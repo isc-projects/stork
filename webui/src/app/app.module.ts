@@ -45,13 +45,13 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { InputTextareaModule } from 'primeng/inputtextarea'
 import { TreeModule } from 'primeng/tree'
 import { DataViewModule } from 'primeng/dataview'
-import { ChipsModule } from 'primeng/chips'
 import { ChartModule } from 'primeng/chart'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { AccordionModule } from 'primeng/accordion'
 import { TreeTableModule } from 'primeng/treetable'
 import { SkeletonModule } from 'primeng/skeleton'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { AutoCompleteModule } from 'primeng/autocomplete'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -312,7 +312,6 @@ export function cfgFactory() {
         InputTextareaModule,
         TreeModule,
         ChipModule,
-        ChipsModule,
         DataViewModule,
         ToggleButtonModule,
         ChartModule,
@@ -323,6 +322,7 @@ export function cfgFactory() {
         SkeletonModule,
         ManagedAccessDirective,
         FloatLabelModule,
+        AutoCompleteModule,
     ],
     providers: [
         {

@@ -1,15 +1,16 @@
 <ng-template #classesinput>
-    <p-chips
-        ngDefaultControl
-        inputId="{{ inputId }}"
-        [allowDuplicate]="false"
-        [addOnBlur]="true"
+    <p-autoComplete
+        [multiple]="true"
+        [suggestions]="classesSuggestions"
+        [dropdown]="true"
+        (completeMethod)="prepareClasses($event)"
         [formControl]="classFormControl"
-        styleClass="adaptive-chips-background w-full"
-        placeholder="{{ floatingPlaceholder ? null : 'Type or Pick From List' }}"
         title="Type or Select Class Names From List"
-    >
-    </p-chips>
+        [inputId]="inputId"
+        placeholder="{{ floatingPlaceholder ? null : 'Type or Pick From List' }}"
+        [unique]="true"
+        class="max-w-form"
+    ></p-autoComplete>
 </ng-template>
 <div class="flex align-items-end gap-1">
     @if (floatingPlaceholder) {
@@ -22,91 +23,91 @@
             <ng-container *ngTemplateOutlet="classesinput"></ng-container>
         </span>
     }
-    <p-overlayPanel #op [dismissable]="false">
-        <ng-template pTemplate>
-            <div
-                *ngIf="!sortedClientClasses || sortedClientClasses.length === 0"
-                class="flex align-items-center justify-content-between text-sm font-italic"
-            >
-                No classes found.
-            </div>
-            <p-table
-                *ngIf="sortedClientClasses && sortedClientClasses.length > 0"
-                [value]="sortedClientClasses"
-                styleClass="p-datatable-gridlines"
-                [scrollable]="true"
-                scrollHight="flex"
-            >
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th>
-                            Class Name
-                            <app-help-tip subject="client classes selection">
-                                <p>
-                                    This list displays the client classes configured on the monitored DHCP servers.
-                                    Check one or more classes you want to assign to the host reservation and click the
-                                    Insert button. The list can be opened multiple times. The already selected classes
-                                    are checked and cannot be unchecked in this list. To remove a class from a host
-                                    reservation, remove its tag from the input box.
-                                </p>
-                                <p>
-                                    If a desired class is not in this list, you can type its name directly in the input
-                                    box.
-                                </p>
-                                <p>
-                                    If the list is too long, use the filtering box to find desired classes. Click on the
-                                    Filter button to select the search mode.
-                                </p>
-                            </app-help-tip>
-                        </th>
-                    </tr>
-                    <tr>
-                        <th>
-                            <p-columnFilter type="text" field="name" matchMode="contains"></p-columnFilter>
-                        </th>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-clientClass>
-                    <tr>
-                        <td>
-                            <div class="field-checkbox mb-0">
-                                <p-checkbox
-                                    inputId="{{ clientClass.name + 'Check' }}"
-                                    value="{{ clientClass.name }}"
-                                    [(ngModel)]="selectedClientClasses"
-                                    [disabled]="isUsed(clientClass.name)"
-                                ></p-checkbox>
-                                <label for="{{ clientClass.name }} + 'Check' ">{{ clientClass.name }}</label>
-                            </div>
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
-            <div class="flex mt-2">
-                <button
-                    *ngIf="sortedClientClasses && sortedClientClasses.length > 0"
-                    pRipple
-                    pButton
-                    label="Insert"
-                    class="p-button-primary p-button-sm mr-2"
-                    (click)="mergeSelected()"
-                ></button>
-                <button
-                    pRipple
-                    pButton
-                    label="Cancel"
-                    class="p-button-secondary p-button-sm"
-                    (click)="cancelSelected()"
-                ></button>
-            </div>
-        </ng-template>
-    </p-overlayPanel>
-    <button
-        pRipple
-        pButton
-        label="List"
-        class="p-button-text p-button-sm flex-none"
-        type="button"
-        (click)="showClassSelectionPanel($event)"
-    ></button>
+    <!--    <p-overlayPanel #op [dismissable]="false">-->
+    <!--        <ng-template pTemplate>-->
+    <!--            <div-->
+    <!--                *ngIf="!sortedClientClasses || sortedClientClasses.length === 0"-->
+    <!--                class="flex align-items-center justify-content-between text-sm font-italic"-->
+    <!--            >-->
+    <!--                No classes found.-->
+    <!--            </div>-->
+    <!--            <p-table-->
+    <!--                *ngIf="sortedClientClasses && sortedClientClasses.length > 0"-->
+    <!--                [value]="sortedClientClasses"-->
+    <!--                styleClass="p-datatable-gridlines"-->
+    <!--                [scrollable]="true"-->
+    <!--                scrollHight="flex"-->
+    <!--            >-->
+    <!--                <ng-template pTemplate="header">-->
+    <!--                    <tr>-->
+    <!--                        <th>-->
+    <!--                            Class Name-->
+    <!--                            <app-help-tip subject="client classes selection">-->
+    <!--                                <p>-->
+    <!--                                    This list displays the client classes configured on the monitored DHCP servers.-->
+    <!--                                    Check one or more classes you want to assign to the host reservation and click the-->
+    <!--                                    Insert button. The list can be opened multiple times. The already selected classes-->
+    <!--                                    are checked and cannot be unchecked in this list. To remove a class from a host-->
+    <!--                                    reservation, remove its tag from the input box.-->
+    <!--                                </p>-->
+    <!--                                <p>-->
+    <!--                                    If a desired class is not in this list, you can type its name directly in the input-->
+    <!--                                    box.-->
+    <!--                                </p>-->
+    <!--                                <p>-->
+    <!--                                    If the list is too long, use the filtering box to find desired classes. Click on the-->
+    <!--                                    Filter button to select the search mode.-->
+    <!--                                </p>-->
+    <!--                            </app-help-tip>-->
+    <!--                        </th>-->
+    <!--                    </tr>-->
+    <!--                    <tr>-->
+    <!--                        <th>-->
+    <!--                            <p-columnFilter type="text" field="name" matchMode="contains"></p-columnFilter>-->
+    <!--                        </th>-->
+    <!--                    </tr>-->
+    <!--                </ng-template>-->
+    <!--                <ng-template pTemplate="body" let-clientClass>-->
+    <!--                    <tr>-->
+    <!--                        <td>-->
+    <!--                            <div class="field-checkbox mb-0">-->
+    <!--                                <p-checkbox-->
+    <!--                                    inputId="{{ clientClass.name + 'Check' }}"-->
+    <!--                                    value="{{ clientClass.name }}"-->
+    <!--                                    [(ngModel)]="selectedClientClasses"-->
+    <!--                                    [disabled]="isUsed(clientClass.name)"-->
+    <!--                                ></p-checkbox>-->
+    <!--                                <label for="{{ clientClass.name }} + 'Check' ">{{ clientClass.name }}</label>-->
+    <!--                            </div>-->
+    <!--                        </td>-->
+    <!--                    </tr>-->
+    <!--                </ng-template>-->
+    <!--            </p-table>-->
+    <!--            <div class="flex mt-2">-->
+    <!--                <button-->
+    <!--                    *ngIf="sortedClientClasses && sortedClientClasses.length > 0"-->
+    <!--                    pRipple-->
+    <!--                    pButton-->
+    <!--                    label="Insert"-->
+    <!--                    class="p-button-primary p-button-sm mr-2"-->
+    <!--                    (click)="mergeSelected()"-->
+    <!--                ></button>-->
+    <!--                <button-->
+    <!--                    pRipple-->
+    <!--                    pButton-->
+    <!--                    label="Cancel"-->
+    <!--                    class="p-button-secondary p-button-sm"-->
+    <!--                    (click)="cancelSelected()"-->
+    <!--                ></button>-->
+    <!--            </div>-->
+    <!--        </ng-template>-->
+    <!--    </p-overlayPanel>-->
+    <!--    <button-->
+    <!--        pRipple-->
+    <!--        pButton-->
+    <!--        label="List"-->
+    <!--        class="p-button-text p-button-sm flex-none"-->
+    <!--        type="button"-->
+    <!--        (click)="showClassSelectionPanel($event)"-->
+    <!--    ></button>-->
 </div>

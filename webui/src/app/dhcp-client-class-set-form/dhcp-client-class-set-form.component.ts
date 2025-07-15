@@ -3,6 +3,7 @@ import { UntypedFormControl } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { OverlayPanel } from 'primeng/overlaypanel'
 import { SelectableClientClass } from '../forms/selectable-client-class'
+import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
 
 /**
  * A component providing a "chips" input box to specify client classes
@@ -50,6 +51,11 @@ export class DhcpClientClassSetFormComponent implements OnInit {
      * An array of the selected class names in the overlay panel.
      */
     selectedClientClasses: string[] = []
+
+    /**
+     * A list of classes to be displayed as suggested options in PrimeNG AutoComplete input component.
+     */
+    classesSuggestions: any[] | undefined
 
     /**
      * Constructor.
@@ -163,5 +169,19 @@ export class DhcpClientClassSetFormComponent implements OnInit {
     showClassSelectionPanel(event): void {
         this._fillSelected()
         this.classSelectionPanel.toggle(event)
+    }
+
+    /**
+     * Prepares a list of classes to be displayed as suggested options in PrimeNG AutoComplete input component.
+     * @param event AutoComplete event received
+     */
+    prepareClasses(event: AutoCompleteCompleteEvent) {
+        this.classesSuggestions = [
+            ...this.sortedClientClasses.filter((c) => c.name.indexOf(event.query) !== -1).map((c) => c.name),
+        ]
+
+        if (!this.classesSuggestions.includes(event.query)) {
+            this.classesSuggestions = [...this.classesSuggestions, event.query]
+        }
     }
 }
