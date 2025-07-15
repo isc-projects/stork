@@ -206,9 +206,10 @@ func TestDeleteAllEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, exEv.ID)
 
-	err = DeleteAllEvents(db)
+	delCount, err := DeleteAllEvents(db)
 
 	require.NoError(t, err)
+	require.EqualValues(t, 1, delCount)
 
 	events, total, err := GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, nil, "", SortDirAny)
 	require.NoError(t, err)

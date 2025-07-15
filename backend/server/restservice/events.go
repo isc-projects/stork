@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -73,7 +74,15 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 }
 
 func (r *RestAPI) DeleteEvents(ctx context.Context, params events.DeleteEventsParams) middleware.Responder {
-	err := dbmodel.DeleteAllEvents(r.DB)
+	_, user := r.SessionManager.Logged(ctx)
+	if user == nil {
+		msg := "Unable to identify the user requesting deletion (for logging purposes)"
+		rsp := events.NewDeleteEventsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	deleteCount, err := dbmodel.DeleteAllEvents(r.DB)
 	if err != nil {
 		msg := "Problem deleting events from the database"
 		log.Error(err)
@@ -82,6 +91,11 @@ func (r *RestAPI) DeleteEvents(ctx context.Context, params events.DeleteEventsPa
 		})
 		return rsp
 	}
+	deletePlural := "s"
+	if deleteCount == 1 {
+		deletePlural = ""
+	}
+	r.EventCenter.AddInfoEvent(fmt.Sprintf("%s cleared the event log and removed %d event%s", user.Login, deleteCount, deletePlural), user)
 	rsp := events.NewDeleteEventsNoContent()
 	return rsp
 }
