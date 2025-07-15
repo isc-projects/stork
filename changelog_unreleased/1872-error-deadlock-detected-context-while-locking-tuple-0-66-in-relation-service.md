@@ -1,6 +1,7 @@
 [bug] slawek
 
-    Fixed deadlocks on the HA-related tables in the database. Fixed
-    infinite appending the same backup server ID to an array in one
-    HA-related table.
+    Fixed deadlocks in the database while detecting Kea HA services
+    including backup servers. They were caused by infinitely
+    appending the same backup server ID to one of the database
+    tables.
     (Gitlab #1872)
