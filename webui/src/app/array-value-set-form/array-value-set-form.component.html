@@ -1,8 +1,8 @@
-<!--<p-chips-->
-<!--    ngDefaultControl-->
-<!--    [allowDuplicate]="false"-->
-<!--    [addOnBlur]="true"-->
-<!--    [formControl]="classFormControl"-->
-<!--    styleClass="adaptive-chips-background w-full"-->
-<!--&gt;-->
-<!--</p-chips>-->
+<p-autoComplete
+    [multiple]="true"
+    [suggestions]="suggestions"
+    (completeMethod)="prepareSuggestions($event)"
+    [formControl]="classFormControl"
+    [unique]="true"
+    class="max-w-form"
+></p-autoComplete>

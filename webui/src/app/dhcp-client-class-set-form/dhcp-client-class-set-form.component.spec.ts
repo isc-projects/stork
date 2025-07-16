@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
-import { ChipsModule } from 'primeng/chips'
 import { ButtonModule } from 'primeng/button'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TableModule } from 'primeng/table'
@@ -10,6 +9,7 @@ import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.co
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { By } from '@angular/platform-browser'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { AutoCompleteModule } from 'primeng/autocomplete'
 
 describe('DhcpClientClassSetFormComponent', () => {
     let component: DhcpClientClassSetFormComponent
@@ -22,13 +22,13 @@ describe('DhcpClientClassSetFormComponent', () => {
             imports: [
                 ButtonModule,
                 CheckboxModule,
-                ChipsModule,
                 FormsModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 TableModule,
                 FloatLabelModule,
+                AutoCompleteModule,
             ],
         }).compileComponents()
 

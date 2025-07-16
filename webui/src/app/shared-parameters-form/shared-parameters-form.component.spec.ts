@@ -5,7 +5,7 @@ import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
-import { ChipsModule } from 'primeng/chips'
+import { AutoCompleteModule } from 'primeng/autocomplete'
 import { DropdownModule } from 'primeng/dropdown'
 import {
     FormControl,
@@ -26,6 +26,7 @@ import { By } from '@angular/platform-browser'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MultiSelectModule } from 'primeng/multiselect'
+import { InputTextModule } from 'primeng/inputtext'
 
 /**
  * Intrface to the form used in the unit tests.
@@ -57,7 +58,7 @@ describe('SharedParametersFormComponent', () => {
             imports: [
                 ButtonModule,
                 CheckboxModule,
-                ChipsModule,
+                AutoCompleteModule,
                 DropdownModule,
                 FormsModule,
                 InputNumberModule,
@@ -68,6 +69,7 @@ describe('SharedParametersFormComponent', () => {
                 TriStateCheckboxModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
+                InputTextModule,
             ],
         }).compileComponents()
 

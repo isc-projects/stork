@@ -89,7 +89,12 @@
                 *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText"
                 class="col-12 sm:col-6"
             >
-                <input pInputText formControlName="idInputHex" class="max-w-form" placeholder="e.g. 01:02:03:04:05:06" />
+                <input
+                    pInputText
+                    formControlName="idInputHex"
+                    class="max-w-form"
+                    placeholder="e.g. 01:02:03:04:05:06"
+                />
                 <small
                     *ngIf="
                         formGroup.get('hostIdGroup.idInputHex').invalid &&
@@ -305,7 +310,12 @@
                 </ng-template>
                 <div>
                     <p-floatLabel>
-                        <input id="next-server-input-{{ i }}" pInputText class="max-w-form" formControlName="nextServer" />
+                        <input
+                            id="next-server-input-{{ i }}"
+                            pInputText
+                            class="max-w-form"
+                            formControlName="nextServer"
+                        />
                         <label for="next-server-input-{{ i }}">Next Server</label>
                     </p-floatLabel>
                     <small

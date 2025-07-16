@@ -17,7 +17,7 @@ import { UpdateKeaDaemonsGlobalParametersBeginResponse } from '../backend'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { CheckboxModule } from 'primeng/checkbox'
-import { ChipsModule } from 'primeng/chips'
+import { AutoCompleteModule } from 'primeng/autocomplete'
 import { DropdownModule } from 'primeng/dropdown'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TagModule } from 'primeng/tag'
@@ -222,7 +222,7 @@ export default {
             imports: [
                 ButtonModule,
                 CheckboxModule,
-                ChipsModule,
+                AutoCompleteModule,
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,

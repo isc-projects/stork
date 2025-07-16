@@ -42,7 +42,7 @@ import { SubnetFormComponent } from '../subnet-form/subnet-form.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
 import { ButtonModule } from 'primeng/button'
-import { ChipsModule } from 'primeng/chips'
+import { AutoCompleteModule } from 'primeng/autocomplete'
 import { DividerModule } from 'primeng/divider'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MessagesModule } from 'primeng/messages'
@@ -129,7 +129,7 @@ describe('SubnetsPageComponent', () => {
                 ProgressSpinnerModule,
                 ButtonModule,
                 CheckboxModule,
-                ChipsModule,
+                AutoCompleteModule,
                 DividerModule,
                 InputNumberModule,
                 MessagesModule,
