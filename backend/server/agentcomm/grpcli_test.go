@@ -270,11 +270,11 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	responseList := actualResponse
 	require.Len(t, responseList, 2)
 
-	require.Equal(t, 1, responseList[0].Result)
+	require.Equal(t, keactrl.ResponseError, responseList[0].Result)
 	require.Equal(t, "operation failed", responseList[0].Text)
 	require.Nil(t, responseList[0].Arguments)
 
-	require.Equal(t, 0, responseList[1].Result)
+	require.Equal(t, keactrl.ResponseSuccess, responseList[1].Result)
 	require.Equal(t, "operation succeeded", responseList[1].Text)
 	require.NotNil(t, responseList[1].Arguments)
 	require.Len(t, *responseList[1].Arguments, 1)
@@ -366,11 +366,11 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	responseList := actualResponse1
 	require.Len(t, responseList, 2)
 
-	require.Equal(t, 1, responseList[0].Result)
+	require.Equal(t, keactrl.ResponseError, responseList[0].Result)
 	require.Equal(t, "operation failed", responseList[0].Text)
 	require.Nil(t, responseList[0].Arguments)
 
-	require.Equal(t, 0, responseList[1].Result)
+	require.Equal(t, keactrl.ResponseSuccess, responseList[1].Result)
 	require.Equal(t, "operation succeeded", responseList[1].Text)
 	require.NotNil(t, responseList[1].Arguments)
 	require.Len(t, *responseList[1].Arguments, 1)
@@ -379,7 +379,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	responseList = actualResponse2
 	require.Len(t, responseList, 1)
 
-	require.Equal(t, 1, responseList[0].Result)
+	require.Equal(t, keactrl.ResponseError, responseList[0].Result)
 	require.Equal(t, "operation failed", responseList[0].Text)
 	require.Nil(t, responseList[0].Arguments)
 

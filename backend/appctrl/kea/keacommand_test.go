@@ -323,7 +323,7 @@ func TestUnmarshalResponseList(t *testing.T) {
 	require.Len(t, list, 2)
 
 	// The first result value is 0.
-	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, ResponseSuccess, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
 
 	// The arguments should be non-nil and contain two parameters.
@@ -340,7 +340,7 @@ func TestUnmarshalResponseList(t *testing.T) {
 
 	// The second response should contain different result and text. The
 	// arguments are not present, so should be nil.
-	require.Equal(t, 1, list[1].Result)
+	require.Equal(t, ResponseError, list[1].Result)
 	require.Equal(t, "command unsuccessful", list[1].Text)
 	require.Nil(t, list[1].Arguments)
 	require.Equal(t, "dhcp6", (list[1]).Daemon)
@@ -375,7 +375,7 @@ func TestUnmarshalHashedResponseList(t *testing.T) {
 	require.Len(t, list, 2)
 
 	// The first result value is 0.
-	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, ResponseSuccess, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
 
 	// The arguments should be non-nil and contain two parameters.
@@ -395,7 +395,7 @@ func TestUnmarshalHashedResponseList(t *testing.T) {
 
 	// The second response should contain different result and text. The
 	// arguments are not present, so should be nil.
-	require.Equal(t, 1, list[1].Result)
+	require.Equal(t, ResponseError, list[1].Result)
 	require.Equal(t, "command unsuccessful", list[1].Text)
 	require.Nil(t, list[1].Arguments)
 	require.Equal(t, "dhcp6", (list[1]).Daemon)
@@ -435,7 +435,7 @@ func TestUnmarshalCustomResponse(t *testing.T) {
 	require.NotNil(t, list)
 
 	require.Len(t, list, 1)
-	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, ResponseSuccess, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
 	require.EqualValues(t, 1, list[0].Arguments.Subnet.SubnetID)
 	require.Equal(t, "192.0.2.0/24", list[0].Arguments.Subnet.Prefix)
@@ -465,7 +465,7 @@ func TestUnmarshalCustomResponseNoArgs(t *testing.T) {
 	require.NotNil(t, list)
 
 	require.Len(t, list, 1)
-	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, ResponseSuccess, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
 }
 
