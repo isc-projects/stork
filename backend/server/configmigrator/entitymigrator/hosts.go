@@ -383,6 +383,22 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		response := (*responsePerDaemon)[0]
 
 		if err := response.GetError(); err != nil {
+			if errors.As(err, &keactrl.UnsupportedOperationKeaError{}) {
+				// Handle missing hook error.
+				err = errors.WithMessagef(err,
+					"command %d/%d returned an unsupported operation error for host '%d' of daemon '%d'",
+					i+1, len(responses),
+					hostID, daemonID)
+				m.daemonErrs[daemonID] = configmigrator.MigrationError{
+					ID:          daemonID,
+					Label:       getDaemonLabel(daemon),
+					Error:       err,
+					CauseEntity: configmigrator.ErrorCauseEntityDaemon,
+				}
+				break
+			}
+
+			// Handle other errors.
 			err = errors.WithMessagef(err,
 				"command %d/%d returned an error for host '%d' of daemon '%d'",
 				i+1, len(responses),

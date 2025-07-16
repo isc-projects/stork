@@ -62,6 +62,11 @@ func TestMigrate(t *testing.T) {
 		// handler. It must have the same length as the number of commands sent
 		// to the Kea DHCP daemon.
 		executionErrs []error
+		// The Kea status assigned to the execution errors. It should have the
+		// same length as the number of commands sent to the Kea DHCP daemon.
+		// If the length is less than the number of commands, the default
+		// status is an error.
+		executionStatuses []keactrl.ResponseStatus
 	}
 
 	expectForwardToKeaOverHTTP := func(daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, err mockErrors) *gomock.Call {
@@ -79,9 +84,14 @@ func TestMigrate(t *testing.T) {
 				r := cmdResponses[i].(*keactrl.ResponseList)
 				require.Empty(t, *r)
 
+				status := keactrl.ResponseError
+				if i < len(err.executionStatuses) {
+					status = err.executionStatuses[i]
+				}
+
 				(*r) = append(*r, keactrl.Response{
 					ResponseHeader: keactrl.ResponseHeader{
-						Result: keactrl.ResponseError,
+						Result: status,
 						Text:   err.executionErrs[i].Error(),
 					},
 				})
@@ -338,6 +348,7 @@ func TestMigrate(t *testing.T) {
 		daemon2 := createDaemon()
 		daemon3 := createDaemon()
 		daemon4 := createDaemon()
+		daemon5 := createDaemon()
 
 		host1 := createHost(daemon1)
 		host2 := createHost(daemon1)
@@ -347,6 +358,8 @@ func TestMigrate(t *testing.T) {
 		host6 := createHost(daemon3)
 		host7 := createHost(daemon4)
 		host8 := createHost(daemon4)
+		host9 := createHost(daemon5)
+		host10 := createHost(daemon5)
 
 		gomock.InOrder(
 			expectDaemonLockNoError(daemon1),
@@ -380,17 +393,26 @@ func TestMigrate(t *testing.T) {
 			}, host7, host8),
 			expectReservationDelCommandNoError(daemon4, host7),
 			expectConfigWriteCommandNoError(daemon4),
+
+			// The Kea daemon processed the commands but the hosts_cmds hook
+			// is not loaded.
+			expectDaemonLockNoError(daemon5),
+			expectReservationAddCommandWithError(daemon5, mockErrors{
+				executionErrs:     []error{errors.Errorf("error hosts_cmds hook"), nil},
+				executionStatuses: []keactrl.ResponseStatus{keactrl.ResponseCommandUnsupported, keactrl.ResponseSuccess},
+			}, host9, host10),
+			expectConfigWriteCommandNoError(daemon5),
 		)
 
 		migrator.items = []dbmodel.Host{
-			host1, host2, host3, host4, host5, host6, host7, host8,
+			host1, host2, host3, host4, host5, host6, host7, host8, host9, host10,
 		}
 
 		// Act
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Len(t, errs, 4)
+		require.Len(t, errs, 5)
 		sort.Slice(errs, func(i, j int) bool {
 			if errs[i].CauseEntity != errs[j].CauseEntity {
 				return len(errs[i].CauseEntity) > len(errs[j].CauseEntity)
@@ -406,13 +428,17 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[1].Error, "error transferring reservation")
 		require.EqualValues(t, configmigrator.ErrorCauseEntityDaemon, errs[1].CauseEntity)
 
-		require.EqualValues(t, host6.ID, errs[2].ID)
-		require.ErrorContains(t, errs[2].Error, "error executing command")
-		require.EqualValues(t, configmigrator.ErrorCauseEntityHost, errs[2].CauseEntity)
+		require.EqualValues(t, daemon5.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Error, "error hosts_cmds hook")
+		require.EqualValues(t, configmigrator.ErrorCauseEntityDaemon, errs[2].CauseEntity)
 
-		require.EqualValues(t, host8.ID, errs[3].ID)
-		require.ErrorContains(t, errs[3].Error, "error as result")
+		require.EqualValues(t, host6.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Error, "error executing command")
 		require.EqualValues(t, configmigrator.ErrorCauseEntityHost, errs[3].CauseEntity)
+
+		require.EqualValues(t, host8.ID, errs[4].ID)
+		require.ErrorContains(t, errs[4].Error, "error as result")
+		require.EqualValues(t, configmigrator.ErrorCauseEntityHost, errs[4].CauseEntity)
 
 		for _, err := range errs {
 			require.EqualValues(t, getExpectedLabel(err), err.Label)
