@@ -2,14 +2,14 @@
     <p-fieldset legend="Prefix" styleClass="mt-4">
         <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="prefixes">
             <p-floatLabel class="flex-auto min-w-0">
-                <input [id]="uuids.prefix" pInputText formControlName="prefix" class="w-full" />
+                <input [id]="uuids.prefix" pInputText formControlName="prefix" class="max-w-form" />
                 <label [for]="uuids.prefix">Pool Prefix</label>
             </p-floatLabel>
             <p-floatLabel class="min-w-0">
                 <p-inputNumber
                     ngDefaultControl
                     [inputId]="uuids.delegatedLength"
-                    inputStyleClass="delegated-length-input w-full"
+                    class="max-w-form"
                     formControlName="delegatedLength"
                     min="1"
                     max="128"
@@ -18,7 +18,7 @@
                 <label [for]="uuids.delegatedLength">Delegated Length</label>
             </p-floatLabel>
             <p-floatLabel class="flex-auto min-w-0">
-                <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" class="w-full" />
+                <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" class="max-w-form" />
                 <label [for]="uuids.excludedPrefix">Excluded Prefix</label>
             </p-floatLabel>
         </div>
@@ -61,7 +61,8 @@
                     formControlName="selectedDaemons"
                     display="chip"
                     [showToggleAll]="false"
-                    styleClass="w-full adaptive-chips-background"
+                    styleClass="adaptive-chips-background"
+                    class="max-w-form"
                     (onChange)="onDaemonsChange($event)"
                 >
                 </p-multiSelect>

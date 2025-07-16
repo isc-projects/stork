@@ -1,6 +1,6 @@
 <div [formGroup]="formGroup" class="flex flex-column gap-1">
     <div class="flex gap-2" [class.flex-column]="!topLevel" [class.align-items-center]="topLevel">
-        <div class="max-w-form" *ngIf="topLevel; else showSuboptionInput">
+        <div class="w-full" *ngIf="topLevel; else showSuboptionInput">
             <p-dropdown
                 inputId="{{ codeInputId }}"
                 [editable]="true"
@@ -8,7 +8,7 @@
                 filterBy="label"
                 placeholder="Select or Type Option Code"
                 [showClear]="true"
-                styleClass="w-full"
+                class="max-w-form"
                 [options]="v6 ? optionsService.getStandardDhcpv6Options() : optionsService.getStandardDhcpv4Options()"
                 formControlName="optionCode"
                 pTooltip="Use the dropdown to select an option from the list of standard options. If the desired option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
