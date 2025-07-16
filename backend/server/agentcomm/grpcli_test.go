@@ -5,10 +5,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/miekg/dns"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
 	dbmodel "isc.org/stork/server/database/model"
@@ -1395,7 +1396,7 @@ func TestReceiveZoneRRs(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
 
 	// Collect the RRs returned over the stream.
-	var contents []dns.RR
+	var contents []*dnsconfig.RR
 	for receivedRRs, err := range agents.ReceiveZoneRRs(context.Background(), app, "zone1", "_default") {
 		require.NoError(t, err)
 		require.NotNil(t, receivedRRs)
@@ -1406,7 +1407,9 @@ func TestReceiveZoneRRs(t *testing.T) {
 
 	// Validate returned RRs.
 	for i, rr := range contents {
-		require.Equal(t, rrs[i], rr.String())
+		// Replace tabs with spaces in the original RR.
+		original := strings.Join(strings.Fields(rrs[i]), " ")
+		require.Equal(t, original, rr.GetString())
 	}
 }
 

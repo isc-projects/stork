@@ -112,6 +112,11 @@
           $ref: '#/definitions/ZoneRR'
       total:
         type: integer
+      cached:
+        type: boolean
+      zoneTransferAt:
+        type: string
+        format: date-time
 
   # Zones
   Zones:

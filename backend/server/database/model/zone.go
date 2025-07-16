@@ -135,6 +135,16 @@ type Zone struct {
 	LocalZones []*LocalZone `pg:"rel:has-many"`
 }
 
+// Returns a local zone for a specific daemon and view.
+func (zone *Zone) GetLocalZone(daemonID int64, view string) *LocalZone {
+	for _, localZone := range zone.LocalZones {
+		if localZone.DaemonID == daemonID && localZone.View == view {
+			return localZone
+		}
+	}
+	return nil
+}
+
 // Represents association between a server and a zone. The server
 // specific zone information is held in this structure.
 type LocalZone struct {
@@ -150,6 +160,8 @@ type LocalZone struct {
 
 	Daemon *Daemon `pg:"rel:has-one"`
 	Zone   *Zone   `pg:"rel:has-one"`
+
+	ZoneTransferAt *time.Time `pg:"zone_transfer_at"`
 }
 
 // Represents the counts of zones returned by the GetZoneCountStatsByDaemon.
@@ -351,6 +363,16 @@ func DeleteOrphanedZones(dbi dbops.DBI) (int64, error) {
 func DeleteLocalZones(db pg.DBI, daemonID int64) error {
 	_, err := db.Model((*LocalZone)(nil)).Where("daemon_id = ?", daemonID).Delete()
 	return errors.Wrapf(err, "failed to delete local zones for daemon id %d", daemonID)
+}
+
+// Updates timestamp of the last RRs fetch for a local zone.
+func UpdateLocalZoneRRsTransferAt(db pg.DBI, localZoneID int64) error {
+	_, err := db.Model((*LocalZone)(nil)).
+		Column("zone_transfer_at").
+		Set("zone_transfer_at = ?", time.Now().UTC()).
+		Where("id = ?", localZoneID).
+		Update()
+	return errors.Wrapf(err, "failed to update RRs transfer time for local zone id %d", localZoneID)
 }
 
 // go-pg hook triggered before zone insert into the database. It sets the

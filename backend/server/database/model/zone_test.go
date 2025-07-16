@@ -922,6 +922,94 @@ func TestDeleteOrphanedZones(t *testing.T) {
 	require.Empty(t, zones)
 }
 
+// Test updating the timestamp of the last zone transfer.
+func TestUpdateLocalZoneRRsTransferAt(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeBind9,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	addedDaemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, addedDaemons, 1)
+
+	zone := &Zone{
+		Name: "example.org",
+		LocalZones: []*LocalZone{
+			{
+				DaemonID: addedDaemons[0].ID,
+				View:     "_default",
+				Class:    "IN",
+				Serial:   123456,
+				Type:     "primary",
+				LoadedAt: time.Now().UTC(),
+			},
+		},
+	}
+	err = AddZones(db, zone)
+	require.NoError(t, err)
+
+	err = UpdateLocalZoneRRsTransferAt(db, zone.LocalZones[0].ID)
+	require.NoError(t, err)
+
+	returnedZone, err := GetZoneByID(db, zone.ID)
+	require.NoError(t, err)
+	require.Len(t, returnedZone.LocalZones, 1)
+	require.NotNil(t, returnedZone.LocalZones[0].ZoneTransferAt)
+	require.InDelta(t, time.Now().Unix(), returnedZone.LocalZones[0].ZoneTransferAt.Unix(), 5)
+}
+
+// Test getting a local zone from a zone by daemon ID and view.
+func TestGetLocalZone(t *testing.T) {
+	zone := &Zone{
+		Name: "example.org",
+		LocalZones: []*LocalZone{
+			{
+				DaemonID: 1,
+				View:     "trusted",
+			},
+			{
+				DaemonID: 2,
+				View:     "guest",
+			},
+		},
+	}
+
+	t.Run("matching daemon ID and view", func(t *testing.T) {
+		localZone := zone.GetLocalZone(1, "trusted")
+		require.NotNil(t, localZone)
+	})
+
+	t.Run("matching daemon ID but not view", func(t *testing.T) {
+		localZone := zone.GetLocalZone(1, "guest")
+		require.Nil(t, localZone)
+	})
+
+	t.Run("matching view but not daemon ID", func(t *testing.T) {
+		localZone := zone.GetLocalZone(2, "trusted")
+		require.Nil(t, localZone)
+	})
+
+	t.Run("no matching daemon ID and view", func(t *testing.T) {
+		localZone := zone.GetLocalZone(3, "guest")
+		require.Nil(t, localZone)
+	})
+}
+
 // Test the "before insert" hook for the zone.
 func TestZoneBeforeInsert(t *testing.T) {
 	zone := &Zone{

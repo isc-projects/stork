@@ -6,12 +6,14 @@ import (
 	"hash/fnv"
 	"iter"
 	"runtime"
+	"slices"
 	"sync"
+	"time"
 
 	"github.com/go-pg/pg/v10"
-	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/appcfg/dnsconfig"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -84,9 +86,19 @@ type Manager interface {
 	// parameters indicate the number of apps from which the zones are fetched and the
 	// number of apps from which the zones have been fetched already.
 	GetFetchZonesProgress() (bool, int, int)
-	GetZoneRRs(zoneID int64, daemonID int64, viewName string) iter.Seq2[[]dns.RR, error]
+	GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse]
 	Shutdown()
 }
+
+// Type of options for GetZoneRRs function.
+type GetZoneRRsOption int
+
+const (
+	// Force zone transfer even when RRs are cached.
+	GetZoneRRsOptionForceZoneTransfer GetZoneRRsOption = iota
+	// Cache RRs returned from transfer.
+	GetZoneRRsOptionCacheRRs
+)
 
 // A zones fetching state including the flag whether or not the fetch
 // is in progress, and other data useful to track fetch progress.
@@ -154,30 +166,61 @@ type rrsRequestingState struct {
 
 // A structure holding a request to fetch RRs for a zone.
 type rrsRequest struct {
+	ctx       context.Context
 	app       *dbmodel.App
 	zoneName  string
 	viewName  string
-	respChan  chan *rrResponse
+	respChan  chan *RRResponse
 	closeOnce sync.Once
 	key       uint64
 }
 
 // Instantiates a new RRs request.
-func newRRsRequest(key uint64, app *dbmodel.App, zoneName string, viewName string) *rrsRequest {
+func newRRsRequest(ctx context.Context, key uint64, app *dbmodel.App, zoneName string, viewName string) *rrsRequest {
 	return &rrsRequest{
+		ctx:       ctx,
 		app:       app,
 		zoneName:  zoneName,
 		viewName:  viewName,
-		respChan:  make(chan *rrResponse),
+		respChan:  make(chan *RRResponse),
 		closeOnce: sync.Once{},
 		key:       key,
 	}
 }
 
-// A structure encapsulating a set of RRs returned by the agent or an error.
-type rrResponse struct {
-	rrs []dns.RR
-	err error
+// A structure encapsulating a set of RRs returned by the agent, a database,
+// or an error.
+type RRResponse struct {
+	Cached         bool
+	ZoneTransferAt time.Time
+	RRs            []*dnsconfig.RR
+	Err            error
+}
+
+// Creates a new RRResponse with an error.
+func NewErrorRRResponse(err error) *RRResponse {
+	return &RRResponse{
+		Err: err,
+	}
+}
+
+// Creates a new non-cached RRResponse with RRs. The zone transfer time is
+// set to current time.
+func NewZoneTransferRRResponse(rrs []*dnsconfig.RR) *RRResponse {
+	return &RRResponse{
+		Cached:         false,
+		ZoneTransferAt: time.Now().UTC(),
+		RRs:            rrs,
+	}
+}
+
+// Creates a new cached RRResponse with RRs.
+func NewCacheRRResponse(rrs []*dnsconfig.RR, transferAt time.Time) *RRResponse {
+	return &RRResponse{
+		Cached:         true,
+		ZoneTransferAt: transferAt,
+		RRs:            rrs,
+	}
 }
 
 // DNS Manager implementation. The Manager is responsible for coordinating all
@@ -434,11 +477,19 @@ func (manager *managerImpl) runRRsRequest(request *rrsRequest) {
 		delete(manager.rrsReqsState.requests, request.key)
 	}()
 	for rr, err := range manager.agents.ReceiveZoneRRs(context.Background(), request.app, request.zoneName, request.viewName) {
+		var response *RRResponse
 		if err != nil {
-			request.respChan <- &rrResponse{nil, err}
-			return
+			response = NewErrorRRResponse(err)
+		} else {
+			response = NewZoneTransferRRResponse(rr)
 		}
-		request.respChan <- &rrResponse{rr, nil}
+		select {
+		case <-request.ctx.Done():
+			// The client stopped reading the RRs.
+			return
+		case request.respChan <- response:
+			// Get more RRs.
+		}
 	}
 }
 
@@ -446,7 +497,7 @@ func (manager *managerImpl) runRRsRequest(request *rrsRequest) {
 // over the response channel. The specified key should uniquely identify a
 // zone, view and daemon for which the RRs are requested. If there is an
 // ongoing request for the same key, the function returns an error.
-func (manager *managerImpl) requestZoneRRs(key uint64, app *dbmodel.App, zoneName string, viewName string) (chan *rrResponse, error) {
+func (manager *managerImpl) requestZoneRRs(ctx context.Context, key uint64, app *dbmodel.App, zoneName string, viewName string) (chan *RRResponse, error) {
 	// Try to mark the request as ongoing. If the request is already present
 	// under the same key, return an error.
 	manager.rrsReqsState.mutex.Lock()
@@ -458,7 +509,7 @@ func (manager *managerImpl) requestZoneRRs(key uint64, app *dbmodel.App, zoneNam
 	manager.rrsReqsState.mutex.Unlock()
 
 	// Create a new request and send it to the channel.
-	request := newRRsRequest(key, app, zoneName, viewName)
+	request := newRRsRequest(ctx, key, app, zoneName, viewName)
 	manager.rrsReqsState.requestChan <- request
 	// Return the response channel, so the caller can receive the RRs.
 	return request.respChan, nil
@@ -487,7 +538,7 @@ func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) {
 				})
 				if err != nil {
 					log.WithError(err).Error("Failed to submit RRs request to the worker pool")
-					request.respChan <- &rrResponse{nil, err}
+					request.respChan <- NewErrorRRResponse(err)
 				}
 			}
 		}
@@ -507,19 +558,22 @@ func (manager *managerImpl) Shutdown() {
 }
 
 // Returns zone contents (RRs) for a specified view, zone and daemon.
-func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName string) iter.Seq2[[]dns.RR, error] {
-	return func(yield func([]dns.RR, error) bool) {
+// Depending on the options, the function may cache transferred RRs in
+// the database. A caller may also request forcing zone transfer to
+// override the cached RRs.
+func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse] {
+	return func(yield func(*RRResponse) bool) {
 		// We need an app associated with the daemon.
 		daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
 		if err != nil {
 			// This is unexpected and we can't proceed because we
 			// don't have the app instance.
-			_ = yield(nil, err)
+			_ = yield(NewErrorRRResponse(err))
 			return
 		}
 		if daemon == nil {
 			// This is also unexpected.
-			_ = yield(nil, errors.Errorf("daemon with the ID of %d not found", daemonID))
+			_ = yield(NewErrorRRResponse(errors.Errorf("daemon with the ID of %d not found", daemonID)))
 			return
 		}
 		app := daemon.App
@@ -529,12 +583,34 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		if err != nil {
 			// Again, it should be rare, unless someone used a link to a non-existing
 			// zone or tempered with the ID in the URL.
-			_ = yield(nil, err)
+			_ = yield(NewErrorRRResponse(err))
 			return
 		}
 		if zone == nil {
 			// This is also unexpected.
-			_ = yield(nil, errors.Errorf("zone with the ID of %d not found", zoneID))
+			_ = yield(NewErrorRRResponse(errors.Errorf("zone with the ID of %d not found", zoneID)))
+			return
+		}
+		// Local zone is required to fetch cached RRs when we don't force zone transfer.
+		// It is also required to cache RRs received over the zone transfer.
+		var localZone *dbmodel.LocalZone
+		if !slices.Contains(options, GetZoneRRsOptionForceZoneTransfer) || slices.Contains(options, GetZoneRRsOptionCacheRRs) {
+			if localZone = zone.GetLocalZone(daemonID, viewName); localZone == nil {
+				_ = yield(NewErrorRRResponse(errors.Errorf("local zone information for daemon ID %d and view %s not found in zone: %s", daemonID, viewName, zone.Name)))
+				return
+			}
+		}
+		// If we don't force zone transfer the local zone should have been initialized
+		// from the database.
+		if !slices.Contains(options, GetZoneRRsOptionForceZoneTransfer) && localZone.ZoneTransferAt != nil {
+			// Get cached RRs from the database and return to the caller.
+			rrs, err := dbmodel.GetDNSConfigRRs(manager.db, localZone.ID)
+			if err != nil {
+				_ = yield(NewErrorRRResponse(err))
+				return
+			}
+			// This response indicates that the RRs were fetched from the database.
+			_ = yield(NewCacheRRResponse(rrs, *localZone.ZoneTransferAt))
 			return
 		}
 		// To avoid sending multiple requests for the same zone, we should check
@@ -543,21 +619,81 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		h := fnv.New64a()
 		h.Write([]byte(fmt.Sprintf("%d:%d:%s", daemonID, zoneID, viewName)))
 		key := h.Sum64()
-		ch, err := manager.requestZoneRRs(key, app, zone.Name, viewName)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		ch, err := manager.requestZoneRRs(ctx, key, app, zone.Name, viewName)
 		if err != nil {
 			// The zone inventory is most likely busy.
-			_ = yield(nil, err)
+			_ = yield(NewErrorRRResponse(err))
 			return
 		}
-		// Collect the RRs and return them to the caller.
+		// If we don't cache RRs, simply return them to the caller.
+		if !slices.Contains(options, GetZoneRRsOptionCacheRRs) {
+			// If the RRs are not cached, we need to collect them and return them to the caller.
+			for r := range ch {
+				if !yield(r) {
+					break
+				}
+			}
+			return
+		}
+		// Caching RRs is enabled. Let's create transaction to cache them.
+		tx, err := manager.db.Begin()
+		if err != nil {
+			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to begin a transaction for caching RRs")))
+			return
+		}
+		defer func() {
+			err := tx.Rollback()
+			if err != nil {
+				log.WithError(err).Error("Failed to rollback the transaction for caching RRs")
+			}
+		}()
+		// Update the timestamp indicating when RRs were last cached.
+		if err := dbmodel.UpdateLocalZoneRRsTransferAt(tx, localZone.ID); err != nil {
+			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to update the RRs fetched at for the local zone")))
+			return
+		}
+		// Delete existing RRs for the local zone.
+		if err := dbmodel.DeleteLocalZoneRRs(tx, localZone.ID); err != nil {
+			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to delete cached RRs for the local zone")))
+			return
+		}
+		// Batch insert RRs into the database.
+		batch := dbmodel.NewBatch(tx, 100, dbmodel.AddLocalZoneRRs)
 		for r := range ch {
-			if r.err != nil {
-				_ = yield(nil, r.err)
+			if r.Err != nil {
+				// There was an error reading from the channel. The channel will be closed and
+				// the transaction will be rolled back.
+				_ = yield(r)
 				return
 			}
-			if !yield(r.rrs, nil) {
+			for _, rr := range r.RRs {
+				// Insert next RR into the database.
+				if err := batch.Add(&dbmodel.LocalZoneRR{
+					RR:          *rr,
+					LocalZoneID: localZone.ID,
+				}); err != nil {
+					// Something went wrong with database insertion.
+					_ = yield(NewErrorRRResponse(err))
+					return
+				}
+			}
+			if !yield(r) {
+				// Stop reading and caching the RRs if the caller is done reading.
 				return
 			}
+		}
+		// We're done reading and caching the RRs. Let's flush and commit the transaction.
+		if err := batch.Flush(); err != nil {
+			// The caller no longer expects responses.
+			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to flush the batch of RRs")))
+			return
+		}
+		if err := tx.Commit(); err != nil {
+			// The caller no longer expects responses.
+			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to commit the transaction for caching RRs")))
+			return
 		}
 	}
 }

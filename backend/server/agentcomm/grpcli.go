@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -18,6 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
 	pdnsdata "isc.org/stork/appdata/pdns"
@@ -1057,8 +1057,8 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, app Control
 
 // Makes a request to the agent to perform a zone transfer for a specified view
 // and zone. It returns an iterator to the received RRs and error.
-func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]dns.RR, error] {
-	return func(yield func([]dns.RR, error) bool) {
+func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error] {
+	return func(yield func([]*dnsconfig.RR, error) bool) {
 		// Get control access point for the specified app. It will be sent
 		// in the request to the agent, so the agent can identify correct
 		// zone inventory.
@@ -1133,9 +1133,9 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app Contr
 			}
 			// Convert the received RRs to the format convenient for further processing
 			// on the server side.
-			rrs := make([]dns.RR, len(receivedRRs.Rrs))
+			rrs := make([]*dnsconfig.RR, len(receivedRRs.Rrs))
 			for i, rr := range receivedRRs.Rrs {
-				rrs[i], err = dns.NewRR(rr)
+				rrs[i], err = dnsconfig.NewRR(rr)
 				if err != nil {
 					// This is unlikely but we need to handle it.
 					_ = yield(nil, err)

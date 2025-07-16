@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -18,6 +17,7 @@ import (
 	"google.golang.org/grpc/security/advancedtls"
 
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
 	pdnsdata "isc.org/stork/appdata/pdns"
@@ -45,7 +45,7 @@ type ConnectedAgents interface {
 	GetPowerDNSServerInfo(ctx context.Context, app ControlledApp) (*pdnsdata.ServerInfo, error)
 	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
 	ReceiveZones(ctx context.Context, app ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error]
-	ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]dns.RR, error]
+	ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error]
 }
 
 // Interface representing a connector to a selected agent over gRPC.

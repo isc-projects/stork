@@ -4,7 +4,7 @@ import (
 	"context"
 	"iter"
 
-	"github.com/miekg/dns"
+	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
 	pdnsdata "isc.org/stork/appdata/pdns"
@@ -200,6 +200,6 @@ func (fa *FakeAgents) ReceiveZones(ctx context.Context, app agentcomm.Controlled
 	return nil
 }
 
-func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, app agentcomm.ControlledApp, zoneName string, viewName string) iter.Seq2[[]dns.RR, error] {
+func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, app agentcomm.ControlledApp, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error] {
 	return nil
 }
