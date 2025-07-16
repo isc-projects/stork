@@ -111,7 +111,7 @@
                                             [attrs]="{ id: error.id, label: error.label }"
                                         ></app-entity-link>
                                         <span *ngSwitchDefault
-                                            >{{ error.type }} [{{ error.id }}] {{ error.label }}</span
+                                            >{{ error.causeEntity }} [{{ error.id }}] {{ error.label }}</span
                                         >
                                     </ng-container>
                                 </td>
