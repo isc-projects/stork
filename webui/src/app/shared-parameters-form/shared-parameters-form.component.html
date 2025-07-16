@@ -64,7 +64,7 @@
                                                 [options]="controls.data.values"
                                                 [showClear]="true"
                                                 [formControlName]="index"
-                                                styleClass="w-full"
+                                                class="max-w-form"
                                                 placeholder="(not specified)"
                                             >
                                             </p-multiSelect>
@@ -74,8 +74,8 @@
                                                     [options]="controls.data.values"
                                                     [showClear]="true"
                                                     [formControlName]="index"
-                                                    styleClass="w-full"
                                                     placeholder="(not specified)"
+                                                    class="max-w-form"
                                                 >
                                                 </p-dropdown>
                                             </ng-template>
@@ -87,7 +87,7 @@
                                             >
                                             </app-array-value-set-form>
                                             <ng-template #noValuesNoArrayCase>
-                                                <input pInputText [formControlName]="index" class="w-full" />
+                                                <input pInputText [formControlName]="index" class="max-w-form" />
                                             </ng-template>
                                         </ng-template>
                                     </ng-container>
@@ -110,7 +110,7 @@
                                             [max]="controls.data.max"
                                             [minFractionDigits]="0"
                                             [maxFractionDigits]="controls.data.fractionDigits"
-                                            styleClass="w-full"
+                                            class="max-w-form"
                                             locale="en-US"
                                             [formControlName]="index"
                                             [useGrouping]="false"

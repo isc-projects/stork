@@ -2,12 +2,12 @@
     <p-fieldset legend="Address Range" styleClass="mt-4">
         <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="range">
             <p-floatLabel class="flex-auto">
-                <input [id]="uuids.poolStart" pInputText formControlName="start" class="w-full" />
+                <input [id]="uuids.poolStart" pInputText formControlName="start" class="max-w-form" />
                 <label [for]="uuids.poolStart">First Address</label>
             </p-floatLabel>
             <div>:</div>
             <p-floatLabel class="flex-auto">
-                <input [id]="uuids.poolEnd" pInputText formControlName="end" class="w-full" />
+                <input [id]="uuids.poolEnd" pInputText formControlName="end" class="max-w-form" />
                 <label [for]="uuids.poolEnd">Last Address</label>
             </p-floatLabel>
         </div>
@@ -39,7 +39,8 @@
                     formControlName="selectedDaemons"
                     display="chip"
                     [showToggleAll]="false"
-                    styleClass="w-full adaptive-chips-background"
+                    styleClass="adaptive-chips-background"
+                    class="max-w-form"
                     (onChange)="onDaemonsChange($event)"
                 >
                 </p-multiSelect>

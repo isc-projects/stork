@@ -11,7 +11,8 @@
                         formControlName="selectedDaemons"
                         display="chip"
                         [showToggleAll]="false"
-                        styleClass="w-full adaptive-chips-background"
+                        styleClass="adaptive-chips-background"
+                        class="max-w-form"
                         (onChange)="onDaemonsChange($event)"
                     >
                     </p-multiSelect>
@@ -29,7 +30,7 @@
         </p-fieldset>
         <p-fieldset legend="Shared Network" styleClass="mt-4">
             <p-floatLabel class="block mt-4 mb-2">
-                <input id="name" pInputText formControlName="name" class="w-full" />
+                <input id="name" pInputText formControlName="name" class="max-w-form" />
                 <label for="name">Name</label>
             </p-floatLabel>
             <ng-container

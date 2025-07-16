@@ -263,7 +263,7 @@
                                     type="text"
                                     formControlName="userLogin"
                                     id="userLogin"
-                                    class="user-input"
+                                    class="max-w-form"
                                     pattern="[a-zA-Z0-9_]+"
                                     title="Login must only contain letters, digits, or an underscore."
                                 />
@@ -286,7 +286,7 @@
                                 <input
                                     pInputText
                                     type="text"
-                                    class="user-input"
+                                    class="max-w-form"
                                     formControlName="userEmail"
                                     id="userEmail"
                                     title="User email address."
@@ -304,7 +304,7 @@
                                     type="text"
                                     formControlName="userFirst"
                                     id="userFirst"
-                                    class="user-input"
+                                    class="max-w-form"
                                     pattern="^[\w](?!.*\s{2,}).*[\w]$"
                                     title="Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed."
                                 />
@@ -329,7 +329,7 @@
                                     type="text"
                                     formControlName="userLast"
                                     id="userLast"
-                                    class="user-input"
+                                    class="max-w-form"
                                     pattern="^[\w](?!.*\s{2,}).*[\w]$"
                                     title="Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed."
                                 />
@@ -371,8 +371,7 @@
                                     <p-password
                                         formControlName="userPassword"
                                         inputId="userPassword"
-                                        inputStyleClass="user-input"
-                                        styleClass="password-component"
+                                        class="max-w-form"
                                         [pattern]="passwordPattern"
                                         title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
                                         [toggleMask]="true"
@@ -400,8 +399,7 @@
                                         [feedback]="false"
                                         formControlName="userPassword2"
                                         inputId="userPassword2"
-                                        inputStyleClass="user-input"
-                                        styleClass="password-component"
+                                        class="max-w-form"
                                         title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
                                         [toggleMask]="true"
                                     ></p-password>

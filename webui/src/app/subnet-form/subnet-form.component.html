@@ -11,7 +11,8 @@
                         formControlName="selectedDaemons"
                         display="chip"
                         [showToggleAll]="false"
-                        styleClass="w-full adaptive-chips-background"
+                        styleClass="adaptive-chips-background"
+                        class="max-w-form"
                         autofocus="true"
                         (onChange)="onDaemonsChange($event)"
                     >
@@ -41,7 +42,7 @@
         </p-fieldset>
         <p-fieldset legend="Subnet" styleClass="mt-4">
             <p-floatLabel class="block mt-4 mb-2">
-                <input id="subnet" pInputText formControlName="subnet" class="w-full" />
+                <input id="subnet" pInputText formControlName="subnet" class="max-w-form" />
                 <label for="subnet">Subnet</label>
             </p-floatLabel>
             <ng-container
@@ -75,7 +76,7 @@
                     [options]="state.selectableSharedNetworks"
                     [showClear]="true"
                     placeholder="not selected"
-                    styleClass="w-full"
+                    class="max-w-form"
                     (onChange)="onSharedNetworkChange($event)"
                 >
                 </p-dropdown>
@@ -103,7 +104,7 @@
                     </div>
                     <!-- Content -->
                     <p-floatLabel class="block mt-2 mb-4" formArrayName="names">
-                        <input id="subnet-name-{{ i }}" pInputText formControlName="{{ i }}" class="w-full" />
+                        <input id="subnet-name-{{ i }}" pInputText formControlName="{{ i }}" class="max-w-form" />
                         <label for="subnet-name-{{ i }}">Subnet name</label>
                     </p-floatLabel>
                 </div>

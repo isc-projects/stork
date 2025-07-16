@@ -1,33 +1,29 @@
-:host ::ng-deep .p-multiselect.p-multiselect-chip .p-multiselect-token
-    background: var(--primary-100)
-    color: var(--text-color)
-    margin-right: 4px
-    margin-top: 2px
-    margin-bottom: 2px
+:host ::ng-deep
+    .p-multiselect.p-multiselect-chip .p-multiselect-token
+        background: var(--primary-100)
+        color: var(--text-color)
+        margin-right: 4px
+        margin-top: 2px
+        margin-bottom: 2px
 
-:host ::ng-deep .host-form
-    .p-fieldset
-        // Distance between form fieldsets.
-        margin-top: 1.5rem
+    .host-form
+        .p-fieldset
+            // Distance between form fieldsets.
+            margin-top: 1.5rem
 
-        // Custom style for form fieldset.
-        &.host-form-section
-            div.p-fieldset-content
-                // Use flexbox layout, columns stack.
-                display: flex
-                flex-direction: column
-                // Apply large gap for floating labels.
-                gap: 2rem
+            // Custom style for form fieldset.
+            &.host-form-section
+                div.p-fieldset-content
+                    // Use flexbox layout, columns stack.
+                    display: flex
+                    flex-direction: column
+                    // Apply large gap for floating labels.
+                    gap: 2rem
 
-                small
-                    // Little margin between form input and feedback text.
-                    margin-top: 0.5rem
+                    small
+                        // Little margin between form input and feedback text.
+                        margin-top: 0.5rem
 
-                & > div:first-child
-                    // Add top margin for first div inside of fieldset.
-                    margin-top: 1.5rem
-
-                    //.w-full
-                    //    &.p-component.p-inputwrapper, &.p-inputtext, &.p-chips .p-chips-input-token input
-                    //        // Form input should take full width but not more than --max-form-width variable value.
-                    //        max-width: var(--max-form-width)
+                    & > div:first-child
+                        // Add top margin for first div inside of fieldset.
+                        margin-top: 1.5rem
