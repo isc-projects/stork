@@ -71,21 +71,24 @@
     </div>
     <div class="flex align-items-center gap-2 flex-none" appAccessEntity="users" [appHideIfNoAccess]="true">
         <p-button
-            tooltip="Clear all events (on all pages)"
+            pTooltip="Clear all events (on all pages)"
+            tooltipPosition="left"
             label="Clear"
             severity="warning"
             icon="pi pi-trash"
+            appAccessEntity="events"
+            appAccessType="delete"
             (onClick)="onClear()"
         ></p-button>
-        <p-confirmDialog
-            key="clearConfirmDialog"
-            closable="false"
-            icon="pi pi-exclamation-triangle"
-            acceptIcon="pi pi-trash mr-2"
-            rejectButtonStyleClass="p-button-text"
-        ></p-confirmDialog>
     </div>
 </div>
+<p-confirmDialog
+    key="clearConfirmDialog"
+    closable="false"
+    icon="pi pi-exclamation-triangle"
+    acceptIcon="pi pi-trash mr-2"
+    rejectButtonStyleClass="p-button-text"
+></p-confirmDialog>
 
 <!-- events table -->
 <p-table

@@ -33,7 +33,8 @@ The Events panel presents the list of the most recent events captured by
 the Stork server. There are three event urgency levels: info, warning,
 and error. Events pertaining to particular entities, e.g. machines
 or applications, provide a link to a web page containing information
-about the given object.
+about the given object. Users with ``super-admin`` permissions can clear
+the events (though this leaves behind an event describing their action).
 
 The Service Status Panel
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,6 +79,7 @@ Only ``super-admin`` users can perform following actions:
 
 - create and manage user accounts
 - add/remove/authorize machines for monitoring
+- clear the event log
 - read access point keys of monitored BIND9 servers
 - read/regenerate Stork server token
 - read secrets in configs of monitored Kea servers.

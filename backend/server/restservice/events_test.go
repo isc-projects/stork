@@ -71,7 +71,7 @@ func TestDeleteEvents(t *testing.T) {
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
 
-	// Create testing user in the database.
+	// Create testing users in the database.
 	user := &dbmodel.SystemUser{
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
@@ -80,6 +80,17 @@ func TestDeleteEvents(t *testing.T) {
 	con, err := dbmodel.CreateUserWithPassword(db, user, "pass")
 	require.False(t, con)
 	require.NoError(t, err)
+	superAdminUser := &dbmodel.SystemUser{
+		Email:    "admin1@example.org",
+		Lastname: "1",
+		Name:     "Admin",
+		Groups: []*dbmodel.SystemGroup{
+			{ID: dbmodel.SuperAdminGroupID},
+		},
+	}
+	con, err = dbmodel.CreateUser(db, superAdminUser)
+	require.NoError(t, err)
+	require.False(t, con)
 
 	// delete all (fails because no user in session)
 	deleteParams := events.DeleteEventsParams{}
@@ -88,6 +99,19 @@ func TestDeleteEvents(t *testing.T) {
 
 	// Log in the test user
 	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// delete all (fails without authorization)
+	deleteParams = events.DeleteEventsParams{}
+	rsp = rapi.DeleteEvents(ctx, deleteParams)
+	require.IsType(t, &events.DeleteEventsDefault{}, rsp)
+
+	// Log out the test user
+	err = rapi.SessionManager.LogoutUser(ctx, user)
+	require.NoError(t, err)
+
+	// Log in the test super-admin user
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
 	require.NoError(t, err)
 
 	// delete all (succeeds)

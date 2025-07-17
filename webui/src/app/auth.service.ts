@@ -285,6 +285,8 @@ export class AuthService {
                     return accessType === 'read' // Admin group can only read their own user data.
                 case 'machine':
                     return accessType !== 'delete' // Admin group can't delete machines.
+                case 'events':
+                    return accessType !== 'delete' // Admin group can't delete events either.
                 default:
                     return true
             }

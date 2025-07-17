@@ -12,6 +12,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/events"
+	storkutil "isc.org/stork/util"
 )
 
 func (r *RestAPI) getEvents(offset, limit int64, level dbmodel.EventLevel, daemonType *string, appType *string, machineID *int64, userID *int64, sortField string, sortDir dbmodel.SortDirEnum) (*models.Events, error) {
@@ -82,6 +83,13 @@ func (r *RestAPI) DeleteEvents(ctx context.Context, params events.DeleteEventsPa
 		})
 		return rsp
 	}
+	if !user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		msg := "User is forbidden to clear the log"
+		rsp := events.NewDeleteEventsDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	deleteCount, err := dbmodel.DeleteAllEvents(r.DB)
 	if err != nil {
 		msg := "Problem deleting events from the database"
@@ -91,11 +99,8 @@ func (r *RestAPI) DeleteEvents(ctx context.Context, params events.DeleteEventsPa
 		})
 		return rsp
 	}
-	deletePlural := "s"
-	if deleteCount == 1 {
-		deletePlural = ""
-	}
-	r.EventCenter.AddInfoEvent(fmt.Sprintf("%s cleared the event log and removed %d event%s", user.Login, deleteCount, deletePlural), user)
+	eventsStr := storkutil.FormatNoun(int64(deleteCount), "event", "s")
+	r.EventCenter.AddInfoEvent(fmt.Sprintf("[%d] %s cleared the event log and removed %s", user.ID, user.Login, eventsStr), user)
 	rsp := events.NewDeleteEventsNoContent()
 	return rsp
 }
