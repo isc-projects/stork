@@ -5,7 +5,7 @@ import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
-import { AutoCompleteModule } from 'primeng/autocomplete'
+import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete'
 import { DropdownModule } from 'primeng/dropdown'
 import {
     FormControl,
@@ -358,16 +358,19 @@ describe('SharedParametersFormComponent', () => {
         const controls = divs[1].queryAll(By.css('app-dhcp-client-class-set-form'))
         expect(controls.length).toBe(1)
 
-        // Click the List button to list the classes.
-        const btns = divs[1].queryAll(By.css('[label=List]'))
-        expect(btns.length).toBe(1)
-        expect(btns[0].nativeElement.innerText).toBe('List')
-        btns[0].nativeElement.click()
+        // Click the autocomplete dropdown button to list the classes.
+        const autoCompleteDe = divs[1].query(By.directive(AutoComplete))
+        expect(autoCompleteDe).toBeTruthy()
+        const dropdownButton = autoCompleteDe.query(By.css('button'))
+        expect(dropdownButton).toBeTruthy()
+        dropdownButton.nativeElement.click()
         fixture.detectChanges()
 
         // The expanded list should contain the client classes.
-        expect(controls[0].nativeElement.innerText).toContain('foo')
-        expect(controls[0].nativeElement.innerText).toContain('bar')
+        const classSpans = divs[1].queryAll(By.css('ul.p-autocomplete-items li span'))
+        expect(classSpans).toBeTruthy()
+        expect(classSpans.length).toBe(2)
+        expect(classSpans.map((de) => de.nativeElement.innerText)).toEqual(jasmine.arrayContaining(['foo', 'bar']))
     })
 
     it('should clear selected value', () => {
