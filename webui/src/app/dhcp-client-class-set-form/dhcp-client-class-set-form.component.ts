@@ -180,8 +180,9 @@ export class DhcpClientClassSetFormComponent implements OnInit {
             ...this.sortedClientClasses.filter((c) => c.name.indexOf(event.query) !== -1).map((c) => c.name),
         ]
 
-        if (!this.classesSuggestions.includes(event.query)) {
-            this.classesSuggestions = [...this.classesSuggestions, event.query]
+        const query = event.query.trim()
+        if (query && !this.classesSuggestions.includes(query)) {
+            this.classesSuggestions = [query, ...this.classesSuggestions]
         }
     }
 }

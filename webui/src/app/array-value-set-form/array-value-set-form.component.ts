@@ -29,7 +29,14 @@ export class ArrayValueSetFormComponent<T> {
      * @param event AutoComplete event received
      */
     prepareSuggestions(event: AutoCompleteCompleteEvent) {
+        const query = event.query.trim()
+        if (!query) {
+            // Do not let empty strings.
+            this.suggestions = []
+            return
+        }
+
         const suggestions = []
-        this.suggestions = [...suggestions, event.query]
+        this.suggestions = [query, ...suggestions]
     }
 }
