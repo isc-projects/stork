@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button'
 import { PaginatorModule } from 'primeng/paginator'
 import { TableModule } from 'primeng/table'
 import { ToastModule } from 'primeng/toast'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 import { EventsService, ServicesService, UsersService } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
@@ -43,7 +44,7 @@ describe('EventsPanelComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
-            imports: [PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule],
+            imports: [PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule, ConfirmDialogModule],
             providers: [
                 EventsService,
                 UsersService,

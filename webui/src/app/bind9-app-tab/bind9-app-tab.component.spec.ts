@@ -13,6 +13,7 @@ import { AppsVersions, Bind9DaemonView, ServicesService, UsersService } from '..
 import { ServerDataService } from '../server-data.service'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { DialogModule } from 'primeng/dialog'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { AppOverviewComponent } from '../app-overview/app-overview.component'
@@ -95,6 +96,7 @@ describe('Bind9AppTabComponent', () => {
                 TableModule,
                 ManagedAccessDirective,
                 ButtonModule,
+                ConfirmDialogModule,
             ],
             providers: [
                 UsersService,

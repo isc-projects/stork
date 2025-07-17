@@ -10,6 +10,7 @@ import { PanelModule } from 'primeng/panel'
 import { TooltipModule } from 'primeng/tooltip'
 import { MessageModule } from 'primeng/message'
 import { MessageService } from 'primeng/api'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, of, throwError } from 'rxjs'
@@ -153,6 +154,7 @@ describe('KeaAppTabComponent', () => {
                 DividerModule,
                 TagModule,
                 ManagedAccessDirective,
+                ConfirmDialogModule,
             ],
             providers: [
                 UsersService,

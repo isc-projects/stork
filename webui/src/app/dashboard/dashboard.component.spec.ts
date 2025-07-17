@@ -27,6 +27,7 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TooltipModule } from 'primeng/tooltip'
 import { TableModule } from 'primeng/table'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -78,6 +79,7 @@ describe('DashboardComponent', () => {
                 RouterModule,
                 TableModule,
                 TagModule,
+                ConfirmDialogModule,
             ],
             providers: [
                 ServicesService,
