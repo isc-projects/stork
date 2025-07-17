@@ -66,7 +66,7 @@ func TestMigrate(t *testing.T) {
 		// same length as the number of commands sent to the Kea DHCP daemon.
 		// If the length is less than the number of commands, the default
 		// status is an error.
-		executionStatuses []keactrl.ResponseStatus
+		executionStatuses []keactrl.ResponseResult
 	}
 
 	expectForwardToKeaOverHTTP := func(daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, err mockErrors) *gomock.Call {
@@ -399,7 +399,7 @@ func TestMigrate(t *testing.T) {
 			expectDaemonLockNoError(daemon5),
 			expectReservationAddCommandWithError(daemon5, mockErrors{
 				executionErrs:     []error{errors.Errorf("error hosts_cmds hook"), nil},
-				executionStatuses: []keactrl.ResponseStatus{keactrl.ResponseCommandUnsupported, keactrl.ResponseSuccess},
+				executionStatuses: []keactrl.ResponseResult{keactrl.ResponseCommandUnsupported, keactrl.ResponseSuccess},
 			}, host9, host10),
 			expectConfigWriteCommandNoError(daemon5),
 		)

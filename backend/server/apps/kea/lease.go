@@ -46,7 +46,7 @@ type LeaseGetMultipleResponse struct {
 // Validates a response from a Kea daemon to the commands fetching
 // leases, e.g. lease4-get-by-hw-address. It checks that the response
 // comprises the Success status and that arguments map is not nil.
-func validateGetLeasesResponse(commandName keactrl.CommandName, result keactrl.ResponseStatus, arguments interface{}) error {
+func validateGetLeasesResponse(commandName keactrl.CommandName, result keactrl.ResponseResult, arguments interface{}) error {
 	if result == keactrl.ResponseError {
 		return errors.Errorf("error returned by Kea in response to %s command", commandName)
 	}

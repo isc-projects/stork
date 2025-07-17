@@ -351,7 +351,7 @@ func newHostIterator(dbi dbops.DBI, app *dbmodel.App, daemon *dbmodel.Daemon, ag
 // Sends the reservation-get-page command to Kea daemon. If there is an error
 // it is returned. Otherwise, the "from" and "source-index" are updated in the
 // iterator's state. Finally the list of hosts is retrieved and returned.
-func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation, keactrl.ResponseStatus, error) {
+func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation, keactrl.ResponseResult, error) {
 	// Depending on the family we should set the service parameter to
 	// dhcp4 or dhcp6.
 	daemons := []string{iterator.daemon.Name}
@@ -455,7 +455,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 	for i := iterator.subnetIndex; i < len(iterator.subnets); i++ {
 		// Send reservation-get-page command to fetch the next chunk of host
 		// reservations from Kea.
-		var result keactrl.ResponseStatus
+		var result keactrl.ResponseResult
 		hosts, result, err = iterator.sendReservationGetPage()
 		if err != nil {
 			err = errors.WithMessagef(err, "problem sending reservation-get-page command upon attempt to detect host reservations over the host_cmds hook library")

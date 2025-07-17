@@ -24,26 +24,26 @@ const (
 	CA     DaemonName = "ca"
 )
 
-// Kea response status codes.
-type ResponseStatus int
+// Kea response result codes.
+type ResponseResult int
 
 // See "src/lib/cc/command_interpreter.h" in the Kea repository for details.
 const (
 	// Status code indicating a successful operation.
-	ResponseSuccess ResponseStatus = 0
+	ResponseSuccess ResponseResult = 0
 	// Status code indicating a general failure.
-	ResponseError ResponseStatus = 1
+	ResponseError ResponseResult = 1
 	// Status code indicating that the specified command is not supported.
-	ResponseCommandUnsupported ResponseStatus = 2
+	ResponseCommandUnsupported ResponseResult = 2
 	// Status code indicating that the specified command was completed
 	// correctly, but failed to produce any results. For example, get
 	// completed the search, but couldn't find the object it was looking for.
-	ResponseEmpty ResponseStatus = 3
+	ResponseEmpty ResponseResult = 3
 	// Status code indicating that the command was unsuccessful due to a
 	// conflict between the command arguments and the server state. For example,
 	// a lease4-add fails when the subnet identifier in the command does not
 	// match the subnet identifier in the server configuration.
-	ResponseConflict ResponseStatus = 4
+	ResponseConflict ResponseResult = 4
 )
 
 // Interface returning a list of daemons in the command.
@@ -68,7 +68,7 @@ type Command struct {
 
 // Common fields in each received Kea response.
 type ResponseHeader struct {
-	Result ResponseStatus `json:"result"`
+	Result ResponseResult `json:"result"`
 	Text   string         `json:"text"`
 	Daemon string         `json:"-"`
 }
@@ -84,7 +84,7 @@ type ResponseList []Response
 
 // Represents an error returned by Kea CA.
 type KeaError struct {
-	result ResponseStatus
+	result ResponseResult
 	text   string
 }
 
@@ -119,7 +119,7 @@ type UnsupportedOperationKeaError struct {
 // The factory function to create a new KeaError instance based on the result
 // and text received from Kea CA.
 // It returns a most specific error type based on the text.
-func newKeaError(result ResponseStatus, text string) error {
+func newKeaError(result ResponseResult, text string) error {
 	// Kea returns a proper response if the status is ResponseEmpty, so there
 	// is no need to treat it as an error.
 	if result == ResponseSuccess || result == ResponseEmpty {
@@ -151,7 +151,7 @@ type HashedResponseList []HashedResponse
 // An interface exposing properties of the response allowing for
 // error checking.
 type ExaminableResponse interface {
-	GetResult() ResponseStatus
+	GetResult() ResponseResult
 	GetText() string
 	GetDaemon() string
 	GetArguments() *map[string]interface{}
@@ -361,7 +361,7 @@ func UnmarshalResponseList(request DaemonsLister, response []byte, parsed interf
 }
 
 // Returns status code.
-func (r ResponseHeader) GetResult() ResponseStatus {
+func (r ResponseHeader) GetResult() ResponseResult {
 	return r.Result
 }
 
@@ -376,7 +376,7 @@ func (r ResponseHeader) GetDaemon() string {
 }
 
 // Returns status code.
-func (r Response) GetResult() ResponseStatus {
+func (r Response) GetResult() ResponseResult {
 	return r.ResponseHeader.GetResult()
 }
 
@@ -401,7 +401,7 @@ func (r ResponseHeader) GetError() error {
 }
 
 // Returns status code.
-func (r HashedResponse) GetResult() ResponseStatus {
+func (r HashedResponse) GetResult() ResponseResult {
 	return r.ResponseHeader.GetResult()
 }
 
