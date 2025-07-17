@@ -5,6 +5,8 @@
         type: string
       filename:
         type: string
+      persist:
+        type: boolean
 
   LogTarget:
     type: object

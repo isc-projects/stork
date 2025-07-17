@@ -31,10 +31,11 @@ type Databases struct {
 // A structure representing the database connection parameters. It is common
 // for all supported backend types.
 type Database struct {
-	Path string `json:"path"`
-	Type string `json:"type"`
-	Name string `json:"name"`
-	Host string `json:"host"`
+	Path    string `json:"path"`
+	Type    string `json:"type"`
+	Name    string `json:"name"`
+	Host    string `json:"host"`
+	Persist *bool  `json:"persist,omitempty"`
 }
 
 // Parses database connection configuration setting the default

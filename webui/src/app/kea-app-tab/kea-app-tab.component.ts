@@ -411,7 +411,11 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
     filenameFromFile(file: ModelFile) {
         if (!file.filename || file.filename.length === 0) {
             if (file.filetype === 'Lease file') {
-                return 'none (lease persistence disabled)'
+                if (file.persist) {
+                    return 'default (lease persistence enabled)'
+                } else {
+                    return 'none (lease persistence disabled)'
+                }
             } else {
                 return 'none'
             }

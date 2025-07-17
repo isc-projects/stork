@@ -1069,9 +1069,18 @@ func getKeaStorages(config keaconfig.DatabaseConfig) ([]*models.File, []*models.
 	if keaDatabases.Lease != nil {
 		if keaDatabases.Lease.Type == "memfile" {
 			// Storing leases in a lease file.
+			persist := true
+			if keaDatabases.Lease.Persist != nil && !*keaDatabases.Lease.Persist {
+				persist = false
+			}
 			files = append(files, &models.File{
 				Filename: keaDatabases.Lease.Name,
 				Filetype: "Lease file",
+				// This is in every file response, but only makes sense for lease files.
+				// Limitations of the subjset of JSON Schema used by OpenAPI 2.0 prevent
+				// me from writing an `anyOf` schema that could exclude it from files
+				// where it is not relevant.
+				Persist: persist,
 			})
 		} else {
 			// Storing leases in a database.
