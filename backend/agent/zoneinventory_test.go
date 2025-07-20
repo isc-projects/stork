@@ -18,7 +18,9 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	"gopkg.in/h2non/gock.v1"
 	bind9config "isc.org/stork/appcfg/bind9"
+	pdnsconfig "isc.org/stork/appcfg/pdns"
 	"isc.org/stork/appdata/bind9stats"
+	pdnsdata "isc.org/stork/appdata/pdns"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
@@ -53,6 +55,21 @@ func generateRandomZones(num int) []*bind9stats.Zone {
 	return zones
 }
 
+// This function generates a collection of zones returned by PowerDNS API.
+func generateRandomPDNSZones(num int) []*pdnsdata.Zone {
+	generatedZones := testutil.GenerateRandomZones(num)
+	var zones []*pdnsdata.Zone
+	for _, generatedZone := range generatedZones {
+		zones = append(zones, &pdnsdata.Zone{
+			ZoneName: generatedZone.Name,
+			Serial:   generatedZone.Serial,
+			Kind:     generatedZone.Type,
+			URL:      "/api/v1/servers/localhost/zones/" + generatedZone.Name,
+		})
+	}
+	return zones
+}
+
 // Sort zones and return the one at specified index.
 func getOrderedZoneByIndex(zones []*bind9stats.Zone, index int) *bind9stats.Zone {
 	slices.SortFunc(zones, func(zone1, zone2 *bind9stats.Zone) int {
@@ -76,6 +93,25 @@ func setGetViewsResponseOK(t *testing.T, response map[string]any) (*bind9StatsCl
 	gock.InterceptClient(bind9StatsClient.innerClient.GetClient())
 
 	return bind9StatsClient, func() {
+		gock.Off()
+	}
+}
+
+// Setup stub response returning zones from the PowerDNS API.
+func setGetViewsPowerDNSResponseOK(t *testing.T, response []*pdnsdata.Zone) (*pdnsClient, func()) {
+	zones, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	gock.New("http://localhost:5380/").
+		Get("api/v1/servers/localhost/zones").
+		Persist().
+		Reply(http.StatusOK).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(zones))
+	pdnsClient := newPDNSClient()
+	gock.InterceptClient(pdnsClient.innerClient.GetClient())
+
+	return pdnsClient, func() {
 		gock.Off()
 	}
 }
@@ -107,6 +143,14 @@ func parseDefaultBind9Config(t *testing.T) *bind9config.Config {
 	require.NoError(t, err)
 	require.NotNil(t, bind9Config)
 	return bind9Config
+}
+
+// Parse the default PowerDNS config file.
+func parseDefaultPDNSConfig(t *testing.T) *pdnsconfig.Config {
+	pdnsConfig, err := pdnsconfig.NewParser().ParseFile("testdata/pdns.conf")
+	require.NoError(t, err)
+	require.NotNil(t, pdnsConfig)
+	return pdnsConfig
 }
 
 // Parse the default BIND9 config file for benchmark.

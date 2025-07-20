@@ -29,6 +29,7 @@ import (
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 	"isc.org/stork/appdata/bind9stats"
+	pdnsdata "isc.org/stork/appdata/pdns"
 	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -137,6 +138,32 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 		Key:               key,
 		UseSecureProtocol: useSecureProtocol,
 	})
+}
+
+// A matcher for PowerDNS zones. It excludes the Loaded field which is
+// dynamically set by the agent, and not returned by the PowerDNS API.
+type powerDNSZoneMatcher struct {
+	expected *agentapi.Zone
+}
+
+// Checks of the zone matches the expected zone.
+func (m *powerDNSZoneMatcher) Matches(actual any) bool {
+	zone, ok := actual.(*agentapi.Zone)
+	if !ok {
+		return false
+	}
+	return zone.Name == m.expected.Name &&
+		zone.Class == m.expected.Class &&
+		zone.Serial == m.expected.Serial &&
+		zone.Type == m.expected.Type &&
+		zone.View == m.expected.View &&
+		zone.TotalZoneCount == m.expected.TotalZoneCount
+}
+
+// Returns expected zone data.
+func (m *powerDNSZoneMatcher) String() string {
+	return fmt.Sprintf("Zone with Name=%s, Class=%s, Serial=%d, Type=%s, View=%s, TotalZoneCount=%d (Loaded ignored)",
+		m.expected.Name, m.expected.Class, m.expected.Serial, m.expected.Type, m.expected.View, m.expected.TotalZoneCount)
 }
 
 // Check if NewStorkAgent can be invoked and sets SA members.
@@ -1066,6 +1093,76 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test receiving a stream of zones from PowerDNS.
+func TestReceiveZonesPDNS(t *testing.T) {
+	// Setup server response.
+	randomZones := generateRandomPDNSZones(20)
+	slices.SortFunc(randomZones, func(zone1, zone2 *pdnsdata.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	pdnsClient, off := setGetViewsPowerDNSResponseOK(t, randomZones)
+	defer off()
+
+	// Create zone inventory.
+	config := parseDefaultPDNSConfig(t)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, pdnsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a PowerDNS app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "", 1234, false)
+	var apps []App
+	apps = append(apps, &PDNSApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// The zones from the localhost view should be returned in order.
+	var mocks []any
+	for _, zone := range randomZones {
+		apiZone := &agentapi.Zone{
+			Name:           zone.Name(),
+			Class:          "IN",
+			Serial:         zone.Serial,
+			Type:           zone.Kind,
+			Loaded:         time.Now().Unix(),
+			View:           "localhost",
+			TotalZoneCount: int64(len(randomZones)),
+		}
+		mocks = append(mocks, mock.EXPECT().Send(&powerDNSZoneMatcher{apiZone}).Return(nil))
+	}
+	gomock.InOrder(mocks...)
+
+	// Run the actual test.
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "localhost",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.NoError(t, err)
+}
+
 // Test receiving a stream of zones filtered by loading time.
 func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 	// Setup server response.
@@ -1522,6 +1619,100 @@ func TestReceiveZoneRRs(t *testing.T) {
 		ControlPort:    1234,
 		ZoneName:       trustedZones[0].Name(),
 		ViewName:       "trusted",
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test successfully receiving a stream of zone RRs from PowerDNS.
+func TestReceiveZoneRRsPowerDNS(t *testing.T) {
+	// Setup server response for populating the zone inventory.
+	randomZones := generateRandomPDNSZones(10)
+	slices.SortFunc(randomZones, func(zone1, zone2 *pdnsdata.Zone) int {
+		return storkutil.CompareNames(zone1.ZoneName, zone2.ZoneName)
+	})
+	pdnsClient, off := setGetViewsPowerDNSResponseOK(t, randomZones)
+	defer off()
+
+	// Create zone inventory.
+	config := parseDefaultPDNSConfig(t)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, pdnsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	// Get the example zone contents from the file.
+	var rrs []string
+	err := json.Unmarshal(validZoneData, &rrs)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Replace the default AXFR executor to mock the AXFR response.
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
+	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
+		require.Len(t, message.Question, 1)
+		require.Contains(t, message.Question[0].Name, randomZones[0].ZoneName)
+		require.Equal(t, "127.0.0.1:53", address)
+		ch := make(chan *dns.Envelope)
+		go func() {
+			for _, rr := range rrs {
+				rr, err := dns.NewRR(rr)
+				require.NoError(t, err)
+				ch <- &dns.Envelope{
+					RR: []dns.RR{rr},
+				}
+			}
+			close(ch)
+		}()
+		return ch, nil
+	})
+	inventory.axfrExecutor = axfrExecutor
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	// Add a PowerDNS app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &PDNSApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
+
+	// The zone RRs should be returned in order.
+	var mocks []any
+	for i, rr := range rrs {
+		rsp := &agentapi.ReceiveZoneRRsRsp{
+			Rrs: []string{rr},
+		}
+		mocks = append(mocks, mock.EXPECT().Send(rsp).DoAndReturn(func(rsp *agentapi.ReceiveZoneRRsRsp) error {
+			require.Equal(t, rr, rrs[i])
+			return nil
+		}))
+	}
+	gomock.InOrder(mocks...)
+
+	// Run the actual test.
+	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ZoneName:       randomZones[0].ZoneName,
+		ViewName:       "localhost",
 	}, mock)
 	require.NoError(t, err)
 }
