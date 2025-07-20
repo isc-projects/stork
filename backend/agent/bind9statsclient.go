@@ -12,6 +12,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Compile-time check to ensure that resty.Response implements the httpResponse interface
+// and the bind9StatsClient implements the zoneFetcher interface.
 var (
 	_ httpResponse = (*resty.Response)(nil)
 	_ zoneFetcher  = (*bind9StatsClient)(nil)
