@@ -204,7 +204,7 @@ func (sm *appMonitor) run(storkAgent *StorkAgent) {
 }
 
 func printNewOrUpdatedApps(detectedApps []App, existingApps []App) {
-	// Check which if the detected apps are new or updated.
+	// Check which of the detected apps are new or updated.
 	var newOrUpdatedApps []App
 	for _, detectedApp := range detectedApps {
 		if !slices.ContainsFunc(existingApps, func(existingApp App) bool {
