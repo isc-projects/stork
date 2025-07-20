@@ -160,7 +160,7 @@ type pdnsClient struct {
 }
 
 // Instantiates REST client for PowerDNS.
-func NewPDNSClient() *pdnsClient {
+func newPDNSClient() *pdnsClient {
 	return &pdnsClient{
 		innerClient: resty.New(),
 	}

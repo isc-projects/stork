@@ -57,7 +57,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	bind9StatsClient := NewBind9StatsClient()
 	gock.InterceptClient(bind9StatsClient.innerClient.GetClient())
 
-	pdnsClient := NewPDNSClient()
+	pdnsClient := newPDNSClient()
 	gock.InterceptClient(pdnsClient.innerClient.GetClient())
 
 	httpClientConfig := HTTPClientConfig{SkipTLSVerification: true}

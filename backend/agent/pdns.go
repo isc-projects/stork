@@ -120,7 +120,7 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 		return nil, errors.Errorf("api-key not found in %s", configPath)
 	}
 	// Create webserver client.
-	client := NewPDNSClient()
+	client := newPDNSClient()
 	// For larger deployments, it may take several minutes to retrieve the
 	// zones from the DNS server.
 	client.SetRequestTimeout(time.Minute * 3)

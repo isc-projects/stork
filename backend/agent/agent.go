@@ -70,7 +70,7 @@ func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClien
 		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
 		AppMonitor:              appMonitor,
 		bind9StatsClient:        bind9StatsClient,
-		pdnsClient:              NewPDNSClient(),
+		pdnsClient:              newPDNSClient(),
 		KeaHTTPClientConfig:     keaHTTPClientConfig,
 		logTailer:               logTailer,
 		keaInterceptor:          newKeaInterceptor(),
