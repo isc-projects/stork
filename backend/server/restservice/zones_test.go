@@ -731,5 +731,5 @@ func TestGetZoneRRsUnknownError(t *testing.T) {
 	require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
 	defaultRsp := rsp.(*dns.GetZoneRRsDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Contains(t, *defaultRsp.Payload.Message, "Failed to get zone contents using zone transfer")
+	require.Contains(t, *defaultRsp.Payload.Message, "Failed to get zone contents from the database")
 }
