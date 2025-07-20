@@ -6,6 +6,12 @@ import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { SidebarModule } from 'primeng/sidebar'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { ButtonModule } from 'primeng/button'
+import { DividerModule } from 'primeng/divider'
+import { TooltipModule } from 'primeng/tooltip'
 
 export default {
     title: 'App/ZoneViewer',
@@ -15,8 +21,16 @@ export default {
             providers: [provideNoopAnimations(), MessageService],
         }),
         moduleMetadata({
-            imports: [SidebarModule, TableModule, ToastModule],
-            declarations: [],
+            imports: [
+                ButtonModule,
+                DividerModule,
+                ProgressSpinnerModule,
+                SidebarModule,
+                TableModule,
+                ToastModule,
+                TooltipModule,
+            ],
+            declarations: [LocaltimePipe, PlaceholderPipe],
         }),
         toastDecorator,
     ],
@@ -26,6 +40,7 @@ type Story = StoryObj<ZoneViewerComponent>
 
 export const Zone: Story = {
     args: {
+        zoneTransferAt: '2024-03-15T01:00:00Z',
         data: {
             items: [
                 {
@@ -93,5 +108,12 @@ export const Zone: Story = {
                 },
             ],
         },
+    },
+}
+
+export const NoZoneData: Story = {
+    args: {
+        zoneTransferAt: '2024-03-15T01:00:00Z',
+        data: { items: [] },
     },
 }

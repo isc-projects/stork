@@ -8,8 +8,15 @@ import { TableModule } from 'primeng/table'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ZoneRRs } from '../backend/model/zoneRRs'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { TooltipModule } from 'primeng/tooltip'
+import { DividerModule } from 'primeng/divider'
+import { ButtonModule } from 'primeng/button'
 
 let mockGetZoneRRs: ZoneRRs = {
+    zoneTransferAt: '2024-03-15T01:00:00Z',
     items: [
         {
             rrClass: 'IN',
@@ -85,8 +92,8 @@ export default {
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideNoopAnimations()],
         }),
         moduleMetadata({
-            imports: [TableModule, ToastModule],
-            declarations: [ZoneViewerComponent],
+            imports: [ButtonModule, DividerModule, ProgressSpinnerModule, TableModule, ToastModule, TooltipModule],
+            declarations: [LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
         }),
         toastDecorator,
     ],
@@ -96,7 +103,14 @@ export default {
                 url: 'http://localhost/daemons/:daemonId/:viewName/zones/:zoneId/rrs',
                 method: 'GET',
                 status: 200,
-                delay: 100,
+                delay: 1000,
+                response: mockGetZoneRRs,
+            },
+            {
+                url: 'http://localhost/rrs-cache/daemons/:daemonId/:viewName/zones/:zoneId',
+                method: 'PUT',
+                status: 200,
+                delay: 1000,
                 response: mockGetZoneRRs,
             },
         ],

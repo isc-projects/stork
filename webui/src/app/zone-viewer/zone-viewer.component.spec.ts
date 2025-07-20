@@ -3,6 +3,12 @@ import { TableModule } from 'primeng/table'
 import { ZoneViewerComponent } from './zone-viewer.component'
 import { ZoneRR } from '../backend/model/zoneRR'
 import { By } from '@angular/platform-browser'
+import { ButtonModule } from 'primeng/button'
+import { TooltipModule } from 'primeng/tooltip'
+import { DividerModule } from 'primeng/divider'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('ZoneViewerComponent', () => {
     let component: ZoneViewerComponent
@@ -10,8 +16,8 @@ describe('ZoneViewerComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [TableModule],
-            declarations: [ZoneViewerComponent],
+            imports: [ButtonModule, DividerModule, ProgressSpinnerModule, TableModule, TooltipModule],
+            declarations: [LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
         }).compileComponents()
 
         fixture = TestBed.createComponent(ZoneViewerComponent)
@@ -182,5 +188,18 @@ describe('ZoneViewerComponent', () => {
         expect(cells[2].nativeElement.innerText).toBe('IN')
         expect(cells[3].nativeElement.innerText).toBe('A')
         expect(cells[4].nativeElement.innerText).toBe('192.0.2.1')
+    })
+
+    it('should display the loading spinner when loading is true', () => {
+        component.loading = true
+        fixture.detectChanges()
+
+        // Spinner should be displayed while loading.
+        const spinner = fixture.debugElement.query(By.css('p-progressSpinner'))
+        expect(spinner).toBeTruthy()
+
+        // Table should not be displayed while loading.
+        const table = fixture.debugElement.query(By.css('p-table'))
+        expect(table).toBeFalsy()
     })
 })

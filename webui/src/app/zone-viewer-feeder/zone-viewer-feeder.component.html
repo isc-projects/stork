@@ -1,4 +1,6 @@
-<app-zone-viewer *ngIf="zoneData.items?.length > 0" [data]="zoneData"></app-zone-viewer>
-<div *ngIf="loading" class="flex justify-content-center align-items-top min-h-full">
-    <p-progressSpinner styleClass="w-2rem h-2rem" />
-</div>
+<app-zone-viewer
+    [data]="zoneData"
+    [zoneTransferAt]="zoneTransferAt"
+    [loading]="loading"
+    (refreshFromDNSClicked)="refreshFromDNS()"
+></app-zone-viewer>

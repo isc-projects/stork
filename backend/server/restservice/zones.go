@@ -148,6 +148,10 @@ func (r *RestAPI) PutZonesFetch(ctx context.Context, params dns.PutZonesFetchPar
 }
 
 // Returns the zone contents (RRs) for a specified view, zone and daemon.
+// If the zone RRs are not present in the database, the zone transfer is
+// initiated. The transferred data is cached in the database and returned.
+// Future calls to this endpoint will return the cached data.
+
 func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) middleware.Responder {
 	var (
 		restRrs               []*models.ZoneRR
@@ -161,7 +165,7 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 	)
 	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, dnsop.GetZoneRRsOptionCacheRRs) {
 		if rrResponse.Err != nil {
-			msg := "Failed to get zone contents using zone transfer"
+			msg := "Failed to get zone contents from the database"
 			log.WithError(rrResponse.Err).Error(msg)
 			switch {
 			case errors.As(rrResponse.Err, &alreadyRequestedError):
@@ -201,6 +205,7 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 			})
 		}
 		cached = rrResponse.Cached
+		zoneTransferAt = rrResponse.ZoneTransferAt
 	}
 	// Return the zone contents.
 	payload := models.ZoneRRs{
@@ -209,5 +214,71 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 		ZoneTransferAt: strfmt.DateTime(zoneTransferAt),
 	}
 	rsp := dns.NewGetZoneRRsOK().WithPayload(&payload)
+	return rsp
+}
+
+// Refreshes the resource for a zone using zone transfer, and return the newly
+// cached RRs. The zone transfer is initiated regardless of whether the zone
+// RRs are present in the database or not.
+func (r *RestAPI) PutZoneRRsCache(ctx context.Context, params dns.PutZoneRRsCacheParams) middleware.Responder {
+	var (
+		restRrs               []*models.ZoneRR
+		alreadyRequestedError *dnsop.ManagerRRsAlreadyRequestedError
+		busyError             *agentcomm.ZoneInventoryBusyError
+		notInitedError        *agentcomm.ZoneInventoryNotInitedError
+		cached                bool
+		zoneTransferAt        time.Time
+	)
+	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, dnsop.GetZoneRRsOptionForceZoneTransfer, dnsop.GetZoneRRsOptionCacheRRs) {
+		if rrResponse.Err != nil {
+			msg := "Failed to refresh zone contents using zone transfer"
+			log.WithError(rrResponse.Err).Error(msg)
+			switch {
+			case errors.As(rrResponse.Err, &alreadyRequestedError):
+				// There is another request in progress for the same zone.
+				rsp := dns.NewPutZoneRRsCacheDefault(http.StatusAccepted).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(alreadyRequestedError, msg).Error()),
+				})
+				return rsp
+			case errors.As(rrResponse.Err, &busyError):
+				// The zone inventory is busy populating or sending zones to the server.
+				rsp := dns.NewPutZoneRRsCacheDefault(http.StatusConflict).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(busyError, msg).Error()),
+				})
+				return rsp
+			case errors.As(rrResponse.Err, &notInitedError):
+				// The zone inventory is not initialized.
+				rsp := dns.NewPutZoneRRsCacheDefault(http.StatusServiceUnavailable).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(notInitedError, msg).Error()),
+				})
+				return rsp
+			default:
+				// An unknown error occurred.
+				rsp := dns.NewPutZoneRRsCacheDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(rrResponse.Err, msg).Error()),
+				})
+				return rsp
+			}
+		}
+		for _, rr := range rrResponse.RRs {
+			// Convert the RR to the REST API format.
+			restRrs = append(restRrs, &models.ZoneRR{
+				Name:    rr.Name,
+				TTL:     rr.TTL,
+				RrClass: rr.Class,
+				RrType:  rr.Type,
+				Data:    rr.Rdata,
+			})
+		}
+		cached = rrResponse.Cached
+		zoneTransferAt = rrResponse.ZoneTransferAt
+	}
+	// Return the zone contents.
+	payload := models.ZoneRRs{
+		Cached:         cached,
+		Items:          restRrs,
+		ZoneTransferAt: strfmt.DateTime(zoneTransferAt),
+	}
+	rsp := dns.NewPutZoneRRsCacheOK().WithPayload(&payload)
 	return rsp
 }

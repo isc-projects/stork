@@ -57,6 +57,11 @@ export class ZoneViewerFeederComponent {
     }
 
     /**
+     * Holds the timestamp of the last zone transfer.
+     */
+    zoneTransferAt: string = null
+
+    /**
      * Holds the flag indicating that the zone resource records have been loaded.
      *
      * It is used to prevent loading the zone resource records multiple times.
@@ -91,7 +96,8 @@ export class ZoneViewerFeederComponent {
             .then((data) => {
                 // The data have been successfully loaded.
                 this._loaded = true
-                this.zoneData.items = data.items
+                this.zoneData = { items: data.items }
+                this.zoneTransferAt = data.zoneTransferAt
             })
             .catch((error) => {
                 // Show the error message.
@@ -109,5 +115,43 @@ export class ZoneViewerFeederComponent {
                 // Hide the loading spinner, regardless of the result.
                 this.loading = false
             })
+    }
+
+    /**
+     * Refreshes the zone contents from the DNS server.
+     */
+    private _refreshRRs(): void {
+        // Show the loading spinner.
+        this.loading = true
+        lastValueFrom(this._dnsApi.putZoneRRsCache(this.daemonId, this.viewName, this.zoneId))
+            .then((data) => {
+                // The data have been successfully loaded.
+                this._loaded = true
+                this.zoneData = { items: data.items }
+                this.zoneTransferAt = data.zoneTransferAt
+            })
+            .catch((error) => {
+                // Show the error message.
+                const errorMsg = getErrorMessage(error)
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Error refreshing zone contents from DNS server',
+                    detail: errorMsg,
+                    life: 10000,
+                })
+                // Notify the parent.
+                this.viewerError.emit()
+            })
+            .finally(() => {
+                // Hide the loading spinner, regardless of the result.
+                this.loading = false
+            })
+    }
+
+    /**
+     * Refreshes the zone contents from the DNS server.
+     */
+    public refreshFromDNS() {
+        this._refreshRRs()
     }
 }

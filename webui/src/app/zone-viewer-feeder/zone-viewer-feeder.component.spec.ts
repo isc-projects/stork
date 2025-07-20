@@ -7,6 +7,13 @@ import { TableModule } from 'primeng/table'
 import { of, throwError } from 'rxjs'
 import { ZoneRR } from '../backend/model/zoneRR'
 import { ZoneRRs } from '../backend/model/zoneRRs'
+import { ButtonModule } from 'primeng/button'
+import { DividerModule } from 'primeng/divider'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ToastModule } from 'primeng/toast'
+import { TooltipModule } from 'primeng/tooltip'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('ZoneViewerFeederComponent', () => {
     let component: ZoneViewerFeederComponent
@@ -33,13 +40,32 @@ describe('ZoneViewerFeederComponent', () => {
         ],
     }
 
+    const mockRefreshedZoneRRs: ZoneRRs = {
+        items: [
+            {
+                name: 'example.com.',
+                ttl: 1800,
+                rrClass: 'IN',
+                rrType: 'SOA',
+                data: 'ns2.example.com. admin.example.com. 2024031501 1800 900 1209600 300',
+            } as ZoneRR,
+            {
+                name: 'www.example.com.',
+                ttl: 1800,
+                rrClass: 'IN',
+                rrType: 'A',
+                data: '192.0.2.2',
+            } as ZoneRR,
+        ],
+    }
+
     beforeEach(async () => {
-        const dnsSpy = jasmine.createSpyObj('DNSService', ['getZoneRRs'])
+        const dnsSpy = jasmine.createSpyObj('DNSService', ['getZoneRRs', 'putZoneRRsCache'])
         const messageSpy = jasmine.createSpyObj('MessageService', ['add'])
 
         await TestBed.configureTestingModule({
-            imports: [TableModule],
-            declarations: [ZoneViewerFeederComponent, ZoneViewerComponent],
+            imports: [ButtonModule, DividerModule, ProgressSpinnerModule, TableModule, ToastModule, TooltipModule],
+            declarations: [LocaltimePipe, PlaceholderPipe, ZoneViewerFeederComponent, ZoneViewerComponent],
             providers: [
                 { provide: DNSService, useValue: dnsSpy },
                 { provide: MessageService, useValue: messageSpy },
@@ -99,6 +125,27 @@ describe('ZoneViewerFeederComponent', () => {
         component.active = true
         tick()
         expect(dnsServiceSpy.getZoneRRs).toHaveBeenCalledTimes(1)
+    }))
+
+    it('should refresh zone data', fakeAsync(() => {
+        dnsServiceSpy.getZoneRRs.and.returnValue(of(mockZoneRRs as any))
+        dnsServiceSpy.putZoneRRsCache.and.returnValue(of(mockRefreshedZoneRRs as any))
+
+        // Load the data when the component is first activated.
+        component.active = true
+        tick()
+        expect(dnsServiceSpy.getZoneRRs).toHaveBeenCalledTimes(1)
+        expect(component.zoneData.items).toEqual(mockZoneRRs.items)
+
+        // Refresh the data.
+        component.refreshFromDNS()
+        tick()
+        expect(dnsServiceSpy.putZoneRRsCache).toHaveBeenCalledWith(
+            component.daemonId,
+            component.viewName,
+            component.zoneId
+        )
+        expect(component.zoneData.items).toEqual(mockRefreshedZoneRRs.items)
     }))
 
     it('should handle API errors', fakeAsync(() => {

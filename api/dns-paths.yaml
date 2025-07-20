@@ -92,9 +92,12 @@
 
   /daemons/{daemonId}/{viewName}/zones/{zoneId}/rrs:
     get:
-      summary: Get the resource records for the zone.
+      summary: Get the resource records for the zone from a database.
       description: >-
-        Get the resource records for the zone.
+        Get the resource records for a zone from the database. If the zone RRs are
+        not present in the database, the zone transfer is initiated. The transferred
+        data is cached in the database and returned. Future calls to this endpoint
+        will return the cached data.
       operationId: getZoneRRs
       tags:
         - DNS
@@ -114,6 +117,39 @@
       responses:
         200:
           description: Zone resource records successfully returned.
+          schema:
+            $ref: "#/definitions/ZoneRRs"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /rrs-cache/daemons/{daemonId}/{viewName}/zones/{zoneId}:
+    put:
+      summary: Refresh the resource records for the zone using the zone transfer.
+      description: >-
+        Refresh the resource for a zone using zone transfer, and return the newly
+        cached RRs. The zone transfer is initiated regardless of whether the zone
+        RRs are present in the database or not.
+      operationId: putZoneRRsCache
+      tags:
+        - DNS
+      parameters:
+        - name: daemonId
+          in: path
+          type: integer
+          required: true
+        - name: viewName
+          in: path
+          type: string
+          required: true
+        - name: zoneId
+          in: path
+          type: integer
+          required: true
+      responses:
+        200:
+          description: Zone resource records successfully cached and returned.
           schema:
             $ref: "#/definitions/ZoneRRs"
         default:

@@ -1,13 +1,38 @@
-<div *ngIf="data?.items">
-    <p-table [value]="data.items" styleClass="datatable-responsive">
-        <ng-template pTemplate="body" let-rr>
-            <tr>
-                <td class="font-bold">{{ rr.name }}</td>
-                <td>{{ rr.ttl }}</td>
-                <td>{{ rr.rrClass }}</td>
-                <td [ngClass]="'rr-type-' + rr.rrType.toLowerCase()">{{ rr.rrType }}</td>
-                <td>{{ rr.data }}</td>
-            </tr>
-        </ng-template>
-    </p-table>
+<div>
+    <div class="flex align-items-end justify-content-between">
+        <div
+            class="text-base text-gray-500"
+            pTooltip="The zone contents presented here were fetched from the DNS server using zone transfer (AXFR), and are cached in Stork. The timestamp indicates when the zone transfer was last performed. If you need up-to-date zone information you can update the cached data using the 'Refresh from DNS' button."
+        >
+            Cached from DNS server on
+            <span class="font-bold text-sm">{{ zoneTransferAt | localtime | placeholder: 'never' }}</span>
+        </div>
+        <p-button
+            label="Refresh from DNS"
+            pTooltip="Refresh the zone contents from the DNS server using zone transfer (AXFR). The received data will be cached in Stork."
+            (click)="refreshFromDNSClicked.emit()"
+            [disabled]="loading"
+        />
+    </div>
+    <p-divider />
+    @if (loading) {
+        <p-progressSpinner styleClass="w-2rem h-2rem" />
+    } @else {
+        <p-table [value]="data?.items ?? []" styleClass="datatable-responsive">
+            <ng-template pTemplate="body" let-rr>
+                <tr>
+                    <td class="font-bold">{{ rr.name }}</td>
+                    <td>{{ rr.ttl }}</td>
+                    <td>{{ rr.rrClass }}</td>
+                    <td [ngClass]="'rr-type-' + rr.rrType.toLowerCase()">{{ rr.rrType }}</td>
+                    <td>{{ rr.data }}</td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="5">No data received</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
 </div>

@@ -61,6 +61,7 @@ import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { DividerModule } from 'primeng/divider'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -307,6 +308,7 @@ describe('ZonesPageComponent', () => {
                 ProgressSpinnerModule,
                 ManagedAccessDirective,
                 FloatLabelModule,
+                DividerModule,
             ],
             declarations: [
                 ZoneViewerComponent,

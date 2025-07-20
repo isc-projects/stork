@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core'
+import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ZoneRRs } from '../backend/model/zoneRRs'
 import { ZoneRR } from '../backend/model/zoneRR'
 
@@ -57,11 +57,27 @@ export class ZoneViewerComponent {
     }
 
     /**
+     * Holds the flag indicating if the zone contents are being loaded.
+     */
+    @Input() loading = false
+
+    /**
+     * Emits the event indicating that the zone contents should be refreshed from the DNS server.
+     */
+    @Output() refreshFromDNSClicked = new EventEmitter<void>()
+
+    /**
      * Returns the transformed resource records.
      */
     get data(): ZoneRRs {
         return this._data
     }
+
+    /**
+     * Holds the timestamp of the last zone transfer.
+     */
+    @Input({ required: true })
+    zoneTransferAt: string = null
 
     /**
      * Transforms the resource record to an abbreviated form.
