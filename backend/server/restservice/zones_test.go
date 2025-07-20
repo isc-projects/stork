@@ -584,7 +584,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), dnsop.GetZoneRRsOptionCacheRRs).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -601,7 +601,11 @@ func TestGetZoneRRs(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := dns.GetZoneRRsParams{}
+	params := dns.GetZoneRRsParams{
+		ZoneID:   1,
+		DaemonID: 2,
+		ViewName: "trusted",
+	}
 	rsp := rapi.GetZoneRRs(ctx, params)
 	require.IsType(t, &dns.GetZoneRRsOK{}, rsp)
 	rspOK := (rsp).(*dns.GetZoneRRsOK)
@@ -623,6 +627,79 @@ func TestGetZoneRRs(t *testing.T) {
 	}
 }
 
+// Test successfully refreshing the zone RRs cache.
+func TestPutZoneRRsCache(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	var rrs []string
+	err := json.Unmarshal(validZone, &rrs)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	mockManager := NewMockManager(ctrl)
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), dnsop.GetZoneRRsOptionForceZoneTransfer, dnsop.GetZoneRRsOptionCacheRRs).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+		return func(yield func(*dnsop.RRResponse) bool) {
+			for _, rr := range rrs {
+				rr, err := dnsconfig.NewRR(rr)
+				require.NoError(t, err)
+				if !yield(dnsop.NewZoneTransferRRResponse([]*dnsconfig.RR{rr})) {
+					return
+				}
+			}
+		}
+	})
+
+	settings := RestAPISettings{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, mockManager)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := dns.PutZoneRRsCacheParams{
+		ZoneID:   1,
+		DaemonID: 2,
+		ViewName: "trusted",
+	}
+	rsp := rapi.PutZoneRRsCache(ctx, params)
+	require.IsType(t, &dns.PutZoneRRsCacheOK{}, rsp)
+	rspOK := (rsp).(*dns.PutZoneRRsCacheOK)
+	require.Equal(t, len(rrs), len(rspOK.Payload.Items))
+
+	zoneTransferAt := time.Time(rspOK.Payload.ZoneTransferAt)
+	require.NotZero(t, zoneTransferAt)
+	require.WithinDuration(t, time.Now().UTC(), zoneTransferAt, 5*time.Second)
+	require.False(t, rspOK.Payload.Cached)
+
+	for i, rr := range rrs {
+		parsedRR, err := dnslib.NewRR(rr)
+		require.NoError(t, err)
+		require.Equal(t, parsedRR.Header().Name, rspOK.Payload.Items[i].Name)
+		require.EqualValues(t, parsedRR.Header().Ttl, rspOK.Payload.Items[i].TTL)
+		require.Equal(t, dnslib.ClassToString[parsedRR.Header().Class], rspOK.Payload.Items[i].RrClass)
+		require.Equal(t, dnslib.TypeToString[parsedRR.Header().Rrtype], rspOK.Payload.Items[i].RrType)
+		parsedFields := strings.Fields(rr)
+		require.Greater(t, len(parsedFields), 4)
+		fields := strings.Fields(rspOK.Payload.Items[i].Data)
+		for _, field := range fields {
+			require.Contains(t, parsedFields[4:], field)
+		}
+	}
+
+	// Run it again. It should refresh RRs.
+	rsp = rapi.PutZoneRRsCache(ctx, params)
+	require.IsType(t, &dns.PutZoneRRsCacheOK{}, rsp)
+	rspOK = (rsp).(*dns.PutZoneRRsCacheOK)
+	require.Equal(t, len(rrs), len(rspOK.Payload.Items))
+
+	zoneTransferAt2 := time.Time(rspOK.Payload.ZoneTransferAt)
+	require.NotZero(t, zoneTransferAt2)
+	require.WithinDuration(t, time.Now().UTC(), zoneTransferAt2, 5*time.Second)
+	require.False(t, rspOK.Payload.Cached)
+
+	// Check that the transfer times are not the same.
+	require.NotEqual(t, zoneTransferAt, zoneTransferAt2)
+}
+
 // Test that HTTP Conflict status is returned when the zone transfer for the
 // same zone and view is already in progress.
 func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
@@ -635,7 +712,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(dnsop.NewManagerRRsAlreadyRequestedError("trusted", "example.com")))
 		}
@@ -646,12 +723,27 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := dns.GetZoneRRsParams{}
-	rsp := rapi.GetZoneRRs(ctx, params)
-	require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
-	defaultRsp := rsp.(*dns.GetZoneRRsDefault)
-	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-	require.Contains(t, *defaultRsp.Payload.Message, "zone transfer for view trusted, zone example.com has been already requested by another user")
+	t.Run("get zone RRs", func(t *testing.T) {
+		params := dns.GetZoneRRsParams{}
+		rsp := rapi.GetZoneRRs(ctx, params)
+		require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
+		defaultRsp := rsp.(*dns.GetZoneRRsDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "zone transfer for view trusted, zone example.com has been already requested by another user")
+	})
+
+	t.Run("put zone RRs cache", func(t *testing.T) {
+		params := dns.PutZoneRRsCacheParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.PutZoneRRsCache(ctx, params)
+		require.IsType(t, &dns.PutZoneRRsCacheDefault{}, rsp)
+		defaultRsp := rsp.(*dns.PutZoneRRsCacheDefault)
+		require.Equal(t, http.StatusAccepted, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "zone transfer for view trusted, zone example.com has been already requested by another user")
+	})
 }
 
 // Test that HTTP Conflict status is returned when the zone inventory is busy.
@@ -661,7 +753,7 @@ func TestGetZoneRRsBusy(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(agentcomm.NewZoneInventoryBusyError("localhost:8080")))
 		}
@@ -672,12 +764,31 @@ func TestGetZoneRRsBusy(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := dns.GetZoneRRsParams{}
-	rsp := rapi.GetZoneRRs(ctx, params)
-	require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
-	defaultRsp := rsp.(*dns.GetZoneRRsDefault)
-	require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-	require.Contains(t, *defaultRsp.Payload.Message, "Zone inventory is temporarily busy on the agent localhost:8080")
+	t.Run("get zone RRs", func(t *testing.T) {
+		params := dns.GetZoneRRsParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.GetZoneRRs(ctx, params)
+		require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
+		defaultRsp := rsp.(*dns.GetZoneRRsDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "Zone inventory is temporarily busy on the agent localhost:8080")
+	})
+
+	t.Run("put zone RRs cache", func(t *testing.T) {
+		params := dns.PutZoneRRsCacheParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.PutZoneRRsCache(ctx, params)
+		require.IsType(t, &dns.PutZoneRRsCacheDefault{}, rsp)
+		defaultRsp := rsp.(*dns.PutZoneRRsCacheDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "Zone inventory is temporarily busy on the agent localhost:8080")
+	})
 }
 
 // Test that HTTP ServiceUnavailable status is returned when the zone inventory
@@ -688,7 +799,7 @@ func TestGetZoneRRsNotInited(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(agentcomm.NewZoneInventoryNotInitedError("localhost:8080")))
 		}
@@ -699,12 +810,31 @@ func TestGetZoneRRsNotInited(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := dns.GetZoneRRsParams{}
-	rsp := rapi.GetZoneRRs(ctx, params)
-	require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
-	defaultRsp := rsp.(*dns.GetZoneRRsDefault)
-	require.Equal(t, http.StatusServiceUnavailable, getStatusCode(*defaultRsp))
-	require.Contains(t, *defaultRsp.Payload.Message, "DNS zones have not been loaded on the agent localhost:8080")
+	t.Run("get zone RRs", func(t *testing.T) {
+		params := dns.GetZoneRRsParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.GetZoneRRs(ctx, params)
+		require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
+		defaultRsp := rsp.(*dns.GetZoneRRsDefault)
+		require.Equal(t, http.StatusServiceUnavailable, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "DNS zones have not been loaded on the agent localhost:8080")
+	})
+
+	t.Run("put zone RRs cache", func(t *testing.T) {
+		params := dns.PutZoneRRsCacheParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.PutZoneRRsCache(ctx, params)
+		require.IsType(t, &dns.PutZoneRRsCacheDefault{}, rsp)
+		defaultRsp := rsp.(*dns.PutZoneRRsCacheDefault)
+		require.Equal(t, http.StatusServiceUnavailable, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "DNS zones have not been loaded on the agent localhost:8080")
+	})
 }
 
 // Test that HTTP InternalServerError status is returned when an unknown error
@@ -715,7 +845,7 @@ func TestGetZoneRRsUnknownError(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(&testError{}))
 		}
@@ -726,10 +856,29 @@ func TestGetZoneRRsUnknownError(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := dns.GetZoneRRsParams{}
-	rsp := rapi.GetZoneRRs(ctx, params)
-	require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
-	defaultRsp := rsp.(*dns.GetZoneRRsDefault)
-	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Contains(t, *defaultRsp.Payload.Message, "Failed to get zone contents from the database")
+	t.Run("get zone RRs", func(t *testing.T) {
+		params := dns.GetZoneRRsParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.GetZoneRRs(ctx, params)
+		require.IsType(t, &dns.GetZoneRRsDefault{}, rsp)
+		defaultRsp := rsp.(*dns.GetZoneRRsDefault)
+		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "Failed to get zone contents from the database")
+	})
+
+	t.Run("put zone RRs cache", func(t *testing.T) {
+		params := dns.PutZoneRRsCacheParams{
+			ZoneID:   1,
+			DaemonID: 2,
+			ViewName: "trusted",
+		}
+		rsp := rapi.PutZoneRRsCache(ctx, params)
+		require.IsType(t, &dns.PutZoneRRsCacheDefault{}, rsp)
+		defaultRsp := rsp.(*dns.PutZoneRRsCacheDefault)
+		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+		require.Contains(t, *defaultRsp.Payload.Message, "Failed to refresh zone contents using zone transfer")
+	})
 }
