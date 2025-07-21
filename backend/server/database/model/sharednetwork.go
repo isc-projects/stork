@@ -156,6 +156,29 @@ func (sn *SharedNetwork) PopulateDaemons(dbi dbops.DBI) error {
 	return nil
 }
 
+// Fetches host reservations information for each subnet within the shared
+// network. The shared network information can be partial when it is created
+// from the request received over the REST API. In particular, the Hosts list
+// can be nil. In order to initialize the Hosts list, this function
+// fetches the host reservations from the database and assigns them to the
+// respective subnets.
+func (sn *SharedNetwork) PopulateHosts(dbi dbops.DBI) error {
+	for i := range sn.Subnets {
+		subnet := &sn.Subnets[i]
+		if subnet.Hosts != nil {
+			// Hosts are already populated.
+			continue
+		}
+
+		hosts, err := GetHostsBySubnetID(dbi, subnet.ID)
+		if err != nil {
+			return pkgerrors.Wrapf(err, "problem populating hosts for shared network %d", sn.ID)
+		}
+		subnet.Hosts = hosts
+	}
+	return nil
+}
+
 // Adds new shared network to the database in a transaction.
 func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 	_, err := tx.Model(network).Insert()
