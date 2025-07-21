@@ -56,7 +56,5 @@ func CommitAppIntoDB(db *pg.DB, app *dbmodel.App, eventCenter eventcenter.EventC
 	} else {
 		_, _, err = dbmodel.UpdateApp(db, app)
 	}
-	// todo: perform any additional actions required after storing the
-	// app in the db.
 	return err
 }
