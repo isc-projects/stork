@@ -238,29 +238,25 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 }
 
 // Detect the Kea application by parsing the Kea CA process command line.
-// The match is a slice of: the full command line, the directory path of the
-// Kea CA executable, and the path to the Kea CA configuration file.
-// The cwd is a path to the current working directory used to resolve relative
-// paths in the Kea CA configuration file.
-// The HTTP client cloner is used to create a new HTTP client instance for the
-// detected Kea app.
-// Returns the Kea app instance or an error if the Kea CA configuration is
-// invalid.
+// This function parses the command line of the specified process. It looks
+// for the Kea CA configuration file path in the command line. If the path is
+// relative, it is resolved against the current working directory of the process.
 //
-// This function reads the Kea CA configuration file and extracts its HTTP
-// host, port, TLS configuration, basic authentication credentials, and list
-// of configured daemons. The returned instance lacks information about the
-// active daemons. It must be detected separately.
+// It reads the Kea CA configuration file and extracts its HTTP host, port,
+// TLS configuration, basic authentication credentials, and list of configured
+// daemons. The returned instance lacks information about the active daemons.
+// It must be detected separately.
 //
-// The Kea application instance has internal HTTP client intended to be used
-// for communication with this Kea CA. The client inherits the the general
-// HTTP client configuration from the Stork agent configuration and
-// additionally sets the basic authentication credentials if they are provided
-// in the Kea CA configuration. It picks the first credentials with the user
-// name "stork" or starting with "stork." If there are no such credentials, it
-// picks the first one. See @readClientCredentials for details.
-// The user name of the selected credentials is used as a key of the
-// application's access point.
+// The specified httpClientConfig is used to create a new HTTP client instance
+// for the detected Kea app. The client inherits the the general HTTP client
+// configuration from the Stork agent configuration and additionally sets the
+// basic authentication credentials if they are provided in the Kea CA
+// configuration. It picks the first credentials with the user name "stork" or
+// starting with "stork." If there are no such credentials, it picks the first
+// one. See @readClientCredentials for details.
+//
+// It returns the Kea app instance or an error if the Kea is not recognized or
+// any error occurs.
 func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (App, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {

@@ -496,20 +496,30 @@ func parseNamedDefaultPath(output []byte) string {
 	return namedConfMatch[1]
 }
 
-// Detects the running Bind 9 application.
-// It accepts the components of the Bind 9 process name (the "match" argument),
-// the current working directory of the process (the "cwd" argument; it may be
-// empty), a command executor instance, and an optional, explicit path to the
-// configuration that can be checked. It uses multiple steps to attempt
-// detection:
+// Detect the BIND 9 application by parsing the named process command line.
+// If the path to the configuration file is relative and chroot directory is
+// not specified, the path is resolved against the current working directory of
+// the process. If the chroot directory is specified, the path is resolved
+// against it.
+//
+// When the configuration file path cannot be determined from the command line,
+// the function tries to parse the output of the named -V command. As a last
+// resort, it tries to find the configuration file in the default locations.
+// Optionally, an explicit path to the configuration file can be provided.
+//
+// Here is the summary of the configuration file detection process:
 //
 // Step 1: Try to parse -c parameter of the running process.
 // Step 2: Checks if the explicit config path is defined and exists. If it is, uses that.
 // Step 3: Try to parse output of the named -V command.
 // Step 4: Try to find named.conf in the default locations.
+
+// The function reads the configuration file and extracts its control address,
+// port, and secret key (if configured). The returned instance lacks information
+// about the active daemons. It must be detected separately.
 //
-// Returns the collected data or nil if the Bind 9 is not recognized or any
-// error occurs.
+// It returns the BIND 9 app instance or an error if the BIND 9 is not
+// recognized or any error occurs.
 func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (App, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {

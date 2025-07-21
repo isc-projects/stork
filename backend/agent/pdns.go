@@ -53,7 +53,17 @@ func (pa *PDNSApp) GetZoneInventory() *zoneInventory {
 	return pa.zoneInventory
 }
 
-// Detects the running PowerDNS application.
+// Detect the PowerDNS application by parsing the named process command line.
+// If the path to the configuration file is relative and chroot directory is
+// not specified, the path is resolved against the current working directory of
+// the process. If the chroot directory is specified, the path is resolved
+// against it.
+//
+// The function reads the configuration file and extracts webserver address,
+// port, and API key (if configured).
+//
+// It returns the PowerDNS app instance or an error if the PowerDNS is not
+// recognized or any error occurs.
 func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {
