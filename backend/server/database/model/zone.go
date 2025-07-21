@@ -69,7 +69,8 @@ func (f *GetZonesFilterZoneTypes) IsAnySpecified() bool {
 // Returns an iterator over the enabled zone types.
 // Since primary is an alias of master, and the secondary is an alias of slave,
 // the iterator includes both primary and master, and/or secondary and slave,
-// if one in any pair is enabled.
+// if one in any pair is enabled. The GetZonesFilter.EnableZoneType() function
+// includes a special logic to enable both aliases if one of them is enabled.
 func (f *GetZonesFilterZoneTypes) GetEnabled() iter.Seq[ZoneType] {
 	return func(yield func(ZoneType) bool) {
 		for zoneType, enabled := range f.types {
