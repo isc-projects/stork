@@ -203,6 +203,51 @@ func TestConfigGetAXFRCredentialsAllowIPv4Address(t *testing.T) {
 	require.Nil(t, secret)
 }
 
+// Test that IPv4 localhost address is returned when the allow-axfr-ips
+// parameter contains the 127.0.0.1 address and the local port is specified.
+func TestConfigGetAXFRCredentialsAllowIPv4AddressLocalPort(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"allow-axfr-ips": {
+			{
+				stringValue: storkutil.Ptr("127.0.0.1"),
+			},
+		},
+		"local-port": {
+			{
+				int64Value: storkutil.Ptr(int64(5353)),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "127.0.0.1:5353", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that IPv4 localhost address is returned when the allow-axfr-ips
+// parameter is not specified and the local port is specified.
+func TestConfigGetAXFRCredentialsNoAllowIPv4AddressLocalPort(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"local-port": {
+			{
+				int64Value: storkutil.Ptr(int64(5353)),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "127.0.0.1:5353", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
 // Test that IPv6 localhost address is returned when the allow-axfr-ips
 // parameter contains the ::/120 range.
 func TestConfigGetAXFRCredentialsAllowIPv6Range(t *testing.T) {

@@ -1,6 +1,7 @@
 package pdnsconfig
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/pkg/errors"
@@ -64,16 +65,23 @@ func (c *Config) GetValues(key string) []ParsedValue {
 // AXFR is globally disabled or if the allow-axfr-ips parameter forbids access
 // from the localhost addresses. The function ignores the viewName parameter
 // until views are supported in PowerDNS and Stork.
+// By default, the DNS port 53 is used for AXFR. If the local-port parameter
+// is specified, it is used instead.
 func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
 	disableAXFR := c.GetBool("disable-axfr")
 	if disableAXFR != nil && *disableAXFR {
 		// AXFR is globally disabled.
 		return nil, nil, nil, nil, errors.Errorf("disable-axfr is set to disable zone transfers")
 	}
+	// Determine local port.
+	localPort := c.GetInt64("local-port")
+	if localPort == nil {
+		localPort = storkutil.Ptr(int64(53))
+	}
 	allowedIPs := c.GetValues("allow-axfr-ips")
-	if allowedIPs == nil {
+	if len(allowedIPs) == 0 {
 		// By default, PowerDNS allows AXFR from the localhost.
-		return storkutil.Ptr("127.0.0.1:53"), nil, nil, nil, nil
+		return storkutil.Ptr(fmt.Sprintf("127.0.0.1:%d", *localPort)), nil, nil, nil, nil
 	}
 	for _, value := range allowedIPs {
 		allowed := value.GetString()
@@ -89,10 +97,10 @@ func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *
 		switch {
 		// Check for things like 127.0.0.0/8 or 127.0.0.1.
 		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("127.0.0.1")), parsedAllowed.IP.Equal(net.ParseIP("127.0.0.1")):
-			return storkutil.Ptr("127.0.0.1:53"), nil, nil, nil, nil
+			return storkutil.Ptr(fmt.Sprintf("127.0.0.1:%d", *localPort)), nil, nil, nil, nil
 		// Check for things like ::/120 or ::1.
 		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("::1")), parsedAllowed.IP.Equal(net.ParseIP("::1")):
-			return storkutil.Ptr("[::1]:53"), nil, nil, nil, nil
+			return storkutil.Ptr(fmt.Sprintf("[::1]:%d", *localPort)), nil, nil, nil, nil
 		}
 	}
 	return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-axfr-ips allows neither 127.0.0.1 nor ::1", zoneName)
