@@ -182,6 +182,7 @@ definitions:
     type: string
     enum: &DNSZONETYPE
       - builtin
+      - consumer
       - delegation-only
       - forward
       - hint
