@@ -92,7 +92,12 @@ func (request *pdnsClientRequest) getRawJSON(path string) (httpResponse, []byte,
 }
 
 // Makes a request to retrieve zones encapsulated in the artificial view (localhost)
-// from the PowerDNS server.
+// from the PowerDNS server. Note that the returned views are encapsulated in the
+// bind9stats.Views type. Using common type between BIND 9 and PowerDNS is
+// intentional, because the zone inventory is shared between BIND 9 and PowerDNS.
+// The zone inventory treats the returned views/zones in a uniform way, regardless
+// of the server type. We may consider moving the bind9stats.Views type to a separate
+// package in the future.
 func (request *pdnsClientRequest) getViews() (httpResponse, *bind9stats.Views, error) {
 	var zones pdnsdata.Zones
 	response, err := request.getJSON("/servers/localhost/zones", &zones)
@@ -207,7 +212,12 @@ func (client *pdnsClient) getCombinedServerInfo(apiKey string, host string, port
 
 // Makes a request to retrieve zones encapsulated in the artificial view (localhost)
 // from the PowerDNS server. It implements the zoneFetcher interface used by the
-// zone inventory.
+// zone inventory. Note that the returned views are encapsulated in the
+// bind9stats.Views type. Using common type between BIND 9 and PowerDNS is
+// intentional, because the zone inventory is shared between BIND 9 and PowerDNS.
+// The zone inventory treats the returned views/zones in a uniform way, regardless
+// of the server type. We may consider moving the bind9stats.Views type to a separate
+// package in the future.
 func (client *pdnsClient) getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error) {
 	return client.createRequest(apiKey, host, port).getViews()
 }
