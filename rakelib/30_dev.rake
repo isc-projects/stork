@@ -692,6 +692,7 @@ namespace :lint do
             # Second line
             if not lines[1].strip.empty?
                 puts "ERROR: Changelog entry '#{filename}' has text on the second line. Expected none."
+                exit_code = 1
             end
 
             # Last line
@@ -699,11 +700,13 @@ namespace :lint do
             gitlab_line = lines[gitlab_line_index]
             if gitlab_line[-1].ord != 10
                 puts "ERROR: Changelog entry '#{filename}' does not have a newline at end of file. Empty newline at EOF expected."
+                exit_code = 1
             end
             gitlab_line = gitlab_line.delete('\n')
             regex = '^    \(Gitlab ((#[0-9]+)(|, ))*#[0-9]+\)$'
             if not gitlab_line.match(/#{regex}/)
                 puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' not matched with regex '#{regex}'."
+                exit_code = 1
             end
 
             # Description section
@@ -712,6 +715,7 @@ namespace :lint do
                 if spaces != '    '
                     line_number = i + 2
                     puts "ERROR: Changelog entry '#{filename}' has '#{spaces}' at the beginning of line #{line_number}. Expected 4 spaces."
+                    exit_code = 1
                 end
             end
 
@@ -730,6 +734,7 @@ namespace :lint do
             end
             if ! lines_too_long.empty?
                 puts 'ERROR: Changelog entry ' + filename + ' has too long lines. Should be < 73 characters.'
+                exit_code = 1
                 lines_too_long.each do |pair|
                     puts "    #{pair[0]} #{pair[1]} ( #{pair[1].length} characters )"
                 end
