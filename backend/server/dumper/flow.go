@@ -23,6 +23,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 		dbmodel.MachineRelationDaemons,
 		dbmodel.MachineRelationKeaDaemons,
 		dbmodel.MachineRelationBind9Daemons,
+		dbmodel.MachineRelationPDNSDaemons,
 		dbmodel.MachineRelationDaemonLogTargets,
 		dbmodel.MachineRelationAppAccessPoints,
 		dbmodel.MachineRelationKeaDHCPConfigs,

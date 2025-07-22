@@ -18,6 +18,7 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
+	pdnsdata "isc.org/stork/appdata/pdns"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -270,6 +271,127 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	require.Equal(t, dbmodel.AppTypeKea.String(), okRsp.Payload.Apps[0].Type)
 	require.Equal(t, dbmodel.AppTypeBind9.String(), okRsp.Payload.Apps[1].Type)
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
+}
+
+// Test that machine state includes PowerDNS app information and that this
+// information is correctly populated.
+func TestGetMachineAndPowerDNSState(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add machine to db.
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add PowerDNS app to db.
+	pdnsApp := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypePDNS,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "1.2.3.4",
+				Port:    123,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Pid:             123,
+				Name:            "pdns",
+				Active:          true,
+				Monitored:       true,
+				Version:         "4.7.3",
+				ExtendedVersion: "4.7.3",
+				Uptime:          1000,
+				PDNSDaemon: &dbmodel.PDNSDaemon{
+					Details: dbmodel.PDNSDaemonDetails{
+						URL:              "http://1.2.3.4:123",
+						ConfigURL:        "http://1.2.3.4:123/config",
+						ZonesURL:         "http://1.2.3.4:123/zones",
+						AutoprimariesURL: "http://1.2.3.4:123/autoprimaries",
+					},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, pdnsApp)
+	require.NoError(t, err)
+
+	controller := gomock.NewController(t)
+	mockAgents := NewMockConnectedAgents(controller)
+
+	mockAgents.EXPECT().GetState(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, machineTag dbmodel.MachineTag) (*agentcomm.State, error) {
+		require.EqualValues(t, machine.ID, machineTag.GetID())
+		return &agentcomm.State{
+			Apps: []*agentcomm.App{
+				{
+					Type:         dbmodel.AppTypePDNS.String(),
+					AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 124),
+				},
+			},
+		}, nil
+	})
+
+	mockAgents.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, appTag dbmodel.AppTag) (*pdnsdata.ServerInfo, error) {
+		require.EqualValues(t, pdnsApp.ID, appTag.GetID())
+		return &pdnsdata.ServerInfo{
+			Type:             "PowerDNS",
+			ID:               "127.0.0.1",
+			DaemonType:       "pdns",
+			Version:          "4.7.0",
+			URL:              "http://127.0.0.1:8081",
+			ConfigURL:        "http://127.0.0.1:8081/config",
+			ZonesURL:         "http://127.0.0.1:8081/zones",
+			AutoprimariesURL: "http://127.0.0.1:8081/autoprimaries",
+			Uptime:           1234,
+		}, nil
+	})
+
+	mockAgents.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+	rapi, err := NewRestAPI(&RestAPISettings{}, dbSettings, db, mockAgents, &storktest.FakeEventCenter{}, &storktest.FakeDispatcher{})
+	require.NoError(t, err)
+
+	rsp := rapi.GetMachineState(context.Background(), services.GetMachineStateParams{
+		ID: 1,
+	})
+	require.IsType(t, &services.GetMachineStateOK{}, rsp)
+	okRsp := rsp.(*services.GetMachineStateOK)
+	require.Len(t, okRsp.Payload.Apps, 1)
+
+	returnedApp := okRsp.Payload.Apps[0]
+
+	require.EqualValues(t, pdnsApp.ID, returnedApp.ID)
+	require.Equal(t, pdnsApp.Name, returnedApp.Name)
+	require.EqualValues(t, dbmodel.AppTypePDNS, returnedApp.Type)
+	require.Equal(t, "1.2.3.4", returnedApp.AccessPoints[0].Address)
+	require.Len(t, returnedApp.AccessPoints, 1)
+	require.EqualValues(t, 124, returnedApp.AccessPoints[0].Port)
+
+	pdnsDaemon := returnedApp.Details.AppPdns.PdnsDaemon
+	require.NotNil(t, pdnsDaemon)
+	require.Equal(t, pdnsApp.Daemons[0].Name, pdnsDaemon.Name)
+	require.Equal(t, "4.7.0", pdnsDaemon.Version)
+	require.EqualValues(t, 1234, pdnsDaemon.Uptime)
+	require.Equal(t, "http://127.0.0.1:8081", pdnsDaemon.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", pdnsDaemon.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", pdnsDaemon.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", pdnsDaemon.AutoprimariesURL)
+
+	updatedApp, err := dbmodel.GetAppByID(db, pdnsApp.ID)
+	require.NoError(t, err)
+	require.Equal(t, pdnsApp.Daemons[0].Name, updatedApp.Daemons[0].Name)
+	require.Equal(t, "4.7.0", updatedApp.Daemons[0].Version)
+	require.Equal(t, "4.7.0", updatedApp.Daemons[0].ExtendedVersion)
+	require.EqualValues(t, 1234, updatedApp.Daemons[0].Uptime)
+	require.Equal(t, "http://127.0.0.1:8081", updatedApp.Daemons[0].PDNSDaemon.Details.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", updatedApp.Daemons[0].PDNSDaemon.Details.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", updatedApp.Daemons[0].PDNSDaemon.Details.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", updatedApp.Daemons[0].PDNSDaemon.Details.AutoprimariesURL)
 }
 
 func TestCreateMachine(t *testing.T) {

@@ -55,6 +55,7 @@ const (
 	MachineRelationDaemons          MachineRelation = "Apps.Daemons"
 	MachineRelationKeaDaemons       MachineRelation = "Apps.Daemons.KeaDaemon"
 	MachineRelationBind9Daemons     MachineRelation = "Apps.Daemons.Bind9Daemon"
+	MachineRelationPDNSDaemons      MachineRelation = "Apps.Daemons.PDNSDaemon"
 	MachineRelationDaemonLogTargets MachineRelation = "Apps.Daemons.LogTargets"
 	MachineRelationAppAccessPoints  MachineRelation = "Apps.AccessPoints"
 	MachineRelationKeaDHCPConfigs   MachineRelation = "Apps.Daemons.KeaDaemon.KeaDHCPDaemon"
@@ -135,7 +136,8 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	return GetMachineByIDWithRelations(db, id,
 		MachineRelationAppAccessPoints,
 		MachineRelationBind9Daemons,
-		MachineRelationKeaDHCPConfigs)
+		MachineRelationKeaDHCPConfigs,
+		MachineRelationPDNSDaemons)
 }
 
 // Get a machine by its ID with relations.
@@ -263,6 +265,7 @@ func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 	q = q.Relation("Apps.AccessPoints")
 	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
+	q = q.Relation("Apps.Daemons.PDNSDaemon")
 	q = q.Relation("Apps.Daemons.ConfigReview")
 
 	err := q.Select()

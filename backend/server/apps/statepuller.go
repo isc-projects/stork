@@ -148,26 +148,16 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 		return nil, "Cannot get machine's apps from db"
 	}
 
-	// count old apps
-	oldKeaAppsCnt := 0
-	oldBind9AppsCnt := 0
+	// Count the number of apps of each type.
+	oldAppsCounts := make(map[dbmodel.AppType]int)
 	for _, dbApp := range oldAppsList {
-		if dbApp.Type == dbmodel.AppTypeKea {
-			oldKeaAppsCnt++
-		} else if dbApp.Type == dbmodel.AppTypeBind9 {
-			oldBind9AppsCnt++
-		}
+		oldAppsCounts[dbApp.Type]++
 	}
 
-	// count new apps
-	newKeaAppsCnt := 0
-	newBind9AppsCnt := 0
+	// Count the number of apps of each type.
+	newAppsCounts := make(map[dbmodel.AppType]int)
 	for _, app := range discoveredApps {
-		if app.Type == dbmodel.AppTypeKea.String() {
-			newKeaAppsCnt++
-		} else if app.Type == dbmodel.AppTypeBind9.String() {
-			newBind9AppsCnt++
-		}
+		newAppsCounts[dbmodel.AppType(app.Type)]++
 	}
 
 	// new and old apps
@@ -183,8 +173,7 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 			// we assume that this is the same app. If there are more apps of a given type than used to be,
 			// or there are less apps than it used to be we have to compare their access control information
 			// to identify matching ones.
-			if (app.Type == dbmodel.AppTypeKea.String() && dbAppOld.Type.IsKea() && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) ||
-				(app.Type == dbmodel.AppTypeBind9.String() && dbAppOld.Type.IsBind9() && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) ||
+			if (app.Type == dbAppOld.Type.String() && oldAppsCounts[dbAppOld.Type] == 1 && newAppsCounts[dbAppOld.Type] == 1) ||
 				appCompare(dbAppOld, app) {
 				dbApp = dbAppOld
 				matchedApps = append(matchedApps, dbApp)
