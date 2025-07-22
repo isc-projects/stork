@@ -40,6 +40,8 @@ func init() {
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
 			DROP TABLE IF EXISTS local_zone_rr;
+			ALTER TABLE local_zone
+				DROP COLUMN zone_transfer_at;
 		`)
 		return err
 	})
