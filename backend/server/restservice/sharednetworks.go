@@ -458,10 +458,10 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkDelete(ctx context.Context, t
 func (r *RestAPI) CreateSharedNetworkBegin(ctx context.Context, params dhcp.CreateSharedNetworkBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx, false)
 	if code != 0 {
 		// Error case.
-		rsp := dhcp.NewCreateSubnetBeginDefault(code).WithPayload(&models.APIError{
+		rsp := dhcp.NewCreateSharedNetworkBeginDefault(code).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -545,7 +545,7 @@ func (r *RestAPI) CreateSharedNetworkDelete(ctx context.Context, params dhcp.Cre
 func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.UpdateSharedNetworkBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx, false)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateSharedNetworkBeginDefault(code).WithPayload(&models.APIError{
@@ -561,7 +561,6 @@ func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.Upda
 		var (
 			sharedNetworkNotFound *config.SharedNetworkNotFoundError
 			lock                  *config.LockError
-			hooksNotConfigured    *config.NoSubnetCmdsHookError
 		)
 		switch {
 		case errors.As(err, &sharedNetworkNotFound):
@@ -580,9 +579,17 @@ func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.Upda
 				Message: &msg,
 			})
 			return rsp
-		case errors.As(err, &hooksNotConfigured):
+		case errors.As(err, &config.NoSubnetCmdsHookError{}):
 			// Lack of the libdhcp_subnet_cmds hook.
 			msg := "Unable to update shared network configuration because some daemons lack libdhcp_subnet_cmds hook library"
+			log.Error(msg)
+			rsp := dhcp.NewUpdateSharedNetworkBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		case errors.As(err, &config.NoHostCmdsHookError{}):
+			// Lack of the libdhcp_host_cmds hook.
+			msg := "Unable to update shared network configuration because some daemons lack libdhcp_host_cmds hook library"
 			log.Error(msg)
 			rsp := dhcp.NewUpdateSharedNetworkBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,

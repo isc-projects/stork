@@ -2473,6 +2473,9 @@ func TestBeginSharedNetworkUpdate(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds.so"
+				},
+				{
+					"library": "libdhcp_host_cmds.so"
 				}
 			]
 		}
