@@ -95,8 +95,8 @@ func TestMigrate(t *testing.T) {
 	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) *gomock.Call {
 		var reservations []keactrl.SerializableCommand
 		for _, host := range hosts {
-			reservation, _ := keaconfig.CreateHostCmdsReservation(
-				daemon.ID, lookup, host,
+			reservation, _ := keaconfig.CreateHostCmdsAddReservation(
+				daemon.ID, lookup, host, keaconfig.HostCmdsOperationTargetDefault,
 			)
 			reservations = append(reservations, keactrl.NewCommandReservationAdd(
 				reservation, daemon.Name,
