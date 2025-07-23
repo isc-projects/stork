@@ -848,11 +848,11 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 		// Convert the updated shared network information to Kea shared network.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
 		appCommand := ConfigCommand{}
+		appCommand.App = lsn.Daemon.App
 		switch sharedNetwork.Family {
 		case 4:
 			deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
 			appCommand.Command = keactrl.NewCommandNetwork4Del(deletedSharedNetwork4, lsn.Daemon.Name)
-			appCommand.App = lsn.Daemon.App
 			commands = append(commands, appCommand)
 
 			sharedNetwork4, err := keaconfig.CreateSharedNetwork4(lsn.DaemonID, lookup, sharedNetwork)
@@ -861,11 +861,9 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			}
 			appCommand.Command = keactrl.NewCommandNetwork4Add(sharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
-
 		default:
 			deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
 			appCommand.Command = keactrl.NewCommandNetwork6Del(deletedSharedNetwork6, lsn.Daemon.Name)
-			appCommand.App = lsn.Daemon.App
 			commands = append(commands, appCommand)
 
 			sharedNetwork6, err := keaconfig.CreateSharedNetwork6(lsn.DaemonID, lookup, sharedNetwork)
@@ -874,6 +872,31 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			}
 			appCommand.Command = keactrl.NewCommandNetwork6Add(sharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
+		}
+
+		// Re-create the shared network reservations.
+		for _, subnet := range sharedNetwork.Subnets {
+			for _, host := range subnet.Hosts {
+				for _, localHost := range host.LocalHosts {
+					if localHost.DataSource != dbmodel.HostDataSourceConfig {
+						continue
+					}
+					if localHost.DaemonID != lsn.DaemonID {
+						continue
+					}
+
+					// Convert the host information to Kea reservation.
+					reservation, err := keaconfig.CreateHostCmdsAddReservation(lsn.DaemonID, lookup, host, keaconfig.HostCmdsOperationTargetMemory)
+					if err != nil {
+						return ctx, err
+					}
+					// Fix subnet ID as the populated hosts do not have the local subnets.
+					reservation.Reservation.SubnetID = subnet.GetID(lsn.DaemonID)
+
+					appCommand.Command = keactrl.NewCommandReservationAdd(reservation, lsn.Daemon.Name)
+					commands = append(commands, appCommand)
+				}
+			}
 		}
 	}
 	// Identify the daemons which no longer exist in the updated shared network.
