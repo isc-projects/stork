@@ -2585,11 +2585,12 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 		},
 		Subnets: []dbmodel.Subnet{
 			{
-				ID:     1,
+				ID:     10,
 				Prefix: "192.0.2.0/24",
 				LocalSubnets: []*dbmodel.LocalSubnet{
 					{
-						DaemonID: 1,
+						LocalSubnetID: 11,
+						DaemonID:      1,
 						Daemon: &dbmodel.Daemon{
 							Name: "dhcp4",
 							App: &dbmodel.App{
@@ -2610,7 +2611,8 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 						},
 					},
 					{
-						DaemonID: 2,
+						LocalSubnetID: 11,
+						DaemonID:      2,
 						Daemon: &dbmodel.Daemon{
 							Name:    "dhcp4",
 							Version: "2.5.0",
@@ -2632,7 +2634,8 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 						},
 					},
 					{
-						DaemonID: 3,
+						LocalSubnetID: 11,
+						DaemonID:      3,
 						Daemon: &dbmodel.Daemon{
 							Name:    "dhcp4",
 							Version: "2.6.0",
@@ -2732,11 +2735,12 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 		},
 		Subnets: []dbmodel.Subnet{
 			{
-				ID:     1,
+				ID:     10,
 				Prefix: "192.0.2.0/24",
 				LocalSubnets: []*dbmodel.LocalSubnet{
 					{
-						DaemonID: 1,
+						LocalSubnetID: 11,
+						DaemonID:      1,
 						Daemon: &dbmodel.Daemon{
 							Name: "dhcp4",
 							App: &dbmodel.App{
@@ -2757,7 +2761,8 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 						},
 					},
 					{
-						DaemonID: 2,
+						LocalSubnetID: 11,
+						DaemonID:      2,
 						Daemon: &dbmodel.Daemon{
 							Name:    "dhcp4",
 							Version: "2.5.0",
@@ -2779,7 +2784,8 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 						},
 					},
 					{
-						DaemonID: 4,
+						LocalSubnetID: 11,
+						DaemonID:      4,
 						Daemon: &dbmodel.Daemon{
 							Name:    "dhcp4",
 							Version: "2.6.0",
@@ -2804,6 +2810,49 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 			},
 		},
 	}
+
+	// Populate hosts.
+	sharedNetwork.Subnets[0].Hosts = []dbmodel.Host{
+		{
+			ID:       21,
+			SubnetID: 10,
+			HostIdentifiers: []dbmodel.HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
+				},
+			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					ID:         31,
+					HostID:     21,
+					DaemonID:   1,
+					Hostname:   "host1",
+					DataSource: dbmodel.HostDataSourceConfig,
+				},
+			},
+		},
+		{
+			ID:       22,
+			SubnetID: 10,
+			HostIdentifiers: []dbmodel.HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{0x06, 0x07, 0x08, 0x08, 0x10, 0x11},
+				},
+			},
+			LocalHosts: []dbmodel.LocalHost{
+				{
+					ID:         32,
+					HostID:     22,
+					DaemonID:   2,
+					Hostname:   "host2",
+					DataSource: dbmodel.HostDataSourceAPI,
+				},
+			},
+		},
+	}
+
 	ctx, err = module.ApplySharedNetworkUpdate(ctx, sharedNetwork)
 	require.NoError(t, err)
 
@@ -2823,7 +2872,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 
 	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 12)
+	require.Len(t, commands, 13)
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
@@ -2831,7 +2880,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 		marshalled := command.Marshal()
 
 		switch i {
-		case 0, 2, 4, 6:
+		case 0, 3, 5, 7:
 			require.JSONEq(t,
 				`{
 					"command": "network4-del",
@@ -2843,7 +2892,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 					}
 				}`,
 				marshalled)
-		case 1, 3, 5:
+		case 1, 4, 6:
 			require.JSONEq(t,
 				`{
 					"command": "network4-add",
@@ -2859,7 +2908,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 												"pool":"192.0.2.100-192.0.2.200"
 											}
 										],
-										"id": 0,
+										"id": 11,
 										"subnet": "192.0.2.0/24"
 									}
 								]
@@ -2868,17 +2917,31 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 					}
 				}`,
 				marshalled)
-		case 7, 8, 10, 11:
+		case 2:
+			require.JSONEq(t,
+				`{
+					"command": "reservation-add",
+					"service": ["dhcp4"],
+					"arguments": {
+						"reservation": {
+							"hostname": "host1",
+							"hw-address": "000102030405",
+							"subnet-id": 11
+						},
+						"operation-target": "memory"
+					}
+				}`,
+				marshalled)
+		case 8, 9, 11, 12:
 			require.JSONEq(t,
 				`{
 					"command": "config-write",
 					"service": [ "dhcp4" ]
 				}`,
 				marshalled)
-		// The default case is executed for the index of 8. The config-reload
-		// is only issued for Kea versions earlier than 2.6.0 that don't
-		// recount statistics until reloaded.
-		default:
+			// The config-reload is only issued for Kea versions earlier than
+			// 2.6.0 that don't recount statistics until reloaded.
+		case 10:
 			require.JSONEq(t,
 				`{
 					"command": "config-reload",

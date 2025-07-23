@@ -1043,3 +1043,171 @@ func TestDeleteDaemonsFromSharedNetwork(t *testing.T) {
 	require.Len(t, network1.Subnets, 1)
 	require.Len(t, network1.Subnets[0].LocalSubnets, 2)
 }
+
+// Test that hosts can be populated for subnets within a shared network.
+func TestPopulateHosts(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create test apps and hosts
+	_, hosts := addTestHosts(t, db)
+
+	// Create a shared network with subnets that have no hosts populated yet
+	network := &SharedNetwork{
+		ID:   1,
+		Name: "test-network",
+		Subnets: []Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				Hosts:  nil, // Not populated yet
+			},
+			{
+				ID:     2,
+				Prefix: "2001:db8:1::/64",
+				Hosts:  nil, // Not populated yet
+			},
+		},
+	}
+
+	// Act
+	err := network.PopulateHosts(db)
+	require.NoError(t, err)
+
+	// Assert
+	require.Len(t, network.Subnets, 2)
+
+	require.Len(t, network.Subnets[0].Hosts, 1)
+	require.EqualValues(t, hosts[0].ID, network.Subnets[0].Hosts[0].ID)
+	require.Equal(t, "first.example.org", network.Subnets[0].Hosts[0].GetHostname())
+	require.Len(t, network.Subnets[1].Hosts, 1)
+	require.EqualValues(t, hosts[2].ID, network.Subnets[1].Hosts[0].ID)
+	require.Equal(t, "second.example.org", network.Subnets[1].Hosts[0].GetHostname())
+}
+
+// Test that PopulateHosts skips subnets that already have hosts populated.
+func TestPopulateHostsSkipsAlreadyPopulated(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create test apps and hosts
+	_, hosts := addTestHosts(t, db)
+
+	// Create a shared network where one subnet already has hosts populated
+	existingHost := hosts[0]
+	network := &SharedNetwork{
+		ID:   1,
+		Name: "test-network",
+		Subnets: []Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				Hosts:  []Host{existingHost}, // Already populated
+			},
+			{
+				ID:     2,
+				Prefix: "2001:db8:1::/64",
+				Hosts:  nil, // Not populated yet
+			},
+		},
+	}
+
+	// Act
+	err := network.PopulateHosts(db)
+	require.NoError(t, err)
+
+	// Assert
+	require.Len(t, network.Subnets, 2)
+	require.Len(t, network.Subnets[0].Hosts, 1)
+	require.EqualValues(t, existingHost.ID, network.Subnets[0].Hosts[0].ID)
+	require.Len(t, network.Subnets[1].Hosts, 1)
+	require.EqualValues(t, hosts[2].ID, network.Subnets[1].Hosts[0].ID)
+}
+
+// Test that PopulateHosts works with empty shared network (no subnets).
+func TestPopulateHostsEmptyNetwork(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a shared network with no subnets
+	network := &SharedNetwork{
+		ID:      1,
+		Name:    "empty-network",
+		Subnets: []Subnet{},
+	}
+
+	// Act
+	err := network.PopulateHosts(db)
+
+	// Assert
+	require.NoError(t, err)
+	require.Empty(t, network.Subnets)
+}
+
+// Test that PopulateHosts works when subnets have no hosts in the database.
+func TestPopulateHostsNoHostsInDatabase(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create subnets without any hosts
+	apps := addMachineAppDaemonsAndSubnets(t, db)
+	_ = apps // Use to avoid compiler warning
+
+	// Create a shared network with subnets that have no hosts in database
+	network := &SharedNetwork{
+		ID:   1,
+		Name: "test-network",
+		Subnets: []Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				Hosts:  nil, // Not populated yet
+			},
+			{
+				ID:     2,
+				Prefix: "2001:db8:1::/64",
+				Hosts:  nil, // Not populated yet
+			},
+		},
+	}
+
+	// Act - populate hosts
+	err := network.PopulateHosts(db)
+	require.NoError(t, err)
+
+	// Assert - verify empty hosts slices were assigned
+	require.Len(t, network.Subnets, 2)
+	require.Empty(t, network.Subnets[0].Hosts)
+	require.Empty(t, network.Subnets[1].Hosts)
+}
+
+// Test that PopulateHosts returns an error when database operation fails.
+func TestPopulateHostsErrorCase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	teardown()
+
+	// Create a shared network with a subnet that has an invalid ID
+	network := &SharedNetwork{
+		ID:   1,
+		Name: "test-network",
+		Subnets: []Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				Hosts:  nil,
+			},
+		},
+	}
+
+	// Act
+	err := network.PopulateHosts(db)
+
+	// Assert
+	require.ErrorContains(t, err, "problem populating hosts for shared network 1:")
+	require.Len(t, network.Subnets, 1)
+	require.Empty(t, network.Subnets[0].Hosts)
+}
