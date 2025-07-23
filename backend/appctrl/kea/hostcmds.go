@@ -9,9 +9,9 @@ const (
 )
 
 // Creates reservation-add command.
-func NewCommandReservationAdd(reservation *keaconfig.HostCmdsReservation, daemonNames ...DaemonName) *Command {
+func NewCommandReservationAdd(reservation *keaconfig.HostCmdsAddReservation, daemonNames ...DaemonName) *Command {
 	return NewCommandBase(ReservationAdd, daemonNames...).
-		WithArgument("reservation", reservation)
+		WithArguments(reservation)
 }
 
 // Creates reservation-del command.
