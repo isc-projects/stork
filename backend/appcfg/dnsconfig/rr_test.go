@@ -28,6 +28,17 @@ func TestNewRRMultipleRdataFields(t *testing.T) {
 	require.Equal(t, "ns1.example.com. hostmaster.example.com. 2025071700 1800 900 604800 86400", rr.Rdata)
 }
 
+// Test that an RR with no Rdata fields is parsed correctly.
+func TestNewRRNoRdataFields(t *testing.T) {
+	rr, err := NewRR("example.com. 120 IN NULL")
+	require.NoError(t, err)
+	require.Equal(t, "example.com.", rr.Name)
+	require.EqualValues(t, 120, rr.TTL)
+	require.Equal(t, "NULL", rr.Type)
+	require.Equal(t, "IN", rr.Class)
+	require.Equal(t, "", rr.Rdata)
+}
+
 // Test that an error is returned when an invalid RR is parsed.
 func TestNewRRInvalidRR(t *testing.T) {
 	rr, err := NewRR("example.com. 3600 IN")

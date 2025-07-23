@@ -18,16 +18,19 @@ type RR struct {
 	Rdata string
 }
 
-// Instantiates a new RR from a string.
+// Instantiates a new RR from a string. The RR is expected to be in the
+// following format:
+//
+// <name> <ttl> <class> <type> <data>
+//
+// Note that data field may be empty (e.g. for NULL RR type).
 func NewRR(rrText string) (*RR, error) {
 	rr, err := dns.NewRR(rrText)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse RR: %s", rrText)
 	}
 	fields := strings.Fields(rr.String())
-	// The full RR record has the following format:
-	// <name> <ttl> <class> <type> <data>
-	// We are interested in extracting the <data> field.
+	// Extract the <data> field.
 	var data string
 	if len(fields) > 4 {
 		data = strings.Join(fields[4:], " ")
