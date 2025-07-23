@@ -12,6 +12,8 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
 import { TooltipModule } from 'primeng/tooltip'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 
 export default {
     title: 'App/ZoneViewer',
@@ -24,13 +26,14 @@ export default {
             imports: [
                 ButtonModule,
                 DividerModule,
+                OverlayPanelModule,
                 ProgressSpinnerModule,
                 SidebarModule,
                 TableModule,
                 ToastModule,
                 TooltipModule,
             ],
-            declarations: [LocaltimePipe, PlaceholderPipe],
+            declarations: [HelpTipComponent, LocaltimePipe, PlaceholderPipe],
         }),
         toastDecorator,
     ],

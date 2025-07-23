@@ -14,6 +14,8 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { DividerModule } from 'primeng/divider'
 import { ButtonModule } from 'primeng/button'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 let mockGetZoneRRs: ZoneRRs = {
     zoneTransferAt: '2024-03-15T01:00:00Z',
@@ -92,8 +94,16 @@ export default {
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideNoopAnimations()],
         }),
         moduleMetadata({
-            imports: [ButtonModule, DividerModule, ProgressSpinnerModule, TableModule, ToastModule, TooltipModule],
-            declarations: [LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
+            imports: [
+                ButtonModule,
+                DividerModule,
+                OverlayPanelModule,
+                ProgressSpinnerModule,
+                TableModule,
+                ToastModule,
+                TooltipModule,
+            ],
+            declarations: [HelpTipComponent, LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
         }),
         toastDecorator,
     ],

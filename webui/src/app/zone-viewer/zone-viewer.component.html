@@ -1,11 +1,15 @@
 <div>
-    <div class="flex align-items-end justify-content-between">
-        <div
-            class="text-base text-gray-500"
-            pTooltip="The zone contents presented here were fetched from the DNS server using zone transfer (AXFR), and are cached in Stork. The timestamp indicates when the zone transfer was last performed. If you need up-to-date zone information you can update the cached data using the 'Refresh from DNS' button."
-        >
+    <div class="flex align-items-center justify-content-between">
+        <div class="text-base text-gray-500">
             Cached from DNS server on
-            <span class="font-bold text-sm">{{ zoneTransferAt | localtime | placeholder: 'never' }}</span>
+            <span class="font-bold text-normal mr-2">{{ zoneTransferAt | localtime | placeholder: 'never' }}</span>
+            <app-help-tip subject="Cached zone contents">
+                <p>
+                    The zone contents presented here were fetched from the DNS server using zone transfer (AXFR), and
+                    are cached in Stork. The timestamp indicates when the zone transfer was last performed. If you need
+                    up-to-date zone information you can update the cached data using the 'Refresh from DNS' button.
+                </p>
+            </app-help-tip>
         </div>
         <p-button
             label="Refresh from DNS"

@@ -14,6 +14,8 @@ import { ToastModule } from 'primeng/toast'
 import { TooltipModule } from 'primeng/tooltip'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 describe('ZoneViewerFeederComponent', () => {
     let component: ZoneViewerFeederComponent
@@ -64,8 +66,22 @@ describe('ZoneViewerFeederComponent', () => {
         const messageSpy = jasmine.createSpyObj('MessageService', ['add'])
 
         await TestBed.configureTestingModule({
-            imports: [ButtonModule, DividerModule, ProgressSpinnerModule, TableModule, ToastModule, TooltipModule],
-            declarations: [LocaltimePipe, PlaceholderPipe, ZoneViewerFeederComponent, ZoneViewerComponent],
+            imports: [
+                ButtonModule,
+                DividerModule,
+                OverlayPanelModule,
+                ProgressSpinnerModule,
+                TableModule,
+                ToastModule,
+                TooltipModule,
+            ],
+            declarations: [
+                HelpTipComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+                ZoneViewerFeederComponent,
+                ZoneViewerComponent,
+            ],
             providers: [
                 { provide: DNSService, useValue: dnsSpy },
                 { provide: MessageService, useValue: messageSpy },
