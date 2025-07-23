@@ -39,10 +39,11 @@ func AddLocalZoneRRs(dbi pg.DBI, rrs ...*LocalZoneRR) error {
 // specified local zone.
 func GetDNSConfigRRs(dbi pg.DBI, localZoneID int64) ([]*dnsconfig.RR, error) {
 	var rrs []*dnsconfig.RR
-	if err := dbi.Model((*LocalZoneRR)(nil)).
+	err := dbi.Model((*LocalZoneRR)(nil)).
 		Column("name", "ttl", "class", "type", "rdata").
 		Where("local_zone_id = ?", localZoneID).
-		Select(&rrs); err != nil {
+		Select(&rrs)
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to select resource records for local zone %d", localZoneID)
 	}
 	return rrs, nil
