@@ -651,7 +651,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		}()
 		// Update the timestamp indicating when RRs were last cached.
 		if err := dbmodel.UpdateLocalZoneRRsTransferAt(tx, localZone.ID); err != nil {
-			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to update the RRs fetched at for the local zone")))
+			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to update the RRs fetched time for the local zone")))
 			return
 		}
 		// Delete existing RRs for the local zone.

@@ -255,7 +255,7 @@ func (r *RestAPI) PutZoneRRsCache(ctx context.Context, params dns.PutZoneRRsCach
 			default:
 				// An unknown error occurred.
 				rsp := dns.NewPutZoneRRsCacheDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-					Message: storkutil.Ptr(errors.WithMessage(rrResponse.Err, msg).Error()),
+					Message: &msg,
 				})
 				return rsp
 			}
