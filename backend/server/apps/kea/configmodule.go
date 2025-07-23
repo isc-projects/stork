@@ -798,6 +798,9 @@ func (module *ConfigModule) BeginSharedNetworkUpdate(ctx context.Context, shared
 		if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
 			return ctx, errors.WithStack(config.NewNoSubnetCmdsHookError())
 		}
+		if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_host_cmds"); !exists {
+			return ctx, errors.WithStack(config.NewNoHostCmdsHookError())
+		}
 		daemonIDs = append(daemonIDs, ls.DaemonID)
 	}
 	// Try to lock configurations.

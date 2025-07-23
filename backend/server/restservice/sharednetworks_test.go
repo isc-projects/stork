@@ -714,6 +714,9 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_host_cmds"
 				}
 			]
 		}
@@ -1112,6 +1115,9 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_host_cmds"
 				}
 			]
 		}
@@ -1310,6 +1316,9 @@ func TestCreateSharedNetworkBeginCancel(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_host_cmds"
 				}
 			]
 		}
@@ -1442,6 +1451,9 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_host_cmds"
 				}
 			]
 		}
@@ -1951,6 +1963,9 @@ func TestUpdateSharedNetwork6BeginSubmit(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_host_cmds"
 				}
 			]
 		}
@@ -2160,6 +2175,216 @@ func TestUpdateSharedNetwork6BeginSubmit(t *testing.T) {
 	}
 }
 
+// Test that an error is returned when it is attempted to begin new
+// transaction when subnet_cmds hook was not configured.
+func TestUpdateSharedNetworkBeginNoSubnetCmdsHook(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_host_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 2)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.CreateSharedNetworkBeginParams{}
+	rsp := rapi.CreateSharedNetworkBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateSharedNetworkBeginDefault{}, rsp)
+	errRsp := rsp.(*dhcp.CreateSharedNetworkBeginDefault)
+	contents := *errRsp.Payload.Message
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*errRsp))
+	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds and host_cmds hook libraries available", contents)
+}
+
+// Test that an error is returned when it is attempted to begin new
+// transaction when host_cmds hook was not configured.
+func TestUpdateSharedNetworkBeginNoHostCmdsHook(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 2)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.CreateSharedNetworkBeginParams{}
+	rsp := rapi.CreateSharedNetworkBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateSharedNetworkBeginDefault{}, rsp)
+	errRsp := rsp.(*dhcp.CreateSharedNetworkBeginDefault)
+	contents := *errRsp.Payload.Message
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*errRsp))
+	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds and host_cmds hook libraries available", contents)
+}
+
 // Test that the transaction to update a shared network can be canceled, resulting
 // in the removal of this transaction from the config manager and allowing
 // another user to apply config updates.
@@ -2183,6 +2408,9 @@ func TestUpdateSharedNetworkBeginCancel(t *testing.T) {
 			"hooks-libraries": [
 				{
 					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_host_cmds"
 				}
 			]
 		}

@@ -248,7 +248,8 @@ The following operations are supported:
   user can also change shared network details, such as the shared network name,
   the list of subnets belonging to the shared network, and the DHCP options.
 
-  The ``subnet_cmds`` hook must be loaded on the Kea server to support this feature.
+  The ``subnet_cmds`` and ``host_cmds`` hooks must be loaded on the Kea server
+  to support this feature.
 
 - Adding, editing, and deleting host reservations
 
