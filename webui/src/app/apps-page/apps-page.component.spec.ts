@@ -141,7 +141,7 @@ describe('AppsPageComponent', () => {
         expect(breadcrumbsComponent).not.toBeNull()
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
-        expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
+        expect(breadcrumbsComponent.items[1].label).toEqual('DNS Apps')
     })
 
     it('should request synchronization configurations from Kea', fakeAsync(() => {
