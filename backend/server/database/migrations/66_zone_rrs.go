@@ -33,8 +33,6 @@ func init() {
 					ON DELETE CASCADE
 			);
 			CREATE INDEX local_zone_rr_local_zone_id_idx ON local_zone_rr(local_zone_id);
-			CREATE INDEX local_zone_rr_name_idx ON local_zone_rr(name);
-			CREATE INDEX local_zone_rr_type_idx ON local_zone_rr(type);
 		`)
 		return err
 	}, func(db migrations.DB) error {
