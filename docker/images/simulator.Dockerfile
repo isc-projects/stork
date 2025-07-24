@@ -2,28 +2,21 @@
 ARG KEA_REPO=public/isc/kea-dev
 ARG KEA_VERSION=2.7.8-isc20250429105336
 
-# The demo setup is not fully compatible with arm64 architectures.
-# In particular, only the amd64 image with named is available.
-# In addition, the flamethrower program requires an older Debian
-# version for which we provide no arm64 packages with perfdhcp.
-# Since we use common containers for building Stork, building
-# BIND9, Kea and simulator on different architectures is impossible.
-# The good news is that amd64 can be emulated on top of the arm64.
-FROM --platform=linux/amd64 debian:12.1-slim AS base
+FROM debian:12.1-slim AS base
 
 # Stage to compile Flamethrower.
-# Flamethrower doesn't compile on Debian 12.1, so we use Debian 11 instead.
-FROM --platform=linux/amd64 debian:bullseye-slim AS flamethrower-builder
+FROM debian:12.1-slim AS flamethrower-builder
 # Install Flamethrower dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        g++=4:10.2.* \
-        cmake=3.18.* \
-        make=4.* \
-        libldns-dev=1.7.* \
-        libnghttp2-dev=1.43.* \
-        libuv1-dev=1.40.* \
-        libgnutls28-dev=3.7.* \
-        pkgconf=1.7.* \
+        g++ \
+        cmake \
+        make \
+        libldns-dev \
+        libnghttp2-dev \
+        libuv1-dev \
+        libgnutls28-dev \
+        pkgconf \
+        unzip \
     # Cleanup.
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -32,13 +25,13 @@ WORKDIR /app
 # Directory for the source files.
 WORKDIR /src
 # Fetch the Flamethrower source code.
-ADD https://github.com/DNS-OARC/flamethrower/archive/refs/tags/v0.11.0.tar.gz flamethrower.tar.gz
+ADD https://github.com/DNS-OARC/flamethrower/archive/refs/heads/master.zip flamethrower.zip
 WORKDIR /src/build
 RUN \
     # Extract the archive.
-    tar -xzf /src/flamethrower.tar.gz --strip-components=1 -C /src \
+    unzip /src/flamethrower.zip -d /src \
     # Configure the build.
-    && cmake -DDOH_ENABLE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo /src \
+    && cmake -DDOH_ENABLE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo /src/flamethrower-master \
     # Compile the binary.
     && make \
     # Copy the binary to the /app directory.
