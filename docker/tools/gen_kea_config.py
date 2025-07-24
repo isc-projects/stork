@@ -283,7 +283,7 @@ KEA_BASE_CONFIG = {
             },
         ],
         "hooks-libraries": [
-            {"library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so"},
+            {"library": "/usr/lib/${KEA_PLATFORM_TRIPLE}/kea/hooks/libdhcp_lease_cmds.so"},
         ],
         "subnet4": [],
         "shared-networks": [],

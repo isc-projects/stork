@@ -135,7 +135,7 @@ services:
       STORK_AGENT_PORT: "8888"
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -143,6 +143,7 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
     depends_on:
       - mariadb
 
@@ -193,13 +194,14 @@ services:
       STORK_AGENT_PORT: "8887"
     volumes:
       - ./docker/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ./docker/config/agent-kea6/kea-dhcp6.conf:/tmp/keacfg/kea-dhcp6.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
     depends_on:
       - postgres
 
@@ -226,7 +228,7 @@ services:
       STORK_AGENT_PORT: "8886"
     volumes:
       - ./docker/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -234,6 +236,7 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
 
   agent-kea-ha2:
     restart: always
@@ -257,7 +260,7 @@ services:
       STORK_AGENT_PORT: "8885"
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -265,6 +268,7 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
 
   agent-kea-ha3:
     restart: always
@@ -289,7 +293,7 @@ services:
       STORK_AGENT_PORT: "8890"
     volumes:
       - ./docker/config/agent-kea-ha3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -297,6 +301,7 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
 
   agent-kea-many-subnets:
     restart: always
@@ -321,7 +326,8 @@ services:
       STORK_AGENT_PORT: "8884"
       STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
     volumes:
-      - ./docker/config/agent-kea-many-subnets:/etc/kea
+      - ./docker/config/agent-kea-many-subnets/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ./docker/config/agent-kea-many-subnets/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -329,6 +335,7 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
     depends_on:
       - kea-config-generator
 
