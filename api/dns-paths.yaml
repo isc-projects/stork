@@ -124,7 +124,7 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /rrs-cache/daemons/{daemonId}/{viewName}/zones/{zoneId}:
+  /daemons/{daemonId}/{viewName}/zones/{zoneId}/rrs/cache:
     put:
       summary: Refresh the resource records for the zone using the zone transfer.
       description: >-
