@@ -134,7 +134,7 @@ agent-kea-ha1 and agent-kea-ha2
    both instances running and registered as machines in Stork, users can observe
    certain HA mechanisms, such as one partner taking over the traffic if the
    other partner becomes unavailable.
-agent-kea-many-subnets
+agent-kea-large
    This container runs an agent with a Kea DHCPv4 server that has many (nearly
    7000) subnets defined in its configuration.
 agent-kea-premium-one and agent-kea-premium-two

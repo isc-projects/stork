@@ -2,7 +2,7 @@
 # Run the demo containers in Docker
 
 namespace :demo do
-    ALL_DEMO_COMPOSE_FILES = FileList["docker/docker-compose*.yaml"]
+    ALL_DEMO_COMPOSE_FILES = FileList["docker/docker-compose.yaml"]
 
     # Produces the arguments for docker-compose.
     # Parameters:
@@ -21,7 +21,6 @@ namespace :demo do
         opts = [
             "--project-directory", ".",
             "-f", "docker/docker-compose.yaml",
-            "-f", "docker/docker-compose-premium.yaml"
         ]
 
         cache_opts = []
@@ -132,10 +131,10 @@ namespace :demo do
             docker_up_services("agent-kea")
         end
 
-        desc 'Build and run container with Stork Agent and Kea with many subnets in the configuration.
+        desc 'Build and run container with Stork Agent and Kea with a very large configuration (currently 7,000 subnets).
         See "up" command for arguments.'
-        task :kea_many_subnets => [DOCKER_COMPOSE] do
-            docker_up_services("agent-kea-many-subnets")
+        task :kea_large => [DOCKER_COMPOSE] do
+            docker_up_services("agent-kea-large")
         end
 
         desc 'Build and run container with Stork Agent and Kea DHCPv6 server
@@ -148,12 +147,6 @@ namespace :demo do
         See "up" command for arguments.'
         task :kea_ha => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea-ha1", "agent-kea-ha2", "agent-kea-ha3")
-        end
-
-        desc 'Build and run container with Stork Agent and Kea with host reservations in db
-        See "up" command for more arguments.'
-        task :kea_premium => [DOCKER_COMPOSE] do
-            docker_up_services("agent-kea-premium-one", "agent-kea-premium-two")
         end
 
         desc 'Build and run container with Stork Agent and BIND 9

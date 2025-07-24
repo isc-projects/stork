@@ -47,7 +47,7 @@ TAGS
 # files created by running docker containers
 /backend/cmd/stork-agent/supervisord.log
 /backend/cmd/stork-agent/supervisord.pid
-docker/config/agent-kea-many-subnets/kea-dhcp4.conf
+docker/config/agent-kea-large/kea-dhcp4.conf
 
 # generated docs
 /doc/man/stork-*.8

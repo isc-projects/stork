@@ -16,7 +16,6 @@ services:
     extra_hosts:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
-      - "agent-kea-premium-one:172.24.0.103"
       - "agent-pdns:172.24.0.55"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
@@ -298,14 +297,14 @@ services:
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
 
-  agent-kea-many-subnets:
+  agent-kea-large:
     restart: always
     build:
       context: .
       dockerfile: docker/images/stork.Dockerfile
       target: kea
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-many-subnets:latest"
-    hostname: agent-kea-many-subnets
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-large:latest"
+    hostname: agent-kea-large
     networks:
       storknet:
         ipv4_address: 172.24.0.102
@@ -317,11 +316,11 @@ services:
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
-      STORK_AGENT_HOST: agent-kea-many-subnets
+      STORK_AGENT_HOST: agent-kea-large
       STORK_AGENT_PORT: "8884"
       STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
     volumes:
-      - ./docker/config/agent-kea-many-subnets:/etc/kea
+      - ./docker/config/agent-kea-large:/etc/kea
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -456,7 +455,7 @@ services:
       dockerfile: docker/images/stork.Dockerfile
       target: kea-config-generator
     volumes:
-      - ./docker/config/agent-kea-many-subnets:/etc/kea
+      - ./docker/config/agent-kea-large:/etc/kea
 
   simulator:
     restart: always
@@ -472,7 +471,6 @@ services:
     extra_hosts:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
-      - "agent-kea-premium-one:172.24.0.103"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
