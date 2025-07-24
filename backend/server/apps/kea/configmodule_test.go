@@ -2875,7 +2875,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 
 	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 13)
+	require.Len(t, commands, 15)
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
@@ -2883,19 +2883,18 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 		marshalled := command.Marshal()
 
 		switch i {
-		case 0, 3, 5, 7:
+		case 0, 3, 6:
 			require.JSONEq(t,
 				`{
 					"command": "network4-del",
 					"service":["dhcp4"],
 					"arguments": {
 						"name": "foo",
-						"subnets-action":
-						"delete"
+						"subnets-action": "keep"
 					}
 				}`,
 				marshalled)
-		case 1, 4, 6:
+		case 1, 4, 7:
 			require.JSONEq(t,
 				`{
 					"command": "network4-add",
@@ -2903,39 +2902,35 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 					"arguments": {
 						"shared-networks": [
 							{
-								"name": "bar",
-								"subnet4": [
-									{
-										"pools": [
-											{
-												"pool":"192.0.2.100-192.0.2.200"
-											}
-										],
-										"id": 11,
-										"subnet": "192.0.2.0/24"
-									}
-								]
+								"name": "bar"
 							}
 						]
 					}
 				}`,
 				marshalled)
-		case 2:
+		case 2, 5, 8:
 			require.JSONEq(t,
 				`{
-					"command": "reservation-add",
+					"command": "network4-subnet-add",
 					"service": ["dhcp4"],
 					"arguments": {
-						"reservation": {
-							"hostname": "host1",
-							"hw-address": "000102030405",
-							"subnet-id": 11
-						},
-						"operation-target": "memory"
+						"id": 11,
+						"name": "bar"
 					}
 				}`,
 				marshalled)
-		case 8, 9, 11, 12:
+		case 9:
+			require.JSONEq(t,
+				`{
+					"command": "network4-del",
+					"service":["dhcp4"],
+					"arguments": {
+						"name": "foo",
+						"subnets-action": "delete"
+					}
+				}`,
+				marshalled)
+		case 10, 11, 13, 14:
 			require.JSONEq(t,
 				`{
 					"command": "config-write",
@@ -2944,13 +2939,15 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 				marshalled)
 			// The config-reload is only issued for Kea versions earlier than
 			// 2.6.0 that don't recount statistics until reloaded.
-		case 10:
+		case 12:
 			require.JSONEq(t,
 				`{
 					"command": "config-reload",
 					"service": [ "dhcp4" ]
 				}`,
 				marshalled)
+		default:
+			require.Fail(t, fmt.Sprintf("Unexpected command index: %d", i))
 		}
 		// Verify they are associated with appropriate apps.
 		require.NotNil(t, commands[i].App)
@@ -3060,14 +3057,14 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	for i, command := range agents.RecordedCommands {
 		marshalled := command.Marshal()
 		switch i {
-		case 0, 2:
+		case 0:
 			require.JSONEq(t,
 				`{
 					"command": "network4-del",
 					"service": ["dhcp4"],
 					"arguments": {
 						"name":"foo",
-						"subnets-action": "delete"
+						"subnets-action": "keep"
 					}
 				}`,
 				marshalled)
@@ -3083,6 +3080,17 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 								"name": "bar"
 							}
 						]
+					}
+				}`,
+				marshalled)
+		case 2:
+			require.JSONEq(t,
+				`{
+					"command": "network4-del",
+					"service": ["dhcp4"],
+					"arguments": {
+						"name":"foo",
+						"subnets-action": "delete"
 					}
 				}`,
 				marshalled)
@@ -3322,7 +3330,7 @@ func TestCommitScheduledSharedNetworkUpdate(t *testing.T) {
 					"service": ["dhcp6"],
 					"arguments": {
 						"name":"foo",
-						"subnets-action": "delete"
+						"subnets-action": "keep"
 					}
 				}`,
 				marshalled)
