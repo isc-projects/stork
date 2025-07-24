@@ -120,20 +120,6 @@ func (e NoSubnetCmdsHookError) Error() string {
 	return "libdhcp_subnet_cmds hook library not configured for some of the daemons"
 }
 
-// An error returned when some of the daemons have no libdhcp_host_cmds hook
-// library configured.
-type NoHostCmdsHookError struct{}
-
-// Create new instance of the NoHostCmdsHookError.
-func NewNoHostCmdsHookError() error {
-	return &NoHostCmdsHookError{}
-}
-
-// Returns error string.
-func (e NoHostCmdsHookError) Error() string {
-	return "libdhcp_host_cmds hook library not configured for some of the daemons"
-}
-
 // An error returned when it was not possible to lock daemons' configuration.
 type LockError struct{}
 

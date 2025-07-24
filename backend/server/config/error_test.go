@@ -64,10 +64,3 @@ func TestLockError(t *testing.T) {
 	err := NewLockError()
 	require.EqualError(t, err, "problem with locking daemons configuration")
 }
-
-// Test creation of an error which indicates that libdhcp_host_cmds hook
-// library was not configured.
-func TestNoHostCmdsHookError(t *testing.T) {
-	err := NewNoHostCmdsHookError()
-	require.EqualError(t, err, "libdhcp_host_cmds hook library not configured for some of the daemons")
-}

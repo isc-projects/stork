@@ -539,10 +539,7 @@ func (r *RestAPI) GetSubnet(ctx context.Context, params dhcp.GetSubnetParams) mi
 // subnet or a shared network is created or updated. It fetches available
 // DHCP daemons. It also creates transaction context. If an error occurs,
 // an http error code and message are returned.
-// The isSubnetProcessed parameter indicates whether the subnet is being
-// processed (created or updated) or whether the shared network is being
-// processed.
-func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context, isSubnetProcessed bool) ([]*models.KeaDaemon, []*models.SharedNetwork, []*models.SharedNetwork, []string, context.Context, int, string) {
+func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*models.KeaDaemon, []*models.SharedNetwork, []*models.SharedNetwork, []string, context.Context, int, string) {
 	// A list of Kea DHCP daemons will be needed in the user form,
 	// so the user can select which servers send the subnet to.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
@@ -564,10 +561,8 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context, isSubnet
 	clientClassesMap := make(map[string]bool)
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
-			// Filter the daemons with subnet_cmds and host_cmds hook libraries.
-			_, _, subnetHookExists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds")
-			_, _, hostHookExists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_host_cmds")
-			if subnetHookExists && (isSubnetProcessed || hostHookExists) {
+			// Filter the daemons with subnet_cmds hook library.
+			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); exists {
 				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
@@ -598,13 +593,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context, isSubnet
 	// If there are no daemons with subnet_cmds hooks library loaded there is no way
 	// to add new host reservation. In that case, we don't begin a transaction.
 	if len(respDaemons) == 0 {
-		var msg string
-		if isSubnetProcessed {
-			msg = "Unable to begin transaction because there are no Kea servers with subnet_cmds hooks library available"
-		} else {
-			msg = "Unable to begin transaction because there are no Kea servers with subnet_cmds and host_cmds hook libraries available"
-		}
-
+		msg := "Unable to begin transaction because there are no Kea servers with subnet_cmds hooks library available"
 		log.Error(msg)
 		return nil, nil, nil, nil, nil, http.StatusBadRequest, msg
 	}
@@ -722,7 +711,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transact
 func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubnetBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx, true)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewCreateSubnetBeginDefault(code).WithPayload(&models.APIError{
@@ -811,7 +800,7 @@ func (r *RestAPI) CreateSubnetDelete(ctx context.Context, params dhcp.CreateSubn
 func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubnetBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx, true)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateSubnetBeginDefault(code).WithPayload(&models.APIError{
