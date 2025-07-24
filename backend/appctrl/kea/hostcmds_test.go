@@ -9,15 +9,12 @@ import (
 
 // Tests reservation-add command.
 func TestNewCommandReservationAdd(t *testing.T) {
-	command := NewCommandReservationAdd(&keaconfig.HostCmdsAddReservation{
-		Reservation: keaconfig.HostCmdsAddReservationInner{
-			Reservation: keaconfig.Reservation{
-				HWAddress: "00:01:02:03:04:05",
-				Hostname:  "foo.example.org",
-			},
-			SubnetID: 123,
+	command := NewCommandReservationAdd(&keaconfig.HostCmdsReservation{
+		Reservation: keaconfig.Reservation{
+			HWAddress: "00:01:02:03:04:05",
+			Hostname:  "foo.example.org",
 		},
-		OperationTarget: keaconfig.HostCmdsOperationTargetMemory,
+		SubnetID: 123,
 	}, "dhcp4", "dhcp6")
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
@@ -28,8 +25,7 @@ func TestNewCommandReservationAdd(t *testing.T) {
 				"hw-address": "00:01:02:03:04:05",
 				"hostname": "foo.example.org",
 				"subnet-id": 123
-			},
-			"operation-target": "memory"
+			}
 		}
 	}`, command.Marshal())
 }

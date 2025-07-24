@@ -172,12 +172,10 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 	controller := gomock.NewController(t)
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).AnyTimes().Return(false)
-	reservationWrapper, err := keaconfig.CreateHostCmdsAddReservation(1, lookup, host, keaconfig.HostCmdsOperationTargetDatabase)
+	reservation, err := keaconfig.CreateHostCmdsReservation(1, lookup, host)
 	require.NoError(t, err)
-	reservation := reservationWrapper.Reservation
 	require.NotNil(t, reservation)
 	require.Equal(t, "010203040506", reservation.HWAddress)
-	require.Equal(t, keaconfig.HostCmdsOperationTargetDatabase, reservationWrapper.OperationTarget)
 	require.Equal(t, "192.0.2.1", reservation.IPAddress)
 	require.Len(t, reservation.IPAddresses, 2)
 	require.Equal(t, "2001:db8:1::1", reservation.IPAddresses[0])
