@@ -646,6 +646,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
         localStorage.setItem(this._dhcpDashboardHiddenStorageKey, JSON.stringify(hidden))
     }
 
+    /**
+     * Returns a DNS daemon for a given app.
+     *
+     * @param app an app holding a daemon.
+     * @returns BIND 9 or PowerDNS daemon.
+     */
     getDNSDaemon(app: App): Bind9Daemon | PdnsDaemon {
         if (app.details?.daemon) {
             return app.details.daemon
