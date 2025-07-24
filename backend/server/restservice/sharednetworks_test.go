@@ -1691,24 +1691,23 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 	require.IsType(t, &dhcp.UpdateSharedNetworkSubmitOK{}, rsp2)
 
 	// Appropriate commands should be sent to two Kea servers.
-	require.Len(t, fa.RecordedCommands, 6)
+	require.Len(t, fa.RecordedCommands, 10)
 
 	for i, c := range fa.RecordedCommands {
 		switch i {
-		case 0, 2:
+		case 0, 4:
 			require.JSONEq(t, `
 				{
 					"command": "network4-del",
 					"service": ["dhcp4"],
 					"arguments": {
 						"name": "foo",
-						"subnets-action":
-						"delete"
+						"subnets-action": "keep"
 					}
 				}
 				`, c.Marshal(),
 			)
-		case 1, 3:
+		case 1, 5:
 			require.JSONEq(t, `
 				{
 					"command": "network4-add",
@@ -1765,30 +1764,43 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 								"match-client-id": true,
 								"name": "foo",
 								"next-server": "192.0.2.1",
-								"server-hostname": "myhost.example.org",
-								"subnet4": [
-									{
-										"id": 1,
-										"subnet": "192.0.2.0/24",
-										"client-class": "baz"
-									},
-									{
-										"id": 2,
-										"subnet": "192.0.3.0/24"
-									}
-								]
+								"server-hostname": "myhost.example.org"
 							}
 						]
 					}
 				}
 			`, c.Marshal())
-		default:
+		case 2, 6:
+			require.JSONEq(t, `
+				{
+					"command": "network4-subnet-add",
+					"service": ["dhcp4"],
+					"arguments": {
+						"name": "foo",
+						"id": 1
+					}
+				}
+			`, c.Marshal())
+		case 3, 7:
+			require.JSONEq(t, `
+				{
+					"command": "network4-subnet-add",
+					"service": ["dhcp4"],
+					"arguments": {
+						"name": "foo",
+						"id": 2
+					}
+				}
+			`, c.Marshal())
+		case 8, 9:
 			require.JSONEq(t, `
 				{
 					"command": "config-write",
 					"service": ["dhcp4"]
 				}
 			`, c.Marshal())
+		default:
+			require.Fail(t, fmt.Sprintf("Unexpected command %d: %s", i, c.Marshal()))
 		}
 	}
 
@@ -2101,7 +2113,7 @@ func TestUpdateSharedNetwork6BeginSubmit(t *testing.T) {
 					"service": ["dhcp6"],
 					"arguments": {
 						"name": "foo",
-						"subnets-action": "delete"
+						"subnets-action": "keep"
 					}
 				}
 			`, c.Marshal())

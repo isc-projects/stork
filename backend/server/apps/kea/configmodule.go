@@ -840,6 +840,13 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 	}
 
 	var commands []ConfigCommand
+
+	// Temporarily remove the subnets from the shared network to avoid including
+	// them in the networkX-add commands. The subnets will be added back by
+	// separate commands.
+	subnets := sharedNetwork.Subnets
+	sharedNetwork.Subnets = []dbmodel.Subnet{}
+
 	// Update the shared network instances.
 	for _, lsn := range sharedNetwork.LocalSharedNetworks {
 		if lsn.Daemon == nil {
@@ -854,7 +861,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 		appCommand.App = lsn.Daemon.App
 		switch sharedNetwork.Family {
 		case 4:
-			deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
+			deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionKeep)
 			appCommand.Command = keactrl.NewCommandNetwork4Del(deletedSharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
@@ -864,8 +871,21 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			}
 			appCommand.Command = keactrl.NewCommandNetwork4Add(sharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
+
+			for _, subnet := range subnets {
+				for _, ls := range subnet.LocalSubnets {
+					if ls.DaemonID != lsn.DaemonID {
+						continue
+					}
+
+					localSubnetID := subnet.GetID(lsn.DaemonID)
+					appCommand.Command = keactrl.NewCommandNetwork4SubnetAdd(sharedNetwork.Name, localSubnetID, lsn.Daemon.Name)
+					commands = append(commands, appCommand)
+					break
+				}
+			}
 		default:
-			deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
+			deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionKeep)
 			appCommand.Command = keactrl.NewCommandNetwork6Del(deletedSharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
@@ -875,33 +895,25 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			}
 			appCommand.Command = keactrl.NewCommandNetwork6Add(sharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
-		}
 
-		// Re-create the shared network reservations.
-		for _, subnet := range sharedNetwork.Subnets {
-			for _, host := range subnet.Hosts {
-				for _, localHost := range host.LocalHosts {
-					if localHost.DataSource != dbmodel.HostDataSourceConfig {
-						continue
-					}
-					if localHost.DaemonID != lsn.DaemonID {
+			for _, subnet := range subnets {
+				for _, ls := range subnet.LocalSubnets {
+					if ls.DaemonID != lsn.DaemonID {
 						continue
 					}
 
-					// Convert the host information to Kea reservation.
-					reservation, err := keaconfig.CreateHostCmdsAddReservation(lsn.DaemonID, lookup, host, keaconfig.HostCmdsOperationTargetMemory)
-					if err != nil {
-						return ctx, err
-					}
-					// Fix subnet ID as the populated hosts do not have the local subnets.
-					reservation.Reservation.SubnetID = subnet.GetID(lsn.DaemonID)
-
-					appCommand.Command = keactrl.NewCommandReservationAdd(reservation, lsn.Daemon.Name)
+					localSubnetID := subnet.GetID(lsn.DaemonID)
+					appCommand.Command = keactrl.NewCommandNetwork6SubnetAdd(sharedNetwork.Name, localSubnetID, lsn.Daemon.Name)
 					commands = append(commands, appCommand)
+					break
 				}
 			}
 		}
 	}
+
+	// Restore the subnets in the shared network.
+	sharedNetwork.Subnets = subnets
+
 	// Identify the daemons which no longer exist in the updated shared network.
 	// Remove the shared network from these daemons.
 	var deletedLocalSharedNetworks []*dbmodel.LocalSharedNetwork
