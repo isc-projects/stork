@@ -200,11 +200,10 @@ func (m *hostMigrator) migrateDaemonHosts(daemon *dbmodel.Daemon) {
 		}
 
 		// Add the reservation to the Kea host database.
-		reservationAdd, err := keaconfig.CreateHostCmdsAddReservation(
+		reservationAdd, err := keaconfig.CreateHostCmdsReservation(
 			daemonID,
 			m.dhcpOptionLookup,
 			*host,
-			keaconfig.HostCmdsOperationTargetDefault,
 		)
 		if err != nil {
 			err = errors.WithMessagef(err,

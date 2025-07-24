@@ -52,16 +52,10 @@ type Reservation struct {
 	OptionData     []SingleOptionData `json:"option-data,omitempty"`
 }
 
-// A structure representing a reservation with an associated subnet ID.
-type HostCmdsAddReservationInner struct {
+// Represents host reservation returned and sent via Kea host commands hook library.
+type HostCmdsReservation struct {
 	Reservation
 	SubnetID int64 `json:"subnet-id"`
-}
-
-// Represents host reservation returned and sent via Kea host commands hook library.
-type HostCmdsAddReservation struct {
-	Reservation     HostCmdsAddReservationInner `json:"reservation"`
-	OperationTarget HostCmdsOperationTarget     `json:"operation-target,omitempty"`
 }
 
 // Represents deleted host reservation. It includes the fields required by
@@ -137,12 +131,11 @@ func CreateReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host H
 	return reservation, nil
 }
 
-// Converts a host representation in Stork to a structure accepted by the
-// reservation-add command in Kea.
-// The daemonID selects host reservation data appropriate for a given daemon.
-// Note that a host in Stork can be shared by multiple daemons. The lookup
-// interface must not be nil.
-func CreateHostCmdsAddReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host HostAccessor, operationTarget HostCmdsOperationTarget) (reservation *HostCmdsAddReservation, err error) {
+// Converts a host representation in Stork to Kea host reservation format used
+// in host_cmds hook library (includes subnet ID). The daemonID selects host
+// reservation data appropriate for a given daemon. Note that a host in Stork
+// can be shared by multiple daemons. The lookup interface must not be nil.
+func CreateHostCmdsReservation(daemonID int64, lookup DHCPOptionDefinitionLookup, host HostAccessor) (reservation *HostCmdsReservation, err error) {
 	var (
 		base     *Reservation
 		subnetID int64
@@ -154,15 +147,9 @@ func CreateHostCmdsAddReservation(daemonID int64, lookup DHCPOptionDefinitionLoo
 	if err != nil {
 		return
 	}
-	reservation = &HostCmdsAddReservation{
-		Reservation: struct {
-			Reservation
-			SubnetID int64 `json:"subnet-id"`
-		}{
-			Reservation: *base,
-			SubnetID:    subnetID,
-		},
-		OperationTarget: operationTarget,
+	reservation = &HostCmdsReservation{
+		Reservation: *base,
+		SubnetID:    subnetID,
 	}
 	return
 }

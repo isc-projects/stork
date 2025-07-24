@@ -317,7 +317,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 		}
 		// Convert the host information to Kea reservation.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		reservation, err := keaconfig.CreateHostCmdsAddReservation(lh.DaemonID, lookup, host, keaconfig.HostCmdsOperationTargetDefault)
+		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, lookup, host)
 		if err != nil {
 			return ctx, err
 		}
@@ -463,7 +463,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 		}
 		// Convert the updated host information to Kea reservation.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		reservation, err := keaconfig.CreateHostCmdsAddReservation(lh.DaemonID, lookup, host, keaconfig.HostCmdsOperationTargetDefault)
+		reservation, err := keaconfig.CreateHostCmdsReservation(lh.DaemonID, lookup, host)
 		if err != nil {
 			return ctx, err
 		}
