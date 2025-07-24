@@ -16,7 +16,7 @@ var (
 	_ pdnsConfigParser = (*pdnsconfig.Parser)(nil)
 
 	// Pattern for detecting PowerDNS process.
-	pdnsPattern = regexp.MustCompile(`(.*?)pdns_server\s+(.*)`)
+	pdnsPattern = regexp.MustCompile(`(.*?)pdns_server(\s+.*)?`)
 )
 
 // An interface for parsing PowerDNS configuration files.
@@ -75,37 +75,36 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 	}
 	match := pdnsPattern.FindStringSubmatch(cmdline)
 	if match == nil {
-		return nil, errors.Wrapf(err, "failed to find pdns_server in cmdline: %s", cmdline)
+		return nil, errors.Errorf("failed to find pdns_server in cmdline: %s", cmdline)
 	}
-	if len(match) < 3 {
-		return nil, errors.Errorf("failed to parse pdns_server cmdline: %s", cmdline)
-	}
-	pdnsParams := match[2]
 
-	configDir := "."
+	configDir := ""
 	configName := "pdns.conf"
 	rootPrefix := ""
-	paramsSlice := strings.Fields(pdnsParams)
-	for _, param := range paramsSlice {
-		key, value, found := strings.Cut(param, "=")
-		if !found {
-			continue
-		}
-		switch key {
-		case "--chroot":
-			rootPrefix = strings.TrimRight(value, "/")
-		case "--config-dir":
-			configDir = value
-		case "--config-name":
-			configName = value
+	if len(match) >= 3 {
+		// The command line contains parameters. Check if they specify config
+		// directory or config name.
+		pdnsParams := match[2]
+		paramsSlice := strings.Fields(pdnsParams)
+		for _, param := range paramsSlice {
+			key, value, found := strings.Cut(param, "=")
+			if !found {
+				continue
+			}
+			switch key {
+			case "--chroot":
+				rootPrefix = strings.TrimRight(value, "/")
+			case "--config-dir":
+				configDir = value
+			case "--config-name":
+				configName = value
+			}
 		}
 	}
-
 	if !path.IsAbs(configDir) {
 		// PowerDNS configuration is typically stored in /etc/powerdns.
 		configDir = path.Join("/etc/powerdns", configDir)
 	}
-
 	configPath := path.Join(configDir, configName)
 	if rootPrefix != "" {
 		configPath = path.Join(rootPrefix, configPath)

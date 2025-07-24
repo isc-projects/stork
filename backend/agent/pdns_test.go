@@ -73,6 +73,36 @@ func TestDetectPowerDNSApp(t *testing.T) {
 	require.NotNil(t, app.GetZoneInventory())
 }
 
+// Test that the PowerDNS is correctly detected when no parameters are
+// specified. It should use the default config directory.
+func TestDetectPowerDNSAppNoConfigDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server", nil)
+	process.EXPECT().getCwd().Return("/etc", nil)
+
+	parser := NewMockPDNSConfigParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
+		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
+	})
+
+	app, err := detectPowerDNSApp(process, parser)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+
+	require.IsType(t, &PDNSApp{}, app)
+	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
+	require.Zero(t, app.GetBaseApp().Pid)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
+	require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
+	require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
+	require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
+	require.NotNil(t, app.GetZoneInventory())
+}
+
 // Test that an error is returned when getting a process command line fails.
 func TestDetectPowerDNSAppCmdLineError(t *testing.T) {
 	ctrl := gomock.NewController(t)
