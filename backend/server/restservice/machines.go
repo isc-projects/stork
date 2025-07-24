@@ -1192,6 +1192,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			// In this case, the application entry is created but no daemon.
 			break
 		}
+		// The BIND9 app has always one daemon.
 		bind9Daemon := bind9DaemonToRestAPI(dbApp.Daemons[0])
 		bind9Daemon.AgentCommErrors = agentErrors
 
@@ -1214,6 +1215,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		if len(dbApp.Daemons) == 0 {
 			break
 		}
+		// The PowerDNS app has always one daemon.
 		pdnsDaemon := pdnsDaemonToRestAPI(dbApp.Daemons[0])
 		app.Details = appDetails{
 			models.AppKea{},
