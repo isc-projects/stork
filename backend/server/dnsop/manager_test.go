@@ -855,32 +855,6 @@ func TestGetZoneRRs(t *testing.T) {
 		original := strings.Join(strings.Fields(rrs[i]), " ")
 		require.Equal(t, original, rr.GetString())
 	}
-	// Make sure that RRs were not cached.
-	cachedRRs, err := dbmodel.GetDNSConfigRRs(db, zone.LocalZones[0].ID)
-	require.NoError(t, err)
-	require.Empty(t, cachedRRs)
-	// Make sure that the timestamp was not set.
-	zone, err = dbmodel.GetZoneByID(db, zone.ID)
-	require.NoError(t, err)
-	require.Len(t, zone.LocalZones, 1)
-	require.Nil(t, zone.LocalZones[0].ZoneTransferAt)
-
-	// Get RRs again but request caching.
-	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionCacheRRs)
-	for rrResponse := range rrResponses {
-		require.False(t, rrResponse.Cached)
-		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
-		require.NoError(t, rrResponse.Err)
-		collectedRRs = append(collectedRRs, rrResponse.RRs...)
-	}
-	// Validate the returned RRs against the original ones.
-	require.Equal(t, len(rrs), len(collectedRRs))
-	for i, rr := range collectedRRs {
-		// Replace tabs with spaces in the original RR.
-		original := strings.Join(strings.Fields(rrs[i]), " ")
-		require.Equal(t, original, rr.GetString())
-	}
 	// Make sure that the timestamp was set.
 	zone, err = dbmodel.GetZoneByID(db, zone.ID)
 	require.NoError(t, err)
@@ -890,7 +864,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Get RRs again. It should return cached RRs.
 	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionCacheRRs)
+	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
 	for rrResponse := range rrResponses {
 		require.True(t, rrResponse.Cached)
 		require.Equal(t, *zone.LocalZones[0].ZoneTransferAt, rrResponse.ZoneTransferAt)
@@ -912,7 +886,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Finally, get RRs again with forcing zone transfer.
 	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionForceZoneTransfer, GetZoneRRsOptionCacheRRs)
+	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionForceZoneTransfer)
 	for rrResponse := range rrResponses {
 		require.False(t, rrResponse.Cached)
 		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
@@ -1272,7 +1246,11 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 		defer wg3.Done()
 		responses := manager.GetZoneRRs(zones[0].ID, app.Daemons[0].ID, "_default")
 		for response := range responses {
-			require.NoError(t, response.Err)
+			// Since these responses will be read in the cleanup phase, it is expected
+			// that some of them will indicate failures while communicating with the
+			// database. Therefore, we don't validate them. We merely read them and
+			// ensure they are not nil.
+			require.NotNil(t, response)
 		}
 	}()
 
@@ -1395,7 +1373,7 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Start reading the RRs.
-	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionCacheRRs)
+	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
 
 	// Read only the first RR and stop the iterator.
 	next, stop := iter.Pull(rrResponses)
@@ -1492,7 +1470,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Start reading the RRs.
-	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionCacheRRs)
+	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
 
 	next, stop := iter.Pull(rrResponses)
 	defer stop()

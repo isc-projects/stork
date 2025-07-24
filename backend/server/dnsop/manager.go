@@ -96,8 +96,6 @@ type GetZoneRRsOption int
 const (
 	// Force zone transfer even when RRs are cached.
 	GetZoneRRsOptionForceZoneTransfer GetZoneRRsOption = iota
-	// Cache RRs returned from transfer.
-	GetZoneRRsOptionCacheRRs
 )
 
 // A zones fetching state including the flag whether or not the fetch
@@ -591,14 +589,11 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 			_ = yield(NewErrorRRResponse(errors.Errorf("zone with the ID of %d not found", zoneID)))
 			return
 		}
-		// Local zone is required to fetch cached RRs when we don't force zone transfer.
-		// It is also required to cache RRs received over the zone transfer.
-		var localZone *dbmodel.LocalZone
-		if !slices.Contains(options, GetZoneRRsOptionForceZoneTransfer) || slices.Contains(options, GetZoneRRsOptionCacheRRs) {
-			if localZone = zone.GetLocalZone(daemonID, viewName); localZone == nil {
-				_ = yield(NewErrorRRResponse(errors.Errorf("local zone information for daemon ID %d and view %s not found in zone: %s", daemonID, viewName, zone.Name)))
-				return
-			}
+		// Local zone is required to fetch cached RRs.
+		localZone := zone.GetLocalZone(daemonID, viewName)
+		if localZone == nil {
+			_ = yield(NewErrorRRResponse(errors.Errorf("local zone information for daemon ID %d and view %s not found in zone: %s", daemonID, viewName, zone.Name)))
+			return
 		}
 		// If we don't force zone transfer the local zone should have been initialized
 		// from the database.
@@ -627,17 +622,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 			_ = yield(NewErrorRRResponse(err))
 			return
 		}
-		// If we don't cache RRs, simply return them to the caller.
-		if !slices.Contains(options, GetZoneRRsOptionCacheRRs) {
-			// If the RRs are not cached, we need to collect them and return them to the caller.
-			for r := range ch {
-				if !yield(r) {
-					break
-				}
-			}
-			return
-		}
-		// Caching RRs is enabled. Let's create transaction to cache them.
+		// Let's create transaction to cache the RRs.
 		tx, err := manager.db.Begin()
 		if err != nil {
 			_ = yield(NewErrorRRResponse(errors.Wrap(err, "failed to begin a transaction for caching RRs")))

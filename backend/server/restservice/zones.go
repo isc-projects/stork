@@ -163,7 +163,7 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 		cached         bool
 		zoneTransferAt time.Time
 	)
-	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, dnsop.GetZoneRRsOptionCacheRRs) {
+	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName) {
 		if rrResponse.Err != nil {
 			msg := "Failed to get zone contents from the database"
 			log.WithError(rrResponse.Err).Error(msg)
@@ -229,7 +229,7 @@ func (r *RestAPI) PutZoneRRsCache(ctx context.Context, params dns.PutZoneRRsCach
 		cached                bool
 		zoneTransferAt        time.Time
 	)
-	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, dnsop.GetZoneRRsOptionForceZoneTransfer, dnsop.GetZoneRRsOptionCacheRRs) {
+	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, dnsop.GetZoneRRsOptionForceZoneTransfer) {
 		if rrResponse.Err != nil {
 			msg := "Failed to refresh zone contents using zone transfer"
 			log.WithError(rrResponse.Err).Error(msg)

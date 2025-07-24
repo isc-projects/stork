@@ -584,7 +584,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), dnsop.GetZoneRRsOptionCacheRRs).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -638,7 +638,7 @@ func TestPutZoneRRsCache(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), dnsop.GetZoneRRsOptionForceZoneTransfer, dnsop.GetZoneRRsOptionCacheRRs).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), dnsop.GetZoneRRsOptionForceZoneTransfer).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
