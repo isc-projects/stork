@@ -31,7 +31,7 @@ export class DaemonNiceNamePipe implements PipeTransform {
             case 'named':
                 return 'named'
             case 'pdns':
-                return 'powerdns_server'
+                return 'pdns_server'
             default:
                 return value
         }

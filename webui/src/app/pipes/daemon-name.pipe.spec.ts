@@ -16,7 +16,7 @@ describe('DaemonNiceNamePipe', () => {
         expect(pipe.transform('ca')).toBe('CA')
         expect(pipe.transform('netconf')).toBe('NETCONF')
         expect(pipe.transform('named')).toBe('named')
-        expect(pipe.transform('pdns')).toBe('powerdns_server')
+        expect(pipe.transform('pdns')).toBe('pdns_server')
         expect(pipe.transform('unsupported')).toBe('unsupported')
     })
 })
