@@ -1290,6 +1290,8 @@ describe('ZonesPageComponent', () => {
         // Act + Assert
         expect(shouldDisableShowZone({ zoneType: 'primary' })).toBeFalse()
         expect(shouldDisableShowZone({ zoneType: 'secondary' })).toBeFalse()
+        expect(shouldDisableShowZone({ zoneType: 'master' })).toBeFalse()
+        expect(shouldDisableShowZone({ zoneType: 'slave' })).toBeFalse()
         expect(shouldDisableShowZone({ zoneType: 'builtin' })).toBeTrue()
         expect(shouldDisableShowZone({ zoneType: 'delegation-only' })).toBeTrue()
         expect(shouldDisableShowZone({ zoneType: 'forward' })).toBeTrue()
