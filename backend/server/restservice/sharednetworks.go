@@ -396,13 +396,6 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkSubmit(ctx context.Context, t
 		log.WithError(err).Error(msg)
 		return http.StatusNotFound, 0, msg
 	}
-	err = sharedNetwork.PopulateHosts(r.DB)
-	if err != nil {
-		msg := "Specified shared network is associated with hosts that no longer exist"
-		log.WithError(err).Error(msg)
-		return http.StatusNotFound, 0, msg
-	}
-
 	// Apply the shared network information (create Kea commands).
 	cctx, err = applyFunc(cctx, sharedNetwork)
 	if err != nil {
