@@ -55,8 +55,7 @@ Kea instances where these host reservations belong.
 Stork requires the Subnet Commands (``subnet_cmds``) hook library to be loaded by the Kea instances
 to manage the subnets and shared networks. Stork can fetch and present subnets and shared networks without this
 hook library; however, adding, updating, or deleting a subnet or shared network requires the ``subnet_cmds``
-hook library to be loaded on all Kea instances where this subnet or shared network belongs. Updating shared networks
-requires additionally the ``host_cmds`` hook library to be loaded.
+hook library to be loaded on all Kea instances where this subnet or shared network belongs.
 
 .. note::
 

@@ -353,7 +353,7 @@ Updating Shared Networks
 To update an existing shared network configuration, click on the shared network in the dashboard
 or in the shared networks list to display detailed information about the shared network.
 Click the ``Edit`` button to open the shared-network update form. Note that only shared networks
-on servers with the ``subnet_cmds`` and ``host_cmds`` hook libraries loaded can
+on servers with the ``subnet_cmds`` hook library loaded can
 be updated.
 
 Removing the shared network from a server (in the ``Assignments`` panel) also removes
