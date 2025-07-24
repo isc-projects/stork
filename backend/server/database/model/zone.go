@@ -217,7 +217,7 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		q = q.Relation(string(relation))
 	}
 	// Order expression.
-	q = q.OrderExpr("rname ASC")
+	q = q.OrderExpr("rname COLLATE \"C\" ASC")
 
 	// Filtering is optional.
 	if filter == nil {
@@ -237,7 +237,7 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		labels := dns.SplitDomainName(*filter.LowerBound)
 		slices.Reverse(labels)
 		lowerBound := strings.Join(labels, ".")
-		q = q.Where("rname > ?", lowerBound)
+		q = q.Where("rname COLLATE \"C\" > ?", lowerBound)
 	}
 	// Paging from offset.
 	if filter.Offset != nil {
