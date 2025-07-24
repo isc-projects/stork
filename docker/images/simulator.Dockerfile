@@ -8,15 +8,15 @@ FROM debian:12.1-slim AS base
 FROM debian:12.1-slim AS flamethrower-builder
 # Install Flamethrower dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        g++ \
-        cmake \
-        make \
-        libldns-dev \
-        libnghttp2-dev \
-        libuv1-dev \
-        libgnutls28-dev \
-        pkgconf \
-        unzip \
+        g++=4:12.* \
+        cmake=3.25.* \
+        make=4.* \
+        libldns-dev=1.8.* \
+        libnghttp2-dev=1.52.* \
+        libuv1-dev=1.44.* \
+        libgnutls28-dev=3.7* \
+        pkgconf=1.8.* \
+        unzip=6.* \
     # Cleanup.
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
