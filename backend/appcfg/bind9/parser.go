@@ -39,6 +39,14 @@ type Statement struct {
 	// The "key" statement is used to define a secure key.
 	Key *Key `parser:"| 'key' @@"`
 
+	// The "controls" statement is used to define access points for the
+	// remote control of the server using rndc.
+	Controls *Controls `parser:"| 'controls' @@"`
+
+	// The "statistics-channels" statement is used to define access points for
+	// the 	statistics channels.
+	StatisticsChannels *StatisticsChannels `parser:"| 'statistics-channels' @@"`
+
 	// The "options" statement is used to define global options.
 	Options *Options `parser:"| 'options' @@"`
 
@@ -179,6 +187,59 @@ type KeyClause struct {
 	Algorithm string `parser:"'algorithm' ( @Ident | @String )"`
 	// The secret clause.
 	Secret string `parser:"| 'secret' ( @Ident | @String )"`
+}
+
+type Keys struct {
+	KeyNames []string `parser:"(( @Ident | @String )';')*"`
+}
+
+// Controls is the statement used to define controls. It has the following format:
+//
+//	controls {
+//		inet ( <ipv4_address> | <ipv6_address> | * ) [ port ( <integer> | * ) ] allow { <address_match_element>; ... } [ keys { <string>; ... } ] [ read-only <boolean> ];
+//		unix <quoted_string> perm <integer> owner <integer> group <integer> [ keys { <string>; ... } ] [ read-only <boolean> ];
+//	};
+//
+// See: https://bind9.readthedocs.io/en/v9.20.11/reference.html#controls-block-grammar.
+type Controls struct {
+	Clauses []*ControlClause `parser:"'{' ( @@ ';'* )* '}'"`
+}
+
+// An inet or unix clause within the controls statement.
+type ControlClause struct {
+	InetClause *InetClause `parser:"'inet' @@"`
+	UnixClause *UnixClause `parser:"| 'unix' @@"`
+}
+
+// An inet clause within the controls statement.
+type InetClause struct {
+	Address  string            `parser:"( @String | @Ident )"`
+	Port     *string           `parser:"( 'port' @Ident )?"`
+	Allow    *AddressMatchList `parser:"( 'allow' '{' @@ '}' )?"`
+	Keys     *Keys             `parser:"( 'keys' '{' @@ '}' )?"`
+	ReadOnly *Boolean          `parser:"( 'read-only' @Ident )?"`
+}
+
+// A unix clause within the controls statement.
+type UnixClause struct {
+	Path     string   `parser:"@String"`
+	Perm     int64    `parser:"'perm' @Ident"`
+	Owner    int64    `parser:"'owner' @Ident"`
+	Group    int64    `parser:"'group' @Ident"`
+	Keys     *Keys    `parser:"( 'keys' '{' @@ '}' )?"`
+	ReadOnly *Boolean `parser:"( 'read-only' @Ident )?"`
+}
+
+// A statistics-channels statement is used to define access points for
+// the statistics channels.
+//
+//	statistics-channels {
+//		inet ( <ipv4_address> | <ipv6_address> | * ) [ port ( <integer> | * ) ] allow { <address_match_element>; ... };
+//	};
+//
+// See: https://bind9.readthedocs.io/en/v9.20.11/reference.html#statistics-channels-block-grammar.
+type StatisticsChannels struct {
+	Clauses []*InetClause `parser:"'{' ( 'inet' @@ ';'* )* '}'"`
 }
 
 // Options is the statement used to define global options.
@@ -374,6 +435,15 @@ func (b *GenericClauseContents) Parse(lex *lexer.PeekingLexer) error {
 		// Consume the token.
 		_ = lex.Next()
 	}
+}
+
+// Boolean is a boolean set to true if the value is "true", "yes", or "1".
+type Boolean bool
+
+// Capture captures the boolean value from the token stream.
+func (b *Boolean) Capture(values []string) error {
+	*b = values[0] == "true" || values[0] == "yes" || values[0] == "1"
+	return nil
 }
 
 var (

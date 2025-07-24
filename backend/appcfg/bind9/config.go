@@ -20,7 +20,27 @@ func (c *Config) HasNoParse() bool {
 	return false
 }
 
-// Returns the options or nil if the options are not found.
+// Returns the controls statement or nil if it is not found.
+func (c *Config) GetControls() *Controls {
+	for _, statement := range c.Statements {
+		if statement.Controls != nil {
+			return statement.Controls
+		}
+	}
+	return nil
+}
+
+// Returns the statistics-channels statement or nil if it is not found.
+func (c *Config) GetStatisticsChannels() *StatisticsChannels {
+	for _, statement := range c.Statements {
+		if statement.StatisticsChannels != nil {
+			return statement.StatisticsChannels
+		}
+	}
+	return nil
+}
+
+// Returns the options statement or nil if it is not found.
 func (c *Config) GetOptions() *Options {
 	for _, statement := range c.Statements {
 		if statement.Options != nil {
@@ -40,6 +60,7 @@ func (c *Config) GetView(viewName string) *View {
 	return nil
 }
 
+// Returns the zone with the given name or nil if the zone is not found.
 func (c *Config) GetZone(zoneName string) *Zone {
 	for _, statement := range c.Statements {
 		if statement.Zone != nil && statement.Zone.Name == zoneName {
@@ -348,6 +369,25 @@ func (c *Config) IsRPZ(viewName string, zoneName string) bool {
 		responsePolicy = view.GetResponsePolicy()
 	}
 	return responsePolicy != nil && responsePolicy.IsRPZ(zoneName)
+}
+
+// Returns the RNDC credentials.
+func (c *Config) GetRNDCCredentials() (address *string, port *int64, keyName *string, algorithm *string, secret *string, err error) {
+	if controls := c.GetControls(); controls != nil {
+		if inetClause := controls.GetInetClause(); inetClause != nil {
+			address, port := inetClause.GetAddressAndPort(defaultControlsPort)
+			keys := inetClause.Keys.KeyNames
+			for _, keyName := range keys {
+				if key := c.GetKey(keyName); key != nil {
+					if algorithm, secret, err = key.GetAlgorithmSecret(); err == nil {
+						return &address, &port, &keyName, algorithm, secret, nil
+					}
+				}
+			}
+			return &address, &port, nil, nil, nil, nil
+		}
+	}
+	return nil, nil, nil, nil, nil, errors.New("no RNDC credentials found")
 }
 
 // Returns the key associated with the given view or nil if the view is not found.

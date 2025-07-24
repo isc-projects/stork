@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Test successfully parsing the named configuration file.
@@ -53,12 +54,36 @@ func TestParseFile(t *testing.T) {
 	require.Len(t, statement.ACL.AddressMatchList.Elements, 6)
 
 	statement, _ = next()
-	require.NotNil(t, statement.Option)
-	require.Equal(t, "controls", statement.Option.Identifier)
+	require.NotNil(t, statement.Controls)
+	require.Len(t, statement.Controls.Clauses, 2)
+	// Inet clause.
+	require.NotNil(t, statement.Controls.Clauses[0].InetClause)
+	require.Equal(t, "*", statement.Controls.Clauses[0].InetClause.Address)
+	require.Empty(t, statement.Controls.Clauses[0].InetClause.Port)
+	require.NotNil(t, statement.Controls.Clauses[0].InetClause.Allow)
+	require.Len(t, statement.Controls.Clauses[0].InetClause.Allow.Elements, 1)
+	require.NotNil(t, statement.Controls.Clauses[0].InetClause.Keys)
+	require.Len(t, statement.Controls.Clauses[0].InetClause.Keys.KeyNames, 1)
+	require.Nil(t, statement.Controls.Clauses[0].InetClause.ReadOnly)
+	// Unix clause.
+	require.NotNil(t, statement.Controls.Clauses[1].UnixClause)
+	require.Equal(t, "/run/named/rndc.sock", statement.Controls.Clauses[1].UnixClause.Path)
+	require.EqualValues(t, 0o600, statement.Controls.Clauses[1].UnixClause.Perm)
+	require.EqualValues(t, 25, statement.Controls.Clauses[1].UnixClause.Owner)
+	require.EqualValues(t, 26, statement.Controls.Clauses[1].UnixClause.Group)
+	require.NotNil(t, statement.Controls.Clauses[1].UnixClause.Keys)
+	require.Len(t, statement.Controls.Clauses[1].UnixClause.Keys.KeyNames, 1)
 
 	statement, _ = next()
-	require.NotNil(t, statement.Option)
-	require.Equal(t, "statistics-channels", statement.Option.Identifier)
+	require.NotNil(t, statement.StatisticsChannels)
+	require.Len(t, statement.StatisticsChannels.Clauses, 1)
+	require.NotNil(t, statement.StatisticsChannels.Clauses[0])
+	require.Equal(t, "127.0.0.1", statement.StatisticsChannels.Clauses[0].Address)
+	require.NotNil(t, statement.StatisticsChannels.Clauses[0].Port)
+	require.Equal(t, "8053", *statement.StatisticsChannels.Clauses[0].Port)
+	require.NotNil(t, statement.StatisticsChannels.Clauses[0].Allow)
+	require.Len(t, statement.StatisticsChannels.Clauses[0].Allow.Elements, 1)
+	require.Equal(t, "127.0.0.1", statement.StatisticsChannels.Clauses[0].Allow.Elements[0].IPAddressOrACLName)
 
 	statement, _ = next()
 	require.NotNil(t, statement.Option)
@@ -917,4 +942,188 @@ func BenchmarkNoParseZones(b *testing.B) {
 			require.NoError(b, err)
 		}
 	})
+}
+
+// Test parsing the inet clause of the controls statement.
+func TestParseControlsInet(t *testing.T) {
+	tests := []struct {
+		name             string
+		source           string
+		expectedAddress  string
+		expectedPort     *string
+		expectedAllow    []string
+		expectedKeys     []string
+		expectedReadOnly *bool
+	}{
+		{
+			name:            "address only",
+			source:          "inet 127.0.0.1;",
+			expectedAddress: "127.0.0.1",
+		},
+		{
+			name:            "address and port",
+			source:          "inet 127.0.0.1 port 53;",
+			expectedAddress: "127.0.0.1",
+			expectedPort:    storkutil.Ptr("53"),
+		},
+		{
+			name:            "address and port and allow",
+			source:          "inet 127.0.0.1 port 53 allow { 1.2.3.4; };",
+			expectedAddress: "127.0.0.1",
+			expectedPort:    storkutil.Ptr("53"),
+			expectedAllow:   []string{"1.2.3.4"},
+		},
+		{
+			name:            "address and port and allow and keys",
+			source:          "inet 127.0.0.1 port 53 allow { 1.2.3.4; } keys { rndc-key; };",
+			expectedAddress: "127.0.0.1",
+			expectedPort:    storkutil.Ptr("53"),
+			expectedAllow:   []string{"1.2.3.4"},
+			expectedKeys:    []string{"rndc-key"},
+		},
+		{
+			name:             "address and port and allow and keys and read-only",
+			source:           "inet 127.0.0.1 port 53 allow { 1.2.3.4; } keys { rndc-key; } read-only true;",
+			expectedAddress:  "127.0.0.1",
+			expectedPort:     storkutil.Ptr("53"),
+			expectedAllow:    []string{"1.2.3.4"},
+			expectedKeys:     []string{"rndc-key"},
+			expectedReadOnly: storkutil.Ptr(true),
+		},
+		{
+			name:             "address and read-only false",
+			source:           "inet 127.0.0.1 read-only false;",
+			expectedAddress:  "127.0.0.1",
+			expectedReadOnly: storkutil.Ptr(false),
+		},
+		{
+			name:             "address and read-only yes",
+			source:           "inet 127.0.0.1 read-only yes;",
+			expectedAddress:  "127.0.0.1",
+			expectedReadOnly: storkutil.Ptr(true),
+		},
+		{
+			name:             "address and read-only no",
+			source:           "inet 127.0.0.1 read-only no;",
+			expectedAddress:  "127.0.0.1",
+			expectedReadOnly: storkutil.Ptr(false),
+		},
+		{
+			name:             "address and read-only 1",
+			source:           "inet 127.0.0.1 read-only 1;",
+			expectedAddress:  "127.0.0.1",
+			expectedReadOnly: storkutil.Ptr(true),
+		},
+		{
+			name:             "address and read-only 0",
+			source:           "inet 127.0.0.1 read-only 0;",
+			expectedAddress:  "127.0.0.1",
+			expectedReadOnly: storkutil.Ptr(false),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			controlsSource := fmt.Sprintf("controls { %s };", test.source)
+			parser := NewParser()
+			cfg, err := parser.Parse("", strings.NewReader(controlsSource))
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+			require.Len(t, cfg.Statements, 1)
+			require.NotNil(t, cfg.Statements[0].Controls)
+			require.Len(t, cfg.Statements[0].Controls.Clauses, 1)
+			require.NotNil(t, cfg.Statements[0].Controls.Clauses[0].InetClause)
+			require.Equal(t, test.expectedAddress, cfg.Statements[0].Controls.Clauses[0].InetClause.Address)
+			if test.expectedPort != nil {
+				require.NotNil(t, cfg.Statements[0].Controls.Clauses[0].InetClause.Port)
+				require.Equal(t, *test.expectedPort, *cfg.Statements[0].Controls.Clauses[0].InetClause.Port)
+			}
+			if test.expectedAllow != nil {
+				for _, element := range cfg.Statements[0].Controls.Clauses[0].InetClause.Allow.Elements {
+					require.Contains(t, test.expectedAllow, element.IPAddressOrACLName)
+				}
+			}
+			if test.expectedKeys != nil {
+				require.ElementsMatch(t, test.expectedKeys, cfg.Statements[0].Controls.Clauses[0].InetClause.Keys.KeyNames)
+			}
+			if test.expectedReadOnly != nil {
+				require.NotNil(t, cfg.Statements[0].Controls.Clauses[0].InetClause.ReadOnly)
+				require.EqualValues(t, *test.expectedReadOnly, *cfg.Statements[0].Controls.Clauses[0].InetClause.ReadOnly)
+			}
+		})
+	}
+}
+
+// Test parsing the unix clause of the controls statement.
+func TestParseControlsUnix(t *testing.T) {
+	tests := []struct {
+		name             string
+		source           string
+		expectedPath     string
+		expectedPerm     int64
+		expectedOwner    int64
+		expectedGroup    int64
+		expectedKeys     []string
+		expectedReadOnly *bool
+	}{
+		{
+			name:          "path and perm and owner and group",
+			source:        `unix "/var/run/rndc.sock" perm 0600 owner 25 group 26;`,
+			expectedPath:  "/var/run/rndc.sock",
+			expectedPerm:  0o600,
+			expectedOwner: 25,
+			expectedGroup: 26,
+		},
+		{
+			name:          "path and perm and owner and group and keys",
+			source:        `unix "/var/run/rndc.sock" perm 0600 owner 25 group 26 keys { rndc-key; };`,
+			expectedPath:  "/var/run/rndc.sock",
+			expectedPerm:  0o600,
+			expectedOwner: 25,
+			expectedGroup: 26,
+			expectedKeys:  []string{"rndc-key"},
+		},
+		{
+			name:             "path and perm and owner and group and keys and read-only",
+			source:           `unix "/var/run/rndc.sock" perm 0600 owner 25 group 26 keys { rndc-key; } read-only true;`,
+			expectedPath:     "/var/run/rndc.sock",
+			expectedPerm:     0o600,
+			expectedOwner:    25,
+			expectedGroup:    26,
+			expectedKeys:     []string{"rndc-key"},
+			expectedReadOnly: storkutil.Ptr(true),
+		},
+		{
+			name:             "path and perm and owner and group and read-only false",
+			source:           `unix "/var/run/rndc.sock" perm 0600 owner 25 group 26 read-only false;`,
+			expectedPath:     "/var/run/rndc.sock",
+			expectedPerm:     0o600,
+			expectedOwner:    25,
+			expectedGroup:    26,
+			expectedReadOnly: storkutil.Ptr(false),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			controlsSource := fmt.Sprintf("controls { %s };", test.source)
+			parser := NewParser()
+			cfg, err := parser.Parse("", strings.NewReader(controlsSource))
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+			require.Len(t, cfg.Statements, 1)
+			require.NotNil(t, cfg.Statements[0].Controls)
+			require.Len(t, cfg.Statements[0].Controls.Clauses, 1)
+			require.NotNil(t, cfg.Statements[0].Controls.Clauses[0].UnixClause)
+			require.Equal(t, test.expectedPath, cfg.Statements[0].Controls.Clauses[0].UnixClause.Path)
+			require.EqualValues(t, test.expectedPerm, cfg.Statements[0].Controls.Clauses[0].UnixClause.Perm)
+			require.EqualValues(t, test.expectedOwner, cfg.Statements[0].Controls.Clauses[0].UnixClause.Owner)
+			require.EqualValues(t, test.expectedGroup, cfg.Statements[0].Controls.Clauses[0].UnixClause.Group)
+			if test.expectedKeys != nil {
+				require.ElementsMatch(t, test.expectedKeys, cfg.Statements[0].Controls.Clauses[0].UnixClause.Keys.KeyNames)
+			}
+			if test.expectedReadOnly != nil {
+				require.NotNil(t, cfg.Statements[0].Controls.Clauses[0].UnixClause.ReadOnly)
+				require.EqualValues(t, *test.expectedReadOnly, *cfg.Statements[0].Controls.Clauses[0].UnixClause.ReadOnly)
+			}
+		})
+	}
 }

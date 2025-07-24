@@ -26,6 +26,48 @@ func TestConfigHasNoParseNone(t *testing.T) {
 	require.False(t, cfg.HasNoParse())
 }
 
+// Test getting the first controls statement.
+func TestGetControls(t *testing.T) {
+	cfg := &Config{
+		Statements: []*Statement{
+			{StatisticsChannels: &StatisticsChannels{}},
+			{Controls: &Controls{}},
+			{Controls: &Controls{}},
+		},
+	}
+	controls := cfg.GetControls()
+	require.NotNil(t, controls)
+	require.Equal(t, cfg.Statements[1].Controls, controls)
+}
+
+// Test that nil is returned when getting the controls statement
+// when it does not exist.
+func TestGetControlsNone(t *testing.T) {
+	cfg := &Config{}
+	require.Nil(t, cfg.GetControls())
+}
+
+// Test getting the first statistics channels statement.
+func TestGetStatisticsChannels(t *testing.T) {
+	cfg := &Config{
+		Statements: []*Statement{
+			{Controls: &Controls{}},
+			{StatisticsChannels: &StatisticsChannels{}},
+			{StatisticsChannels: &StatisticsChannels{}},
+		},
+	}
+	statisticsChannels := cfg.GetStatisticsChannels()
+	require.NotNil(t, statisticsChannels)
+	require.Equal(t, cfg.Statements[1].StatisticsChannels, cfg.GetStatisticsChannels())
+}
+
+// Test that nil is returned when getting the statistics channels statement
+// when it does not exist.
+func TestGetStatisticsChannelsNone(t *testing.T) {
+	cfg := &Config{}
+	require.Nil(t, cfg.GetStatisticsChannels())
+}
+
 // Tests that GetView returns expected view.
 func TestGetView(t *testing.T) {
 	cfg, err := NewParser().ParseFile("testdata/named.conf")
@@ -800,4 +842,76 @@ func TestGetAPIKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Empty(t, cfg.GetAPIKey())
+}
+
+func TestGetRNDCCredentials(t *testing.T) {
+	config := `
+		key "rndc-key" {
+			algorithm hmac-sha256;
+			secret "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=";
+		};
+		controls {
+			inet 192.0.2.1 port 953 allow { 192.0.2.0/24; } keys { "rndc-key"; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, port, keyName, algorithm, secret, err := cfg.GetRNDCCredentials()
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "192.0.2.1", *address)
+	require.NotNil(t, port)
+	require.Equal(t, int64(953), *port)
+	require.NotNil(t, keyName)
+	require.Equal(t, "rndc-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=", *secret)
+}
+
+func TestGetRNDCCredentialsNoKey(t *testing.T) {
+	config := `
+		controls {
+			inet 192.0.2.1 port 953 allow { 192.0.2.0/24; } keys { "rndc-key"; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, port, keyName, algorithm, secret, err := cfg.GetRNDCCredentials()
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1", *address)
+	require.Equal(t, int64(953), *port)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+func TestGetRNDCCredentialsNoInetClause(t *testing.T) {
+	config := `
+		controls {
+			unix "/var/run/rndc.sock" perm 0666 owner 0 group 0 keys { "rndc-key"; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	_, _, _, _, _, err = cfg.GetRNDCCredentials()
+	require.ErrorContains(t, err, "no RNDC credentials found")
+}
+
+func TestGetRNDCCredentialsEmptyControls(t *testing.T) {
+	config := `
+		controls { };
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	_, _, _, _, _, err = cfg.GetRNDCCredentials()
+	require.ErrorContains(t, err, "no RNDC credentials found")
 }
