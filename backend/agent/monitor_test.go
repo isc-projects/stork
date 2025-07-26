@@ -37,6 +37,16 @@ const defaultBind9Config = `
 		inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
 	};`
 
+const bind9ConfigWithoutStatistics = `
+	key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+	};
+	controls {
+		inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
+		inet * port 5454 allow { localhost; 1.2.3.4; };
+	};`
+
 const defaultPDNSConfig = `
 	api
 	webserver
@@ -266,11 +276,11 @@ func TestDetectApps(t *testing.T) {
 	httpConfig := HTTPClientConfig{}
 	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
 
-	// Create fake app to test that the monitor awaits background tasks
+	// Create fake app for which the zone inventory should be stopped
 	// when new apps are detected.
 	fakeApp := NewMockApp(ctrl)
 	fakeApp.EXPECT().GetBaseApp().AnyTimes().Return(&BaseApp{})
-	fakeApp.EXPECT().AwaitBackgroundTasks().Times(1)
+	fakeApp.EXPECT().StopZoneInventory().Times(1)
 
 	am.apps = append(am.apps, fakeApp)
 
@@ -292,7 +302,11 @@ func TestDetectApps(t *testing.T) {
 	apps2 := am.apps
 	require.Len(t, apps2, 3)
 	require.Equal(t, apps[1].(*Bind9App).zoneInventory, apps2[1].(*Bind9App).zoneInventory)
+	require.True(t, apps[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
+	require.True(t, apps2[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
 	require.Equal(t, apps[2].(*PDNSApp).zoneInventory, apps2[2].(*PDNSApp).zoneInventory)
+	require.True(t, apps[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
+	require.True(t, apps2[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
 
 	// If the app access point changes, the inventory should be recreated.
 	for index, accessPoint := range am.apps[1].(*Bind9App).AccessPoints {
@@ -313,7 +327,75 @@ func TestDetectApps(t *testing.T) {
 	apps3 := am.apps
 	require.Len(t, apps3, 3)
 	require.NotEqual(t, apps[1].(*Bind9App).zoneInventory, apps3[1].(*Bind9App).zoneInventory)
+	require.False(t, apps[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
+	require.True(t, apps3[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
 	require.NotEqual(t, apps[2].(*PDNSApp).zoneInventory, apps3[2].(*PDNSApp).zoneInventory)
+	require.False(t, apps[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
+	require.True(t, apps3[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
+}
+
+// Test that verifies that when the zone inventory is not initialized
+// re-detecting the app does not cause an error.
+func TestDetectAppsConfigNoStatistics(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Prepare the command executor.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput("/etc/named.conf", bind9ConfigWithoutStatistics).
+		setConfigPathInNamedOutput("/etc/named.conf")
+
+	// Prepare process mocks.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	bind9Process := NewMockSupportedProcess(ctrl)
+	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
+	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
+
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().AnyTimes().Return([]supportedProcess{
+		bind9Process,
+	}, nil)
+	processManager.lister = lister
+
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, strings.NewReader(bind9ConfigWithoutStatistics))
+	})
+	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
+	hm := NewHookManager()
+	bind9StatsClient := NewBind9StatsClient()
+	httpConfig := HTTPClientConfig{}
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+
+	// Create fake app to test that the monitor stops zone inventory
+	// when new apps are detected.
+	fakeApp := NewMockApp(ctrl)
+	fakeApp.EXPECT().GetBaseApp().AnyTimes().Return(&BaseApp{})
+	fakeApp.EXPECT().StopZoneInventory().Times(1)
+
+	am.apps = append(am.apps, fakeApp)
+
+	// Detect apps for the first time.
+	am.detectApps(sa)
+	apps := am.apps
+
+	// Zone inventory should not be initialized.
+	require.Len(t, apps, 1)
+	require.Nil(t, apps[0].(*Bind9App).zoneInventory)
+
+	// Detect apps again. It should not panic even though the zone
+	// inventory is not initialized.
+	am.detectApps(sa)
+	apps2 := am.apps
+	require.Len(t, apps2, 1)
+	require.Nil(t, apps2[0].(*Bind9App).zoneInventory)
 }
 
 // Test that the processes for which the command line cannot be read are

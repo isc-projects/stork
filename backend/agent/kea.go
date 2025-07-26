@@ -212,8 +212,8 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	return paths, nil
 }
 
-// Currently it does nothing.
-func (ka *KeaApp) AwaitBackgroundTasks() {}
+// It does nothing as it applies to DNS servers only.
+func (ka *KeaApp) StopZoneInventory() {}
 
 // Always returns nil. It is implemented to satisfy the App interface.
 func (ka *KeaApp) GetZoneInventory() *zoneInventory {

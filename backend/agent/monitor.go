@@ -95,7 +95,7 @@ type App interface {
 	GetBaseApp() *BaseApp
 	DetectAllowedLogs() ([]string, error)
 	GetZoneInventory() *zoneInventory
-	AwaitBackgroundTasks()
+	StopZoneInventory()
 }
 
 // Supported app types: "kea", "bind9" and "pdns".
@@ -290,29 +290,43 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 				log.WithError(err).Warnf("Failed to detect BIND 9 DNS server app")
 				continue
 			}
+			for _, app := range sm.apps {
+				if app.GetBaseApp().IsEqual(detectedApp.GetBaseApp()) {
+					existingApp := app.(*Bind9App)
+					if existingApp.zoneInventory != nil {
+						// Stop the zone inventory of the detected app because we're going
+						// inherit the zone inventory from the existing app. This is a
+						// temporary solution to be removed with:
+						// https://gitlab.isc.org/isc-projects/stork/-/issues/1934
+						detectedApp.StopZoneInventory()
+						detectedApp = existingApp
+					}
+					break
+				}
+			}
 		case pdnsProcName:
 			// PowerDNS server.
 			if detectedApp, err = detectPowerDNSApp(p, sm.pdnsConfigParser); err != nil {
 				log.WithError(err).Warn("Failed to detect PowerDNS server app")
 				continue
 			}
+			for _, app := range sm.apps {
+				if app.GetBaseApp().IsEqual(detectedApp.GetBaseApp()) {
+					existingApp := app.(*PDNSApp)
+					if existingApp.zoneInventory != nil {
+						// Stop the zone inventory of the detected app because we're going
+						// inherit the zone inventory from the existing app. This is a
+						// temporary solution to be removed with:
+						// https://gitlab.isc.org/isc-projects/stork/-/issues/1934
+						detectedApp.StopZoneInventory()
+						detectedApp = existingApp
+					}
+					break
+				}
+			}
 		default:
 			// This should never be the case given that we list only supported processes.
 			continue
-		}
-		// All DNS servers should have zone inventory attached.
-		zoneInventory := detectedApp.GetZoneInventory()
-		if zoneInventory != nil {
-			// Check if this DNS app already exists. If it does we want to use
-			// an existing app to preserve its state.
-			if i := slices.IndexFunc(sm.apps, func(app App) bool {
-				return app.GetBaseApp().IsEqual(detectedApp.GetBaseApp())
-			}); i >= 0 {
-				if zoneInventory != nil {
-					zoneInventory.stop()
-				}
-				detectedApp = sm.apps[i]
-			}
 		}
 		detectedApp.GetBaseApp().Pid = p.getPid()
 		apps = append(apps, detectedApp)
@@ -332,9 +346,13 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 		printNewOrUpdatedApps(apps, sm.apps)
 		sm.isNoAppsReported = false
 	}
-	// Wait for the zone inventories to complete pending operations.
+
+	// Stop no longer used zone inventories and wait for the completion of
+	// the pending operations.
 	for _, app := range sm.apps {
-		app.AwaitBackgroundTasks()
+		if !slices.Contains(apps, app) {
+			app.StopZoneInventory()
+		}
 	}
 	// Remember detected apps.
 	sm.apps = apps
@@ -411,7 +429,7 @@ func (sm *appMonitor) GetApp(apType, address string, port int64) App {
 // Shut down monitor. Stop background goroutines.
 func (sm *appMonitor) Shutdown() {
 	for _, app := range sm.GetApps() {
-		app.AwaitBackgroundTasks()
+		app.StopZoneInventory()
 	}
 	sm.quit <- true
 	sm.wg.Wait()

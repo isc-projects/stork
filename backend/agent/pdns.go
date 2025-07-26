@@ -53,6 +53,13 @@ func (pa *PDNSApp) GetZoneInventory() *zoneInventory {
 	return pa.zoneInventory
 }
 
+// Stops the zone inventory.
+func (pa *PDNSApp) StopZoneInventory() {
+	if pa.zoneInventory != nil {
+		pa.zoneInventory.stop()
+	}
+}
+
 // Detect the PowerDNS application by parsing the named process command line.
 // If the path to the configuration file is relative and chroot directory is
 // not specified, the path is resolved against the current working directory of

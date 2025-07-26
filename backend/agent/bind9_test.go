@@ -1049,5 +1049,5 @@ func TestDetermineDetailsCustomKeyMissingConfigMissingKey(t *testing.T) {
 // Test that awaiting background tasks doesn't panic when zone inventory is nil.
 func TestBind9AppAwaitBackgroundTasksNilZoneInventory(t *testing.T) {
 	app := &Bind9App{}
-	require.NotPanics(t, app.AwaitBackgroundTasks)
+	require.NotPanics(t, app.StopZoneInventory)
 }

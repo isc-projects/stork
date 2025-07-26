@@ -368,10 +368,10 @@ func TestKeaAllowedLogsFewerResponses(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that awaiting background tasks doesn't panic.
-func TestKeaAppAwaitBackgroundTasks(t *testing.T) {
+// Test that stopping zone inventory doesn't panic.
+func TestKeaAppStopZoneInventory(t *testing.T) {
 	app := &KeaApp{}
-	require.NotPanics(t, app.AwaitBackgroundTasks)
+	require.NotPanics(t, app.StopZoneInventory)
 }
 
 // Test that the client credentials are retrieved properly.
