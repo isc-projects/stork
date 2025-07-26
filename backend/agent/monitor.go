@@ -94,7 +94,7 @@ func (ba *BaseApp) IsEqual(other *BaseApp) bool {
 type App interface {
 	GetBaseApp() *BaseApp
 	DetectAllowedLogs() ([]string, error)
-	AwaitBackgroundTasks()
+	StopZoneInventory()
 }
 
 // Currently supported types are: "kea" and "bind9".
@@ -317,11 +317,15 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 				if bind9App != nil {
 					// Check if this app already exists. If it does we want to use
 					// an existing app to preserve its state.
-					if i := slices.IndexFunc(sm.apps, func(app App) bool {
-						return app.GetBaseApp().IsEqual(bind9App.GetBaseApp())
-					}); i >= 0 {
-						bind9App.zoneInventory.stop()
-						bind9App = sm.apps[i].(*Bind9App)
+					for _, app := range sm.apps {
+						if app.GetBaseApp().IsEqual(bind9App.GetBaseApp()) {
+							existingApp := app.(*Bind9App)
+							if existingApp.zoneInventory != nil {
+								bind9App.StopZoneInventory()
+								bind9App = existingApp
+							}
+							break
+						}
 					}
 					bind9App.GetBaseApp().Pid = p.GetPid()
 					apps = append(apps, bind9App)
@@ -347,9 +351,12 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 		sm.isNoAppsReported = false
 	}
 
-	// Wait for the zone inventories to complete pending operations.
+	// Stop no longer used zone inventories and wait for the completion of
+	// the pending operations.
 	for _, app := range sm.apps {
-		app.AwaitBackgroundTasks()
+		if !slices.Contains(apps, app) {
+			app.StopZoneInventory()
+		}
 	}
 
 	// Remember detected apps.
@@ -431,7 +438,7 @@ func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
 // Shut down monitor. Stop background goroutines.
 func (sm *appMonitor) Shutdown() {
 	for _, app := range sm.GetApps() {
-		app.AwaitBackgroundTasks()
+		app.StopZoneInventory()
 	}
 	sm.quit <- true
 	sm.wg.Wait()

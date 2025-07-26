@@ -206,8 +206,8 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	return paths, nil
 }
 
-// Currently it does nothing.
-func (ka *KeaApp) AwaitBackgroundTasks() {}
+// It does nothing as it applies to DNS servers only.
+func (ka *KeaApp) StopZoneInventory() {}
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
 func readKeaConfig(path string) (*keaconfig.Config, error) {

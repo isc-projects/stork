@@ -73,10 +73,10 @@ func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
 }
 
-// Waits for the zone inventory to complete background tasks.
-func (ba *Bind9App) AwaitBackgroundTasks() {
+// Stops the zone inventory.
+func (ba *Bind9App) StopZoneInventory() {
 	if ba.zoneInventory != nil {
-		ba.zoneInventory.awaitBackgroundTasks()
+		ba.zoneInventory.stop()
 	}
 }
 
@@ -672,6 +672,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	} else {
 		log.Warn("BIND 9 `statistics-channels` clause unparsable or not found. Neither statistics export nor zone viewer will work.")
 		log.Warn("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")
+		log.Warn("The `statistics-channels` clause must contain explicit `allow` statement.")
 	}
 
 	// determine rndc details

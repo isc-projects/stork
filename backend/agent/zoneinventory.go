@@ -697,6 +697,8 @@ type zoneInventory struct {
 	// the zone transfer. By default, it uses the dns library but can be
 	// replaced with a custom implementation for mocking purposes.
 	axfrExecutor zoneInventoryAXFRExecutor
+	// A flag indicating if the AXFR workers are active.
+	axfrWorkersActive bool
 }
 
 // A message sent over the channels to notify that the long lasting
@@ -730,12 +732,13 @@ func newZoneInventory(storage zoneInventoryStorage, config dnsConfigAccessor, cl
 		visitedStates: map[zoneInventoryStateName]*zoneInventoryState{
 			zoneInventoryStateInitial: state,
 		},
-		mutex:         sync.RWMutex{},
-		wg:            sync.WaitGroup{},
-		axfrReqChan:   make(chan *zoneInventoryAXFRRequest),
-		axfrReqCancel: cancel,
-		axfrExecutor:  &zoneInventoryAXFRExecutorImpl{},
-		axfrPool:      storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2),
+		mutex:             sync.RWMutex{},
+		wg:                sync.WaitGroup{},
+		axfrReqChan:       make(chan *zoneInventoryAXFRRequest),
+		axfrReqCancel:     cancel,
+		axfrExecutor:      &zoneInventoryAXFRExecutorImpl{},
+		axfrPool:          storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2),
+		axfrWorkersActive: false,
 	}
 	// Start the workers performing AXFR requests.
 	inventory.startAXFRWorkers(ctx)
@@ -1056,6 +1059,7 @@ func (inventory *zoneInventory) runAXFR(request *zoneInventoryAXFRRequest) {
 // called only once. It is called internally during the zone inventory
 // initialization.
 func (inventory *zoneInventory) startAXFRWorkers(ctx context.Context) {
+	inventory.axfrWorkersActive = true
 	go func() {
 		defer func() {
 			// Ensure that the channel is closed.
@@ -1106,6 +1110,13 @@ func (inventory *zoneInventory) stopAXFRWorkers() {
 	inventory.axfrPool.Stop()
 	// Cancel the context to unblock the pending tasks.
 	inventory.axfrReqCancel()
+	// Set the flag to false to indicate that the workers are not active anymore.
+	inventory.axfrWorkersActive = false
+}
+
+// Returns a flag indicating if the AXFR workers are active.
+func (inventory *zoneInventory) isAXFRWorkersActive() bool {
+	return inventory.axfrWorkersActive
 }
 
 // This function waits for the asynchronous operations to complete.
