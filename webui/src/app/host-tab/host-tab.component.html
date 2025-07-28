@@ -313,7 +313,7 @@
 
             <!-- DHCP options -->
             <div class="mb-4" *ngFor="let localHosts of localHostsGroups.dhcpOptions">
-                <p-fieldset>
+                <p-fieldset [toggleable]="true" collapsed="true">
                     <ng-template pTemplate="header">
                         <ng-container
                             [ngTemplateOutlet]="sectionHeaderContent"

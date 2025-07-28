@@ -130,7 +130,7 @@
     </div>
     <ng-container *ngIf="sharedNetwork.localSharedNetworks?.length > 0">
         <div class="mb-4">
-            <p-fieldset legend="DHCP Parameters">
+            <p-fieldset legend="DHCP Parameters" [toggleable]="true" collapsed="true">
                 <app-cascaded-parameters-board
                     [levels]="['Shared Network', 'Global']"
                     [data]="dhcpParameters"
@@ -140,7 +140,7 @@
             </p-fieldset>
         </div>
         <div *ngFor="let localSharedNetwork of sharedNetwork.localSharedNetworks; let i = index" class="mb-4">
-            <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()">
+            <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()" [toggleable]="true" collapsed="true">
                 <ng-template pTemplate="header">
                     <span class="stork-fieldset-legend-text"
                         >DHCP Options&nbsp;/&nbsp;
