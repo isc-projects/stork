@@ -16,7 +16,7 @@ Stork services. It contains:
 - Stork Agent with Kea HA-1 (High Availability Server 1)
 - Stork Agent with Kea HA-2 (High Availability Server 2)
 - Stork Agent with Kea HA-3 (High Availability Server 3)
-- Stork Agent with Kea Using Many Subnets
+- Stork Agent with Kea Large Configuration
 - Stork Agent with BIND 9
 - Stork Agent with BIND 9-2
 - Stork Agent with PowerDNS
@@ -24,14 +24,11 @@ Stork services. It contains:
 - PostgreSQL Database
 - Prometheus & Grafana
 - OpenLDAP server
-- Stork Agent with Former Kea Premium Features-1
-- Stork Agent with Former Kea Premium Features-2
 
 .. note::
 
    Kea premium features have been moved to open source in Kea 2.7.7 release.
-   Running the demo with these features no longer requires specifying the
-   Cloudsmith access token.
+   They are configured and active in the other Kea containers.
 
 The demo launch instructions and its features are also described on the
 `ISC GitLab Wiki <https://gitlab.isc.org/isc-projects/stork/-/wikis/Demo>`_.
@@ -137,10 +134,6 @@ agent-kea-ha1 and agent-kea-ha2
 agent-kea-large
    This container runs an agent with a Kea DHCPv4 server that has many (nearly
    7000) subnets defined in its configuration.
-agent-kea-premium-one and agent-kea-premium-two
-   These containers run agents with Kea DHCPv4 and DHCPv6 servers connected
-   to a MySQL database containing host reservations. They are only available when
-   additional features have been enabled during the demo build.
 
 These are containers with third-party services that are required by Stork:
 

@@ -952,11 +952,6 @@ The following ``Rake`` tasks start these containers.
    |                                        | ``agent-kea-ha2`` that are configured to work together in     |
    |                                        | High Availability mode, with Stork agents, and Kea DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up:kea_premium``           | Build and run the ``agent-kea-premium-one`` and               |
-   |                                        | ``agent-kea-premium-two`` containers with Stork agents and    |
-   |                                        | Kea DHCPv4 and DHCPv6 servers, with host reservations stored  |
-   |                                        | in a database. It requires **premium** features.              |
-   +----------------------------------------+---------------------------------------------------------------+
    | ``rake demo:up:bind9``                 | Build and run an ``agent-bind9`` container with a Stork agent |
    |                                        | and BIND 9. Published port is 9999.                           |
    +----------------------------------------+---------------------------------------------------------------+

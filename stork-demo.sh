@@ -59,7 +59,6 @@ then
     $DOCKER_COMPOSE \
         --project-directory "${SCRIPT_DIR}" \
         -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-        -f "${SCRIPT_DIR}/docker/docker-compose-premium.yaml" \
         down --volumes
 
     if [ ${NO_PROMPT} -eq 0 ]
@@ -77,13 +76,11 @@ COMPOSE_DOCKER_CLI_BUILD=1 \
 $DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-    -f "${SCRIPT_DIR}/docker/docker-compose-premium.yaml" \
     build
 # Start Docker containers
 $DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-    -f "${SCRIPT_DIR}/docker/docker-compose-premium.yaml" \
     up -d
 
 if [ ${NO_PROMPT} -eq 0 ]

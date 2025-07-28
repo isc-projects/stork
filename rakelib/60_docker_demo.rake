@@ -16,7 +16,6 @@ namespace :demo do
     # Services - list of service names; if empty then all services are used
     # Detach - run services in the detached mode
     # Environment variables:
-    # CS_REPO_ACCESS_TOKEN - CloudSmith repo token, required for premium services
     def get_docker_opts(server_mode, cache, detach, services)
         opts = [
             "--project-directory", ".",
@@ -196,7 +195,6 @@ namespace :demo do
 
     desc 'Down all containers and remove all volumes'
     task :down => [DOCKER_COMPOSE] do
-        ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         sh *DOCKER_COMPOSE, *opts, "down",
             "--volumes",
@@ -212,7 +210,6 @@ namespace :demo do
     desc 'Print logs of a given service
         SERVICE - service name - optional'
     task :logs => [DOCKER_COMPOSE] do
-        ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         services = []
         if !ENV["SERVICE"].nil?
@@ -225,7 +222,6 @@ namespace :demo do
         SERVICE - service name - required
         SERVICE_USER - user to login - optional, default: root'
     task :shell => [DOCKER_COMPOSE] do
-        ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         exec_opts = []
         if !ENV["SERVICE_USER"].nil?
@@ -235,7 +231,6 @@ namespace :demo do
     end
 
     desc "Build the demo containers
-        CS_REPO_ACCESS_TOKEN - CloudSmith token - optional
         SERVICE - service name - optional
         CACHE - doesn't rebuild the containers if present - default: true"
     task :build => [DOCKER_COMPOSE] do
