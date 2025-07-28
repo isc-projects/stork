@@ -1,5 +1,5 @@
 [ui] william
 
-    When viewing a subnet, the DHCP Subnet Options boxes can now be
-    expanded and collapsed.
+    When viewing a subnet, shared network, or host reservation, the DHCP
+    Options and DHCP Parameters boxes can now be expanded and collapsed.
     (Gitlab #1550)

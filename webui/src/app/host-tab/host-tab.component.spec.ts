@@ -1027,7 +1027,7 @@ describe('HostTabComponent', () => {
         expect(fieldsets[11].properties.innerText).toContain('DHCP Options')
 
         for (let i = 2; i < 12; i++) {
-            let link = fieldsets[i].query(By.css('a'))
+            let link = fieldsets[i].query(By.css('a:not([aria-expanded])'))
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
                 expect(link.properties.innerText).toContain('frog')
