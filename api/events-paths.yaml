@@ -48,7 +48,7 @@
         - Events
       responses:
         204:
-          description: No events (because deleting all of them was successful).
+          description: Events successfully deleted.
         default:
           description: generic error response
           schema:

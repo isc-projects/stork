@@ -84,7 +84,7 @@ func (r *RestAPI) DeleteEvents(ctx context.Context, params events.DeleteEventsPa
 		return rsp
 	}
 	if !user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
-		msg := "User is forbidden to clear the log"
+		msg := "User is forbidden to clear the event log"
 		rsp := events.NewDeleteEventsDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
 		})
