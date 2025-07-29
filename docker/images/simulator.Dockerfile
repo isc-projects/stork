@@ -1,11 +1,13 @@
 # The main purpose of this container is to run Stork Environment Simulator.
 ARG KEA_REPO=public/isc/kea-dev
 ARG KEA_VERSION=2.7.8-isc20250429105336
+ARG FLAMETHROWER_COMMIT=0ee1fba170d7673e32dc0226d08732fd08acc7ac
 
 FROM debian:12.1-slim AS base
 
 # Stage to compile Flamethrower.
 FROM debian:12.1-slim AS flamethrower-builder
+ARG FLAMETHROWER_COMMIT
 # Install Flamethrower dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         g++=4:12.* \
@@ -25,13 +27,13 @@ WORKDIR /app
 # Directory for the source files.
 WORKDIR /src
 # Fetch the Flamethrower source code.
-ADD https://github.com/DNS-OARC/flamethrower/archive/refs/heads/master.zip flamethrower.zip
+ADD https://github.com/DNS-OARC/flamethrower/archive/${FLAMETHROWER_COMMIT}.zip flamethrower.zip
 WORKDIR /src/build
 RUN \
     # Extract the archive.
     unzip /src/flamethrower.zip -d /src \
     # Configure the build.
-    && cmake -DDOH_ENABLE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo /src/flamethrower-master \
+    && cmake -DDOH_ENABLE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo /src/flamethrower-${FLAMETHROWER_COMMIT} \
     # Compile the binary.
     && make \
     # Copy the binary to the /app directory.
