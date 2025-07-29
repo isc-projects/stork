@@ -258,13 +258,22 @@ describe('KeaAppTabComponent', () => {
         expect(component.filenameFromFile(file)).toBe('/tmp/kea-leases4.csv')
 
         file = { filetype: 'Lease file' }
-        expect(component.filenameFromFile(file)).toBe('none (lease persistence disabled)')
+        expect(component.filenameFromFile(file)).toBe('none (persistence disabled)')
 
         file = { filename: '', filetype: 'Lease file' }
-        expect(component.filenameFromFile(file)).toBe('none (lease persistence disabled)')
+        expect(component.filenameFromFile(file)).toBe('none (persistence disabled)')
+
+        file = { filetype: 'Lease file', persist: true }
+        expect(component.filenameFromFile(file)).toBe('default (persistence enabled)')
 
         file = { filename: '', filetype: 'Forensic log' }
-        expect(component.filenameFromFile(file)).toBe('none')
+        expect(component.filenameFromFile(file)).toBe('none (persistence disabled)')
+
+        file = { filename: '/tmp/kea-forensic.log', filetype: 'Forensic log' }
+        expect(component.filenameFromFile(file)).toBe('/tmp/kea-forensic.log')
+
+        file = { filetype: 'Forensic log', persist: true }
+        expect(component.filenameFromFile(file)).toBe('default (persistence enabled)')
     })
 
     it('should return database name from type', () => {

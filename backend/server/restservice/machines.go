@@ -1097,13 +1097,20 @@ func getKeaStorages(config keaconfig.DatabaseConfig) ([]*models.File, []*models.
 	}
 	// Forensic logging.
 	if keaDatabases.Forensic != nil {
-		if len(keaDatabases.Forensic.Path) > 0 {
+		// If the type is empty (or missing) or equals to "logfile", the logs
+		// are saved to a file. If it is "syslog", the logs are sent to syslog.
+		// If it is anything else, the logs are saved to a database.
+		// See src/lib/dhcpsrv/legal_log_mgr.cc@LegalLogMgr::parseConfig in Kea
+		// source code for more details.
+		switch keaDatabases.Forensic.Type {
+		case "", "logfile", "syslog":
 			// Not logging to a database.
 			files = append(files, &models.File{
 				Filename: keaDatabases.Forensic.Path,
 				Filetype: "Forensic Logging",
+				Persist:  keaDatabases.Forensic.Type != "syslog",
 			})
-		} else {
+		default:
 			// Logging to a database.
 			mergeKeaDatabase(keaDatabases.Forensic, "Forensic Logging", &foundDatabases)
 		}

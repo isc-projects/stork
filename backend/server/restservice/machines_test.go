@@ -2979,10 +2979,12 @@ func TestGetKeaStorages(t *testing.T) {
 	// Ensure that the lease file is present.
 	require.Equal(t, "/tmp/leases4.csv", files[0].Filename)
 	require.Equal(t, "Lease file", files[0].Filetype)
+	require.True(t, files[0].Persist)
 
 	// Ensure that the forensic logging file is present.
 	require.Equal(t, "/tmp/legal_log.log", files[1].Filename)
 	require.Equal(t, "Forensic Logging", files[1].Filetype)
+	require.True(t, files[1].Persist)
 
 	// Test database configurations.
 	for _, d := range databases {
@@ -2995,6 +2997,44 @@ func TestGetKeaStorages(t *testing.T) {
 			require.Equal(t, "localhost", d.Host)
 		}
 	}
+}
+
+// This test verifies that file backend configurations are parsed correctly
+// from the Kea configuration if they use non-persistent storage.
+func TestGetKeaStoragesNonPersist(t *testing.T) {
+	configString := `{
+        "Dhcp4": {
+            "lease-database": {
+                "type": "memfile",
+                "persist": false
+            },
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_legal_log.so",
+                    "parameters": {
+                         "type": "syslog"
+                    }
+                }
+            ]
+        }
+    }`
+	keaConfig, err := keaconfig.NewConfig(configString)
+	require.NoError(t, err)
+	require.NotNil(t, keaConfig)
+
+	files, databases := getKeaStorages(keaConfig)
+	require.Len(t, files, 2)
+	require.Empty(t, databases)
+
+	// Ensure that the lease file is present.
+	require.Empty(t, files[0].Filename)
+	require.Equal(t, "Lease file", files[0].Filetype)
+	require.False(t, files[0].Persist)
+
+	// Ensure that the forensic logging file is present.
+	require.Empty(t, files[1].Filename)
+	require.Equal(t, "Forensic Logging", files[1].Filetype)
+	require.False(t, files[1].Persist)
 }
 
 // Test that converting app with nil Kea config doesn't cause panic.
