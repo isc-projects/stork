@@ -219,13 +219,20 @@ services:
     ports:
       - "8886:8886" # publish ports for development purposes
     environment:
-      DB_TYPE: none
+      DB_TYPE: mysql
+      DB_HOST: mariadb
+      DB_USER: agent_kea_ha1
+      DB_PASSWORD: agent_kea_ha1
+      DB_ROOT_USER: root
+      DB_ROOT_PASSWORD: root
+      DB_NAME: agent_kea_ha1
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha1
       STORK_AGENT_PORT: "8886"
     volumes:
       - ./docker/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha1/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -250,13 +257,20 @@ services:
     ports:
       - "8885:8885" # publish ports for development purposes
     environment:
-      DB_TYPE: none
+      DB_TYPE: mysql
+      DB_HOST: mariadb
+      DB_USER: agent_kea_ha2
+      DB_PASSWORD: agent_kea_ha2
+      DB_ROOT_USER: root
+      DB_ROOT_PASSWORD: root
+      DB_NAME: agent_kea_ha2
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha2
       STORK_AGENT_PORT: "8885"
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha2/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -282,13 +296,20 @@ services:
     ports:
       - "8890:8890" # publish ports for development purposes
     environment:
-      DB_TYPE: none
+      DB_TYPE: mysql
+      DB_HOST: mariadb
+      DB_USER: agent_kea_ha3
+      DB_PASSWORD: agent_kea_ha3
+      DB_ROOT_USER: root
+      DB_ROOT_PASSWORD: root
+      DB_NAME: agent_kea_ha3
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha3
       STORK_AGENT_PORT: "8890"
     volumes:
       - ./docker/config/agent-kea-ha3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha3/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
