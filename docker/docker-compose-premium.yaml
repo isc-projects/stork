@@ -35,8 +35,8 @@ services:
       STORK_AGENT_PORT: "8881"
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-premium-one/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
-      - ./docker/config/agent-kea-premium-one/kea-dhcp6.conf:/tmp/keacfg/kea-dhcp6.conf
+      - ./docker/config/agent-kea-premium-one/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-premium-one/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/agent-kea-premium-one/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
@@ -46,7 +46,6 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
-      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
     depends_on:
       - mariadb
 
@@ -78,8 +77,8 @@ services:
       STORK_AGENT_PORT: "8889"
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-premium-two/kea-dhcp4.conf:/tmp/keacfg/kea-dhcp4.conf
-      - ./docker/config/agent-kea-premium-two/kea-dhcp6.conf:/tmp/keacfg/kea-dhcp6.conf
+      - ./docker/config/agent-kea-premium-two/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-premium-two/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/agent-kea-premium-two/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
@@ -89,6 +88,5 @@ services:
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
-      - ./docker/tools/configtemplate.py:/usr/lib/configtemplate.py
     depends_on:
       - mariadb
