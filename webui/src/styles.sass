@@ -9,22 +9,20 @@ h3
   border-bottom: 2px solid var(--surface-border)
 
 // Overwrite default browser underlined anchors.
-// Do not style PrimeNG internal anchors for components like:
-// - buttons
-// - tab view navigation
-// - menu navigation
-// - accordion header.
-// Apply the underline only for :hover.
-a:not(.p-button):not(.p-tabview-nav-link):not(.p-menuitem-link):not(.p-accordion-header-link)
-  text-decoration: none
-  color: var(--primary-color)
-
-  &:hover
-    text-decoration: underline
-
-  // Utility class to disable underline on demand
-  &.no-underline:hover
+// Use lower priority CSS layer to not mess with PrimeNG internal anchors style.
+@layer storklow
+  a
     text-decoration: none
+    color: var(--primary-color)
+
+    // Apply the underline only for :hover.
+    &:hover
+      text-decoration: underline
+
+// Utility class to disable underline on demand.
+// This is an extension of existing primeflex class .no-underline
+a.no-underline:hover
+  text-decoration: none
 
 // header should occupy 100% width of parent div so elements inside a header could be right aligned
 p-header
