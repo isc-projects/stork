@@ -318,7 +318,7 @@
                         Download (<a
                             target="_blank"
                             href="https://cloudsmith.io/~isc/repos/kea-{{
-                                v.status === 'Development' ? 'dev' : v.major + '-' + (v.minor ?? '0')
+                                v.status === 'Development' ? 'dev' : v.major + '-' + v.minor
                             }}/packages/"
                             >Packages</a
                         ><a target="_blank" class="ml-2" href="https://downloads.isc.org/isc/kea/{{ v.version }}/"
@@ -351,7 +351,7 @@
                     <td>{{ v.version }}</td>
                     <td>{{ v.status }}<ng-container *ngIf="v.esv">, ESV</ng-container></td>
                     <td>
-                        BIND {{ v.major + '.' + (v.minor ?? '0') }} ARM (<a
+                        BIND {{ v.major + '.' + v.minor }} ARM (<a
                             href="https://bind9.readthedocs.io/en/v{{ v.version }}/"
                             target="_blank"
                             >HTML</a

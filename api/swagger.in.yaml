@@ -102,8 +102,10 @@ definitions:
         type: string
       major:
         type: integer
+        x-omitempty: false
       minor:
         type: integer
+        x-omitempty: false
       range:
         type: string
 
