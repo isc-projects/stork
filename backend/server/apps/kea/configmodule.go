@@ -858,10 +858,13 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 		appCommand.App = lsn.Daemon.App
 		switch sharedNetwork.Family {
 		case 4:
+			// Delete the existing shared network first but keep the subnets.
+			// The subnets will be temporarily promoted to be global subnets.
 			deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionKeep)
 			appCommand.Command = keactrl.NewCommandNetwork4Del(deletedSharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
+			// Re-create the shared network with the updated parameters.
 			sharedNetwork4, err := keaconfig.CreateSharedNetwork4(lsn.DaemonID, lookup, sharedNetwork)
 			if err != nil {
 				return ctx, err
@@ -869,6 +872,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			appCommand.Command = keactrl.NewCommandNetwork4Add(sharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
+			// Move the subnets back to the shared network.
 			for _, subnet := range subnets {
 				for _, ls := range subnet.LocalSubnets {
 					if ls.DaemonID != lsn.DaemonID {
@@ -882,10 +886,13 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 				}
 			}
 		default:
+			// Delete the existing shared network first but keep the subnets.
+			// The subnets will be temporarily promoted to be global subnets.
 			deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionKeep)
 			appCommand.Command = keactrl.NewCommandNetwork6Del(deletedSharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
+			// Re-create the shared network with the updated parameters.
 			sharedNetwork6, err := keaconfig.CreateSharedNetwork6(lsn.DaemonID, lookup, sharedNetwork)
 			if err != nil {
 				return ctx, err
@@ -893,6 +900,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			appCommand.Command = keactrl.NewCommandNetwork6Add(sharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
+			// Move the subnets back to the shared network.
 			for _, subnet := range subnets {
 				for _, ls := range subnet.LocalSubnets {
 					if ls.DaemonID != lsn.DaemonID {
