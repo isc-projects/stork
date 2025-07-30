@@ -387,7 +387,7 @@ def _prepare_kea_wrapper(
     return wrapper
 
 
-def _regenerate_lease_files(config_dirname):
+def _regenerate_lease_files(config_dirname: str):
     """
     Regenerates the Kea lease files with a new expiration time.
     This is used to ensure that the lease files are always up-to-date.
