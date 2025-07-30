@@ -110,6 +110,7 @@ func (n *BigCounter) Subtract(other *BigCounter) *BigCounter {
 	return n
 }
 
+// Adds uint64 number to the internal counting value.
 // It modifies the internal state.
 func (n *BigCounter) AddUint64(val uint64) *BigCounter {
 	if !n.isExtended() && !n.canAddToBase(val) {
