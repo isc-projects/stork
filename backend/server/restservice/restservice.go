@@ -48,6 +48,7 @@ import (
 type RestAPISettings struct {
 	CleanupTimeout time.Duration    `long:"rest-cleanup-timeout" description:"The waiting period before killing idle connections" default:"10s" env:"STORK_REST_CLEANUP_TIMEOUT"`
 	MaxHeaderSize  flagext.ByteSize `long:"rest-max-header-size" description:"Controls the maximum number of bytes the server reads when parsing the request header's keys and values, including the request line; it does not limit the size of the request body" default:"1MiB" env:"STORK_REST_MAX_HEADER_SIZE"`
+	MaxBodySize    flagext.ByteSize `long:"rest-max-body-size" description:"Controls the maximum number of bytes the server reads when parsing the request body; it does not limit the size of the request header" default:"10MiB" env:"STORK_REST_MAX_BODY_SIZE"`
 
 	Host         string        `long:"rest-host" description:"The IP to listen on" default:"" env:"STORK_REST_HOST"`
 	Port         int           `long:"rest-port" description:"The port to listen on for connections" default:"8080" env:"STORK_REST_PORT"`
@@ -518,7 +519,7 @@ func (r *RestAPI) Serve() (err error) {
 		httpServer.IdleTimeout = s.CleanupTimeout
 	}
 
-	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, s.BaseURL, r.EventCenter)
+	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, s.BaseURL, r.EventCenter, int64(r.Settings.MaxBodySize))
 
 	if r.TLS {
 		err = prepareTLS(httpServer, s)
