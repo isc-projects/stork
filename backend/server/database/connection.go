@@ -3,11 +3,9 @@ package dbops
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	storkutil "isc.org/stork/util"
@@ -29,51 +27,6 @@ type TxI interface {
 	Rollback() error
 }
 
-// Defines the go-pg hooks to enable the SQL query logging.
-// It implements the "pg.QueryHook" interface.
-type DBLogger struct{}
-
-// The type used to define context keys for database handling.
-type contextKeywordDB string
-
-const suppressQueryLoggingKeyword contextKeywordDB = "suppress-query-logging"
-
-// Hook run before SQL query execution.
-func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
-	if HasSuppressedQueryLogging(c) {
-		return c, nil
-	}
-
-	// When making queries on the system_user table we want to make sure that
-	// we don't expose actual data in the logs, especially password.
-	if model, ok := q.Model.(orm.TableModel); ok {
-		if model != nil {
-			table := model.Table()
-			if table != nil && table.SQLName == "system_user" {
-				// Query on the system_user table. Don't print the actual data.
-				fmt.Println(q.UnformattedQuery())
-				return c, nil
-			}
-		}
-	}
-	query, err := q.FormattedQuery()
-	// FormattedQuery returns a tuple of query and error. The error in most cases is nil, and
-	// we don't want to print it. On the other hand, all logging is printed on stdout. We want
-	// to print here to stderr, so it's possible to redirect just the queries to a file.
-	if err != nil {
-		// Let's print errors as SQL comments. This will allow trying to run the export as a script.
-		fmt.Fprintf(os.Stderr, "%s -- error:%s\n", string(query), err)
-	} else {
-		fmt.Fprintln(os.Stderr, string(query))
-	}
-	return c, nil
-}
-
-// Hook run after SQL query execution.
-func (d DBLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
-	return nil
-}
-
 // Create only new PgDB instance.
 func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 	pgParams, err := settings.convertToPgOptions()
@@ -82,6 +35,7 @@ func NewPgDBConn(settings *DatabaseSettings) (*PgDB, error) {
 	}
 
 	db := pg.Connect(pgParams)
+	db.AddQueryHook(NewDBQuerySizeLimiterDefault())
 	// Add tracing hooks if requested.
 	if settings.TraceSQL != LoggingQueryPresetNone {
 		db.AddQueryHook(DBLogger{})
