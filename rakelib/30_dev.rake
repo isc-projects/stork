@@ -207,8 +207,8 @@ namespace :unittest do
                 ignore_list = [
                     'backend/server/restservice/restservice.go:Serve',
                     'backend/server/server.go:Serve',
-                    'backend/server/database/connection.go:BeforeQuery',
-                    'backend/server/database/connection.go:AfterQuery',
+                    'backend/server/database/hooks.go:BeforeQuery',
+                    'backend/server/database/hooks.go:AfterQuery',
                     'backend/server/restservice/middleware.go:loggingMiddleware',
                     'backend/server/restservice/middleware.go:GlobalMiddleware',
                     'backend/server/restservice/middleware.go:Authorizer',
