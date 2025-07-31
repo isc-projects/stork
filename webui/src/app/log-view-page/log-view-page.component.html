@@ -13,26 +13,8 @@
 </div>
 
 <p-panel styleClass="log-tail-panel" [style]="{ 'margin-top': '10px' }">
-    <p-header>
-        <div class="flex justify-content-between gap-2">
-            <span class="p-panel-title" style="margin-top: 5px; display: inline-block">
-                <ng-container *ngIf="!loaded"> Loading... </ng-container>
-
-                <ng-container *ngIf="loaded">
-                    Log {{ data.logTargetOutput }}
-                    from the
-                    <app-entity-link
-                        id="app-link"
-                        entity="app"
-                        [attrs]="{ id: appId, type: appType, name: appName, version: '' }"
-                    ></app-entity-link>
-                    on the
-                    <app-entity-link
-                        entity="machine"
-                        [attrs]="{ id: data.machine.id, address: data.machine.address }"
-                    ></app-entity-link>
-                </ng-container>
-            </span>
+    <ng-template pTemplate="header">
+        <div class="flex justify-content-between gap-2 w-full align-items-center">
             <span class="flex flex-wrap gap-2">
                 <p-button
                     class="flex-none"
@@ -58,8 +40,26 @@
                     (click)="refreshLog()"
                 ></p-button>
             </span>
+            <span class="font-semibold">
+                <ng-container *ngIf="!loaded"> Loading... </ng-container>
+
+                <ng-container *ngIf="loaded">
+                    Log {{ data.logTargetOutput }}
+                    from the
+                    <app-entity-link
+                        id="app-link"
+                        entity="app"
+                        [attrs]="{ id: appId, type: appType, name: appName, version: '' }"
+                    ></app-entity-link>
+                    on the
+                    <app-entity-link
+                        entity="machine"
+                        [attrs]="{ id: data.machine.id, address: data.machine.address }"
+                    ></app-entity-link>
+                </ng-container>
+            </span>
         </div>
-    </p-header>
+    </ng-template>
     <div *ngIf="loaded && (!contents || contents.length === 0)">(empty)</div>
     <div *ngIf="contents && contents.length > 1">...</div>
     <div *ngFor="let line of contents; let i = index">

@@ -22,9 +22,19 @@
     margin-top: 2px
     border-bottom: 2px solid var(--surface-border)
 
-// header should occupy 100% width of parent div so elements inside a header could be right aligned
-p-header
-  width: 100%
+// storkhigh is higher priority CSS layer.
+// Put here all rules that should overwrite PrimeNG styling.
+@layer storkhigh
+  // When the table header has p-panel inside, do not add extra horizontal padding,
+  // because the panel has it's own padding.
+  .p-datatable .p-datatable-header:has(.p-panel)
+    padding-left: 0
+    padding-right: 0
+
+  // p-panel with .p-panel-icons-hidden class applied has custom toggle show/hide panel button on the left side of the panel,
+  // so hide the default PrimeNG toggle button.
+  .p-panel-icons-hidden .p-panel-icons
+    display: none
 
 .p-fieldset .p-fieldset-legend span
   // Padding (0.5rem 0.75rem) was added in PrimeNG aura theme to all span elements inside of Fieldset legend.

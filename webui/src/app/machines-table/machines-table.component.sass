@@ -1,10 +1,4 @@
 :host ::ng-deep
-  // When the table header has p-panel inside, do not add extra horizontal padding,
-  // because the panel has it's own padding.
-  .p-datatable .p-datatable-header:has(.p-panel)
-    padding-left: 0
-    padding-right: 0
-
   // Set minimum width to 8rem.
   .min-w-8rem
     min-width: 8rem
@@ -18,7 +12,3 @@
   .hiding-column
     @media all and (max-width: 1350px)
       display: none
-
-  // As we have custom toggle show/hide panel button on the left side of the panel, hide the default PrimeNG toggle button.
-  .p-panel-icons-hidden .p-panel-icons
-    display: none

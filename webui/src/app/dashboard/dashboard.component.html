@@ -2,9 +2,9 @@
     <article>
         <div *ngIf="noApps" class="max-w-50rem">
             <p-panel>
-                <p-header>
-                    <span class="p-panel-title text-3xl">Welcome to Stork!</span>
-                </p-header>
+                <ng-template pTemplate="header">
+                    <span class="font-semibold text-3xl">Welcome to Stork!</span>
+                </ng-template>
 
                 <p class="pb-3">
                     Stork is a monitoring solution for <em>ISC Kea DHCP</em> and <em>ISC BIND 9</em>. It also integrates
@@ -52,7 +52,7 @@
                 </ng-template>
                 <ng-template pTemplate="header">
                     <div class="flex align-items-center">
-                        <span class="p-panel-title mr-4 flex-order-0 text-3xl">DHCP Dashboard</span>
+                        <span class="mr-4 text-3xl font-semibold">DHCP Dashboard</span>
                         <p-button
                             id="refresh-dhcp-button"
                             icon="pi pi-refresh"
@@ -396,7 +396,7 @@
                 </ng-template>
                 <ng-template pTemplate="header">
                     <div class="flex align-items-center">
-                        <span class="p-panel-title mr-4 flex-order-0 text-3xl">DNS Dashboard</span>
+                        <span class="mr-4 text-3xl font-semibold">DNS Dashboard</span>
                         <p-button
                             id="refresh-dns-button"
                             icon="pi pi-refresh"
@@ -548,7 +548,7 @@
         <p-panel class="dashboard-events-panel" iconPos="start">
             <ng-template pTemplate="header">
                 <div class="flex align-items-center">
-                    <span class="p-panel-title mr-4 flex-order-0 text-3xl">Events</span>
+                    <span class="mr-4 text-3xl font-semibold">Events</span>
                     <p-button
                         icon="pi pi-refresh"
                         id="refresh-events-button"

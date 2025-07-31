@@ -13,8 +13,8 @@
     </div>
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
-            <p-header>
-                <div class="flex justify-content-between flex-wrap gap-2">
+            <ng-template pTemplate="header">
+                <div class="flex justify-content-between flex-wrap gap-2 w-full">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
                         <p-button
@@ -45,7 +45,7 @@
                         (click)="refreshAppState()"
                     ></button>
                 </div>
-            </p-header>
+            </ng-template>
             <app-app-overview [app]="appTab.app"></app-app-overview>
         </p-panel>
     </div>
