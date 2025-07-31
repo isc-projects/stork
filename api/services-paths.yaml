@@ -215,9 +215,11 @@
             properties:
               serverToken:
                 type: string
+                maxLength: 256
                 description: Server access token.
               agentToken:
                 type: string
+                maxLength: 256
                 description: Agent token.
       responses:
         200:
