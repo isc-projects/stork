@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
 
 Description
 ~~~~~~~~~~~
@@ -123,6 +123,10 @@ variables are listed in square brackets, where applicable):
 ``--rest-max-header-size``
    Specifies the maximum number of bytes the server reads when parsing the request header's keys and
    values, including the request line. It does not limit the size of the request body. The default is 1024 (1MB). ``[$STORK_REST_MAX_HEADER_SIZE]``
+
+``--rest-max-body-size``
+   Specifies the maximum number of bytes the server reads when parsing the request body. It does not
+   limit the size of the request header. The default is 10MB. Set to zero to disable the limit. ``[$STORK_REST_MAX_BODY_SIZE]``
 
 ``--rest-host``
    Specifies the IP address to listen on for connections over the RESTful API. ``[$STORK_REST_HOST]``

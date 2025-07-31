@@ -338,15 +338,69 @@ func trimBaseURLMiddleware(next http.Handler, baseURL string) http.Handler {
 	})
 }
 
+// Middleware that rejects requests whose bodies are too large.
+// Accepts a maximum body size in bytes. The requests with unknown content
+// length are rejected as suspicious. The requests with content length larger
+// than the maximum body size are rejected with HTTP 413 status code.
+// If the maximum body size is less than or equal to zero, the middleware is
+// skipped.
+func bodySizeLimiterMiddleware(next http.Handler, maxBodySize int64) http.Handler {
+	if maxBodySize <= 0 {
+		// No limit, so we can skip the middleware.
+		return next
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Body == nil || r.Body == http.NoBody {
+			// No body.
+			next.ServeHTTP(w, r)
+			return
+		}
+		if r.ContentLength <= 0 {
+			// Unknown body size, reject such requests as suspicious.
+			// I don't know if it is a good idea to reject such requests,
+			// but it doesn't fail in our tests, so we keep it for now.
+			// As an alternative, we could limit the body size to a max
+			// body size.
+			http.Error(w,
+				fmt.Sprintf(
+					"Request content length unknown, rejecting request. "+
+						"Please, set the Content-Length header to a "+
+						"value less than or equal to %d bytes.",
+					maxBodySize,
+				),
+				http.StatusRequestEntityTooLarge,
+			)
+			return
+		}
+		if r.ContentLength > maxBodySize {
+			http.Error(w,
+				fmt.Sprintf(
+					"Request content length too large: %d bytes (max: %d bytes)",
+					r.ContentLength, maxBodySize,
+				),
+				http.StatusRequestEntityTooLarge,
+			)
+			return
+		}
+
+		// Limit the body to its declared size.
+		r.Body = http.MaxBytesReader(w, r.Body, r.ContentLength)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
-func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL string, eventCenter eventcenter.EventCenter) http.Handler {
+func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL string, eventCenter eventcenter.EventCenter, maxBodySize int64) http.Handler {
 	// last handler is executed first for incoming request
 	handler = fileServerMiddleware(handler, staticFilesDir)
 	handler = agentInstallerMiddleware(handler, staticFilesDir)
 	handler = sseMiddleware(handler, eventCenter)
 	handler = metricsMiddleware(handler, r.MetricsCollector)
 	handler = trimBaseURLMiddleware(handler, baseURL)
+	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = loggingMiddleware(handler)
 	return handler
 }

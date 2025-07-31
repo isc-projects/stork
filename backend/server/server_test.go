@@ -32,7 +32,7 @@ func getExpectedSwitches() []string {
 	return []string{
 		"-v", "-m", "--metrics", "--version", "-d", "--db-name", "-u", "--db-user", "--db-host",
 		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout",
-		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
+		"--rest-max-header-size", "--rest-max-body-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
 		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-puller-interval",
 		"--env-file", "--use-env-file", "--db-password",
@@ -116,6 +116,7 @@ func TestNewStorkServer(t *testing.T) {
 		"--db-trace-queries", "all",
 		"--rest-cleanup-timeout", "12s",
 		"--rest-max-header-size", "56",
+		"--rest-max-body-size", "67",
 		"--rest-host", "resthost",
 		"--rest-port", "1234",
 		"--rest-listen-limit", "78",

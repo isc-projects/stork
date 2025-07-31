@@ -566,3 +566,147 @@ func TestTrimBaseURLMiddleware(t *testing.T) {
 		require.EqualValues(t, "/endpoint", url.Path)
 	})
 }
+
+// Test that the request body size is limited by the middleware.
+func TestMaxBodySizeMiddleware(t *testing.T) {
+	// Arrange
+	var outputRequest *http.Request
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		outputRequest = r
+	})
+	middleware := bodySizeLimiterMiddleware(nextHandler, 1024)
+
+	request := func(body string) *http.Request {
+		req := httptest.NewRequest("POST", "http://localhost/", strings.NewReader(body))
+		return req
+	}
+
+	t.Run("request body size is within the limit", func(t *testing.T) {
+		// Act
+		req := request(strings.Repeat("a", 1024))
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		require.EqualValues(t, 200, resp.StatusCode)
+	})
+
+	t.Run("request body size exceeds the limit", func(t *testing.T) {
+		// Act
+		req := request(strings.Repeat("a", 1025))
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		require.EqualValues(t, 413, resp.StatusCode)
+		content, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		require.NoError(t, err)
+		require.Contains(t,
+			string(content),
+			"Request content length too large: 1025 bytes (max: 1024 bytes)",
+		)
+	})
+
+	t.Run("request body size is zero", func(t *testing.T) {
+		// Act
+		req := request("")
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		// Zero content length is treated as an unknown content length.
+		require.EqualValues(t, 413, resp.StatusCode)
+		content, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		require.NoError(t, err)
+		require.Contains(t,
+			string(content),
+			"Request content length unknown, rejecting request. "+
+				"Please, set the Content-Length header to a "+
+				"value less than or equal to 1024 bytes.",
+		)
+	})
+
+	t.Run("request body is empty", func(t *testing.T) {
+		// Act
+		req := httptest.NewRequest("POST", "http://localhost/", nil)
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		require.EqualValues(t, 200, resp.StatusCode)
+		content, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		require.NoError(t, err)
+		require.Empty(t, content)
+	})
+
+	t.Run("request content length exceeds the limit", func(t *testing.T) {
+		// Act
+		req := request("foo")
+		req.ContentLength = 2048 // Set content length to 2048 bytes.
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		require.EqualValues(t, 413, resp.StatusCode)
+		content, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		require.NoError(t, err)
+		require.Contains(t,
+			string(content),
+			"Request content length too large: 2048 bytes (max: 1024 bytes)",
+		)
+	})
+
+	t.Run("request body exceeds the limit but content length does not", func(t *testing.T) {
+		// Act
+		req := request(strings.Repeat("a", 2048)) // Body is 2048 bytes.
+		req.ContentLength = 1024                  // Content length is set to 1024 bytes.
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		require.EqualValues(t, 200, resp.StatusCode)
+		defer outputRequest.Body.Close()
+		// Check that the body is truncated to the content length.
+		buffer := make([]byte, 1024)
+		n, err := io.ReadAtLeast(outputRequest.Body, buffer, 1024)
+
+		require.NoError(t, err)
+		require.EqualValues(t, 1024, n)
+
+		// Read a byte above the content length to ensure no more data is
+		// available.
+		_, err = io.ReadAtLeast(outputRequest.Body, buffer, 1)
+		require.Error(t, err, "http: request body too large")
+	})
+
+	t.Run("content length is unknown", func(t *testing.T) {
+		// Act
+		req := request("foo")
+		req.ContentLength = -1 // Set content length to unknown.
+		writer := httptest.NewRecorder()
+		middleware.ServeHTTP(writer, req)
+
+		// Assert
+		resp := writer.Result()
+		require.EqualValues(t, 413, resp.StatusCode)
+		content, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		require.NoError(t, err)
+		require.Contains(t,
+			string(content),
+			"Request content length unknown, rejecting request. "+
+				"Please, set the Content-Length header to a "+
+				"value less than or equal to 1024 bytes.",
+		)
+	})
+}
