@@ -94,12 +94,15 @@
       authenticationMethodId:
         description: Unique ID of the authentication method
         type: string
+        maxLength: 256
       identifier:
         description: Identifier of the user logging to the system (e.g., email, login, ID number; depending on authentication method)
         type: string
+        maxLength: 1024
       secret:
         description: User secret to log in to the system (e.g., password, token, one-share code; depending on authentication method)
         type: string
+        maxLength: 2048
 
   AuthenticationMethod:
     type: object
