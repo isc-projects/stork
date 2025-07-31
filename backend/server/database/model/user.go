@@ -294,7 +294,7 @@ func Authenticate(db *pg.DB, user *SystemUser, password string) (bool, error) {
 			return false, nil
 		}
 		// Other types of errors have to be logged properly.
-		err = pkgerrors.Wrapf(err, "database operation error while trying to authenticate user %s", user.Identity())
+		err = pkgerrors.Wrap(err, "database operation error while trying to authenticate user")
 		return false, err
 	}
 
