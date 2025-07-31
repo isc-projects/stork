@@ -198,7 +198,7 @@
                         <div class="col-12 xl:col-7">
                             <!-- Overview -->
                             <div [ngClass]="{ disabled: !daemon.active }">
-                                <h3>Overview</h3>
+                                <h3 class="underlined">Overview</h3>
                                 <div class="grid">
                                     <div class="col-12 lg:col-7">
                                         <p-fieldset legend="Daemon Information">
@@ -272,7 +272,7 @@
                                 "
                                 class="mt-4"
                             >
-                                <h3>Data Storage</h3>
+                                <h3 class="underlined">Data Storage</h3>
                                 <div class="grid">
                                     <ng-container *ngIf="daemon.files">
                                         <div class="col-12 lg:col-6">
@@ -308,7 +308,7 @@
 
                             <!-- Loggers -->
                             <div class="mt-4">
-                                <h3>Loggers</h3>
+                                <h3 class="underlined">Loggers</h3>
                                 <p-table [value]="daemon.logTargets">
                                     <ng-template pTemplate="header">
                                         <tr>
@@ -345,7 +345,7 @@
                             </div>
 
                             <div id="config-review-reports-div" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
-                                <h3>
+                                <h3 class="underlined">
                                     Configuration Review Reports
                                     <app-help-tip subject="daemon configuration review section">
                                         <p>
@@ -378,7 +378,7 @@
 
                         <!-- Events -->
                         <div class="col-12 xl:col-5">
-                            <h3>Events</h3>
+                            <h3 class="underlined">Events</h3>
                             <app-events-panel
                                 #eventsTable
                                 [filter]="{

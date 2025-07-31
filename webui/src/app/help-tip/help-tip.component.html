@@ -11,7 +11,7 @@
 <p-overlayPanel [showCloseIcon]="true" styleClass="help-tip-inserted">
     <ng-template pTemplate="content">
         <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + subject }}">
-            <h3>Help for {{ subject }}</h3>
+            <h3 class="underlined">Help for {{ subject }}</h3>
             <ng-content></ng-content>
         </div>
     </ng-template>

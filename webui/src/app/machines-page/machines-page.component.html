@@ -274,7 +274,7 @@ sudo ./stork-install-agent.sh</textarea
 
         <div class="col-12 xl:col-7 grid">
             <div class="col-12 md:col-6">
-                <h3>System Information</h3>
+                <h3 class="underlined">System Information</h3>
                 <table [class.text-color-secondary]="machineTab?.error">
                     <tr>
                         <td>Address</td>
@@ -395,7 +395,7 @@ sudo ./stork-install-agent.sh</textarea
                 ></button>
             </div>
             <div class="col-12 md:col-6">
-                <h3>Applications</h3>
+                <h3 class="underlined">Applications</h3>
                 <div *ngFor="let app of machineTab?.apps">
                     <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
                     <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
@@ -407,7 +407,7 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </div>
         <div class="col-12 xl:col-5">
-            <h3>Events</h3>
+            <h3 class="underlined">Events</h3>
             <app-events-panel #eventsTable [filter]="{ machine: machineTab?.id }"></app-events-panel>
         </div>
     </div>
