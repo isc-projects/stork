@@ -16,5 +16,6 @@ func TestIsRPZ(t *testing.T) {
 		},
 	}
 	require.True(t, rp.IsRPZ("rpz.example.com"))
+	require.True(t, rp.IsRPZ("RPZ.Example.Com"))
 	require.False(t, rp.IsRPZ("db.local"))
 }
