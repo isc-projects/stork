@@ -1,3 +1,13 @@
+@layer storkhigh
+  :host ::ng-deep
+    .p-tabview-selected
+      .icon-ok
+        color: var(--green-300)
+      .icon-not-monitored
+        color: var(--gray-200)
+      .icon-not-active
+        color: var(--red-300)
+
 .disabled
   color: var(--gray-400)
 
@@ -5,26 +15,8 @@
 .icon-not-monitored
   color: var(--gray-400)
 
-:host ::ng-deep .p-tabview-selected .icon-not-monitored
-  color: var(--gray-200)
-
 .icon-not-active
   color: var(--red-500)
 
-:host ::ng-deep .p-tabview-selected .icon-not-active
-  color: var(--red-300)
-
 .icon-ok
   color: var(--green-500)
-
-:host ::ng-deep .p-tabview-selected .icon-ok
-  color: var(--green-300)
-
-@keyframes p-progress-spinner-color
-    0%
-        stroke: var(--gray-400)
-    100%
-        stroke: var(--gray-400)
-
-:host ::ng-deep .app-rename-spinner
-  margin-left: 15px

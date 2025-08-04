@@ -108,6 +108,28 @@
       // Make chips background darker in dark mode.
       background: var(--primary-400)
 
+  // Define gray-colored spinner.
+  @keyframes progress-spinner-color-gray
+    0%
+      stroke: var(--gray-400)
+    100%
+      stroke: var(--gray-400)
+
+  // Define white-colored spinner.
+  @keyframes progress-spinner-color-white
+    0%
+      stroke: #fff
+    100%
+      stroke: #fff
+
+  .gray-spinner .p-progress-spinner-circle
+    // Overwrite PrimeNG default colorful spinner with gray-colored spinner.
+    animation-name: p-progress-spinner-dash, progress-spinner-color-gray
+
+  .white-spinner .p-progress-spinner-circle
+    // Overwrite PrimeNG default colorful spinner with white-colored spinner.
+    animation-name: p-progress-spinner-dash, progress-spinner-color-white
+
 // No css @layer - global styles, that have the highest priority.
 // These rules overwrite storklow, primeng and storkhigh layers if necessary.
 
