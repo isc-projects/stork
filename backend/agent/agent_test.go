@@ -1190,6 +1190,7 @@ func TestReceiveRPZZones(t *testing.T) {
 	// Create zone inventory with the configuration that marks each zone as RPZ.
 	rpzMock := NewMockDNSConfigAccessor(ctrl)
 	rpzMock.EXPECT().IsRPZ(gomock.Any(), gomock.Any()).AnyTimes().Return(true)
+	rpzMock.EXPECT().GetAPIKey().AnyTimes().Return("")
 
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), rpzMock, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()

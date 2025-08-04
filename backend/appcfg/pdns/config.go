@@ -115,6 +115,13 @@ func (c *Config) GetAPIKey() string {
 	return ""
 }
 
+// Checks if the zone is RPZ. Since this function is called for the zones
+// returned over the webserver, which doesn't return RPZ zones, this function
+// always returns false.
+func (c *Config) IsRPZ(viewName string, zoneName string) bool {
+	return false
+}
+
 // ParsedValue represents a parsed value from a PowerDNS configuration.
 // It is one of the values specified after equal sign for a given key.
 type ParsedValue struct {

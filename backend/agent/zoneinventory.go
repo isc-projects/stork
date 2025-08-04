@@ -17,6 +17,8 @@ import (
 	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	bind9config "isc.org/stork/appcfg/bind9"
+	pdnsconfig "isc.org/stork/appcfg/pdns"
 	"isc.org/stork/appdata/bind9stats"
 	storkutil "isc.org/stork/util"
 )
@@ -29,6 +31,8 @@ var (
 	_ zoneInventoryAXFRExecutor       = (*zoneInventoryAXFRExecutorImpl)(nil)
 	_ bind9stats.ZoneIteratorAccessor = (*viewIO)(nil)
 	_ bind9stats.NameAccessor         = (os.DirEntry)(nil)
+	_ dnsConfigAccessor               = (*bind9config.Config)(nil)
+	_ dnsConfigAccessor               = (*pdnsconfig.Config)(nil)
 )
 
 // A file name holding zone inventory meta data.

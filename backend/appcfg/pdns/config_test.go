@@ -327,3 +327,16 @@ func TestConfigGetAPIKey(t *testing.T) {
 	apiKey := config.GetAPIKey()
 	require.Equal(t, "stork", apiKey)
 }
+
+// Test checking if a zone is RPZ.
+func TestConfigIsRPZ(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"rpzFile": {
+			{
+				stringValue: storkutil.Ptr("/etc/pdns-recursor/rpz.zone"),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	require.False(t, config.IsRPZ("", "example.com"))
+}
