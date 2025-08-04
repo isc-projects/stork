@@ -1,25 +1,3 @@
-.disabled
-  color: var(--gray-400)
-
-// icons style on daemon tabs (when active and not)
-.icon-not-monitored
-  color: var(--gray-400)
-
-:host ::ng-deep .p-tabview-selected .icon-not-monitored
-  color: var(--gray-200)
-
-.icon-not-active
-  color: var(--red-500)
-
-:host ::ng-deep .p-tabview-selected .icon-not-active
-  color: var(--red-300)
-
-.icon-ok
-  color: var(--green-500)
-
-:host ::ng-deep .p-tabview-selected .icon-ok
-  color: var(--green-300)
-
 // remove padding from daemon tabs panels so grey bar sticks to borders
 :host ::ng-deep .daemon-tabs.p-tabview .p-tabview-panels
   padding-left: 0
@@ -31,7 +9,3 @@
   cursor: pointer
   &:hover
     background: var(--surface-hover)
-
-// Overwrite default display: inline-block; rule to center-align the switch vertically.
-:host ::ng-deep .p-inputswitch
-  display: block
