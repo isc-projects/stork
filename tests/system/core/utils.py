@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 import functools
 import logging
 import time
@@ -69,6 +69,8 @@ def wait_for_success(
     """Wait until function throws no error."""
 
     transient_exceptions = TRANSIENT_EXCEPTIONS + tuple(transient_exceptions)
+    start_time = datetime.now()
+    max_sleep_time = sleep_time * max_tries * 1.5
 
     def outer_wrapper(f):
         @functools.wraps(f)
@@ -87,9 +89,15 @@ def wait_for_success(
                     )
                     time.sleep(sleep_time.total_seconds())
                     exception = ex
+                elapsed_time = datetime.now() - start_time
+                if elapsed_time > max_sleep_time:
+                    raise TimeoutError(
+                        f"Wait time ({elapsed_time.total_seconds()}s) exceeded for {f.__name__}"
+                        f" (args: {args}, kwargs {kwargs}). Exception: {exception}"
+                    )
             raise TimeoutError(
-                f"Wait time ({max_tries * sleep_time}s) exceeded for {f.__name__}"
-                f"(args: {args}, kwargs {kwargs}). Exception: {exception}"
+                f"Max retries exceeded for {f.__name__}"
+                f" (args: {args}, kwargs {kwargs}). Exception: {exception}"
             )
 
         return inner_wrapper
