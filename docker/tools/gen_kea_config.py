@@ -217,7 +217,7 @@ KEA_BASE_CONFIG = {
         "interfaces-config": {"interfaces": ["eth0"]},
         "control-socket": {
             "socket-type": "unix",
-            "socket-name": "/tmp/kea4-ctrl-socket",
+            "socket-name": "/var/run/kea/kea4-ctrl-socket",
         },
         "lease-database": {"type": "memfile", "lfc-interval": 3600},
         "expired-leases-processing": {
@@ -291,7 +291,7 @@ KEA_BASE_CONFIG = {
                 "name": "kea-dhcp4",
                 "output_options": [
                     {"output": "stdout", "pattern": "%-5p %m\n"},
-                    {"output": "/tmp/kea-dhcp4.log"},
+                    {"output": "/var/log/kea/kea-dhcp4.log"},
                 ],
                 "severity": "DEBUG",
                 "debuglevel": 0,
