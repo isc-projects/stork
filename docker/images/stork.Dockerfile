@@ -3,7 +3,7 @@
 #################
 
 ARG KEA_REPO=public/isc/kea-dev
-ARG KEA_VERSION=2.7.8-isc20250429105336
+ARG KEA_VERSION=3.1.0-isc20250728104543
 # Indicates if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
@@ -11,7 +11,7 @@ ARG KEA_PREMIUM=""
 ARG KEA_PRIOR_2_3_0="false"
 ARG KEA_PRIOR_2_7_5="false"
 ARG KEA_PRIOR_2_7_7="false"
-ARG BIND9_VERSION=9.18
+ARG BIND9_VERSION=9.20
 
 ###################
 ### Base images ###
@@ -151,6 +151,12 @@ RUN rake build:ui_only_dist && rm -rf /app/dist/server/lib
 FROM codebase-backend AS agent-builder
 # The lib directory prevents from copying the files in the next stages
 # because in Debian Bookworm the /lib directory is a link.
+RUN rake build:agent_dist && rm -rf /app/dist/agent/lib
+
+FROM agent-builder AS agent-builder-amd64
+# Cross-compile the agent for amd64 architecture. It is a workaround for the
+# BIND9 image that is not available for arm64.
+ENV STORK_GOARCH=amd64
 RUN rake build:agent_dist && rm -rf /app/dist/agent/lib
 
 FROM codebase AS server-full-builder
@@ -351,7 +357,9 @@ HEALTHCHECK CMD output="$(supervisorctl status)" || exit 1; echo "$output" | gre
 # Stork Agent files: /etc/stork
 
 # Bind9 with Stork Agent container
-FROM internetsystemsconsortium/bind9:${BIND9_VERSION} AS bind
+# The demo setup is not fully compatible with arm64 architectures.
+# In particular, only the amd64 image with named is available.
+FROM --platform=linux/amd64 internetsystemsconsortium/bind9:${BIND9_VERSION} AS bind
 # Install Bind9 dependencies
 # BIND9 images switched to Alpine 3.20 some time around Aug 2024.
 # The --no-cache prevents any local caching (storing anything
@@ -387,7 +395,7 @@ RUN apk update \
         && chown bind:bind /var/lib/stork-agent \
         && chmod 755 /var/lib/stork-agent
 # Install agent
-COPY --from=agent-builder /app/dist/agent/usr/bin /usr/bin
+COPY --from=agent-builder-amd64 /app/dist/agent/usr/bin /usr/bin
 # Use dedicated bind user
 USER bind
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]

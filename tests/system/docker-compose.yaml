@@ -88,7 +88,7 @@ services:
       target: kea
       args:
         KEA_REPO: ${KEA_PUBLIC_REPO:-public/isc/kea-dev}
-        KEA_VERSION: ${KEA_VERSION:-2.7.8-isc20250429105336}
+        KEA_VERSION: ${KEA_VERSION:-3.1.0-isc20250728104543}
         KEA_PRIOR_2_3_0: ${KEA_PRIOR_2_3_0:-false}
         KEA_PRIOR_2_7_5: ${KEA_PRIOR_2_7_5:-false}
         KEA_PRIOR_2_7_7: ${KEA_PRIOR_2_7_7:-false}
@@ -420,7 +420,7 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: bind
       args:
-        BIND9_VERSION: ${BIND9_VERSION:-9.18}
+        BIND9_VERSION: ${BIND9_VERSION:-9.20}
     hostname: agent-bind9
     networks:
       storknet:
