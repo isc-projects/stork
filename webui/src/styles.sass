@@ -157,6 +157,11 @@
 .max-w-40rem
   max-width: 40rem
 
+// Set max-width to prevent horizontal overflow.
+.max-w-100vw
+  // full viewport width minus some space for margins and paddings
+  max-width: calc(100vw - 5rem)
+
 // Custom style for part of PrimeNG p-tabMenu component.
 // Sets custom margin for the button which closes active tab.
 .close-tab-btn
