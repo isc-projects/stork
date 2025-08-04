@@ -96,13 +96,15 @@
       padding-right: 0.5rem
       padding-left: 0.5rem
 
-  // Custom styling for PrimeNG p-multiselect component in dark mode.
-  // By default, PrimeNG applies darker background color to those components.
-  // There are some components in stork, where this background is customized and set to lighter var(--primary-100) color.
-  // This is fine for light mode, however it must be tweaked for dark mode.
-  // To apply dark mode tweak, those components must have .adaptive-chips-background class applied.
-  body.dark .adaptive-chips-background
-    &.p-multiselect.p-multiselect-chip .p-multiselect-token
+  // Custom styling for PrimeNG p-multiselect component.
+  .p-multiselect.p-multiselect-chip.adaptive-chips-background .p-multiselect-token
+    background: var(--primary-100)
+    color: var(--text-color)
+    margin-right: 4px
+    margin-top: 2px
+    margin-bottom: 2px
+
+    body.dark &
       // Make chips background darker in dark mode.
       background: var(--primary-400)
 
