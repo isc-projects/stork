@@ -577,20 +577,16 @@ def cmd():  # pylint: disable=too-many-locals, too-many-statements
     conf = copy.deepcopy(KEA_BASE_CONFIG)
 
     if args.add_lease_cmds:
-        conf["Dhcp4"]["hooks-libraries"].append(
-            {"library": "libdhcp_lease_cmds.so"}
-        )
+        conf["Dhcp4"]["hooks-libraries"].append({"library": "libdhcp_lease_cmds.so"})
     if args.add_stats_cmds:
-        conf["Dhcp4"]["hooks-libraries"].append(
-            {"library": "libdhcp_stat_cmds.so"}
-        )
+        conf["Dhcp4"]["hooks-libraries"].append({"library": "libdhcp_stat_cmds.so"})
     if args.add_includes:
         conf["Dhcp4"]["hooks-libraries"].extend(
             [
                 {"include": "/etc/kea/hook-hostcmds.json"},
                 {"include": "/etc/kea/hook-subnetcmds.json"},
                 {"include": "/etc/kea/hook-ha-dhcp4.json"},
-                {"include": "/etc/kea/hook-database-driver.json"}
+                {"include": "/etc/kea/hook-database-driver.json"},
             ]
         )
         conf["Dhcp4"]["hosts-databases"] = [

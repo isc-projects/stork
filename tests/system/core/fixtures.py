@@ -400,11 +400,11 @@ def _regenerate_lease_files(config_dirname: str):
     config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
     lease_expire = str(int((datetime.now() + timedelta(minutes=10)).timestamp()))
 
-    for lease_filename in ["kea-leases4.csv", "kea-leases6.csv"]:
-        lease_path = os.path.join(config_dir, lease_filename)
-        with open(lease_path + ".template", "rt", encoding="utf-8") as f:
+    for template_path in Path(config_dir).glob("kea-leases*.csv.template"):
+        with open(template_path, "rt", encoding="utf-8") as f:
             lease_template = f.read()
         lease_file_content = lease_template.format(expire=lease_expire)
+        lease_path = template_path.with_suffix("")
         with open(lease_path, "w+t", encoding="utf-8") as f:
             f.write(lease_file_content)
 
