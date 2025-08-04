@@ -11,7 +11,7 @@
                 <div class="flex flex-column gap-3">
                     <div class="flex align-items-center">
                         <span class="font-semibold w-8rem">Status:</span>
-                        <p-tag [severity]="statusSeverity" [value]="statusText"></p-tag>
+                        <p-tag [severity]="statusSeverity" [value]="statusText" styleClass="capitalize"></p-tag>
                     </div>
 
                     <div class="flex align-items-center" *ngIf="migration.generalError">
@@ -21,7 +21,7 @@
 
                     <div class="flex align-items-center" *ngIf="totalErrors > 0">
                         <span class="font-semibold w-8rem">Errors:</span>
-                        <p-tag severity="danger" [value]="totalErrors + ' errors'"></p-tag>
+                        <p-tag severity="danger" [value]="totalErrors + ' errors'" styleClass="capitalize"></p-tag>
                     </div>
 
                     <div class="flex align-items-center">

@@ -138,8 +138,14 @@
   font-family: "Lucida Console", Monaco, monospace
 
 // Capitalize first letter of the first word in the container.
-.capitalize-first::first-letter
-  text-transform: capitalize
+.capitalize-first
+  &::first-letter
+    text-transform: capitalize
+  // Propagate the style inside of p-tag component that has the .capitalize-first class applied.
+  &.p-tag
+    .p-tag-value::first-letter
+      @layer storkhigh
+        text-transform: capitalize
 
 // Allows breaking long lines of text on small
 // screens to avoid overlapping on other UI blocks.

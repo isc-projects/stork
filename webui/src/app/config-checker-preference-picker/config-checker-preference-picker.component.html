@@ -134,6 +134,7 @@
                     *ngIf="state === 'enabled' || state === 'disabled'"
                     [value]="state"
                     [severity]="state === 'enabled' ? 'success' : state === 'disabled' ? 'danger' : 'warning'"
+                    styleClass="capitalize-first"
                 />
             </span>
             <span class="picker__state-inherit-status" *ngIf="state === 'inherit'">
