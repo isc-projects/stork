@@ -67,9 +67,9 @@ func TestParseFile(t *testing.T) {
 
 	statement, _ = next()
 	require.NotNil(t, statement.Options)
-	require.Len(t, statement.Options.Clauses, 9)
-	require.NotNil(t, statement.Options.Clauses[0].UnnamedClause)
-	require.Equal(t, "allow-query", statement.Options.Clauses[0].UnnamedClause.Identifier)
+	require.Len(t, statement.Options.Clauses, 10)
+	require.NotNil(t, statement.Options.Clauses[0].Option)
+	require.Equal(t, "allow-query", statement.Options.Clauses[0].Option.Identifier)
 	require.NotNil(t, statement.Options.Clauses[1].AllowTransfer)
 	require.Nil(t, statement.Options.Clauses[1].AllowTransfer.Port)
 	require.Nil(t, statement.Options.Clauses[1].AllowTransfer.Transport)
@@ -109,11 +109,15 @@ func TestParseFile(t *testing.T) {
 	require.Len(t, statement.Options.Clauses[8].ResponsePolicy.Switches, 2)
 	require.Equal(t, "update-interval", statement.Options.Clauses[8].ResponsePolicy.Switches[0])
 	require.Equal(t, "100", statement.Options.Clauses[8].ResponsePolicy.Switches[1])
+	require.Equal(t, "deny-answer-aliases", statement.Options.Clauses[9].Option.Identifier)
+	require.NotNil(t, statement.Options.Clauses[9].Option.Contents)
+	require.Len(t, statement.Options.Clauses[9].Option.Suboptions, 1)
+	require.NotNil(t, statement.Options.Clauses[9].Option.Suboptions[0].Contents)
 
 	statement, _ = next()
 	require.NotNil(t, statement.View)
 	require.Equal(t, "trusted", statement.View.Name)
-	require.Len(t, statement.View.Clauses, 7)
+	require.Len(t, statement.View.Clauses, 8)
 	require.NotNil(t, statement.View.Clauses[0].MatchClients)
 	require.Len(t, statement.View.Clauses[0].MatchClients.AddressMatchList.Elements, 1)
 	require.NotNil(t, statement.View.Clauses[1].AllowTransfer)
@@ -130,11 +134,15 @@ func TestParseFile(t *testing.T) {
 	require.Equal(t, "pdns.example.com", statement.View.Clauses[5].Zone.Name)
 	require.NotNil(t, statement.View.Clauses[6].Zone)
 	require.Equal(t, "rpz.example.com", statement.View.Clauses[6].Zone.Name)
+	require.NotNil(t, statement.View.Clauses[7].Option)
+	require.Equal(t, "allow-new-zones", statement.View.Clauses[7].Option.Identifier)
+	require.Len(t, statement.View.Clauses[7].Option.Switches, 1)
+	require.Equal(t, "no", statement.View.Clauses[7].Option.Switches[0])
 
 	statement, _ = next()
 	require.NotNil(t, statement.View)
 	require.Equal(t, "guest", statement.View.Name)
-	require.Len(t, statement.View.Clauses, 3)
+	require.Len(t, statement.View.Clauses, 4)
 	require.NotNil(t, statement.View.Clauses[0].MatchClients)
 	require.Len(t, statement.View.Clauses[0].MatchClients.AddressMatchList.Elements, 1)
 	require.NotNil(t, statement.View.Clauses[1].AllowTransfer)
@@ -143,6 +151,10 @@ func TestParseFile(t *testing.T) {
 	require.NotNil(t, statement.View.Clauses[1].AllowTransfer.AddressMatchList)
 	require.NotNil(t, statement.View.Clauses[2].Zone)
 	require.Equal(t, "bind9.example.org", statement.View.Clauses[2].Zone.Name)
+	require.NotNil(t, statement.View.Clauses[3].Option)
+	require.Equal(t, "deny-answer-addresses", statement.View.Clauses[3].Option.Identifier)
+	require.NotNil(t, statement.View.Clauses[3].Option.Contents)
+	require.Empty(t, statement.View.Clauses[3].Option.Suboptions)
 
 	statement, _ = next()
 	require.NotNil(t, statement.Zone)
@@ -152,16 +164,16 @@ func TestParseFile(t *testing.T) {
 	require.Len(t, statement.Zone.Clauses, 3)
 	require.NotNil(t, statement.Zone.Clauses[0].Option)
 	require.Equal(t, "type", statement.Zone.Clauses[0].Option.Identifier)
-	require.Len(t, statement.Zone.Clauses[0].Option.SwitchesBeforeCurlyBrackets, 1)
-	require.Equal(t, "master", statement.Zone.Clauses[0].Option.SwitchesBeforeCurlyBrackets[0])
+	require.Len(t, statement.Zone.Clauses[0].Option.Switches, 1)
+	require.Equal(t, "master", statement.Zone.Clauses[0].Option.Switches[0])
 	require.NotNil(t, statement.Zone.Clauses[1].AllowTransfer)
 	require.EqualValues(t, 853, *statement.Zone.Clauses[1].AllowTransfer.Port)
 	require.Nil(t, statement.Zone.Clauses[1].AllowTransfer.Transport)
 	require.NotNil(t, statement.Zone.Clauses[1].AllowTransfer.AddressMatchList)
 	require.NotNil(t, statement.Zone.Clauses[2].Option)
 	require.Equal(t, "file", statement.Zone.Clauses[2].Option.Identifier)
-	require.Len(t, statement.Zone.Clauses[2].Option.SwitchesBeforeCurlyBrackets, 1)
-	require.Equal(t, "/etc/bind/db.nsd.example.com", statement.Zone.Clauses[2].Option.SwitchesBeforeCurlyBrackets[0])
+	require.Len(t, statement.Zone.Clauses[2].Option.Switches, 1)
+	require.Equal(t, "/etc/bind/db.nsd.example.com", statement.Zone.Clauses[2].Option.Switches[0])
 
 	statement, _ = next()
 	require.NotNil(t, statement.UnnamedStatement)
@@ -399,4 +411,122 @@ func TestParseNotifySource(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 	})
+}
+
+// Test parsing option with a single switch.
+func TestParseBasicOption(t *testing.T) {
+	testCases := []struct {
+		name  string
+		value string
+	}{
+		{
+			name:  "IPv4 address",
+			value: "1.2.3.4",
+		},
+		{
+			name:  "IPv6 address range",
+			value: "2001:db8::/32",
+		},
+		{
+			name:  "IPv6 address",
+			value: "2001:db8::1",
+		},
+		{
+			name:  "IPv4 address quoted",
+			value: `"1.2.3.4"`,
+		},
+		{
+			name:  "IPv6 address range quoted",
+			value: `"2001:db8::/32"`,
+		},
+		{
+			name:  "IPv6 address quoted",
+			value: `"2001:db8::1"`,
+		},
+		{
+			name:  "string",
+			value: `"bar"`,
+		},
+		{
+			name:  "ident",
+			value: "bar-abc",
+		},
+		{
+			name:  "number",
+			value: "123",
+		},
+		{
+			name:  "asterisk",
+			value: "*",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			cfgText := fmt.Sprintf(`
+				options {
+					foo %s;
+				}
+			`, testCase.value)
+			cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+			require.Len(t, cfg.Statements, 1)
+			require.NotNil(t, cfg.Statements[0].Options)
+			require.Len(t, cfg.Statements[0].Options.Clauses, 1)
+			require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
+			require.Equal(t, "foo", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
+			require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 1)
+			require.Equal(t, strings.Trim(testCase.value, `"`), cfg.Statements[0].Options.Clauses[0].Option.Switches[0])
+			require.Nil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
+			require.Empty(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions)
+		})
+	}
+}
+
+// Test parsing option including curly brackets and no suboptions.
+func TestParseOptionWithCurlyBrackets(t *testing.T) {
+	cfgText := `
+		options {
+			foo 123	abc { city "paris"; };
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Options)
+	require.Len(t, cfg.Statements[0].Options.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
+	require.Equal(t, "foo", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
+	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 2)
+	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Switches[0])
+	require.Equal(t, "abc", cfg.Statements[0].Options.Clauses[0].Option.Switches[1])
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
+	require.Empty(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions)
+}
+
+// Test parsing option with suboptions.
+func TestParseOptionWithSuboptions(t *testing.T) {
+	cfgText := `
+		options {
+			foo 123	{ city "paris"; } except-from { "abc"; } update 100;
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Options)
+	require.Len(t, cfg.Statements[0].Options.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
+	require.Equal(t, "foo", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
+	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 1)
+	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Switches[0])
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
+	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions, 2)
+	require.Equal(t, "except-from", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Identifier)
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents)
+	require.Equal(t, "update", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Identifier)
+	require.Equal(t, "100", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0])
 }

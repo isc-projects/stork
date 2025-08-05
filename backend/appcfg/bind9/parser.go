@@ -168,10 +168,6 @@ type OptionClause struct {
 	ListenOnV6 *ListenOn `parser:"| 'listen-on-v6' @@"`
 	// The response-policy clause specifying the response policy zones.
 	ResponsePolicy *ResponsePolicy `parser:"| 'response-policy' @@"`
-	// Any named clause.
-	NamedClause *NamedStatement `parser:"| @@"`
-	// Any unnamed clause.
-	UnnamedClause *UnnamedStatement `parser:"| @@"`
 	// Any option clause.
 	Option *Option `parser:"| @@"`
 }
@@ -208,10 +204,6 @@ type ViewClause struct {
 	ResponsePolicy *ResponsePolicy `parser:"| 'response-policy' @@"`
 	// The zone clause associating the zone with a view.
 	Zone *Zone `parser:"| 'zone' @@"`
-	// Any namedClause clause.
-	NamedClause *NamedStatement `parser:"| @@"`
-	// Any unnamedClause clause.
-	UnnamedClause *UnnamedStatement `parser:"| @@"`
 	// Any option clause.
 	Option *Option `parser:"| @@"`
 }
@@ -236,10 +228,6 @@ type Zone struct {
 type ZoneClause struct {
 	// The allow-transfer clause restricting who can perform AXFR.
 	AllowTransfer *AllowTransfer `parser:"'allow-transfer' @@"`
-	// Any namedClause clause.
-	NamedClause *NamedStatement `parser:"| @@"`
-	// Any unnamedClause clause.
-	UnnamedClause *UnnamedStatement `parser:"| @@"`
 	// Any option clause.
 	Option *Option `parser:"| @@"`
 }
@@ -317,10 +305,18 @@ type UnnamedStatement struct {
 //
 // Many options in the options statement have this format.
 type Option struct {
-	Identifier                  string                 `parser:"@Ident"`
-	SwitchesBeforeCurlyBrackets []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
-	Contents                    *GenericClauseContents `parser:"( '{' @@ '}' )?"`
-	SwitchesAfterCurlyBrackets  []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
+	Identifier string                 `parser:"@Ident"`
+	Switches   []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
+	Contents   *GenericClauseContents `parser:"( '{' @@ '}' )?"`
+	Suboptions []Suboption            `parser:"( @@ )*"`
+}
+
+// Suboption is a generic catch-all clause being an optional part of an
+// option. Suboptions can appear after curly braces in the option.
+type Suboption struct {
+	Identifier string                 `parser:"@Ident"`
+	Switches   []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
+	Contents   *GenericClauseContents `parser:"( '{' @@ '}' )?"`
 }
 
 // GenericClauseContents is used to parse any type of contents. It is
