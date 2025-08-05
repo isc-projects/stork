@@ -123,9 +123,7 @@ class Kea(Agent):
             self.read_prometheus_metrics(), uptime_metric_name
         )
 
-        @wait_for_success(
-            wait_msg="Waiting to update Prometheus metrics...", max_tries=5
-        )
+        @wait_for_success(wait_msg="Waiting to update Prometheus metrics...")
         def worker():
             metrics = self.read_prometheus_metrics()
             uptime = Kea._get_metric_value(metrics, uptime_metric_name)

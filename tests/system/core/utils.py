@@ -63,21 +63,20 @@ logger = setup_logger(__file__)
 def wait_for_success(
     *transient_exceptions,
     wait_msg="Waiting to be ready...",
-    max_tries=120,
-    sleep_time: timedelta = timedelta(seconds=1),
+    sleep_time=timedelta(milliseconds=100),
+    max_time=timedelta(seconds=120),
 ):
     """Wait until function throws no error."""
 
     transient_exceptions = TRANSIENT_EXCEPTIONS + tuple(transient_exceptions)
-    start_time = datetime.now()
-    max_sleep_time = sleep_time * max_tries * 1.5
 
     def outer_wrapper(f):
         @functools.wraps(f)
         def inner_wrapper(*args, **kwargs):
+            start_time = datetime.now()
             exception = None
             logger.info(wait_msg)
-            for _ in range(max_tries):
+            while True:
                 try:
                     result = f(*args, **kwargs)
                     done_msg = wait_msg + "done"
@@ -90,15 +89,11 @@ def wait_for_success(
                     time.sleep(sleep_time.total_seconds())
                     exception = ex
                 elapsed_time = datetime.now() - start_time
-                if elapsed_time > max_sleep_time:
+                if elapsed_time > max_time:
                     raise TimeoutError(
-                        f"Wait time ({elapsed_time.total_seconds()}s) exceeded for {f.__name__}"
+                        f"Wait time ({max_time.total_seconds()}s) exceeded for {f.__name__}"
                         f" (args: {args}, kwargs {kwargs}). Exception: {exception}"
                     )
-            raise TimeoutError(
-                f"Max retries exceeded for {f.__name__}"
-                f" (args: {args}, kwargs {kwargs}). Exception: {exception}"
-            )
 
         return inner_wrapper
 

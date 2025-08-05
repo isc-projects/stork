@@ -1,6 +1,6 @@
 import re
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Callable, List, Optional, TypeVar
 
 import openapi_client
@@ -417,9 +417,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     # Delete
 
-    @wait_for_success(
-        ServiceException, wait_msg="Waiting to delete machine...", max_tries=5
-    )
+    @wait_for_success(ServiceException, wait_msg="Waiting to delete machine...")
     def delete_machine(self, machine_id: int):
         """
         Deletes a machine and references.
@@ -774,7 +772,9 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             raise NoSuccessException("zones have not been fetched yet")
         return zones_states
 
-    @wait_for_success(wait_msg="Waiting for finishing migration...", max_tries=5 * 60)
+    @wait_for_success(
+        wait_msg="Waiting for finishing migration...", max_time=timedelta(minutes=5)
+    )
     def wait_for_finishing_migration(self, migration: MigrationStatus):
         """Waits for finishing the migration. Returns the final status."""
         api_instance = DHCPApi(self._api_client)

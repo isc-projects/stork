@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import os
 
+import pytest
+
 from core.utils import memoize, wait_for_success, NoSuccessException
 from core.prometheus_parser import text_fd_to_metric_families
 
@@ -59,26 +61,29 @@ def test_wait_for_instant_success():
     assert call_count == 1
 
 
-def test_wait_for_success_with_retries():
-    """A function fails initially, but the decorator repeats execution until
-    success happens."""
+def test_wait_for_success_with_max_time():
+    """The function is interrupted if it doesn't success in an expected time."""
     # Arrange
     call_count = 0
+    start_time = datetime.now()
 
-    @wait_for_success(max_tries=5, sleep_time=timedelta())
+    @wait_for_success(
+        max_time=timedelta(seconds=1), sleep_time=timedelta(milliseconds=100)
+    )
     def f():
         nonlocal call_count
         call_count += 1
-        if call_count <= 3:
-            raise NoSuccessException()
-        return 42
+        raise NoSuccessException()
 
     # Act
-    res = f()
+    with pytest.raises(TimeoutError):
+        f()
+
+    end_time = datetime.now()
 
     # Assert
-    assert res == 42
-    assert call_count == 4
+    assert end_time - start_time < timedelta(seconds=2)
+    assert call_count > 0
 
 
 def test_wait_for_success_use_sleep_time():
@@ -88,7 +93,7 @@ def test_wait_for_success_use_sleep_time():
     last_call = datetime.min
     delta = timedelta(milliseconds=250)
 
-    @wait_for_success(max_tries=5, sleep_time=delta)
+    @wait_for_success(max_time=timedelta(milliseconds=500), sleep_time=delta)
     def f():
         nonlocal call_count, last_call
         now = datetime.now()
@@ -106,16 +111,16 @@ def test_wait_for_success_use_sleep_time():
         pass
 
     # Assert
-    assert call_count == 5
+    assert call_count <= 3
 
 
-def test_wait_for_success_with_retries_use_custom_expected_exception():
+def test_wait_for_success_use_custom_expected_exception():
     """A function fails initially, but the decorator repeats execution until
     success happens. The function throws a custom but expected exception."""
     # Arrange
     call_count = 0
 
-    @wait_for_success(LookupError, max_tries=5, sleep_time=timedelta())
+    @wait_for_success(LookupError, sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
@@ -137,7 +142,7 @@ def test_wait_for_no_success_use_unexpected_exception():
     # Arrange
     call_count = 0
 
-    @wait_for_success(max_tries=5, sleep_time=timedelta())
+    @wait_for_success(sleep_time=timedelta())
     def f():
         nonlocal call_count
         call_count += 1
@@ -152,54 +157,6 @@ def test_wait_for_no_success_use_unexpected_exception():
 
     # Assert
     assert call_count == 1
-
-
-def test_wait_for_no_success_with_retries():
-    """A function fails initially, and the decorator repeats execution but
-    without success. It throws exceptions after exceeding the number of
-    retries."""
-    # Arrange
-    call_count = 0
-
-    @wait_for_success(max_tries=5, sleep_time=timedelta())
-    def f():
-        nonlocal call_count
-        call_count += 1
-        raise NoSuccessException()
-
-    # Act
-    try:
-        f()
-    except TimeoutError:
-        # We expect this to fail maximum number of counts. No need to log anything.
-        pass
-
-    # Assert
-    assert call_count == 5
-
-
-def test_wait_for_no_success_with_retries_use_custom_expected_exception():
-    """A function fails initially, and the decorator repeats execution but
-    without success. It throws exceptions after exceeding the number of
-    retries. The function throws a custom but expected exception."""
-    # Arrange
-    call_count = 0
-
-    @wait_for_success(LookupError, max_tries=5, sleep_time=timedelta())
-    def f():
-        nonlocal call_count
-        call_count += 1
-        raise LookupError()
-
-    # Act
-    try:
-        f()
-    except TimeoutError:
-        # We don't care about Timeouts here. Let's continue.
-        pass
-
-    # Assert
-    assert call_count == 5
 
 
 def test_prometheus_parser():
