@@ -441,6 +441,10 @@ services:
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - $PWD/tests/system/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - $PWD/docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+    healthcheck:
+      interval: 250ms
+      timeout: 1s
+      retries: 40
 
   agent-bind9-rndc:
     extends: agent-bind9

@@ -13,6 +13,7 @@ def test_server_instance():
     state = compose.get_service_state(service_name)
     assert state.is_running()
     assert state.is_healthy()
+    compose.kill()
     compose.down()
 
 
@@ -53,6 +54,7 @@ def test_kea_only_instance():
     isolated_directory = os.path.join(config_directory, ".isolated")
     assert os.path.exists(isolated_directory)
 
+    compose.kill()
     compose.down()
 
     # Check if the isolated directory is removed.

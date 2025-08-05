@@ -132,6 +132,7 @@ def pytest_sessionstart(session):  # pylint: disable=unused-argument
     on the testing end if no interruption happened
     """
     compose = create_docker_compose()
+    compose.kill()
     compose.down()
     # Remove old test results
     tests_dir = Path("test-results")

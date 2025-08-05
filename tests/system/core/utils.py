@@ -79,7 +79,10 @@ def wait_for_success(
             while True:
                 try:
                     result = f(*args, **kwargs)
+                    elapsed_time = datetime.now() - start_time
                     done_msg = wait_msg + "done"
+                    if elapsed_time.total_seconds() > 0.1:
+                        done_msg += f", took {elapsed_time.total_seconds()}s"
                     logger.info(done_msg)
                     return result
                 except transient_exceptions as ex:
