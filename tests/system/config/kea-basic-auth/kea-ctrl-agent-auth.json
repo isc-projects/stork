@@ -3,8 +3,7 @@
     "realm": "kea-control-agent",
     "clients": [
         {
-            "user": "foo",
-            "password": "bar"
+            "password-file": "/etc/kea/kea-ctrl-agent-password-file.txt"
         }
     ]
 },

@@ -213,6 +213,7 @@ services:
       STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "true"
     volumes:
       - $PWD/tests/system/config/kea-basic-auth/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
+      - $PWD/tests/system/config/kea-basic-auth/kea-ctrl-agent-password-file.txt:/etc/kea/kea-ctrl-agent-password-file.txt
 
   agent-kea-premium:
     extends: agent-kea
