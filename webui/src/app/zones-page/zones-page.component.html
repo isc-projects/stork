@@ -78,7 +78,7 @@
 
 <ng-template #localZoneCells let-localZone let-serialInfo="serialInfo">
     <td>
-        <a routerLink="/apps/dns/{{ localZone.appId }}">{{ localZone.appName }}</a>
+        <a routerLink="/apps/{{ localZone.appId }}">{{ localZone.appName }}</a>
     </td>
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }" (click)="activateFirstTab()">{{
@@ -187,7 +187,7 @@ to the number of configured zones.
         <ng-template pTemplate="body" let-state>
             <tr>
                 <td>
-                    <a routerLink="/apps/dns/{{ state.appId }}">{{ state.appName }}</a>
+                    <a routerLink="/apps/{{ state.appId }}">{{ state.appName }}</a>
                 </td>
                 <td>{{ state.appId }}</td>
                 <td>{{ state.zoneConfigsCount || 'n/a' }}</td>
@@ -766,7 +766,7 @@ to the number of configured zones.
                                                     <span class="font-bold text-2xl">{{ tab.name | unroot }}</span>
                                                     <span class="text-lg">
                                                         for
-                                                        <a routerLink="/apps/dns/{{ localZone.appId }}">{{
+                                                        <a routerLink="/apps/{{ localZone.appId }}">{{
                                                             localZone.appName
                                                         }}</a
                                                         >, view:

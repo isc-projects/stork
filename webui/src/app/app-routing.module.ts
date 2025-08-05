@@ -64,18 +64,18 @@ const routes: Routes = [
         data: { key: 'communication' },
     },
     {
-        path: 'apps/:appType',
+        path: 'apps',
         pathMatch: 'full',
-        redirectTo: 'apps/:appType/all',
+        redirectTo: 'apps/all',
     },
     {
-        path: 'apps/:appType/:id',
+        path: 'apps/:id',
         component: AppsPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'app' },
     },
     {
-        path: 'apps/kea/:appId/daemons/:daemonId/config',
+        path: 'apps/:appId/daemons/:daemonId/config',
         component: KeaDaemonConfigurationPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'daemon-config' },
@@ -131,7 +131,7 @@ const routes: Routes = [
         data: { key: 'zones' },
     },
     {
-        path: 'apps/kea/:appId/daemons/:daemonId/global-config',
+        path: 'apps/:appId/daemons/:daemonId/global-config',
         component: KeaGlobalConfigurationPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'daemon-global-config' },

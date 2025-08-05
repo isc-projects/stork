@@ -108,7 +108,7 @@
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
-                            routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/global-config"
+                            routerLink="/apps/{{ appTab.app.id }}/daemons/{{ daemon.id }}/global-config"
                             label="Global Configuration"
                             icon="fa-solid fa-globe"
                             class="p-button-secondary mr-2 my-2"
@@ -122,7 +122,7 @@
                             icon="fa fa-file-alt"
                             class="block p-button p-button-secondary mr-2 my-2 no-underline"
                             type="button"
-                            routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
+                            routerLink="/apps/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
                             pButton
                             appAccessEntity="daemon-config"
                         ></a>

@@ -345,10 +345,12 @@
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
         - $ref: '#/parameters/filterTextParam'
-        - name: app
+        - name: apps
           in: query
-          description: Limit returned list of apps, possible values 'bind9' or 'kea'.
-          type: string
+          description: Limit returned list of apps, possible values 'bind9', 'kea' or 'pdns'.
+          type: array
+          items:
+            type: string
       responses:
         200:
           description: List of apps

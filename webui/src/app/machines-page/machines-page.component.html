@@ -399,7 +399,7 @@ sudo ./stork-install-agent.sh</textarea
                 <div *ngFor="let app of machineTab?.apps">
                     <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
                     <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
-                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
+                    <a routerLink="/apps/{{ app.id }}">Version {{ app.version }}</a>
                     <app-version-status [app]="app.type" [version]="app.version"></app-version-status>
                     <br />
                     <app-app-daemons-status [app]="app"></app-app-daemons-status>

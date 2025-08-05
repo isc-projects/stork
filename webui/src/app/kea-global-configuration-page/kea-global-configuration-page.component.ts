@@ -24,7 +24,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
      */
     breadcrumbs = [
         { label: 'Services' },
-        { label: 'Kea Apps', routerLink: '/apps/kea/all' },
+        { label: 'Apps', routerLink: '/apps/all' },
         { label: 'App' },
         { label: 'Daemons' },
         { label: 'Daemon' },
@@ -212,9 +212,9 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
         const breadcrumb = [...this.breadcrumbs]
 
         if (appId != null) {
-            breadcrumb[2].routerLink = `/apps/kea/${appId}`
+            breadcrumb[2].routerLink = `/apps/${appId}`
             if (daemonId != null) {
-                breadcrumb[4].routerLink = `/apps/kea/${appId}?daemon=${daemonId}`
+                breadcrumb[4].routerLink = `/apps/${appId}?daemon=${daemonId}`
             }
         }
 

@@ -282,11 +282,7 @@
                 *ngIf="formGroup.get('splitFormMode').value && selectedDaemons.value?.length >= i + 1"
                 class="font-normal"
                 >&nbsp;/&nbsp;
-                <a
-                    routerLink="/apps/{{ form.getDaemonById(selectedDaemons.value[i]).appType }}/{{
-                        form.getDaemonById(selectedDaemons.value[i]).appId
-                    }}"
-                >
+                <a routerLink="/apps/{{ form.getDaemonById(selectedDaemons.value[i]).appId }}">
                     {{ form.getDaemonById(selectedDaemons.value[i]).label }}
                 </a>
             </span>

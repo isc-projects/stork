@@ -354,10 +354,10 @@ describe('KeaGlobalConfigurationPageComponent', () => {
 
         expect(breadcrumbs.items.length).toBe(6)
         expect(breadcrumbs.items[2].label).toBe('App')
-        expect(breadcrumbs.items[2].routerLink).toBe('/apps/kea/1')
+        expect(breadcrumbs.items[2].routerLink).toBe('/apps/1')
 
         expect(breadcrumbs.items[4].label).toBe('Daemon')
-        expect(breadcrumbs.items[4].routerLink).toBe('/apps/kea/1?daemon=2')
+        expect(breadcrumbs.items[4].routerLink).toBe('/apps/1?daemon=2')
     })
 
     it('should update breadcrumbs if app, daemon ID, app name and daemon name are provided', () => {
@@ -370,9 +370,9 @@ describe('KeaGlobalConfigurationPageComponent', () => {
 
         expect(breadcrumbs.items.length).toBe(6)
         expect(breadcrumbs.items[2].label).toBe('My App')
-        expect(breadcrumbs.items[2].routerLink).toBe('/apps/kea/1')
+        expect(breadcrumbs.items[2].routerLink).toBe('/apps/1')
 
         expect(breadcrumbs.items[4].label).toBe('My Daemon')
-        expect(breadcrumbs.items[4].routerLink).toBe('/apps/kea/1?daemon=2')
+        expect(breadcrumbs.items[4].routerLink).toBe('/apps/1?daemon=2')
     })
 })

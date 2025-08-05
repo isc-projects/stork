@@ -207,7 +207,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].attributes.href).toBe('/apps/kea/1')
+        expect(cols[4].children[0].attributes.href).toBe('/apps/1')
 
         // Simulate expanding the lease information.
         expandButton.click()
@@ -313,7 +313,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].attributes.href).toBe('/apps/kea/1')
+        expect(cols[4].children[0].attributes.href).toBe('/apps/1')
 
         // Simulate expanding the lease information.
         expandButton.click()
@@ -419,7 +419,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].attributes.href).toBe('/apps/kea/2')
+        expect(cols[4].children[0].attributes.href).toBe('/apps/2')
 
         // Prefix lease.
 
@@ -436,7 +436,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[9].children.length).toBe(1)
-        expect(cols[9].children[0].attributes.href).toBe('/apps/kea/2')
+        expect(cols[9].children[0].attributes.href).toBe('/apps/2')
 
         // Simulate expanding the lease information.
         expandButton1.click()

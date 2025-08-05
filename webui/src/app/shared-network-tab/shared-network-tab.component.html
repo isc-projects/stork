@@ -142,7 +142,7 @@
                         >DHCP Options&nbsp;/&nbsp;
                         <a
                             *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
-                            routerLink="/apps/kea/{{ localSharedNetwork.appId }}"
+                            routerLink="/apps/{{ localSharedNetwork.appId }}"
                         >
                             {{ localSharedNetwork.appName }}
                         </a>

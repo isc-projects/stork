@@ -3,7 +3,7 @@
         pTooltip="{{ daemonStatusIconTooltip(d) }}"
         [ngStyle]="{ color: daemonStatusIconColor(d) }"
         style="white-space: nowrap; margin: 0 0.5rem 0 0"
-        routerLink="/apps/{{ app.type }}/{{ app.id }}"
+        routerLink="/apps/{{ app.id }}"
         [queryParams]="{ daemon: d.name }"
     >
         <i class="{{ daemonStatusIconName(d) }} text-sm pr-1"></i>{{ d.niceName }}

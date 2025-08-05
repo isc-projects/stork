@@ -4,7 +4,7 @@
     </div>
 </app-breadcrumbs>
 <div class="mt-2 mb-4">
-    <a *ngIf="appId" routerLink="/apps/kea/{{ appId }}" [queryParams]="{ daemon: daemonName }">
+    <a *ngIf="appId" routerLink="/apps/{{ appId }}" [queryParams]="{ daemon: daemonName }">
         <span class="fa fa-arrow-left"></span>
         <span class="ml-2">Back to {{ appName ?? 'Kea' }}</span>
     </a>

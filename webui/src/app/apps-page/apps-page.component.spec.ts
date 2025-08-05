@@ -75,7 +75,7 @@ describe('AppsPageComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
+                provideRouter([{ path: 'apps/all', component: AppsPageComponent }]),
             ],
         }).compileComponents()
     }))
@@ -83,7 +83,6 @@ describe('AppsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(AppsPageComponent)
         component = fixture.componentInstance
-        component.appType = 'dns'
         api = fixture.debugElement.injector.get(ServicesService)
         msgSrv = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
@@ -98,23 +97,19 @@ describe('AppsPageComponent', () => {
         app.id = 1
         app.name = 'test-app'
 
-        component.appType = 'dns'
-
         component.addAppTab(app)
         expect(component.tabs.length).toEqual(2)
         expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
         expect(component.tabs[1].hasOwnProperty('routerLink')).toBeTrue()
 
         expect(component.tabs[1].label).toBe('test-app')
-        expect(component.tabs[1].routerLink).toBe('/apps/dns/1')
+        expect(component.tabs[1].routerLink).toBe('/apps/1')
     })
 
     it('should change app tab label after rename', () => {
         const app = new App()
         app.id = 1
         app.name = 'kea@@machine1'
-
-        component.appType = 'kea'
 
         // Open a tab presenting our test app.
         component.addAppTab(app)
@@ -141,7 +136,7 @@ describe('AppsPageComponent', () => {
         expect(breadcrumbsComponent).not.toBeNull()
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
-        expect(breadcrumbsComponent.items[1].label).toEqual('DNS Apps')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Apps')
     })
 
     it('should request synchronization configurations from Kea', fakeAsync(() => {

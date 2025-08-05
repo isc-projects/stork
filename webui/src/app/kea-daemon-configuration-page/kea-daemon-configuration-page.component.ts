@@ -67,7 +67,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.breadcrumbs = [
             { label: 'Services' },
-            { label: 'Kea Apps', routerLink: '/apps/kea/all' },
+            { label: 'Kea Apps', routerLink: '/apps/all', queryParams: { appType: 'kea' } },
             { label: 'App' },
             { label: 'Daemons' },
             { label: 'Daemon' },
@@ -97,10 +97,10 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
                 // Breadcrumbs
                 this.breadcrumbs = [
                     { label: 'Services' },
-                    { label: 'Kea Apps', routerLink: '/apps/kea/all' },
-                    { label: app.name, routerLink: `/apps/kea/${app.id}` },
+                    { label: 'Apps', routerLink: '/apps/all' },
+                    { label: app.name, routerLink: `/apps/${app.id}` },
                     { label: 'Daemons' },
-                    { label: friendlyName, routerLink: `/apps/kea/${app.id}?daemon=${daemonName}` },
+                    { label: friendlyName, routerLink: `/apps/${app.id}?daemon=${daemonName}` },
                     { label: 'Configuration' },
                 ]
             })
@@ -138,7 +138,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
 
                 // Daemon ID is required
                 if (!Number.isFinite(daemonId)) {
-                    this.router.navigate(['/apps/kea/all'])
+                    this.router.navigate(['/apps/all'])
                 }
 
                 this._daemonId = daemonId

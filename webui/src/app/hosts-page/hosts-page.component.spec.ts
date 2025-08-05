@@ -203,7 +203,7 @@ describe('HostsPageComponent', () => {
         // Verify that the link to the app is correct.
         const appLinkAnchor = appLink.query(By.css('a'))
         expect(appLinkAnchor.properties.hasOwnProperty('pathname')).toBeTrue()
-        expect(appLinkAnchor.properties.pathname).toBe('/apps/kea/1')
+        expect(appLinkAnchor.properties.pathname).toBe('/apps/1')
     })
 
     it('should open and close host tabs', fakeAsync(() => {

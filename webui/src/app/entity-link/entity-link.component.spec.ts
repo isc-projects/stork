@@ -32,7 +32,7 @@ describe('EntityLinkComponent', () => {
         component.showEntityName = false
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#daemon-link'))
-        expect(link.attributes.href).toEqual('/apps/kea/1?daemon=dhcp4')
+        expect(link.attributes.href).toEqual('/apps/1?daemon=dhcp4')
         expect(link.nativeElement.innerText).toEqual('[98] dhcp4')
 
         // Test entity name is not displayed.
@@ -52,7 +52,7 @@ describe('EntityLinkComponent', () => {
         component.showEntityName = false
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#app-link'))
-        expect(link.attributes.href).toEqual('/apps/kea/1')
+        expect(link.attributes.href).toEqual('/apps/1')
         expect(link.nativeElement.innerText).toEqual('mouse')
 
         // Test entity name is not displayed.

@@ -314,9 +314,7 @@
             <td>
                 <div *ngFor="let lhs of localHostsGroupedByApp[h.id]" class="flex align-items-baseline">
                     <!-- Hyperlink to the host page -->
-                    <a routerLink="/apps/kea/{{ lhs[0].appId }}" class="block white-space-nowrap"
-                        >{{ lhs[0].appName }}
-                    </a>
+                    <a routerLink="/apps/{{ lhs[0].appId }}" class="block white-space-nowrap">{{ lhs[0].appName }} </a>
                     <!-- Data source labels -->
                     <app-host-data-source-label
                         *ngFor="let lh of lhs"

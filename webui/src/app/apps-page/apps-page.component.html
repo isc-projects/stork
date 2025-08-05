@@ -1,13 +1,19 @@
 <p-confirmDialog styleClass="w-4" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <p>This page displays a list of {{ getAppsLabel() }}.</p>
+        <p>This page displays a list of apps.</p>
     </div>
 </app-breadcrumbs>
 
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+        <a
+            role="menuitem"
+            pRipple
+            [routerLink]="item.routerLink"
+            [queryParams]="item.queryParams"
+            class="p-ripple p-element p-menuitem-link"
+        >
             <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
@@ -51,7 +57,6 @@
                 class="flex-none"
             ></p-button>
             <p-button
-                *ngIf="appType === 'kea'"
                 id="sync-kea-configs-button"
                 label="Resynchronize Kea Configs"
                 icon="pi pi-file-import"
@@ -94,10 +99,10 @@
         <ng-template pTemplate="body" let-a>
             <tr>
                 <td>
-                    <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.name }}</a>
+                    <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a>
                 </td>
                 <td>
-                    <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.version }}</a>
+                    <a routerLink="/apps/{{ a.id }}">{{ a.version }}</a>
                     <app-version-status [app]="a.type" [version]="a.version"></app-version-status>
                 </td>
                 <td>

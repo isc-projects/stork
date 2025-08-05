@@ -1618,45 +1618,101 @@ func TestRestGetApps(t *testing.T) {
 	stats.GetBind9CommErrorStats(s2.ID).IncreaseErrorCountBy(agentcomm.Bind9ChannelStats, 3)
 	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).DoAndReturn(wrap(stats)).AnyTimes()
 
-	// get added apps
-	params = services.GetAppsParams{}
-	rsp = rapi.GetApps(ctx, params)
-	require.IsType(t, &services.GetAppsOK{}, rsp)
-	okRsp = rsp.(*services.GetAppsOK)
-	require.EqualValues(t, 3, okRsp.Payload.Total)
+	t.Run("get all apps", func(t *testing.T) {
+		// get added apps
+		params = services.GetAppsParams{}
+		rsp = rapi.GetApps(ctx, params)
+		require.IsType(t, &services.GetAppsOK{}, rsp)
+		okRsp = rsp.(*services.GetAppsOK)
+		require.EqualValues(t, 3, okRsp.Payload.Total)
 
-	// Verify that the communication error counters are returned.
-	require.Len(t, okRsp.Payload.Items, 3)
-	for _, app := range okRsp.Payload.Items {
-		switch app.Type {
-		case dbmodel.AppTypeKea.String():
-			require.Equal(t, "fancy-app", app.Name)
-			appKea := app.Details.AppKea
-			require.Len(t, appKea.Daemons, 1)
-			daemon := appKea.Daemons[0]
-			require.EqualValues(t, 1, daemon.AgentCommErrors)
-			require.EqualValues(t, 2, daemon.CaCommErrors)
-			require.EqualValues(t, 5, daemon.DaemonCommErrors)
-			require.Len(t, daemon.LogTargets, 1)
-			require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
-			require.Equal(t, "debug", daemon.LogTargets[0].Severity)
-			require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
-		case dbmodel.AppTypeBind9.String():
-			require.Equal(t, "another-fancy-app", app.Name)
-			appBind9 := app.Details.AppBind9
-			daemon := appBind9.Daemon
-			require.EqualValues(t, 1, daemon.AgentCommErrors)
-			require.EqualValues(t, 2, daemon.RndcCommErrors)
-			require.EqualValues(t, 3, daemon.StatsCommErrors)
-		case dbmodel.AppTypePDNS.String():
-			require.Equal(t, "pdns@localhost", app.Name)
-			appPdns := app.Details.AppPdns
-			require.Equal(t, "https://pdns.example.com", appPdns.PdnsDaemon.URL)
-			require.Equal(t, "https://pdns.example.com/config", appPdns.PdnsDaemon.ConfigURL)
-			require.Equal(t, "https://pdns.example.com/zones", appPdns.PdnsDaemon.ZonesURL)
-			require.Equal(t, "https://pdns.example.com/autoprimaries", appPdns.PdnsDaemon.AutoprimariesURL)
+		// Verify that the communication error counters are returned.
+		require.Len(t, okRsp.Payload.Items, 3)
+		for _, app := range okRsp.Payload.Items {
+			switch app.Type {
+			case dbmodel.AppTypeKea.String():
+				require.Equal(t, "fancy-app", app.Name)
+				appKea := app.Details.AppKea
+				require.Len(t, appKea.Daemons, 1)
+				daemon := appKea.Daemons[0]
+				require.EqualValues(t, 1, daemon.AgentCommErrors)
+				require.EqualValues(t, 2, daemon.CaCommErrors)
+				require.EqualValues(t, 5, daemon.DaemonCommErrors)
+				require.Len(t, daemon.LogTargets, 1)
+				require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
+				require.Equal(t, "debug", daemon.LogTargets[0].Severity)
+				require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
+			case dbmodel.AppTypeBind9.String():
+				require.Equal(t, "another-fancy-app", app.Name)
+				appBind9 := app.Details.AppBind9
+				daemon := appBind9.Daemon
+				require.EqualValues(t, 1, daemon.AgentCommErrors)
+				require.EqualValues(t, 2, daemon.RndcCommErrors)
+				require.EqualValues(t, 3, daemon.StatsCommErrors)
+			case dbmodel.AppTypePDNS.String():
+				require.Equal(t, "pdns@localhost", app.Name)
+				appPdns := app.Details.AppPdns
+				require.Equal(t, "https://pdns.example.com", appPdns.PdnsDaemon.URL)
+				require.Equal(t, "https://pdns.example.com/config", appPdns.PdnsDaemon.ConfigURL)
+				require.Equal(t, "https://pdns.example.com/zones", appPdns.PdnsDaemon.ZonesURL)
+				require.Equal(t, "https://pdns.example.com/autoprimaries", appPdns.PdnsDaemon.AutoprimariesURL)
+			}
 		}
-	}
+	})
+
+	t.Run("get kea apps", func(t *testing.T) {
+		params = services.GetAppsParams{
+			Apps: []string{dbmodel.AppTypeKea.String()},
+		}
+		rsp = rapi.GetApps(ctx, params)
+		require.IsType(t, &services.GetAppsOK{}, rsp)
+		okRsp = rsp.(*services.GetAppsOK)
+		require.EqualValues(t, 1, okRsp.Payload.Total)
+		require.EqualValues(t, dbmodel.AppTypeKea.String(), okRsp.Payload.Items[0].Type)
+		require.EqualValues(t, "fancy-app", okRsp.Payload.Items[0].Name)
+	})
+
+	t.Run("get bind9 apps", func(t *testing.T) {
+		params = services.GetAppsParams{
+			Apps: []string{dbmodel.AppTypeBind9.String()},
+		}
+		rsp = rapi.GetApps(ctx, params)
+		require.IsType(t, &services.GetAppsOK{}, rsp)
+		okRsp = rsp.(*services.GetAppsOK)
+		require.EqualValues(t, 1, okRsp.Payload.Total)
+		require.EqualValues(t, dbmodel.AppTypeBind9.String(), okRsp.Payload.Items[0].Type)
+		require.EqualValues(t, "another-fancy-app", okRsp.Payload.Items[0].Name)
+	})
+
+	t.Run("get pdns apps", func(t *testing.T) {
+		params = services.GetAppsParams{
+			Apps: []string{dbmodel.AppTypePDNS.String()},
+		}
+		rsp = rapi.GetApps(ctx, params)
+		require.IsType(t, &services.GetAppsOK{}, rsp)
+		okRsp = rsp.(*services.GetAppsOK)
+		require.EqualValues(t, 1, okRsp.Payload.Total)
+		require.EqualValues(t, dbmodel.AppTypePDNS.String(), okRsp.Payload.Items[0].Type)
+		require.EqualValues(t, "pdns@localhost", okRsp.Payload.Items[0].Name)
+	})
+
+	t.Run("get apps with multiple types", func(t *testing.T) {
+		params = services.GetAppsParams{
+			Apps: []string{dbmodel.AppTypeKea.String(), dbmodel.AppTypeBind9.String()},
+		}
+		rsp = rapi.GetApps(ctx, params)
+		require.IsType(t, &services.GetAppsOK{}, rsp)
+		okRsp = rsp.(*services.GetAppsOK)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		for _, app := range okRsp.Payload.Items {
+			switch app.Type {
+			case dbmodel.AppTypeKea.String():
+				require.Equal(t, "fancy-app", app.Name)
+			case dbmodel.AppTypeBind9.String():
+				require.Equal(t, "another-fancy-app", app.Name)
+			}
+		}
+	})
 }
 
 // Test converting BIND9 app to REST API format with DNS query stats.

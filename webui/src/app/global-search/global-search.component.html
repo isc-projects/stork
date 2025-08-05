@@ -47,7 +47,7 @@
         <div id="apps-div" *ngIf="searchResults.apps.items.length > 0" style="margin-right: 20px; min-width: 9em">
             <h4>Apps</h4>
             <div *ngFor="let a of searchResults.apps.items">
-                <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.name }}</a>
+                <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a>
             </div>
             <!-- TODO: not supported yet <div style="margin-top: 10px;"><a >more</a></div> -->
         </div>

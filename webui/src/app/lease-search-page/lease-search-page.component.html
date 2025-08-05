@@ -97,7 +97,7 @@
                 Issues were found for the following Kea servers:
                 <ul style="list-style-type: disc">
                     <li *ngFor="let erredApp of erredApps">
-                        <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                        <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
                     </li>
                 </ul>
             </div>
@@ -131,7 +131,7 @@
                 {{ leaseStateAsText(lease.state) }}
             </td>
             <td>
-                <a routerLink="/apps/kea/{{ lease.appId }}" style="display: block">
+                <a routerLink="/apps/{{ lease.appId }}" style="display: block">
                     {{ lease.appName }}
                 </a>
             </td>

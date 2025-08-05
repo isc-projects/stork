@@ -177,8 +177,8 @@ describe('HostTabComponent', () => {
 
         const appLinks = appsFieldset.queryAll(By.css('a'))
         expect(appLinks.length).toBe(2)
-        expect(appLinks[0].attributes.href).toBe('/apps/kea/1')
-        expect(appLinks[1].attributes.href).toBe('/apps/kea/2')
+        expect(appLinks[0].attributes.href).toBe('/apps/1')
+        expect(appLinks[1].attributes.href).toBe('/apps/2')
 
         let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
         expect(datasourceLabel).toBeTruthy()
@@ -326,8 +326,8 @@ describe('HostTabComponent', () => {
 
         const appLinks = appsFieldset.queryAll(By.css('a'))
         expect(appLinks.length).toBe(2)
-        expect(appLinks[0].attributes.href).toBe('/apps/kea/1')
-        expect(appLinks[1].attributes.href).toBe('/apps/kea/2')
+        expect(appLinks[0].attributes.href).toBe('/apps/1')
+        expect(appLinks[1].attributes.href).toBe('/apps/2')
 
         let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
         expect(datasourceLabel).toBeTruthy()
@@ -1031,10 +1031,10 @@ describe('HostTabComponent', () => {
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
                 expect(link.properties.innerText).toContain('frog')
-                expect(link.properties.pathname).toBe('/apps/kea/1')
+                expect(link.properties.pathname).toBe('/apps/1')
             } else {
                 expect(link.properties.innerText).toContain('lion')
-                expect(link.properties.pathname).toBe('/apps/kea/2')
+                expect(link.properties.pathname).toBe('/apps/2')
             }
         }
     })

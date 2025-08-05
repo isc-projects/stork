@@ -81,7 +81,7 @@
                     were found for the following Kea servers:
                     <ul style="list-style-type: disc">
                         <li *ngFor="let erredApp of erredApps">
-                            <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                            <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
                         </li>
                     </ul>
                 </div>
@@ -95,7 +95,7 @@
                     <ng-template pTemplate="body" let-ls>
                         <tr>
                             <td class="border-none w-10rem">
-                                <a routerLink="/apps/kea/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
+                                <a routerLink="/apps/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
                                 <app-host-data-source-label
                                     class="ml-2"
                                     *ngFor="let l of ls"
@@ -337,7 +337,7 @@
     <span class="stork-fieldset-legend-text">
         {{ title }}&nbsp;/&nbsp;
         <ng-container *ngIf="!all">
-            <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
+            <a class="mr-1" routerLink="/apps/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
             <app-host-data-source-label
                 *ngFor="let localHost of localHosts"
                 class="ml-2"

@@ -129,7 +129,7 @@
                     >Pools&nbsp;/&nbsp;
                     <a
                         *ngIf="!allDaemonsHaveEqualPools(); else equalPoolsBlock"
-                        routerLink="/apps/kea/{{ localSubnet.appId }}"
+                        routerLink="/apps/{{ localSubnet.appId }}"
                     >
                         {{ localSubnet.appName }}
                     </a>
@@ -178,7 +178,7 @@
                     >User Context&nbsp;/&nbsp;
                     <a
                         *ngIf="!allDaemonsHaveEqualUserContext(); else equalPoolsBlock"
-                        routerLink="/apps/kea/{{ localSubnet.appId }}"
+                        routerLink="/apps/{{ localSubnet.appId }}"
                     >
                         {{ localSubnet.appName }}
                     </a>
@@ -218,7 +218,7 @@
                         >DHCP Options&nbsp;/&nbsp;
                         <a
                             *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
-                            routerLink="/apps/kea/{{ localSubnet.appId }}"
+                            routerLink="/apps/{{ localSubnet.appId }}"
                         >
                             {{ localSubnet.appName }}
                         </a>

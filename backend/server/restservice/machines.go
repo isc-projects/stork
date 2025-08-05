@@ -1430,25 +1430,16 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		limit = *params.Limit
 	}
 
-	appType := ""
-	if params.App != nil {
-		appType = *params.App
-	}
-
 	log.WithFields(log.Fields{
 		"start": start,
 		"limit": limit,
 		"text":  params.Text,
-		"app":   appType,
+		"apps":  params.Apps,
 	}).Info("query apps")
 
 	var appTypes []dbmodel.AppType
-	if appType != "" {
-		if appType == "dns" {
-			appTypes = []dbmodel.AppType{dbmodel.AppTypeBind9, dbmodel.AppTypePDNS}
-		} else {
-			appTypes = []dbmodel.AppType{dbmodel.AppType(appType)}
-		}
+	for _, appType := range params.Apps {
+		appTypes = append(appTypes, dbmodel.AppType(appType))
 	}
 	apps, err := r.getApps(start, limit, params.Text, "", dbmodel.SortDirAny, appTypes...)
 	if err != nil {

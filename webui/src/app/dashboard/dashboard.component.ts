@@ -330,7 +330,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                             this.zoneInventoryStateMap.set(s.appId, s)
                         })
                     }
-                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'dns')
+                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, ['bind9', 'pdns'])
                 })
             )
         )

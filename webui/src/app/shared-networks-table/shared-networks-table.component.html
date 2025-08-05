@@ -215,7 +215,7 @@
             </td>
             <td>
                 <div *ngFor="let app of getApps(net)">
-                    <a routerLink="/apps/kea/{{ app.id }}">{{ app.name }}</a>
+                    <a routerLink="/apps/{{ app.id }}">{{ app.name }}</a>
                 </div>
             </td>
         </tr>
