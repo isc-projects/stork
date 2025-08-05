@@ -258,6 +258,21 @@ def test_down_calls_proper_command_and_removes_volumes():
     assert cmd[-1] == "-v"
 
 
+def test_kill_calls_proper_command():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    compose._call_command = mock
+    base_cmd = compose.docker_compose_command()
+    # Act
+    compose.kill()
+    # Assert
+    mock.assert_called_once()
+    cmd = mock.call_args.kwargs["cmd"]
+    assert " ".join(cmd[:-1]) == " ".join(base_cmd)
+    assert cmd[-1] == "kill"
+
+
 def test_run_calls_proper_command():
     # Arrange
     compose = DockerCompose("project-dir")

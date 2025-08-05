@@ -319,6 +319,13 @@ class DockerCompose:
         self._call_command(cmd=down_cmd)
         self._clean_isolated_directory()
 
+    def kill(self, *service_names):
+        """
+        Kill the docker compose services.
+        """
+        kill_cmd = self.docker_compose_command() + ["kill", *service_names]
+        self._call_command(cmd=kill_cmd)
+
     def start(self, *service_names):
         """
         Start the docker compose services.

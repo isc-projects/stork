@@ -676,6 +676,7 @@ def finish(request):
 
         # Down all containers
         compose = create_docker_compose()
+        compose.kill()
         compose.down()
 
     request.addfinalizer(collect_logs_and_down_all)
