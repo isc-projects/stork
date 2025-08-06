@@ -157,7 +157,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	var err error
 
 	if params.Credentials == nil {
-		log.Warning(("Cannot authenticate a user due to missing credentials"))
+		log.Debug(("Cannot authenticate a user due to missing credentials"))
 		return users.NewCreateSessionBadRequest()
 	}
 
