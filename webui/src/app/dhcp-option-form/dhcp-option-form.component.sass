@@ -23,28 +23,29 @@
             cursor: help
             background: var(--surface-300)
 
-    .p-togglebutton.p-button
-        // Overwrite default PrimeNG toggle button style.
-        // PrimeNG Aura theme style of toggle button doesn't match with
-        // dashed border of .option-field class.
-        // This should be revised in the future,
-        // whether custom style is still necessary.
-        background: var(--surface-0)
-        border-color: var(--surface-0)
+    @layer storkhigh
+        .p-togglebutton.p-button
+            // Overwrite default PrimeNG toggle button style.
+            // PrimeNG Aura theme style of toggle button doesn't match with
+            // dashed border of .option-field class.
+            // This should be revised in the future,
+            // whether custom style is still necessary.
+            background: var(--surface-0)
+            border-color: var(--surface-0)
 
-        &.p-highlight
-            background: var(--surface-200)
-            border-color: var(--surface-200)
+            &.p-highlight
+                background: var(--surface-200)
+                border-color: var(--surface-200)
 
-            &:hover
-                background: var(--surface-300)
-                border-color: var(--surface-300)
+                &:hover
+                    background: var(--surface-300)
+                    border-color: var(--surface-300)
 
-            & .p-button-label
-                background: inherit
-                border-color: inherit
-                box-shadow: none
+                & .p-button-label
+                    background: inherit
+                    border-color: inherit
+                    box-shadow: none
 
-        .p-button-label
-            // Don't wrap button label when viewport shrinks.
-            white-space: nowrap
+            .p-button-label
+                // Don't wrap button label when viewport shrinks.
+                white-space: nowrap
