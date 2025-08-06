@@ -170,9 +170,6 @@ CLEAN.append "test-results/", "tests/system/test-results/", "tests/system/perfor
 # The internal system test framework files
 CLEAN.append "tests/system/config/.isolated/"
 
-# The internal system test framework files
-CLEAN.append "tests/system/config/.isolated/"
-
 #########################
 ### System test tasks ###
 #########################
