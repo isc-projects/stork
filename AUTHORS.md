@@ -1,11 +1,14 @@
- Stork authors and contributors
+Stork authors and contributors
 ------------------------------
 
 Primary developers:
 
-- Marcin Siodelski (maintainer, database, server, agent, UI, config management, Kea)
+- Marcin Siodelski (maintainer, database, server, agent, UI, config management,
+                    config review, Kea, BIND 9, PowerDNS, DNS zone viewer)
 - Sławek Figiel (maintainer, database, server, agent, UI, hooks, LDAP, system tests,
-                 registration, config migration, prometheus)
+                 registration, config migration, config review, Prometheus,
+                 Kea statistics)
+- Piotrek Zadroga (maintainer, UI, responsive UI, version reporting, DNS zone viewer)
 
 Active developers:
 
@@ -15,8 +18,7 @@ Active developers:
 - Andrei Pavel (CI, release engineering, UI)
 - Marcin Godzina (QA, release engineering)
 - Suzanne Goldlust (documentation)
-- Razvan Becheriu (database, server, UI)
-- Piotrek Zadroga (UI, version reporting)
+- William Leuschner
 - Yavor Peev (QA)
 
 Primary area of work mentioned in parentheses. The list is in
@@ -24,6 +26,7 @@ roughly chronological order.
 
 Former developers:
 
+- Razvan Becheriu (database, server, UI)
 - Thomas Markwalder (Kea)
 - Matthijs Mekking (BIND 9, Prometheus)
 - Michał Nowikowski (maintainer, server, agent, UI, Prometheus, release engineering)
