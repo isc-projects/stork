@@ -338,10 +338,12 @@ func trimBaseURLMiddleware(next http.Handler, baseURL string) http.Handler {
 	})
 }
 
-// Middleware that rejects requests whose bodies are too large.
-// Accepts a maximum body size in bytes. The requests with unknown content
-// length are rejected as suspicious. The requests with content length larger
-// than the maximum body size are rejected with HTTP 413 status code.
+// Middleware that limits request body size.
+// It is used to prevent DoS attacks by limiting the number of bytes received
+// in the incoming HTTP requests. Accepts a maximum body size in bytes.
+// The requests can have a body of any size, but if the server will try to
+// read more bytes than the maximum body size, it will return an HTTP 413
+// Entity Too Large status code.
 // If the maximum body size is less than or equal to zero, the middleware is
 // skipped.
 func bodySizeLimiterMiddleware(next http.Handler, maxBodySize int64) http.Handler {
