@@ -125,7 +125,7 @@ variables are listed in square brackets, where applicable):
    values, including the request line. It does not limit the size of the request body. The default is 1024 (1MB). ``[$STORK_REST_MAX_HEADER_SIZE]``
 
 ``--rest-max-body-size``
-   Specifies the maximum number of bytes the server accepts when parsing the request body. It does not
+   Specifies the maximum number of bytes the server accepts when parsing the request body. HTTP 413 is returned if the body exceeds the limit. It does not
    limit the size of the request header. The default is 10MB. Set to zero to disable the limit. ``[$STORK_REST_MAX_BODY_SIZE]``
 
 ``--rest-host``
