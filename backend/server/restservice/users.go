@@ -179,14 +179,14 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		log.
 			WithField("method", authenticationMethod).
 			WithField("identifier", *params.Credentials.Identifier).
-			Error("User not found, cannot authenticate")
+			Debug("User not found, cannot authenticate")
 		return users.NewCreateSessionBadRequest()
 	} else if err != nil {
 		log.
 			WithError(err).
 			WithField("method", authenticationMethod).
 			WithField("identifier", *params.Credentials.Identifier).
-			Error("Cannot authenticate a user")
+			Debug("Cannot authenticate a user")
 		return users.NewCreateSessionBadRequest()
 	}
 
@@ -195,7 +195,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		log.
 			WithError(err).
 			WithField("identifier", *params.Credentials.Identifier).
-			Error("Cannot log in a user")
+			Debug("Cannot log in a user")
 		return users.NewCreateSessionBadRequest()
 	}
 
