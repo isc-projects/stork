@@ -156,41 +156,6 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
-  agent-kea-many-host-reservations-1:
-    extends: agent-kea-premium-host-database-base
-    volumes:
-      - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-1.conf:/etc/kea/kea-dhcp4.conf
-
-  agent-kea-many-host-reservations-2:
-    extends: agent-kea-premium-host-database-base
-    environment:
-      STORK_AGENT_HOST: 172.42.42.101
-      DB_NAME: kea_hostcmds_2
-      DB_USER: kea_hostcmds_2
-      DB_PASSWORD: kea_hostcmds_2
-    networks:
-      storknet:
-        ipv4_address: 172.42.42.101
-        priority: 1000
-      subnet_00:
-        ipv4_address: 172.100.42.101
-        priority: 500
-      subnet_01:
-        ipv4_address: 172.101.42.101
-        priority: 400
-      subnet_02:
-        ipv4_address: 172.102.42.101
-        priority: 300
-      subnet6_00:
-        ipv6_address: 3000:db8:1:42::101
-        priority: 500
-      subnet6_01:
-        ipv6_address: 3001:db8:1:42::101
-        priority: 400
-    volumes:
-      - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-2.conf:/etc/kea/kea-dhcp4.conf
-      - $PWD/tests/system/config/kea-premium-host-database/kea-host-database-2.json:/etc/kea/kea-host-database.json
-
   agent-kea6:
     extends: agent-kea
     networks:
@@ -275,6 +240,45 @@ services:
 
   agent-kea-premium-host-database:
     extends: agent-kea-premium-host-database-base
+    depends_on:
+      - postgres
+
+  agent-kea-many-host-reservations-1:
+    extends: agent-kea-premium-host-database-base
+    volumes:
+      - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-1.conf:/etc/kea/kea-dhcp4.conf
+    depends_on:
+      - postgres
+
+  agent-kea-many-host-reservations-2:
+    extends: agent-kea-premium-host-database-base
+    environment:
+      STORK_AGENT_HOST: 172.42.42.101
+      DB_NAME: kea_hostcmds_2
+      DB_USER: kea_hostcmds_2
+      DB_PASSWORD: kea_hostcmds_2
+    networks:
+      storknet:
+        ipv4_address: 172.42.42.101
+        priority: 1000
+      subnet_00:
+        ipv4_address: 172.100.42.101
+        priority: 500
+      subnet_01:
+        ipv4_address: 172.101.42.101
+        priority: 400
+      subnet_02:
+        ipv4_address: 172.102.42.101
+        priority: 300
+      subnet6_00:
+        ipv6_address: 3000:db8:1:42::101
+        priority: 500
+      subnet6_01:
+        ipv6_address: 3001:db8:1:42::101
+        priority: 400
+    volumes:
+      - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-2.conf:/etc/kea/kea-dhcp4.conf
+      - $PWD/tests/system/config/kea-premium-host-database/kea-host-database-2.json:/etc/kea/kea-host-database.json
     depends_on:
       - postgres
 
