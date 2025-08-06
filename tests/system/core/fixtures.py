@@ -669,7 +669,9 @@ def finish(request):
 
         # If the test fails due to non-assertion error then the call status is
         # unavailable.
-        if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
+        # The rep_call attribute is unavailable if an error occurs in the
+        # fixture setup phase.
+        if not hasattr(request.node, "rep_call") or request.node.rep_call.failed:
             collect_logs(test_dir)
 
         # Down all containers
