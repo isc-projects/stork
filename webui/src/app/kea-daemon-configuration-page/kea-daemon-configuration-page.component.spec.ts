@@ -213,7 +213,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(breadcrumbsComponent).not.toBeNull()
         expect(breadcrumbsComponent.items).toHaveSize(6)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
-        expect(breadcrumbsComponent.items[1].label).toEqual('Kea Apps')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Apps')
         expect(breadcrumbsComponent.items[2].label).toEqual('foo')
         expect(breadcrumbsComponent.items[3].label).toEqual('Daemons')
         expect(breadcrumbsComponent.items[4].label).toEqual('DHCPv6')
