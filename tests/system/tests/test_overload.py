@@ -67,13 +67,21 @@ def test_two_same_big_configurations_at_time(
 
 
 @pytest.mark.skip(
-    reason="""The test is unstable because the deadlocks may occur after the
-migration. It causes the server to partially update the host data in the
-database. In result, the test assertions fail."""
+    reason="""This test doesn't pass but The `test_migrate_many_hosts` is
+    unstable, or rather always fails, but not due to any bug in the code. For
+    this amount of host reservations, single state and host pulling seem
+    insufficient to detect all changes in the reservations. As a result,
+    there is a period when Stork sees them as being stored in the database and
+    the configuration file simultaneously. It takes around 90-120 seconds to
+    stabilize the situation. To fix it, we could alter the database as a part
+    of the migration process, rethink the pulling process, or add any smart
+    logic to recognize when all reservations are finally pulled. See #1959.
+    """
 )
 @ha_parametrize(
     "agent-kea-many-host-reservations-1",
     "agent-kea-many-host-reservations-2",
+    None,
 )
 def test_migrate_many_hosts(server_service: Server, ha_service: Tuple[Kea, Kea]):
     """
@@ -105,6 +113,7 @@ def test_migrate_many_hosts(server_service: Server, ha_service: Tuple[Kea, Kea])
     server_service.wait_for_host_reservation_pulling()
     # Go through all host reservations and check if they were migrated
     # properly.
+    not_migrated_count = 0
     for i in range(0, 10005, 100):
         hosts = server_service.list_hosts(start=i, limit=100)
         assert hosts.total == 10005
@@ -116,4 +125,5 @@ def test_migrate_many_hosts(server_service: Server, ha_service: Tuple[Kea, Kea])
                         host.host_identifiers[0].id_hex_value,
                         local_host.daemon_id,
                     )
-                assert local_host.data_source == "api"
+                    not_migrated_count += 1
+    assert not_migrated_count == 0
