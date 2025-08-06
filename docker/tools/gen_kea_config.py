@@ -590,6 +590,7 @@ def cmd():  # pylint: disable=too-many-locals, too-many-statements
                 {"include": "/etc/kea/hook-hostcmds.json"},
                 {"include": "/etc/kea/hook-subnetcmds.json"},
                 {"include": "/etc/kea/hook-ha-dhcp4.json"},
+                {"include": "/etc/kea/hook-database-driver.json"}
             ]
         )
         conf["Dhcp4"]["hosts-databases"] = [
