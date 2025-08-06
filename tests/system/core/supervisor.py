@@ -40,7 +40,6 @@ class SupervisorService:
         # See: https://supervisord.org/subprocess.html#process-states for
         # the list of process states.
         code, stdout, _ = self._exec(cmd)
-
         # If any process is in the STARTING or BACKOFF state, it means they are
         # not operational. BACKOFF means that the process failed to start
         # and is waiting for the retry.

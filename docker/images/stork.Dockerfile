@@ -343,7 +343,7 @@ EXPOSE 8080
 # Prometheus Kea port
 EXPOSE 9547
 # The process is in a BACKOFF state when it is starting or start is retrying.
-# BACKOFF and STARTING states don't cause the supervisor to exit with a
+# BACKOFF and STARTING states doesn't cause the supervisor to exit with a
 # non-zero status.
 # But for Healthcheck purposes, we need to treat them as unhealthy states.
 HEALTHCHECK CMD output="$(supervisorctl status)" || exit 1; echo "$output" | grep -vz 'BACKOFF\|STARTING'
