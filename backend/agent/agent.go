@@ -41,7 +41,10 @@ type StorkAgent struct {
 	// Explicitly provided BIND 9 configuration path by user. It will be used
 	// to detect the BIND 9 app. It may be empty.
 	ExplicitBind9ConfigPath string
-	AppMonitor              AppMonitor
+	// Explicitly provided PowerDNS configuration path by user. It will be used
+	// to detect the PowerDNS app. It may be empty.
+	ExplicitPowerDNSConfigPath string
+	AppMonitor                 AppMonitor
 	// BIND9 HTTP stats client.
 	bind9StatsClient *bind9StatsClient
 	// PowerDNS webserver client.
@@ -61,20 +64,21 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClientConfig HTTPClientConfig, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
+func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClientConfig HTTPClientConfig, hookManager *HookManager, explicitBind9ConfigPath string, explicitPowerDNSConfigPath string) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Host:                    host,
-		Port:                    port,
-		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
-		AppMonitor:              appMonitor,
-		bind9StatsClient:        bind9StatsClient,
-		pdnsClient:              newPDNSClient(),
-		KeaHTTPClientConfig:     keaHTTPClientConfig,
-		logTailer:               logTailer,
-		keaInterceptor:          newKeaInterceptor(),
-		hookManager:             hookManager,
+		Host:                       host,
+		Port:                       port,
+		ExplicitBind9ConfigPath:    explicitBind9ConfigPath,
+		ExplicitPowerDNSConfigPath: explicitPowerDNSConfigPath,
+		AppMonitor:                 appMonitor,
+		bind9StatsClient:           bind9StatsClient,
+		pdnsClient:                 newPDNSClient(),
+		KeaHTTPClientConfig:        keaHTTPClientConfig,
+		logTailer:                  logTailer,
+		keaInterceptor:             newKeaInterceptor(),
+		hookManager:                hookManager,
 	}
 
 	registerKeaInterceptFns(sa)

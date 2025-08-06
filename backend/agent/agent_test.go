@@ -173,7 +173,7 @@ func TestNewStorkAgent(t *testing.T) {
 	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClientConfig := HTTPClientConfig{}
 	sa := NewStorkAgent(
-		"foo", 42, fam, bind9StatsClient, keaHTTPClientConfig, NewHookManager(), "",
+		"foo", 42, fam, bind9StatsClient, keaHTTPClientConfig, NewHookManager(), "", "",
 	)
 	require.NotNil(t, sa.AppMonitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)

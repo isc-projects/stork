@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -60,7 +61,7 @@ func TestGetApps(t *testing.T) {
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpClientConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClientConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClientConfig, hm, "", "")
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -238,7 +239,7 @@ func TestDetectApps(t *testing.T) {
 
 	pdnsProcess := NewMockSupportedProcess(ctrl)
 	pdnsProcess.EXPECT().getName().AnyTimes().Return("pdns_server", nil)
-	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server -c /etc/powerdns/pdns.conf", nil)
+	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server --config-dir=/etc/powerdns", nil)
 	pdnsProcess.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	pdnsProcess.EXPECT().getPid().AnyTimes().Return(int32(7890))
 	pdnsProcess.EXPECT().getParentPid().AnyTimes().Return(int32(8901), nil)
@@ -274,7 +275,7 @@ func TestDetectApps(t *testing.T) {
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
 	// Create fake app for which the zone inventory should be stopped
 	// when new apps are detected.
@@ -372,7 +373,7 @@ func TestDetectAppsConfigNoStatistics(t *testing.T) {
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
 	// Create fake app to test that the monitor stops zone inventory
 	// when new apps are detected.
@@ -428,7 +429,7 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
 	// Act
 	am.detectApps(sa)
@@ -477,7 +478,7 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
 	// Act
 	am.detectApps(sa)
@@ -515,7 +516,7 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
 	// Act
 	am.detectApps(sa)
@@ -545,7 +546,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	})
 
 	hm := NewHookManager()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
@@ -614,6 +615,7 @@ func TestDetectPowerDNSAppAbsPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	executor := NewMockCommandExecutor(ctrl)
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
@@ -621,7 +623,7 @@ func TestDetectPowerDNSAppAbsPath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
 	process.EXPECT().getCwd().Return("", nil)
-	app, err := detectPowerDNSApp(process, parser)
+	app, err := detectPowerDNSApp(process, executor, "", parser)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypePowerDNS)
@@ -638,6 +640,11 @@ func TestDetectPowerDNSAppRelativePath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(filepath.Join("/etc", "powerdns", "pdns.conf")).DoAndReturn(func(path string) bool {
+		return path == filepath.Join("/etc", "powerdns", "pdns.conf")
+	})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
@@ -645,7 +652,7 @@ func TestDetectPowerDNSAppRelativePath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=pdns.conf", nil)
 	process.EXPECT().getCwd().Return("/etc", nil)
-	app, err := detectPowerDNSApp(process, parser)
+	app, err := detectPowerDNSApp(process, executor, "", parser)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypePowerDNS)

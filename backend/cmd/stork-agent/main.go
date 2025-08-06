@@ -120,6 +120,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 		keaHTTPClientConfig,
 		hookManager,
 		settings.Bind9Path,
+		settings.PowerDNSPath,
 	)
 
 	// Let's start the app monitor.
@@ -338,6 +339,7 @@ type generalSettings struct {
 	ServerURL                           string `long:"server-url" description:"The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)" env:"STORK_AGENT_SERVER_URL"`
 	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory" default:"/usr/lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`
 	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_AGENT_BIND9_CONFIG"`
+	PowerDNSPath                        string `long:"powerdns-path" description:"Specify the path to PowerDNS config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_AGENT_POWERDNS_CONFIG"`
 }
 
 // Register command settings.

@@ -52,6 +52,9 @@ where applicable)
 ``--bind9-path``
    The path to the BIND 9 configuration file. Does not need to be specified, unless the location is uncommon. ``[$STORK_AGENT_BIND9_PATH]``
 
+``--powerdns-path``
+   The path to the PowerDNS configuration file. Does not need to be specified, unless the location is uncommon. ``[$STORK_AGENT_POWERDNS_PATH]``
+
 ``--env-file``
    The environment file location; applicable only if the ``use-env-file`` is provided. The default is ``/etc/stork/agent.env``.
 

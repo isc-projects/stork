@@ -306,7 +306,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			}
 		case pdnsProcName:
 			// PowerDNS server.
-			if detectedApp, err = detectPowerDNSApp(p, sm.pdnsConfigParser); err != nil {
+			if detectedApp, err = detectPowerDNSApp(p, sm.commander, storkAgent.ExplicitPowerDNSConfigPath, sm.pdnsConfigParser); err != nil {
 				log.WithError(err).Warn("Failed to detect PowerDNS server app")
 				continue
 			}
