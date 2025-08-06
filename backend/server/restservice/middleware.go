@@ -356,36 +356,9 @@ func bodySizeLimiterMiddleware(next http.Handler, maxBodySize int64) http.Handle
 			next.ServeHTTP(w, r)
 			return
 		}
-		if r.ContentLength <= 0 {
-			// Unknown body size, reject such requests as suspicious.
-			// I don't know if it is a good idea to reject such requests,
-			// but it doesn't fail in our tests, so we keep it for now.
-			// As an alternative, we could limit the body size to a max
-			// body size.
-			http.Error(w,
-				fmt.Sprintf(
-					"Request content length unknown, rejecting request. "+
-						"Please, set the Content-Length header to a "+
-						"value less than or equal to %d bytes.",
-					maxBodySize,
-				),
-				http.StatusRequestEntityTooLarge,
-			)
-			return
-		}
-		if r.ContentLength > maxBodySize {
-			http.Error(w,
-				fmt.Sprintf(
-					"Request content length too large: %d bytes (max: %d bytes)",
-					r.ContentLength, maxBodySize,
-				),
-				http.StatusRequestEntityTooLarge,
-			)
-			return
-		}
 
-		// Limit the body to its declared size.
-		r.Body = http.MaxBytesReader(w, r.Body, r.ContentLength)
+		// Limit the body to the maximum value.
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 
 		next.ServeHTTP(w, r)
 	})
