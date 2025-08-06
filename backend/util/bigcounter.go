@@ -159,6 +159,8 @@ func (n *BigCounter) DivideBy(other *BigCounter) float64 {
 func (n *BigCounter) DivideSafeBy(other *BigCounter) float64 {
 	if !other.isExtended() && other.base == 0 {
 		return 0.0
+	} else if other.isExtended() && other.extended.Cmp(big.NewInt(0)) == 0 {
+		return 0.0
 	}
 	return n.DivideBy(other)
 }
