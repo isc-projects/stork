@@ -1,7 +1,8 @@
 // remove padding from daemon tabs panels so grey bar sticks to borders
 :host ::ng-deep .daemon-tabs.p-tabview .p-tabview-panels
-  padding-left: 0
-  padding-right: 0
+  @layer storkhigh
+    padding-left: 0
+    padding-right: 0
 
 // Custom style for divs displaying hook names.
 // It adds clickable UX (pointer cursor and hover effect).

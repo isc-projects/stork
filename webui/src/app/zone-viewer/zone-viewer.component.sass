@@ -1,36 +1,37 @@
-:host ::ng-deep .p-datatable
-    .p-datatable-tbody > tr
-        background: none !important
+@layer storkhigh
+    :host ::ng-deep .p-datatable
+        .p-datatable-tbody > tr
+            background: none !important
 
-    .p-datatable-tbody > tr > td
-        font-family: monospace
-        padding: 0.5rem 1rem
-        border: none
-        vertical-align: top
+        .p-datatable-tbody > tr > td
+            font-family: monospace
+            padding: 0.5rem 1rem
+            border: none
+            vertical-align: top
 
-        &.rr-type-soa
-            color: var(--red-600)
+            &.rr-type-soa
+                color: var(--red-600)
 
-        &.rr-type-a
-            color: var(--green-600)
+            &.rr-type-a
+                color: var(--green-600)
 
-        &.rr-type-aaaa
-            color: var(--green-700)
+            &.rr-type-aaaa
+                color: var(--green-700)
 
-        &.rr-type-ns
-            color: var(--blue-600)
+            &.rr-type-ns
+                color: var(--blue-600)
 
-        &.rr-type-mx
-            color: var(--orange-600)
+            &.rr-type-mx
+                color: var(--orange-600)
 
-        &.rr-type-cname
-            color: var(--purple-600)
+            &.rr-type-cname
+                color: var(--purple-600)
 
-        &.rr-type-txt
-            color: var(--cyan-700)
+            &.rr-type-txt
+                color: var(--cyan-700)
 
-        &.rr-type-ptr
-            color: var(--indigo-600)
+            &.rr-type-ptr
+                color: var(--indigo-600)
 
-    .p-datatable-tbody > tr:hover
-        background-color: var(--surface-hover)
+        .p-datatable-tbody > tr:hover
+            background-color: var(--surface-hover)

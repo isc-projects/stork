@@ -124,15 +124,16 @@
 
 
 ::ng-deep .p-paginator
-    // Scale paginator. Default is little too big to put inside tree
-    scale: 0.85
-    // Pull to the left to better expose assigned node
-    // Align to a key with pad for collapse marker
-    margin-left: 0
+    @layer storkhigh
+        // Scale paginator. Default is little too big to put inside tree
+        scale: 0.85
+        // Pull to the left to better expose assigned node
+        // Align to a key with pad for collapse marker
+        margin-left: 0
 
-    .p-paginator__jump-to-page
-        width: 5em
-        margin-left: 0.5em
+        .p-paginator__jump-to-page
+            width: 5em
+            margin-left: 0.5em
 
 
 .sensitive-data

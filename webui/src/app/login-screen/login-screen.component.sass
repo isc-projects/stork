@@ -107,30 +107,31 @@ $layout-breakpoint: 640px
         // Justify the authentication description.
         text-align: justify
 
-:host ::ng-deep .login-screen__authentication-inputs
-    // Limit the maximum width of the input area to be convenient for typing.
-    max-width: 400px
-    // Center the input area.
-    margin: auto
+@layer storkhigh
+    :host ::ng-deep .login-screen__authentication-inputs
+        // Limit the maximum width of the input area to be convenient for typing.
+        max-width: 400px
+        // Center the input area.
+        margin: auto
 
-    input, button, .password-component
-        // Expand to full width.
-        width: 100%
+        input, button, .password-component
+            // Expand to full width.
+            width: 100%
 
-    & > div:first-child
-        // Make a space for floating label.
-        margin-bottom: 2rem
-        margin-top: 2rem
-    & > div:not(:first-child)
-        // Spacing between inputs.
-        margin-top: 8px
-    & > div:last-child
-        // Spacing between button and above input.
-        margin-top: 18px
-    .p-inputwrapper-focus, .p-inputwrapper-filled, input:focus, .p-filled
-        & ~ label
-            // The default color is gray. Use white to better contrast with a blue background.
-            color: var(--gray-0)
+        & > div:first-child
+            // Make a space for floating label.
+            margin-bottom: 2rem
+            margin-top: 2rem
+        & > div:not(:first-child)
+            // Spacing between inputs.
+            margin-top: 8px
+        & > div:last-child
+            // Spacing between button and above input.
+            margin-top: 18px
+        .p-inputwrapper-focus, .p-inputwrapper-filled, input:focus, .p-filled
+            & ~ label
+                // The default color is gray. Use white to better contrast with a blue background.
+                color: var(--gray-0)
 
 .login-screen__authentication-loader
     // Center the loader spinner horizontally.

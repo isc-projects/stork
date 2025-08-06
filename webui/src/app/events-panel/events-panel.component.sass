@@ -1,16 +1,3 @@
-// PrimeNG style modifications for the bare layout.
-:host ::ng-deep .events-table--bare
-  .p-paginator
-    // Disable the border around the pagination element.
-    border: 0px
-    // Add a small vertical spacing between the panel and the pagination bar.
-    margin-top: 5px
-
-  .p-datatable
-    .p-datatable-tbody > tr > td
-      // Disable borders around cells.
-      border: none
-
 // Style changes related to the bare layout.
 .events-table--bare
   td
@@ -25,6 +12,20 @@
   .events-table__date
     // Displays the date in two rows. The first contains the date, and the second time.
     width: 6em
+
+  // PrimeNG style modifications for the bare layout.
+  @layer storkhigh
+    :host ::ng-deep &
+      .p-paginator
+        // Disable the border around the pagination element.
+        border: 0
+        // Add a small vertical spacing between the panel and the pagination bar.
+        margin-top: 5px
+
+      .p-datatable
+        .p-datatable-tbody > tr > td
+          // Disable borders around cells.
+          border: none
 
 // Style changes related to the table layout.
 .events-table--table

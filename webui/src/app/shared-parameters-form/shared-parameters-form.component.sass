@@ -1,20 +1,21 @@
-:host ::ng-deep
-    // Override default flex min-width so that text items like
-    // p-multiselect could shrink.
-    .flex-auto, .md\:flex-auto
-        min-width: 0
+@layer storkhigh
+    :host ::ng-deep
+        // Override default flex min-width so that text items like
+        // p-multiselect could shrink.
+        .flex-auto, .md\:flex-auto
+            min-width: 0
 
-    // Minimize horizontal padding for small text buttons.
-    .p-button-sm.p-button.p-button-text
-        width: auto
-        padding-left: 0.125rem
-        padding-right: 0.125rem
+        // Minimize horizontal padding for small text buttons.
+        .p-button-sm.p-button.p-button-text
+            width: auto
+            padding-left: 0.125rem
+            padding-right: 0.125rem
 
-    // When small button is inside flex container that has .align-items-end class applied,
-    // add some bottom margin to align the button vertically with other higher flex items.
-    .align-items-end >
-        .p-button-sm, .p-element:has(> .p-button-sm)
-            margin-bottom: 0.25rem
+        // When small button is inside flex container that has .align-items-end class applied,
+        // add some bottom margin to align the button vertically with other higher flex items.
+        .align-items-end >
+            .p-button-sm, .p-element:has(> .p-button-sm)
+                margin-bottom: 0.25rem
 
 // Add border between shared parameters.
 .shared-parameter-wrapper:not(:last-child)

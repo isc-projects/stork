@@ -20,7 +20,7 @@
     </div>
     <p-divider />
     @if (loading) {
-        <p-progressSpinner styleClass="w-2rem h-2rem" />
+        <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" />
     } @else {
         <p-table [value]="data?.items ?? []" styleClass="datatable-responsive">
             <ng-template pTemplate="body" let-rr>

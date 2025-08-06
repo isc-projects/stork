@@ -1,14 +1,15 @@
-:host ::ng-deep
-  // Set minimum width to 8rem.
-  .min-w-8rem
-    min-width: 8rem
+@layer storkhigh
+  :host ::ng-deep
+    // Set minimum width to 8rem.
+    .min-w-8rem
+      min-width: 8rem
 
-  // Set min-width for PrimeNG progressbar value div.
-  // For small progressbar values the width of the div is too small and the value cannot be read.
-  .p-progressbar-value
-    min-width: 1.5rem
+    // Set min-width for PrimeNG progressbar value div.
+    // For small progressbar values the width of the div is too small and the value cannot be read.
+    .p-progressbar-value
+      min-width: 1.5rem
 
-  // Hide a column for smaller viewports.
-  .hiding-column
-    @media all and (max-width: 1350px)
-      display: none
+    // Hide a column for smaller viewports.
+    .hiding-column
+      @media all and (max-width: 1350px)
+        display: none

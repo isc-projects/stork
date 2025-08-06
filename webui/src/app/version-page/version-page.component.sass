@@ -1,42 +1,43 @@
-:host ::ng-deep
-  // Use bigger font for panel headers.
-  .p-panel-title
-    font-size: 1.5rem
+@layer storkhigh
+  :host ::ng-deep
+    // Use bigger font for panel headers.
+    .p-panel-title
+      font-size: 1.5rem
 
-  #summary-table .p-datatable-tbody tr td:not(.row-toggle)
-    // When responsive table stack layout is applied, customize table cells to wrap wide content for better visibility.
-    // Do not apply the style to row toggles table cells.
-    @media screen and (max-width: 48rem)
-      flex-wrap: wrap
-      gap: 0.5rem
-
-    .p-messages
-      // Apply flex-wrap to .p-message-wrapper container for better
-      // messages visibility - the icon and short summary should fit in first line.
-      // Message details will wrap to new line.
-      .p-message-wrapper
+    #summary-table .p-datatable-tbody tr td:not(.row-toggle)
+      // When responsive table stack layout is applied, customize table cells to wrap wide content for better visibility.
+      // Do not apply the style to row toggles table cells.
+      @media screen and (max-width: 48rem)
         flex-wrap: wrap
         gap: 0.5rem
 
-      .p-message-detail
-        // flex-basis set to 100% makes .p-message-detail div always wrap to new line
-        flex-basis: 100%
-        // .p-message-detail div will be wrapped to new line,
-        // so left margin is not needed.
-        margin-left: 0
+      .p-messages
+        // Apply flex-wrap to .p-message-wrapper container for better
+        // messages visibility - the icon and short summary should fit in first line.
+        // Message details will wrap to new line.
+        .p-message-wrapper
+          flex-wrap: wrap
+          gap: 0.5rem
 
+        .p-message-detail
+          // flex-basis set to 100% makes .p-message-detail div always wrap to new line
+          flex-basis: 100%
+          // .p-message-detail div will be wrapped to new line,
+          // so left margin is not needed.
+          margin-left: 0
+
+        .p-message
+          // Disable top margin to decrease the gap between message containers.
+          margin-top: 0
+
+    .header-message
       .p-message
-        // Disable top margin to decrease the gap between message containers.
-        margin-top: 0
+        // Decrease vertical margins for p-messages component that are used in the view's header.
+        // When the component is repeated one below another, the margins are too big.
+        margin-top: 0.25rem
+        margin-bottom: 0.25rem
 
-  .header-message
-    .p-message
-      // Decrease vertical margins for p-messages component that are used in the view's header.
-      // When the component is repeated one below another, the margins are too big.
-      margin-top: 0.25rem
-      margin-bottom: 0.25rem
-
-    // Make consecutive header messages having vertically aligned summary and detail parts.
-    // This is achieved by disabling flex-shrink and setting flex-basis for message summary.
-    .p-message-summary
-      flex: 0 0 5rem
+      // Make consecutive header messages having vertically aligned summary and detail parts.
+      // This is achieved by disabling flex-shrink and setting flex-basis for message summary.
+      .p-message-summary
+        flex: 0 0 5rem

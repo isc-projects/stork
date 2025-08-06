@@ -1,22 +1,23 @@
-:host ::ng-deep
-    .host-form
-        .p-fieldset
-            // Distance between form fieldsets.
-            margin-top: 1.5rem
+@layer storkhigh
+    :host ::ng-deep
+        .host-form
+            .p-fieldset
+                // Distance between form fieldsets.
+                margin-top: 1.5rem
 
-            // Custom style for form fieldset.
-            &.host-form-section
-                div.p-fieldset-content
-                    // Use flexbox layout, columns stack.
-                    display: flex
-                    flex-direction: column
-                    // Apply large gap for floating labels.
-                    gap: 2rem
+                // Custom style for form fieldset.
+                &.host-form-section
+                    div.p-fieldset-content
+                        // Use flexbox layout, columns stack.
+                        display: flex
+                        flex-direction: column
+                        // Apply large gap for floating labels.
+                        gap: 2rem
 
-                    small
-                        // Little margin between form input and feedback text.
-                        margin-top: 0.5rem
+                        small
+                            // Little margin between form input and feedback text.
+                            margin-top: 0.5rem
 
-                    & > div:first-child
-                        // Add top margin for first div inside of fieldset.
-                        margin-top: 1.5rem
+                        & > div:first-child
+                            // Add top margin for first div inside of fieldset.
+                            margin-top: 1.5rem

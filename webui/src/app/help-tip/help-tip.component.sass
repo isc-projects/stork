@@ -14,25 +14,26 @@
   &:hover
     color: var(--primary-700)
 
-.help-tip
-  // Do not let tips be too narrow on small-screen devices. But also not wider than max-width.
-  min-width: min(22rem, 60vw)
-  // help box max width should be not larger than 60% of window width
-  max-width: 60vw
-  font-weight: normal
-  text-align: left
+@layer storkhigh
+  .help-tip
+    // Do not let tips be too narrow on small-screen devices. But also not wider than max-width.
+    min-width: min(22rem, 60vw)
+    // help box max width should be not larger than 60% of window width
+    max-width: 60vw
+    font-weight: normal
+    text-align: left
 
-::ng-deep .help-tip-inserted.p-overlaypanel
-  // help-tip component is using PrimeNG p-overlayPanel.
-  // Sometimes, for specific viewport sizes, the OverlayPanel is displayed above the target, instead of below the target.
-  // In this case PrimeNG adds class .p-overlaypanel-flipped to the panel and custom margin-top is applied, which
-  // in our case makes the header of the help-tip invisible. Overwrite this rule below to make it always look ok.
-  &.p-overlaypanel-flipped
-    margin-top: 10px !important
+  ::ng-deep .help-tip-inserted.p-overlaypanel
+    // help-tip component is using PrimeNG p-overlayPanel.
+    // Sometimes, for specific viewport sizes, the OverlayPanel is displayed above the target, instead of below the target.
+    // In this case PrimeNG adds class .p-overlaypanel-flipped to the panel and custom margin-top is applied, which
+    // in our case makes the header of the help-tip invisible. Overwrite this rule below to make it always look ok.
+    &.p-overlaypanel-flipped
+      margin-top: 10px !important
 
-  // PrimeNG p-overlayPanel displays by default chevron pointing to the target.
-  // When the target is close to the right side of the viewport, it overlaps
-  // panel's close button, which is always in the top right corner of the panel.
-  // To prevent the overlapping, do not display the chevron in the help-tip component.
-  &::after, &::before
-    content: none
+    // PrimeNG p-overlayPanel displays by default chevron pointing to the target.
+    // When the target is close to the right side of the viewport, it overlaps
+    // panel's close button, which is always in the top right corner of the panel.
+    // To prevent the overlapping, do not display the chevron in the help-tip component.
+    &::after, &::before
+      content: none

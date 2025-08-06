@@ -112,6 +112,7 @@
                                 (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
                                 [ngModel]="value"
                                 [disabled]="hasPrefilter()"
+                                class="max-w-8rem"
                             ></p-inputNumber>
                             <label for="app-id">Kea App ID</label>
                         </p-floatLabel>
@@ -127,6 +128,7 @@
                                 min="1"
                                 (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
                                 [ngModel]="value"
+                                class="max-w-8rem"
                             ></p-inputNumber>
                             <label for="subnet-id">Subnet ID</label>
                         </p-floatLabel>

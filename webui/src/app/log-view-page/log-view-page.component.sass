@@ -1,25 +1,27 @@
-:host ::ng-deep .log-tail-panel.p-panel
-  & .p-panel-content
-    background-color: var(--gray-800)
-    color: var(--gray-0)
-    font-family: "courier"
+@layer storkhigh
+  :host ::ng-deep
+    .log-tail-panel.p-panel
+      & .p-panel-content
+        background-color: var(--gray-800)
+        color: var(--gray-0)
+        font-family: "courier"
 
-  & .p-panel-footer, & .p-panel-header
-    background-color: var(--surface-ground)
+      & .p-panel-footer, & .p-panel-header
+        background-color: var(--surface-ground)
 
-:host ::ng-deep .p-messages
-  .p-message-detail
-    // The message can have very long details text. Set the flex item to shrink faster than
-    // other filex items in the flex container. This will make message icon and summary wider.
-    flex-shrink: 2
-    @media screen and (max-width: 1199px)
-      // For screens more narrow than 1200px .p-message-detail div will be wrapped to new line,
-      // so left margin is not needed.
-      margin-left: 0
+    .p-messages
+      .p-message-detail
+        // The message can have very long details text. Set the flex item to shrink faster than
+        // other filex items in the flex container. This will make message icon and summary wider.
+        flex-shrink: 2
+        @media screen and (max-width: 1199px)
+          // For screens more narrow than 1200px .p-message-detail div will be wrapped to new line,
+          // so left margin is not needed.
+          margin-left: 0
 
-  @media screen and (max-width: 1199px)
-    // For screens more narrow than 1200px apply flex-wrap to .p-message-wrapper container for better
-    // messages visibility.
-    .p-message-wrapper
-      flex-wrap: wrap
-      gap: 0.5rem
+      @media screen and (max-width: 1199px)
+        // For screens more narrow than 1200px apply flex-wrap to .p-message-wrapper container for better
+        // messages visibility.
+        .p-message-wrapper
+          flex-wrap: wrap
+          gap: 0.5rem
