@@ -1,7 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { App, Bind9Daemon, KeaDaemon } from '../backend'
 import { TreeNode } from 'primeng/api'
-import { daemonNameToFriendlyName } from '../utils'
 
 /**
  * Metadata associated with a tree node presenting communication
@@ -152,7 +151,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
                                     id: daemon.id,
                                     appType: app.type,
                                     appId: app.id,
-                                    name: daemonNameToFriendlyName(daemon.name),
+                                    name: daemon.name,
                                 },
                                 daemonCommErrors: daemon.daemonCommErrors,
                                 monitored: !!daemon.monitored,
@@ -239,7 +238,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
                     id: daemon.id,
                     appType: app.type,
                     appId: app.id,
-                    name: daemonNameToFriendlyName(daemon.name),
+                    name: daemon.name,
                 },
                 channelCommErrors: channelType === 'rndc' ? daemon.rndcCommErrors : daemon.statsCommErrors,
                 monitored: !!daemon.monitored,

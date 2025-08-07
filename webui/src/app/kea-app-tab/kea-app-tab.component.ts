@@ -192,7 +192,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 daemonMap[dm[0]].statusErred = this.daemonStatusErred(daemonMap[dm[0]])
                 daemons.push(daemonMap[dm[0]])
 
-                if (dm[0] === activeDaemonTabName) {
+                if (dm[0].toUpperCase() === activeDaemonTabName?.toUpperCase()) {
                     this.activeTabIndex = idx
                 }
                 idx += 1

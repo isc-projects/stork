@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core'
+import { daemonNameToFriendlyName } from '../utils'
 
 /**
  * A component that displays given entity as a link with rounded border
@@ -36,4 +37,10 @@ export class EntityLinkComponent {
     @Input() styleClass: string
 
     constructor() {}
+
+    /**
+     * Reference to daemonNameToFriendlyName() function to be used in html template.
+     * @protected
+     */
+    protected readonly daemonNameToFriendlyName = daemonNameToFriendlyName
 }

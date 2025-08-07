@@ -308,7 +308,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[0].children[0].children[0].data?.attrs?.id).toBe(3)
         expect(component.nodes[0].children[0].children[0].data?.attrs?.appType).toBe('kea')
         expect(component.nodes[0].children[0].children[0].data?.attrs?.appId).toBe(1)
-        expect(component.nodes[0].children[0].children[0].data?.attrs?.name).toBe('DHCPv4')
+        expect(component.nodes[0].children[0].children[0].data?.attrs?.name).toBe('dhcp4')
 
         // named control channel on agent1.
         expect(component.nodes[0].children[1].icon).toBe('pi pi-link')
@@ -359,7 +359,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[1].children[0].children[0].data?.attrs?.id).toBe(2)
         expect(component.nodes[1].children[0].children[0].data?.attrs?.appType).toBe('kea')
         expect(component.nodes[1].children[0].children[0].data?.attrs?.appId).toBe(2)
-        expect(component.nodes[1].children[0].children[0].data?.attrs?.name).toBe('DDNS')
+        expect(component.nodes[1].children[0].children[0].data?.attrs?.name).toBe('d2')
 
         // DHCPv4 server on agent2.
         expect(component.nodes[1].children[0].children[1].icon).toBe('pi pi-link')
@@ -369,7 +369,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[1].children[0].children[1].data?.attrs?.id).toBe(3)
         expect(component.nodes[1].children[0].children[1].data?.attrs?.appType).toBe('kea')
         expect(component.nodes[1].children[0].children[1].data?.attrs?.appId).toBe(2)
-        expect(component.nodes[1].children[0].children[1].data?.attrs?.name).toBe('DHCPv4')
+        expect(component.nodes[1].children[0].children[1].data?.attrs?.name).toBe('dhcp4')
 
         // DHCPv6 server on agent2.
         expect(component.nodes[1].children[0].children[2].icon).toBe('pi pi-link')
@@ -379,7 +379,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[1].children[0].children[2].data?.attrs?.id).toBe(4)
         expect(component.nodes[1].children[0].children[2].data?.attrs?.appType).toBe('kea')
         expect(component.nodes[1].children[0].children[2].data?.attrs?.appId).toBe(2)
-        expect(component.nodes[1].children[0].children[2].data?.attrs?.name).toBe('DHCPv6')
+        expect(component.nodes[1].children[0].children[2].data?.attrs?.name).toBe('dhcp6')
 
         // Stork agent on agent3.
         expect(component.nodes[2].icon).toBe('pi pi-server')
@@ -427,7 +427,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[3].children[0].children[0].data?.attrs?.id).toBe(3)
         expect(component.nodes[3].children[0].children[0].data?.attrs?.appType).toBe('kea')
         expect(component.nodes[3].children[0].children[0].data?.attrs?.appId).toBe(4)
-        expect(component.nodes[3].children[0].children[0].data?.attrs?.name).toBe('DHCPv4')
+        expect(component.nodes[3].children[0].children[0].data?.attrs?.name).toBe('dhcp4')
 
         // Stork agent on agent5.
         expect(component.nodes[4].icon).toBe('pi pi-server')

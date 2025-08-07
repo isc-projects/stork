@@ -31,9 +31,9 @@ describe('EntityLinkComponent', () => {
         component.attrs = { id: 98, appType: 'kea', appId: 1, name: 'dhcp4' }
         component.showEntityName = false
         fixture.detectChanges()
-        const link = fixture.debugElement.query(By.css('#daemon-link'))
+        const link = fixture.debugElement.query(By.css('#daemon-link-98'))
         expect(link.attributes.href).toEqual('/apps/1?daemon=dhcp4')
-        expect(link.nativeElement.innerText).toEqual('[98] dhcp4')
+        expect(link.nativeElement.innerText).toEqual('[98] DHCPv4')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement

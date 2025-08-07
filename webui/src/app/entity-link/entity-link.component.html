@@ -2,8 +2,8 @@
     <!-- daemon -->
     <ng-container *ngSwitchCase="'daemon'">
         {{ showEntityName ? 'daemon' : '' }}
-        <a id="daemon-link" routerLink="/apps/{{ attrs.appId }}" [queryParams]="{ daemon: attrs.name }">
-            [{{ attrs.id }}] {{ attrs.name }}
+        <a [id]="'daemon-link-' + attrs.id" routerLink="/apps/{{ attrs.appId }}" [queryParams]="{ daemon: attrs.name }">
+            [{{ attrs.id }}] {{ daemonNameToFriendlyName(attrs.name) }}
         </a>
     </ng-container>
 
