@@ -136,6 +136,6 @@ export class ManagedAccessDirective implements AfterViewInit {
      */
     private setDisabledClasses(el: HTMLElement): void {
         this.renderer.addClass(el, 'p-disabled')
-        this.renderer.addClass(el, 'stork-disabled')
+        this.renderer.addClass(el, 'app-disabled')
     }
 }
