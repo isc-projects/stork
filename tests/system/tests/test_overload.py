@@ -67,8 +67,8 @@ def test_two_same_big_configurations_at_time(
 
 
 @pytest.mark.skip(
-    reason="""This test doesn't pass but The `test_migrate_many_hosts` is
-    unstable, or rather always fails, but not due to any bug in the code. For
+    reason="""The `test_migrate_many_hosts` is unstable, or rather always
+    fails, but not due to a bug in the code, but rather Stork's design. For
     this amount of host reservations, single state and host pulling seem
     insufficient to detect all changes in the reservations. As a result,
     there is a period when Stork sees them as being stored in the database and
