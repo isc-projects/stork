@@ -100,7 +100,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
                     { label: 'Apps', routerLink: '/apps/all' },
                     { label: app.name, routerLink: `/apps/${app.id}` },
                     { label: 'Daemons' },
-                    { label: friendlyName, routerLink: `/apps/${app.id}?daemon=${daemonName}` },
+                    { label: friendlyName, routerLink: `/apps/${app.id}`, queryParams: { daemon: daemonName } },
                     { label: 'Configuration' },
                 ]
             })

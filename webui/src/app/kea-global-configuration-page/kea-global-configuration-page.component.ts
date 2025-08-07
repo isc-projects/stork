@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { Subscription, lastValueFrom } from 'rxjs'
-import { MessageService } from 'primeng/api'
+import { MenuItem, MessageService } from 'primeng/api'
 import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ActivatedRoute } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
@@ -22,7 +22,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     /**
      * Breadcrumbs for this view.
      */
-    breadcrumbs = [
+    breadcrumbs: MenuItem[] = [
         { label: 'Services' },
         { label: 'Apps', routerLink: '/apps/all' },
         { label: 'App' },
@@ -124,7 +124,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 const daemonId = parseInt(daemonIdStr, 10)
                 this.daemonId = daemonId
                 this.appId = parseInt(params.get('appId'), 10)
-                this.updateBreadcrumbs(this.appId, this.daemonId)
+                this.updateBreadcrumbs(this.appId)
                 this.load()
             })
         )
@@ -191,7 +191,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 this.dhcpOptions = data.options ? [data.options.options] : []
 
                 // Update breadcrumbs.
-                this.updateBreadcrumbs(this.appId, this.daemonId, this.appName, friendlyDaemonName)
+                this.updateBreadcrumbs(this.appId, this.appName, data.daemonName)
             })
             .catch((err) => {
                 let msg = getErrorMessage(err)
@@ -208,13 +208,14 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     /** Updates the breadcrumbs links and labels. */
-    updateBreadcrumbs(appId: number, daemonId: number, appName?: string, daemonName?: string): void {
+    updateBreadcrumbs(appId: number, appName?: string, daemonName?: string): void {
         const breadcrumb = [...this.breadcrumbs]
 
         if (appId != null) {
             breadcrumb[2].routerLink = `/apps/${appId}`
-            if (daemonId != null) {
-                breadcrumb[4].routerLink = `/apps/${appId}?daemon=${daemonId}`
+            if (daemonName != null) {
+                breadcrumb[4].routerLink = `/apps/${appId}`
+                breadcrumb[4].queryParams = { daemon: daemonName }
             }
         }
 
@@ -223,7 +224,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
         }
 
         if (daemonName != null) {
-            breadcrumb[4].label = daemonName
+            breadcrumb[4].label = daemonNameToFriendlyName(daemonName)
         }
 
         this.breadcrumbs = breadcrumb
