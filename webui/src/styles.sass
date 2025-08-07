@@ -1,8 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
 
-// storklow is lower priority CSS layer.
+// "low" is lower priority CSS layer.
 // Put here all rules that shouldn't overwrite PrimeNG styling.
-@layer storklow
+@layer low
   // Overwrite default browser underlined anchors.
   a
     text-decoration: none
@@ -18,9 +18,9 @@
     margin-top: 2px
     border-bottom: 2px solid var(--surface-border)
 
-// storkhigh is higher priority CSS layer.
+// "high" is higher priority CSS layer.
 // Put here all rules that overwrite PrimeNG styling.
-@layer storkhigh
+@layer high
   // When the table header has p-panel inside, do not add extra horizontal padding,
   // because the panel has it's own padding.
   .p-datatable .p-datatable-header:has(.p-panel)
@@ -131,7 +131,7 @@
     animation-name: p-progress-spinner-dash, progress-spinner-color-white
 
 // No css @layer - global styles, that have the highest priority.
-// These rules overwrite storklow, primeng and storkhigh layers if necessary.
+// These rules overwrite low, primeng and high layers if necessary.
 
 // console-like font style.
 .monospace
@@ -144,7 +144,7 @@
   // Propagate the style inside of p-tag component that has the .capitalize-first class applied.
   &.p-tag
     .p-tag-value::first-letter
-      @layer storkhigh
+      @layer high
         text-transform: capitalize
 
 // Allows breaking long lines of text on small
