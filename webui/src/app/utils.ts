@@ -688,6 +688,10 @@ export function daemonNameToFriendlyName(daemonName: string): string {
             return 'CA'
         case 'netconf':
             return 'NETCONF'
+        case 'named':
+            return 'named'
+        case 'pdns':
+            return 'pdns_server'
         default:
             return daemonName
     }

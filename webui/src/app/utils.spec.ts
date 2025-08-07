@@ -420,6 +420,7 @@ describe('utils', () => {
         expect(daemonNameToFriendlyName('dhcp6')).toBe('DHCPv6')
         expect(daemonNameToFriendlyName('netconf')).toBe('NETCONF')
         expect(daemonNameToFriendlyName('named')).toBe('named')
+        expect(daemonNameToFriendlyName('pdns')).toBe('pdns_server')
     })
 
     it('should return valid version range', () => {

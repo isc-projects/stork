@@ -39,6 +39,8 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { TagModule } from 'primeng/tag'
 import { provideRouter, RouterModule } from '@angular/router'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -68,6 +70,8 @@ describe('DashboardComponent', () => {
                 EntityLinkComponent,
                 VersionStatusComponent,
                 UtilizationBarComponent,
+                DaemonNiceNamePipe,
+                PlaceholderPipe,
             ],
             imports: [
                 NoopAnimationsModule,

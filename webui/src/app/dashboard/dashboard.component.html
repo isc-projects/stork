@@ -344,7 +344,7 @@
                             <td>
                                 <a routerLink="/apps/{{ d.appId }}">{{ d.appName }}</a>
                             </td>
-                            <td>{{ d.name }}</td>
+                            <td>{{ d.name | daemonNiceName }}</td>
                             <td>
                                 <i
                                     pTooltip="{{ daemonStatusIconTooltip(d) }}"
@@ -475,7 +475,7 @@
                             <td>
                                 <a *ngIf="a.id" routerLink="/apps/{{ a.id }}">{{ a.name ?? 'unknown' }}</a>
                             </td>
-                            <td>{{ getDNSDaemon(a)?.name ?? 'unknown' }}</td>
+                            <td>{{ getDNSDaemon(a)?.name | daemonNiceName | placeholder: 'unknown' }}</td>
                             <td>
                                 <i
                                     *ngIf="getDNSDaemon(a)"

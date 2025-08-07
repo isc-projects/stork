@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core'
+import { daemonNameToFriendlyName } from '../utils'
 
 /**
  * Transforms a daemon name to a nice name.
@@ -17,23 +18,6 @@ export class DaemonNiceNamePipe implements PipeTransform {
      * @returns nice name.
      */
     transform(value: string): string {
-        switch (value) {
-            case 'dhcp4':
-                return 'DHCPv4'
-            case 'dhcp6':
-                return 'DHCPv6'
-            case 'd2':
-                return 'DDNS'
-            case 'ca':
-                return 'CA'
-            case 'netconf':
-                return 'NETCONF'
-            case 'named':
-                return 'named'
-            case 'pdns':
-                return 'pdns_server'
-            default:
-                return value
-        }
+        return daemonNameToFriendlyName(value)
     }
 }
