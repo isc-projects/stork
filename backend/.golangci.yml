@@ -1,18 +1,13 @@
+version: "2"
 linters:
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - typecheck
-    - unused
     - asciicheck
     - bodyclose
+    - copyloopvar
     - dogsled
+    - err113
     - errorlint
     - exhaustive
-    - copyloopvar
     - gochecknoglobals
     - gochecknoinits
     - gocognit
@@ -20,12 +15,7 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - err113
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
-    - revive
     - gomodguard
     - goprintffuncname
     - gosec
@@ -34,105 +24,124 @@ linters:
     - nestif
     - noctx
     - nolintlint
+    - revive
     - rowserrcheck
     - sqlclosecheck
-    - stylecheck
+    - staticcheck
     - tparallel
     - unconvert
     - unparam
     - whitespace
   disable:
     - depguard        # From 1.54.2 it requires to be strictly configured. Otherwise, it blocks all dependencies, including internals.
+    - dupl            # there are some false positives (identical code but operating on different types so no possibility to unify)
+    - funlen
     - godox
     - lll
-    - funlen
+    - mnd              # This may be useful but in many cases creating artificial constants, e.g. in tests is counter productive.
+    - nlreturn         # This seems to be overkill and sometimes new lines before continue or break is useless.
+    - paralleltest     # This enforces t.Parallel() usage but some of our tests seem to work incorrectly. Need to fix it first.
     - prealloc
-    - wsl              # TODO: reenable later
-    - dupl             # there are some false positives (identical code but operating on different types so no possibility to unify)
     - testpackage      # Requires rewriting a lot of unit tests and blocks the ability to test unexported functions.
     - wrapcheck        # We currently use pkg/errors tool that deals with the issue on its own.
-    - mnd              # This may be useful but in many cases creating artificial constants, e.g. in tests is counter productive.
-    - paralleltest     # This enforces t.Parallel() usage but some of our tests seem to work incorrectly. Need to fix it first.
-    - nlreturn         # This seems to be overkill and sometimes new lines before continue or break is useless.
-    - gci              # More less the same as goimports but it breaks imports grouping so it is not nice.
-
-linters-settings:
-  gocognit:
-    min-complexity: 65
-  nestif:
-    min-complexity: 13
-  exhaustive:
-    # Treats switch statements with default case as taking into account all possible cases.
-    # Without this setting the switch statements must enumerate all possible cases.
-    default-signifies-exhaustive: true
-  stylecheck:
-    checks:
-      - "all"
-      # Disables the rule that the comments of the exported variables ("var") must start with the variable name.
-      - "-ST1022"
-  revive:
+    - wsl_v5              # TODO: reenable later
+  settings:
+    dogsled:
+      max-blank-identifiers: 3
+    exhaustive:
+      # Treats switch statements with default case as taking into account all possible cases.
+      # Without this setting the switch statements must enumerate all possible cases.
+      default-signifies-exhaustive: true
+    gocognit:
+      min-complexity: 65
+    goconst:
+      ignore-string-values:
+        - "127.0.0.1"
+      eval-const-expressions: true
+      # find-duplicates: true  # TODO: Nice to have but it requires some refactoring.
+      # ignore-calls: false
+    nakedret:
+      # Operation of this checker was changed. Previously, it allowed to use
+      # naked returns to a particular line. Now, it disallows naked returns if
+      # the function has more lines than limit. I increased the limit to not
+      # trigger the warning on the most of the functions that previously met the
+      # requirement.
+      max-func-lines: 70
+    nestif:
+      min-complexity: 13
+    revive:
+      rules:
+        - name: unused-parameter
+          arguments:
+            # Allows any names started with _, not just _ itself.
+            - allowRegex: ^_
+          # TODO: Reenable it when the allowRegex option will be supported.
+          disabled: true
+        # TODO: The exported linter checks now if the comment starts with the
+        #       variable name. We need to do a contribution to the linter
+        #       to allow disabling this check.
+        - name: exported
+          severity: warning
+          disabled: true
+          exclude: [""]
+    staticcheck:
+      checks:
+        - all
+        - -ST1000 # At least one file in a package should have a package comment.
+        - -ST1020 # The documentation of an exported function should start with the function's name.
+        - -ST1021 # The documentation of an exported type should start with the type's name.
+        - -ST1022 # The documentation of an exported variable or constant should start with variable's name.
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - legacy  # TODO: Consider removing it. It suppresses a lot of unhandled errors.
+      - std-error-handling
     rules:
-      - name: unused-parameter
-        # TODO: Reenable it when the allowRegex option will be supported.
-        disabled: true
-        arguments:
-          # Allows any names started with _, not just _ itself.
-          - allowRegex: "^_"
-  nakedret:
-    # Operation of this checker was changed. Previously, it allowed to use
-    # naked returns to a particular line. Now, it disallows naked returns if
-    # the function has more lines than limit. I increased the limit to not
-    # trigger the warning on the most of the functions that previously met the
-    # requirement.
-    max-func-lines: 70
-  goconst:
-    ignore-tests: true
-  dogsled:
-    max-blank-identifiers: 3
-
+      - linters:
+          - errcheck
+          - goconst
+          - gocyclo
+          - gosec
+        path: _test\.go
+      - linters:
+          - gosec
+        text: G115
+      - linters:
+          - gochecknoglobals
+          - wsl
+        path: api/gomock
+      - linters:
+          - gochecknoglobals
+          - gochecknoinits
+        path: server/database/migrations/
+      - linters:
+          - gochecknoglobals
+        path: version.go
+      - linters:
+          - gochecknoinits
+        path: server/database/model/
+      - linters:
+          - gochecknoinits
+        path: server/database/settings.go
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  max-same-issues: 3
-
-  include:
-    - EXC0012  # (comment on exported (method|function|type|const)|should have( a package)? comment|comment should be of the form)
-  exclude-rules:
-    # Exclude some linters from running on tests files.
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - gosec
-        - goconst
-
-    - linters:
-        - gosec
-      # G115: integer overflow conversion
-      # Temporary disabled due to false positives.
-      # The problem is already fixed in the gosec repository but golangci-lint
-      # still uses the old version.
-      # https://github.com/securego/gosec/issues/1212
-      text: "G115"
-
-    - path: api/gomock
-      linters:
-        - gochecknoglobals
-        - wsl
-        - gofmt
-        - goimports
-
-    - path: server/database/migrations/
-      linters:
-        - gochecknoinits
-        - gochecknoglobals
-
-    - path: version.go
-      linters:
-        - gochecknoglobals
-
-    - path: server/database/model/
-      linters:
-        - gochecknoinits
-
-    - path: server/database/settings.go
-      linters:
-        - gochecknoinits
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - api/gomock

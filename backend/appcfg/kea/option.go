@@ -178,8 +178,8 @@ func splitByComma(value string) []string {
 		current   string
 	)
 	for _, c := range value {
-		switch {
-		case c == '\\':
+		switch c {
+		case '\\':
 			if !backslash {
 				// The backslash has not been seen yet. Count it.
 				backslash = true
@@ -188,7 +188,7 @@ func splitByComma(value string) []string {
 				// to the current string.
 				current += string(c)
 			}
-		case c == ',':
+		case ',':
 			if backslash {
 				// Escaped comma. Add it to the current string.
 				current += string(c)

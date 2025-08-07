@@ -288,8 +288,8 @@ func (s *Subnet) GetPrefixPools(daemonID int64) (accessors []dhcpmodel.PrefixPoo
 func (s *Subnet) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.DHCPOptionAccessor) {
 	for _, ls := range s.LocalSubnets {
 		if ls.DaemonID == daemonID {
-			for i := range ls.DHCPOptionSet.Options {
-				accessors = append(accessors, ls.DHCPOptionSet.Options[i])
+			for i := range ls.Options {
+				accessors = append(accessors, ls.Options[i])
 			}
 		}
 	}

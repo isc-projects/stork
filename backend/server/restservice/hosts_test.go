@@ -541,8 +541,8 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 		require.Equal(t, "stork.example.org", lh.ServerHostname)
 
 		// No DHCP options
-		require.Empty(t, lh.DHCPOptionSet.Options)
-		require.Empty(t, lh.DHCPOptionSet.Hash)
+		require.Empty(t, lh.Options)
+		require.Empty(t, lh.Hash)
 	}
 }
 
@@ -1214,15 +1214,15 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 		require.Equal(t, "stork.example.org", lh.ServerHostname)
 
 		// DHCP options
-		require.Len(t, lh.DHCPOptionSet.Options, 1)
-		require.True(t, lh.DHCPOptionSet.Options[0].AlwaysSend)
-		require.EqualValues(t, 3, lh.DHCPOptionSet.Options[0].Code)
-		require.Len(t, lh.DHCPOptionSet.Options[0].Fields, 1)
-		require.Equal(t, dhcpmodel.IPv4AddressField, lh.DHCPOptionSet.Options[0].Fields[0].FieldType)
-		require.Len(t, lh.DHCPOptionSet.Options[0].Fields[0].Values, 1)
-		require.Equal(t, "192.0.2.1", lh.DHCPOptionSet.Options[0].Fields[0].Values[0])
-		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lh.DHCPOptionSet.Options[0].Space)
-		require.NotEmpty(t, lh.DHCPOptionSet.Hash)
+		require.Len(t, lh.Options, 1)
+		require.True(t, lh.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, lh.Options[0].Code)
+		require.Len(t, lh.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, lh.Options[0].Fields[0].FieldType)
+		require.Len(t, lh.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", lh.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lh.Options[0].Space)
+		require.NotEmpty(t, lh.Hash)
 	}
 }
 

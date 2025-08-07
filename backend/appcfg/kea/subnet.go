@@ -442,17 +442,17 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	}
 	// Subnet-level Kea-specific parameters.
 	if params := subnet.GetKeaParameters(daemonID); params != nil {
-		subnet4.CommonSubnetParameters.CacheParameters = params.CacheParameters
-		subnet4.CommonSubnetParameters.ClientClassParameters = params.ClientClassParameters
-		subnet4.CommonSubnetParameters.DDNSParameters = params.DDNSParameters
-		subnet4.CommonSubnetParameters.HostnameCharParameters = params.HostnameCharParameters
-		subnet4.CommonSubnetParameters.ReservationParameters = params.ReservationParameters
-		subnet4.CommonSubnetParameters.TimerParameters = params.TimerParameters
-		subnet4.CommonSubnetParameters.ValidLifetimeParameters = params.ValidLifetimeParameters
-		subnet4.CommonSubnetParameters.Allocator = params.Allocator
-		subnet4.CommonSubnetParameters.Interface = params.Interface
-		subnet4.CommonSubnetParameters.StoreExtendedInfo = params.StoreExtendedInfo
-		subnet4.CommonSubnetParameters.Relay = params.Relay
+		subnet4.CacheParameters = params.CacheParameters
+		subnet4.ClientClassParameters = params.ClientClassParameters
+		subnet4.DDNSParameters = params.DDNSParameters
+		subnet4.HostnameCharParameters = params.HostnameCharParameters
+		subnet4.ReservationParameters = params.ReservationParameters
+		subnet4.TimerParameters = params.TimerParameters
+		subnet4.ValidLifetimeParameters = params.ValidLifetimeParameters
+		subnet4.Allocator = params.Allocator
+		subnet4.Interface = params.Interface
+		subnet4.StoreExtendedInfo = params.StoreExtendedInfo
+		subnet4.Relay = params.Relay
 		subnet4.FourOverSixParameters = params.FourOverSixParameters
 		subnet4.Authoritative = params.Authoritative
 		subnet4.BootFileName = params.BootFileName
@@ -559,17 +559,17 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	}
 	// Subnet-level Kea-specific parameters.
 	if params := subnet.GetKeaParameters(daemonID); params != nil {
-		subnet6.CommonSubnetParameters.CacheParameters = params.CacheParameters
-		subnet6.CommonSubnetParameters.ClientClassParameters = params.ClientClassParameters
-		subnet6.CommonSubnetParameters.DDNSParameters = params.DDNSParameters
-		subnet6.CommonSubnetParameters.HostnameCharParameters = params.HostnameCharParameters
-		subnet6.CommonSubnetParameters.ReservationParameters = params.ReservationParameters
-		subnet6.CommonSubnetParameters.TimerParameters = params.TimerParameters
-		subnet6.CommonSubnetParameters.ValidLifetimeParameters = params.ValidLifetimeParameters
-		subnet6.CommonSubnetParameters.Allocator = params.Allocator
-		subnet6.CommonSubnetParameters.Interface = params.Interface
-		subnet6.CommonSubnetParameters.StoreExtendedInfo = params.StoreExtendedInfo
-		subnet6.CommonSubnetParameters.Relay = params.Relay
+		subnet6.CacheParameters = params.CacheParameters
+		subnet6.ClientClassParameters = params.ClientClassParameters
+		subnet6.DDNSParameters = params.DDNSParameters
+		subnet6.HostnameCharParameters = params.HostnameCharParameters
+		subnet6.ReservationParameters = params.ReservationParameters
+		subnet6.TimerParameters = params.TimerParameters
+		subnet6.ValidLifetimeParameters = params.ValidLifetimeParameters
+		subnet6.Allocator = params.Allocator
+		subnet6.Interface = params.Interface
+		subnet6.StoreExtendedInfo = params.StoreExtendedInfo
+		subnet6.Relay = params.Relay
 		subnet6.PreferredLifetimeParameters = params.PreferredLifetimeParameters
 		subnet6.PDAllocator = params.PDAllocator
 		subnet6.InterfaceID = params.InterfaceID

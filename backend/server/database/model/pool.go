@@ -53,8 +53,8 @@ func (ap *AddressPool) GetKeaParameters() *keaconfig.PoolParameters {
 
 // Returns a slice of interfaces describing the DHCP options for a pool.
 func (ap *AddressPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccessor) {
-	for i := range ap.DHCPOptionSet.Options {
-		accessors = append(accessors, ap.DHCPOptionSet.Options[i])
+	for i := range ap.Options {
+		accessors = append(accessors, ap.Options[i])
 	}
 	return
 }

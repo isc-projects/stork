@@ -103,7 +103,7 @@ func TestConvertToPgOptionsSocket(t *testing.T) {
 	// Open a socket.
 	socketDir := os.TempDir()
 	socketPath := path.Join(socketDir, ".s.PGSQL.123")
-	listener, _ := net.Listen("unix", socketPath)
+	listener, _ := (&net.ListenConfig{}).Listen(t.Context(), "unix", socketPath)
 	defer listener.Close()
 
 	settings := DatabaseSettings{

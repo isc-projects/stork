@@ -80,11 +80,11 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 			ServerHostname: dbLocalHost.ServerHostname,
 			BootFileName:   dbLocalHost.BootFileName,
 			ClientClasses:  dbLocalHost.ClientClasses,
-			OptionsHash:    dbLocalHost.DHCPOptionSet.Hash,
+			OptionsHash:    dbLocalHost.Hash,
 			Hostname:       dbLocalHost.Hostname,
 			IPReservations: ipReservations,
 		}
-		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet.Options, "", 0)
+		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.Options, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
 	}
 	return host
@@ -144,7 +144,7 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 		if err != nil {
 			return nil, err
 		}
-		localHost.DHCPOptionSet.SetDHCPOptions(options, keaconfig.NewHasher())
+		localHost.SetDHCPOptions(options, keaconfig.NewHasher())
 		host.AddOrUpdateLocalHost(localHost)
 	}
 	return host, nil

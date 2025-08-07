@@ -550,7 +550,7 @@ mockgen_ver = 'v0.5.2'
 dlv_ver = 'v1.25.1'
 gdlv_ver = 'v1.14.0'
 nfpm_ver = 'v2.43.0'
-golangcilint_ver = '1.64.8'
+golangcilint_ver = '2.3.1'
 
 # UI-related
 node_ver = '20.17.0'

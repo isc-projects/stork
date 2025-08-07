@@ -275,7 +275,6 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	return nil
 }
 
-// Run Stork Server.
 func (ss *StorkServer) Serve() {
 	// Start listening for requests from ReST API.
 	err := ss.RestAPI.Serve()

@@ -361,42 +361,42 @@ func (c *SettableDHCPv4Config) SetCacheThreshold(cacheThreshold *float32) {
 
 // Sets boolean flag indicating if DDNS updates should be sent.
 func (c *SettableDHCPv4Config) SetDDNSSendUpdates(ddnsSendUpdates *bool) {
-	c.SettableCommonDHCPConfig.DDNSSendUpdates = storkutil.NewNullable(ddnsSendUpdates)
+	c.DDNSSendUpdates = storkutil.NewNullable(ddnsSendUpdates)
 }
 
 // Sets boolean flag indicating whether the DHCP server should override the
 // client's wish to not update the DNS.
 func (c *SettableDHCPv4Config) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) {
-	c.SettableCommonDHCPConfig.DDNSOverrideNoUpdate = storkutil.NewNullable(ddnsOverrideNoUpdate)
+	c.DDNSOverrideNoUpdate = storkutil.NewNullable(ddnsOverrideNoUpdate)
 }
 
 // Sets the boolean flag indicating whether the DHCP server should ignore the
 // client's wish to update the DNS on its own.
 func (c *SettableDHCPv4Config) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) {
-	c.SettableCommonDHCPConfig.DDNSOverrideClientUpdate = storkutil.NewNullable(ddnsOverrideClientUpdate)
+	c.DDNSOverrideClientUpdate = storkutil.NewNullable(ddnsOverrideClientUpdate)
 }
 
 // Sets the enumeration specifying whether the server should honor
 // the hostname or Client FQDN sent by the client or replace this name.
 func (c *SettableDHCPv4Config) SetDDNSReplaceClientName(ddnsReplaceClientName *string) {
-	c.SettableCommonDHCPConfig.DDNSReplaceClientName = storkutil.NewNullable(ddnsReplaceClientName)
+	c.DDNSReplaceClientName = storkutil.NewNullable(ddnsReplaceClientName)
 }
 
 // Sets a prefix to be prepended to the generated Client FQDN.
 func (c *SettableDHCPv4Config) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) {
-	c.SettableCommonDHCPConfig.DDNSGeneratedPrefix = storkutil.NewNullable(ddnsGeneratedPrefix)
+	c.DDNSGeneratedPrefix = storkutil.NewNullable(ddnsGeneratedPrefix)
 }
 
 // Sets a suffix appended to the partial name sent to the DNS.
 func (c *SettableDHCPv4Config) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) {
-	c.SettableCommonDHCPConfig.DDNSQualifyingSuffix = storkutil.NewNullable(ddnsQualifyingSuffix)
+	c.DDNSQualifyingSuffix = storkutil.NewNullable(ddnsQualifyingSuffix)
 }
 
 // Sets a boolean flag, which when true instructs the server to always
 // update DNS when leases are renewed, even if the DNS information
 // has not changed.
 func (c *SettableDHCPv4Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
-	c.SettableCommonDHCPConfig.DDNSUpdateOnRenew = storkutil.NewNullable(ddnsUpdateOnRenew)
+	c.DDNSUpdateOnRenew = storkutil.NewNullable(ddnsUpdateOnRenew)
 }
 
 // Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
@@ -404,17 +404,17 @@ func (c *SettableDHCPv4Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
 // resolution as described in RFC 4703 should be employed for the
 // given update request.
 func (c *SettableDHCPv4Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
-	c.SettableCommonDHCPConfig.DDNSUseConflictResolution = storkutil.NewNullable(ddnsUseConflictResolution)
+	c.DDNSUseConflictResolution = storkutil.NewNullable(ddnsUseConflictResolution)
 }
 
 // Sets a DDNS conflict resolution mode.
 func (c *SettableDHCPv4Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
-	c.SettableCommonDHCPConfig.DDNSConflictResolutionMode = storkutil.NewNullable(ddnsConflictResolutionMode)
+	c.DDNSConflictResolutionMode = storkutil.NewNullable(ddnsConflictResolutionMode)
 }
 
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.
 func (c *SettableDHCPv4Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
-	c.SettableCommonDHCPConfig.DDNSTTLPercent = storkutil.NewNullable(ddnsTTLPercent)
+	c.DDNSTTLPercent = storkutil.NewNullable(ddnsTTLPercent)
 }
 
 // Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
@@ -522,32 +522,32 @@ func (c *SettableDHCPv4Config) SetExpiredLeasesProcessing(expiredLeasesProcessin
 
 // Sets the boolean flag enabling global reservations.
 func (c *SettableDHCPv4Config) SetReservationsGlobal(reservationsGlobal *bool) {
-	c.SettableReservationParameters.ReservationsGlobal = storkutil.NewNullable(reservationsGlobal)
+	c.ReservationsGlobal = storkutil.NewNullable(reservationsGlobal)
 }
 
 // Sets the boolean flag enabling in-subnet reservations.
 func (c *SettableDHCPv4Config) SetReservationsInSubnet(reservationsInSubnet *bool) {
-	c.SettableReservationParameters.ReservationsInSubnet = storkutil.NewNullable(reservationsInSubnet)
+	c.ReservationsInSubnet = storkutil.NewNullable(reservationsInSubnet)
 }
 
 // Sets the boolean flag enabling out-of-pool reservations.
 func (c *SettableDHCPv4Config) SetReservationsOutOfPool(reservationsOutOfPool *bool) {
-	c.SettableReservationParameters.ReservationsOutOfPool = storkutil.NewNullable(reservationsOutOfPool)
+	c.ReservationsOutOfPool = storkutil.NewNullable(reservationsOutOfPool)
 }
 
 // Sets a boolean flag enabling an early global reservations lookup.
 func (c *SettableDHCPv4Config) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) {
-	c.SettableReservationParameters.EarlyGlobalReservationsLookup = storkutil.NewNullable(earlyGlobalReservationsLookup)
+	c.EarlyGlobalReservationsLookup = storkutil.NewNullable(earlyGlobalReservationsLookup)
 }
 
 // Sets host reservation identifiers to be used for host reservation lookup.
 func (c *SettableDHCPv4Config) SetHostReservationIdentifiers(hostReservationIdentifiers []string) {
-	c.SettableReservationParameters.HostReservationIdentifiers = storkutil.NewNullableArray(hostReservationIdentifiers)
+	c.HostReservationIdentifiers = storkutil.NewNullableArray(hostReservationIdentifiers)
 }
 
 // Sets global valid lifetime.
 func (c *SettableDHCPv4Config) SetValidLifetime(validLifetime *int64) {
-	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLifetime)
+	c.ValidLifetime = storkutil.NewNullable(validLifetime)
 }
 
 // Sets global DHCP option data.
@@ -655,42 +655,42 @@ func (c *SettableDHCPv6Config) SetCacheThreshold(cacheThreshold *float32) {
 
 // Sets boolean flag indicating if DDNS updates should be sent.
 func (c *SettableDHCPv6Config) SetDDNSSendUpdates(ddnsSendUpdates *bool) {
-	c.SettableCommonDHCPConfig.DDNSSendUpdates = storkutil.NewNullable(ddnsSendUpdates)
+	c.DDNSSendUpdates = storkutil.NewNullable(ddnsSendUpdates)
 }
 
 // Sets boolean flag indicating whether the DHCP server should override the
 // client's wish to not update the DNS.
 func (c *SettableDHCPv6Config) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) {
-	c.SettableCommonDHCPConfig.DDNSOverrideNoUpdate = storkutil.NewNullable(ddnsOverrideNoUpdate)
+	c.DDNSOverrideNoUpdate = storkutil.NewNullable(ddnsOverrideNoUpdate)
 }
 
 // Sets the boolean flag indicating whether the DHCP server should ignore the
 // client's wish to update the DNS on its own.
 func (c *SettableDHCPv6Config) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) {
-	c.SettableCommonDHCPConfig.DDNSOverrideClientUpdate = storkutil.NewNullable(ddnsOverrideClientUpdate)
+	c.DDNSOverrideClientUpdate = storkutil.NewNullable(ddnsOverrideClientUpdate)
 }
 
 // Sets the enumeration specifying whether the server should honor
 // the hostname or Client FQDN sent by the client or replace this name.
 func (c *SettableDHCPv6Config) SetDDNSReplaceClientName(ddnsReplaceClientName *string) {
-	c.SettableCommonDHCPConfig.DDNSReplaceClientName = storkutil.NewNullable(ddnsReplaceClientName)
+	c.DDNSReplaceClientName = storkutil.NewNullable(ddnsReplaceClientName)
 }
 
 // Sets a prefix to be prepended to the generated Client FQDN.
 func (c *SettableDHCPv6Config) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) {
-	c.SettableCommonDHCPConfig.DDNSGeneratedPrefix = storkutil.NewNullable(ddnsGeneratedPrefix)
+	c.DDNSGeneratedPrefix = storkutil.NewNullable(ddnsGeneratedPrefix)
 }
 
 // Sets a suffix appended to the partial name sent to the DNS.
 func (c *SettableDHCPv6Config) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) {
-	c.SettableCommonDHCPConfig.DDNSQualifyingSuffix = storkutil.NewNullable(ddnsQualifyingSuffix)
+	c.DDNSQualifyingSuffix = storkutil.NewNullable(ddnsQualifyingSuffix)
 }
 
 // Sets a boolean flag, which when true instructs the server to always
 // update DNS when leases are renewed, even if the DNS information
 // has not changed.
 func (c *SettableDHCPv6Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
-	c.SettableCommonDHCPConfig.DDNSUpdateOnRenew = storkutil.NewNullable(ddnsUpdateOnRenew)
+	c.DDNSUpdateOnRenew = storkutil.NewNullable(ddnsUpdateOnRenew)
 }
 
 // Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
@@ -698,17 +698,17 @@ func (c *SettableDHCPv6Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
 // resolution as described in RFC 4703 should be employed for the
 // given update request.
 func (c *SettableDHCPv6Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
-	c.SettableCommonDHCPConfig.DDNSUseConflictResolution = storkutil.NewNullable(ddnsUseConflictResolution)
+	c.DDNSUseConflictResolution = storkutil.NewNullable(ddnsUseConflictResolution)
 }
 
 // Sets a DDNS conflict resolution mode.
 func (c *SettableDHCPv6Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
-	c.SettableCommonDHCPConfig.DDNSConflictResolutionMode = storkutil.NewNullable(ddnsConflictResolutionMode)
+	c.DDNSConflictResolutionMode = storkutil.NewNullable(ddnsConflictResolutionMode)
 }
 
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.
 func (c *SettableDHCPv6Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
-	c.SettableCommonDHCPConfig.DDNSTTLPercent = storkutil.NewNullable(ddnsTTLPercent)
+	c.DDNSTTLPercent = storkutil.NewNullable(ddnsTTLPercent)
 }
 
 // Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
@@ -816,32 +816,32 @@ func (c *SettableDHCPv6Config) SetExpiredLeasesProcessing(expiredLeasesProcessin
 
 // Sets the boolean flag enabling global reservations.
 func (c *SettableDHCPv6Config) SetReservationsGlobal(reservationsGlobal *bool) {
-	c.SettableReservationParameters.ReservationsGlobal = storkutil.NewNullable(reservationsGlobal)
+	c.ReservationsGlobal = storkutil.NewNullable(reservationsGlobal)
 }
 
 // Sets the boolean flag enabling in-subnet reservations.
 func (c *SettableDHCPv6Config) SetReservationsInSubnet(reservationsInSubnet *bool) {
-	c.SettableReservationParameters.ReservationsInSubnet = storkutil.NewNullable(reservationsInSubnet)
+	c.ReservationsInSubnet = storkutil.NewNullable(reservationsInSubnet)
 }
 
 // Sets the boolean flag enabling out-of-pool reservations.
 func (c *SettableDHCPv6Config) SetReservationsOutOfPool(reservationsOutOfPool *bool) {
-	c.SettableReservationParameters.ReservationsOutOfPool = storkutil.NewNullable(reservationsOutOfPool)
+	c.ReservationsOutOfPool = storkutil.NewNullable(reservationsOutOfPool)
 }
 
 // Sets a boolean flag enabling an early global reservations lookup.
 func (c *SettableDHCPv6Config) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) {
-	c.SettableReservationParameters.EarlyGlobalReservationsLookup = storkutil.NewNullable(earlyGlobalReservationsLookup)
+	c.EarlyGlobalReservationsLookup = storkutil.NewNullable(earlyGlobalReservationsLookup)
 }
 
 // Sets host reservation identifiers to be used for host reservation lookup.
 func (c *SettableDHCPv6Config) SetHostReservationIdentifiers(hostReservationIdentifiers []string) {
-	c.SettableReservationParameters.HostReservationIdentifiers = storkutil.NewNullableArray(hostReservationIdentifiers)
+	c.HostReservationIdentifiers = storkutil.NewNullableArray(hostReservationIdentifiers)
 }
 
 // Sets global valid lifetime.
 func (c *SettableDHCPv6Config) SetValidLifetime(validLifetime *int64) {
-	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLifetime)
+	c.ValidLifetime = storkutil.NewNullable(validLifetime)
 }
 
 // Sets global DHCP option data.

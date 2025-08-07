@@ -385,14 +385,14 @@ func TestGetSubnet4(t *testing.T) {
 	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.RequireClientClasses, 1)
 	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.EvaluateAdditionalClasses, 1)
 	require.EqualValues(t, "early", ls.Pools[0].KeaConfigPoolParameters.EvaluateAdditionalClasses[0])
-	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options, 1)
-	require.False(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].AlwaysSend)
-	require.EqualValues(t, 3, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Code)
-	require.Empty(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Encapsulate)
-	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields, 1)
-	require.Equal(t, dhcpmodel.IPv4AddressField, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].FieldType)
-	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].Values, 1)
-	require.Equal(t, "192.0.3.10", ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].Values[0])
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.Options, 1)
+	require.False(t, ls.Pools[0].KeaConfigPoolParameters.Options[0].AlwaysSend)
+	require.EqualValues(t, 3, ls.Pools[0].KeaConfigPoolParameters.Options[0].Code)
+	require.Empty(t, ls.Pools[0].KeaConfigPoolParameters.Options[0].Encapsulate)
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.Options[0].Fields, 1)
+	require.Equal(t, dhcpmodel.IPv4AddressField, ls.Pools[0].KeaConfigPoolParameters.Options[0].Fields[0].FieldType)
+	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.Options[0].Fields[0].Values, 1)
+	require.Equal(t, "192.0.3.10", ls.Pools[0].KeaConfigPoolParameters.Options[0].Fields[0].Values[0])
 	require.EqualValues(t, storkutil.IPv4, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
 	require.EqualValues(t, 7, ls.Pools[0].KeaConfigPoolParameters.PoolID)
 
@@ -896,12 +896,12 @@ func TestGetSubnet6(t *testing.T) {
 	require.EqualValues(t, 2, poolParams.PoolID)
 
 	// DHCP options in a prefix pool.
-	require.Len(t, poolParams.DHCPOptions.Options, 1)
-	require.False(t, poolParams.DHCPOptions.Options[0].AlwaysSend)
-	require.EqualValues(t, 7, poolParams.DHCPOptions.Options[0].Code)
-	require.Empty(t, poolParams.DHCPOptions.Options[0].Encapsulate)
-	require.Len(t, poolParams.DHCPOptions.Options[0].Fields, 1)
-	require.Equal(t, dhcpmodel.BinaryField, poolParams.DHCPOptions.Options[0].Fields[0].FieldType)
+	require.Len(t, poolParams.Options, 1)
+	require.False(t, poolParams.Options[0].AlwaysSend)
+	require.EqualValues(t, 7, poolParams.Options[0].Code)
+	require.Empty(t, poolParams.Options[0].Encapsulate)
+	require.Len(t, poolParams.Options[0].Fields, 1)
+	require.Equal(t, dhcpmodel.BinaryField, poolParams.Options[0].Fields[0].FieldType)
 	require.Len(t, poolParams.DHCPOptions.Options[0].Fields[0].Values, 1)
 	require.Equal(t, "cafe", poolParams.DHCPOptions.Options[0].Fields[0].Values[0])
 	require.EqualValues(t, storkutil.IPv6, ls.PrefixDelegationPools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
@@ -1618,15 +1618,15 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 		require.True(t, *ls.KeaParameters.StoreExtendedInfo)
 
 		// DHCP options
-		require.Len(t, ls.DHCPOptionSet.Options, 1)
-		require.True(t, ls.DHCPOptionSet.Options[0].AlwaysSend)
-		require.EqualValues(t, 3, ls.DHCPOptionSet.Options[0].Code)
-		require.Len(t, ls.DHCPOptionSet.Options[0].Fields, 1)
-		require.Equal(t, dhcpmodel.IPv4AddressField, ls.DHCPOptionSet.Options[0].Fields[0].FieldType)
-		require.Len(t, ls.DHCPOptionSet.Options[0].Fields[0].Values, 1)
-		require.Equal(t, "192.0.2.1", ls.DHCPOptionSet.Options[0].Fields[0].Values[0])
-		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, ls.DHCPOptionSet.Options[0].Space)
-		require.NotEmpty(t, ls.DHCPOptionSet.Hash)
+		require.Len(t, ls.Options, 1)
+		require.True(t, ls.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, ls.Options[0].Code)
+		require.Len(t, ls.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, ls.Options[0].Fields[0].FieldType)
+		require.Len(t, ls.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", ls.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, ls.Options[0].Space)
+		require.NotEmpty(t, ls.Hash)
 	}
 }
 
@@ -2539,15 +2539,15 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 		require.True(t, *ls.KeaParameters.StoreExtendedInfo)
 
 		// DHCP options
-		require.Len(t, ls.DHCPOptionSet.Options, 1)
-		require.True(t, ls.DHCPOptionSet.Options[0].AlwaysSend)
-		require.EqualValues(t, 3, ls.DHCPOptionSet.Options[0].Code)
-		require.Len(t, ls.DHCPOptionSet.Options[0].Fields, 1)
-		require.Equal(t, dhcpmodel.IPv4AddressField, ls.DHCPOptionSet.Options[0].Fields[0].FieldType)
-		require.Len(t, ls.DHCPOptionSet.Options[0].Fields[0].Values, 1)
-		require.Equal(t, "192.0.2.1", ls.DHCPOptionSet.Options[0].Fields[0].Values[0])
-		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, ls.DHCPOptionSet.Options[0].Space)
-		require.NotEmpty(t, ls.DHCPOptionSet.Hash)
+		require.Len(t, ls.Options, 1)
+		require.True(t, ls.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, ls.Options[0].Code)
+		require.Len(t, ls.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, ls.Options[0].Fields[0].FieldType)
+		require.Len(t, ls.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", ls.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, ls.Options[0].Space)
+		require.NotEmpty(t, ls.Hash)
 	}
 }
 
@@ -3472,8 +3472,8 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 		require.Equal(t, "random", *ls.KeaParameters.PDAllocator)
 
 		// DHCP options
-		require.Empty(t, ls.DHCPOptionSet.Options)
-		require.Empty(t, ls.DHCPOptionSet.Hash)
+		require.Empty(t, ls.Options)
+		require.Empty(t, ls.Hash)
 	}
 }
 

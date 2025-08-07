@@ -204,12 +204,12 @@ func TestBeginGlobalParametersUpdate(t *testing.T) {
 	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
 	require.Equal(t, "global_parameters_update", state.Updates[0].Operation)
 
-	daemons := state.Updates[0].Recipe.GlobalConfigRecipeParams.KeaDaemonsBeforeConfigUpdate
+	daemons := state.Updates[0].Recipe.KeaDaemonsBeforeConfigUpdate
 	require.Len(t, daemons, 2)
 	require.EqualValues(t, apps[0].Daemons[0].ID, daemons[0].ID)
 	require.EqualValues(t, apps[1].Daemons[0].ID, daemons[1].ID)
 
-	require.Nil(t, state.Updates[0].Recipe.GlobalConfigRecipeParams.KeaDaemonsAfterConfigUpdate)
+	require.Nil(t, state.Updates[0].Recipe.KeaDaemonsAfterConfigUpdate)
 }
 
 // Test second stage of global parameters update.
@@ -300,8 +300,8 @@ func TestApplyGlobalParametersUpdate(t *testing.T) {
 	require.Equal(t, datamodel.AppTypeKea, update.Target)
 	require.Equal(t, "global_parameters_update", update.Operation)
 	require.NotNil(t, update.Recipe)
-	require.Len(t, update.Recipe.GlobalConfigRecipeParams.KeaDaemonsBeforeConfigUpdate, 2)
-	require.Len(t, update.Recipe.GlobalConfigRecipeParams.KeaDaemonsAfterConfigUpdate, 2)
+	require.Len(t, update.Recipe.KeaDaemonsBeforeConfigUpdate, 2)
+	require.Len(t, update.Recipe.KeaDaemonsAfterConfigUpdate, 2)
 
 	commands := update.Recipe.Commands
 	require.Len(t, commands, 4)
@@ -1107,18 +1107,18 @@ func TestApplyHostUpdate(t *testing.T) {
 
 	require.EqualValues(t, 1, recipeReturned.HostAfterUpdate.LocalHosts[0].DaemonID)
 	require.EqualValues(t, dbmodel.HostDataSourceAPI, recipeReturned.HostAfterUpdate.LocalHosts[0].DataSource)
-	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[0].DHCPOptionSet.Options, 1)
-	require.EqualValues(t, 4, recipeReturned.HostAfterUpdate.LocalHosts[0].DHCPOptionSet.Options[0].Code)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[0].Options, 1)
+	require.EqualValues(t, 4, recipeReturned.HostAfterUpdate.LocalHosts[0].Options[0].Code)
 
 	require.EqualValues(t, 2, recipeReturned.HostAfterUpdate.LocalHosts[1].DaemonID)
 	require.EqualValues(t, dbmodel.HostDataSourceAPI, recipeReturned.HostAfterUpdate.LocalHosts[1].DataSource)
-	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[1].DHCPOptionSet.Options, 1)
-	require.EqualValues(t, 4, recipeReturned.HostAfterUpdate.LocalHosts[1].DHCPOptionSet.Options[0].Code)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[1].Options, 1)
+	require.EqualValues(t, 4, recipeReturned.HostAfterUpdate.LocalHosts[1].Options[0].Code)
 
 	require.EqualValues(t, 2, recipeReturned.HostAfterUpdate.LocalHosts[2].DaemonID)
 	require.EqualValues(t, dbmodel.HostDataSourceConfig, recipeReturned.HostAfterUpdate.LocalHosts[2].DataSource)
-	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[2].DHCPOptionSet.Options, 1)
-	require.EqualValues(t, 3, recipeReturned.HostAfterUpdate.LocalHosts[2].DHCPOptionSet.Options[0].Code)
+	require.Len(t, recipeReturned.HostAfterUpdate.LocalHosts[2].Options, 1)
+	require.EqualValues(t, 3, recipeReturned.HostAfterUpdate.LocalHosts[2].Options[0].Code)
 
 	require.Len(t, stateReturned.Updates, 1)
 	update := stateReturned.Updates[0]
@@ -1516,8 +1516,8 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	require.Len(t, agents.RecordedCommands, 2)
 	for i, command := range agents.RecordedCommands {
 		marshalled := command.Marshal()
-		switch {
-		case i == 0:
+		switch i {
+		case 0:
 			require.JSONEq(t,
 				`{
                  "command": "reservation-del",

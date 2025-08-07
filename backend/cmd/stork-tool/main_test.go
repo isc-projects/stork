@@ -69,7 +69,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 // This test checks if stork-tool -h presents expected text fragments.
 func TestMainHelp(t *testing.T) {
 	// Run the --help version and get its output.
-	toolCmd := exec.Command(ToolBin, "-h")
+	toolCmd := exec.CommandContext(t.Context(), ToolBin, "-h")
 	output, err := toolCmd.Output()
 	require.NoError(t, err)
 
@@ -102,7 +102,7 @@ func TestDbOptsHelp(t *testing.T) {
 	cmds := []string{"db-init", "db-up", "db-down", "db-reset", "db-version", "db-set-version", "cert-export", "cert-import"}
 	for _, cmd := range cmds {
 		// Run the --help version and get its output.
-		toolCmd := exec.Command(ToolBin, cmd, "-h")
+		toolCmd := exec.CommandContext(t.Context(), ToolBin, cmd, "-h")
 		output, err := toolCmd.Output()
 		require.NoError(t, err)
 
@@ -116,7 +116,7 @@ func TestVersion(t *testing.T) {
 	// Let's repeat the test twice for -v and then for --version
 	for _, opt := range []string{"-v", "--version"} {
 		// Run the agent with specific switch.
-		agentCmd := exec.Command(ToolBin, opt)
+		agentCmd := exec.CommandContext(t.Context(), ToolBin, opt)
 		output, err := agentCmd.Output()
 		require.NoError(t, err)
 

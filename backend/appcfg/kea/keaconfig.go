@@ -290,7 +290,7 @@ func (c *Config) GetTimerParameters() (parameters TimerParameters) {
 // Returns DHCPv6 preferred lifetime parameters.
 func (c *Config) GetPreferredLifetimeParameters() (parameters PreferredLifetimeParameters) {
 	if c.IsDHCPv6() {
-		parameters = c.DHCPv6Config.PreferredLifetimeParameters
+		parameters = c.PreferredLifetimeParameters
 	}
 	return
 }
@@ -314,7 +314,7 @@ func (c *Config) GetAllocator() (allocator *string) {
 // Returns prefix delegation allocator.
 func (c *Config) GetPDAllocator() (allocator *string) {
 	if c.IsDHCPv6() {
-		allocator = c.DHCPv6Config.PDAllocator
+		allocator = c.PDAllocator
 	}
 	return
 }
@@ -322,7 +322,7 @@ func (c *Config) GetPDAllocator() (allocator *string) {
 // Returns DHCPv4 authoritative flag.
 func (c *Config) GetAuthoritative() (authoritative *bool) {
 	if c.IsDHCPv4() {
-		authoritative = c.DHCPv4Config.Authoritative
+		authoritative = c.Authoritative
 	}
 	return
 }
@@ -330,7 +330,7 @@ func (c *Config) GetAuthoritative() (authoritative *bool) {
 // Returns DHCPv4 boot file name.
 func (c *Config) GetBootFileName() (bootFileName *string) {
 	if c.IsDHCPv4() {
-		bootFileName = c.DHCPv4Config.BootFileName
+		bootFileName = c.BootFileName
 	}
 	return
 }
@@ -338,7 +338,7 @@ func (c *Config) GetBootFileName() (bootFileName *string) {
 // Returns DHCPv4 match client ID.
 func (c *Config) GetMatchClientID() (matchClientID *bool) {
 	if c.IsDHCPv4() {
-		matchClientID = c.DHCPv4Config.MatchClientID
+		matchClientID = c.MatchClientID
 	}
 	return
 }
@@ -346,7 +346,7 @@ func (c *Config) GetMatchClientID() (matchClientID *bool) {
 // Returns DHCPv4 next server.
 func (c *Config) GetNextServer() (nextServer *string) {
 	if c.IsDHCPv4() {
-		nextServer = c.DHCPv4Config.NextServer
+		nextServer = c.NextServer
 	}
 	return
 }
@@ -354,7 +354,7 @@ func (c *Config) GetNextServer() (nextServer *string) {
 // Returns DHCPv4 server hostname.
 func (c *Config) GetServerHostname() (serverHostname *string) {
 	if c.IsDHCPv4() {
-		serverHostname = c.DHCPv4Config.ServerHostname
+		serverHostname = c.ServerHostname
 	}
 	return
 }
@@ -362,7 +362,7 @@ func (c *Config) GetServerHostname() (serverHostname *string) {
 // Returns DHCPv6 rapid commit flag.
 func (c *Config) GetRapidCommit() (rapidCommit *bool) {
 	if c.IsDHCPv6() {
-		rapidCommit = c.DHCPv6Config.RapidCommit
+		rapidCommit = c.RapidCommit
 	}
 	return
 }

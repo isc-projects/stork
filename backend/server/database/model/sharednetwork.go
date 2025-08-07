@@ -105,8 +105,8 @@ func (sn *SharedNetwork) GetKeaParameters(daemonID int64) *keaconfig.SharedNetwo
 func (sn *SharedNetwork) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.DHCPOptionAccessor) {
 	for _, lsn := range sn.LocalSharedNetworks {
 		if lsn.DaemonID == daemonID {
-			for i := range lsn.DHCPOptionSet.Options {
-				accessors = append(accessors, lsn.DHCPOptionSet.Options[i])
+			for i := range lsn.Options {
+				accessors = append(accessors, lsn.Options[i])
 			}
 		}
 	}

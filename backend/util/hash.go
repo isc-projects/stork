@@ -12,7 +12,7 @@ func Fnv128(input ...any) string {
 	h := fnv.New128()
 	// Ignore errors because they are never returned in this case.
 	for _, i := range input {
-		_, _ = h.Write([]byte(fmt.Sprintf("%+v", i)))
+		_, _ = fmt.Fprintf(h, "%+v", i)
 	}
 	bs := h.Sum(nil)
 	return fmt.Sprintf("%x", bs)

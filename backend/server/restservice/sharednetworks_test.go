@@ -1071,15 +1071,15 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 		require.True(t, *lsn.KeaParameters.StoreExtendedInfo)
 
 		// DHCP options
-		require.Len(t, lsn.DHCPOptionSet.Options, 1)
-		require.True(t, lsn.DHCPOptionSet.Options[0].AlwaysSend)
-		require.EqualValues(t, 3, lsn.DHCPOptionSet.Options[0].Code)
-		require.Len(t, lsn.DHCPOptionSet.Options[0].Fields, 1)
-		require.Equal(t, dhcpmodel.IPv4AddressField, lsn.DHCPOptionSet.Options[0].Fields[0].FieldType)
-		require.Len(t, lsn.DHCPOptionSet.Options[0].Fields[0].Values, 1)
-		require.Equal(t, "192.0.2.1", lsn.DHCPOptionSet.Options[0].Fields[0].Values[0])
-		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lsn.DHCPOptionSet.Options[0].Space)
-		require.NotEmpty(t, lsn.DHCPOptionSet.Hash)
+		require.Len(t, lsn.Options, 1)
+		require.True(t, lsn.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, lsn.Options[0].Code)
+		require.Len(t, lsn.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, lsn.Options[0].Fields[0].FieldType)
+		require.Len(t, lsn.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", lsn.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lsn.Options[0].Space)
+		require.NotEmpty(t, lsn.Hash)
 	}
 }
 
@@ -1922,15 +1922,15 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 		require.True(t, *lsn.KeaParameters.StoreExtendedInfo)
 
 		// DHCP options
-		require.Len(t, lsn.DHCPOptionSet.Options, 1)
-		require.True(t, lsn.DHCPOptionSet.Options[0].AlwaysSend)
-		require.EqualValues(t, 3, lsn.DHCPOptionSet.Options[0].Code)
-		require.Len(t, lsn.DHCPOptionSet.Options[0].Fields, 1)
-		require.Equal(t, dhcpmodel.IPv4AddressField, lsn.DHCPOptionSet.Options[0].Fields[0].FieldType)
-		require.Len(t, lsn.DHCPOptionSet.Options[0].Fields[0].Values, 1)
-		require.Equal(t, "192.0.2.1", lsn.DHCPOptionSet.Options[0].Fields[0].Values[0])
-		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lsn.DHCPOptionSet.Options[0].Space)
-		require.NotEmpty(t, lsn.DHCPOptionSet.Hash)
+		require.Len(t, lsn.Options, 1)
+		require.True(t, lsn.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, lsn.Options[0].Code)
+		require.Len(t, lsn.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, lsn.Options[0].Fields[0].FieldType)
+		require.Len(t, lsn.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", lsn.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lsn.Options[0].Space)
+		require.NotEmpty(t, lsn.Hash)
 	}
 }
 
@@ -2167,8 +2167,8 @@ func TestUpdateSharedNetwork6BeginSubmit(t *testing.T) {
 		require.Equal(t, "random", *lsn.KeaParameters.PDAllocator)
 
 		// DHCP options
-		require.Empty(t, lsn.DHCPOptionSet.Options)
-		require.Empty(t, lsn.DHCPOptionSet.Hash)
+		require.Empty(t, lsn.Options)
+		require.Empty(t, lsn.Hash)
 	}
 }
 

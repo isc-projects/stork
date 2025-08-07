@@ -807,7 +807,8 @@ func (sa *StorkAgent) Serve() error {
 
 	// Prepare listener on configured address.
 	addr := net.JoinHostPort(sa.Host, strconv.Itoa(sa.Port))
-	lis, err := net.Listen("tcp", addr)
+	listenConfig := &net.ListenConfig{}
+	lis, err := listenConfig.Listen(context.Background(), "tcp", addr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to listen on: %s", addr)
 	}

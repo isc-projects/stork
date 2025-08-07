@@ -51,7 +51,8 @@ func runPingGRPCServer(host string, port int) (func(), error) {
 
 	// Prepare listener on configured address.
 	addr := net.JoinHostPort(host, fmt.Sprint(port))
-	listener, err := net.Listen("tcp", addr)
+	listenConfig := &net.ListenConfig{}
+	listener, err := listenConfig.Listen(context.Background(), "tcp", addr)
 	if err != nil {
 		if errors.Is(err, unix.EADDRINUSE) {
 			err = errors.Wrapf(err,

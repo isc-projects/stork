@@ -197,7 +197,8 @@ func TestRegisterBusyPort(t *testing.T) {
 	var agentAPI agentcomm.ConnectedAgents
 
 	// Start a listener on the agent port.
-	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", agentAddr, agentPort))
+	listenConfig := &net.ListenConfig{}
+	ln, err := listenConfig.Listen(t.Context(), "tcp", fmt.Sprintf("%s:%d", agentAddr, agentPort))
 	require.NoError(t, err)
 	defer ln.Close()
 

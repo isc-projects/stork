@@ -1603,13 +1603,14 @@ func getKeaServicesStatus(db *dbops.PgDB, app *dbmodel.App) *models.ServicesStat
 		controlAddress := make([]string, 2)
 		appID := make([]int64, 2)
 		for i := range s.Daemons {
-			if s.Daemons[i].ID == ha.PrimaryID {
+			switch s.Daemons[i].ID {
+			case ha.PrimaryID:
 				ap, _ := s.Daemons[i].App.GetAccessPoint("control")
 				if ap != nil {
 					controlAddress[0] = ap.Address
 				}
 				appID[0] = s.Daemons[i].App.ID
-			} else if s.Daemons[i].ID == ha.SecondaryID {
+			case ha.SecondaryID:
 				ap, _ := s.Daemons[i].App.GetAccessPoint("control")
 				if ap != nil {
 					controlAddress[1] = ap.Address

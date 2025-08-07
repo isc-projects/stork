@@ -613,7 +613,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		// if any requests are already in progress. The FNV key is unique for the
 		// daemon, zone and view.
 		h := fnv.New64a()
-		h.Write([]byte(fmt.Sprintf("%d:%d:%s", daemonID, zoneID, viewName)))
+		fmt.Fprintf(h, "%d:%d:%s", daemonID, zoneID, viewName)
 		key := h.Sum64()
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

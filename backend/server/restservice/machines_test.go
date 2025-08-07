@@ -371,7 +371,7 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	require.Len(t, returnedApp.AccessPoints, 1)
 	require.EqualValues(t, 124, returnedApp.AccessPoints[0].Port)
 
-	pdnsDaemon := returnedApp.Details.AppPdns.PdnsDaemon
+	pdnsDaemon := returnedApp.Details.PdnsDaemon
 	require.NotNil(t, pdnsDaemon)
 	require.Equal(t, pdnsApp.Daemons[0].Name, pdnsDaemon.Name)
 	require.Equal(t, "4.7.0", pdnsDaemon.Version)
@@ -1505,10 +1505,10 @@ func TestGetPowerDNSApp(t *testing.T) {
 	okRsp := rsp.(*services.GetAppOK)
 	require.Equal(t, pdnsApp.ID, okRsp.Payload.ID)
 	require.Equal(t, pdnsApp.Name, okRsp.Payload.Name)
-	require.Equal(t, "https://pdns.example.com", okRsp.Payload.Details.AppPdns.PdnsDaemon.URL)
-	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.Details.AppPdns.PdnsDaemon.ConfigURL)
-	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.Details.AppPdns.PdnsDaemon.ZonesURL)
-	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.Details.AppPdns.PdnsDaemon.AutoprimariesURL)
+	require.Equal(t, "https://pdns.example.com", okRsp.Payload.Details.PdnsDaemon.URL)
+	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.Details.PdnsDaemon.ConfigURL)
+	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.Details.PdnsDaemon.ZonesURL)
+	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.Details.PdnsDaemon.AutoprimariesURL)
 }
 
 func TestRestGetApps(t *testing.T) {
@@ -3181,7 +3181,7 @@ func TestAppToRestAPIForNilBIND9Daemon(t *testing.T) {
 	require.NotNil(t, restApp)
 	require.EqualValues(t, dbmodel.AppTypeBind9, restApp.Type)
 	require.NotNil(t, restApp.Details.AppBind9)
-	require.Nil(t, restApp.Details.AppBind9.Daemon)
+	require.Nil(t, restApp.Details.Daemon)
 	require.Empty(t, restApp.Details.Daemons)
 }
 

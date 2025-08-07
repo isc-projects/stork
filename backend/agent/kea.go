@@ -62,7 +62,7 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 // Sends a serialized command to Kea and returns a serialized response.
 func (ka *KeaApp) sendCommandRaw(command []byte) ([]byte, error) {
 	var accessPoint *AccessPoint
-	for _, ap := range ka.BaseApp.AccessPoints {
+	for _, ap := range ka.AccessPoints {
 		if ap.Type == AccessPointControl {
 			accessPoint = &ap
 			break
@@ -157,7 +157,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 		return nil, err
 	}
 
-	ap := ka.BaseApp.AccessPoints[0]
+	ap := ka.AccessPoints[0]
 
 	// There should be exactly one response received because we sent the command
 	// to only one daemon.

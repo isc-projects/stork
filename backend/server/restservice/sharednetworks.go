@@ -129,8 +129,8 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 				localSharedNetwork.KeaConfigSharedNetworkParameters = &models.KeaConfigSharedNetworkParameters{}
 			}
 			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters = convertSharedNetworkParametersToRestAPI(keaParameters)
-			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.OptionsHash = lsn.DHCPOptionSet.Hash
-			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(lsn.DHCPOptionSet.Options, "", 0)
+			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.OptionsHash = lsn.Hash
+			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(lsn.Options, "", 0)
 		}
 
 		// Global configuration parameters.
@@ -259,7 +259,7 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 			if err != nil {
 				return nil, err
 			}
-			localSharedNetwork.DHCPOptionSet.SetDHCPOptions(options, keaconfig.NewHasher())
+			localSharedNetwork.SetDHCPOptions(options, keaconfig.NewHasher())
 		}
 		sharedNetwork.SetLocalSharedNetwork(localSharedNetwork)
 	}

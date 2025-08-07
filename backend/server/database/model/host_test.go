@@ -1810,10 +1810,10 @@ func TestAddHost(t *testing.T) {
 	require.Equal(t, "bar", returnedList[0].LocalHosts[0].ClientClasses[1])
 
 	// Make sure that DHCP options are returned.
-	require.Len(t, returnedList[0].LocalHosts[0].DHCPOptionSet.Options, 1)
-	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].DHCPOptionSet.Options[0].Code)
-	require.Equal(t, "foo", returnedList[0].LocalHosts[0].DHCPOptionSet.Options[0].Name)
-	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].DHCPOptionSet.Options[0].Space)
+	require.Len(t, returnedList[0].LocalHosts[0].Options, 1)
+	require.EqualValues(t, 254, returnedList[0].LocalHosts[0].Options[0].Code)
+	require.Equal(t, "foo", returnedList[0].LocalHosts[0].Options[0].Name)
+	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, returnedList[0].LocalHosts[0].Options[0].Space)
 }
 
 // Test that the host and its local host can be added within a single transaction.

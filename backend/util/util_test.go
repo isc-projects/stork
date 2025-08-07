@@ -517,7 +517,7 @@ func TestSocketIsSocket(t *testing.T) {
 	socketName, _ := sb.Join("socket")
 	os.Remove(socketName)
 
-	listener, _ := net.Listen("unix", socketName)
+	listener, _ := (&net.ListenConfig{}).Listen(t.Context(), "unix", socketName)
 	defer listener.Close()
 
 	// Act & Assert

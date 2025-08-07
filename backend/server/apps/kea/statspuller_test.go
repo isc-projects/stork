@@ -572,15 +572,15 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	verifyStandardLocalSubnetsStatistics(t, db)
 
 	// We should have two rows in RpsWorker.PreviousRps map one for each daemon
-	require.Equal(t, 2, len(sp.RpsWorker.PreviousRps))
+	require.Equal(t, 2, len(sp.PreviousRps))
 
 	// Entry for ID 1 should be dhcp4 daemon, it should have an RPS value of 44
-	previous := sp.RpsWorker.PreviousRps[1]
+	previous := sp.PreviousRps[1]
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 44, previous.Value)
 
 	// Entry for ID 2 should be dhcp6 daemon, it should have an RPS value of 66
-	previous = sp.RpsWorker.PreviousRps[2]
+	previous = sp.PreviousRps[2]
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 66, previous.Value)
 

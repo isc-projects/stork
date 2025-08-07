@@ -44,7 +44,7 @@ func TestReadIntervalFromDatabase(t *testing.T) {
 		func() error { return nil })
 	defer puller.Shutdown()
 
-	initialInterval := puller.PeriodicExecutor.GetInterval()
+	initialInterval := puller.GetInterval()
 
 	// Act
 	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 10)

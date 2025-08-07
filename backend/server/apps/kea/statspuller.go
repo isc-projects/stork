@@ -376,7 +376,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	// If we're running RPS, age off obsolete RPS data.
 	if statsPuller.RpsWorker != nil {
-		_ = statsPuller.RpsWorker.AgeOffRpsIntervals()
+		_ = statsPuller.AgeOffRpsIntervals()
 	}
 
 	// Slices for tracking commands, the daemons they're sent to, and the responses
@@ -504,14 +504,14 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 			lastErr = err
 		}
 
-		err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], response)
+		err = statsPuller.Response4Handler(cmdDaemons[idx], response)
 		if err != nil {
 			log.WithError(err).Error("Error handling RPS DHCPv4 statistics " +
 				" in the statistic-get-all response")
 			lastErr = err
 		}
 
-		err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], response)
+		err = statsPuller.Response6Handler(cmdDaemons[idx], response)
 		if err != nil {
 			log.WithError(err).Error("Error handling RPS DHCPv6 statistics " +
 				" in the statistic-get-all response")

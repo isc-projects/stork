@@ -1170,7 +1170,7 @@ func (host Host) GetBootFileName(daemonID int64) (bootFileName string) {
 func (host Host) GetDHCPOptions(daemonID int64) (options []dhcpmodel.DHCPOptionAccessor) {
 	for _, lh := range host.LocalHosts {
 		if lh.DaemonID == daemonID {
-			for _, o := range lh.DHCPOptionSet.Options {
+			for _, o := range lh.Options {
 				options = append(options, o)
 			}
 		}

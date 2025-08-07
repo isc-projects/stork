@@ -792,40 +792,56 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, app
 	result.CmdsErrors = keaCommState.controlAgentErrors
 
 	// Generate events for the Kea Control Agent.
-	if keaCommState.controlAgentState == CommErrorNew {
+	switch keaCommState.controlAgentState {
+	case CommErrorNew:
 		// The connection was ok but now it is broken.
 		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea Control Agent")
 		agents.eventCenter.AddErrorEvent("forwarding Kea command via the Kea Control Agent {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameCA), app.GetMachineTag(), dbmodel.SSEConnectivity, keaCommState.controlAgentErrors)
-	} else if keaCommState.controlAgentState == CommErrorReset {
+	case CommErrorReset:
 		// The connection was broken but now is ok.
 		agents.eventCenter.AddWarningEvent("forwarding Kea command via the Kea Control Agent {daemon} on {machine} succeeded", app.GetDaemonTag(dbmodel.DaemonNameCA), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	case CommErrorContinued, CommErrorNone:
+		// The connection was ok and is still ok.
+		// No event is generated in this case.
 	}
 	// Generate events for the DHCPv4 server.
-	if keaCommState.dhcp4State == CommErrorNew {
+	switch keaCommState.dhcp4State {
+	case CommErrorNew:
 		// The connection was ok but now it is broken.
 		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea DHCPv4 server")
 		agents.eventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameDHCPv4), app.GetMachineTag(), dbmodel.SSEConnectivity, keaCommState.dhcp4ErrMessage)
-	} else if keaCommState.dhcp4State == CommErrorReset {
+	case CommErrorReset:
 		// The connection was broken but now is ok.
 		agents.eventCenter.AddWarningEvent("processing Kea command by {daemon} on {machine} succeeded", app.GetDaemonTag(dbmodel.DaemonNameDHCPv4), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	case CommErrorContinued, CommErrorNone:
+		// The connection was ok and is still ok.
+		// No event is generated in this case.
 	}
 	// Generate events for the DHCPv6 server.
-	if keaCommState.dhcp6State == CommErrorNew {
+	switch keaCommState.dhcp6State {
+	case CommErrorNew:
 		// The connection was ok but now it is broken.
 		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea DHCPv6 server")
 		agents.eventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameDHCPv6), app.GetMachineTag(), dbmodel.SSEConnectivity, keaCommState.dhcp6ErrMessage)
-	} else if keaCommState.dhcp6State == CommErrorReset {
+	case CommErrorReset:
 		// The connection was broken but now is ok.
 		agents.eventCenter.AddWarningEvent("processing Kea command by {daemon} on {machine} succeeded", app.GetDaemonTag(dbmodel.DaemonNameDHCPv6), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	case CommErrorContinued, CommErrorNone:
+		// The connection was ok and is still ok.
+		// No event is generated in this case.
 	}
 	// Generate events for the D2 server.
-	if keaCommState.d2State == CommErrorNew {
+	switch keaCommState.d2State {
+	case CommErrorNew:
 		// The connection was ok but now it is broken.
 		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea D2 server")
 		agents.eventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameD2), app.GetMachineTag(), dbmodel.SSEConnectivity, keaCommState.d2ErrMessage)
-	} else if keaCommState.d2State == CommErrorReset {
+	case CommErrorReset:
 		// The connection was broken but now is ok.
 		agents.eventCenter.AddWarningEvent("processing Kea command by {daemon} on {machine} succeeded", app.GetDaemonTag(dbmodel.DaemonNameD2), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	case CommErrorContinued, CommErrorNone:
+		// The connection was ok and is still ok.
+		// No event is generated in this case.
 	}
 
 	// Get all responses from the Kea server.

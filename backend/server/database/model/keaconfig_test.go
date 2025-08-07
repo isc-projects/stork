@@ -582,7 +582,7 @@ func TestNewHostFromKeaDHCPv4Reservation(t *testing.T) {
 	require.Len(t, host.LocalHosts[0].ClientClasses, 2)
 	require.Equal(t, "foo", host.LocalHosts[0].ClientClasses[0])
 	require.Equal(t, "bar", host.LocalHosts[0].ClientClasses[1])
-	require.Len(t, host.LocalHosts[0].DHCPOptionSet.Options, 1)
+	require.Len(t, host.LocalHosts[0].Options, 1)
 	require.Equal(t, HostDataSourceAPI, host.LocalHosts[0].DataSource)
 	require.Equal(t, "192.0.2.2", host.LocalHosts[0].NextServer)
 	require.Equal(t, "host.example.org", host.LocalHosts[0].ServerHostname)

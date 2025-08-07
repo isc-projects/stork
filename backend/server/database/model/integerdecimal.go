@@ -59,7 +59,7 @@ func (d *integerDecimal) ScanValue(rd types.Reader, n int) error {
 		return err
 	}
 
-	_, ok := d.Int.SetString(string(tmp), 10)
+	_, ok := d.SetString(string(tmp), 10)
 	if !ok {
 		return errors.Errorf("invalid decimal")
 	}

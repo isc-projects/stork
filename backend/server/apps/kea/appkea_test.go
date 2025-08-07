@@ -190,9 +190,10 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 
 	// check getting config of 1 daemon
 	keaMock := func(callNo int, cmdResponses []interface{}) {
-		if callNo == 0 {
+		switch callNo {
+		case 0:
 			mockGetConfigFromCAResponse(1, cmdResponses)
-		} else if callNo == 1 {
+		case 1:
 			mockGetConfigFromOtherDaemonsResponse(1, cmdResponses)
 		}
 	}
@@ -222,9 +223,10 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 
 	// check getting configs of 2 daemons
 	keaMock := func(callNo int, cmdResponses []interface{}) {
-		if callNo == 0 {
+		switch callNo {
+		case 0:
 			mockGetConfigFromCAResponse(2, cmdResponses)
-		} else if callNo == 1 {
+		case 1:
 			mockGetConfigFromOtherDaemonsResponse(2, cmdResponses)
 		}
 	}
@@ -255,9 +257,10 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 
 	// check getting config of 1 daemon
 	keaMock := func(callNo int, cmdResponses []interface{}) {
-		if callNo%2 == 0 {
+		switch callNo % 2 {
+		case 0:
 			mockGetConfigFromCAResponse(1, cmdResponses)
-		} else if callNo%2 == 1 {
+		case 1:
 			mockGetConfigFromOtherDaemonsResponse(1, cmdResponses)
 		}
 	}
@@ -330,9 +333,10 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 		// We successfully communicated with the daemons so they should
 		// be in active state.
 		require.True(t, dbApp.Daemons[i].Active)
-		if dbApp.Daemons[i].Name == "ca" {
+		switch dbApp.Daemons[i].Name {
+		case "ca":
 			caDaemon = dbApp.Daemons[i]
-		} else if dbApp.Daemons[i].Name == "dhcp4" {
+		case "dhcp4":
 			dhcp4Daemon = dbApp.Daemons[i]
 		}
 	}

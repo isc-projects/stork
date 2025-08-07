@@ -132,8 +132,8 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					},
 				}
 				// DHCP options.
-				pool.KeaConfigPoolParameters.OptionsHash = poolDetails.DHCPOptionSet.Hash
-				pool.KeaConfigPoolParameters.Options = r.unflattenDHCPOptions(poolDetails.DHCPOptionSet.Options, "", 0)
+				pool.KeaConfigPoolParameters.OptionsHash = poolDetails.Hash
+				pool.KeaConfigPoolParameters.Options = r.unflattenDHCPOptions(poolDetails.Options, "", 0)
 			}
 
 			localSubnet.Pools = append(localSubnet.Pools, pool)
@@ -249,8 +249,8 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					IPAddresses: keaParameters.Relay.IPAddresses,
 				}
 			}
-			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.OptionsHash = lsn.DHCPOptionSet.Hash
-			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.Options = r.unflattenDHCPOptions(lsn.DHCPOptionSet.Options, "", 0)
+			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.OptionsHash = lsn.Hash
+			localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.Options = r.unflattenDHCPOptions(lsn.Options, "", 0)
 		}
 		// Shared network level Kea DHCP parameters.
 		if sn.SharedNetwork != nil {
@@ -261,8 +261,8 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 				}
 				localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters = convertSharedNetworkParametersToRestAPI(keaParameters)
 				if localSharedNetwork := sn.SharedNetwork.GetLocalSharedNetwork(lsn.DaemonID); localSharedNetwork != nil {
-					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.OptionsHash = localSharedNetwork.DHCPOptionSet.Hash
-					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(localSharedNetwork.DHCPOptionSet.Options, "", 0)
+					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.OptionsHash = localSharedNetwork.Hash
+					localSubnet.KeaConfigSubnetParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(localSharedNetwork.Options, "", 0)
 				}
 			}
 		}
@@ -445,7 +445,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 			if err != nil {
 				return nil, err
 			}
-			localSubnet.DHCPOptionSet.SetDHCPOptions(options, keaconfig.NewHasher())
+			localSubnet.SetDHCPOptions(options, keaconfig.NewHasher())
 		}
 		subnet.SetLocalSubnet(localSubnet)
 	}

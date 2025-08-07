@@ -564,7 +564,8 @@ func (r *RestAPI) Listen() error {
 
 	if !r.TLS {
 		// TLS disabled
-		listener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
+		listenerConfig := &net.ListenConfig{}
+		listener, err := listenerConfig.Listen(context.Background(), "tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
 			return pkgerrors.Wrap(err, "problem occurred while starting to listen using RESTful API")
 		}
@@ -578,8 +579,8 @@ func (r *RestAPI) Listen() error {
 		r.srvListener = listener
 	} else {
 		// TLS enabled
-
-		tlsListener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
+		listenerConfig := &net.ListenConfig{}
+		tlsListener, err := listenerConfig.Listen(context.Background(), "tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
 			return pkgerrors.Wrap(err, "problem occurred while starting to listen using RESTful API")
 		}

@@ -93,15 +93,23 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, 4, total)
 	require.Len(t, events, 4)
 	for _, ev := range events {
-		if ev.Level == EvError {
+		switch ev.Level {
+		case EvError:
 			require.EqualValues(t, aEv.Relations.AppID, ev.Relations.AppID)
 			require.EqualValues(t, "some error event", ev.Text)
-		} else if ev.Level == EvInfo {
+		case EvInfo:
 			require.EqualValues(t, mEv.Relations.MachineID, ev.Relations.MachineID)
 			require.EqualValues(t, "some info event", ev.Text)
 			require.Len(t, ev.SSEStreams, 2)
 			require.EqualValues(t, "foo", ev.SSEStreams[0])
 			require.EqualValues(t, "bar", ev.SSEStreams[1])
+		case EvWarning:
+			if ev.Relations.UserID != 0 {
+				require.EqualValues(t, uEv.Relations.UserID, ev.Relations.UserID)
+			} else {
+				require.EqualValues(t, dEv.Relations.DaemonID, ev.Relations.DaemonID)
+			}
+			require.EqualValues(t, "some warning event", ev.Text)
 		}
 	}
 

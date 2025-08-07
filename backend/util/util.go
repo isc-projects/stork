@@ -2,6 +2,7 @@ package storkutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"io/fs"
@@ -236,7 +237,7 @@ func NewSystemCommandExecutor() CommandExecutor {
 
 // Executes a given command in the system shell and returns an output.
 func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, error) {
-	return exec.Command(command, args...).Output()
+	return exec.CommandContext(context.Background(), command, args...).Output()
 }
 
 // Looks for a given command in the system PATH and returns absolute path if found.
