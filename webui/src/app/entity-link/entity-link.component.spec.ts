@@ -51,7 +51,7 @@ describe('EntityLinkComponent', () => {
         component.attrs = { type: 'kea', id: 1, name: 'mouse' }
         component.showEntityName = false
         fixture.detectChanges()
-        const link = fixture.debugElement.query(By.css('#app-link'))
+        const link = fixture.debugElement.query(By.css('#app-link-1'))
         expect(link.attributes.href).toEqual('/apps/1')
         expect(link.nativeElement.innerText).toEqual('mouse')
 
