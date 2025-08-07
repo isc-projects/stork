@@ -623,6 +623,9 @@ end
 tools_dir = File.expand_path('tools')
 directory tools_dir
 
+downloads_dir = File.join(tools_dir, "downloads")
+directory downloads_dir
+
 node_dir = File.join(tools_dir, "nodejs")
 directory node_dir
 
@@ -780,19 +783,23 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, BUNDLE] do
 end
 add_hash_guard(DANGER, danger_gemfile)
 
+node_archive = File.join(downloads_dir, "node-v#{node_ver}-#{node_suffix}.tar.xz")
+file node_archive => [WGET, downloads_dir] do
+    fetch_file "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", node_archive
+    sh "touch", "-c", node_archive
+end
+
 node = File.join(node_bin_dir, "node")
-file node => [TAR, WGET, node_dir] do
+file node => [TAR, node_archive, node_dir] do
+    node_archive = File.expand_path(node_archive)
     Dir.chdir(node_dir) do
         FileUtils.rm_rf(FileList["*"])
-        fetch_file "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "node.tar.xz"
-        sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
-        sh "rm", "node.tar.xz"
+        sh TAR, "-Jxf", node_archive, "--strip-components=1"
     end
     sh "touch", "-c", node
     sh node, "--version"
 end
 node = require_manual_install_on(node, libc_musl_system, freebsd_system, openbsd_system)
-add_version_guard(node, node_ver)
 
 npm = File.join(node_bin_dir, "npm")
 file npm => [node] do
@@ -853,39 +860,60 @@ file STORYBOOK => [NPM] do
 end
 add_version_guard(STORYBOOK, storybook_ver)
 
+openapi_generator_jar = File.join(downloads_dir, "openapi-generator-cli-#{openapi_generator_ver}.jar")
+file openapi_generator_jar => [WGET, downloads_dir] do
+    fetch_file "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", openapi_generator_jar
+    sh "touch", "-c", openapi_generator_jar
+end
+
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
-file OPENAPI_GENERATOR => [WGET, tools_dir] do
-    fetch_file "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", OPENAPI_GENERATOR
+file OPENAPI_GENERATOR => [openapi_generator_jar, tools_dir] do
+    cp openapi_generator_jar, OPENAPI_GENERATOR
     sh "touch", "-c", OPENAPI_GENERATOR
 end
-add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
+
+go_archive = File.join(downloads_dir, "go#{go_ver}.#{go_suffix}.tar.gz")
+file go_archive => [WGET, downloads_dir] do
+    fetch_file "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", go_archive
+    sh "touch", "-c", go_archive
+end
 
 go = File.join(gobin, "go")
-file go => [WGET, go_tools_dir] do
+file go => [go_archive, go_tools_dir] do
+    go_archive = File.expand_path(go_archive)
     Dir.chdir(go_tools_dir) do
         FileUtils.rm_rf("go")
-        fetch_file "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "go.tar.gz"
-        sh "tar", "-zxf", "go.tar.gz"
-        sh "rm", "go.tar.gz"
+        sh "tar", "-zxf", go_archive
     end
     sh "touch", "-c", go
     sh go, "version"
 end
 GO = require_manual_install_on(go, openbsd_system, freebsd_arm64_system)
-add_version_guard(GO, go_ver)
+
+goswagger_binary = File.join(downloads_dir, "swagger_#{goswagger_suffix}_#{goswagger_ver}.tar.gz")
+file goswagger_binary => [WGET, downloads_dir] do
+    fetch_file "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", goswagger_binary
+    sh "touch", "-c", goswagger_binary
+end
+
+goswagger_archive = File.join(downloads_dir, "goswagger-#{goswagger_ver}.tar.gz")
+file goswagger_archive => [WGET, downloads_dir] do
+    fetch_file "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", goswagger_archive
+    sh "touch", "-c", goswagger_archive
+end
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [WGET, GO, TAR, go_tools_dir] do
     if OS != 'FreeBSD' && OS != "OpenBSD"
-        fetch_file "https://github.com/go-swagger/go-swagger/releases/download/#{goswagger_ver}/swagger_#{goswagger_suffix}", GOSWAGGER
+        Rake::Task[goswagger_binary].invoke
+        sh "cp", goswagger_binary, GOSWAGGER
         sh "chmod", "u+x", GOSWAGGER
     else
         # GoSwagger lacks the packages for BSD-like systems then it must be
         # built from sources.
-        goswagger_archive = "#{GOSWAGGER}.tar.gz"
         goswagger_dir = "#{GOSWAGGER}-sources"
         sh "mkdir", goswagger_dir
-        fetch_file "https://github.com/go-swagger/go-swagger/archive/refs/tags/#{goswagger_ver}.tar.gz", goswagger_archive
+        Rake::Task[goswagger_archive].invoke
         sh TAR, "-zxf", goswagger_archive, "-C", goswagger_dir
         # We cannot use --strip-components because OpenBSD tar doesn't support it.
         goswagger_dir = File.join(goswagger_dir, "go-swagger-#{goswagger_ver[1..-1]}") # Trim 'v' letter
@@ -895,26 +923,28 @@ file GOSWAGGER => [WGET, GO, TAR, go_tools_dir] do
         end
         sh "mv", File.join(goswagger_build_dir, "swagger"), GOSWAGGER
         sh "rm", "-rf", goswagger_dir
-        sh "rm", goswagger_archive
     end
 
     sh "touch", "-c", GOSWAGGER
     sh GOSWAGGER, "version"
 end
-add_version_guard(GOSWAGGER, goswagger_ver)
+
+protoc_archive = File.join(downloads_dir, "protoc-#{protoc_ver}-#{protoc_suffix}.zip")
+file protoc_archive => [WGET, downloads_dir] do
+    fetch_file "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", protoc_archive
+    sh "touch", "-c", protoc_archive
+end
 
 protoc = File.join(protoc_dir, "protoc")
-file protoc => [WGET, UNZIP, go_tools_dir] do
+file protoc => [protoc_archive, UNZIP, go_tools_dir] do
+    protoc_archive = File.expand_path(protoc_archive)
     Dir.chdir(go_tools_dir) do
-        fetch_file "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "protoc.zip"
-        sh UNZIP, "-o", "-j", "protoc.zip", "bin/protoc"
-        sh "rm", "protoc.zip"
+        sh UNZIP, "-o", "-j", protoc_archive, "bin/protoc"
     end
     sh protoc, "--version"
     sh "touch", "-c", protoc
 end
 PROTOC = require_manual_install_on(protoc, freebsd_system, openbsd_system)
-add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
 file PROTOC_GEN_GO => [GO] do
@@ -930,21 +960,25 @@ file PROTOC_GEN_GO_GRPC => [GO] do
 end
 add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_grpc_ver)
 
+golangcilint_archive = File.join(downloads_dir, "golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz")
+file golangcilint_archive => [WGET, downloads_dir] do
+    fetch_file "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", golangcilint_archive
+    sh "touch", "-c", golangcilint_archive
+end
+
 golangcilint = File.join(go_tools_dir, "golangci-lint")
-file golangcilint => [WGET, GO, TAR, go_tools_dir] do
+file golangcilint => [golangcilint_archive, GO, TAR, go_tools_dir] do
+    golangcilint_archive = File.expand_path(golangcilint_archive)
     Dir.chdir(go_tools_dir) do
-        fetch_file "https://github.com/golangci/golangci-lint/releases/download/v#{golangcilint_ver}/golangci-lint-#{golangcilint_ver}-#{golangcilint_suffix}.tar.gz", "golangci-lint.tar.gz"
         sh "mkdir", "tmp"
-        sh TAR, "-zxf", "golangci-lint.tar.gz", "-C", "tmp", "--strip-components=1"
+        sh TAR, "-zxf", golangcilint_archive, "-C", "tmp", "--strip-components=1"
         sh "mv", "tmp/golangci-lint", "."
         sh "rm", "-rf", "tmp"
-        sh "rm", "-f", "golangci-lint.tar.gz"
     end
     sh "touch", "-c", golangcilint
     sh golangcilint, "--version"
 end
 GOLANGCILINT = require_manual_install_on(golangcilint, openbsd_system)
-add_version_guard(GOLANGCILINT, golangcilint_ver)
 
 GOLIVEPPROF = File.join(gobin, "live-pprof")
 file GOLIVEPPROF => [GO] do
@@ -955,16 +989,20 @@ file GOLIVEPPROF => [GO] do
 end
 add_version_guard(GOLIVEPPROF, go_live_pprof_ver)
 
+shellcheck_archive = File.join(downloads_dir, "shellcheck-v#{shellcheck_ver}.#{shellcheck_suffix}.tar.xz")
+file shellcheck_archive => [WGET, downloads_dir] do
+    fetch_file "https://github.com/koalaman/shellcheck/releases/download/v#{shellcheck_ver}/shellcheck-v#{shellcheck_ver}.#{shellcheck_suffix}.tar.xz", shellcheck_archive
+    sh "touch", "-c", shellcheck_archive
+end
+
 shellcheck = File.join(tools_dir, "shellcheck")
-file shellcheck => [WGET, TAR, tools_dir] do
+file shellcheck => [shellcheck_archive, TAR, tools_dir] do
+    shellcheck_archive = File.expand_path(shellcheck_archive)
     Dir.chdir(tools_dir) do
-        # Download the shellcheck binary.
-        fetch_file "https://github.com/koalaman/shellcheck/releases/download/v#{shellcheck_ver}/shellcheck-v#{shellcheck_ver}.#{shellcheck_suffix}.tar.xz", "shellcheck.tar.xz"
         sh "mkdir", "-p", "tmp"
-        sh TAR, "-xf", "shellcheck.tar.xz", "-C", "tmp", "--strip-components=1"
+        sh TAR, "-xf", shellcheck_archive, "-C", "tmp", "--strip-components=1"
         sh "mv", "tmp/shellcheck", "."
         sh "rm", "-rf", "tmp"
-        sh "rm", "-f", "shellcheck.tar.xz"
     end
     sh "touch", "-c", shellcheck
     sh shellcheck, "--version"
@@ -1136,4 +1174,22 @@ end
 desc 'Check all system-level dependencies'
 task :check do
     check_deps(__FILE__)
+end
+
+namespace :clear do
+    desc 'Clear all unused downloaded files'
+    task :downloads do
+        # Find all expected downloaded files declared in this file.
+        tasks = find_tasks(__FILE__)
+        # Filter out the tasks that are not file tasks.
+        tasks = tasks.select { |task| task.is_a?(Rake::FileTask) }
+        # Filter out the tasks that not reside in the downloads directory.
+        tasks = tasks.select { |task| task.name.start_with?(downloads_dir) }
+        # Get the list of files in the downloads directory.
+        downloaded_files = FileList[File.join(downloads_dir, "*")]
+        # Get the downloaded files that are not declared in the tasks.
+        unused_files = downloaded_files - tasks.map(&:name)
+        # Remove the unused files.
+        sh "rm", "-rf", *unused_files if unused_files.any?
+    end
 end
