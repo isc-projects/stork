@@ -69,6 +69,20 @@
     "latestDev": {
       "version": "9.21.10",
       "releaseDate": "2025-07-16"
-    }
+    },
+    "latestSecure": [
+      {
+        "version": "9.20.11",
+        "releaseDate": "2025-07-16"
+      },
+      {
+        "version": "9.18.38",
+        "releaseDate": "2025-07-16"
+      },
+      {
+        "version": "9.21.10",
+        "releaseDate": "2025-07-16"
+      }
+    ]
   }
 }
