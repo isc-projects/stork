@@ -553,8 +553,8 @@ nfpm_ver = 'v2.43.0'
 golangcilint_ver = '2.3.1'
 
 # UI-related
-node_ver = '20.17.0'
-npm_ver = '11.2.0'
+node_ver = '20.19.4'
+npm_ver = '11.5.2'
 yamlinc_ver = '0.1.10'
 storybook_ver = '8.6.8'
 openapi_generator_ver = '7.12.0'
