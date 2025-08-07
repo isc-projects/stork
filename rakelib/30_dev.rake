@@ -1144,9 +1144,9 @@ namespace :update do
     end
 
     desc 'Update Storybook to the latest version'
-    task :storybook => [STORYBOOK] do
+    task :storybook => [NPX] + WEBUI_CODEBASE do
         Dir.chdir("webui") do
-            sh STORYBOOK, "upgrade", "--disable-telemetry"
+            sh NPX, "storybook@latest", "upgrade", "--disable-telemetry"
         end
     end
 

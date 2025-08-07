@@ -556,7 +556,6 @@ golangcilint_ver = '2.3.1'
 node_ver = '20.19.4'
 npm_ver = '11.5.2'
 yamlinc_ver = '0.1.10'
-storybook_ver = '8.6.8'
 openapi_generator_ver = '7.12.0'
 
 # Other
@@ -842,23 +841,6 @@ file YAMLINC => [NPM] do
     sh YAMLINC, "--version"
 end
 add_version_guard(YAMLINC, yamlinc_ver)
-
-STORYBOOK = File.join(node_dir, "node_modules", "bin", "sb")
-file STORYBOOK => [NPM] do
-    ci_opts = []
-    if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress"]
-    end
-
-    sh NPM, "install",
-            "-g",
-            *ci_opts,
-            "--prefix", "#{node_dir}/node_modules",
-            "storybook@#{storybook_ver}"
-    sh "touch", "-c", STORYBOOK
-    sh STORYBOOK, "--version"
-end
-add_version_guard(STORYBOOK, storybook_ver)
 
 openapi_generator_jar = File.join(downloads_dir, "openapi-generator-cli-#{openapi_generator_ver}.jar")
 file openapi_generator_jar => [WGET, downloads_dir] do
