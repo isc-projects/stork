@@ -10,7 +10,7 @@
     <!-- app -->
     <ng-container *ngSwitchCase="'app'">
         {{ showEntityName ? 'app' : '' }}
-        <a id="app-link" routerLink="/apps/{{ attrs.id }}">{{ attrs.name }}</a>
+        <a [id]="'app-link-' + attrs.id" routerLink="/apps/{{ attrs.id }}">{{ attrs.name }}</a>
     </ng-container>
 
     <!-- machine -->
