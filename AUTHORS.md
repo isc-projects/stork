@@ -8,7 +8,8 @@ Primary developers:
 - Sławek Figiel (maintainer, database, server, agent, UI, hooks, LDAP, system tests,
                  registration, config migration, config review, Prometheus,
                  Kea statistics)
-- Piotrek Zadroga (maintainer, UI, responsive UI, version reporting, DNS zone viewer)
+- Piotrek Zadroga (maintainer, UI, responsive UI, version reporting, DNS zone viewer,
+                   read-only user role)
 
 Active developers:
 
