@@ -237,7 +237,8 @@ func TestGetFreeLocalTCPPort(t *testing.T) {
 	require.NotZero(t, port)
 	// Check that the port is not in use.
 	addr := net.JoinHostPort("localhost", fmt.Sprint(port))
-	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", addr)
+	config := &net.ListenConfig{}
+	listener, err := config.Listen(t.Context(), "tcp", addr)
 	require.NoError(t, err)
 	listener.Close()
 }
