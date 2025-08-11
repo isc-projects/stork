@@ -1,4 +1,4 @@
-FROM debian:12.1-slim
+FROM debian:12.11-slim
 
 WORKDIR /repo
 RUN apt-get update \
@@ -25,7 +25,7 @@ RUN apt-get update \
         ssh=1:9.* \
         unzip=6.* \
         wget=1.21.* \
-        chromium=117.* \
+        chromium=138.* \
         # Clean up cache.
         && rm -rf /var/lib/apt/lists/* \
         # Replace default Python.

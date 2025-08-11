@@ -146,6 +146,22 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 9**
+
+    - ``debian.Dockerfile``:
+
+        Introduced in the #1946 ticket. Upgrades the base Debian image to
+        12.11 version and Chromium to 138.0.
+
+    - ``redhat-ubi.Dockerfile``:
+
+        Introduced in the #1946 ticket. Upgrades the base RedHat image to
+        10.0, Python to 3.12, Java to 21 version.
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #1946 ticket. Upgrades Golang to 1.24.6.
+
 **Tag: 8**
 
     - ``alpine.Dockerfile``:
