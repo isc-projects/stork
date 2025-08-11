@@ -25,7 +25,9 @@ RUN apt-get update \
         ssh=1:9.* \
         unzip=6.* \
         wget=1.21.* \
-        chromium=138.* \
+        # Chromium for AMD64 architecture is available in 139 version.
+        # For ARM64 architecture, it is available in 138 version.
+        chromium=13* \
         # Clean up cache.
         && rm -rf /var/lib/apt/lists/* \
         # Replace default Python.
