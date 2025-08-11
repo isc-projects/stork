@@ -560,7 +560,7 @@ openapi_generator_ver = '7.14.0'
 
 # Other
 bundler_ver = '2.6.9'
-shellcheck_ver = '0.10.0'
+shellcheck_ver = '0.11.0'
 pip_tools_ver = '7.4.1'
 pip_audit_ver = '2.7.3'
 
@@ -581,6 +581,7 @@ when "macos"
         node_suffix = "darwin-arm64"
         golangcilint_suffix = "darwin-arm64"
         goswagger_suffix = "darwin_arm64"
+        shellcheck_suffix = "darwin.aarch64"
         # Shellcheck has no binaries for Darwin ARM: https://github.com/koalaman/shellcheck/issues/2714
     end
     puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
@@ -989,7 +990,7 @@ file shellcheck => [shellcheck_archive, TAR, tools_dir] do
     sh "touch", "-c", shellcheck
     sh shellcheck, "--version"
 end
-SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system, macos_arm64_system)
+SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system)
 add_version_guard(SHELLCHECK, shellcheck_ver)
 
 TPARSE = "#{gobin}/tparse"
