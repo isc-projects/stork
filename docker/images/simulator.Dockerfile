@@ -3,10 +3,10 @@ ARG KEA_REPO=public/isc/kea-dev
 ARG KEA_VERSION=2.7.8-isc20250429105336
 ARG FLAMETHROWER_COMMIT=0ee1fba170d7673e32dc0226d08732fd08acc7ac
 
-FROM debian:12.1-slim AS base
+FROM debian:12.11-slim AS base
 
 # Stage to compile Flamethrower.
-FROM debian:12.1-slim AS flamethrower-builder
+FROM base AS flamethrower-builder
 ARG FLAMETHROWER_COMMIT
 # Install Flamethrower dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

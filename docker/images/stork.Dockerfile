@@ -17,7 +17,7 @@ ARG BIND9_VERSION=9.20
 ### Base images ###
 ###################
 
-FROM debian:12.1-slim AS debian-base
+FROM debian:12.11-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
@@ -187,13 +187,13 @@ EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 # Web UI container
-FROM nginx:1.25-alpine AS webui
+FROM nginx:1.29-alpine AS webui
 ENV CI=true
 COPY --from=webui-builder /app/dist/server/ /
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
 ENV DOLLAR=$
-ENV API_HOST localhost
-ENV API_PORT 5000
+ENV API_HOST=localhost
+ENV API_PORT=5000
 ENTRYPOINT [ "/bin/sh", "-c", \
         "envsubst < /tmp/nginx.conf.tpl > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'" ]
 EXPOSE 80
@@ -203,8 +203,8 @@ HEALTHCHECK CMD ["curl", "--fail", "http://localhost:80"]
 FROM httpd:2.4 AS webui-apache
 COPY --from=webui-builder /app/dist/server/ /
 COPY etc/httpd-stork.conf /usr/local/apache2/conf/httpd.conf
-ENV API_HOST localhost
-ENV API_PORT 8080
+ENV API_HOST=localhost
+ENV API_PORT=8080
 EXPOSE 81
 EXPOSE 82
 RUN apt-get update \
