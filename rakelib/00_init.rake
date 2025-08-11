@@ -559,7 +559,7 @@ yamlinc_ver = '0.1.10'
 openapi_generator_ver = '7.14.0'
 
 # Other
-bundler_ver = '2.5.19'
+bundler_ver = '2.6.9'
 shellcheck_ver = '0.10.0'
 pip_tools_ver = '7.4.1'
 pip_audit_ver = '2.7.3'
