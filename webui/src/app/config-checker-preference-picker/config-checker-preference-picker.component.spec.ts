@@ -288,7 +288,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
             globallyEnabled: true,
             name: 'foo',
             selectors: [],
-            state: ConfigChecker.StateEnum.Enabled,
+            state: ConfigChecker.StateEnum.Enabled as ConfigChecker.StateEnum,
             triggers: [],
         }
         component.checkers = [checker]

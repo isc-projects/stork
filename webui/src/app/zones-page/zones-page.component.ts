@@ -846,10 +846,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * instance of the zone on a server
      */
     private _shouldDisableShowZone(localZone: LocalZone): boolean {
-        return (
-            ![DNSZoneType.Primary, DNSZoneType.Secondary].includes(localZone.zoneType as DNSZoneType) &&
-            !['master', 'slave'].includes(localZone.zoneType)
-        )
+        const allowedTypes: string[] = [DNSZoneType.Primary, DNSZoneType.Secondary, 'master', 'slave']
+        return !allowedTypes.includes(localZone.zoneType)
     }
 
     /**

@@ -556,7 +556,7 @@ golangcilint_ver = '2.3.1'
 node_ver = '20.19.4'
 npm_ver = '11.5.2'
 yamlinc_ver = '0.1.10'
-openapi_generator_ver = '7.12.0'
+openapi_generator_ver = '7.14.0'
 
 # Other
 bundler_ver = '2.5.19'
