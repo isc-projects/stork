@@ -557,7 +557,7 @@ services:
       - prometheus
 
   openldap:
-    image: bitnami/openldap:2
+    image: bitnamilegacy/openldap:2
     environment:
       LDAP_ADMIN_USERNAME: admin
       LDAP_ADMIN_PASSWORD: adminpassword
