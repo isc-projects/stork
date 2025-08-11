@@ -341,6 +341,18 @@ namespace :hook do
             end
         end
     end
+
+    desc "Update the hook dependencies to the latest version.
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
+    task :update_deps => [GO] do
+        forEachHook do |dir_name, project_path, src_path|
+            Dir.chdir(src_path) do
+                puts "Updating dependencies for #{dir_name}..."
+                sh GO, "get", "-u", "./..."
+                sh GO, "mod", "tidy"
+            end
+        end
+    end
 end
 
 namespace :run do
