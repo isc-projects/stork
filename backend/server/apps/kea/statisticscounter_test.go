@@ -1118,3 +1118,70 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 	require.EqualValues(t, 140, stats["total-pds"])
 	require.EqualValues(t, 40, stats["assigned-pds"])
 }
+
+// Test that multiple calls to GetStatistics return the same result.
+func TestGetStatisticsIdempotent(t *testing.T) {
+	// Arrange
+	subnet := &dbmodel.Subnet{
+		ID:              2,
+		SharedNetworkID: 1,
+		Prefix:          "20::/64",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				Stats: dbmodel.Stats{
+					"total-nas":    uint64(100),
+					"assigned-nas": uint64(10),
+					"declined-nas": uint64(20),
+					"total-pds":    uint64(40),
+					"assigned-pds": uint64(30),
+				},
+				AddressPools: []dbmodel.AddressPool{
+					{
+						Stats: dbmodel.Stats{
+							"total-nas":    uint64(90),
+							"assigned-nas": uint64(9),
+							"declined-nas": uint64(18),
+							"total-pds":    uint64(36),
+							"assigned-pds": uint64(27),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					},
+				},
+				PrefixPools: []dbmodel.PrefixPool{
+					{
+						Stats: dbmodel.Stats{
+							"total-pds":    uint64(30),
+							"assigned-pds": uint64(10),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					},
+				},
+			},
+		},
+	}
+
+	counter := newStatisticsCounter()
+	counter.setOutOfPoolShifts(outOfPoolShifts{
+		outOfPoolAddresses:       map[int64]uint64{2: 10},
+		outOfPoolPrefixes:        map[int64]uint64{1: 4},
+		outOfPoolGlobalAddresses: 0,
+		outOfPoolGlobalNAs:       10,
+		outOfPoolGlobalPrefixes:  4,
+	})
+
+	subnetStats := counter.add(subnet)
+	networkStats := counter.sharedNetworks[1]
+
+	// Act
+	globalStats1 := counter.GetStatistics()
+	globalStats2 := counter.GetStatistics()
+	networkStats1 := networkStats.GetStatistics()
+	networkStats2 := networkStats.GetStatistics()
+	subnetStats1 := subnetStats.GetStatistics()
+	subnetStats2 := subnetStats.GetStatistics()
+
+	// Assert
+	require.Equal(t, globalStats1, globalStats2)
+	require.Equal(t, networkStats1, networkStats2)
+	require.Equal(t, subnetStats1, subnetStats2)
+}
