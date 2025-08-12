@@ -20,38 +20,14 @@ type BigCounter struct {
 	extended *big.Int
 }
 
-// Indicates that the uint64 can be added to the base value without integer overflow.
-func (n *BigCounter) canAddToBase(val uint64) bool {
-	return n.base <= math.MaxUint64-val
+// Indicates that two uint64 can be added without integer overflow.
+func canAdd(a, b uint64) bool {
+	return a <= math.MaxUint64-b
 }
 
-// Indicates that the uint64 can be subtracted from the base value without
-// integer underflow.
-func (n *BigCounter) canSubtractFromBase(val uint64) bool {
-	return n.base >= val
-}
-
-// Indicates that another counting value can be added to the internal state.
-func (n *BigCounter) canAdd(other *BigCounter) bool {
-	if n.isExtended() {
-		return true
-	}
-	if other.isExtended() {
-		return false
-	}
-	return n.canAddToBase(other.base)
-}
-
-// Indicates that another counting value can be subtracted from the internal
-// state.
-func (n *BigCounter) canSubtract(other *BigCounter) bool {
-	if n.isExtended() {
-		return true
-	}
-	if other.isExtended() {
-		return false
-	}
-	return n.canSubtractFromBase(other.base)
+// Indicates that two uint64 can be subtracted without integer underflow.
+func canSubtract(a, b uint64) bool {
+	return a >= b
 }
 
 // Indicates that this counter uses big-int based counter.
@@ -59,83 +35,83 @@ func (n *BigCounter) isExtended() bool {
 	return n.extended != nil
 }
 
-// Initializes the big-int counter with current value of the uint64 counter.
-// Set the uint64 counter to max uint64 value to ensure that the canAddToBase will return false.
-// It should be called only once per big counter.
-// It should be called only if the counting value exceeds the uint64 range.
-func (n *BigCounter) initExtended() {
-	n.extended = big.NewInt(0).SetUint64(n.base)
-	n.base = math.MaxUint64
-}
-
-// Makes a copy of the current big counter.
-func (n *BigCounter) Clone() *BigCounter {
-	var extended *big.Int
-	if n.extended != nil {
-		extended = new(big.Int).Set(n.extended)
-	}
-
-	return &BigCounter{
-		base:     n.base,
-		extended: extended,
+// Normalizes the big counter to the uint64 range if possible.
+func (n *BigCounter) normalize() {
+	if n.isExtended() && n.extended.IsUint64() {
+		n.base = n.extended.Uint64()
+		n.extended = nil
 	}
 }
 
-// Adds the other big counter value to the internal counting value.
-// It modifies the internal state.
-func (n *BigCounter) Add(other *BigCounter) *BigCounter {
-	if !n.canAdd(other) {
-		n.initExtended()
-	}
+// Adds two big counters and puts the result into the receiver.
+func (n *BigCounter) Add(a, b *BigCounter) *BigCounter {
+	if a.extended != nil || b.extended != nil || !canAdd(a.base, b.base) {
+		outBigInt := n.extended
+		if outBigInt == nil {
+			outBigInt = big.NewInt(0)
+		}
 
-	if n.isExtended() {
-		n.extended.Add(n.extended, other.ToBigInt())
+		n.extended = outBigInt.Add(a.ToBigInt(), b.ToBigInt())
+		n.base = math.MaxUint64
 	} else {
-		n.base += other.base
+		n.base = a.base + b.base
+		n.extended = nil
 	}
 
 	return n
 }
 
-// Subtracts the other big counter value from the internal counting value.
-func (n *BigCounter) Subtract(other *BigCounter) *BigCounter {
-	if !n.canSubtract(other) {
-		n.initExtended()
-	}
-	if n.isExtended() {
-		n.extended.Sub(n.extended, other.ToBigInt())
+// Subtracts the big counters and puts the result into the receiver.
+func (n *BigCounter) Subtract(a, b *BigCounter) *BigCounter {
+	if a.isExtended() || b.isExtended() || !canSubtract(a.base, b.base) {
+		outBigInt := n.extended
+		if outBigInt == nil {
+			outBigInt = big.NewInt(0)
+		}
+
+		n.extended = outBigInt.Sub(n.ToBigInt(), b.ToBigInt())
+		n.base = 0
+		n.normalize()
 	} else {
-		n.base -= other.base
+		n.base = a.base - b.base
+		n.extended = nil
 	}
 	return n
 }
 
-// Adds uint64 number to the internal counting value.
-// It modifies the internal state.
-func (n *BigCounter) AddUint64(val uint64) *BigCounter {
-	if !n.isExtended() && !n.canAddToBase(val) {
-		n.initExtended()
-	}
+// Adds the big counter and the uint64 value and puts the result into the
+// receiver.
+func (n *BigCounter) AddUint64(a *BigCounter, b uint64) *BigCounter {
+	if a.isExtended() || !canAdd(a.base, b) {
+		outBigInt := n.extended
+		if outBigInt == nil {
+			outBigInt = big.NewInt(0)
+		}
 
-	if n.isExtended() {
-		valBig := new(big.Int).SetUint64(val)
-		n.extended.Add(n.extended, valBig)
+		n.extended = outBigInt.Add(a.ToBigInt(), big.NewInt(0).SetUint64(b))
+		n.base = math.MaxUint64
 	} else {
-		n.base += val
+		n.base = a.base + b
+		n.extended = nil
 	}
 	return n
 }
 
-// Adds big.Int number to the internal counting value.
-// It modifies the internal state. Only positive integer are allowed.
-func (n *BigCounter) AddBigInt(val *big.Int) *BigCounter {
-	if val.IsUint64() {
-		return n.AddUint64(val.Uint64())
+// Adds big counter and the big int value and puts the result into the
+// receiver.
+func (n *BigCounter) AddBigInt(a *BigCounter, b *big.Int) *BigCounter {
+	if !a.isExtended() && b.IsUint64() && canAdd(a.base, b.Uint64()) {
+		n.extended = nil
+		n.base = a.base + b.Uint64()
+	} else {
+		outBigInt := n.extended
+		if outBigInt == nil {
+			outBigInt = big.NewInt(0)
+		}
+
+		n.extended = outBigInt.Add(a.ToBigInt(), b)
+		n.base = math.MaxUint64
 	}
-	if !n.isExtended() {
-		n.initExtended()
-	}
-	n.extended.Add(n.extended, val)
 	return n
 }
 
@@ -154,11 +130,19 @@ func (n *BigCounter) DivideBy(other *BigCounter) float64 {
 	return res
 }
 
+// Indicates if the big counter is zero.
+func (n *BigCounter) IsZero() bool {
+	if n.isExtended() {
+		return n.extended.Sign() == 0
+	}
+	return n.base == 0
+}
+
 // Works as the Divide function but returns 0 when the value
 // of the denominator counter is 0.
 func (n *BigCounter) DivideSafeBy(other *BigCounter) float64 {
-	if !other.isExtended() && other.base == 0 {
-		return 0.0
+	if other.IsZero() {
+		return 0
 	}
 	return n.DivideBy(other)
 }

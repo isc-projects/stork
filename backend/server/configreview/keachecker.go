@@ -946,7 +946,7 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 			for _, address := range reservedAddresses {
 				if address.IsInRange(lb, ub) {
 					// Increment by one.
-					reservationsInPoolCount.AddUint64(1)
+					reservationsInPoolCount.AddUint64(reservationsInPoolCount, 1)
 				}
 			}
 
@@ -1073,7 +1073,7 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 			reservationsInPoolCount := storkutil.NewBigCounter(0)
 			for _, prefix := range reservedPrefixes {
 				if prefix.IsInPrefixRange(pool.Prefix, pool.PrefixLen, pool.DelegatedLen) {
-					reservationsInPoolCount.AddUint64(1)
+					reservationsInPoolCount.AddUint64(reservationsInPoolCount, 1)
 				}
 			}
 

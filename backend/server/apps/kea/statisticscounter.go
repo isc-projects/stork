@@ -50,26 +50,26 @@ func newGlobalStats() *globalStats {
 
 // Add the IPv4 subnet statistics to the global state.
 func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.totalIPv4Addresses.AddUint64(subnet.totalAddresses)
-	g.totalIPv4AddressesInPools.AddUint64(subnet.totalAddressesInPools)
-	g.totalAssignedIPv4Addresses.AddUint64(subnet.totalAssignedAddresses)
-	g.totalAssignedIPv4AddressesInPools.AddUint64(subnet.totalAssignedAddressesInPools)
-	g.totalDeclinedIPv4Addresses.AddUint64(subnet.totalDeclinedAddresses)
-	g.totalDeclinedIPv4AddressesInPools.AddUint64(subnet.totalDeclinedAddressesInPools)
+	g.totalIPv4Addresses.AddUint64(g.totalIPv4Addresses, subnet.totalAddresses)
+	g.totalIPv4AddressesInPools.AddUint64(g.totalIPv4AddressesInPools, subnet.totalAddressesInPools)
+	g.totalAssignedIPv4Addresses.AddUint64(g.totalAssignedIPv4Addresses, subnet.totalAssignedAddresses)
+	g.totalAssignedIPv4AddressesInPools.AddUint64(g.totalAssignedIPv4AddressesInPools, subnet.totalAssignedAddressesInPools)
+	g.totalDeclinedIPv4Addresses.AddUint64(g.totalDeclinedIPv4Addresses, subnet.totalDeclinedAddresses)
+	g.totalDeclinedIPv4AddressesInPools.AddUint64(g.totalDeclinedIPv4AddressesInPools, subnet.totalDeclinedAddressesInPools)
 }
 
 // Add the IPv6 subnet statistics to the global state.
 func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.totalIPv6Addresses.Add(subnet.totalAddresses)
-	g.totalIPv6AddressesInPools.Add(subnet.totalAddressesInPools)
-	g.totalAssignedIPv6Addresses.Add(subnet.totalAssignedAddresses)
-	g.totalAssignedIPv6AddressesInPools.Add(subnet.totalAssignedAddressesInPools)
-	g.totalDeclinedIPv6Addresses.Add(subnet.totalDeclinedAddresses)
-	g.totalDeclinedIPv6AddressesInPools.Add(subnet.totalDeclinedAddressesInPools)
-	g.totalDelegatedPrefixes.Add(subnet.totalDelegatedPrefixes)
-	g.totalDelegatedPrefixesInPools.Add(subnet.totalDelegatedPrefixesInPools)
-	g.totalAssignedDelegatedPrefixes.Add(subnet.totalAssignedDelegatedPrefixes)
-	g.totalAssignedDelegatedPrefixesInPools.Add(subnet.totalAssignedDelegatedPrefixesInPools)
+	g.totalIPv6Addresses.Add(g.totalIPv6Addresses, subnet.totalAddresses)
+	g.totalIPv6AddressesInPools.Add(g.totalIPv6AddressesInPools, subnet.totalAddressesInPools)
+	g.totalAssignedIPv6Addresses.Add(g.totalAssignedIPv6Addresses, subnet.totalAssignedAddresses)
+	g.totalAssignedIPv6AddressesInPools.Add(g.totalAssignedIPv6AddressesInPools, subnet.totalAssignedAddressesInPools)
+	g.totalDeclinedIPv6Addresses.Add(g.totalDeclinedIPv6Addresses, subnet.totalDeclinedAddresses)
+	g.totalDeclinedIPv6AddressesInPools.Add(g.totalDeclinedIPv6AddressesInPools, subnet.totalDeclinedAddressesInPools)
+	g.totalDelegatedPrefixes.Add(g.totalDelegatedPrefixes, subnet.totalDelegatedPrefixes)
+	g.totalDelegatedPrefixesInPools.Add(g.totalDelegatedPrefixesInPools, subnet.totalDelegatedPrefixesInPools)
+	g.totalAssignedDelegatedPrefixes.Add(g.totalAssignedDelegatedPrefixes, subnet.totalAssignedDelegatedPrefixes)
+	g.totalAssignedDelegatedPrefixesInPools.Add(g.totalAssignedDelegatedPrefixesInPools, subnet.totalAssignedDelegatedPrefixesInPools)
 }
 
 // General subnet lease statistics.
@@ -117,9 +117,9 @@ func (s *sharedNetworkStats) GetAddressUtilization() float64 {
 
 // Out-of-pool address utilization of the shared network.
 func (s *sharedNetworkStats) GetOutOfPoolAddressUtilization() float64 {
-	return s.totalAssignedAddresses.Subtract(s.totalAssignedAddressesInPools).
+	return storkutil.NewBigCounter(0).Subtract(s.totalAssignedAddresses, s.totalAssignedAddressesInPools).
 		DivideSafeBy(
-			s.totalAddresses.Subtract(s.totalAddressesInPools),
+			storkutil.NewBigCounter(0).Subtract(s.totalAddresses, s.totalAddressesInPools),
 		)
 }
 
@@ -130,9 +130,9 @@ func (s *sharedNetworkStats) GetDelegatedPrefixUtilization() float64 {
 
 // Out-of-pool delegated prefix utilization of the shared network.
 func (s *sharedNetworkStats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
-	return s.totalAssignedDelegatedPrefixes.Subtract(s.totalAssignedDelegatedPrefixesInPools).
+	return storkutil.NewBigCounter(0).Subtract(s.totalAssignedDelegatedPrefixes, s.totalAssignedDelegatedPrefixesInPools).
 		DivideSafeBy(
-			s.totalDelegatedPrefixes.Subtract(s.totalDelegatedPrefixesInPools),
+			storkutil.NewBigCounter(0).Subtract(s.totalDelegatedPrefixes, s.totalDelegatedPrefixesInPools),
 		)
 }
 
@@ -141,34 +141,34 @@ func (s *sharedNetworkStats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
 func (s *sharedNetworkStats) GetStatistics() dbmodel.Stats {
 	return dbmodel.Stats{
 		dbmodel.StatNameTotalNAs:             s.totalAddresses.ConvertToNativeType(),
-		dbmodel.StatNameTotalOutOfPoolNAs:    s.totalAddresses.Subtract(s.totalAddressesInPools).ConvertToNativeType(),
+		dbmodel.StatNameTotalOutOfPoolNAs:    storkutil.NewBigCounter(0).Subtract(s.totalAddresses, s.totalAddressesInPools).ConvertToNativeType(),
 		dbmodel.StatNameAssignedNAs:          s.totalAssignedAddresses.ConvertToNativeType(),
-		dbmodel.StatNameAssignedOutOfPoolNAs: s.totalAssignedAddresses.Subtract(s.totalAssignedAddressesInPools).ConvertToNativeType(),
+		dbmodel.StatNameAssignedOutOfPoolNAs: storkutil.NewBigCounter(0).Subtract(s.totalAssignedAddresses, s.totalAssignedAddressesInPools).ConvertToNativeType(),
 		dbmodel.StatNameTotalPDs:             s.totalDelegatedPrefixes.ConvertToNativeType(),
-		dbmodel.StatNameTotalOutOfPoolPDs:    s.totalDelegatedPrefixes.Subtract(s.totalDelegatedPrefixesInPools).ConvertToNativeType(),
+		dbmodel.StatNameTotalOutOfPoolPDs:    storkutil.NewBigCounter(0).Subtract(s.totalDelegatedPrefixes, s.totalDelegatedPrefixesInPools).ConvertToNativeType(),
 		dbmodel.StatNameAssignedPDs:          s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
-		dbmodel.StatNameAssignedOutOfPoolPDs: s.totalAssignedDelegatedPrefixes.Subtract(s.totalAssignedDelegatedPrefixesInPools).ConvertToNativeType(),
+		dbmodel.StatNameAssignedOutOfPoolPDs: storkutil.NewBigCounter(0).Subtract(s.totalAssignedDelegatedPrefixes, s.totalAssignedDelegatedPrefixesInPools).ConvertToNativeType(),
 	}
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	s.totalAddresses.AddUint64(subnet.totalAddresses)
-	s.totalAddressesInPools.AddUint64(subnet.totalAddressesInPools)
-	s.totalAssignedAddresses.AddUint64(subnet.totalAssignedAddresses)
-	s.totalAssignedAddressesInPools.AddUint64(subnet.totalAssignedAddressesInPools)
+	s.totalAddresses.AddUint64(s.totalAddresses, subnet.totalAddresses)
+	s.totalAddressesInPools.AddUint64(s.totalAddressesInPools, subnet.totalAddressesInPools)
+	s.totalAssignedAddresses.AddUint64(s.totalAssignedAddresses, subnet.totalAssignedAddresses)
+	s.totalAssignedAddressesInPools.AddUint64(s.totalAssignedAddressesInPools, subnet.totalAssignedAddressesInPools)
 }
 
 // Add the IPv6 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.totalAddresses.Add(subnet.totalAddresses)
-	s.totalAddressesInPools.Add(subnet.totalAddressesInPools)
-	s.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
-	s.totalAssignedAddressesInPools.Add(subnet.totalAssignedAddressesInPools)
-	s.totalDelegatedPrefixes.Add(subnet.totalDelegatedPrefixes)
-	s.totalDelegatedPrefixesInPools.Add(subnet.totalDelegatedPrefixesInPools)
-	s.totalAssignedDelegatedPrefixes.Add(subnet.totalAssignedDelegatedPrefixes)
-	s.totalAssignedDelegatedPrefixesInPools.Add(subnet.totalAssignedDelegatedPrefixesInPools)
+	s.totalAddresses.Add(s.totalAddresses, subnet.totalAddresses)
+	s.totalAddressesInPools.Add(s.totalAddressesInPools, subnet.totalAddressesInPools)
+	s.totalAssignedAddresses.Add(s.totalAssignedAddresses, subnet.totalAssignedAddresses)
+	s.totalAssignedAddressesInPools.Add(s.totalAssignedAddressesInPools, subnet.totalAssignedAddressesInPools)
+	s.totalDelegatedPrefixes.Add(s.totalDelegatedPrefixes, subnet.totalDelegatedPrefixes)
+	s.totalDelegatedPrefixesInPools.Add(s.totalDelegatedPrefixesInPools, subnet.totalDelegatedPrefixesInPools)
+	s.totalAssignedDelegatedPrefixes.Add(s.totalAssignedDelegatedPrefixes, subnet.totalAssignedDelegatedPrefixes)
+	s.totalAssignedDelegatedPrefixesInPools.Add(s.totalAssignedDelegatedPrefixesInPools, subnet.totalAssignedDelegatedPrefixesInPools)
 }
 
 // IPv4 statistics retrieved from the single subnet.
@@ -247,9 +247,9 @@ func (s *subnetIPv6Stats) GetAddressUtilization() float64 {
 
 // Returns the out-of-pool IPv6 address utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) GetOutOfPoolAddressUtilization() float64 {
-	return s.totalAssignedAddresses.Clone().Subtract(s.totalAssignedAddressesInPools).
+	return storkutil.NewBigCounter(0).Subtract(s.totalAssignedAddresses, s.totalAssignedAddressesInPools).
 		DivideSafeBy(
-			s.totalAddresses.Clone().Subtract(s.totalAddressesInPools),
+			storkutil.NewBigCounter(0).Subtract(s.totalAddresses, s.totalAddressesInPools),
 		)
 }
 
@@ -260,9 +260,9 @@ func (s *subnetIPv6Stats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns the out-of-pool delegated prefix utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
-	return s.totalAssignedDelegatedPrefixes.Clone().Subtract(s.totalAssignedDelegatedPrefixesInPools).
+	return storkutil.NewBigCounter(0).Subtract(s.totalAssignedDelegatedPrefixes, s.totalAssignedDelegatedPrefixesInPools).
 		DivideSafeBy(
-			s.totalDelegatedPrefixes.Clone().Subtract(s.totalDelegatedPrefixesInPools),
+			storkutil.NewBigCounter(0).Subtract(s.totalDelegatedPrefixes, s.totalDelegatedPrefixesInPools),
 		)
 }
 
@@ -271,15 +271,15 @@ func (s *subnetIPv6Stats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
 func (s *subnetIPv6Stats) GetStatistics() dbmodel.Stats {
 	return dbmodel.Stats{
 		dbmodel.StatNameTotalNAs:             s.totalAddresses.ConvertToNativeType(),
-		dbmodel.StatNameTotalOutOfPoolNAs:    s.totalAddresses.Subtract(s.totalAddressesInPools).ConvertToNativeType(),
+		dbmodel.StatNameTotalOutOfPoolNAs:    storkutil.NewBigCounter(0).Subtract(s.totalAddresses, s.totalAddressesInPools).ConvertToNativeType(),
 		dbmodel.StatNameAssignedNAs:          s.totalAssignedAddresses.ConvertToNativeType(),
-		dbmodel.StatNameAssignedOutOfPoolNAs: s.totalAssignedAddresses.Subtract(s.totalAssignedAddressesInPools).ConvertToNativeType(),
+		dbmodel.StatNameAssignedOutOfPoolNAs: storkutil.NewBigCounter(0).Subtract(s.totalAssignedAddresses, s.totalAssignedAddressesInPools).ConvertToNativeType(),
 		dbmodel.StatNameDeclinedNAs:          s.totalDeclinedAddresses.ConvertToNativeType(),
-		dbmodel.StatNameDeclinedOutOfPoolNAs: s.totalDeclinedAddresses.Subtract(s.totalDeclinedAddressesInPools).ConvertToNativeType(),
+		dbmodel.StatNameDeclinedOutOfPoolNAs: storkutil.NewBigCounter(0).Subtract(s.totalDeclinedAddresses, s.totalDeclinedAddressesInPools).ConvertToNativeType(),
 		dbmodel.StatNameTotalPDs:             s.totalDelegatedPrefixes.ConvertToNativeType(),
-		dbmodel.StatNameTotalOutOfPoolPDs:    s.totalDelegatedPrefixes.Subtract(s.totalDelegatedPrefixesInPools).ConvertToNativeType(),
+		dbmodel.StatNameTotalOutOfPoolPDs:    storkutil.NewBigCounter(0).Subtract(s.totalDelegatedPrefixes, s.totalDelegatedPrefixesInPools).ConvertToNativeType(),
 		dbmodel.StatNameAssignedPDs:          s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
-		dbmodel.StatNameAssignedOutOfPoolPDs: s.totalAssignedDelegatedPrefixes.Subtract(s.totalAssignedDelegatedPrefixesInPools).ConvertToNativeType(),
+		dbmodel.StatNameAssignedOutOfPoolPDs: storkutil.NewBigCounter(0).Subtract(s.totalAssignedDelegatedPrefixes, s.totalAssignedDelegatedPrefixesInPools).ConvertToNativeType(),
 	}
 }
 
@@ -395,17 +395,20 @@ func (c *statisticsCounter) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint
 // calculated similarly.
 func (c *statisticsCounter) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalAddresses:                        sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameTotalNAs, c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
+		totalAddresses:                        sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameTotalNAs, c.excludedDaemons),
 		totalAddressesInPools:                 sumStatAddressPoolsIPv6(subnet, dbmodel.StatNameTotalNAs, c.excludedDaemons),
 		totalAssignedAddresses:                sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameAssignedNAs, c.excludedDaemons),
 		totalAssignedAddressesInPools:         sumStatAddressPoolsIPv6(subnet, dbmodel.StatNameAssignedNAs, c.excludedDaemons),
 		totalDeclinedAddresses:                sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameDeclinedNAs, c.excludedDaemons),
 		totalDeclinedAddressesInPools:         sumStatAddressPoolsIPv6(subnet, dbmodel.StatNameDeclinedNAs, c.excludedDaemons),
-		totalDelegatedPrefixes:                sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameTotalPDs, c.excludedDaemons).AddUint64(outOfPoolDelegatedPrefixes),
+		totalDelegatedPrefixes:                sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameTotalPDs, c.excludedDaemons),
 		totalDelegatedPrefixesInPools:         sumStatPrefixPoolsIPv6(subnet, dbmodel.StatNameTotalPDs, c.excludedDaemons),
 		totalAssignedDelegatedPrefixes:        sumStatLocalSubnetsIPv6(subnet, dbmodel.StatNameAssignedPDs, c.excludedDaemons),
 		totalAssignedDelegatedPrefixesInPools: sumStatPrefixPoolsIPv6(subnet, dbmodel.StatNameAssignedPDs, c.excludedDaemons),
 	}
+
+	stats.totalAddresses.AddUint64(stats.totalAddresses, outOfPoolTotalAddresses)
+	stats.totalDelegatedPrefixes.AddUint64(stats.totalDelegatedPrefixes, outOfPoolDelegatedPrefixes)
 
 	if subnet.SharedNetworkID != 0 {
 		c.sharedNetworks[subnet.SharedNetworkID].addIPv6Subnet(stats)
@@ -431,7 +434,7 @@ func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string, excludedDa
 			continue
 		}
 
-		sum.Add(value)
+		sum.Add(sum, value)
 	}
 	return sum
 }
@@ -460,7 +463,7 @@ func sumStatAddressPoolsIPv6(subnet *dbmodel.Subnet, statName string, excludedDa
 				continue
 			}
 
-			sum.Add(value)
+			sum.Add(sum, value)
 		}
 	}
 	return sum
@@ -490,7 +493,7 @@ func sumStatPrefixPoolsIPv6(subnet *dbmodel.Subnet, statName string, excludedDae
 				continue
 			}
 
-			sum.Add(value)
+			sum.Add(sum, value)
 		}
 	}
 	return sum
@@ -556,22 +559,47 @@ func sumStatAddressPoolsIPv4(subnet *dbmodel.Subnet, statName string, excludedDa
 
 // Returns the global statistics.
 func (c *statisticsCounter) GetStatistics() dbmodel.Stats {
-	return dbmodel.Stats{
-		dbmodel.StatNameTotalAddresses:             c.global.totalIPv4Addresses.Clone().AddUint64(c.outOfPoolShifts.outOfPoolGlobalAddresses).ToBigInt(),
-		dbmodel.StatNameTotalOutOfPoolAddresses:    c.global.totalIPv4Addresses.Clone().AddUint64(c.outOfPoolShifts.outOfPoolGlobalAddresses).Subtract(c.global.totalIPv4AddressesInPools).ToBigInt(),
-		dbmodel.StatNameAssignedAddresses:          c.global.totalAssignedIPv4Addresses.ToBigInt(),
-		dbmodel.StatNameAssignedOutOfPoolAddresses: c.global.totalAssignedIPv4Addresses.Clone().Subtract(c.global.totalAssignedIPv4AddressesInPools).ToBigInt(),
-		dbmodel.StatNameDeclinedAddresses:          c.global.totalDeclinedIPv4Addresses.ToBigInt(),
-		dbmodel.StatNameDeclinedOutOfPoolAddresses: c.global.totalDeclinedIPv4Addresses.Subtract(c.global.totalDeclinedIPv4AddressesInPools).ToBigInt(),
-		dbmodel.StatNameTotalNAs:                   c.global.totalIPv6Addresses.Clone().AddUint64(c.outOfPoolShifts.outOfPoolGlobalNAs).ToBigInt(),
-		dbmodel.StatNameTotalOutOfPoolNAs:          c.global.totalIPv6Addresses.Clone().AddUint64(c.outOfPoolShifts.outOfPoolGlobalNAs).Subtract(c.global.totalIPv6AddressesInPools).ToBigInt(),
-		dbmodel.StatNameAssignedNAs:                c.global.totalAssignedIPv6Addresses.ToBigInt(),
-		dbmodel.StatNameAssignedOutOfPoolNAs:       c.global.totalAssignedIPv6Addresses.Clone().Subtract(c.global.totalAssignedIPv6AddressesInPools).ToBigInt(),
-		dbmodel.StatNameDeclinedNAs:                c.global.totalDeclinedIPv6Addresses.ToBigInt(),
-		dbmodel.StatNameDeclinedOutOfPoolNAs:       c.global.totalDeclinedIPv6Addresses.Clone().Subtract(c.global.totalDeclinedIPv6AddressesInPools).ToBigInt(),
-		dbmodel.StatNameTotalPDs:                   c.global.totalDelegatedPrefixes.Clone().AddUint64(c.outOfPoolShifts.outOfPoolGlobalPrefixes).ToBigInt(),
-		dbmodel.StatNameTotalOutOfPoolPDs:          c.global.totalDelegatedPrefixes.Clone().AddUint64(c.outOfPoolShifts.outOfPoolGlobalPrefixes).Subtract(c.global.totalDelegatedPrefixesInPools).ToBigInt(),
-		dbmodel.StatNameAssignedPDs:                c.global.totalAssignedDelegatedPrefixes.ToBigInt(),
-		dbmodel.StatNameAssignedOutOfPoolPDs:       c.global.totalAssignedDelegatedPrefixes.Clone().Subtract(c.global.totalAssignedDelegatedPrefixesInPools).ToBigInt(),
-	}
+	stats := dbmodel.Stats{}
+
+	value := storkutil.NewBigCounter(0).AddUint64(c.global.totalIPv4Addresses, c.outOfPoolShifts.outOfPoolGlobalAddresses)
+	stats[dbmodel.StatNameTotalAddresses] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalIPv4AddressesInPools)
+	stats[dbmodel.StatNameTotalOutOfPoolAddresses] = value.ConvertToNativeType()
+
+	value = c.global.totalAssignedIPv4Addresses
+	stats[dbmodel.StatNameAssignedAddresses] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalAssignedIPv4AddressesInPools)
+	stats[dbmodel.StatNameAssignedOutOfPoolAddresses] = value.ConvertToNativeType()
+
+	value = c.global.totalDeclinedIPv4Addresses
+	stats[dbmodel.StatNameDeclinedAddresses] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalDeclinedIPv4AddressesInPools)
+	stats[dbmodel.StatNameDeclinedOutOfPoolAddresses] = value.ConvertToNativeType()
+
+	value = storkutil.NewBigCounter(0).AddUint64(c.global.totalIPv6Addresses, c.outOfPoolShifts.outOfPoolGlobalNAs)
+	stats[dbmodel.StatNameTotalNAs] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalIPv6AddressesInPools)
+	stats[dbmodel.StatNameTotalOutOfPoolNAs] = value.ConvertToNativeType()
+
+	value = c.global.totalAssignedIPv6Addresses
+	stats[dbmodel.StatNameAssignedNAs] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalAssignedIPv6AddressesInPools)
+	stats[dbmodel.StatNameAssignedOutOfPoolNAs] = value.ConvertToNativeType()
+
+	value = c.global.totalDeclinedIPv6Addresses
+	stats[dbmodel.StatNameDeclinedNAs] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalDeclinedIPv6AddressesInPools)
+	stats[dbmodel.StatNameDeclinedOutOfPoolNAs] = value.ConvertToNativeType()
+
+	value = storkutil.NewBigCounter(0).AddUint64(c.global.totalDelegatedPrefixes, c.outOfPoolShifts.outOfPoolGlobalPrefixes)
+	stats[dbmodel.StatNameTotalPDs] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalDelegatedPrefixesInPools)
+	stats[dbmodel.StatNameTotalOutOfPoolPDs] = value.ConvertToNativeType()
+
+	value = c.global.totalAssignedDelegatedPrefixes
+	stats[dbmodel.StatNameAssignedPDs] = value.ConvertToNativeType()
+	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalAssignedDelegatedPrefixesInPools)
+	stats[dbmodel.StatNameAssignedOutOfPoolPDs] = value.ConvertToNativeType()
+
+	return stats
 }
