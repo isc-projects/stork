@@ -1,3 +1,122 @@
+Stork 2.3.0 released on 2025-08-13.
+
+* 547 [build] slawek
+
+    Upgraded the Kea to version 3.1.0 and BIND 9 to version 9.20 in the
+    demo.
+    (Gitlab #1856)
+
+* 546 [func] marcin
+
+    Integrated PowerDNS server. Stork can now fetch and list zones
+    configured on the PowerDNS servers, and show zone contents.
+    (Gitlab #1751, #1753)
+
+* 545 [func] piotrek
+
+    Added a possibility to configure multiple groups for LDAP group
+    mapping in the LDAP hook.
+    (Gitlab #1845)
+
+* 544 [bug] marcin
+
+    Show RPZ tags next to the response policy zones in the zones list.
+    The list can also be filtered by RPZ.
+    (Gitlab #1805)
+
+* 543 [bug] william
+
+    Fixed issue where Stork would incorrectly report that lease
+    persistence was disabled on a Kea server, when it was actually
+    enabled and set to use the default memfile path.
+    (Gitlab #667)
+
+* 542 [func] slawek
+
+    Display a utilization bar for out of pool addresses and delegated
+    prefixes.
+    (Gitlab #879)
+
+* 541 [bug] slawek
+
+    Fixed unexpected wiping out all shared network-related host
+    reservations from the configuration file after modifying this shared
+    network by UI form.
+    (Gitlab #1866)
+
+* 540 [ui] william
+
+    Add a Clear button on the Monitoring > Events page which clears
+    all of the events that Stork knows about.
+    (Gitlab #1539)
+
+* 539 [ui] william
+
+    When viewing a subnet, shared network, or host reservation, the DHCP
+    Options and DHCP Parameters boxes can now be expanded and collapsed.
+    (Gitlab #1550)
+
+* 538 [bug] marcin
+
+    The stork-agent gracefully deals with the situation when the
+    statistics-channel configuration in BIND 9 lacks the allow
+    statement. It logs an error requesting that the allow statement
+    is included in the configuration.
+    (Gitlab #1908)
+
+* 537 [bug] marcin
+
+    Zone RRs are cached in the database for a viewed zone. It avoids
+    repeated zone transfers (AXFR) when showing zone contents. The
+    cached zone contents can be refreshed using zone transfer on
+    demand by clicking a button in the UI.
+    (Gitlab #1909)
+
+* 536 [bug] marcin
+
+    The number of distinct and builtin zones are displayed in the
+    dashboard and DNS fetch status pages.
+    (Gitlab #1786)
+
+* 535 [bug] marcin
+
+    Root zone is now properly fetched from the agent and stored in the
+    database. Previously, fetching the zones from the agent failed
+    when the DNS server configuration on the agent's machine included
+    a root zone.
+    (Gitlab #1870)
+
+* 534 [func] slawek
+
+    The host migrator reports now a missing Kea host_cmds hook as a
+    daemon-related error.
+    (Gitlab #1868)
+
+* 533 [bug] slawek
+
+    Fixed deadlocks in the database while detecting Kea HA services
+    including backup servers. They were caused by infinitely
+    appending the same backup server ID to one of the database
+    tables.
+    (Gitlab #1872)
+
+* 532 [bug] marcin
+
+    Fixed parsing BIND9 query-source, query-source-v6, notify-source
+    notify-source-v6, and similar parameters.
+    (Gitlab #1881)
+
+* 531 [bug] marcin
+
+    Fixed parsing of the BIND 9 configuration file containing dots in
+    the configuration statement names.
+    (Gitlab #1876)
+
+* 530 [bug] slawek
+
+    Fixed overriding the environment files when updating RPM packages.
+    (Gitlab #1874)
+
 Stork 2.2.0 released on 2025-06-11.
 
 * 529 [doc] bscott
