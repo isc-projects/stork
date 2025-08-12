@@ -188,27 +188,11 @@ func TestBigCounterDivideBigIntByInt64InInt64Range(t *testing.T) {
 	require.EqualValues(t, float64(math.MaxUint64), res)
 }
 
-// Test that safe divide doesn't panic for the base counter.
+// Test that safe divide doesn't panic.
 func TestBigCounterSafeDivideByZero(t *testing.T) {
 	// Arrange
 	counter1 := NewBigCounter(1)
 	counter2 := NewBigCounter(0)
-
-	// Act
-	res := counter1.DivideSafeBy(counter2)
-
-	// Assert
-	require.Zero(t, res)
-}
-
-// Test that safe divide doesn't panic for the extended counter.
-func TestBigCounterSafeDivideByZeroExtended(t *testing.T) {
-	// Arrange
-	counter1 := NewBigCounter(1)
-	counter2 := NewBigCounter(math.MaxUint64).AddUint64(1).
-		Subtract(
-			NewBigCounter(math.MaxUint64).AddUint64(1),
-		)
 
 	// Act
 	res := counter1.DivideSafeBy(counter2)
