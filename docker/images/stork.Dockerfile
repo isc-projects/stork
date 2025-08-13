@@ -211,8 +211,8 @@ RUN apt-get update \
         && apt-get install \
                 --no-install-recommends \
                 -y \
-                # The version of curl available for ARM64 is 7.88.
-                # The version for AMD64 is 8.14.
+                # The curl version available for AMD64 and ARM64 is different.
+                # We can't pin the version here.
                 curl \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
