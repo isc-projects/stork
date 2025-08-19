@@ -17,6 +17,7 @@ Active developers:
 - Suzanne Goldlust (documentation)
 - Razvan Becheriu (database, server, UI)
 - Piotrek Zadroga (UI, version reporting)
+- Yavor Peev (QA)
 
 Primary area of work mentioned in parentheses. The list is in
 roughly chronological order.
