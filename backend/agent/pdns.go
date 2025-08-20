@@ -25,8 +25,7 @@ func getPotentialPDNSConfLocations() []string {
 	return []string{
 		"/etc/powerdns/",
 		"/etc/pdns/",
-		"/usr/local/etc/pdns/",
-		"/usr/local/etc/powerdns/",
+		"/usr/local/etc/",
 		"/opt/homebrew/etc/powerdns/",
 	}
 }
