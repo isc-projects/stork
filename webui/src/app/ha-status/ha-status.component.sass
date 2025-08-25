@@ -1,46 +1,46 @@
 .icon-ok
-    color: var(--green-500)
+    color: var(--p-green-500)
     text-decoration: none
 
 .icon-warn
-    color: var(--orange-500)
+    color: var(--p-orange-500)
     text-decoration: none
 
 .icon-error
-    color: var(--red-500)
+    color: var(--p-red-500)
     text-decoration: none
 
 .icon-pending
-    color: var(--surface-500)
+    color: var(--p-surface-500)
     text-decoration: none
 
 @layer high
     :host ::ng-deep .p-datatable-table
         .p-datatable-thead tr
             th
-                border-top: 1px solid var(--surface-200)
+                border-top: 1px solid var(--p-surface-200)
                 border-left: none
                 border-right: none
-                border-bottom: 1px solid var(--surface-200)
+                border-bottom: 1px solid var(--p-surface-200)
                 background: var(--surface-ground)
                 font-weight: normal
 
                 &:first-child
                     width: 25%
-                    border-right: 1px solid var(--surface-200)
+                    border-right: 1px solid var(--p-surface-200)
                 &:not(:first-child):not(:last-child)
                     min-width: 25%
 
 
         .p-datatable-tbody tr
             .relationship-pane
-                background: var(--surface-0)
+                background: var(--p-surface-0)
                 font-weight: 500
             td
                 border-top: none
                 border-left: none
                 border-right: none
-                border-bottom: 1px solid var(--surface-200)
+                border-bottom: 1px solid var(--p-surface-200)
 
                 &:first-child
-                    border-right: 1px solid var(--surface-200)
+                    border-right: 1px solid var(--p-surface-200)

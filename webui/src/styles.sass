@@ -6,7 +6,7 @@
   // Overwrite default browser underlined anchors.
   a
     text-decoration: none
-    color: var(--primary-color)
+    color: var(--p-primary-color)
 
     // Apply the underline only for :hover.
     &:hover
@@ -16,7 +16,7 @@
   h3.underlined
     padding: 3px 6px 3px 6px
     margin-top: 2px
-    border-bottom: 2px solid var(--surface-border)
+    border-bottom: 2px solid var(--p-content-border-color)
 
 // "high" is higher priority CSS layer.
 // Put here all rules that overwrite PrimeNG styling.
@@ -98,22 +98,22 @@
 
   // Custom styling for PrimeNG p-multiselect component.
   .p-multiselect.p-multiselect-chip.adaptive-chips-background .p-multiselect-token
-    background: var(--primary-100)
-    color: var(--text-color)
+    background: var(--p-primary-100)
+    color: var(--p-text-color)
     margin-right: 4px
     margin-top: 2px
     margin-bottom: 2px
 
-    body.dark &
+    html.dark &
       // Make chips background darker in dark mode.
-      background: var(--primary-400)
+      background: var(--p-primary-400)
 
   // Define gray-colored spinner.
   @keyframes progress-spinner-color-gray
     0%
-      stroke: var(--gray-400)
+      stroke: var(--p-gray-400)
     100%
-      stroke: var(--gray-400)
+      stroke: var(--p-gray-400)
 
   // Define white-colored spinner.
   @keyframes progress-spinner-color-white
@@ -207,3 +207,9 @@ body
 :root
   // Max width of form. Apply max-width to prevent the form from becoming too wide.
   --max-form-width: 35rem
+  // Missing css variables that were used before PrimeNG v18. They differ in the dark mode.
+  --surface-ground: var(--p-surface-50)
+  --surface-hover: var(--p-surface-100)
+  &.dark
+    --surface-ground: var(--p-surface-950)
+    --surface-hover: var(--p-surface-800)

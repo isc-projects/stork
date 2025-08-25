@@ -142,13 +142,13 @@ export class UtilizationStatsChartComponent {
                                     !this.isPD ? declined64 : []
                                 ),
                                 backgroundColor: [
-                                    documentStyle.getPropertyValue('--green-500'),
-                                    documentStyle.getPropertyValue('--red-500'),
-                                ].concat(!this.isPD ? documentStyle.getPropertyValue('--gray-500') : []),
+                                    documentStyle.getPropertyValue('--p-green-500'),
+                                    documentStyle.getPropertyValue('--p-red-500'),
+                                ].concat(!this.isPD ? documentStyle.getPropertyValue('--p-gray-500') : []),
                                 hoverBackgroundColor: [
-                                    documentStyle.getPropertyValue('--green-400'),
-                                    documentStyle.getPropertyValue('--red-400'),
-                                ].concat(!this.isPD ? documentStyle.getPropertyValue('--gray-400') : []),
+                                    documentStyle.getPropertyValue('--p-green-400'),
+                                    documentStyle.getPropertyValue('--p-red-400'),
+                                ].concat(!this.isPD ? documentStyle.getPropertyValue('--p-gray-400') : []),
                             },
                         ],
                     }
@@ -178,14 +178,14 @@ export class UtilizationStatsChartComponent {
                             {
                                 data: [free64, uncertain64, declined64],
                                 backgroundColor: [
-                                    documentStyle.getPropertyValue('--green-500'),
-                                    documentStyle.getPropertyValue('--orange-500'),
-                                    documentStyle.getPropertyValue('--surface-700'),
+                                    documentStyle.getPropertyValue('--p-green-500'),
+                                    documentStyle.getPropertyValue('--p-orange-500'),
+                                    documentStyle.getPropertyValue('--p-surface-700'),
                                 ],
                                 hoverBackgroundColor: [
-                                    documentStyle.getPropertyValue('--green-400'),
-                                    documentStyle.getPropertyValue('--orange-400'),
-                                    documentStyle.getPropertyValue('--surface-600'),
+                                    documentStyle.getPropertyValue('--p-green-400'),
+                                    documentStyle.getPropertyValue('--p-orange-400'),
+                                    documentStyle.getPropertyValue('--p-surface-600'),
                                 ],
                             },
                         ],
@@ -203,12 +203,12 @@ export class UtilizationStatsChartComponent {
                     {
                         data: [100 - this.utilization, this.utilization],
                         backgroundColor: [
-                            documentStyle.getPropertyValue('--green-500'),
-                            documentStyle.getPropertyValue('--red-500'),
+                            documentStyle.getPropertyValue('--p-green-500'),
+                            documentStyle.getPropertyValue('--p-red-500'),
                         ],
                         hoverBackgroundColor: [
-                            documentStyle.getPropertyValue('--green-400'),
-                            documentStyle.getPropertyValue('--red-400'),
+                            documentStyle.getPropertyValue('--p-green-400'),
+                            documentStyle.getPropertyValue('--p-red-400'),
                         ],
                     },
                 ],

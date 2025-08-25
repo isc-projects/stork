@@ -177,9 +177,9 @@ export class LogViewPageComponent implements OnInit {
         switch (block) {
             case 'ERROR':
             case 'FATAL':
-                return 'var(--red-500)'
+                return 'var(--p-red-500)'
             case 'WARN':
-                return 'var(--orange-400)'
+                return 'var(--p-orange-400)'
             case 'INFO':
                 return 'cyan'
             default:

@@ -1,7 +1,7 @@
 // Improve look of top bar menu.
 .top-navbar
   // Darker primary color for the navbar.
-  background-color: var(--primary-600)
+  background-color: var(--p-primary-600)
   // For responsive navbar, set min-height when it becomes narrow on smaller viewports.
   min-height: 58px
 
@@ -16,7 +16,7 @@
     // the project webpage.
     font-variant: none
     font-size: 2.3rem
-    color: var(--gray-0)
+    color: var(--p-surface-0)
     vertical-align: super
 
 @layer high
@@ -54,7 +54,7 @@
 
           &:hover
             // On hover the background is white, so use black text.
-            color: var(--text-color) !important
+            color: var(--p-text-color) !important
           &:focus
             outline: 1px solid var(--p-focus-ring-color)
             outline-offset: 2px
@@ -64,13 +64,13 @@
           position: absolute
           display: none
           padding: 0.25rem 0.25rem
-          background: var(--surface-0)
-          border: 1px solid var(--surface-border)
+          background: var(--p-surface-0)
+          border: 1px solid var(--p-content-border-color)
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)
           width: 100%
 
           .p-menuitem-separator
-            border-top: 1px solid var(--surface-border)
+            border-top: 1px solid var(--p-content-border-color)
             margin: 2px 0
 
           .p-submenu-icon
@@ -140,7 +140,7 @@
             background-color: var(--highlight-bg)
             .p-menuitem-link .p-menuitem-text
               // Highlighted menu has light background color, so use contrasting font color.
-              color: var(--text-color)
+              color: var(--p-text-color)
 
       // Custom responsive style for the Logout split button inside the Stork menubar.
       .p-splitbutton

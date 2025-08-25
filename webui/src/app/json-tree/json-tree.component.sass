@@ -12,7 +12,7 @@
 
     .tree-level__key
         // Default font color
-        color: var(--primary-color)
+        color: var(--p-primary-color)
         // Minimal spacing between key and value
         margin-right: 2em
 
@@ -22,7 +22,7 @@
 
     .tree-level__value
         // Default font color for values
-        color: var(--green-800)
+        color: var(--p-green-800)
 
     .tree-level__value--clickable
         // Mark link as clickable
@@ -35,14 +35,14 @@
         // Specify brackets around object
         quotes: "{" "}"
         // Font color
-        color: var(--blue-700)
+        color: var(--p-blue-700)
 
     .tree-level__value--array
         @extend %around-quotes
         // Specify brackets around array
         quotes: "[" "]"
         // Font color
-        color: var(--blue-700)
+        color: var(--p-blue-700)
 
     .tree-level__value--string
         @extend %around-quotes
@@ -52,7 +52,7 @@
     .tree-level__value--collapse
         // Pull right the collapse mark
         float: right
-        color: var(--gray-500)
+        color: var(--p-gray-500)
 
     .tree-level__value--not-assigned
         // Fix for Chromium-like browsers to prevent horizontal bar
@@ -77,7 +77,7 @@
         // Mark corrupted value with red wave
         text-decoration-line: underline
         text-decoration-style: wavy
-        text-decoration-color: var(--red-500)
+        text-decoration-color: var(--p-red-500)
 
 
 .tree-level--leaf
