@@ -75,7 +75,7 @@ func TestParseFile(t *testing.T) {
 	require.Nil(t, statement.Options.Clauses[1].AllowTransfer.Transport)
 	require.NotNil(t, statement.Options.Clauses[1].AllowTransfer.AddressMatchList)
 	require.Len(t, statement.Options.Clauses[1].AllowTransfer.AddressMatchList.Elements, 1)
-	require.Equal(t, "any", statement.Options.Clauses[1].AllowTransfer.AddressMatchList.Elements[0].ACLName)
+	require.Equal(t, "any", statement.Options.Clauses[1].AllowTransfer.AddressMatchList.Elements[0].IPAddressOrACLName)
 	require.NotNil(t, statement.Options.Clauses[2].Option)
 	require.Equal(t, "also-notify", statement.Options.Clauses[2].Option.Identifier)
 	require.NotNil(t, statement.Options.Clauses[3].Option)
@@ -95,11 +95,11 @@ func TestParseFile(t *testing.T) {
 	require.Equal(t, "myserver", *statement.Options.Clauses[6].ListenOn.HTTP)
 	require.NotNil(t, statement.Options.Clauses[6].ListenOn.AddressMatchList)
 	require.Len(t, statement.Options.Clauses[6].ListenOn.AddressMatchList.Elements, 1)
-	require.Equal(t, "127.0.0.1", statement.Options.Clauses[6].ListenOn.AddressMatchList.Elements[0].IPAddress)
+	require.Equal(t, "127.0.0.1", statement.Options.Clauses[6].ListenOn.AddressMatchList.Elements[0].IPAddressOrACLName)
 	require.NotNil(t, statement.Options.Clauses[7].ListenOnV6)
 	require.NotNil(t, statement.Options.Clauses[7].ListenOnV6.AddressMatchList)
 	require.Len(t, statement.Options.Clauses[7].ListenOnV6.AddressMatchList.Elements, 1)
-	require.Equal(t, "::1", statement.Options.Clauses[7].ListenOnV6.AddressMatchList.Elements[0].IPAddress)
+	require.Equal(t, "::1", statement.Options.Clauses[7].ListenOnV6.AddressMatchList.Elements[0].IPAddressOrACLName)
 	require.NotNil(t, statement.Options.Clauses[8].ResponsePolicy)
 	require.Len(t, statement.Options.Clauses[8].ResponsePolicy.Zones, 2)
 	require.Equal(t, "rpz.example.com", statement.Options.Clauses[8].ResponsePolicy.Zones[0].Zone)
@@ -180,6 +180,208 @@ func TestParseFile(t *testing.T) {
 	require.Equal(t, "logging", statement.UnnamedStatement.Identifier)
 }
 
+// Test that the parser correctly handles the @stork:no-parse directive.
+func TestNoParseSelectedZone(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		zone "example.com" {
+			type forward;
+		};
+		//@stork:no-parse:scope
+		zone "example.org" {
+			type forward;
+		};
+		//@stork:no-parse:end
+		zone "example.net" {
+			type forward;
+		};
+	`))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 3)
+	require.NotNil(t, cfg.Statements[0].Zone)
+	require.Equal(t, "example.com", cfg.Statements[0].Zone.Name)
+	require.NotNil(t, cfg.Statements[1].NoParse)
+	require.False(t, cfg.Statements[1].NoParse.IsGlobal())
+	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(), `
+		zone "example.org" {
+			type forward;
+		};
+	`)
+	require.NotNil(t, cfg.Statements[2].Zone)
+	require.Equal(t, "example.net", cfg.Statements[2].Zone.Name)
+}
+
+// Test selectively skipping parsing the inner contents of a zone definition.
+func TestNoParseSelectedZoneOptions(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		zone "example.org" {
+			//@stork:no-parse:scope
+			type forward;
+			//@stork:no-parse:end
+			allow-transfer port 853 { any; };
+		};
+	`))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Zone)
+	require.Equal(t, "example.org", cfg.Statements[0].Zone.Name)
+	require.Len(t, cfg.Statements[0].Zone.Clauses, 2)
+	require.NotNil(t, cfg.Statements[0].Zone.Clauses[0].NoParse)
+	require.False(t, cfg.Statements[0].Zone.Clauses[0].NoParse.IsGlobal())
+	require.Contains(t, cfg.Statements[0].Zone.Clauses[0].NoParse.GetContentsString(), "type forward;")
+	require.NotNil(t, cfg.Statements[0].Zone.Clauses[1].AllowTransfer)
+	require.EqualValues(t, 853, *cfg.Statements[0].Zone.Clauses[1].AllowTransfer.Port)
+}
+
+// Test that the parser correctly handles the @stork:no-parse directive
+// for the view options.
+func TestNoParseViewOptions(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		view "foo" {
+			zone "example.com" {
+				type primary;
+			};
+			//@stork:no-parse:scope
+			zone "example.net" {
+				type primary;
+			};
+			//@stork:no-parse:end
+			zone "example.org" {
+				type primary;
+			};
+		};
+	`))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].View)
+	require.Equal(t, "foo", cfg.Statements[0].View.Name)
+	require.Len(t, cfg.Statements[0].View.Clauses, 3)
+	require.NotNil(t, cfg.Statements[0].View.Clauses[0].Zone)
+	require.Equal(t, "example.com", cfg.Statements[0].View.Clauses[0].Zone.Name)
+	require.NotNil(t, cfg.Statements[0].View.Clauses[1].NoParse)
+	require.False(t, cfg.Statements[0].View.Clauses[1].NoParse.IsGlobal())
+	require.NotNil(t, cfg.Statements[0].View.Clauses[2].Zone)
+	require.Equal(t, "example.org", cfg.Statements[0].View.Clauses[2].Zone.Name)
+}
+
+// Test that the parser correctly handles the @stork:no-parse directive
+// for the options.
+func TestNoParseOptions(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		options {
+			allow-transfer port 853 { any; };
+			//@stork:no-parse:scope
+			listen-on port 853 { 127.0.0.1; };
+			//@stork:no-parse:end
+			listen-on-v6 port 853 { ::1; };
+		};
+	`))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Options)
+	require.Len(t, cfg.Statements[0].Options.Clauses, 3)
+}
+
+// Test that an error is returned when the @stork:no-parse:scope is not
+// followed by the @stork:no-parse:end directive.
+func TestNoParseNoEnd(t *testing.T) {
+	_, err := NewParser().Parse(" ", strings.NewReader(`
+		zone "example.com" {
+			type forward;
+		};
+		//@stork:no-parse:scope
+		zone "example.org" {
+			type forward;
+		};
+		zone "example.net" {
+			type forward;
+		};
+	`))
+	require.Error(t, err)
+	require.ErrorContains(t, err, `expected <noparsecontents> <noparseend>`)
+}
+
+// Test that the @stork:no-parse:global directive is correctly parsed
+// and parsing the rest of the file is skipped.
+func TestNoParseGlobal(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		zone "example.com" {
+			type forward;
+		};
+		//@stork:no-parse:global
+		zone "example.org" {
+			type forward;
+		};
+	`))
+	require.NoError(t, err)
+	require.Len(t, cfg.Statements, 2)
+	require.NotNil(t, cfg.Statements[0].Zone)
+	require.Equal(t, "example.com", cfg.Statements[0].Zone.Name)
+	require.Len(t, cfg.Statements[0].Zone.Clauses, 1)
+	require.NotNil(t, cfg.Statements[1].NoParse)
+	require.True(t, cfg.Statements[1].NoParse.IsGlobal())
+	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(), `
+		zone "example.org" {
+			type forward;
+		};
+	`)
+}
+
+// Test that an error is returned when the @stork:no-parse:global directive
+// is used in the middle of a statement.
+func TestNoParseGlobalMidStatement(t *testing.T) {
+	_, err := NewParser().Parse(" ", strings.NewReader(`
+		zone "example.com" {
+			//@stork:no-parse:global
+			type forward;
+		};
+	`))
+	require.Error(t, err)
+	require.ErrorContains(t, err, `(expected "}")`)
+}
+
+// Test that the @stork:no-parse:end is ignored for the @stork:no-parse:global
+// directive.
+func TestNoParseGlobalExtraneousEnd(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		zone "example.com" {
+			type forward;
+		};
+		//@stork:no-parse:global
+		zone "example.org" {
+			type forward;
+			allow-transfer port 853 { any; };
+		};
+		//@stork:no-parse:end
+		zone "example.net" {
+			type forward;
+		};
+	`))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 2)
+	require.NotNil(t, cfg.Statements[0].Zone)
+	require.Equal(t, "example.com", cfg.Statements[0].Zone.Name)
+	require.NotNil(t, cfg.Statements[1].NoParse)
+	require.True(t, cfg.Statements[1].NoParse.IsGlobal())
+}
+
+// Test that an error is returned when the @stork:no-parse:end directive
+// is used without the @stork:no-parse:scope directive.
+func TestNoParseOnlyEnd(t *testing.T) {
+	_, err := NewParser().Parse(" ", strings.NewReader(`
+		//@stork:no-parse:end
+		zone "example.com" {
+			type forward;
+		};
+	`))
+	require.Error(t, err)
+	require.ErrorContains(t, err, `unexpected token "end"`)
+}
+
 // Test that an attempt to parse a non-existent file returns an error.
 func TestParseFileError(t *testing.T) {
 	cfg, err := NewParser().ParseFile("testdata/non-existent.conf")
@@ -241,13 +443,13 @@ func TestParseIncludes(t *testing.T) {
 	require.NotNil(t, acl1)
 	require.Equal(t, "test1", acl1.Name)
 	require.Len(t, acl1.AddressMatchList.Elements, 1)
-	require.Equal(t, "1.2.3.4", acl1.AddressMatchList.Elements[0].IPAddress)
+	require.Equal(t, "1.2.3.4", acl1.AddressMatchList.Elements[0].IPAddressOrACLName)
 
 	acl2 := cfg.GetACL("test2")
 	require.NotNil(t, acl2)
 	require.Equal(t, "test2", acl2.Name)
 	require.Len(t, acl2.AddressMatchList.Elements, 1)
-	require.Equal(t, "0.0.0.0", acl2.AddressMatchList.Elements[0].IPAddress)
+	require.Equal(t, "0.0.0.0", acl2.AddressMatchList.Elements[0].IPAddressOrACLName)
 }
 
 // Test the case when the configuration file includes itself.
@@ -283,7 +485,7 @@ func TestParseIncludeSelf(t *testing.T) {
 	require.NotNil(t, cfg.Statements[1].ACL)
 	require.Equal(t, "test", cfg.Statements[1].ACL.Name)
 	require.Len(t, cfg.Statements[1].ACL.AddressMatchList.Elements, 1)
-	require.Equal(t, "1.2.3.4", cfg.Statements[1].ACL.AddressMatchList.Elements[0].IPAddress)
+	require.Equal(t, "1.2.3.4", cfg.Statements[1].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
 }
 
 // Test that the parser doesn't fail when parsing the query-source option.
@@ -529,4 +731,157 @@ func TestParseOptionWithSuboptions(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents)
 	require.Equal(t, "update", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Identifier)
 	require.Equal(t, "100", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0])
+}
+
+func TestParseACLWithNegatedKey(t *testing.T) {
+	cfgText := `
+		acl "trusted-networks" {
+			!key guest-key;
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].ACL)
+	require.Equal(t, "trusted-networks", cfg.Statements[0].ACL.Name)
+	require.NotNil(t, cfg.Statements[0].ACL.AddressMatchList)
+	require.Len(t, cfg.Statements[0].ACL.AddressMatchList.Elements, 1)
+	require.True(t, cfg.Statements[0].ACL.AddressMatchList.Elements[0].Negation)
+	require.Equal(t, "guest-key", cfg.Statements[0].ACL.AddressMatchList.Elements[0].KeyID)
+}
+
+func TestParseACLWithKey(t *testing.T) {
+	cfgText := `
+		acl "guest-networks" {
+			key "guest-key";
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].ACL)
+	require.Equal(t, "guest-networks", cfg.Statements[0].ACL.Name)
+	require.NotNil(t, cfg.Statements[0].ACL.AddressMatchList)
+	require.Len(t, cfg.Statements[0].ACL.AddressMatchList.Elements, 1)
+	require.False(t, cfg.Statements[0].ACL.AddressMatchList.Elements[0].Negation)
+	require.Equal(t, "guest-key", cfg.Statements[0].ACL.AddressMatchList.Elements[0].KeyID)
+}
+
+func TestParseACLWithUnquotedACLName(t *testing.T) {
+	cfgText := `
+		acl "trusted-networks" {
+			localnets;
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].ACL)
+	require.Equal(t, "trusted-networks", cfg.Statements[0].ACL.Name)
+	require.NotNil(t, cfg.Statements[0].ACL.AddressMatchList)
+	require.Len(t, cfg.Statements[0].ACL.AddressMatchList.Elements, 1)
+	require.Equal(t, "localnets", cfg.Statements[0].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
+}
+
+func TestParseACLWithQuotedACLName(t *testing.T) {
+	cfgText := `
+		acl "trusted-networks" {
+			"localhosts";
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].ACL)
+	require.Equal(t, "trusted-networks", cfg.Statements[0].ACL.Name)
+	require.NotNil(t, cfg.Statements[0].ACL.AddressMatchList)
+	require.Len(t, cfg.Statements[0].ACL.AddressMatchList.Elements, 1)
+	require.Equal(t, "localhosts", cfg.Statements[0].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
+}
+
+func TestParseACLWithQuotedIPv4Address(t *testing.T) {
+	cfgText := `
+		acl "trusted-networks" {
+			"10.0.0.1";
+		}
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].ACL)
+	require.Equal(t, "trusted-networks", cfg.Statements[0].ACL.Name)
+	require.NotNil(t, cfg.Statements[0].ACL.AddressMatchList)
+	require.Len(t, cfg.Statements[0].ACL.AddressMatchList.Elements, 1)
+	require.Equal(t, "10.0.0.1", cfg.Statements[0].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
+}
+
+// A benchmark that measures the performance of the @stork:no-parse directive.
+// It creates a set of zones and runs two independent checks. First, how long
+// it takes to parse the zones. Second, how long it takes to process the config
+// when @stork:no-parse elides the zones.
+//
+// For 10000 we've got the following results:
+//
+// BenchmarkNoParseZones/No_parse-12         	       2	 774297854 ns/op	 1344496 B/op	     122 allocs/op
+// BenchmarkNoParseZones/NoParseGlobal-12    	       2	 717727792 ns/op	 1306192 B/op	     106 allocs/op
+// BenchmarkNoParseZones/Parse-12            	       1	6126068000 ns/op	2984310664 B/op	10009899 allocs/op
+// PASS
+// ok  	isc.org/stork/appcfg/bind9	12.047s
+//
+// Clearly, skipping the zones during parsing significantly improves the
+// configuration file parsing performance.
+func BenchmarkNoParseZones(b *testing.B) {
+	zones := testutil.GenerateRandomZones(10000)
+	zoneTemplate := `
+		zone "%s" {
+			type master;
+			allow-transfer port 853 { any; };
+			file "/etc/bind/db.%s";
+		};
+	`
+	builder := strings.Builder{}
+	for _, zone := range zones {
+		zoneText := fmt.Sprintf(zoneTemplate, zone.Name, zone.Name)
+		builder.WriteString(zoneText)
+	}
+	parser := NewParser()
+	require.NotNil(b, parser)
+
+	b.Run("No parse", func(b *testing.B) {
+		// Surround the zones with the @stork:no-parse:begin/end directscope
+		noParseBuilder := strings.Builder{}
+		noParseBuilder.WriteString("//@stork:no-parse:scope\n")
+		noParseBuilder.WriteString(builder.String())
+		noParseBuilder.WriteString("//@stork:no-parse:end\n")
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := parser.Parse("", strings.NewReader(noParseBuilder.String()))
+			require.NoError(b, err)
+		}
+	})
+
+	b.Run("NoParseGlobal", func(b *testing.B) {
+		// Precede the zones with the @stork:no-parse:global directive.
+		noParseBuilder := strings.Builder{}
+		noParseBuilder.WriteString("//@stork:no-parse:global\n")
+		noParseBuilder.WriteString(builder.String())
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := parser.Parse("", strings.NewReader(noParseBuilder.String()))
+			require.NoError(b, err)
+		}
+	})
+
+	b.Run("Parse", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := parser.Parse("", strings.NewReader(builder.String()))
+			require.NoError(b, err)
+		}
+	})
 }

@@ -22,7 +22,7 @@ func TestAllowTransferIsDisabledNone(t *testing.T) {
 		AddressMatchList: &AddressMatchList{
 			Elements: []*AddressMatchListElement{
 				{
-					ACLName: "none",
+					IPAddressOrACLName: "none",
 				},
 			},
 		},
@@ -37,10 +37,10 @@ func TestAllowTransferIsNotDisabled(t *testing.T) {
 		AddressMatchList: &AddressMatchList{
 			Elements: []*AddressMatchListElement{
 				{
-					ACLName: "none",
+					IPAddressOrACLName: "none",
 				},
 				{
-					IPAddress: "127.0.0.1",
+					IPAddressOrACLName: "127.0.0.1",
 				},
 			},
 		},

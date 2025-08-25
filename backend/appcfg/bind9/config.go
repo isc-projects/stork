@@ -78,9 +78,9 @@ func (c *Config) getKeyFromAddressMatchList(level int, addressMatchList *Address
 		case element.ACL != nil:
 			// Recursively search for a key in the inline ACL.
 			return c.getKeyFromAddressMatchList(level+1, element.ACL.AddressMatchList)
-		case element.ACLName != "":
+		case element.IPAddressOrACLName != "":
 			// Recursively search for a key in the referenced ACL.
-			acl := c.GetACL(element.ACLName)
+			acl := c.GetACL(element.IPAddressOrACLName)
 			if acl != nil {
 				return c.getKeyFromAddressMatchList(level+1, acl.AddressMatchList)
 			}

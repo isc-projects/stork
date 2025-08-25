@@ -10,8 +10,8 @@ import (
 func TestAddressMatchListExcludesIPAddress(t *testing.T) {
 	aml := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddress: "127.0.0.1", Negation: true},
-			{IPAddress: "::1", Negation: false},
+			{IPAddressOrACLName: "127.0.0.1", Negation: true},
+			{IPAddressOrACLName: "::1", Negation: false},
 		},
 	}
 	require.True(t, aml.ExcludesIPAddress("127.0.0.1"))
@@ -24,7 +24,7 @@ func TestAddressMatchListExcludesIPAddress(t *testing.T) {
 func TestAddressMatchListExcludesIPAddressWithNone(t *testing.T) {
 	aml := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{ACLName: "none"},
+			{IPAddressOrACLName: "none"},
 		},
 	}
 	require.True(t, aml.ExcludesIPAddress("127.0.0.1"))
@@ -37,7 +37,7 @@ func TestAddressMatchListExcludesIPAddressWithNone(t *testing.T) {
 func TestAddressMatchListExcludesIPAddressWithAny(t *testing.T) {
 	aml := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{ACLName: "any"},
+			{IPAddressOrACLName: "any"},
 		},
 	}
 	require.False(t, aml.ExcludesIPAddress("127.0.0.1"))
