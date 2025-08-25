@@ -42,16 +42,17 @@ import { ToggleButtonModule } from 'primeng/togglebutton'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { CheckboxModule } from 'primeng/checkbox'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { InputTextareaModule } from 'primeng/inputtextarea'
+import { TextareaModule } from 'primeng/textarea'
 import { TreeModule } from 'primeng/tree'
 import { DataViewModule } from 'primeng/dataview'
 import { ChartModule } from 'primeng/chart'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { AccordionModule } from 'primeng/accordion'
 import { TreeTableModule } from 'primeng/treetable'
 import { SkeletonModule } from 'primeng/skeleton'
 import { FloatLabelModule } from 'primeng/floatlabel'
 import { AutoCompleteModule } from 'primeng/autocomplete'
+import { InputNumberModule } from 'primeng/inputnumber'
+import Aura from '@primeng/themes/aura'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -164,6 +165,7 @@ import { OutOfPoolBarComponent } from './out-of-pool-bar/out-of-pool-bar.compone
 import { DaemonNiceNamePipe } from './pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from './bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from './pdns-daemon/pdns-daemon.component'
+import { providePrimeNG } from 'primeng/config'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -317,13 +319,12 @@ export function cfgFactory() {
         MultiSelectModule,
         CheckboxModule,
         ConfirmDialogModule,
-        InputTextareaModule,
+        TextareaModule,
         TreeModule,
         ChipModule,
         DataViewModule,
         ToggleButtonModule,
         ChartModule,
-        TriStateCheckboxModule,
         AccordionModule,
         TreeTableModule,
         BadgeModule,
@@ -331,6 +332,7 @@ export function cfgFactory() {
         ManagedAccessDirective,
         FloatLabelModule,
         AutoCompleteModule,
+        InputNumberModule,
     ],
     providers: [
         {
@@ -349,6 +351,14 @@ export function cfgFactory() {
             useClass: CustomRouteReuseStrategy,
         },
         provideHttpClient(withInterceptorsFromDi()),
+        providePrimeNG({
+            theme: {
+                preset: Aura,
+                options: {
+                    darkModeSelector: '.dark',
+                },
+            },
+        }),
     ],
 })
 export class AppModule {}

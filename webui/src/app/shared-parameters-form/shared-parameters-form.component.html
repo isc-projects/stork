@@ -98,8 +98,12 @@
                                             {{ control.value || false }}
                                         </ng-container>
                                         <ng-container *ngIf="!controls.data.required">
-                                            <p-triStateCheckbox ngDefaultControl [formControlName]="index">
-                                            </p-triStateCheckbox>
+                                            <p-checkbox
+                                                ngDefaultControl
+                                                [formControlName]="index"
+                                                [indeterminate]="true"
+                                            >
+                                            </p-checkbox>
                                             {{ control.value === null ? 'unset' : control.value }}
                                         </ng-container>
                                     </ng-container>

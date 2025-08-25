@@ -19,7 +19,6 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ToastModule } from 'primeng/toast'
@@ -305,7 +304,6 @@ describe('SharedNetworkFormComponent', () => {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                TriStateCheckboxModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,

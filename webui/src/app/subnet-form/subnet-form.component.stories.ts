@@ -14,7 +14,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { CreateSubnetBeginResponse, UpdateSubnetBeginResponse } from '../backend'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
@@ -497,7 +496,6 @@ export default {
                 MultiSelectModule,
                 TableModule,
                 TagModule,
-                TriStateCheckboxModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,

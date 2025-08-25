@@ -14,7 +14,7 @@ import { ConfigCheckerPreferencePickerComponent } from '../config-checker-prefer
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { TagModule } from 'primeng/tag'
 import { ManagedAccessDirective } from '../managed-access.directive'
@@ -41,7 +41,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 ToastModule,
                 ButtonModule,
                 FormsModule,
-                TriStateCheckboxModule,
+                CheckboxModule,
                 TagModule,
                 ManagedAccessDirective,
             ],

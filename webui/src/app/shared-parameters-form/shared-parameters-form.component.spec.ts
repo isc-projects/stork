@@ -19,7 +19,6 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
@@ -66,7 +65,6 @@ describe('SharedParametersFormComponent', () => {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                TriStateCheckboxModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 InputTextModule,
@@ -252,7 +250,7 @@ describe('SharedParametersFormComponent', () => {
         labelDiv = allWrapperDivs[4].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
         expect(labelDiv[0].nativeElement.innerText).toBe('DDNS Override Client Update')
-        controls = allWrapperDivs[4].queryAll(By.css('p-triStateCheckbox'))
+        controls = allWrapperDivs[4].queryAll(By.css('p-checkbox'))
         expect(controls.length).toBe(1)
         tags = allWrapperDivs[4].queryAll(By.css('p-tag'))
         expect(tags.length).toBe(0)

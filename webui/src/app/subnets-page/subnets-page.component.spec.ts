@@ -48,7 +48,6 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { MessagesModule } from 'primeng/messages'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ToastModule } from 'primeng/toast'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
@@ -137,7 +136,6 @@ describe('SubnetsPageComponent', () => {
                 MessagesModule,
                 MultiSelectModule,
                 TagModule,
-                TriStateCheckboxModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToastModule,

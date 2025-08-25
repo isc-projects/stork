@@ -21,7 +21,6 @@ import { AutoCompleteModule } from 'primeng/autocomplete'
 import { DropdownModule } from 'primeng/dropdown'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { MessagesModule } from 'primeng/messages'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
@@ -235,7 +234,6 @@ export default {
                 ReactiveFormsModule,
                 TableModule,
                 TagModule,
-                TriStateCheckboxModule,
                 ToastModule,
                 SplitButtonModule,
                 FloatLabelModule,

@@ -42,17 +42,12 @@ export class ThemeService {
     switchTheme(isDark: boolean, theme: string = 'aura-blue') {
         this.darkMode = isDark
         const darkLight = isDark ? 'dark' : 'light'
-        const themeLink = this.document.getElementById('stork-theme') as HTMLLinkElement
 
-        // Store dark/light mode also as a class in <body> element.
+        // Store dark/light mode also as a class in <html> element.
         // This is needed for custom styling of some components that may differ for light and dark mode.
-        this.document.body.classList.remove('dark', 'light')
-        this.document.body.classList.add(darkLight)
-
-        // Update dynamically Stork theme.
-        if (themeLink) {
-            themeLink.href = `${theme}-${darkLight}.css`
-        }
+        const htmlElement = this.document.querySelector('html')
+        htmlElement.classList.remove('dark', 'light')
+        htmlElement.classList.add(darkLight)
 
         // Notify subscribers about dark/light mode switch.
         this.isDark$.next(this.darkMode)

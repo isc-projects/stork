@@ -26,9 +26,6 @@
                         "assets": ["src/favicon.ico", "src/assets"],
                         "styles": [
                             "node_modules/primeicons/primeicons.css",
-                            { "input": "src/aura-dark-blue.scss", "bundleName": "aura-blue-dark", "inject": false },
-                            { "input": "src/aura-light-blue.scss", "bundleName": "aura-blue-light", "inject": false },
-                            "node_modules/primeng/resources/primeng.min.css",
                             "node_modules/primeflex/primeflex.css",
                             "node_modules/@fortawesome/fontawesome-free/css/all.css",
                             "node_modules/swagger-ui-dist/swagger-ui.css",

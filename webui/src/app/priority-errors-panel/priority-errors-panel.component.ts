@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ServicesService } from '../backend'
-import { Message, MessageService } from 'primeng/api'
+import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { EventStream, ServerSentEventsService } from '../server-sent-events.service'
 import { Subscription, filter, lastValueFrom, map } from 'rxjs'
 import { formatNoun, getErrorMessage } from '../utils'
@@ -22,7 +22,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     /**
      * Holds displayed alerts.
      */
-    messages: Message[] = []
+    messages: ToastMessageOptions[] = []
 
     /**
      * A subscription to the SSE service receiving the events.
@@ -97,7 +97,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      * @param key message key.
      * @param message message to be displayed.
      */
-    private insertMessage(key: string, message: Message): void {
+    private insertMessage(key: string, message: ToastMessageOptions): void {
         const index = this.messages.findIndex((message) => message.key === key)
         if (index >= 0) {
             // The message under this key already exists. Replace it.
@@ -145,7 +145,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
             try {
                 const data = await lastValueFrom(this.servicesApi.getAppsWithCommunicationIssues())
                 if (data.total > 0) {
-                    const message: Message = {
+                    const message: ToastMessageOptions = {
                         key: EventStream.Connectivity,
                         severity: 'warn',
                         summary: 'Communication issues',
@@ -189,7 +189,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
             try {
                 const count = await lastValueFrom(this.servicesApi.getUnauthorizedMachinesCount())
                 if (count > 0) {
-                    const message: Message = {
+                    const message: ToastMessageOptions = {
                         key: EventStream.Registration,
                         severity: 'warn',
                         summary: 'Unregistered machines',

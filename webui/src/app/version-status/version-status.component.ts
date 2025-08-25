@@ -1,6 +1,6 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { AppType, Severity, VersionFeedback, VersionService } from '../version.service'
-import { Message, MessageService } from 'primeng/api'
+import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { map } from 'rxjs/operators'
@@ -68,7 +68,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Holds PrimeNG Message value for the block message.
      */
-    messages: Message[] | undefined
+    messages: ToastMessageOptions[] | undefined
 
     /**
      * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on app field.
@@ -192,7 +192,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     private setSeverity(feedback: VersionFeedback) {
         this.severity = feedback.severity
         this.feedbackMessages = feedback.messages ?? []
-        const m: Message = {
+        const m: ToastMessageOptions = {
             severity: Severity[feedback.severity],
             summary: `${this.appName} ${this.version}`,
             detail: feedback.messages.join('<br><br>'),

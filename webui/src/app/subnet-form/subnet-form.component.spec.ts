@@ -14,7 +14,6 @@ import { MultiSelectModule } from 'primeng/multiselect'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { SplitButtonModule } from 'primeng/splitbutton'
@@ -431,7 +430,6 @@ describe('SubnetFormComponent', () => {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                TriStateCheckboxModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,

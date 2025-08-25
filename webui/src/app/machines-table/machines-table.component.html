@@ -114,13 +114,14 @@
                 >
                     <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                         <label for="authorized-input">Authorized machines</label>
-                        <p-triStateCheckbox
+                        <p-checkbox
                             inputId="authorized-input"
                             (onChange)="filterTable($event.value, filterConstraint)"
                             [ngModel]="value"
                             [disabled]="hasPrefilter()"
                             styleClass="ml-2"
-                        ></p-triStateCheckbox>
+                            [indeterminate]="true"
+                        ></p-checkbox>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">

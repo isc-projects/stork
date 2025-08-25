@@ -11,7 +11,6 @@ import { ButtonModule } from 'primeng/button'
 import { DropdownModule } from 'primeng/dropdown'
 import { TagModule } from 'primeng/tag'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { CheckboxModule } from 'primeng/checkbox'
 import { StorkValidators } from '../validators'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
@@ -54,7 +53,6 @@ export default {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                TriStateCheckboxModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
             ],

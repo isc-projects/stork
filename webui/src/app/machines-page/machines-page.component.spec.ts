@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
 
-import { ConfirmationService, Message, MessageService } from 'primeng/api'
+import { ConfirmationService, ToastMessageOptions, MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
@@ -39,7 +39,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { BadgeModule } from 'primeng/badge'
 import { PanelModule } from 'primeng/panel'
-import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { CheckboxModule } from 'primeng/checkbox'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
@@ -68,7 +68,7 @@ describe('MachinesPageComponent', () => {
         ) => Observable<{ items?: Array<Partial<Machine>>; total?: number }>
     >
     let getMachinesServerTokenSpy: jasmine.Spy<() => Observable<GetMachinesServerToken200Response>>
-    let msgSrvAddSpy: jasmine.Spy<(message: Message) => void>
+    let msgSrvAddSpy: jasmine.Spy<(message: ToastMessageOptions) => void>
     let authService: AuthService
 
     // prepare responses for api calls
@@ -161,7 +161,7 @@ describe('MachinesPageComponent', () => {
                 ConfirmDialogModule,
                 BadgeModule,
                 PanelModule,
-                TriStateCheckboxModule,
+                CheckboxModule,
                 TagModule,
                 ManagedAccessDirective,
             ],
