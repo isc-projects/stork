@@ -3,7 +3,7 @@ import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/f
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToggleButtonModule } from 'primeng/togglebutton'
@@ -24,7 +24,7 @@ describe('DhcpOptionSetFormComponent', () => {
             providers: [UntypedFormBuilder],
             imports: [
                 CheckboxModule,
-                DropdownModule,
+                SelectModule,
                 FormsModule,
                 InputNumberModule,
                 NoopAnimationsModule,

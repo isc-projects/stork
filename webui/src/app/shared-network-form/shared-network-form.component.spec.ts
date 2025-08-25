@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { DividerModule } from 'primeng/divider'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { InputNumberModule } from 'primeng/inputnumber'
@@ -295,7 +295,7 @@ describe('SharedNetworkFormComponent', () => {
                 CheckboxModule,
                 AutoCompleteModule,
                 DividerModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

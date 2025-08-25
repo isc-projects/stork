@@ -8,7 +8,7 @@ import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/d
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ButtonModule } from 'primeng/button'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { TagModule } from 'primeng/tag'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { CheckboxModule } from 'primeng/checkbox'
@@ -46,7 +46,7 @@ export default {
                 ButtonModule,
                 CheckboxModule,
                 AutoCompleteModule,
-                DropdownModule,
+                SelectModule,
                 FormsModule,
                 InputNumberModule,
                 MultiSelectModule,

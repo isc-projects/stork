@@ -11,7 +11,7 @@
 
         <div class="flex align-items-center gap-2 flex-none">
             <div>Machine:</div>
-            <p-dropdown
+            <p-select
                 [options]="machines"
                 [(ngModel)]="selectedMachine"
                 optionLabel="address"
@@ -21,12 +21,12 @@
                 tooltip="Show events related to selected machine"
                 styleClass="max-w-14rem w-12rem"
                 (onChange)="onMachineSelect($event)"
-            ></p-dropdown>
+            ></p-select>
         </div>
 
         <div class="flex align-items-center gap-2 flex-none">
             <div>App Type:</div>
-            <p-dropdown
+            <p-select
                 [options]="appTypes"
                 [(ngModel)]="selectedAppType"
                 optionLabel="name"
@@ -36,12 +36,12 @@
                 tooltip="Show events related to selected app type"
                 styleClass="max-w-14rem w-10rem"
                 (onChange)="onAppTypeSelect($event)"
-            ></p-dropdown>
+            ></p-select>
         </div>
 
         <div class="flex align-items-center gap-2 flex-none">
             <div>Daemon:</div>
-            <p-dropdown
+            <p-select
                 [options]="daemonTypes"
                 [(ngModel)]="selectedDaemonType"
                 optionLabel="name"
@@ -51,12 +51,12 @@
                 tooltip="Show events related to selected daemon type"
                 styleClass="max-w-14rem w-10rem"
                 (onChange)="onDaemonTypeSelect($event)"
-            ></p-dropdown>
+            ></p-select>
         </div>
 
         <div class="flex align-items-center gap-2 flex-none" appAccessEntity="users" [appHideIfNoAccess]="true">
             <div>User:</div>
-            <p-dropdown
+            <p-select
                 [options]="users"
                 [(ngModel)]="selectedUser"
                 optionLabel="login"
@@ -66,7 +66,7 @@
                 tooltip="Show events related to selected user"
                 styleClass="max-w-14rem w-10rem"
                 (onChange)="onUserSelect($event)"
-            ></p-dropdown>
+            ></p-select>
         </div>
     </div>
     <p-button

@@ -7,7 +7,7 @@ import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { InputSwitchModule } from 'primeng/inputswitch'
@@ -136,7 +136,7 @@ describe('HostFormComponent', () => {
                 ButtonModule,
                 CheckboxModule,
                 AutoCompleteModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

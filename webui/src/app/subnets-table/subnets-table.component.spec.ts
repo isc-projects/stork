@@ -15,7 +15,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { RouterModule } from '@angular/router'
 import { SubnetsPageComponent } from '../subnets-page/subnets-page.component'
 import { TagModule } from 'primeng/tag'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { DHCPService, Subnets } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
@@ -59,7 +59,7 @@ describe('SubnetsTableComponent', () => {
                 PanelModule,
                 BrowserAnimationsModule,
                 TagModule,
-                DropdownModule,
+                SelectModule,
                 RouterModule.forRoot([
                     {
                         path: 'dhcp/subnets',

@@ -10,7 +10,7 @@ import { ToastModule } from 'primeng/toast'
 import { ButtonModule } from 'primeng/button'
 import { action } from '@storybook/addon-actions'
 import { PasswordModule } from 'primeng/password'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { provideRouter, RouterModule } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { FloatLabelModule } from 'primeng/floatlabel'
@@ -35,7 +35,7 @@ export default {
                 FormsModule,
                 RouterModule,
                 ProgressSpinnerModule,
-                DropdownModule,
+                SelectModule,
                 ButtonModule,
                 ToastModule,
                 PasswordModule,

@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { DividerModule } from 'primeng/divider'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -421,7 +421,7 @@ describe('SubnetFormComponent', () => {
                 CheckboxModule,
                 AutoCompleteModule,
                 DividerModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

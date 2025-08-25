@@ -20,7 +20,7 @@ import { MultiSelectModule } from 'primeng/multiselect'
 import { KeaPoolParametersForm, PrefixForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { InputNumberModule } from 'primeng/inputnumber'
@@ -48,7 +48,7 @@ export default {
                 CheckboxModule,
                 AutoCompleteModule,
                 DividerModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

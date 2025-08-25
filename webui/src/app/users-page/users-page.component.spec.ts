@@ -22,7 +22,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { MockParamMap } from '../utils'
 import { TagModule } from 'primeng/tag'
 import { PanelModule } from 'primeng/panel'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { PasswordModule } from 'primeng/password'
 import { CheckboxModule } from 'primeng/checkbox'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -55,7 +55,7 @@ describe('UsersPageComponent', () => {
                     { path: 'users/new', component: UsersPageComponent },
                 ]),
                 PanelModule,
-                DropdownModule,
+                SelectModule,
                 PasswordModule,
                 FormsModule,
                 CheckboxModule,

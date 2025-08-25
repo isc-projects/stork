@@ -69,7 +69,7 @@
                                             >
                                             </p-multiSelect>
                                             <ng-template #noArrayCase>
-                                                <p-dropdown
+                                                <p-select
                                                     [autoDisplayFirst]="false"
                                                     [options]="controls.data.values"
                                                     [showClear]="true"
@@ -77,7 +77,7 @@
                                                     placeholder="(not specified)"
                                                     class="max-w-form"
                                                 >
-                                                </p-dropdown>
+                                                </p-select>
                                             </ng-template>
                                         </ng-container>
                                         <ng-template #noValuesCase>

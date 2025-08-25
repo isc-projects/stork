@@ -349,13 +349,13 @@
                         <div class="field grid">
                             <label for="userGroup" class="col-12 sm:col-3">Group*:</label>
                             <div class="col-12 sm:col-9">
-                                <p-dropdown
+                                <p-select
                                     [options]="userGroups"
                                     formControlName="userGroup"
                                     id="userGroup"
                                     [style]="{ width: '14em' }"
                                     title="Group which the user will belong to."
-                                ></p-dropdown>
+                                ></p-select>
                             </div>
                             <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userGroup')">
                                 <p-message severity="error" [text]="buildFeedbackMessage('userGroup')"></p-message>

@@ -137,7 +137,7 @@
                 <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <p-floatLabel>
-                            <p-dropdown
+                            <p-select
                                 inputId="dhcp-version"
                                 [options]="[
                                     { label: 'DHCPv4', value: 4 },
@@ -148,7 +148,7 @@
                                 (onChange)="filterTable($event.value, filterMetadata)"
                                 [ngModel]="value"
                                 styleClass="w-10rem"
-                            ></p-dropdown>
+                            ></p-select>
                             <label for="dhcp-version">DHCP Version</label>
                         </p-floatLabel>
                     </ng-template>

@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { ButtonModule } from 'primeng/button'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { TableModule } from 'primeng/table'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -39,7 +39,7 @@ describe('EventsPageComponent', () => {
                 SelectButtonModule,
                 ButtonModule,
                 ConfirmDialogModule,
-                DropdownModule,
+                SelectModule,
                 TableModule,
                 BreadcrumbModule,
                 OverlayPanelModule,

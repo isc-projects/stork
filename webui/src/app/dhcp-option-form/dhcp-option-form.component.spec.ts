@@ -9,7 +9,7 @@ import {
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { CheckboxModule } from 'primeng/checkbox'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToggleButtonModule } from 'primeng/togglebutton'
@@ -32,7 +32,7 @@ describe('DhcpOptionFormComponent', () => {
             providers: [UntypedFormBuilder],
             imports: [
                 CheckboxModule,
-                DropdownModule,
+                SelectModule,
                 FormsModule,
                 InputNumberModule,
                 NoopAnimationsModule,
@@ -64,7 +64,7 @@ describe('DhcpOptionFormComponent', () => {
 
     it('should display DHCPv4 options selection', () => {
         // By default, the component should display a dropdown with option codes.
-        const dropdownEl = fixture.debugElement.query(By.css('p-dropdown'))
+        const dropdownEl = fixture.debugElement.query(By.css('p-select'))
         expect(dropdownEl).toBeTruthy()
 
         // The dropdown should include a placeholder informing about its purpose.
@@ -85,7 +85,7 @@ describe('DhcpOptionFormComponent', () => {
         fixture.detectChanges()
 
         // There should be a dropdown.
-        const dropdownEl = fixture.debugElement.query(By.css('p-dropdown'))
+        const dropdownEl = fixture.debugElement.query(By.css('p-select'))
         expect(dropdownEl).toBeTruthy()
 
         // The dropdown should include a placeholder informing about its purpose.

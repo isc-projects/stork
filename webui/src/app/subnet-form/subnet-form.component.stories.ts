@@ -9,7 +9,7 @@ import { SharedParametersFormComponent } from '../shared-parameters-form/shared-
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TableModule } from 'primeng/table'
@@ -488,7 +488,7 @@ export default {
                 CheckboxModule,
                 AutoCompleteModule,
                 DividerModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

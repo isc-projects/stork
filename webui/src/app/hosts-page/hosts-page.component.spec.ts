@@ -31,7 +31,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HostFormComponent } from '../host-form/host-form.component'
@@ -110,7 +110,7 @@ describe('HostsPageComponent', () => {
                 ProgressSpinnerModule,
                 ToggleButtonModule,
                 CheckboxModule,
-                DropdownModule,
+                SelectModule,
                 MultiSelectModule,
                 ReactiveFormsModule,
                 ConfirmDialogModule,

@@ -6,7 +6,7 @@ import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/d
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import {
     FormControl,
     FormGroup,
@@ -58,7 +58,7 @@ describe('SharedParametersFormComponent', () => {
                 ButtonModule,
                 CheckboxModule,
                 AutoCompleteModule,
-                DropdownModule,
+                SelectModule,
                 FormsModule,
                 InputNumberModule,
                 MultiSelectModule,
@@ -182,7 +182,7 @@ describe('SharedParametersFormComponent', () => {
         let labelDiv = allWrapperDivs[0].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
         expect(labelDiv[0].nativeElement.innerText).toBe('Allocator')
-        let controls = allWrapperDivs[0].queryAll(By.css('p-dropdown'))
+        let controls = allWrapperDivs[0].queryAll(By.css('p-select'))
         expect(controls.length).toBe(2)
         let tags = allWrapperDivs[0].queryAll(By.css('p-tag'))
         expect(tags.length).toBe(2)

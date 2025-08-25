@@ -17,7 +17,7 @@ import { TabViewModule } from 'primeng/tabview'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { DialogModule } from 'primeng/dialog'
 import { InputTextModule } from 'primeng/inputtext'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { MessageModule } from 'primeng/message'
@@ -315,7 +315,7 @@ const AuraBluePreset = definePreset(Aura, {
         ProgressBarModule,
         DialogModule,
         InputTextModule,
-        DropdownModule,
+        SelectModule,
         ToastModule,
         MessageModule,
         MessagesModule,

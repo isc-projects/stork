@@ -50,7 +50,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { PanelModule } from 'primeng/panel'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
@@ -332,7 +332,7 @@ describe('ZonesPageComponent', () => {
                 PanelModule,
                 InputNumberModule,
                 FormsModule,
-                DropdownModule,
+                SelectModule,
                 MultiSelectModule,
                 ProgressSpinnerModule,
                 ManagedAccessDirective,
@@ -767,7 +767,7 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones table by app type', fakeAsync(() => {
         // Arrange
-        const inputDropdown = fixture.debugElement.query(By.css('[inputId="app-type"] .p-dropdown'))
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="app-type"] .p-select'))
         expect(inputDropdown).toBeTruthy()
         inputDropdown.nativeElement.click()
         fixture.detectChanges()
@@ -787,7 +787,7 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones table by class', fakeAsync(() => {
         // Arrange
-        const inputDropdown = fixture.debugElement.query(By.css('[inputId="zone-class"] .p-dropdown'))
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="zone-class"] .p-select'))
         expect(inputDropdown).toBeTruthy()
         inputDropdown.nativeElement.click()
         fixture.detectChanges()
@@ -847,7 +847,7 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones table with including RPZ', fakeAsync(() => {
         // Arrange
-        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-dropdown'))
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-select'))
         expect(inputDropdown).toBeTruthy()
         inputDropdown.nativeElement.click()
         fixture.detectChanges()
@@ -867,7 +867,7 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones table with excluding RPZ', fakeAsync(() => {
         // Arrange
-        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-dropdown'))
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-select'))
         expect(inputDropdown).toBeTruthy()
         inputDropdown.nativeElement.click()
         fixture.detectChanges()
@@ -887,7 +887,7 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones table with RPZ only', fakeAsync(() => {
         // Arrange
-        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-dropdown'))
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-select'))
         expect(inputDropdown).toBeTruthy()
         inputDropdown.nativeElement.click()
         fixture.detectChanges()

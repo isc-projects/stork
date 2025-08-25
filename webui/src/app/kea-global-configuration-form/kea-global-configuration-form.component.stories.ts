@@ -18,7 +18,7 @@ import { SharedParametersFormComponent } from '../shared-parameters-form/shared-
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { CheckboxModule } from 'primeng/checkbox'
 import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TagModule } from 'primeng/tag'
 import { MessagesModule } from 'primeng/messages'
@@ -222,7 +222,7 @@ export default {
                 ButtonModule,
                 CheckboxModule,
                 AutoCompleteModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

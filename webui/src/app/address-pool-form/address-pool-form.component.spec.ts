@@ -4,7 +4,7 @@ import { AddressPoolFormComponent } from './address-pool-form.component'
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
@@ -38,7 +38,7 @@ describe('AddressPoolFormComponent', () => {
                 CheckboxModule,
                 AutoCompleteModule,
                 DividerModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

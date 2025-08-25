@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from 
 
 import { SubnetsPageComponent } from './subnets-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
@@ -116,7 +116,7 @@ describe('SubnetsPageComponent', () => {
             imports: [
                 AccordionModule,
                 FormsModule,
-                DropdownModule,
+                SelectModule,
                 TableModule,
                 TooltipModule,
                 RouterModule,

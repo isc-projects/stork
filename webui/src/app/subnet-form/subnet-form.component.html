@@ -67,7 +67,7 @@
                 >
             </ng-container>
             <p-floatLabel *ngIf="!state.wizard" class="block mt-5 mb-2">
-                <p-dropdown
+                <p-select
                     inputId="shared-networks-select"
                     emptyMessage="No shared networks found"
                     formControlName="sharedNetwork"
@@ -79,7 +79,7 @@
                     class="max-w-form"
                     (onChange)="onSharedNetworkChange($event)"
                 >
-                </p-dropdown>
+                </p-select>
                 <label for="shared-network-select">Shared Network</label>
             </p-floatLabel>
         </p-fieldset>

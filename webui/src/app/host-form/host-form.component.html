@@ -44,7 +44,7 @@
         </div>
         <div *ngIf="!formGroup.get('globalReservation').value">
             <p-floatLabel>
-                <p-dropdown
+                <p-select
                     inputId="subnets-dropdown"
                     optionLabel="subnet"
                     optionValue="id"
@@ -56,7 +56,7 @@
                     class="max-w-form"
                     (onChange)="onSelectedSubnetChange()"
                 >
-                </p-dropdown>
+                </p-select>
                 <label for="subnets-dropdown">Subnet</label>
             </p-floatLabel>
             <small
@@ -73,16 +73,16 @@
     <p-fieldset legend="DHCP Identifier" styleClass="host-form-section">
         <div formGroupName="hostIdGroup" class="grid">
             <div class="col-6 sm:col-3">
-                <p-dropdown
+                <p-select
                     [options]="hostIdTypes"
                     formControlName="idType"
                     class="max-w-form"
                     (onChange)="onSelectedIdentifierChange()"
                 >
-                </p-dropdown>
+                </p-select>
             </div>
             <div class="col-6 sm:col-3">
-                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" class="max-w-form"> </p-dropdown>
+                <p-select [options]="hostIdFormats" formControlName="idFormat" class="max-w-form"> </p-select>
             </div>
 
             <div
@@ -159,7 +159,7 @@
                 <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i">
                     <ng-container [formGroup]="ipGroup" class="flex align-items-start">
                         <div class="col-12 sm:col-3">
-                            <p-dropdown [options]="ipTypes" formControlName="ipType" class="max-w-form"> </p-dropdown>
+                            <p-select [options]="ipTypes" formControlName="ipType" class="max-w-form"> </p-select>
                         </div>
                         <ng-container [ngSwitch]="ipGroup.value.ipType">
                             <ng-container *ngSwitchCase="'ipv4'">

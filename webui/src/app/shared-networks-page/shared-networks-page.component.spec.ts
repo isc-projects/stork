@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angul
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
@@ -110,7 +110,7 @@ describe('SharedNetworksPageComponent', () => {
                 AutoCompleteModule,
                 ConfirmDialogModule,
                 DividerModule,
-                DropdownModule,
+                SelectModule,
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,

@@ -13,7 +13,7 @@ import { By } from '@angular/platform-browser'
 import { RouterModule } from '@angular/router'
 import { MessagesModule } from 'primeng/messages'
 import { AuthService } from '../auth.service'
-import { DropdownModule } from 'primeng/dropdown'
+import { SelectModule } from 'primeng/select'
 import { PasswordModule } from 'primeng/password'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -58,7 +58,7 @@ describe('LoginScreenComponent', () => {
                 SelectButtonModule,
                 ButtonModule,
                 MessagesModule,
-                DropdownModule,
+                SelectModule,
                 PasswordModule,
                 BrowserAnimationsModule,
                 FloatLabelModule,
@@ -117,14 +117,14 @@ describe('LoginScreenComponent', () => {
         expect(component.authenticationMethods.length).toEqual(2)
 
         // There should be a dropdown visible.
-        const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-dropdown'))
+        const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-select'))
         expect(dropdown).toBeTruthy()
 
         dropdown.nativeElement.click()
         fixture.detectChanges()
 
         // Dropdown should display two methods.
-        const listItems = dropdown.queryAll(By.css('.p-dropdown-panel li'))
+        const listItems = dropdown.queryAll(By.css('.p-select-list li'))
         expect(listItems).toBeTruthy()
         expect(listItems.length).toEqual(2)
         expect(listItems[0].nativeElement.innerText).toContain('local')
@@ -140,7 +140,7 @@ describe('LoginScreenComponent', () => {
         fixture.detectChanges()
 
         // There should be a dropdown visible.
-        const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-dropdown'))
+        const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-select'))
         expect(dropdown).toBeTruthy()
 
         dropdown.nativeElement.click()

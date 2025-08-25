@@ -1,7 +1,7 @@
 <div [formGroup]="formGroup" class="flex flex-column gap-1">
     <div class="flex gap-2" [class.flex-column]="!topLevel" [class.align-items-center]="topLevel">
         <div class="w-full" *ngIf="topLevel; else showSuboptionInput">
-            <p-dropdown
+            <p-select
                 inputId="{{ codeInputId }}"
                 [editable]="true"
                 [filter]="true"
@@ -14,7 +14,7 @@
                 pTooltip="Use the dropdown to select an option from the list of standard options. If the desired option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
                 (onChange)="onOptionCodeChange($event)"
             >
-            </p-dropdown>
+            </p-select>
         </div>
         <ng-template #showSuboptionInput>
             <!-- For smaller viewports, option nesting level can't be visualized with left padding (not enough horizontal space), so display light divider and text information about nest level. -->
