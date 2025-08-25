@@ -13,7 +13,7 @@ import { BehaviorSubject, of, throwError, Observable } from 'rxjs'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ButtonModule } from 'primeng/button'
 import { TableModule } from 'primeng/table'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -91,7 +91,7 @@ describe('ConfigMigrationPageComponent', () => {
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 TabMenuModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ButtonModule,
                 TableModule,
                 FieldsetModule,

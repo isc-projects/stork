@@ -19,7 +19,7 @@ import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { DataViewModule } from 'primeng/dataview'
 import { DurationPipe } from '../pipes/duration.pipe'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
@@ -166,7 +166,7 @@ export default {
                 TabViewModule,
                 TooltipModule,
                 PanelModule,
-                OverlayPanelModule,
+                PopoverModule,
                 DataViewModule,
                 TableModule,
                 MockManagedAccessDirective,

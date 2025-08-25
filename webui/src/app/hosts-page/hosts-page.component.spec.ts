@@ -22,7 +22,7 @@ import { TabMenu, TabMenuModule } from 'primeng/tabmenu'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostTabComponent } from '../host-tab/host-tab.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TooltipModule } from 'primeng/tooltip'
 import { FieldsetModule } from 'primeng/fieldset'
@@ -103,7 +103,7 @@ describe('HostsPageComponent', () => {
                 ]),
                 TabMenuModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 TooltipModule,
                 FieldsetModule,

@@ -14,7 +14,7 @@ import { MultiSelectModule } from 'primeng/multiselect'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ToastModule } from 'primeng/toast'
@@ -430,7 +430,7 @@ describe('SubnetFormComponent', () => {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
                 RouterModule.forRoot([]),

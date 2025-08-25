@@ -4,7 +4,7 @@ import { TreeModule } from 'primeng/tree'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TooltipModule } from 'primeng/tooltip'
 import { importProvidersFrom } from '@angular/core'
 import { HttpClientModule } from '@angular/common/http'
@@ -292,7 +292,7 @@ export default {
             imports: [
                 BreadcrumbModule,
                 ButtonModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 RouterModule,
                 ToastModule,

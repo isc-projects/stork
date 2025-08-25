@@ -8,7 +8,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { PanelModule } from 'primeng/panel'
 import { TableModule } from 'primeng/table'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { ButtonModule } from 'primeng/button'
 import { RouterModule } from '@angular/router'
@@ -252,7 +252,7 @@ describe('VersionPageComponent', () => {
                 PanelModule,
                 TableModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 RouterModule.forRoot([

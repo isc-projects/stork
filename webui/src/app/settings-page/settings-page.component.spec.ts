@@ -12,7 +12,7 @@ import { SettingsService } from '../backend/api/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ActivatedRoute, provideRouter, RouterModule } from '@angular/router'
 import { DividerModule } from 'primeng/divider'
 import { of, throwError } from 'rxjs'
@@ -43,7 +43,7 @@ describe('SettingsPageComponent', () => {
                 ReactiveFormsModule,
                 MessagesModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 RouterModule,
                 InputNumberModule,

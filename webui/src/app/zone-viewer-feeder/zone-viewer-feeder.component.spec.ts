@@ -14,7 +14,7 @@ import { ToastModule } from 'primeng/toast'
 import { TooltipModule } from 'primeng/tooltip'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 describe('ZoneViewerFeederComponent', () => {
@@ -69,7 +69,7 @@ describe('ZoneViewerFeederComponent', () => {
             imports: [
                 ButtonModule,
                 DividerModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,
                 ToastModule,

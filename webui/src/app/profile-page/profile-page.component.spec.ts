@@ -14,7 +14,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MenuModule } from 'primeng/menu'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -36,7 +36,7 @@ describe('ProfilePageComponent', () => {
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 MenuModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 RouterModule,
             ],

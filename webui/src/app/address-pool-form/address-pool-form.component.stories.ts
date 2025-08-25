@@ -12,7 +12,7 @@ import { TagModule } from 'primeng/tag'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { ButtonModule } from 'primeng/button'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { importProvidersFrom } from '@angular/core'
 import { FieldsetModule } from 'primeng/fieldset'
@@ -53,7 +53,7 @@ export default {
                 FormsModule,
                 InputNumberModule,
                 MultiSelectModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
                 TableModule,

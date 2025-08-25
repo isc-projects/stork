@@ -5,7 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { ChipModule } from 'primeng/chip'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TableModule } from 'primeng/table'
 import { ToastModule } from 'primeng/toast'
 import { of, throwError } from 'rxjs'
@@ -36,7 +36,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
             imports: [
                 TableModule,
                 ChipModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 ToastModule,
                 ButtonModule,

@@ -13,7 +13,7 @@ import { ConfigCheckerPreferencePickerComponent } from '../config-checker-prefer
 import { HttpClientModule } from '@angular/common/http'
 import { TableModule } from 'primeng/table'
 import { ChipModule } from 'primeng/chip'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { action } from '@storybook/addon-actions'
 import { ToastModule } from 'primeng/toast'
@@ -66,7 +66,7 @@ export default {
                 TagModule,
                 TableModule,
                 ChipModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ToastModule,
                 FormsModule,
                 ToggleButtonModule,

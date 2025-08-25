@@ -14,7 +14,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { CreateSharedNetworkBeginResponse, UpdateSharedNetworkBeginResponse } from '../backend'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
@@ -329,7 +329,7 @@ export default {
                 MultiSelectModule,
                 TableModule,
                 TagModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
                 RouterModule,

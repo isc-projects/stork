@@ -11,7 +11,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TreeModule } from 'primeng/tree'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TagModule } from 'primeng/tag'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -33,7 +33,7 @@ describe('KeaGlobalConfigurationViewComponent', () => {
                 TableModule,
                 TooltipModule,
                 TreeModule,
-                OverlayPanelModule,
+                PopoverModule,
                 TagModule,
                 ManagedAccessDirective,
             ],

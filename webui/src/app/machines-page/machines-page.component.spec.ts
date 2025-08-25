@@ -17,7 +17,7 @@ import { TabMenuModule } from 'primeng/tabmenu'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MenuModule } from 'primeng/menu'
 import { ProgressBarModule } from 'primeng/progressbar'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
@@ -154,7 +154,7 @@ describe('MachinesPageComponent', () => {
                 TabMenuModule,
                 MenuModule,
                 ProgressBarModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 MessagesModule,

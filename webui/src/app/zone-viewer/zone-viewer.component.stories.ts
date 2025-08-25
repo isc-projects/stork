@@ -13,7 +13,7 @@ import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
 import { TooltipModule } from 'primeng/tooltip'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 
 export default {
     title: 'App/ZoneViewer',
@@ -26,7 +26,7 @@ export default {
             imports: [
                 ButtonModule,
                 DividerModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 SidebarModule,
                 TableModule,

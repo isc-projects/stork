@@ -14,7 +14,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { DividerModule } from 'primeng/divider'
 import { ButtonModule } from 'primeng/button'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 let mockGetZoneRRs: ZoneRRs = {
@@ -97,7 +97,7 @@ export default {
             imports: [
                 ButtonModule,
                 DividerModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,
                 ToastModule,

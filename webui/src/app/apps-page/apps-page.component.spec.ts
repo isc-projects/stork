@@ -20,7 +20,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
@@ -64,7 +64,7 @@ describe('AppsPageComponent', () => {
                 RouterModule,
                 RouterModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 ProgressSpinnerModule,
                 ConfirmDialogModule,

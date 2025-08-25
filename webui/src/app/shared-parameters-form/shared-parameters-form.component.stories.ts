@@ -6,7 +6,7 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { InputNumberModule } from 'primeng/inputnumber'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { AutoCompleteModule } from 'primeng/autocomplete'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ButtonModule } from 'primeng/button'
 import { SelectModule } from 'primeng/select'
 import { TagModule } from 'primeng/tag'
@@ -53,7 +53,7 @@ export default {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ReactiveFormsModule,
             ],
             declarations: [ArrayValueSetFormComponent, DhcpClientClassSetFormComponent, SharedParametersFormComponent],

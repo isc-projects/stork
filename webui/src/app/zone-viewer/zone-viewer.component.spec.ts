@@ -10,7 +10,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 
 describe('ZoneViewerComponent', () => {
     let component: ZoneViewerComponent
@@ -18,14 +18,7 @@ describe('ZoneViewerComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                ButtonModule,
-                DividerModule,
-                OverlayPanelModule,
-                ProgressSpinnerModule,
-                TableModule,
-                TooltipModule,
-            ],
+            imports: [ButtonModule, DividerModule, PopoverModule, ProgressSpinnerModule, TableModule, TooltipModule],
             declarations: [HelpTipComponent, LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
         }).compileComponents()
 

@@ -12,7 +12,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { ToastModule } from 'primeng/toast'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { FieldsetModule } from 'primeng/fieldset'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
@@ -236,7 +236,7 @@ export default {
                 ButtonModule,
                 FieldsetModule,
                 MessagesModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,
                 ToastModule,

@@ -20,7 +20,7 @@ import { TreeModule } from 'primeng/tree'
 import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TagModule } from 'primeng/tag'
 import { ChipModule } from 'primeng/chip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -60,7 +60,7 @@ describe('HostTabComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 TableModule,
                 RouterModule,
                 ToggleButtonModule,

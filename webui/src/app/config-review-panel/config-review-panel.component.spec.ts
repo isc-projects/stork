@@ -14,7 +14,7 @@ import { ConfigReports, ServicesService } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { TableModule } from 'primeng/table'
 import { ChipModule } from 'primeng/chip'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
 import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -49,7 +49,7 @@ describe('ConfigReviewPanelComponent', () => {
                 TableModule,
                 ChipModule,
                 FormsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ToggleButtonModule,
                 DataViewModule,
                 ManagedAccessDirective,

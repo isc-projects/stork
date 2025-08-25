@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TooltipModule } from 'primeng/tooltip'
 import { TreeModule } from 'primeng/tree'
 import { ButtonModule } from 'primeng/button'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -38,7 +38,7 @@ describe('CommunicationStatusPageComponent', () => {
                 ButtonModule,
                 NoopAnimationsModule,
                 RouterModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 TooltipModule,
                 TreeModule,

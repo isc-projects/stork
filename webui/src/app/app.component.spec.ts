@@ -9,7 +9,7 @@ import { AppsVersions, GeneralService, ServicesService, Settings, SettingsServic
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { GlobalSearchComponent } from './global-search/global-search.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
@@ -49,7 +49,7 @@ describe('AppComponent', () => {
                 SplitButtonModule,
                 ProgressSpinnerModule,
                 ToastModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 FormsModule,
                 MessagesModule,

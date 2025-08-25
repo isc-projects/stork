@@ -8,7 +8,7 @@ import { MessageService } from 'primeng/api'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { ButtonModule } from 'primeng/button'
 import { MessageModule } from 'primeng/message'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { PanelModule } from 'primeng/panel'
 import { of, throwError } from 'rxjs'
 import { AuthService } from '../auth.service'
@@ -41,7 +41,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
             imports: [
                 PanelModule,
                 ButtonModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 MessageModule,
                 BreadcrumbModule,

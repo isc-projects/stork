@@ -4,7 +4,7 @@ import { GlobalSearchComponent } from './global-search.component'
 import { SearchService } from '../backend/api/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -17,7 +17,7 @@ describe('GlobalSearchComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [GlobalSearchComponent],
-            imports: [OverlayPanelModule, NoopAnimationsModule, FormsModule, RouterModule],
+            imports: [PopoverModule, NoopAnimationsModule, FormsModule, RouterModule],
             providers: [
                 SearchService,
                 provideHttpClient(withInterceptorsFromDi()),

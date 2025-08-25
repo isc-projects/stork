@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ButtonModule } from 'primeng/button'
 import { ChipModule } from 'primeng/chip'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TableModule } from 'primeng/table'
 import { ConfigChecker } from '../backend'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -27,7 +27,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
             imports: [
                 TableModule,
                 ChipModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 ButtonModule,
                 FormsModule,

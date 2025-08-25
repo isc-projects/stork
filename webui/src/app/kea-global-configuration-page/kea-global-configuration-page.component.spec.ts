@@ -9,7 +9,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
@@ -56,7 +56,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 ButtonModule,
                 FieldsetModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,
                 TreeModule,

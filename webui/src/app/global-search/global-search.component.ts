@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core'
 
-import { OverlayPanel } from 'primeng/overlaypanel'
+import { Popover } from 'primeng/popover'
 
 import { SearchService } from '../backend/api/api'
 
@@ -16,8 +16,7 @@ const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', '
     styleUrls: ['./global-search.component.sass'],
 })
 export class GlobalSearchComponent implements OnInit {
-    @ViewChild('searchResultsBox')
-    searchResultsBox: OverlayPanel
+    @ViewChild('searchResultsBox') searchResultsBox: Popover
 
     searchText: string
     searchResults: any

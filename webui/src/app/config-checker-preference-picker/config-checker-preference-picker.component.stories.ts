@@ -5,7 +5,7 @@ import { ConfigChecker } from '../backend'
 import { TableModule } from 'primeng/table'
 import { ChipModule } from 'primeng/chip'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { ButtonModule } from 'primeng/button'
 import { FormsModule } from '@angular/forms'
@@ -23,7 +23,7 @@ export default {
             imports: [
                 TableModule,
                 ChipModule,
-                OverlayPanelModule,
+                PopoverModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 FormsModule,

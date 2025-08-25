@@ -2,7 +2,7 @@ import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core
 
 import { SubnetsTableComponent } from './subnets-table.component'
 import { ButtonModule } from 'primeng/button'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { PanelModule } from 'primeng/panel'
@@ -53,7 +53,7 @@ describe('SubnetsTableComponent', () => {
             imports: [
                 TableModule,
                 ButtonModule,
-                OverlayPanelModule,
+                PopoverModule,
                 InputNumberModule,
                 FormsModule,
                 PanelModule,

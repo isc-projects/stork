@@ -9,7 +9,7 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
@@ -44,7 +44,7 @@ describe('AddressPoolFormComponent', () => {
                 InputNumberModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
                 TableModule,

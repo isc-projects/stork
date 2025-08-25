@@ -8,7 +8,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ButtonModule } from 'primeng/button'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
@@ -51,7 +51,7 @@ describe('HostsTableComponent', () => {
                     },
                 ]),
                 ButtonModule,
-                OverlayPanelModule,
+                PopoverModule,
                 InputNumberModule,
                 FormsModule,
                 PanelModule,

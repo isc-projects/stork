@@ -7,7 +7,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TableModule } from 'primeng/table'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ButtonModule } from 'primeng/button'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { PanelModule } from 'primeng/panel'
@@ -52,7 +52,7 @@ describe('SharedNetworksTableComponent', () => {
             imports: [
                 TableModule,
                 ButtonModule,
-                OverlayPanelModule,
+                PopoverModule,
                 InputNumberModule,
                 FormsModule,
                 PanelModule,

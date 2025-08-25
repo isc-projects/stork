@@ -5,7 +5,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { FieldsetModule } from 'primeng/fieldset'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { MessagesModule } from 'primeng/messages'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MessageService } from 'primeng/api'
@@ -57,7 +57,7 @@ export default {
                 FieldsetModule,
                 FormsModule,
                 MessagesModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
                 RouterModule,

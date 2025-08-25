@@ -1,6 +1,6 @@
 import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TagModule } from 'primeng/tag'
 import { TooltipModule } from 'primeng/tooltip'
 import { TreeModule } from 'primeng/tree'
@@ -23,7 +23,7 @@ export default {
                 DividerModule,
                 FormsModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 TagModule,
                 TooltipModule,
                 TreeModule,

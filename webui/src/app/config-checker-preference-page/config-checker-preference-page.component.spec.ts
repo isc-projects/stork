@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { ButtonModule } from 'primeng/button'
 import { ChipModule } from 'primeng/chip'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TableModule } from 'primeng/table'
 import { ToastModule } from 'primeng/toast'
 import { ServicesService } from '../backend'
@@ -36,7 +36,7 @@ describe('ConfigCheckerPreferencePageComponent', () => {
             imports: [
                 TableModule,
                 ChipModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 ToastModule,
                 BreadcrumbModule,

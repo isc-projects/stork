@@ -13,7 +13,7 @@ import { MenuModule } from 'primeng/menu'
 import { TableModule } from 'primeng/table'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ReactiveFormsModule } from '@angular/forms'
 import { AuthService } from '../auth.service'
@@ -43,7 +43,7 @@ describe('UsersPageComponent', () => {
                 MenuModule,
                 TableModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 RouterModule,
                 ReactiveFormsModule,

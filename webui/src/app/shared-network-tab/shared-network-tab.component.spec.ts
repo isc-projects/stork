@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
 import { TooltipModule } from 'primeng/tooltip'
@@ -87,7 +87,7 @@ describe('SharedNetworkTabComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 RouterModule.forRoot([{ path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent }]),
                 TableModule,
                 TagModule,

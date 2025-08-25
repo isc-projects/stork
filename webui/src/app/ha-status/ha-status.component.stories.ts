@@ -13,7 +13,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ToastModule } from 'primeng/toast'
 import { TagModule } from 'primeng/tag'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -155,7 +155,7 @@ export default {
                 PanelModule,
                 TooltipModule,
                 MessageModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressBarModule,
                 ProgressSpinnerModule,
                 RouterModule,

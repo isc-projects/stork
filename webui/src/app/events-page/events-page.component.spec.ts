@@ -15,7 +15,7 @@ import { SelectModule } from 'primeng/select'
 import { TableModule } from 'primeng/table'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
@@ -42,7 +42,7 @@ describe('EventsPageComponent', () => {
                 SelectModule,
                 TableModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ManagedAccessDirective,
                 RouterModule,
             ],

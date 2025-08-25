@@ -10,7 +10,7 @@ import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { Router, RouterModule } from '@angular/router'
 import {
     DNSAppType,
@@ -320,7 +320,7 @@ describe('ZonesPageComponent', () => {
                 TableModule,
                 TabViewModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 RouterModule.forRoot([]),
                 ConfirmDialogModule,
                 MessageModule,

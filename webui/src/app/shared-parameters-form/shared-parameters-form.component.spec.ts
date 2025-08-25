@@ -19,7 +19,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
@@ -65,7 +65,7 @@ describe('SharedParametersFormComponent', () => {
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ReactiveFormsModule,
                 InputTextModule,
             ],

@@ -13,7 +13,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { ToggleSwitchModule } from 'primeng/toggleswitch'
 import { MessagesModule } from 'primeng/messages'
 import { MultiSelectModule } from 'primeng/multiselect'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { HostFormComponent } from './host-form.component'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { SplitButtonModule } from 'primeng/splitbutton'
@@ -144,7 +144,7 @@ describe('HostFormComponent', () => {
                 MessagesModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ReactiveFormsModule,
                 RouterModule,
                 SplitButtonModule,

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { ChartModule } from 'primeng/chart'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
@@ -89,7 +89,7 @@ describe('SubnetTabComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 RouterModule.forRoot([{ path: 'dhcp/subnets/:id', component: SubnetTabComponent }]),
                 TableModule,
                 TagModule,

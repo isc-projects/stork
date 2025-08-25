@@ -17,7 +17,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MessageModule } from 'primeng/message'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { FieldsetModule } from 'primeng/fieldset'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { MessagesModule } from 'primeng/messages'
@@ -55,7 +55,7 @@ describe('LeaseSearchPageComponent', () => {
                 MessageModule,
                 ProgressSpinnerModule,
                 FieldsetModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 MessagesModule,

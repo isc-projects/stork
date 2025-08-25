@@ -1,7 +1,7 @@
 import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SharedNetworkTabComponent } from './shared-network-tab.component'
 import { ChartModule } from 'primeng/chart'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
@@ -61,7 +61,7 @@ export default {
                 FieldsetModule,
                 FormsModule,
                 MessageModule,
-                OverlayPanelModule,
+                PopoverModule,
                 RouterModule,
                 TableModule,
                 TagModule,

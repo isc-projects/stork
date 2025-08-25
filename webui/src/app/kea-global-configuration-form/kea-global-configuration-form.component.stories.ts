@@ -8,7 +8,7 @@ import { HttpClientModule } from '@angular/common/http'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { FieldsetModule } from 'primeng/fieldset'
 import { TableModule } from 'primeng/table'
 import { ButtonModule } from 'primeng/button'
@@ -229,7 +229,7 @@ export default {
                 MessagesModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
                 TableModule,

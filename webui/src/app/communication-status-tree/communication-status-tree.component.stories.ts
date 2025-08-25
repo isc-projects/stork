@@ -4,7 +4,7 @@ import { TreeModule } from 'primeng/tree'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { TooltipModule } from 'primeng/tooltip'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -18,14 +18,7 @@ export default {
             providers: [provideRouter([])],
         }),
         moduleMetadata({
-            imports: [
-                BreadcrumbModule,
-                NoopAnimationsModule,
-                OverlayPanelModule,
-                RouterModule,
-                TooltipModule,
-                TreeModule,
-            ],
+            imports: [BreadcrumbModule, NoopAnimationsModule, PopoverModule, RouterModule, TooltipModule, TreeModule],
             declarations: [
                 BreadcrumbsComponent,
                 CommunicationStatusTreeComponent,

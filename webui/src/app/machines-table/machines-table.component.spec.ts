@@ -9,7 +9,7 @@ import { TableHeaderCheckbox, TableModule } from 'primeng/table'
 import { PanelModule } from 'primeng/panel'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
@@ -137,7 +137,7 @@ describe('MachinesTableComponent', () => {
                 TableModule,
                 PanelModule,
                 BrowserAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 CheckboxModule,
                 FormsModule,
                 TagModule,

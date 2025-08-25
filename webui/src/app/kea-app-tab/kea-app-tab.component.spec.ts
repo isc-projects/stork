@@ -25,7 +25,7 @@ import { DialogModule } from 'primeng/dialog'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { PaginatorModule } from 'primeng/paginator'
 import { FormsModule } from '@angular/forms'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ConfigReviewPanelComponent } from '../config-review-panel/config-review-panel.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { AppOverviewComponent } from '../app-overview/app-overview.component'
@@ -145,7 +145,7 @@ describe('KeaAppTabComponent', () => {
                 DialogModule,
                 NoopAnimationsModule,
                 PaginatorModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ButtonModule,
                 FormsModule,
                 ToggleButtonModule,

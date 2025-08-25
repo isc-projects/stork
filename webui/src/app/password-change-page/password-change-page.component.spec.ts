@@ -13,7 +13,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { MenuModule } from 'primeng/menu'
 import { PasswordModule } from 'primeng/password'
 import { MessageModule } from 'primeng/message'
@@ -33,7 +33,7 @@ describe('PasswordChangePageComponent', () => {
                 PanelModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
-                OverlayPanelModule,
+                PopoverModule,
                 MenuModule,
                 RouterModule,
                 ReactiveFormsModule,

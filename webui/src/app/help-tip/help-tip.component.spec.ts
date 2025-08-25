@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { HelpTipComponent } from './help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 
 describe('HelpTipComponent', () => {
     let component: HelpTipComponent
@@ -9,7 +9,7 @@ describe('HelpTipComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [OverlayPanelModule],
+            imports: [PopoverModule],
             declarations: [HelpTipComponent],
         }).compileComponents()
     }))

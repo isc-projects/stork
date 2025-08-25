@@ -7,7 +7,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { FieldsetModule } from 'primeng/fieldset'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { PopoverModule } from 'primeng/popover'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
@@ -50,7 +50,7 @@ export default {
                 FieldsetModule,
                 FormsModule,
                 MessagesModule,
-                OverlayPanelModule,
+                PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,
                 RouterModule,
