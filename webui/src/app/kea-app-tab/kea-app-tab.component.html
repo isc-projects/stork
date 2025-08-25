@@ -64,14 +64,14 @@
                 <ng-template pTemplate="content">
                     <div class="flex flex-wrap px-2 border-1 border-round surface-border">
                         <div class="mr-5 my-2 flex align-items-center">
-                            <p-inputSwitch
+                            <p-toggleswitch
                                 [ngModel]="daemon.monitored"
                                 (onChange)="changeMonitored(daemon)"
                                 inputId="monitored-switch"
                                 appAccessEntity="daemon-monitoring"
                                 appAccessType="update"
                                 styleClass="block"
-                            ></p-inputSwitch>
+                            ></p-toggleswitch>
                             <label for="monitored-switch" class="ml-2 my-auto">Monitoring</label>
                         </div>
                         <button

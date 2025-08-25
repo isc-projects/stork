@@ -11,7 +11,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete'
 import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { InputNumberModule } from 'primeng/inputnumber'
-import { InputSwitchModule } from 'primeng/inputswitch'
+import { ToggleSwitchModule } from 'primeng/toggleswitch'
 import { MessagesModule } from 'primeng/messages'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -165,7 +165,7 @@ export default {
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,
-                InputSwitchModule,
+                ToggleSwitchModule,
                 MessagesModule,
                 MultiSelectModule,
                 NoopAnimationsModule,

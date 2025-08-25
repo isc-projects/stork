@@ -32,7 +32,7 @@ import { CardModule } from 'primeng/card'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { FieldsetModule } from 'primeng/fieldset'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { InputSwitchModule } from 'primeng/inputswitch'
+import { ToggleSwitchModule } from 'primeng/toggleswitch'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { PaginatorModule } from 'primeng/paginator'
 import { SelectButtonModule } from 'primeng/selectbutton'
@@ -328,7 +328,7 @@ const AuraBluePreset = definePreset(Aura, {
         SplitButtonModule,
         FieldsetModule,
         OverlayPanelModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         BreadcrumbModule,
         PaginatorModule,
         SelectButtonModule,

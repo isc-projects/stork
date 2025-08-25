@@ -18,7 +18,7 @@ import { BehaviorSubject, of, throwError } from 'rxjs'
 import { AppsVersions, DHCPService, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
-import { InputSwitchModule } from 'primeng/inputswitch'
+import { ToggleSwitchModule } from 'primeng/toggleswitch'
 import { FieldsetModule } from 'primeng/fieldset'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { DialogModule } from 'primeng/dialog'
@@ -140,7 +140,7 @@ describe('KeaAppTabComponent', () => {
                 TooltipModule,
                 MessageModule,
                 FormsModule,
-                InputSwitchModule,
+                ToggleSwitchModule,
                 FieldsetModule,
                 DialogModule,
                 NoopAnimationsModule,

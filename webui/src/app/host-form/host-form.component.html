@@ -2,15 +2,15 @@
     <p-fieldset legend="Form Settings">
         <div class="flex flex-column">
             <div class="flex align-items-center">
-                <p-inputSwitch
+                <p-toggleswitch
                     ngDefaultControl
                     formControlName="splitFormMode"
                     (onChange)="onSplitModeChange()"
-                ></p-inputSwitch>
+                ></p-toggleswitch>
                 <div class="flex ml-2">Configure individual server values.</div>
             </div>
             <div class="flex align-items-center mt-2">
-                <p-inputSwitch ngDefaultControl formControlName="globalReservation"></p-inputSwitch>
+                <p-toggleswitch ngDefaultControl formControlName="globalReservation"></p-toggleswitch>
                 <div class="flex ml-2">Global reservation.</div>
             </div>
         </div>
