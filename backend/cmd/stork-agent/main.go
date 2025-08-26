@@ -338,8 +338,8 @@ type generalSettings struct {
 	SkipTLSCertVerification             bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
 	ServerURL                           string `long:"server-url" description:"The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)" env:"STORK_AGENT_SERVER_URL"`
 	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory" default:"/usr/lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`
-	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_AGENT_BIND9_CONFIG"`
-	PowerDNSPath                        string `long:"powerdns-path" description:"Specify the path to PowerDNS config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_AGENT_POWERDNS_CONFIG"`
+	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is uncommon. See stork-agent(8) for a list of locations where Stork can automatically find BIND 9 configs." env:"STORK_AGENT_BIND9_CONFIG"`
+	PowerDNSPath                        string `long:"powerdns-path" description:"Specify the path to PowerDNS config file. Does not need to be specified, unless the location is uncommon. See stork-agent(8) for a list of locations where Stork can automatically find PowerDNS configs." env:"STORK_AGENT_POWERDNS_CONFIG"`
 }
 
 // Register command settings.

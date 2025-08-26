@@ -52,8 +52,22 @@ where applicable)
 ``--bind9-path``
    The path to the BIND 9 configuration file. Does not need to be specified, unless the location is uncommon. ``[$STORK_AGENT_BIND9_CONFIG]``
 
+   Common locations where the agent is trying to find the BIND 9 configuration file are:
+
+      - ``/etc/bind/named.conf``
+      - ``/etc/opt/isc/isc-bind/named.conf``
+      - ``/etc/opt/isc/scls/isc-bind/named.conf``
+      - ``/usr/local/etc/namedb/named.conf``
+
 ``--powerdns-path``
    The path to the PowerDNS configuration file. Does not need to be specified, unless the location is uncommon. ``[$STORK_AGENT_POWERDNS_CONFIG]``
+
+   Common locations where the agent is trying to find the PowerDNS configuration file are:
+
+      - ``/etc/powerdns/pdns.conf``
+      - ``/etc/pdns/pdns.conf``
+      - ``/usr/local/etc/pdns.conf``
+      - ``/opt/homebrew/etc/powerdns/pdns.conf``
 
 ``--env-file``
    The environment file location; applicable only if the ``use-env-file`` is provided. The default is ``/etc/stork/agent.env``.
