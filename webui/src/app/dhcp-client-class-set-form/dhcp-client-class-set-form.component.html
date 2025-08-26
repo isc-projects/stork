@@ -14,10 +14,10 @@
 </ng-template>
 <div class="flex align-items-end gap-1">
     @if (floatingPlaceholder) {
-        <p-floatLabel class="flex-auto min-w-0">
+        <p-floatlabel class="flex-auto min-w-0">
             <ng-container *ngTemplateOutlet="classesinput"></ng-container>
             <label for="{{ inputId }}">Type or Pick From List</label>
-        </p-floatLabel>
+        </p-floatlabel>
     } @else {
         <span class="flex-auto min-w-0">
             <ng-container *ngTemplateOutlet="classesinput"></ng-container>

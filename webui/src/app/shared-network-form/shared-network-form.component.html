@@ -2,7 +2,7 @@
     <ng-container *ngIf="state.loaded; else showSpinner" [formGroup]="state.group">
         <p-fieldset legend="Assignments" styleClass="mt-4">
             <div class="mt-4" [formGroup]="state.group">
-                <p-floatLabel class="block mb-2">
+                <p-floatlabel class="block mb-2">
                     <p-multiSelect
                         inputId="servers-select"
                         optionLabel="label"
@@ -17,7 +17,7 @@
                     >
                     </p-multiSelect>
                     <label for="servers-select">DHCP Servers</label>
-                </p-floatLabel>
+                </p-floatlabel>
                 <small
                     *ngIf="
                         state.group.get('selectedDaemons').invalid &&
@@ -29,10 +29,10 @@
             </div>
         </p-fieldset>
         <p-fieldset legend="Shared Network" styleClass="mt-4">
-            <p-floatLabel class="block mt-4 mb-2">
+            <p-floatlabel class="block mt-4 mb-2">
                 <input id="name" pInputText formControlName="name" class="max-w-form" />
                 <label for="name">Name</label>
-            </p-floatLabel>
+            </p-floatlabel>
             <ng-container
                 *ngIf="
                     state.group.get('name').invalid &&

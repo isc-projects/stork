@@ -100,7 +100,7 @@
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatLabel>
+                        <p-floatlabel>
                             <p-inputNumber
                                 inputId="app-id"
                                 mode="decimal"
@@ -112,12 +112,12 @@
                                 class="max-w-8rem"
                             ></p-inputNumber>
                             <label for="app-id">Kea App ID</label>
-                        </p-floatLabel>
+                        </p-floatlabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatLabel>
+                        <p-floatlabel>
                             <p-select
                                 inputId="dhcp-version"
                                 [options]="[
@@ -131,7 +131,7 @@
                                 styleClass="w-10rem"
                             ></p-select>
                             <label for="dhcp-version">DHCP Version</label>
-                        </p-floatLabel>
+                        </p-floatlabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">

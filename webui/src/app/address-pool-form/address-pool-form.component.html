@@ -1,15 +1,15 @@
 <div [formGroup]="formGroup">
     <p-fieldset legend="Address Range" styleClass="mt-4">
         <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="range">
-            <p-floatLabel class="flex-auto">
+            <p-floatlabel class="flex-auto">
                 <input [id]="uuids.poolStart" pInputText formControlName="start" class="max-w-form" />
                 <label [for]="uuids.poolStart">First Address</label>
-            </p-floatLabel>
+            </p-floatlabel>
             <div>:</div>
-            <p-floatLabel class="flex-auto">
+            <p-floatlabel class="flex-auto">
                 <input [id]="uuids.poolEnd" pInputText formControlName="end" class="max-w-form" />
                 <label [for]="uuids.poolEnd">Last Address</label>
-            </p-floatLabel>
+            </p-floatlabel>
         </div>
         <ng-container *ngFor="let control of ['start', 'end']">
             <small
@@ -30,7 +30,7 @@
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="mt-4">
-            <p-floatLabel class="block mt-4 mb-2">
+            <p-floatlabel class="block mt-4 mb-2">
                 <p-multiSelect
                     [inputId]="uuids.selectedDaemons"
                     optionLabel="label"
@@ -45,7 +45,7 @@
                 >
                 </p-multiSelect>
                 <label [for]="uuids.selectedDaemons">DHCP Servers</label>
-            </p-floatLabel>
+            </p-floatlabel>
             <small
                 *ngIf="
                     formGroup.get('selectedDaemons').invalid &&

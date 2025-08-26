@@ -174,7 +174,7 @@
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatLabel>
+                        <p-floatlabel>
                             <p-inputNumber
                                 inputId="app-id"
                                 mode="decimal"
@@ -186,12 +186,12 @@
                                 class="max-w-8rem"
                             ></p-inputNumber>
                             <label for="app-id">Kea App ID</label>
-                        </p-floatLabel>
+                        </p-floatlabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatLabel>
+                        <p-floatlabel>
                             <p-inputNumber
                                 inputId="subnet-id"
                                 mode="decimal"
@@ -202,12 +202,12 @@
                                 class="max-w-8rem"
                             ></p-inputNumber>
                             <label for="subnet-id">Subnet ID</label>
-                        </p-floatLabel>
+                        </p-floatlabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="keaSubnetId" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatLabel>
+                        <p-floatlabel>
                             <p-inputNumber
                                 inputId="kea-subnet-id"
                                 mode="decimal"
@@ -218,7 +218,7 @@
                                 class="max-w-8rem"
                             ></p-inputNumber>
                             <label for="kea-subnet-id">Kea Subnet ID</label>
-                        </p-floatLabel>
+                        </p-floatlabel>
                     </ng-template>
                 </p-columnFilter>
                 <div class="flex align-items-center gap-1">

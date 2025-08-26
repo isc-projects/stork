@@ -1,11 +1,11 @@
 <div [formGroup]="formGroup">
     <p-fieldset legend="Prefix" styleClass="mt-4">
         <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="prefixes">
-            <p-floatLabel class="flex-auto min-w-0">
+            <p-floatlabel class="flex-auto min-w-0">
                 <input [id]="uuids.prefix" pInputText formControlName="prefix" class="max-w-form" />
                 <label [for]="uuids.prefix">Pool Prefix</label>
-            </p-floatLabel>
-            <p-floatLabel class="min-w-0">
+            </p-floatlabel>
+            <p-floatlabel class="min-w-0">
                 <p-inputNumber
                     ngDefaultControl
                     [inputId]="uuids.delegatedLength"
@@ -16,11 +16,11 @@
                 >
                 </p-inputNumber>
                 <label [for]="uuids.delegatedLength">Delegated Length</label>
-            </p-floatLabel>
-            <p-floatLabel class="flex-auto min-w-0">
+            </p-floatlabel>
+            <p-floatlabel class="flex-auto min-w-0">
                 <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" class="max-w-form" />
                 <label [for]="uuids.excludedPrefix">Excluded Prefix</label>
-            </p-floatLabel>
+            </p-floatlabel>
         </div>
         <ng-container *ngFor="let control of ['prefix', 'excludedPrefix']">
             <small
@@ -52,7 +52,7 @@
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="mt-4">
-            <p-floatLabel class="block mt-4 mb-2">
+            <p-floatlabel class="block mt-4 mb-2">
                 <p-multiSelect
                     [inputId]="uuids.selectedDaemons"
                     optionLabel="label"
@@ -67,7 +67,7 @@
                 >
                 </p-multiSelect>
                 <label [for]="uuids.selectedDaemons">DHCP Servers</label>
-            </p-floatLabel>
+            </p-floatlabel>
             <small
                 *ngIf="
                     formGroup.get('selectedDaemons').invalid &&

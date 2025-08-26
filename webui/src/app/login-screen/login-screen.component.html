@@ -21,7 +21,7 @@
                 ></p-progressSpinner>
                 <form [formGroup]="loginForm" *ngIf="authenticationMethods">
                     <div class="login-screen__authentication-selector" *ngIf="authenticationMethods.length > 1">
-                        <p-floatLabel class="authentication-methods-wrapper">
+                        <p-floatlabel class="authentication-methods-wrapper">
                             <p-select
                                 [options]="authenticationMethods"
                                 formControlName="authenticationMethod"
@@ -55,14 +55,14 @@
                                 </ng-template>
                             </p-select>
                             <label for="authenticationMethod" class="text-white">Choose a Method</label>
-                        </p-floatLabel>
+                        </p-floatlabel>
                         <p>
                             {{ loginForm.get('authenticationMethod')?.value.description }}
                         </p>
                     </div>
                     <div class="login-screen__authentication-inputs">
                         <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier">
-                            <p-floatLabel>
+                            <p-floatlabel>
                                 <input
                                     type="text"
                                     name="identifier"
@@ -74,10 +74,10 @@
                                 <label for="identifier">{{
                                     loginForm.get('authenticationMethod')?.value.formLabelIdentifier
                                 }}</label>
-                            </p-floatLabel>
+                            </p-floatlabel>
                         </div>
                         <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret">
-                            <p-floatLabel>
+                            <p-floatlabel>
                                 <p-password
                                     id="secret"
                                     formControlName="secret"
@@ -89,7 +89,7 @@
                                 <label for="secret">{{
                                     loginForm.get('authenticationMethod')?.value.formLabelSecret
                                 }}</label>
-                            </p-floatLabel>
+                            </p-floatlabel>
                         </div>
                         <div>
                             <button

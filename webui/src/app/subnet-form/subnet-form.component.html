@@ -2,7 +2,7 @@
     <ng-container *ngIf="state.loaded; else showSpinner" [formGroup]="state.group">
         <p-fieldset *ngIf="!state.wizard" legend="Assignments" styleClass="mt-4">
             <div class="mt-4" [formGroup]="state.group">
-                <p-floatLabel class="block mb-2">
+                <p-floatlabel class="block mb-2">
                     <p-multiSelect
                         inputId="servers-select"
                         optionLabel="label"
@@ -18,7 +18,7 @@
                     >
                     </p-multiSelect>
                     <label for="servers-select">DHCP Servers</label>
-                </p-floatLabel>
+                </p-floatlabel>
                 <small
                     *ngIf="
                         state.group.get('selectedDaemons').invalid &&
@@ -41,10 +41,10 @@
             </div>
         </p-fieldset>
         <p-fieldset legend="Subnet" styleClass="mt-4">
-            <p-floatLabel class="block mt-4 mb-2">
+            <p-floatlabel class="block mt-4 mb-2">
                 <input id="subnet" pInputText formControlName="subnet" class="max-w-form" />
                 <label for="subnet">Subnet</label>
-            </p-floatLabel>
+            </p-floatlabel>
             <ng-container
                 *ngIf="
                     state.group.get('subnet').invalid &&
@@ -66,7 +66,7 @@
                     >A valid subnet prefix is required.</small
                 >
             </ng-container>
-            <p-floatLabel *ngIf="!state.wizard" class="block mt-5 mb-2">
+            <p-floatlabel *ngIf="!state.wizard" class="block mt-5 mb-2">
                 <p-select
                     inputId="shared-networks-select"
                     emptyMessage="No shared networks found"
@@ -81,7 +81,7 @@
                 >
                 </p-select>
                 <label for="shared-network-select">Shared Network</label>
-            </p-floatLabel>
+            </p-floatlabel>
         </p-fieldset>
         <p-fieldset
             *ngIf="!state.wizard"
@@ -103,10 +103,10 @@
                         </p-divider>
                     </div>
                     <!-- Content -->
-                    <p-floatLabel class="block mt-2 mb-4" formArrayName="names">
+                    <p-floatlabel class="block mt-2 mb-4" formArrayName="names">
                         <input id="subnet-name-{{ i }}" pInputText formControlName="{{ i }}" class="max-w-form" />
                         <label for="subnet-name-{{ i }}">Subnet name</label>
-                    </p-floatLabel>
+                    </p-floatlabel>
                 </div>
             </ng-container>
         </p-fieldset>

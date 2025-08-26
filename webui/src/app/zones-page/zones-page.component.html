@@ -361,7 +361,7 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatLabel>
+                                    <p-floatlabel>
                                         <p-multiSelect
                                             inputId="zone-type"
                                             [options]="zoneTypes"
@@ -370,7 +370,7 @@ to the number of configured zones.
                                             (onChange)="filterZonesTable($event.value, filterConstraint)"
                                         />
                                         <label for="zone-type">Zone Type</label>
-                                    </p-floatLabel>
+                                    </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -413,7 +413,7 @@ to the number of configured zones.
                         <p-columnFilter field="appId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatLabel>
+                                    <p-floatlabel>
                                         <p-inputNumber
                                             inputId="app-id"
                                             mode="decimal"
@@ -429,7 +429,7 @@ to the number of configured zones.
                                             styleClass="w-6rem"
                                         ></p-inputNumber>
                                         <label for="app-id">App ID</label>
-                                    </p-floatLabel>
+                                    </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -450,7 +450,7 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatLabel>
+                                    <p-floatlabel>
                                         <input
                                             pInputText
                                             type="text"
@@ -460,7 +460,7 @@ to the number of configured zones.
                                             class="w-8rem"
                                         />
                                         <label for="zone-serial">Serial</label>
-                                    </p-floatLabel>
+                                    </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -481,7 +481,7 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatLabel>
+                                    <p-floatlabel>
                                         <p-select
                                             inputId="zone-class"
                                             [options]="zoneClasses"
@@ -490,7 +490,7 @@ to the number of configured zones.
                                             styleClass="w-10rem"
                                         ></p-select>
                                         <label for="zone-class">Zone Class</label>
-                                    </p-floatLabel>
+                                    </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -506,7 +506,7 @@ to the number of configured zones.
                         <p-columnFilter field="appType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatLabel>
+                                    <p-floatlabel>
                                         <p-select
                                             inputId="app-type"
                                             [options]="appTypes"
@@ -517,7 +517,7 @@ to the number of configured zones.
                                             styleClass="w-10rem"
                                         ></p-select>
                                         <label for="app-type">App Type</label>
-                                    </p-floatLabel>
+                                    </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
