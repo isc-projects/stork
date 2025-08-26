@@ -212,7 +212,9 @@ RUN apt-get update \
         && apt-get install \
                 --no-install-recommends \
                 -y \
-                curl=7.88.* \
+                # The curl version available for AMD64 and ARM64 is different.
+                # We can't pin the version here.
+                curl \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 RUN sed -i 's/<base href="\/">/<base href="\/stork\/">/g' /usr/share/stork/www/index.html
