@@ -4,7 +4,7 @@
     dataKey="name"
     styleClass="cascaded-parameters-table max-w-100vw"
 >
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th *ngIf="showCascaded" class="w-3rem"></th>
             <th></th>
@@ -13,7 +13,7 @@
             </th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-row let-expanded="expanded">
+    <ng-template #body let-row let-expanded="expanded">
         <tr class="text-blue-500">
             <td *ngIf="showCascaded">
                 <button
@@ -33,7 +33,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="rowexpansion" let-row>
+    <ng-template #expandedrow let-row>
         <tr *ngFor="let level of levels; let i = index">
             <td></td>
             <td class="pl-3 sm:pl-6">

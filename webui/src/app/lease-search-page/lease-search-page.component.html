@@ -43,14 +43,14 @@
                     { h: 'DHCPv6 DUID', dhcp4: false, dhcp6: true },
                 ]"
             >
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <tr>
                         <th></th>
                         <th>kea-dhcp4</th>
                         <th>kea-dhcp6</th>
                     </tr>
                 </ng-template>
-                <ng-template pTemplate="body" let-r>
+                <ng-template #body let-r>
                     <tr>
                         <th>{{ r.h }}</th>
                         <td>{{ r.dhcp4 ? '&#x2705;' : '' }}</td>
@@ -102,7 +102,7 @@
     </p-messages>
 </div>
 <p-table id="leases-table" [value]="leases" dataKey="id" styleClass="mt-3 max-width-100vw">
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th style="width: 3rem"></th>
             <th>Lease</th>
@@ -111,7 +111,7 @@
             <th>App Name</th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-lease let-expanded="expanded">
+    <ng-template #body let-lease let-expanded="expanded">
         <tr>
             <td>
                 <a [pRowToggler]="lease">
@@ -134,7 +134,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="rowexpansion" let-lease>
+    <ng-template #expandedrow let-lease>
         <tr>
             <td colspan="5">
                 <div class="flex flex-wrap gap-3">
@@ -251,7 +251,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td *ngIf="searchStatus === Status.Searching" colspan="5">
                 <p-progressSpinner
@@ -269,7 +269,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="summary">
+    <ng-template #summary>
         <span id="leases-search-summary-span" *ngIf="leases && leases.length > 0">
             Found {{ leases.length }} lease{{ leases.length > 1 ? 's' : '' }} matching {{ lastSearchText.trim() }}.
         </span>

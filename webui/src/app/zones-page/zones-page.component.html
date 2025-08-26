@@ -21,9 +21,7 @@
                 ></p-message>
                 <h4>Progress</h4>
                 <p-progressBar [value]="(fetchAppsCompletedCount / fetchTotalAppsCount) * 100" styleClass="max-w-30rem">
-                    <ng-template pTemplate="content">
-                        <span>{{ fetchAppsCompletedCount }}/{{ fetchTotalAppsCount }}</span>
-                    </ng-template>
+                    <span>{{ fetchAppsCompletedCount }}/{{ fetchTotalAppsCount }}</span>
                 </p-progressBar>
             </td>
         </tr>
@@ -148,7 +146,7 @@
         [alwaysShowPaginator]="false"
         styleClass="p-datatable-striped datatable-responsive"
     >
-        <ng-template pTemplate="header">
+        <ng-template #header>
             <tr>
                 <th>App Name</th>
                 <th>App ID</th>
@@ -184,7 +182,7 @@ to the number of configured zones.
                 <th>Created At</th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-state>
+        <ng-template #body let-state>
             <tr>
                 <td>
                     <a routerLink="/apps/{{ state.appId }}">{{ state.appName }}</a>
@@ -210,7 +208,7 @@ to the number of configured zones.
                 <td>{{ state.createdAt | localtime | placeholder: 'never' }}</td>
             </tr>
         </ng-template>
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
             <ng-container
                 *ngTemplateOutlet="
                     emptyMessage;
@@ -271,9 +269,9 @@ to the number of configured zones.
             [totalRecords]="zonesTotal"
             (rowsChange)="storeZonesTableRowsPerPage($event)"
         >
-            <ng-template pTemplate="caption">
+            <ng-template #caption>
                 <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <div class="flex align-items-center gap-2">
                             <p-button
                                 type="button"
@@ -359,7 +357,7 @@ to the number of configured zones.
                             [showMenu]="false"
                             [showClearButton]="false"
                         >
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-multiSelect
@@ -384,7 +382,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="rpz" matchMode="equals" [showMenu]="false" [showClearButton]="false">
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <span class="p-float-label">
                                         <p-select
@@ -411,7 +409,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="appId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-inputNumber
@@ -448,7 +446,7 @@ to the number of configured zones.
                             [showMenu]="false"
                             [showClearButton]="false"
                         >
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <input
@@ -479,7 +477,7 @@ to the number of configured zones.
                             [showMenu]="false"
                             [showClearButton]="false"
                         >
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-select
@@ -504,7 +502,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="appType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-select
@@ -531,7 +529,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <span class="p-input-icon-left">
                                         <i class="pi pi-search"></i>
@@ -560,7 +558,7 @@ to the number of configured zones.
                     </div>
                 </p-panel>
             </ng-template>
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <tr>
                     <th class="w-3rem sm:w-5rem"></th>
                     <th>Zone Name</th>
@@ -569,7 +567,7 @@ to the number of configured zones.
                     <th>Number of Associated DNS Views</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-zone let-expanded="expanded">
+            <ng-template #body let-zone let-expanded="expanded">
                 <tr>
                     <td>
                         <p-button
@@ -606,7 +604,7 @@ to the number of configured zones.
                 </tr>
             </ng-template>
 
-            <ng-template pTemplate="rowexpansion" let-zone>
+            <ng-template #expandedrow let-zone>
                 <tr>
                     <td colspan="5">
                         <div class="p-2">
@@ -620,12 +618,12 @@ to the number of configured zones.
                                 [columns]="localZoneColumns"
                                 styleClass="p-datatable-striped datatable-responsive"
                             >
-                                <ng-template pTemplate="header" let-columns>
+                                <ng-template #header let-columns>
                                     <tr>
                                         <th *ngFor="let col of columns">{{ col }}</th>
                                     </tr>
                                 </ng-template>
-                                <ng-template pTemplate="body" let-localZone>
+                                <ng-template #body let-localZone>
                                     <tr>
                                         <ng-container
                                             *ngTemplateOutlet="
@@ -635,7 +633,7 @@ to the number of configured zones.
                                         ></ng-container>
                                     </tr>
                                 </ng-template>
-                                <ng-template pTemplate="emptymessage" let-columns>
+                                <ng-template #emptymessage let-columns>
                                     <tr>
                                         <td [attr.colspan]="columns.length">
                                             There are no DNS views associated with this zone.
@@ -647,7 +645,7 @@ to the number of configured zones.
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="emptymessage">
+            <ng-template #emptymessage>
                 <ng-container
                     *ngTemplateOutlet="
                         emptyMessage;
@@ -661,7 +659,7 @@ to the number of configured zones.
                     "
                 ></ng-container>
             </ng-template>
-            <ng-template pTemplate="paginatorright" let-paginatorState>
+            <ng-template #paginatorright let-paginatorState>
                 Total: {{ paginatorState.totalRecords | pluralize: 'zone' }}
             </ng-template>
         </p-table>
@@ -677,7 +675,7 @@ to the number of configured zones.
             <div class="mb-4">
                 <p-fieldset legend="Zone Data">
                     <p-table [value]="[tab]">
-                        <ng-template pTemplate="body" let-zone>
+                        <ng-template #body let-zone>
                             <tr>
                                 <td class="font-semibold w-14rem">Name</td>
                                 <td>{{ zone.name | unroot }}</td>
@@ -702,14 +700,14 @@ to the number of configured zones.
                         [columns]="localZoneColumns"
                         styleClass="p-datatable-striped datatable-responsive"
                     >
-                        <ng-template pTemplate="header" let-columns>
+                        <ng-template #header let-columns>
                             <tr>
                                 <th *ngFor="let col of columns">{{ col }}</th>
                                 <th>Fetch Status</th>
                                 <th>Show Zone</th>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="body" let-localZone>
+                        <ng-template #body let-localZone>
                             <tr>
                                 <ng-container
                                     *ngTemplateOutlet="
@@ -760,7 +758,7 @@ to the number of configured zones.
                                             )
                                         "
                                     >
-                                        <ng-template pTemplate="header">
+                                        <ng-template #header>
                                             <div class="inline-flex align-items-center justify-content-center gap-2">
                                                 <span>
                                                     <span class="font-bold text-2xl">{{ tab.name | unroot }}</span>
@@ -808,7 +806,7 @@ to the number of configured zones.
                                 </td>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="emptymessage">
+                        <ng-template #emptymessage>
                             <tr>
                                 <td [attr.colspan]="localZoneColumns.length + 1">
                                     There are no DNS views associated with this zone.

@@ -99,13 +99,13 @@
     <div class="my-4">
         <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Subnet">
             <p-table [value]="subnet.localSubnets" styleClass="subnet-servers-table">
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <tr>
                         <th>Server</th>
                         <th>Configured Subnet ID</th>
                     </tr>
                 </ng-template>
-                <ng-template pTemplate="body" let-l>
+                <ng-template #body let-l>
                     <tr>
                         <td class="w-15rem">
                             <app-entity-link
@@ -124,7 +124,7 @@
     </div>
     <div *ngFor="let localSubnet of subnet.localSubnets; let i = index" class="mb-4">
         <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualPools()">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <span class="stork-fieldset-legend-text"
                     >Pools&nbsp;/&nbsp;
                     <a
@@ -173,7 +173,7 @@
 
     <div *ngFor="let localSubnet of subnet.localSubnets; let i = index" class="mb-4">
         <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualUserContext()">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <span class="stork-fieldset-legend-text"
                     >User Context&nbsp;/&nbsp;
                     <a
@@ -213,7 +213,7 @@
         </div>
         <div *ngFor="let localSubnet of subnet.localSubnets; let i = index" class="mb-4">
             <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()" [toggleable]="true" collapsed="true">
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <span class="stork-fieldset-legend-text"
                         >DHCP Options&nbsp;/&nbsp;
                         <a

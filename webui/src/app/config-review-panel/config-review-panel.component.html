@@ -13,7 +13,7 @@
     layout="list"
     currentPageReportTemplate="{first} - {last} of {totalRecords}"
 >
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <div class="review-header flex-wrap sm:flex-nowrap">
             <div id="review-summary-div" *ngIf="review" class="font-normal mt-2 sm:mt-0">
                 <span class="font-bold"> {{ totalIssues }}</span> issue{{ totalIssues !== 1 ? 's' : '' }} found in
@@ -68,7 +68,7 @@
             </div>
         </div>
     </ng-template>
-    <ng-template pTemplate="list" let-reports>
+    <ng-template #list let-reports>
         <div class="w-full" *ngFor="let report of reports">
             <p-divider styleClass="report-divider" type="solid" align="left">
                 <p-tag [severity]="!report.content ? 'success' : ''">
@@ -90,7 +90,7 @@
             </div>
         </div>
     </ng-template>
-    <ng-template let-report pTemplate="empty">
+    <ng-template #emptymessage>
         <span id="status-text" class="font-italic text-sm">
             <ng-container *ngIf="refreshFailed"
                 >An error occurred while fetching the configuration review reports.</ng-container
@@ -106,12 +106,10 @@
 </p-dataView>
 
 <p-popover #selectCheckersPanel showCloseIcon="true" styleClass="checker-panel">
-    <ng-template pTemplate>
-        <div class="checker-panel-wrapper">
-            <app-config-checker-preference-updater
-                [daemonID]="daemonId"
-                [minimal]="true"
-            ></app-config-checker-preference-updater>
-        </div>
-    </ng-template>
+    <div class="checker-panel-wrapper">
+        <app-config-checker-preference-updater
+            [daemonID]="daemonId"
+            [minimal]="true"
+        ></app-config-checker-preference-updater>
+    </div>
 </p-popover>

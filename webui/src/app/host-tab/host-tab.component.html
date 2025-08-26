@@ -92,7 +92,7 @@
         <div class="my-4">
             <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Host">
                 <p-table [value]="localHostsGroups.appID">
-                    <ng-template pTemplate="body" let-ls>
+                    <ng-template #body let-ls>
                         <tr>
                             <td class="border-none w-10rem">
                                 <a routerLink="/apps/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
@@ -118,7 +118,7 @@
         <div class="mb-4">
             <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
                 <p-table [value]="host.hostIdentifiers">
-                    <ng-template pTemplate="body" let-i>
+                    <ng-template #body let-i>
                         <tr>
                             <td class="border-none w-8rem">{{ i.idType }}</td>
                             <td class="monospace border-none text-color-secondary">
@@ -137,7 +137,7 @@
             <!-- Hostname -->
             <div class="mb-4" *ngFor="let localHosts of localHostsGroups.hostname">
                 <p-fieldset>
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <ng-container
                             [ngTemplateOutlet]="sectionHeaderContent"
                             [ngTemplateOutletContext]="{
@@ -155,7 +155,7 @@
             <!-- IP Reservations -->
             <div class="mb-4" *ngFor="let localHosts of localHostsGroups.ipReservations">
                 <p-fieldset>
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <ng-container
                             [ngTemplateOutlet]="sectionHeaderContent"
                             [ngTemplateOutletContext]="{
@@ -166,7 +166,7 @@
                         ></ng-container>
                     </ng-template>
                     <p-table [value]="localHosts[0].ipReservations || []" dataKey="address">
-                        <ng-template pTemplate="body" let-r let-expanded="expanded">
+                        <ng-template #body let-r let-expanded="expanded">
                             <tr>
                                 <td class="border-none">
                                     <div class="flex align-items-center">
@@ -224,7 +224,7 @@
                                 </td>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="rowexpansion" let-r>
+                        <ng-template #expandedrow let-r>
                             <tr>
                                 <td class="border-none pl-6 pt-0 pb-4">
                                     <div
@@ -241,7 +241,7 @@
                                 </td>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="emptymessage">
+                        <ng-template #emptymessage>
                             <tr>
                                 <td>No IP reservations configured.</td>
                             </tr>
@@ -254,7 +254,7 @@
             <ng-container *ngIf="displayBootFields">
                 <div class="mb-4" *ngFor="let localHosts of localHostsGroups.bootFields">
                     <p-fieldset>
-                        <ng-template pTemplate="header">
+                        <ng-template #header>
                             <ng-container
                                 [ngTemplateOutlet]="sectionHeaderContent"
                                 [ngTemplateOutletContext]="{
@@ -296,7 +296,7 @@
             <!-- Client classes -->
             <div class="mb-4" *ngFor="let localHosts of localHostsGroups.clientClasses">
                 <p-fieldset>
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <ng-container
                             [ngTemplateOutlet]="sectionHeaderContent"
                             [ngTemplateOutletContext]="{
@@ -314,7 +314,7 @@
             <!-- DHCP options -->
             <div class="mb-4" *ngFor="let localHosts of localHostsGroups.dhcpOptions">
                 <p-fieldset [toggleable]="true" collapsed="true">
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <ng-container
                             [ngTemplateOutlet]="sectionHeaderContent"
                             [ngTemplateOutletContext]="{

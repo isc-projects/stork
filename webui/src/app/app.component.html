@@ -2,7 +2,7 @@
     <div class="flex align-items-center top-navbar">
         <div class="flex-grow-1">
             <p-menubar [model]="menuItems" styleClass="app-menubar">
-                <ng-template pTemplate="start">
+                <ng-template #start>
                     <div class="flex align-items-center gap-2 mr-2 sm:mr-4 ml-1 sm:ml-2">
                         <a
                             routerLink="/"
@@ -16,7 +16,7 @@
                         </a>
                     </div>
                 </ng-template>
-                <ng-template pTemplate="end"
+                <ng-template #end
                     ><div class="flex align-items-center gap-2 mx-1 sm:mx-2">
                         <p-toggleButton
                             [(ngModel)]="isDark"

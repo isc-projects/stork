@@ -214,7 +214,7 @@ sudo ./stork-install-agent.sh</textarea
                 [allowEmpty]="false"
                 id="unauthorized-select-button"
             >
-                <ng-template let-item pTemplate>
+                <ng-template #item let-item>
                     <span class="p-button-label">{{ item.label }}</span
                     ><p-badge
                         *ngIf="item.hasBadge"

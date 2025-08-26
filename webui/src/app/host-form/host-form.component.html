@@ -296,7 +296,7 @@
                 styleClass="host-form-section"
                 [formGroupName]="i"
             >
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <ng-container
                         *ngTemplateOutlet="
                             splittableFieldsetHeaderTemplate;
@@ -361,7 +361,7 @@
 
     <ng-container *ngFor="let clientClassesSet of clientClassesArray.controls; let i = index">
         <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="host-form-section">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <ng-container
                     *ngTemplateOutlet="
                         splittableFieldsetHeaderTemplate;
@@ -381,7 +381,7 @@
     <ng-container formArrayName="options">
         <ng-container *ngFor="let optionsSet of optionsArray.controls; let i = index">
             <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="host-form-section">
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <ng-container
                         *ngTemplateOutlet="
                             splittableFieldsetHeaderTemplate;

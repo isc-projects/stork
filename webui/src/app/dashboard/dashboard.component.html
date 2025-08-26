@@ -2,7 +2,7 @@
     <article>
         <div *ngIf="noApps" class="max-w-50rem">
             <p-panel>
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <span class="font-semibold text-3xl">Welcome to Stork!</span>
                 </ng-template>
 
@@ -40,7 +40,7 @@
                 iconPos="start"
                 (onAfterToggle)="storeDHCPDashboardHidden($event.collapsed)"
             >
-                <ng-template pTemplate="headericons" let-collapsed>
+                <ng-template #headericons let-collapsed>
                     <i
                         [class]="{
                             pi: true,
@@ -50,7 +50,7 @@
                         }"
                     ></i>
                 </ng-template>
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <div class="flex align-items-center">
                         <span class="mr-4 text-3xl font-semibold">DHCP Dashboard</span>
                         <p-button
@@ -317,7 +317,7 @@
                 <h1 class="section-heading">Service Status</h1>
 
                 <p-table [value]="overview.dhcpDaemons" styleClass="p-datatable-sm p-datatable-striped max-w-100vw">
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <tr>
                             <th>Host</th>
                             <th>App Version</th>
@@ -332,7 +332,7 @@
                             <th>Uptime</th>
                         </tr>
                     </ng-template>
-                    <ng-template pTemplate="body" let-d>
+                    <ng-template #body let-d>
                         <tr>
                             <td>
                                 <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
@@ -391,10 +391,10 @@
                 iconPos="start"
                 (onAfterToggle)="storeDNSDashboardHidden($event.collapsed)"
             >
-                <ng-template pTemplate="headericons" let-collapsed>
+                <ng-template #headericons let-collapsed>
                     <i [class]="{ pi: true, 'pi-chevron-down': !collapsed, 'pi-chevron-right': collapsed }"></i>
                 </ng-template>
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <div class="flex align-items-center">
                         <span class="mr-4 text-3xl font-semibold">DNS Dashboard</span>
                         <p-button
@@ -418,7 +418,7 @@
                     [rowsPerPageOptions]="[5, 10, 20]"
                     [alwaysShowPaginator]="false"
                 >
-                    <ng-template pTemplate="header">
+                    <ng-template #header>
                         <tr>
                             <th>Host</th>
                             <th>App Version</th>
@@ -456,7 +456,7 @@
                             <th>Uptime</th>
                         </tr>
                     </ng-template>
-                    <ng-template pTemplate="body" let-a>
+                    <ng-template #body let-a>
                         <tr>
                             <td>
                                 <a *ngIf="a.machine?.id" routerLink="/machines/{{ a.machine.id }}">{{
@@ -546,7 +546,7 @@
 
     <aside>
         <p-panel class="dashboard-events-panel" iconPos="start">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <div class="flex align-items-center">
                     <span class="mr-4 text-3xl font-semibold">Events</span>
                     <p-button

@@ -78,7 +78,7 @@
     <div class="my-4">
         <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Shared Network">
             <p-table [value]="sharedNetwork.localSharedNetworks" styleClass="shared-network-servers-table">
-                <ng-template pTemplate="body" let-l>
+                <ng-template #body let-l>
                     <tr>
                         <td class="border-none w-15rem">
                             <app-entity-link
@@ -137,7 +137,7 @@
         </div>
         <div *ngFor="let localSharedNetwork of sharedNetwork.localSharedNetworks; let i = index" class="mb-4">
             <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()" [toggleable]="true" collapsed="true">
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <span class="stork-fieldset-legend-text"
                         >DHCP Options&nbsp;/&nbsp;
                         <a

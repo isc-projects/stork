@@ -4,7 +4,7 @@
     responsiveLayout="scroll"
     ngClass="{{ minimal ? 'picker--minimal' : '' }}"
 >
-    <ng-template pTemplate="caption">
+    <ng-template #caption>
         <div class="p-d-flex p-mt-1 p-ai-center">
             Checkers list
             <app-help-tip subject="Checkers list">
@@ -32,7 +32,7 @@
             </app-help-tip>
         </div>
     </ng-template>
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th>State</th>
             <th>Name</th>
@@ -41,7 +41,7 @@
             <th class="picker__trigger-column">Triggers</th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-checker>
+    <ng-template #body let-checker>
         <tr>
             <td
                 class="picker__state-cell"
@@ -87,12 +87,12 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr class="picker__empty">
             <td colspan="100%">There are no checkers enabled.</td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="summary">
+    <ng-template #summary>
         <div class="picker__buttons">
             <button
                 pButton

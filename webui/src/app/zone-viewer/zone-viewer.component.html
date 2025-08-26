@@ -23,7 +23,7 @@
         <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" />
     } @else {
         <p-table [value]="data?.items ?? []" styleClass="datatable-responsive">
-            <ng-template pTemplate="body" let-rr>
+            <ng-template #body let-rr>
                 <tr>
                     <td class="font-bold">{{ rr.name }}</td>
                     <td>{{ rr.ttl }}</td>
@@ -32,7 +32,7 @@
                     <td>{{ rr.data }}</td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="emptymessage">
+            <ng-template #emptymessage>
                 <tr>
                     <td colspan="5">No data received</td>
                 </tr>

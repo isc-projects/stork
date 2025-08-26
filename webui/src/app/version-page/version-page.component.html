@@ -164,7 +164,7 @@
             [tableStyle]="{ 'min-width': '15rem' }"
             [loading]="summaryDataLoading"
         >
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <tr>
                     <th class="w-6rem lg:w-10rem">Hostname</th>
                     <th class="w-6rem lg:w-10rem">Location</th>
@@ -174,7 +174,7 @@
                 </tr>
             </ng-template>
 
-            <ng-template pTemplate="groupheader" let-m let-expanded="expanded">
+            <ng-template #groupheader let-m let-expanded="expanded">
                 <tr>
                     <td colspan="5" class="row-toggle">
                         <div class="flex align-items-center">
@@ -211,7 +211,7 @@
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="rowexpansion" let-m>
+            <ng-template #expandedrow let-m>
                 <tr>
                     <td>
                         <span class="p-column-title">Hostname</span>
@@ -272,7 +272,7 @@
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="emptymessage">
+            <ng-template #emptymessage>
                 <tr>
                     <td colspan="5">
                         No data retrieved from the Stork server (this may be due to no authorized machines being found).
@@ -283,7 +283,7 @@
     </p-panel>
     <p-panel header="Kea current releases" styleClass="mt-3">
         <p-table [value]="keaVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <tr>
                     <th class="xl:w-10rem">Version</th>
                     <th class="xl:w-18rem">Status</th>
@@ -293,7 +293,7 @@
                     <th>Download</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-v>
+            <ng-template #body let-v>
                 <tr>
                     <td>{{ v.version }}</td>
                     <td>{{ v.status }}</td>
@@ -327,7 +327,7 @@
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="emptymessage">
+            <ng-template #emptymessage>
                 <tr>
                     <td colspan="6">No data retrieved from the Stork server.</td>
                 </tr>
@@ -336,7 +336,7 @@
     </p-panel>
     <p-panel header="BIND 9 current releases" styleClass="mt-3">
         <p-table [value]="bind9Versions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <tr>
                     <th class="xl:w-10rem">Version</th>
                     <th class="xl:w-18rem">Status</th>
@@ -346,7 +346,7 @@
                     <th>Download</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-v>
+            <ng-template #body let-v>
                 <tr>
                     <td>{{ v.version }}</td>
                     <td>{{ v.status }}<ng-container *ngIf="v.esv">, ESV</ng-container></td>
@@ -379,7 +379,7 @@
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="emptymessage">
+            <ng-template #emptymessage>
                 <tr>
                     <td colspan="6">No data retrieved from the Stork server.</td>
                 </tr>
@@ -388,7 +388,7 @@
     </p-panel>
     <p-panel header="Stork current releases" styleClass="mt-3">
         <p-table [value]="storkVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <tr>
                     <th class="xl:w-10rem">Version</th>
                     <th class="xl:w-18rem">Status</th>
@@ -398,7 +398,7 @@
                     <th>Download</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-v>
+            <ng-template #body let-v>
                 <tr>
                     <td>{{ v.version }}</td>
                     <td>{{ v.status }}</td>
@@ -432,7 +432,7 @@
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="emptymessage">
+            <ng-template #emptymessage>
                 <tr>
                     <td colspan="6">No data retrieved from the Stork server.</td>
                 </tr>

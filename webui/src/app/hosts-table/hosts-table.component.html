@@ -1,6 +1,6 @@
 <div appAccessEntity="migrations-hosts" appAccessType="create" [appHideIfNoAccess]="true">
     <p-confirmDialog key="migrationToDatabaseDialog">
-        <ng-template pTemplate="message">
+        <ng-template #message>
             <div class="block ml-3 max-w-40rem message">
                 <p>Are you sure you want to migrate host reservations to the database?</p>
                 <p>
@@ -89,9 +89,9 @@
     [currentPageReportTemplate]="currentPageReportTemplate"
     styleClass="p-datatable-striped"
 >
-    <ng-template pTemplate="caption">
+    <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <div class="flex align-items-center gap-2">
                     <p-button
                         type="button"
@@ -173,7 +173,7 @@
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="app-id"
@@ -190,7 +190,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="subnet-id"
@@ -206,7 +206,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="keaSubnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="kea-subnet-id"
@@ -230,7 +230,7 @@
                     <p-columnFilter type="boolean" field="conflict" matchMode="equals"></p-columnFilter>
                 </div>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
@@ -246,7 +246,7 @@
             </div>
         </p-panel>
     </ng-template>
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th style="width: 28%">DHCP Identifiers</th>
             <th style="width: 18%">IP Addresses</th>
@@ -256,7 +256,7 @@
             <th style="width: 14%">App Name</th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td colspan="6">
                 No hosts found.
@@ -273,7 +273,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-h>
+    <ng-template #body let-h>
         <tr id="host-row-{{ h.id }}">
             <td>
                 <app-identifier
@@ -344,10 +344,10 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="paginatorright" let-paginatorState>
+    <ng-template #paginatorright let-paginatorState>
         Total: {{ paginatorState.totalRecords | pluralize: 'host' }}
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td colspan="6">
                 No hosts found.

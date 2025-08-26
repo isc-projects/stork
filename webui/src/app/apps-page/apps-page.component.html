@@ -97,7 +97,7 @@
         stateKey="apps-table-session"
         styleClass="p-datatable-striped"
     >
-        <ng-template pTemplate="header">
+        <ng-template #header>
             <tr>
                 <th style="width: 14em">Name</th>
                 <th>Version</th>
@@ -107,7 +107,7 @@
                 <th style="width: 4rem">Action</th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-a>
+        <ng-template #body let-a>
             <tr>
                 <td>
                     <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a>
@@ -136,11 +136,11 @@
                 </td>
             </tr>
         </ng-template>
-        <ng-template pTemplate="paginatorright" let-state>
+        <ng-template #paginatorright let-state>
             Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
             {{ state.totalRecords === 1 ? 'app' : 'apps' }}
         </ng-template>
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
             <tr>
                 <td colspan="6">
                     No apps were found.

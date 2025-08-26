@@ -110,7 +110,7 @@
     paginatorDropdownAppendTo="body"
     [first]="start"
 >
-    <ng-template *ngIf="isTable" pTemplate="header">
+    <ng-template *ngIf="isTable" #header>
         <tr>
             <th class="events-table__level">Level</th>
             <th class="events-table__date">Created At</th>
@@ -118,7 +118,7 @@
             <th class="events-table__details">Details</th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-ev let-expanded="expanded">
+    <ng-template #body let-ev let-expanded="expanded">
         <tr>
             <td class="events-table__level events-table__level--info" *ngIf="ev.level === undefined || ev.level === 0">
                 <i class="pi pi-info-circle"></i>
@@ -151,7 +151,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td colspan="4">
                 <div class="events-table__empty">

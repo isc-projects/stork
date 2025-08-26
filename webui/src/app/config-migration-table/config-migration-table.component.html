@@ -34,7 +34,7 @@
     [currentPageReportTemplate]="currentPageReportTemplate"
     styleClass="p-datatable-striped"
 >
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th>ID</th>
             <th>Start Date</th>
@@ -45,12 +45,12 @@
             <th>Actions</th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td colspan="7" class="text-center">No migrations found.</td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-m>
+    <ng-template #body let-m>
         <tr id="migration-row-{{ m.id }}">
             <td>
                 <a routerLink="/config-migrations/{{ m.id }}">{{ m.id }}</a>
@@ -101,7 +101,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="paginatorright" let-paginatorState>
+    <ng-template #paginatorright let-paginatorState>
         Total: {{ paginatorState.totalRecords | pluralize: 'migration' }}
     </ng-template>
 </p-table>

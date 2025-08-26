@@ -2,14 +2,14 @@
     <h3 class="underlined">High Availability</h3>
     <div *ngIf="hasStatus" class="mb-4">
         <p-table [value]="status" rowGroupMode="subheader" groupRowsBy="relationship.name">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <tr>
                     <th></th>
                     <th>This Server</th>
                     <th *ngIf="hasPartnerColumn">Partner</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="groupheader" let-statusRow let-expanded="expanded">
+            <ng-template #groupheader let-statusRow let-expanded="expanded">
                 <tr pRowGroupHeader class="relationship-pane">
                     <td>
                         <div class="flex align-items-center justify-content-between">
@@ -51,7 +51,7 @@
                     </td>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="rowexpansion" let-statusRow>
+            <ng-template #expandedrow let-statusRow>
                 <tr>
                     <td>
                         <div class="flex align-items-center justify-content-between">

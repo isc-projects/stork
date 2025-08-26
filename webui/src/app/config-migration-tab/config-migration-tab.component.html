@@ -95,13 +95,13 @@
                         [alwaysShowPaginator]="false"
                         styleClass="p-datatable-sm"
                     >
-                        <ng-template pTemplate="header">
+                        <ng-template #header>
                             <tr>
                                 <th>Entity</th>
                                 <th>Error</th>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="body" let-error>
+                        <ng-template #body let-error>
                             <tr>
                                 <td>
                                     <ng-container [ngSwitch]="error.causeEntity">
@@ -118,7 +118,7 @@
                                 <td class="text-red-500">{{ error.error }}</td>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="emptymessage">
+                        <ng-template #emptymessage>
                             <tr>
                                 <td colspan="2">No error details available</td>
                             </tr>

@@ -30,7 +30,7 @@
                                 inputId="authenticationMethod"
                                 styleClass="w-full"
                             >
-                                <ng-template let-item pTemplate="item">
+                                <ng-template let-item #item>
                                     <div class="flex align-items-center gap-2">
                                         <img
                                             src="/assets/authentication-methods/{{ item.id }}.png"
@@ -39,7 +39,7 @@
                                         <div>{{ item.name }}</div>
                                     </div>
                                 </ng-template>
-                                <ng-template pTemplate="selectedItem">
+                                <ng-template #selectedItem>
                                     <div
                                         class="flex align-items-center gap-2"
                                         *ngIf="loginForm.get('authenticationMethod').value"

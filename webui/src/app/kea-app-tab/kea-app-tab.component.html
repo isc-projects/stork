@@ -13,7 +13,7 @@
     </div>
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <div class="flex justify-content-between flex-wrap gap-2 w-full">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
@@ -311,14 +311,14 @@
                             <div class="mt-4">
                                 <h3 class="underlined">Loggers</h3>
                                 <p-table [value]="daemon.logTargets">
-                                    <ng-template pTemplate="header">
+                                    <ng-template #header>
                                         <tr>
                                             <th style="width: 10rem">Logger</th>
                                             <th style="width: 7rem">Severity</th>
                                             <th>Output Location</th>
                                         </tr>
                                     </ng-template>
-                                    <ng-template pTemplate="body" let-logTarget>
+                                    <ng-template #body let-logTarget>
                                         <tr>
                                             <td>{{ logTarget.name }}</td>
                                             <td align="center">{{ logTarget.severity }}</td>
@@ -337,7 +337,7 @@
                                             </td>
                                         </tr>
                                     </ng-template>
-                                    <ng-template pTemplate="emptymessage" let-columns>
+                                    <ng-template #emptymessage let-columns>
                                         <tr>
                                             <td [attr.colspan]="3">No loggers found</td>
                                         </tr>

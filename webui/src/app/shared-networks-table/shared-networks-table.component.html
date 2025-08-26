@@ -42,9 +42,9 @@
     [currentPageReportTemplate]="currentPageReportTemplate"
     styleClass="p-datatable-striped"
 >
-    <ng-template pTemplate="caption">
+    <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <div class="flex align-items-center gap-2">
                     <p-button
                         type="button"
@@ -99,7 +99,7 @@
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="app-id"
@@ -116,7 +116,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-select
                                 inputId="dhcp-version"
@@ -135,7 +135,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
@@ -151,7 +151,7 @@
             </div>
         </p-panel>
     </ng-template>
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th rowspan="2" style="width: 7rem">Name</th>
             <th colspan="3" style="width: 16rem">Addresses</th>
@@ -170,7 +170,7 @@
             </ng-container>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-net>
+    <ng-template #body let-net>
         <tr>
             <td>
                 <app-entity-link entity="shared-network" [showEntityName]="false" [attrs]="net"></app-entity-link>
@@ -221,7 +221,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td colspan="6">
                 No shared networks found.
@@ -238,7 +238,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="paginatorright" let-paginatorState>
+    <ng-template #paginatorright let-paginatorState>
         Total: {{ paginatorState.totalRecords | pluralize: 'shared network' }}
     </ng-template>
 </p-table>

@@ -79,7 +79,7 @@
         stateKey="users-table-session"
         styleClass="p-datatable-striped"
     >
-        <ng-template pTemplate="header">
+        <ng-template #header>
             <tr>
                 <th>Login</th>
                 <th>Email</th>
@@ -90,7 +90,7 @@
                 <th>External ID</th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-u>
+        <ng-template #body let-u>
             <tr>
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
@@ -108,12 +108,12 @@
                 <td align="center">{{ u.externalId | placeholder }}</td>
             </tr>
         </ng-template>
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
             <tr>
                 <td colspan="7">No users found.</td>
             </tr>
         </ng-template>
-        <ng-template pTemplate="paginatorright" let-state>
+        <ng-template #paginatorright let-state>
             Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
             {{ state.totalRecords === 1 ? 'user' : 'users' }}
         </ng-template>

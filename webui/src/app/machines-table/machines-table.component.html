@@ -46,9 +46,9 @@
     [selectAll]="selectAll"
     (selectAllChange)="onSelectAllChange($event)"
 >
-    <ng-template pTemplate="caption">
+    <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-            <ng-template pTemplate="header">
+            <ng-template #header>
                 <div class="flex align-items-center gap-2">
                     <p-button
                         type="button"
@@ -112,7 +112,7 @@
                     [showClearButton]="!hasPrefilter()"
                     [hidden]="hasPrefilter()"
                 >
-                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                    <ng-template #filter let-value let-filterConstraint="filterConstraint">
                         <label for="authorized-input">Authorized machines</label>
                         <p-checkbox
                             inputId="authorized-input"
@@ -125,7 +125,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                    <ng-template #filter let-value let-filterConstraint="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
@@ -141,7 +141,7 @@
             </div>
         </p-panel>
     </ng-template>
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr>
             <th *ngIf="unauthorizedMachinesDisplayed()" class="w-4rem">
                 <p-tableHeaderCheckbox
@@ -207,7 +207,7 @@
             <th class="w-4rem">Action</th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-m>
+    <ng-template #body let-m>
         <tr>
             <td *ngIf="unauthorizedMachinesDisplayed()">
                 <p-tableCheckbox
@@ -290,7 +290,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage>
         <tr>
             <td colspan="3">
                 <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
@@ -326,7 +326,7 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="paginatorright" let-paginatorState>
+    <ng-template #paginatorright let-paginatorState>
         Total: {{ paginatorState.totalRecords | pluralize: 'machine' }}
     </ng-template>
 </p-table>
