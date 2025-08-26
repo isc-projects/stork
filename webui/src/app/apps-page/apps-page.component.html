@@ -5,174 +5,141 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a
-            role="menuitem"
-            pRipple
-            [routerLink]="item.routerLink"
-            [queryParams]="item.queryParams"
-            class="p-ripple p-element p-menuitem-link"
-        >
-            <div class="flex justify-content-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-                <div class="pi pi-times close-tab-btn" (click)="closeTab($event, i)" *ngIf="i !== 0"></div>
+<app-tab-view routePath="/apps/" [entitiesCollection]="apps" [entityProvider]="appProvider">
+    <ng-template #firstTab>
+        <div class="flex flex-wrap gap-2 justify-content-end mb-3">
+            <span class="p-input-icon-left flex min-w-0">
+                <i class="pi pi-search"></i>
+                <input
+                    type="text"
+                    id="filter-apps-text-field"
+                    pInputText
+                    placeholder="Search apps"
+                    (input)="inputFilterText(appsTable, $event.target?.value)"
+                    (keyup.enter)="inputFilterText(appsTable, $event.target?.value, true)"
+                    [value]="appsTable.filters?.text?.value || appsTable.filters?.[0]?.text?.value"
+                />
+            </span>
+            <button
+                pButton
+                label="Clear"
+                class="ml-2 flex-none"
+                icon="pi pi-filter-slash"
+                (click)="clearFilters(appsTable)"
+            ></button>
+            <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
+                <div class="flex-auto"></div>
+                <p-button
+                    id="apps-refresh-button"
+                    label="Refresh"
+                    icon="pi pi-refresh"
+                    (click)="refreshAppsList(appsTable)"
+                    class="flex-none"
+                ></p-button>
+                <p-button
+                    id="sync-kea-configs-button"
+                    label="Resynchronize Kea Configs"
+                    icon="pi pi-file-import"
+                    class="flex-none"
+                    styleClass="p-button-warning"
+                    (click)="onSyncKeaConfigs()"
+                    appAccessEntity="kea-config-hashes"
+                    appAccessType="delete"
+                ></p-button>
             </div>
-        </a>
-    </ng-template>
-</p-tabMenu>
-
-<!-- Apps tab -->
-<div *ngIf="activeTabIdx === 0">
-    <div class="flex flex-wrap gap-2 justify-content-end mb-3">
-        <span class="p-input-icon-left flex min-w-0">
-            <i class="pi pi-search"></i>
-            <input
-                type="text"
-                id="filter-apps-text-field"
-                pInputText
-                placeholder="Search apps"
-                (input)="inputFilterText(appsTable, $event.target?.value)"
-                (keyup.enter)="inputFilterText(appsTable, $event.target?.value, true)"
-                [value]="appsTable.filters?.text?.value || appsTable.filters?.[0]?.text?.value"
-            />
-        </span>
-        <p-multiSelect
-            [options]="[
-                { label: 'BIND9', value: 'bind9' },
-                { label: 'Kea', value: 'kea' },
-                { label: 'PowerDNS', value: 'pdns' },
-            ]"
-            [(ngModel)]="selectedAppTypes"
-            (ngModelChange)="updateAppTypesFilter($event)"
-            filter="false"
-            placeholder="Select App Types"
-        />
-        <button
-            pButton
-            label="Clear"
-            class="ml-2 flex-none"
-            icon="pi pi-filter-slash"
-            (click)="clearFilters(appsTable)"
-        ></button>
-        <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
-            <div class="flex-auto"></div>
-            <p-button
-                id="apps-refresh-button"
-                label="Refresh"
-                icon="pi pi-refresh"
-                (click)="refreshAppsList(appsTable)"
-                class="flex-none"
-            ></p-button>
-            <p-button
-                id="sync-kea-configs-button"
-                label="Resynchronize Kea Configs"
-                icon="pi pi-file-import"
-                class="flex-none"
-                styleClass="p-button-warning"
-                (click)="onSyncKeaConfigs()"
-                appAccessEntity="kea-config-hashes"
-                appAccessType="delete"
-            ></p-button>
         </div>
-    </div>
-
-    <p-menu #appMenu [popup]="true" [model]="appMenuItems"></p-menu>
-    <p-table
-        #appsTable
-        [value]="apps"
-        [paginator]="true"
-        [rows]="10"
-        [lazy]="true"
-        [loading]="dataLoading"
-        (onLazyLoad)="loadApps($event)"
-        [totalRecords]="totalApps"
-        [rowsPerPageOptions]="[10, 30, 100]"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="{currentPage} of {totalPages} pages"
-        stateStorage="session"
-        stateKey="apps-table-session"
-        styleClass="p-datatable-striped"
-    >
-        <ng-template #header>
-            <tr>
-                <th style="width: 14em">Name</th>
-                <th>Version</th>
-                <th>Status</th>
-                <th>Machine Address</th>
-                <th>Machine Hostname</th>
-                <th style="width: 4rem">Action</th>
-            </tr>
-        </ng-template>
-        <ng-template #body let-a>
-            <tr>
-                <td>
-                    <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a>
-                </td>
-                <td>
-                    <a routerLink="/apps/{{ a.id }}">{{ a.version }}</a>
-                    <app-version-status [app]="a.type" [version]="a.version"></app-version-status>
-                </td>
-                <td>
-                    <app-app-daemons-status [app]="a"></app-app-daemons-status>
-                </td>
-                <td>
-                    <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.address }}</a>
-                </td>
-                <td>
-                    <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.hostname }}</a>
-                </td>
-                <td>
-                    <button
-                        id="{{ 'menu-of-' + a.machine.id }}"
-                        type="button"
-                        pButton
-                        icon="pi pi-bars"
-                        (click)="showAppMenu($event, appMenu, a)"
-                    ></button>
-                </td>
-            </tr>
-        </ng-template>
-        <ng-template #paginatorright let-state>
-            Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
-            {{ state.totalRecords === 1 ? 'app' : 'apps' }}
-        </ng-template>
-        <ng-template #emptymessage>
-            <tr>
-                <td colspan="6">
-                    No apps were found.
-                    <span *ngIf="appsTable.hasFilter()">
-                        Clear filtering and try again.
+        <p-menu #appMenu [popup]="true" [model]="appMenuItems"></p-menu>
+        <p-table
+            #appsTable
+            [value]="apps"
+            [paginator]="true"
+            [rows]="10"
+            [lazy]="true"
+            [loading]="dataLoading"
+            (onLazyLoad)="loadApps($event)"
+            [totalRecords]="totalApps"
+            [rowsPerPageOptions]="[10, 30, 100]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            stateStorage="session"
+            stateKey="apps-table-session"
+            styleClass="p-datatable-striped"
+        >
+            <ng-template #header>
+                <tr>
+                    <th style="width: 14em">Name</th>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>Machine Address</th>
+                    <th>Machine Hostname</th>
+                    <th style="width: 4rem">Action</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-a>
+                <tr>
+                    <td>
+                        <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a>
+                    </td>
+                    <td>
+                        <a routerLink="/apps/{{ a.id }}">{{ a.version }}</a>
+                        <app-version-status [app]="a.type" [version]="a.version"></app-version-status>
+                    </td>
+                    <td>
+                        <app-app-daemons-status [app]="a"></app-app-daemons-status>
+                    </td>
+                    <td>
+                        <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.address }}</a>
+                    </td>
+                    <td>
+                        <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.hostname }}</a>
+                    </td>
+                    <td>
                         <button
+                            id="{{ 'menu-of-' + a.machine.id }}"
+                            type="button"
                             pButton
-                            label="Clear"
-                            class="p-button-outlined"
-                            icon="pi pi-filter-slash"
-                            (click)="clearFilters(appsTable)"
+                            icon="pi pi-bars"
+                            (click)="showAppMenu($event, appMenu, a)"
                         ></button>
-                    </span>
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
-</div>
-
-<!-- Single app tab -->
-<div *ngIf="activeTabIdx !== 0" class="p-component">
-    <app-app-tab
-        *ngIf="appTab.app.type === 'bind9' || appTab.app.type === 'pdns'"
-        [appTab]="appTab"
-        (refreshApp)="onRefreshApp()"
-        (renameApp)="onRenameApp($event)"
-    ></app-app-tab>
-    <app-kea-app-tab
-        *ngIf="appTab.app.type === 'kea'"
-        [appTab]="appTab"
-        [refreshedAppTab]="refreshedAppTab"
-        (refreshApp)="onRefreshApp()"
-        (renameApp)="onRenameApp($event)"
-    ></app-kea-app-tab>
-</div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template #paginatorright let-state>
+                Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
+                {{ state.totalRecords === 1 ? 'app' : 'apps' }}
+            </ng-template>
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="6">
+                        No apps were found.
+                        <span *ngIf="appsTable.hasFilter()">
+                            Clear filtering and try again.
+                            <button
+                                pButton
+                                label="Clear"
+                                class="p-button-outlined"
+                                icon="pi pi-filter-slash"
+                                (click)="clearFilters(appsTable)"
+                            ></button>
+                        </span>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </ng-template>
+    <ng-template #entityTab let-app>
+        <app-app-tab
+            *ngIf="app.type === 'bind9' || app.type === 'pdns'"
+            [appTab]="{ app: app }"
+            (refreshApp)="onRefreshApp()"
+            (renameApp)="onRenameApp($event)"
+        ></app-app-tab>
+        <app-kea-app-tab
+            *ngIf="app.type === 'kea'"
+            [appTab]="{ app: app }"
+            [refreshedAppTab]="refreshedAppTab"
+            (refreshApp)="onRefreshApp()"
+            (renameApp)="onRenameApp($event)"
+        ></app-kea-app-tab>
+    </ng-template>
+</app-tab-view>

@@ -167,6 +167,7 @@ import { OutOfPoolBarComponent } from './out-of-pool-bar/out-of-pool-bar.compone
 import { DaemonNiceNamePipe } from './pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from './bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from './pdns-daemon/pdns-daemon.component'
+import { TabViewComponent } from './tab-view/tab-view.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -352,6 +353,7 @@ const AuraBluePreset = definePreset(Aura, {
         FloatLabelModule,
         AutoCompleteModule,
         InputNumberModule,
+        TabViewComponent,
     ],
     providers: [
         {

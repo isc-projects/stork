@@ -187,6 +187,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {
                 daemonMap[dm[0]].niceName = dm[1]
+                daemonMap[dm[0]].icon = this.daemonStatusIconName(daemonMap[dm[0]])
                 daemonMap[dm[0]].subnets = []
                 daemonMap[dm[0]].totalSubnets = 0
                 daemonMap[dm[0]].statusErred = this.daemonStatusErred(daemonMap[dm[0]])

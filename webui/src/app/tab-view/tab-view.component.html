@@ -1,0 +1,46 @@
+<p-tabs [(value)]="activeTabEntityID" (valueChange)="logChange($event)">
+    <p-tablist>
+        @if (firstTabTemplate) {
+            <p-tab [value]="0" [routerLink]="firstTabRoute()">{{ firstTabLabel() }}</p-tab>
+        }
+        @for (tab of openTabs; track tab.value) {
+            <p-tab [value]="tab.value" [routerLink]="tab.route">
+                @if (tab.icon) {
+                    <span [ngClass]="tab.icon"></span>
+                }
+                {{ tab.title }}
+                @if (closableTabs()) {
+                    <button
+                        type="button"
+                        class="p-message-close-button p-tabs-tab-closebutton"
+                        (click)="closeTab(tab.value)"
+                    >
+                        <TimesIcon styleClass="p-message-close-icon" />
+                    </button>
+                }
+            </p-tab>
+        }
+    </p-tablist>
+    <p-tabpanels>
+        @if (firstTabTemplate) {
+            <p-tabpanel [value]="0">
+                <ng-container *ngTemplateOutlet="firstTabTemplate"></ng-container>
+            </p-tabpanel>
+        }
+
+        @if (entityTabTemplate) {
+            @for (tab of openTabs; track tab.value) {
+                <p-tabpanel [value]="tab.value">
+                    <ng-container
+                        *ngTemplateOutlet="
+                            entityTabTemplate;
+                            context: {
+                                $implicit: tab.entity,
+                            }
+                        "
+                    ></ng-container>
+                </p-tabpanel>
+            }
+        }
+    </p-tabpanels>
+</p-tabs>

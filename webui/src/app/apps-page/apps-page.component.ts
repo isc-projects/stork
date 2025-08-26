@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { lastValueFrom, debounceTime, distinctUntilChanged, Subject, Subscription } from 'rxjs'
+import { lastValueFrom, Subject, Subscription, tap, debounceTime, distinctUntilChanged } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
@@ -10,6 +10,7 @@ import { App } from '../backend'
 import { Table } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { AppTab } from '../apps'
+import { finalize } from 'rxjs/operators'
 
 /**
  * Replaces the newlines in the versions with the HTML-compatible line breaks.
@@ -59,19 +60,28 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     breadcrumbs: MenuItem[] = []
 
     // apps table
-    apps: any[] = []
+    apps: App[] = []
     totalApps: number
     appMenuItems: MenuItem[]
     dataLoading: boolean
 
     // app tabs
-    activeTabIdx = 0
-    tabs: MenuItem[] = []
-    activeItem: MenuItem
     openedApps: AppTab[] = []
     appTab: AppTab = null
 
     refreshedAppTab = new Subject<AppTab>()
+    appProvider: (id: number) => Promise<App> = (appId: number) => {
+        this.dataLoading = true
+        return lastValueFrom(
+            this.servicesApi.getApp(appId).pipe(
+                tap((data) => {
+                    htmlizeExtVersion(data)
+                    setDaemonStatusErred(data)
+                }),
+                finalize(() => (this.dataLoading = false))
+            )
+        )
+    }
 
     /**
      * Event pipeline to react to changes in the App Types filter dropdown.
@@ -94,37 +104,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         this.subscriptions.unsubscribe()
     }
 
-    /** Switches to tab with a given index. */
-    switchToTab(index: number) {
-        if (this.activeTabIdx === index) {
-            return
-        }
-        this.activeTabIdx = index
-        this.activeItem = this.tabs[index]
-
-        if (index > 0) {
-            this.appTab = { ...this.openedApps[index - 1] }
-        }
-    }
-
-    /** Append a new tab for the given application. */
-    addAppTab(app: App) {
-        this.openedApps.push({
-            app,
-        })
-        this.tabs = [
-            ...this.tabs,
-            {
-                label: `${app.name}`,
-                routerLink: '/apps/' + app.id,
-            },
-        ]
-    }
-
     ngOnInit() {
         this.breadcrumbs = [{ label: 'Services' }, { label: 'Apps' }]
-
-        this.tabs = [{ label: 'All', routerLink: '/apps/all' }]
 
         this.apps = []
         this.appMenuItems = [
@@ -150,65 +131,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         if (this.appsTable) {
             this.refreshAppsList(this.appsTable)
         }
-
-        this.subscriptions.add(
-            this.route.paramMap.subscribe((paramMap) => {
-                const appIdStr = paramMap.get('id')
-                if (appIdStr === 'all') {
-                    this.switchToTab(0)
-                } else {
-                    const appId = parseInt(appIdStr, 10)
-
-                    let found = false
-                    // if tab for this app is already opened then switch to it
-                    for (let idx = 0; idx < this.openedApps.length; idx++) {
-                        const s = this.openedApps[idx].app
-                        if (s.id === appId) {
-                            this.switchToTab(idx + 1)
-                            found = true
-                        }
-                    }
-
-                    // if tab is not opened then search for list of apps if the one is present there,
-                    // if so then open it in new tab and switch to it
-                    if (!found) {
-                        for (const s of this.apps) {
-                            if (s.id === appId) {
-                                this.addAppTab(s)
-                                this.switchToTab(this.tabs.length - 1)
-                                found = true
-                                break
-                            }
-                        }
-                    }
-
-                    // if app is not loaded in list fetch it individually
-                    if (!found) {
-                        this.dataLoading = true
-                        lastValueFrom(this.servicesApi.getApp(appId))
-                            .then((data) => {
-                                htmlizeExtVersion(data)
-                                setDaemonStatusErred(data)
-                                this.addAppTab(data)
-                                this.switchToTab(this.tabs.length - 1)
-                            })
-                            .catch((err) => {
-                                let msg = getErrorMessage(err)
-                                this.msgSrv.add({
-                                    severity: 'error',
-                                    summary: 'Cannot get app',
-                                    detail: 'Getting app with ID ' + appId + ' failed: ' + msg,
-                                    life: 10000,
-                                })
-                                this.router.navigate(['/apps/all'])
-                            })
-                            .finally(() => {
-                                this.dataLoading = false
-                            })
-                    }
-                }
-            })
-        )
     }
 
     /**
@@ -258,25 +180,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             table.filter(filterText, 'text', 'contains')
         } else if (filterText.length == 0) {
             this.clearFilters(table)
-        }
-    }
-
-    /** Closes tab with a given index. */
-    closeTab(event: PointerEvent, idx: number) {
-        this.openedApps.splice(idx - 1, 1)
-        this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
-        if (this.activeTabIdx === idx) {
-            this.switchToTab(idx - 1)
-            if (idx - 1 > 0) {
-                this.router.navigate(['/apps/' + this.appTab.app.id])
-            } else {
-                this.router.navigate(['/apps/all'])
-            }
-        } else if (this.activeTabIdx > idx) {
-            this.activeTabIdx = this.activeTabIdx - 1
-        }
-        if (event) {
-            event.preventDefault()
         }
     }
 
@@ -354,9 +257,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      * @param event holds new app name.
      */
     onRenameApp(event) {
-        if (this.activeTabIdx > 0) {
-            this.tabs[this.activeTabIdx].label = event
-        }
+        // TODO: update the impl
+        // if (this.activeTabIdx > 0) {
+        //     this.tabs[this.activeTabIdx].label = event
+        // }
     }
 
     /**
