@@ -46,8 +46,8 @@ func TestPowerDNSAppGetZoneInventory(t *testing.T) {
 	require.Equal(t, app.zoneInventory, app.GetZoneInventory())
 }
 
-// Test successfully detecting PowerDNS app.
-func TestDetectPowerDNSApp(t *testing.T) {
+// Test successfully detecting PowerDNS app config path.
+func TestDetectPowerDNSAppConfigPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -56,27 +56,13 @@ func TestDetectPowerDNSApp(t *testing.T) {
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
 	process.EXPECT().getCwd().Return("/etc", nil)
 
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
-
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, app)
-
-	require.IsType(t, &PDNSApp{}, app)
-	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
-	require.Zero(t, app.GetBaseApp().Pid)
-	require.Len(t, app.GetBaseApp().AccessPoints, 1)
-	require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
-	require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
-	require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
-	require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
-	require.NotNil(t, app.GetZoneInventory())
+	require.NotNil(t, configPath)
+	require.Equal(t, "/etc/pdns.conf", *configPath)
 }
 
-// Test that the PowerDNS is correctly detected when no parameters are
+// Test that the PowerDNS config path is correctly detected when no parameters are
 // specified. It should use the default config directory.
 func TestDetectPowerDNSAppNoConfigDir(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -91,28 +77,14 @@ func TestDetectPowerDNSAppNoConfigDir(t *testing.T) {
 		return path == filepath.Join("/etc", "powerdns", "pdns.conf")
 	})
 
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
-
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, app)
-
-	require.IsType(t, &PDNSApp{}, app)
-	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
-	require.Zero(t, app.GetBaseApp().Pid)
-	require.Len(t, app.GetBaseApp().AccessPoints, 1)
-	require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
-	require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
-	require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
-	require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
-	require.NotNil(t, app.GetZoneInventory())
+	require.NotNil(t, configPath)
+	require.Equal(t, "/etc/powerdns/pdns.conf", *configPath)
 }
 
-// Test that the PowerDNS is correctly detected when the explicit config path is
-// specified.
+// Test that the PowerDNS config path is correctly detected when the explicit
+// config path is specified.
 func TestDetectPowerDNSAppExplicitConfigPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -123,29 +95,17 @@ func TestDetectPowerDNSAppExplicitConfigPath(t *testing.T) {
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist("/etc/custom/powerdns/pdns.conf").Return(true)
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/custom/powerdns/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
 
-	app, err := detectPowerDNSApp(process, executor, "/etc/custom/powerdns/pdns.conf", parser)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "/etc/custom/powerdns/pdns.conf")
 	require.NoError(t, err)
-	require.NotNil(t, app)
-
-	require.IsType(t, &PDNSApp{}, app)
-	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
-	require.Zero(t, app.GetBaseApp().Pid)
-	require.Len(t, app.GetBaseApp().AccessPoints, 1)
-	require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
-	require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
-	require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
-	require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
-	require.NotNil(t, app.GetZoneInventory())
+	require.NotNil(t, configPath)
+	require.Equal(t, "/etc/custom/powerdns/pdns.conf", *configPath)
 }
 
-// Test that the PowerDNS is correctly detected when the config directory is
-// not specified. It should try to find the config file in typical locations.
-func TestDetectPowerDNSAppPotentialConfLocations(t *testing.T) {
+// Test that the PowerDNS config path is correctly detected when the config
+// directory is not specified. It should try to find the config file in
+// typical locations.
+func TestDetectPowerDNSAppConfigPathPotentialConfLocations(t *testing.T) {
 	for _, location := range getPotentialPDNSConfLocations() {
 		t.Run(location, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -160,30 +120,16 @@ func TestDetectPowerDNSAppPotentialConfLocations(t *testing.T) {
 			process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=powerdns.conf", nil)
 			process.EXPECT().getCwd().Return("/etc", nil)
 
-			parser := NewMockPDNSConfigParser(ctrl)
-			parser.EXPECT().ParseFile(filepath.Join(location, "powerdns.conf")).DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-				return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-			})
-
-			app, err := detectPowerDNSApp(process, executor, "", parser)
+			configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 			require.NoError(t, err)
-			require.NotNil(t, app)
-
-			require.IsType(t, &PDNSApp{}, app)
-			require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
-			require.Zero(t, app.GetBaseApp().Pid)
-			require.Len(t, app.GetBaseApp().AccessPoints, 1)
-			require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
-			require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
-			require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
-			require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
-			require.NotNil(t, app.GetZoneInventory())
+			require.NotNil(t, configPath)
+			require.Equal(t, filepath.Join(location, "powerdns.conf"), *configPath)
 		})
 	}
 }
 
 // Test that an error is returned when getting a process command line fails.
-func TestDetectPowerDNSAppCmdLineError(t *testing.T) {
+func TestDetectPowerDNSAppConfigPathCmdLineError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -191,14 +137,14 @@ func TestDetectPowerDNSAppCmdLineError(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("", errors.New("test error"))
 
-	app, err := detectPowerDNSApp(process, executor, "", nil)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
-	require.Nil(t, app)
+	require.Nil(t, configPath)
 }
 
 // Test that an error is returned when getting a process current working directory fails.
-func TestDetectPowerDNSAppCwdError(t *testing.T) {
+func TestDetectPowerDNSAppConfigPathCwdError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -211,28 +157,14 @@ func TestDetectPowerDNSAppCwdError(t *testing.T) {
 		return path == filepath.Join("/etc", "powerdns", "pdns.conf")
 	})
 
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
-
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, app)
-
-	require.IsType(t, &PDNSApp{}, app)
-	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
-	require.Zero(t, app.GetBaseApp().Pid)
-	require.Len(t, app.GetBaseApp().AccessPoints, 1)
-	require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
-	require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
-	require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
-	require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
-	require.NotNil(t, app.GetZoneInventory())
+	require.NotNil(t, configPath)
+	require.Equal(t, "/etc/powerdns/pdns.conf", *configPath)
 }
 
 // Test that the app can be detected when the chroot directory is used.
-func TestDetectPowerDNSAppChroot(t *testing.T) {
+func TestDetectPowerDNSAppConfigPathChroot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -241,29 +173,15 @@ func TestDetectPowerDNSAppChroot(t *testing.T) {
 	process.EXPECT().getCwd().Return("/chroot", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/chroot/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
-
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, app)
-
-	require.IsType(t, &PDNSApp{}, app)
-	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
-	require.Zero(t, app.GetBaseApp().Pid)
-	require.Len(t, app.GetBaseApp().AccessPoints, 1)
-	require.Equal(t, AccessPointControl, app.GetBaseApp().AccessPoints[0].Type)
-	require.EqualValues(t, 8081, app.GetBaseApp().AccessPoints[0].Port)
-	require.Equal(t, "127.0.0.1", app.GetBaseApp().AccessPoints[0].Address)
-	require.Equal(t, "stork", app.GetBaseApp().AccessPoints[0].Key)
-	require.NotNil(t, app.GetZoneInventory())
+	require.NotNil(t, configPath)
+	require.Equal(t, "/chroot/etc/pdns.conf", *configPath)
 }
 
 // Test that custom config directory and name can be specified while detecting
 // PowerDNS app.
-func TestDetectPowerDNSAppConfigDir(t *testing.T) {
+func TestDetectPowerDNSAppConfigPathConfigDirSpecified(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -272,12 +190,23 @@ func TestDetectPowerDNSAppConfigDir(t *testing.T) {
 	process.EXPECT().getCwd().Return("/chroot", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/opt/etc/server.conf", *configPath)
+}
+
+// Test instantiating and configuring the PowerDNS app using specified config path.
+func TestConfigurePowerDNSApp(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/opt/etc/server.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
+	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
 	})
 
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
@@ -293,19 +222,14 @@ func TestDetectPowerDNSAppConfigDir(t *testing.T) {
 }
 
 // Test that an error is returned when parsing the configuration file fails.
-func TestDetectPowerDNSAppParseError(t *testing.T) {
+func TestConfigurePowerDNSAppParseError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc --config-name=pdns.conf", nil)
-	process.EXPECT().getCwd().Return("/etc", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").Return(nil, errors.New("test error"))
 
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
 	require.Nil(t, app)
@@ -313,15 +237,10 @@ func TestDetectPowerDNSAppParseError(t *testing.T) {
 
 // Test that default webserver address and port are used when not specified
 // in the configuration file.
-func TestDetectPowerDNSAppDefaultWebserver(t *testing.T) {
+func TestConfigurePowerDNSAppDefaultWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
-	process.EXPECT().getCwd().Return("", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(`
@@ -331,7 +250,7 @@ func TestDetectPowerDNSAppDefaultWebserver(t *testing.T) {
 		`))
 	})
 
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
@@ -348,15 +267,10 @@ func TestDetectPowerDNSAppDefaultWebserver(t *testing.T) {
 
 // Test that an error is returned when the API key is not specified in the
 // configuration file.
-func TestDetectPowerDNSAppNoAPIKey(t *testing.T) {
+func TestConfigurePowerDNSAppNoAPIKey(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
-	process.EXPECT().getCwd().Return("", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(`
@@ -365,7 +279,7 @@ func TestDetectPowerDNSAppNoAPIKey(t *testing.T) {
 		`))
 	})
 
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "api-key not found in /etc/pdns.conf")
 	require.Nil(t, app)
@@ -373,15 +287,10 @@ func TestDetectPowerDNSAppNoAPIKey(t *testing.T) {
 
 // Test that an error is returned when the webserver is disabled in the
 // configuration file.
-func TestDetectPowerDNSAppNoWebserver(t *testing.T) {
+func TestConfigurePowerDNSAppNoWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
-	process.EXPECT().getCwd().Return("", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(`
@@ -390,7 +299,7 @@ func TestDetectPowerDNSAppNoWebserver(t *testing.T) {
 		`))
 	})
 
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "webserver disabled in /etc/pdns.conf")
 	require.Nil(t, app)
@@ -398,15 +307,10 @@ func TestDetectPowerDNSAppNoWebserver(t *testing.T) {
 
 // Test that an error is returned when the API is disabled in the
 // configuration file.
-func TestDetectPowerDNSAppNoAPI(t *testing.T) {
+func TestConfigurePowerDNSAppNoAPI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
-	process.EXPECT().getCwd().Return("", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(`
@@ -414,7 +318,7 @@ func TestDetectPowerDNSAppNoAPI(t *testing.T) {
 		`))
 	})
 
-	app, err := detectPowerDNSApp(process, executor, "", parser)
+	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "API or webserver disabled in /etc/pdns.conf")
 	require.Nil(t, app)

@@ -305,9 +305,16 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 				}
 			}
 		case pdnsProcName:
-			// PowerDNS server.
-			if detectedApp, err = detectPowerDNSApp(p, sm.commander, storkAgent.ExplicitPowerDNSConfigPath, sm.pdnsConfigParser); err != nil {
-				log.WithError(err).Warn("Failed to detect PowerDNS server app")
+			// PowerDNS server configuration location detection.
+			configPath, err := detectPowerDNSAppConfigPath(p, sm.commander, storkAgent.ExplicitPowerDNSConfigPath)
+			if err != nil {
+				log.WithError(err).Warn("Failed to detect PowerDNS server config path")
+				continue
+			}
+			// Parse and interpret the PowerDNS server configuration.
+			detectedApp, err = configurePowerDNSApp(*configPath, sm.pdnsConfigParser)
+			if err != nil {
+				log.WithError(err).Warn("PowerDNS server configuration is invalid")
 				continue
 			}
 			for _, app := range sm.apps {

@@ -71,23 +71,17 @@ func (pa *PDNSApp) StopZoneInventory() {
 	}
 }
 
-// Detect the PowerDNS application by parsing the named process command line.
-// If the configuration path is not specified in the command line, the function
-// will use the explicitly specified path. If the path is not specified in the
-// command line and explicitly specified path is not provided, the function will
-// try to find the configuration file in the potential locations.
+// Detect the PowerDNS application config path by parsing the named process
+// command line. If the configuration path is not specified in the command line,
+// the function will use the explicitly specified path. If the path is not
+// specified in the command line and explicitly specified path is not provided,
+// the function will try to find the configuration file in the potential locations.
 //
 // If the path to the configuration file is relative and chroot directory is
 // not specified, the path is resolved against the current working directory of
 // the process. If the chroot directory is specified, the path is resolved
 // against it.
-//
-// The function reads the configuration file and extracts webserver address,
-// port, and API key (if configured).
-//
-// It returns the PowerDNS app instance or an error if the PowerDNS is not
-// recognized or any error occurs.
-func detectPowerDNSApp(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser pdnsConfigParser) (App, error) {
+func detectPowerDNSAppConfigPath(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string) (*string, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil, err
@@ -175,6 +169,14 @@ func detectPowerDNSApp(p supportedProcess, executor storkutil.CommandExecutor, e
 
 	configPath = filepath.Join(rootPrefix, configPath)
 
+	return &configPath, nil
+}
+
+// Parses the PowerDNS configuration file specified in the first argument. It extracts
+// the webserver configuration and the API key. If the webserver is disabled or the
+// API key does not exist it returns an error. Otherwise it instantiates the
+// PowerDNS app and the zone inventory.
+func configurePowerDNSApp(configPath string, parser pdnsConfigParser) (App, error) {
 	// Parse the configuration file.
 	parsedConfig, err := parser.ParseFile(configPath)
 	if err != nil {

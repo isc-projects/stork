@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"path"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -607,55 +606,6 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
-}
-
-// Check PowerDNS app detection when its conf file is absolute path.
-func TestDetectPowerDNSAppAbsPath(t *testing.T) {
-	// check BIND 9 app detection
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	executor := NewMockCommandExecutor(ctrl)
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
-	process.EXPECT().getCwd().Return("", nil)
-	app, err := detectPowerDNSApp(process, executor, "", parser)
-	require.NoError(t, err)
-	require.NotNil(t, app)
-	require.Equal(t, app.GetBaseApp().Type, AppTypePowerDNS)
-	require.Len(t, app.GetBaseApp().AccessPoints, 1)
-	point := app.GetBaseApp().AccessPoints[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "127.0.0.1", point.Address)
-	require.EqualValues(t, 8081, point.Port)
-	require.NotEmpty(t, point.Key)
-}
-
-// Check PowerDNS app detection when its conf file is relative to CWD of its process.
-func TestDetectPowerDNSAppRelativePath(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().IsFileExist(filepath.Join("/etc", "powerdns", "pdns.conf")).DoAndReturn(func(path string) bool {
-		return path == filepath.Join("/etc", "powerdns", "pdns.conf")
-	})
-
-	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
-	})
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=pdns.conf", nil)
-	process.EXPECT().getCwd().Return("/etc", nil)
-	app, err := detectPowerDNSApp(process, executor, "", parser)
-	require.NoError(t, err)
-	require.NotNil(t, app)
-	require.Equal(t, app.GetBaseApp().Type, AppTypePowerDNS)
 }
 
 // Creates a basic Kea configuration file.
