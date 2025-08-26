@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -71,36 +72,40 @@ func (pa *PDNSApp) StopZoneInventory() {
 	}
 }
 
-// Detect the PowerDNS application config path by parsing the named process
-// command line. If the configuration path is not specified in the command line,
-// the function will use the explicitly specified path. If the path is not
-// specified in the command line and explicitly specified path is not provided,
-// the function will try to find the configuration file in the potential locations.
+// Detects the PowerDNS application config path using the following algorithm:
 //
-// If the path to the configuration file is relative and chroot directory is
-// not specified, the path is resolved against the current working directory of
-// the process. If the chroot directory is specified, the path is resolved
-// against it.
+// STEP 1: Parse the command line arguments. If the config-dir is specified
+// in the process command line it points to the directory with the config file
+// actually used by the server.
+// - If the config-dir is absolute, use this directory.
+// - If the config-dir is relative, use it as relative to the current working
+// directory.
+// - If the config-dir is relative and chroot is set, return an error given that
+// it is impossible to determine the absolute path to the config directory.
+//
+// STEP 2: If the config path is explicitly specified in settings, use it.
+// - Make sure that the path is inside the chroot directory if chroot is set.
+//
+// STEP 3: Try to find the config file in the common locations:
+// - Use the locations returned by getPotentialPDNSConfLocations() function.
+// - Prepend the chroot directory if it is set.
 func detectPowerDNSAppConfigPath(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string) (*string, error) {
+	// We can't proceed without the command line.
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil, err
 	}
-	cwd, err := p.getCwd()
-	if err != nil {
-		log.WithError(err).Warnf("Failed to get %s process current working directory", pdnsProcName)
-	}
+
+	// The command line must contain pdns_server.
 	match := pdnsPattern.FindStringSubmatch(cmdline)
 	if match == nil {
 		return nil, errors.Errorf("failed to find pdns_server in cmdline: %s", cmdline)
 	}
 
-	// STEP 1: Let's try to parse --config-dir and --config-name parameters passed to pdns_server.
+	// STEP 1: Let's try to parse --chroot, --config-dir and --config-name parameters passed to pdns_server.
 	log.Debug("Looking for PowerDNS config file in --config-dir and --config-name parameters of a running process.")
 
-	configDir := ""
-	configName := "pdns.conf"
-	rootPrefix := ""
+	var configDir, configName, configPath, rootPrefix string
 	if len(match) >= 3 {
 		// The command line contains parameters. Check if they specify config
 		// directory or config name.
@@ -114,62 +119,126 @@ func detectPowerDNSAppConfigPath(p supportedProcess, executor storkutil.CommandE
 			switch key {
 			case "--chroot":
 				rootPrefix = strings.TrimRight(value, "/")
-				// The cwd path is already prefixed with the chroot directory
-				// because the /proc/(pid)/cwd is absolute.
-				cwd = strings.TrimPrefix(cwd, rootPrefix)
 			case "--config-dir":
-				configDir = value
-				if !filepath.IsAbs(configDir) {
-					configDir = filepath.Join(cwd, configDir)
-				}
+				configDir = strings.TrimRight(value, "/")
 			case "--config-name":
 				configName = value
 			}
 		}
 	}
+	log.WithFields(log.Fields{
+		"config-dir":  configDir,
+		"config-name": configName,
+		"chroot":      rootPrefix,
+	}).Debug("PowerDNS was started with the following command line arguments")
 
-	configPath := ""
+	if rootPrefix != "" && !filepath.IsAbs(rootPrefix) {
+		// If the chroot directory is relative, we can use cwd as chroot because
+		// cwd is absolute and points to the chroot directory.
+		cwd, err := p.getCwd()
+		if err != nil {
+			// That's unexpected. We're unable to determine the chroot directory.
+			// We can't reliably proceed.
+			return nil, errors.Wrapf(err, "failed to get PowerDNS current working directory to determine absolute chroot path")
+		}
+		log.Debugf("The PowerDNS chroot directory (%s) is relative. Using current working directory (%s) as chroot", rootPrefix, cwd)
+		rootPrefix = cwd
+	}
+
+	// The default config file name is pdns.conf. The name can be overridden
+	// by passing --config-name parameter. For example, setting --config-name=custom
+	// yields a config file named pdns-custom.conf.
+	configFileName := "pdns.conf"
+	if configName != "" {
+		configFileName = fmt.Sprintf("pdns-%s.conf", configName)
+		log.Debugf("Using custom config file name: %s", configFileName)
+	}
+
+	// If the config directory is specified in the process command line, it points
+	// to the directory with the config file actually used by the server.
 	if configDir != "" {
-		configPath = filepath.Join(configDir, configName)
+		if !filepath.IsAbs(configDir) {
+			// The config directory location is relative.
+			if rootPrefix != "" {
+				// Using a relative config directory with chroot is not supported. Suppose
+				// we start the server like this:
+				// pdns_server --chroot=/home/frank/chroot --config-dir=frank/chroot/etc.
+				// It is likely that the config file is under /home/frank/chroot/etc. However,
+				// there is no guarantee. It depends on the current working directory from which
+				// the pdns_server process was started. We don't know this directory. cwd will
+				// rather point me to the chroot directory, not the directory from which the
+				// process was started. We still can use other methods to detect the config file
+				// but let's log the issue.
+				log.Warnf("Config directory (%s) is relative while chroot is set (%s)", configDir, rootPrefix)
+				log.Warn("Unable to match relative config directory against chroot directory. Falling back to other possible locations")
+			} else {
+				// The config directory location is relative but the chroot is not set.
+				// We can assume that cwd points to the directory from which the process
+				// was started.
+				cwd, err := p.getCwd()
+				if err != nil {
+					// That's unexpected. We're unable to determine the chroot directory.
+					// We can't reliably proceed.
+					return nil, errors.Wrapf(err, "failed to get PowerDNS current working directory to determine absolute config directory path")
+				}
+				configPath = filepath.Join(cwd, configDir, configFileName)
+			}
+		} else {
+			// The config directory location is absolute. We can simply join it
+			// with the config file name and that's where our config resides.
+			configPath = filepath.Join(configDir, configFileName)
+		}
+	}
+	if configPath != "" {
+		// Found the config file location. There is nothing more to do.
+		return &configPath, nil
 	}
 
 	// STEP 2: Check if the config path is explicitly specified in settings. If
 	// it is, we'll use whatever value is provided.
-	if configPath == "" && explicitConfigPath != "" {
-		log.Debugf("Looking for PowerDNS config in %s as explicitly specified in settings.", explicitConfigPath)
-		switch {
-		case !strings.HasPrefix(explicitConfigPath, rootPrefix):
-			log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", rootPrefix, explicitConfigPath)
-		case executor.IsFileExist(explicitConfigPath):
-			// Trim the root prefix.
-			configPath = explicitConfigPath[len(rootPrefix):]
-		default:
-			log.Errorf("Explicitly specified PowerDNS config file (%s) not found or unreadable.", explicitConfigPath)
+	if explicitConfigPath != "" {
+		var candidatePath string
+		log.Debugf("Looking for PowerDNS config in the location explicitly specified in settings: %s", explicitConfigPath)
+		if rootPrefix != "" {
+			rel, err := filepath.Rel(rootPrefix, explicitConfigPath)
+			if err != nil || strings.HasPrefix(rel, "..") {
+				// The explicit config path does not belong to the chroot directory when
+				// it is impossible to build a relative path between the two (error case).
+				// If the explicit path is a parent of the chroot directory, it is also
+				// wrong (the double dot case).
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", rootPrefix, explicitConfigPath)
+			} else {
+				candidatePath = explicitConfigPath
+			}
+		} else {
+			candidatePath = explicitConfigPath
 		}
-	}
-
-	// STEP 3: If the config path is not explicitly specified, we'll try to
-	// find it in the potential locations.
-	if configPath == "" {
-		log.Debugf("Looking for PowerDNS config file in typical locations.")
-		for _, location := range getPotentialPDNSConfLocations() {
-			// Concat with root or chroot.
-			fullPath := filepath.Join(rootPrefix, location, configName)
-			log.Debugf("Looking for PowerDNS config file in %s", fullPath)
-			if executor.IsFileExist(fullPath) {
-				configPath = filepath.Join(location, configName)
-				break
+		if candidatePath != "" {
+			if executor.IsFileExist(candidatePath) {
+				configPath = candidatePath
+			} else {
+				log.Errorf("Explicitly specified PowerDNS config file (%s) not found or unreadable", candidatePath)
 			}
 		}
 	}
 
-	if configPath == "" {
-		return nil, errors.Errorf("PowerDNS config file not found")
+	if configPath != "" {
+		// Found the config file location. There is nothing more to do.
+		return &configPath, nil
 	}
 
-	configPath = filepath.Join(rootPrefix, configPath)
-
-	return &configPath, nil
+	// STEP 3: If the config path is not explicitly specified, we'll try to
+	// find it in the potential locations.
+	log.Debugf("Looking for PowerDNS config file in typical locations")
+	for _, location := range getPotentialPDNSConfLocations() {
+		// Concat with root or chroot.
+		path := filepath.Join(rootPrefix, location, configFileName)
+		log.Debugf("Checking if config file exists: %s", path)
+		if executor.IsFileExist(path) {
+			return &path, nil
+		}
+	}
+	return nil, errors.Errorf("PowerDNS config file not found")
 }
 
 // Parses the PowerDNS configuration file specified in the first argument. It extracts

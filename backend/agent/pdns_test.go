@@ -46,35 +46,34 @@ func TestPowerDNSAppGetZoneInventory(t *testing.T) {
 	require.Equal(t, app.zoneInventory, app.GetZoneInventory())
 }
 
-// Test successfully detecting PowerDNS app config path.
-func TestDetectPowerDNSAppConfigPath(t *testing.T) {
+// Test that the PowerDNS config detection function returns an error when
+// getting the process command line fails.
+func TestPowerDNSAppCmdLineError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	executor := NewMockCommandExecutor(ctrl)
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
-	process.EXPECT().getCwd().Return("/etc", nil)
+	process.EXPECT().getCmdline().Return("", errors.New("test error"))
 
+	executor := NewMockCommandExecutor(ctrl)
 	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
-	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/pdns.conf", *configPath)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "test error")
+	require.Nil(t, configPath)
 }
 
-// Test that the PowerDNS config path is correctly detected when no parameters are
-// specified. It should use the default config directory.
-func TestDetectPowerDNSAppNoConfigDir(t *testing.T) {
+// Test that the PowerDNS config path is correctly detected when no command
+// line arguments are specified. It should use the default config directory.
+func TestDetectPowerDNSAppNoArguments(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server", nil)
-	process.EXPECT().getCwd().Return("/etc", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().IsFileExist(filepath.Join("/etc", "powerdns", "pdns.conf")).DoAndReturn(func(path string) bool {
-		return path == filepath.Join("/etc", "powerdns", "pdns.conf")
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		return path == "/etc/powerdns/pdns.conf"
 	})
 
 	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
@@ -83,23 +82,246 @@ func TestDetectPowerDNSAppNoConfigDir(t *testing.T) {
 	require.Equal(t, "/etc/powerdns/pdns.conf", *configPath)
 }
 
+// Test that the PowerDNS config path is correctly detected when the config-dir
+// is specified and points to a non-standard location.
+func TestDetectPowerDNSAppConfigDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/etc/pdns.conf", *configPath)
+}
+
+// Test that the config directory is correctly detected when it is relative
+// and the chroot is not set.
+func TestDetectPowerDNSAppRelConfigDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
+	process.EXPECT().getCwd().Return("/opt", nil)
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/opt/etc/pdns.conf", *configPath)
+}
+
+// Test that an error is returned when getting a process current working directory fails
+// when the config directory is relative and the chroot is not set.
+func TestDetectPowerDNSAppRelConfigDirCwdError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
+	process.EXPECT().getCwd().Return("", errors.New("test error"))
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "test error")
+	require.Nil(t, configPath)
+}
+
+// Test that the config-name parameter is correctly interpreted when detected
+// in the PowerDNS process command line.
+func TestDetectPowerDNSAppConfigName(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		return path == "/etc/powerdns/pdns-foo.conf"
+	})
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=foo", nil)
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/etc/powerdns/pdns-foo.conf", *configPath)
+}
+
+// Test that the PowerDNS config path is correctly detected when both
+// the chroot and config-dir are absolute and the config-dir belongs to
+// the chroot directory.
+func TestDetectPowerDNSAppChrootAbsConfigDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/chroot --config-dir=/chroot/etc --config-name=foo", nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/chroot/etc/pdns-foo.conf", *configPath)
+}
+
+// Test that using chroot and relative config-dir falls back to alternative
+// locations.
+func TestDetectPowerDNSAppChrootRelConfigDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/var/chroot --config-dir=chroot/etc", nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		return path == "/var/chroot/etc/powerdns/pdns.conf"
+	})
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+}
+
+// Test that the PowerDNS config path is correctly detected even for a relative
+// chroot directory if cwd is correctly set.
+func TestDetectPowerDNSAppRelChroot(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Specify relative chroot directory. Since cwd for the chroot case is
+	// always set to the absolute path of the chroot directory, we should
+	// get correct absolute path by prepending cwd to the config path.
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=chroot", nil)
+	process.EXPECT().getCwd().Return("/var/chroot", nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		// Since there is no config-dir, the agent should look for the config
+		// in the default locations. The first tried default location is the
+		// one below.
+		return path == "/var/chroot/etc/powerdns/pdns.conf"
+	})
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+}
+
+// Test that an error is returned when getting a process current working directory fails.
+// This is a corner case scenario when the chroot directory is relative.
+func TestDetectPowerDNSAppRelChrootCwdError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=chroot", nil)
+	process.EXPECT().getCwd().Return("", errors.New("test error"))
+
+	executor := NewMockCommandExecutor(ctrl)
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "test error")
+	require.Nil(t, configPath)
+}
+
 // Test that the PowerDNS config path is correctly detected when the explicit
-// config path is specified.
+// config path is specified and the config-dir is not specified in the process
+// command line.
 func TestDetectPowerDNSAppExplicitConfigPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server", nil)
-	process.EXPECT().getCwd().Return("/etc", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().IsFileExist("/etc/custom/powerdns/pdns.conf").Return(true)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		return path == "/etc/custom/powerdns/pdns.conf"
+	})
 
 	configPath, err := detectPowerDNSAppConfigPath(process, executor, "/etc/custom/powerdns/pdns.conf")
 	require.NoError(t, err)
 	require.NotNil(t, configPath)
 	require.Equal(t, "/etc/custom/powerdns/pdns.conf", *configPath)
+}
+
+// Test that the explicit PowerDNS config path is respected when this path
+// belongs to the chroot directory.
+func TestDetectPowerDNSAppExplicitConfigPathChroot(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/chroot/", nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		return path == "/chroot/etc/custom/powerdns/pdns.conf"
+	})
+
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "/chroot/etc/custom/powerdns/pdns.conf")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/chroot/etc/custom/powerdns/pdns.conf", *configPath)
+}
+
+// Test that an error is returned when the explicit PowerDNS config path
+// belongs to a different directory than the chroot directory.
+func TestDetectPowerDNSAppExplicitConfigPathChrootMismatch(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/var/chroot/", nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		// We expect the agent to use a default location rather than the
+		// explicitly specified one. That's because the explicit path does
+		// not belong to the chroot directory.
+		return path == "/var/chroot/etc/powerdns/pdns.conf"
+	})
+
+	// Explicit path does not belong to the chroot directory.
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "/chroot/etc/custom/powerdns/pdns.conf")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+}
+
+// Test that an error is returned when the explicit PowerDNS config path
+// belongs to a parent of the chroot directory.
+func TestDetectPowerDNSAppExplicitConfigPathInChrootParent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/var/chroot", nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		// We expect the agent to use a default location rather than the
+		// explicitly specified one. That's because the explicit path does
+		// not belong to the chroot directory.
+		return path == "/var/chroot/etc/powerdns/pdns.conf"
+	})
+
+	// Explicit path does not belong to the chroot directory. The
+	// explicit path should be ignored and one of the default locations
+	// should be used.
+	configPath, err := detectPowerDNSAppConfigPath(process, executor, "/var/pdns.conf")
+	require.NoError(t, err)
+	require.NotNil(t, configPath)
+	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
 }
 
 // Test that the PowerDNS config path is correctly detected when the config
@@ -113,17 +335,16 @@ func TestDetectPowerDNSAppConfigPathPotentialConfLocations(t *testing.T) {
 
 			executor := NewMockCommandExecutor(ctrl)
 			executor.EXPECT().IsFileExist(gomock.Any()).AnyTimes().DoAndReturn(func(path string) bool {
-				return path == filepath.Join(location, "powerdns.conf")
+				return path == filepath.Join(location, "pdns-custom.conf")
 			})
 
 			process := NewMockSupportedProcess(ctrl)
-			process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=powerdns.conf", nil)
-			process.EXPECT().getCwd().Return("/etc", nil)
+			process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=custom", nil)
 
 			configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 			require.NoError(t, err)
 			require.NotNil(t, configPath)
-			require.Equal(t, filepath.Join(location, "powerdns.conf"), *configPath)
+			require.Equal(t, filepath.Join(location, "pdns-custom.conf"), *configPath)
 		})
 	}
 }
@@ -149,51 +370,17 @@ func TestDetectPowerDNSAppConfigPathCwdError(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=pdns.conf", nil)
-	process.EXPECT().getCwd().Return("", errors.New("test error"))
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=custom", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().IsFileExist(filepath.Join("/etc", "powerdns", "pdns.conf")).DoAndReturn(func(path string) bool {
-		return path == filepath.Join("/etc", "powerdns", "pdns.conf")
+	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
+		return path == "/etc/powerdns/pdns-custom.conf"
 	})
 
 	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
 	require.NoError(t, err)
 	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/powerdns/pdns.conf", *configPath)
-}
-
-// Test that the app can be detected when the chroot directory is used.
-func TestDetectPowerDNSAppConfigPathChroot(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/chroot --config-dir=/etc --config-name=pdns.conf", nil)
-	process.EXPECT().getCwd().Return("/chroot", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
-	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
-	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/chroot/etc/pdns.conf", *configPath)
-}
-
-// Test that custom config directory and name can be specified while detecting
-// PowerDNS app.
-func TestDetectPowerDNSAppConfigPathConfigDirSpecified(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/opt/etc --config-name=server.conf", nil)
-	process.EXPECT().getCwd().Return("/chroot", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
-	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
-	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/opt/etc/server.conf", *configPath)
+	require.Equal(t, "/etc/powerdns/pdns-custom.conf", *configPath)
 }
 
 // Test instantiating and configuring the PowerDNS app using specified config path.

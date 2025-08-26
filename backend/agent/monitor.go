@@ -311,6 +311,10 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 				log.WithError(err).Warn("Failed to detect PowerDNS server config path")
 				continue
 			}
+			log.WithFields(log.Fields{
+				"path": *configPath,
+			}).Debug("PowerDNS server config path detected")
+
 			// Parse and interpret the PowerDNS server configuration.
 			detectedApp, err = configurePowerDNSApp(*configPath, sm.pdnsConfigParser)
 			if err != nil {
