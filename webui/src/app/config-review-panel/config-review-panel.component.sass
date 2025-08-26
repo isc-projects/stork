@@ -55,18 +55,18 @@
       .p-dataview-content > .p-grid > div:last-child
         padding-bottom: 1em
 
-    .p-popover.checker-panel
-      @media screen and (max-width: 1199px)
-        // For screens more narrow than 1200px there is not enough space on the right to fit
-        // the overlay panel. Force align it to the left edge of the viewport to prevent content
-        // overlapping.
-        left: 1rem !important
+  ::ng-deep .p-popover.checker-panel
+    @media screen and (max-width: 1199px)
+      // For screens more narrow than 1200px there is not enough space on the right to fit
+      // the overlay panel. Force align it to the left edge of the viewport to prevent content
+      // overlapping.
+      left: 1rem !important
 
-      .p-popover-content
-        // Set max-width to prevent horizontal overflow on smaller screens.
-        max-width: calc(90vw - 1rem)
+    .p-popover-content
+      // Set max-width to prevent horizontal overflow on smaller screens.
+      max-width: calc(90vw - 1rem)
 
-      // Hide the default chevron pointing to the target,
-      // because it might be misleading for smaller screens.
-      &::after, &::before
-        content: none
+    // Hide the default chevron pointing to the target,
+    // because it might be misleading for smaller screens.
+    &::after, &::before
+      content: none
