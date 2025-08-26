@@ -386,13 +386,12 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Communicates with themeService to change stork UI dark/light mode and the color theme.
+     * Communicates with themeService to change stork UI dark/light mode.
      * User's preference is stored in browser's local storage.
      * @param isDark when true provided, dark mode is enabled; otherwise light mode is enabled
-     * @param theme optional color theme; when skipped, default theme and color scheme is used
      */
-    changeTheme(isDark: boolean = false, theme?: string): void {
-        this.themeService.switchTheme(isDark, theme)
+    changeTheme(isDark: boolean = false): void {
+        this.themeService.switchTheme(isDark)
         this.themeService.storeTheme()
     }
 

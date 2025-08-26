@@ -37,9 +37,8 @@ export class ThemeService {
     /**
      * Switches dark/light mode and color theme.
      * @param isDark when true provided, dark mode is enabled; otherwise light mode is enabled
-     * @param theme color theme which may be also switched; defaults to PrimeNGv17 default `aura-blue` theme
      */
-    switchTheme(isDark: boolean, theme: string = 'aura-blue') {
+    switchTheme(isDark: boolean) {
         this.darkMode = isDark
         const darkLight = isDark ? 'dark' : 'light'
 
