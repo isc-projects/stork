@@ -1,3 +1,31 @@
+Stork 2.2.1 released on 2025-09-10.
+
+* 533 [build] marcin
+
+    Fixed an issue with starting the demo due to curl version mismatch
+    on one of the Docker containers.
+    (Gitlab #1977)
+
+* 532 [bug] slawek
+
+    Fixed unexpected wiping out all shared network-related host
+    reservations from the configuration file after modifying this shared
+    network by UI form.
+    (Gitlab #1924)
+
+* 531 [bug] marcin
+
+    The stork-agent gracefully deals with the situation when the
+    statistics-channel configuration in BIND 9 lacks the allow
+    statement. It logs an error requesting that the allow statement
+    is included in the configuration.
+    (Gitlab #1925)
+
+* 530 [bug] slawek, piotrek
+
+    Fixed overriding the environment files when updating RPM packages.
+    (Gitlab #1907)
+
 Stork 2.2.0 released on 2025-06-11.
 
 * 529 [doc] bscott
