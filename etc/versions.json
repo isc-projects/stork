@@ -54,20 +54,35 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.18.37",
-        "releaseDate": "2025-05-21",
-        "eolDate": "2026-07-01",
+        "version": "9.20.12",
+        "releaseDate": "2025-08-20",
+        "eolDate": "2028-07-01",
         "ESV": "true"
       },
       {
-        "version": "9.20.9",
-        "releaseDate": "2025-05-21",
-        "eolDate": "2028-07-01"
+        "version": "9.18.39",
+        "releaseDate": "2025-08-20",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
       }
     ],
     "latestDev": {
-      "version": "9.21.8",
-      "releaseDate": "2025-05-21"
-    }
+      "version": "9.21.11",
+      "releaseDate": "2025-08-20"
+    },
+    "latestSecure": [
+      {
+        "version": "9.20.11",
+        "releaseDate": "2025-07-16"
+      },
+      {
+        "version": "9.18.38",
+        "releaseDate": "2025-07-16"
+      },
+      {
+        "version": "9.21.10",
+        "releaseDate": "2025-07-16"
+      }
+    ]
   }
 }
