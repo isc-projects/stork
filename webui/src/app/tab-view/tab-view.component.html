@@ -24,7 +24,14 @@
     <p-tabpanels>
         @if (firstTabTemplate) {
             <p-tabpanel [value]="0">
-                <ng-container *ngTemplateOutlet="firstTabTemplate"></ng-container>
+                <ng-container
+                    *ngTemplateOutlet="
+                        firstTabTemplate;
+                        context: {
+                            updateTabEntityFn: onUpdateTabEntity,
+                        }
+                    "
+                ></ng-container>
             </p-tabpanel>
         }
 
@@ -36,6 +43,8 @@
                             entityTabTemplate;
                             context: {
                                 $implicit: tab.entity,
+                                updateTabTitleFn: onUpdateTabTitle,
+                                updateTabEntityFn: onUpdateTabEntity,
                             }
                         "
                     ></ng-container>

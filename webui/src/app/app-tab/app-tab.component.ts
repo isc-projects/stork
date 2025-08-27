@@ -7,12 +7,20 @@ import { MessageService } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 
-import { daemonStatusErred, daemonStatusIconName, daemonStatusIconTooltip, getErrorMessage } from '../utils'
+import {
+    daemonNameToFriendlyName,
+    daemonStatusErred,
+    daemonStatusIconName,
+    daemonStatusIconTooltip,
+    getErrorMessage,
+} from '../utils'
 import { AppTab } from '../apps'
 import { Bind9Daemon } from '../backend'
 
 type DaemonInfo = Bind9Daemon & {
     statusErred: boolean
+    niceName?: string
+    icon?: string
 }
 
 @Component({
@@ -42,7 +50,7 @@ export class AppTabComponent {
     /**
      * Active tab index used by the tab view.
      */
-    activeTabIndex = 0
+    // activeTabIndex = 0
 
     /**
      * Holds a map of existing apps' names and ids.
@@ -97,6 +105,8 @@ export class AppTabComponent {
         this.daemons = [
             {
                 statusErred: this.daemonStatusErred(daemon),
+                niceName: daemonNameToFriendlyName(daemon.name),
+                icon: daemonStatusIconName(daemon),
                 ...daemon,
             },
         ]

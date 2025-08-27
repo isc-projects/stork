@@ -50,52 +50,43 @@
         </p-panel>
     </div>
     <div class="p-0 col-12">
-        <p-tabView [activeIndex]="activeTabIndex">
-            <p-tabPanel *ngFor="let daemon of daemons; let i = index" [selected]="i === activeTabIndex">
-                <ng-template pTemplate="header">
-                    <div>
-                        <span
-                            class="{{ daemonStatusIconName(daemon) }}"
-                            style="font-size: 1.6em; vertical-align: bottom"
-                        ></span>
-                        <span style="margin-right: 0.5em; font-weight: bold">
-                            {{ daemon.name | daemonNiceName }}
-                        </span>
+        <app-tab-view
+            [entitiesCollection]="daemons"
+            entityNameKey="niceName"
+            [initWithEntitiesInCollection]="true"
+            [closableTabs]="false"
+        >
+            <ng-template #entityTab let-daemon>
+                <div class="grid p-0">
+                    <div *ngIf="daemon.statusErred" class="col-12 sm:col-10 md:col-6">
+                        <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
                     </div>
-                </ng-template>
 
-                <ng-template pTemplate="content">
-                    <div class="grid p-0">
-                        <div *ngIf="daemon.statusErred" class="col-12 sm:col-10 md:col-6">
-                            <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
-                        </div>
-
-                        <div class="col-12 xl:col-7">
-                            <ng-container [ngSwitch]="appTab.app.type">
-                                <!-- BIND9 -->
-                                <app-bind9-daemon
-                                    *ngSwitchCase="'bind9'"
-                                    [appId]="appTab.app.id"
-                                    [daemon]="daemon"
-                                ></app-bind9-daemon>
-                                <!-- PowerDNS -->
-                                <app-pdns-daemon *ngSwitchCase="'pdns'" [daemon]="daemon"></app-pdns-daemon>
-                            </ng-container>
-                        </div>
-                        <!-- Events -->
-                        <div class="col-12 xl:col-5">
-                            <h3 class="underlined">Events</h3>
-                            <app-events-panel
-                                #eventsTable
-                                [filter]="{
-                                    machine: appTab.app.machine.id,
-                                    appType: appTab.app.type,
-                                }"
-                            ></app-events-panel>
-                        </div>
+                    <div class="col-12 xl:col-7">
+                        <ng-container [ngSwitch]="appTab.app.type">
+                            <!-- BIND9 -->
+                            <app-bind9-daemon
+                                *ngSwitchCase="'bind9'"
+                                [appId]="appTab.app.id"
+                                [daemon]="daemon"
+                            ></app-bind9-daemon>
+                            <!-- PowerDNS -->
+                            <app-pdns-daemon *ngSwitchCase="'pdns'" [daemon]="daemon"></app-pdns-daemon>
+                        </ng-container>
                     </div>
-                </ng-template>
-            </p-tabPanel>
-        </p-tabView>
+                    <!-- Events -->
+                    <div class="col-12 xl:col-5">
+                        <h3 class="underlined">Events</h3>
+                        <app-events-panel
+                            #eventsTable
+                            [filter]="{
+                                machine: appTab.app.machine.id,
+                                appType: appTab.app.type,
+                            }"
+                        ></app-events-panel>
+                    </div>
+                </div>
+            </ng-template>
+        </app-tab-view>
     </div>
 </div>

@@ -91,6 +91,55 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
 
     /**
      *
+     * @param id
+     * @param title
+     */
+    onUpdateTabTitle = (id: number, title: string) => {
+        console.log('onUpdateTabTitle', id, title)
+        const existingTab = this.openTabs.find((tab) => tab.value === id)
+        if (existingTab) {
+            existingTab.title = title
+        }
+    }
+
+    /**
+     *
+     * @param id
+     */
+    onUpdateTabEntity = (id: number) => {
+        if (!this.entityProvider) {
+            return
+        }
+
+        const existingTab = this.openTabs.find((tab) => tab.value === id)
+        const existingEntityInCollectionIdx = this.entitiesCollection()?.findIndex(
+            (entity) => this.getID(entity) === id
+        )
+        console.log('onUpdateTabEntity', id, existingTab, existingEntityInCollectionIdx)
+        if (existingTab || existingEntityInCollectionIdx > -1) {
+            this.entityProvider(id)
+                .then((entity) => {
+                    if (existingTab) {
+                        existingTab.entity = entity
+                    }
+
+                    if (existingEntityInCollectionIdx > -1) {
+                        this.entitiesCollection().splice(existingEntityInCollectionIdx, 1, entity)
+                    }
+                })
+                .catch((error) => {
+                    const msg = getErrorMessage(error)
+                    this.messageService.add({
+                        detail: `Error trying to update tab with id ${id} - ${msg}`,
+                        severity: 'error',
+                        summary: `Error updating tab`,
+                    })
+                })
+        }
+    }
+
+    /**
+     *
      * @param entity
      */
     getID(entity: TEntity): number {

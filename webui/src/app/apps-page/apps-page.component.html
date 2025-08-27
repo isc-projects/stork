@@ -6,7 +6,7 @@
 </app-breadcrumbs>
 
 <app-tab-view routePath="/apps/" [entitiesCollection]="apps" [entityProvider]="appProvider">
-    <ng-template #firstTab>
+    <ng-template #firstTab let-onRefreshApp="updateTabEntityFn">
         <div class="flex flex-wrap gap-2 justify-content-end mb-3">
             <span class="p-input-icon-left flex min-w-0">
                 <i class="pi pi-search"></i>
@@ -33,7 +33,7 @@
                     id="apps-refresh-button"
                     label="Refresh"
                     icon="pi pi-refresh"
-                    (click)="refreshAppsList(appsTable)"
+                    (click)="refreshAppsList()"
                     class="flex-none"
                 ></p-button>
                 <p-button
@@ -99,7 +99,7 @@
                             type="button"
                             pButton
                             icon="pi pi-bars"
-                            (click)="showAppMenu($event, appMenu, a)"
+                            (click)="showAppMenu($event, onRefreshApp, a.id)"
                         ></button>
                     </td>
                 </tr>
@@ -127,19 +127,18 @@
             </ng-template>
         </p-table>
     </ng-template>
-    <ng-template #entityTab let-app>
+    <ng-template #entityTab let-app let-onRenameApp="updateTabTitleFn" let-onRefreshApp="updateTabEntityFn">
         <app-app-tab
             *ngIf="app.type === 'bind9' || app.type === 'pdns'"
             [appTab]="{ app: app }"
-            (refreshApp)="onRefreshApp()"
-            (renameApp)="onRenameApp($event)"
+            (refreshApp)="onRefreshApp($event)"
+            (renameApp)="onRenameApp(app.id, $event)"
         ></app-app-tab>
         <app-kea-app-tab
             *ngIf="app.type === 'kea'"
             [appTab]="{ app: app }"
-            [refreshedAppTab]="refreshedAppTab"
-            (refreshApp)="onRefreshApp()"
-            (renameApp)="onRenameApp($event)"
+            (refreshApp)="onRefreshApp($event)"
+            (renameApp)="onRenameApp(app.id, $event)"
         ></app-kea-app-tab>
     </ng-template>
 </app-tab-view>

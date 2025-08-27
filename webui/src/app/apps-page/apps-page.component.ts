@@ -1,16 +1,15 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { ActivatedRoute, Router } from '@angular/router'
-import { lastValueFrom, Subject, Subscription, tap, debounceTime, distinctUntilChanged } from 'rxjs'
+import { Component, OnInit, ViewChild } from '@angular/core'
+import { lastValueFrom, tap } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
-import { daemonStatusErred, getErrorMessage } from '../utils'
-import { ServicesService } from '../backend/api/api'
+import { daemonStatusErred } from '../utils'
+import { ServicesService } from '../backend'
 import { App } from '../backend'
-import { Table } from 'primeng/table'
+import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Menu } from 'primeng/menu'
-import { AppTab } from '../apps'
 import { finalize } from 'rxjs/operators'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 /**
  * Replaces the newlines in the versions with the HTML-compatible line breaks.
@@ -39,11 +38,7 @@ function htmlizeExtVersion(app: App) {
 function setDaemonStatusErred(app) {
     if (app.details.daemons) {
         for (const d of app.details.daemons) {
-            if (d.active && daemonStatusErred(d)) {
-                d.statusErred = true
-            } else {
-                d.statusErred = false
-            }
+            d.statusErred = d.active && daemonStatusErred(d)
         }
     }
 }
@@ -53,10 +48,10 @@ function setDaemonStatusErred(app) {
     templateUrl: './apps-page.component.html',
     styleUrls: ['./apps-page.component.sass'],
 })
-export class AppsPageComponent implements OnInit, OnDestroy {
+export class AppsPageComponent implements OnInit {
     @ViewChild('appsTable') appsTable: Table
+    @ViewChild('appMenu') appMenu: Menu
 
-    private subscriptions = new Subscription()
     breadcrumbs: MenuItem[] = []
 
     // apps table
@@ -65,15 +60,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     appMenuItems: MenuItem[]
     dataLoading: boolean
 
-    // app tabs
-    openedApps: AppTab[] = []
-    appTab: AppTab = null
-
-    refreshedAppTab = new Subject<AppTab>()
-    appProvider: (id: number) => Promise<App> = (appId: number) => {
+    appProvider: (id: number) => Promise<App> = (appID: number) => {
         this.dataLoading = true
         return lastValueFrom(
-            this.servicesApi.getApp(appId).pipe(
+            this.servicesApi.getApp(appID).pipe(
                 tap((data) => {
                     htmlizeExtVersion(data)
                     setDaemonStatusErred(data)
@@ -83,26 +73,11 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         )
     }
 
-    /**
-     * Event pipeline to react to changes in the App Types filter dropdown.
-     */
-    selectedAppTypes$: Subject<string[]> = new Subject()
-    /**
-     * Storage for the currently selected App Types in the filter dropdown.
-     */
-    selectedAppTypes: string[] = []
-
     constructor(
-        private route: ActivatedRoute,
-        private router: Router,
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         private confirmService: ConfirmationService
     ) {}
-
-    ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
-    }
 
     ngOnInit() {
         this.breadcrumbs = [{ label: 'Services' }, { label: 'Apps' }]
@@ -116,45 +91,25 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             },
         ]
 
-        this.openedApps = []
-        // Reload 450ms after the user stops changing filters.  Value chosen by
-        // messing around with it until it felt good to me.
-        this.subscriptions.add(
-            this.selectedAppTypes$.pipe(debounceTime(450), distinctUntilChanged()).subscribe((_) => {
-                // Ignore the value *in* the event, just use the existence of the
-                // event to cause a refresh.  This avoids rewriting large portions
-                // of this component just before the PrimeNG 17 -> 19 upgrade.
-                this.refreshAppsList(this.appsTable)
-            })
-        )
-
         if (this.appsTable) {
-            this.refreshAppsList(this.appsTable)
+            this.refreshAppsList()
         }
-    }
-
-    /**
-     * Function called by the MultiSelect for choosing which app types to show,
-     * in order to emit an event which reloads the table.
-     */
-    updateAppTypesFilter(change_event: string[]) {
-        this.selectedAppTypes$.next(change_event)
     }
 
     /**
      * Function called by the table data loader. Accepts the pagination event.
      */
-    loadApps(event) {
+    loadApps(event: TableLazyLoadEvent) {
         this.dataLoading = true
         let text
         if (event.filters && event.filters.hasOwnProperty('text')) {
-            text = event.filters.text.value
+            text = (event.filters['text'] as FilterMetadata).value
         }
 
         // ToDo: Uncaught promise
         // If any HTTP exception will be thrown then the promise
         // fails, but a user doesn't get any message, popup, log.
-        lastValueFrom(this.servicesApi.getApps(event.first, event.rows, text, this.selectedAppTypes))
+        lastValueFrom(this.servicesApi.getApps(event.first, event.rows, text))
             .then((data) => {
                 this.apps = data.items ?? []
                 this.totalApps = data.total ?? 0
@@ -183,84 +138,25 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    /** Fetches an application state from the API. */
-    _refreshAppState(app: App) {
-        this.servicesApi.getApp(app.id).subscribe(
-            (data) => {
-                this.msgSrv.add({
-                    severity: 'success',
-                    summary: 'App refreshed',
-                    detail: 'Refreshing succeeded.',
-                })
-
-                htmlizeExtVersion(app)
-                setDaemonStatusErred(data)
-
-                // refresh app in app list
-                for (const s of this.apps) {
-                    if (s.id === data.id) {
-                        Object.assign(s, data)
-                        break
-                    }
-                }
-                // refresh machine in opened tab if present
-                for (const s of this.openedApps) {
-                    if (s.app.id === data.id) {
-                        Object.assign(s.app, data)
-                        // Notify the child component about the update.
-                        this.appTab = { ...s }
-                        this.refreshedAppTab.next(this.appTab)
-                        break
-                    }
-                }
-            },
-            (err) => {
-                const msg = getErrorMessage(err)
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Error getting app state',
-                    detail: 'Error getting state of app: ' + msg,
-                    life: 10000,
-                })
-            }
-        )
-    }
-
-    /** Callback called on click on the application menu button. */
-    showAppMenu(event: PointerEvent, appMenu: Menu, app: App) {
-        appMenu.toggle(event)
-
+    /**
+     * Callback called on click on the application menu button.
+     *
+     * @param event
+     * @param onRefreshAppFn
+     * @param appID
+     */
+    showAppMenu(event: Event, onRefreshAppFn: (appID: number) => void, appID: number) {
         // connect method to refresh machine state
         this.appMenuItems[0].command = () => {
-            this._refreshAppState(app)
+            onRefreshAppFn(appID)
         }
-    }
 
-    /** Callback called on click the refresh button. */
-    onRefreshApp() {
-        this._refreshAppState(this.appTab.app)
+        this.appMenu.toggle(event)
     }
 
     /** Callback called on click the refresh application list button. */
-    refreshAppsList(appsTable) {
-        appsTable.onLazyLoad.emit(appsTable.createLazyLoadMetadata())
-    }
-
-    /**
-     * Modifies an active tab's label after renaming an app.
-     *
-     * This function is invoked when an app is renamed in a child
-     * component, i.e. kea-app-tab or bind9-app-tab. As a result,
-     * the label of the currently selected tab is changed to the
-     * new app name.
-     *
-     * @param event holds new app name.
-     */
-    onRenameApp(event) {
-        // TODO: update the impl
-        // if (this.activeTabIdx > 0) {
-        //     this.tabs[this.activeTabIdx].label = event
-        // }
+    refreshAppsList() {
+        this.loadApps(this.appsTable?.createLazyLoadMetadata())
     }
 
     /**
@@ -319,7 +215,5 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      */
     clearFilters(table: Table) {
         table.filter(null, 'text', 'contains')
-        this.selectedAppTypes = []
-        this.refreshAppsList(this.appsTable)
     }
 }

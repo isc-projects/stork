@@ -1,12 +1,12 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
+import { Component, Input, Output, EventEmitter, AfterViewInit, ViewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { forkJoin, Observable, Subscription } from 'rxjs'
+import { forkJoin } from 'rxjs'
 import { prerelease, gte } from 'semver'
 
 import { MessageService } from 'primeng/api'
 
 import { AppTab } from '../apps'
-import { ServicesService } from '../backend/api/api'
+import { ServicesService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 
 import {
@@ -18,21 +18,20 @@ import {
     getErrorMessage,
 } from '../utils'
 import { KeaDaemon, ModelFile } from '../backend'
+import { TabViewComponent } from '../tab-view/tab-view.component'
 
 @Component({
     selector: 'app-kea-app-tab',
     templateUrl: './kea-app-tab.component.html',
     styleUrls: ['./kea-app-tab.component.sass'],
 })
-export class KeaAppTabComponent implements OnInit, OnDestroy {
-    private subscriptions = new Subscription()
+export class KeaAppTabComponent implements AfterViewInit {
     private _appTab: AppTab
     @Output() refreshApp = new EventEmitter<number>()
-    @Input() refreshedAppTab: Observable<AppTab>
 
     daemons: KeaDaemon[] = []
 
-    activeTabIndex = 0
+    activeTabDaemonID = -1
 
     /**
      * Holds a map of existing apps' names and ids.
@@ -114,29 +113,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         private msgService: MessageService
     ) {}
 
-    ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    /**
-     * Subscribes to the updates of the information about daemons
-     *
-     * The information about the daemons may be updated as a result of
-     * pressing the refresh button in the app tab. In such case, this
-     * component emits an event to which the parent component reacts
-     * and updates the daemons. When the daemons are updated, it
-     * notifies this component via the subscription mechanism.
-     */
-    ngOnInit() {
-        this.subscriptions.add(
-            this.refreshedAppTab.subscribe((data) => {
-                if (data) {
-                    this.initDaemons(data.app.details.daemons)
-                }
-            })
-        )
-    }
-
     /**
      * Selects new application tab
      *
@@ -183,7 +159,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
             ['netconf', 'NETCONF'],
         ]
         const daemons = []
-        let idx = 0
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {
                 daemonMap[dm[0]].niceName = dm[1]
@@ -194,9 +169,8 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 daemons.push(daemonMap[dm[0]])
 
                 if (dm[0].toUpperCase() === activeDaemonTabName?.toUpperCase()) {
-                    this.activeTabIndex = idx
+                    this.activeTabDaemonID = daemonMap[dm[0]].id
                 }
-                idx += 1
             }
         }
         this.daemons = daemons
@@ -230,10 +204,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      *         false otherwise.
      */
     private daemonStatusErred(daemon: KeaDaemon): boolean {
-        if (daemon.active && daemonStatusErred(daemon)) {
-            return true
-        }
-        return false
+        return daemon.active && daemonStatusErred(daemon)
     }
 
     /**
@@ -504,5 +475,12 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 })
             }
         )
+    }
+
+    @ViewChild('daemonsTabs') daemonsTabs: TabViewComponent<KeaDaemon>
+    ngAfterViewInit(): void {
+        if (this.activeTabDaemonID > -1) {
+            this.daemonsTabs?.openTab(this.activeTabDaemonID)
+        }
     }
 }
