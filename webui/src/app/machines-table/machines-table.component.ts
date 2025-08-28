@@ -51,6 +51,9 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      */
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
+    @Input() dataCollection: Machine[] = []
+    @Output() dataCollectionChange = new EventEmitter<Machine[]>()
+
     /**
      * Machines currently displayed in the table.
      */
@@ -170,6 +173,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         )
             .then((data) => {
                 this.dataCollection = data.items ?? []
+                this.dataCollectionChange.emit(this.dataCollection)
                 this.totalRecords = data.total ?? 0
                 this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
                 if (
