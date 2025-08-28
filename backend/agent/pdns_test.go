@@ -274,8 +274,8 @@ func TestDetectPowerDNSAppExplicitConfigPathChroot(t *testing.T) {
 	require.Equal(t, "/chroot/etc/custom/powerdns/pdns.conf", *configPath)
 }
 
-// Test that an error is returned when the explicit PowerDNS config path
-// belongs to a different directory than the chroot directory.
+// Test that the explicit PowerDNS config path is ignored when it is not
+// inside the chroot directory.
 func TestDetectPowerDNSAppExplicitConfigPathChrootMismatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -298,8 +298,8 @@ func TestDetectPowerDNSAppExplicitConfigPathChrootMismatch(t *testing.T) {
 	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
 }
 
-// Test that an error is returned when the explicit PowerDNS config path
-// belongs to a parent of the chroot directory.
+// Test that the explicit PowerDNS config path is ignored when it contains
+// a path to a file which is in a parent of the chroot directory.
 func TestDetectPowerDNSAppExplicitConfigPathInChrootParent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
