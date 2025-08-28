@@ -93,6 +93,9 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
+    @Input() dataCollection: Machine[] = []
+    @Output() dataCollectionChange = new EventEmitter<Machine[]>()
+
     /**
      * Keeps state of the Select All checkbox in the table's header.
      */
@@ -173,6 +176,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
         )
             .then((data) => {
                 this.dataCollection = data.items ?? []
+                this.dataCollectionChange.emit(this.dataCollection)
                 this.totalRecords = data.total ?? 0
                 this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
                 if (authorized === false && this.hasFilter(this.table) === false) {

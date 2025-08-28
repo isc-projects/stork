@@ -220,6 +220,38 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Machines popup menu component.
      */
     @ViewChild('machineMenu') machineMenu: Menu
+    machineProvider: (id: number) => Promise<Machine> = (machineID: number) => {
+        // this.dataLoading = true
+        return lastValueFrom(
+            this.servicesApi.getMachine(machineID)
+                // .pipe(
+                // map((data) => {
+                //     htmlizeExtVersion(data)
+                //     setDaemonStatusErred(data)
+                //     return data
+                // }),
+                // finalize(() => (this.dataLoading = false))
+            // )
+        )
+        // lastValueFrom(this.servicesApi.getMachine(numericId))
+        //     .then((machine) => {
+        //         this.addMachineTab(machine)
+        //         this.switchToTab(this.tabs.length - 1)
+        //     })
+        //     .catch((err) => {
+        //         const msg = getErrorMessage(err)
+        //         this.msgSrv.add({
+        //             severity: 'error',
+        //             summary: 'Cannot get machine',
+        //             detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
+        //             life: 10000,
+        //         })
+        //         this.machinesTable?.loadDataWithoutFilter()
+        //         this.switchToTab(0)
+        //     })
+    }
+
+    machines: Machine[] = []
 
     /**
      * Component's constructor.
@@ -291,54 +323,54 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         // Update the filter only if the target is machine list.
                         this.machinesTable?.updateFilterFromQueryParameters(queryParamMap)
                         this.cd.detectChanges()
-                        this.switchToTab(0)
+                        // this.switchToTab(0)
                         return
                     }
-                    const numericId = parseInt(id, 10)
-                    if (!Number.isNaN(numericId)) {
-                        // The path has a numeric id indicating that we should
-                        // open a tab with selected machine information or switch
-                        // to this tab if it has been already opened.
-                        for (let idx = 0; idx < this.openedMachines.length; idx++) {
-                            const m = this.openedMachines[idx]
-                            if (m.id === numericId) {
-                                this.switchToTab(idx + 1)
-                                return
-                            }
-                        }
-
-                        // if tab is not opened then search for list of machines if the one is present there,
-                        // if so then open it in new tab and switch to it
-                        for (const m of this.machinesTable?.dataCollection || []) {
-                            if (m.id === numericId) {
-                                this.addMachineTab(m)
-                                this.switchToTab(this.tabs.length - 1)
-                                return
-                            }
-                        }
-
-                        // if machine is not loaded in list fetch it individually
-                        lastValueFrom(this.servicesApi.getMachine(numericId))
-                            .then((machine) => {
-                                this.addMachineTab(machine)
-                                this.switchToTab(this.tabs.length - 1)
-                            })
-                            .catch((err) => {
-                                const msg = getErrorMessage(err)
-                                this.msgSrv.add({
-                                    severity: 'error',
-                                    summary: 'Cannot get machine',
-                                    detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
-                                    life: 10000,
-                                })
-                                this.machinesTable?.loadDataWithoutFilter()
-                                this.switchToTab(0)
-                            })
-                    } else {
-                        // In case of failed Id parsing, open list tab.
-                        this.machinesTable?.loadDataWithoutFilter()
-                        this.switchToTab(0)
-                    }
+                    // const numericId = parseInt(id, 10)
+                    // if (!Number.isNaN(numericId)) {
+                    //     // The path has a numeric id indicating that we should
+                    //     // open a tab with selected machine information or switch
+                    //     // to this tab if it has been already opened.
+                    //     for (let idx = 0; idx < this.openedMachines.length; idx++) {
+                    //         const m = this.openedMachines[idx]
+                    //         if (m.id === numericId) {
+                    //             this.switchToTab(idx + 1)
+                    //             return
+                    //         }
+                    //     }
+                    //
+                    //     // if tab is not opened then search for list of machines if the one is present there,
+                    //     // if so then open it in new tab and switch to it
+                    //     for (const m of this.machinesTable?.dataCollection || []) {
+                    //         if (m.id === numericId) {
+                    //             this.addMachineTab(m)
+                    //             this.switchToTab(this.tabs.length - 1)
+                    //             return
+                    //         }
+                    //     }
+                    //
+                    //     // if machine is not loaded in list fetch it individually
+                    //     lastValueFrom(this.servicesApi.getMachine(numericId))
+                    //         .then((machine) => {
+                    //             this.addMachineTab(machine)
+                    //             this.switchToTab(this.tabs.length - 1)
+                    //         })
+                    //         .catch((err) => {
+                    //             const msg = getErrorMessage(err)
+                    //             this.msgSrv.add({
+                    //                 severity: 'error',
+                    //                 summary: 'Cannot get machine',
+                    //                 detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
+                    //                 life: 10000,
+                    //             })
+                    //             this.machinesTable?.loadDataWithoutFilter()
+                    //             this.switchToTab(0)
+                    //         })
+                    // } else {
+                    //     // In case of failed Id parsing, open list tab.
+                    //     this.machinesTable?.loadDataWithoutFilter()
+                    //     this.switchToTab(0)
+                    // }
                 })
         )
     }

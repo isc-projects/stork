@@ -166,211 +166,209 @@ sudo ./stork-install-agent.sh</textarea
 
 <p-confirmDialog styleClass="w-28rem" />
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIdx]" styleClass="mb-2" [scrollable]="true">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a
-            role="menuitem"
-            pRipple
-            [routerLink]="item.routerLink"
-            [queryParams]="i === 0 ? machinesTable?.validFilter : null"
-            class="p-ripple p-element p-menuitem-link"
-        >
-            <div class="flex justify-content-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-                <div
-                    class="pi pi-times close-tab-btn"
-                    (click)="closeTab($event, i)"
-                    id="{{ 'close-machine-tab-' + item.label }}"
-                    *ngIf="i !== 0"
-                ></div>
-            </div>
-        </a>
-    </ng-template>
-</p-tabMenu>
+<!--<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIdx]" styleClass="mb-2" [scrollable]="true">-->
+<!--    <ng-template pTemplate="item" let-item let-i="index">-->
+<!--        <a-->
+<!--            role="menuitem"-->
+<!--            pRipple-->
+<!--            [routerLink]="item.routerLink"-->
+<!--            [queryParams]="i === 0 ? machinesTable?.validFilter : null"-->
+<!--            class="p-ripple p-element p-menuitem-link"-->
+<!--        >-->
+<!--            <div class="flex justify-content-between">-->
+<!--                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>-->
+<!--                <div class="p-menuitem-text">-->
+<!--                    <b>{{ item.label }}</b>-->
+<!--                </div>-->
+<!--                <div-->
+<!--                    class="pi pi-times close-tab-btn"-->
+<!--                    (click)="closeTab($event, i)"-->
+<!--                    id="{{ 'close-machine-tab-' + item.label }}"-->
+<!--                    *ngIf="i !== 0"-->
+<!--                ></div>-->
+<!--            </div>-->
+<!--        </a>-->
+<!--    </ng-template>-->
+<!--</p-tabMenu>-->
+<app-tab-view routePath="/machines/" [entitiesCollection]="machines" [entityProvider]="machineProvider" entityTitleKey="address">
+    <ng-template #firstTab>
+        <div class="flex flex-wrap gap-2 justify-content-end mb-3">
+            <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
+                <div class="flex-auto"></div>
+                <button
+                        type="button"
+                        pButton
+                        label="Installing Stork Agent on a New Machine"
+                        icon="pi pi-download"
+                        (click)="showAgentInstallationInstruction()"
+                        id="show-agent-installation-instruction-button"
+                        appAccessEntity="machines-server-token"
+                        appAccessType="read"
+                ></button>
 
-<!-- Machines tab -->
-<div [hidden]="activeTabIdx !== 0">
-    <div class="flex flex-wrap gap-2 justify-content-end mb-3">
-        <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
-            <div class="flex-auto"></div>
-            <button
-                type="button"
-                pButton
-                label="Installing Stork Agent on a New Machine"
-                icon="pi pi-download"
-                (click)="showAgentInstallationInstruction()"
-                id="show-agent-installation-instruction-button"
-                appAccessEntity="machines-server-token"
-                appAccessType="read"
-            ></button>
-
-            <p-selectButton
-                [options]="selectButtonOptions"
-                [ngModel]="showAuthorized"
-                (onChange)="onSelectButtonChange($event)"
-                [allowEmpty]="false"
-                id="unauthorized-select-button"
-            >
-                <ng-template #item let-item>
+                <p-selectButton
+                        [options]="selectButtonOptions"
+                        [ngModel]="showAuthorized"
+                        (onChange)="onSelectButtonChange($event)"
+                        [allowEmpty]="false"
+                        id="unauthorized-select-button"
+                >
+                    <ng-template #item let-item>
                     <span class="p-button-label">{{ item.label }}</span
                     ><p-badge
-                        *ngIf="item.hasBadge"
-                        severity="info"
-                        [value]="unauthorizedMachinesCount$ | async"
-                        styleClass="relative"
-                        class="inline-flex"
+                            *ngIf="item.hasBadge"
+                            severity="info"
+                            [value]="unauthorizedMachinesCount$ | async"
+                            styleClass="relative"
+                            class="inline-flex"
                     />
-                </ng-template>
-            </p-selectButton>
-        </div>
-    </div>
-
-    <p-messages *ngIf="showAuthorized === false && registrationDisabled" severity="warn">
-        <ng-template pTemplate>
-            <span class="pi pi-exclamation-triangle"></span>
-            <div class="ml-2">
-                Registration of new machines is disabled. Navigate to the
-                <a routerLink="/settings" class="font-semibold">Settings</a>
-                page to enable registration, if you expect new machines on the list below.
-            </div>
-        </ng-template>
-    </p-messages>
-    <app-machines-table
-        #machinesTable
-        [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
-        (authorizeSelectedMachines)="onAuthorizeSelectedMachines($event)"
-        (machineMenuDisplay)="onMachineMenuDisplay($event.e, $event.m)"
-    ></app-machines-table>
-    <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
-</div>
-
-<!-- Single machine tab -->
-<div *ngIf="activeTabIdx > 0" class="p-component">
-    <div class="grid w-full">
-        <div class="col-12 flex gap-3 column-gap-8 row-gap-3 flex-wrap">
-            <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
-                <i class="fa fa-server pr-2"></i> {{ machineTab?.address
-                }}<span class="text-primary-200">:{{ machineTab?.agentPort }}</span>
-                <p-button
-                    icon="pi pi-pencil"
-                    styleClass="ml-1"
-                    id="edit-machine-icon"
-                    (onClick)="editAddress(machineTab)"
-                    appAccessEntity="machine-address"
-                    appAccessType="update"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="secondary"
-                />
-            </div>
-
-            <div>
-                <p-message *ngIf="machineTab?.error" severity="error" text="{{ machineTab?.error }}"></p-message>
+                    </ng-template>
+                </p-selectButton>
             </div>
         </div>
 
-        <div class="col-12 xl:col-7 grid">
-            <div class="col-12 md:col-6">
-                <h3 class="underlined">System Information</h3>
-                <table [class.text-color-secondary]="machineTab?.error">
-                    <tr>
-                        <td>Address</td>
-                        <td>{{ machineTab?.address }}:{{ machineTab?.agentPort }}</td>
-                    </tr>
-                    <tr>
-                        <td>Hostname</td>
-                        <td>{{ machineTab?.hostname }}</td>
-                    </tr>
-                    <tr>
-                        <td>Agent Version</td>
-                        <td>
-                            {{ machineTab?.agentVersion }}
-                            <app-version-status
-                                *ngIf="machineTab?.authorized"
-                                app="stork"
-                                [version]="machineTab?.agentVersion"
-                            ></app-version-status>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>CPUs</td>
-                        <td>{{ machineTab?.cpus }}</td>
-                    </tr>
-                    <tr>
-                        <td class="flex align-items-center justify-content-between">
-                            <span>CPUs Load</span>
-                            <app-help-tip subject="CPU Load" id="cpu-load-2-help-button">
-                                <p>
-                                    These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15
-                                    minutes. This is the usual syntax used by the <b>top</b> command.
-                                </p>
+        <p-messages *ngIf="showAuthorized === false && registrationDisabled" severity="warn">
+            <ng-template pTemplate>
+                <span class="pi pi-exclamation-triangle"></span>
+                <div class="ml-2">
+                    Registration of new machines is disabled. Navigate to the
+                    <a routerLink="/settings" class="font-semibold">Settings</a>
+                    page to enable registration, if you expect new machines on the list below.
+                </div>
+            </ng-template>
+        </p-messages>
+        <app-machines-table
+            #machinesTable
+            [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
+            (authorizeSelectedMachines)="onAuthorizeSelectedMachines($event)"
+            (machineMenuDisplay)="onMachineMenuDisplay($event.e, $event.m)"
+            [(dataCollection)]="machines"
+        ></app-machines-table>
+        <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
+    </ng-template>
+    <ng-template #entityTab let-machineTab>
+        <div class="grid w-full">
+            <div class="col-12 flex gap-3 column-gap-8 row-gap-3 flex-wrap">
+                <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
+                    <i class="fa fa-server pr-2"></i> {{ machineTab?.address
+                    }}<span class="text-primary-200">:{{ machineTab?.agentPort }}</span>
+                    <p-button
+                            icon="pi pi-pencil"
+                            styleClass="ml-1"
+                            id="edit-machine-icon"
+                            (onClick)="editAddress(machineTab)"
+                            appAccessEntity="machine-address"
+                            appAccessType="update"
+                            [rounded]="true"
+                            [text]="true"
+                            severity="secondary"
+                    />
+                </div>
 
-                                <p>
-                                    High load averages imply that a system is overloaded. A value of 1.00 means one CPU
-                                    core is fully utilized. For example, if your system has load of 1.22 and you have
-                                    only one CPU core, the system is overloaded. However, if the load is 1.22 with four
-                                    cores, your system is working at slightly over 30% of its capacity.
-                                </p>
-                            </app-help-tip>
-                        </td>
-                        <td>{{ machineTab?.cpusLoad }}</td>
-                    </tr>
-                    <tr>
-                        <td>Memory</td>
-                        <td>{{ machineTab?.memory || '?' }} GiB</td>
-                    </tr>
-                    <tr>
-                        <td>Used Memory</td>
-                        <td>{{ machineTab?.usedMemory }} %</td>
-                    </tr>
-                    <tr>
-                        <td>Uptime</td>
-                        <td>{{ machineTab?.uptime || '?' }} days</td>
-                    </tr>
-                    <tr>
-                        <td>OS</td>
-                        <td>{{ machineTab?.os }}</td>
-                    </tr>
-                    <tr>
-                        <td>Platform Family</td>
-                        <td>{{ machineTab?.platformFamily }}</td>
-                    </tr>
-                    <tr>
-                        <td>Platform</td>
-                        <td>{{ machineTab?.platform }}</td>
-                    </tr>
-                    <tr>
-                        <td>Platform Version</td>
-                        <td>{{ machineTab?.platformVersion }}</td>
-                    </tr>
-                    <tr>
-                        <td>Kernel Version</td>
-                        <td>{{ machineTab?.kernelVersion }}</td>
-                    </tr>
-                    <tr>
-                        <td>Kernel Arch</td>
-                        <td>{{ machineTab?.kernelArch }}</td>
-                    </tr>
-                    <tr>
-                        <td>Virtualization Role</td>
-                        <td>{{ machineTab?.virtualizationRole }}</td>
-                    </tr>
-                    <tr *ngIf="machineTab?.virtualizationRole === 'guest'">
-                        <td>Virtualization System</td>
-                        <td>{{ machineTab?.virtualizationSystem }}</td>
-                    </tr>
-                    <tr>
-                        <td>Host ID</td>
-                        <td>{{ machineTab?.hostID }}</td>
-                    </tr>
-                    <tr>
-                        <td>Last Visited</td>
-                        <td>{{ machineTab?.lastVisitedAt | localtime | placeholder: 'never' }}</td>
-                    </tr>
-                </table>
+                <div>
+                    <p-message *ngIf="machineTab?.error" severity="error" text="{{ machineTab?.error }}"></p-message>
+                </div>
+            </div>
+
+            <div class="col-12 xl:col-7 grid">
+                <div class="col-12 md:col-6">
+                    <h3 class="underlined">System Information</h3>
+                    <table [class.text-color-secondary]="machineTab?.error">
+                        <tr>
+                            <td>Address</td>
+                            <td>{{ machineTab?.address }}:{{ machineTab?.agentPort }}</td>
+                        </tr>
+                        <tr>
+                            <td>Hostname</td>
+                            <td>{{ machineTab?.hostname }}</td>
+                        </tr>
+                        <tr>
+                            <td>Agent Version</td>
+                            <td>
+                                {{ machineTab?.agentVersion }}
+                                <app-version-status
+                                        *ngIf="machineTab?.authorized"
+                                        app="stork"
+                                        [version]="machineTab?.agentVersion"
+                                ></app-version-status>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>CPUs</td>
+                            <td>{{ machineTab?.cpus }}</td>
+                        </tr>
+                        <tr>
+                            <td class="flex align-items-center justify-content-between">
+                                <span>CPUs Load</span>
+                                <app-help-tip subject="CPU Load" id="cpu-load-2-help-button">
+                                    <p>
+                                        These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15
+                                        minutes. This is the usual syntax used by the <b>top</b> command.
+                                    </p>
+
+                                    <p>
+                                        High load averages imply that a system is overloaded. A value of 1.00 means one CPU
+                                        core is fully utilized. For example, if your system has load of 1.22 and you have
+                                        only one CPU core, the system is overloaded. However, if the load is 1.22 with four
+                                        cores, your system is working at slightly over 30% of its capacity.
+                                    </p>
+                                </app-help-tip>
+                            </td>
+                            <td>{{ machineTab?.cpusLoad }}</td>
+                        </tr>
+                        <tr>
+                            <td>Memory</td>
+                            <td>{{ machineTab?.memory || '?' }} GiB</td>
+                        </tr>
+                        <tr>
+                            <td>Used Memory</td>
+                            <td>{{ machineTab?.usedMemory }} %</td>
+                        </tr>
+                        <tr>
+                            <td>Uptime</td>
+                            <td>{{ machineTab?.uptime || '?' }} days</td>
+                        </tr>
+                        <tr>
+                            <td>OS</td>
+                            <td>{{ machineTab?.os }}</td>
+                        </tr>
+                        <tr>
+                            <td>Platform Family</td>
+                            <td>{{ machineTab?.platformFamily }}</td>
+                        </tr>
+                        <tr>
+                            <td>Platform</td>
+                            <td>{{ machineTab?.platform }}</td>
+                        </tr>
+                        <tr>
+                            <td>Platform Version</td>
+                            <td>{{ machineTab?.platformVersion }}</td>
+                        </tr>
+                        <tr>
+                            <td>Kernel Version</td>
+                            <td>{{ machineTab?.kernelVersion }}</td>
+                        </tr>
+                        <tr>
+                            <td>Kernel Arch</td>
+                            <td>{{ machineTab?.kernelArch }}</td>
+                        </tr>
+                        <tr>
+                            <td>Virtualization Role</td>
+                            <td>{{ machineTab?.virtualizationRole }}</td>
+                        </tr>
+                        <tr *ngIf="machineTab?.virtualizationRole === 'guest'">
+                            <td>Virtualization System</td>
+                            <td>{{ machineTab?.virtualizationSystem }}</td>
+                        </tr>
+                        <tr>
+                            <td>Host ID</td>
+                            <td>{{ machineTab?.hostID }}</td>
+                        </tr>
+                        <tr>
+                            <td>Last Visited</td>
+                            <td>{{ machineTab?.lastVisitedAt | localtime | placeholder: 'never' }}</td>
+                        </tr>
+                    </table>
 
                 <button
                     *ngIf="machineTab?.authorized"
