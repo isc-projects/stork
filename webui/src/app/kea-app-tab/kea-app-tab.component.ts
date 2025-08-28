@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, AfterViewInit, ViewChild } from '@angular/core'
+import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { forkJoin } from 'rxjs'
 import { prerelease, gte } from 'semver'
@@ -18,20 +18,19 @@ import {
     getErrorMessage,
 } from '../utils'
 import { KeaDaemon, ModelFile } from '../backend'
-import { TabViewComponent } from '../tab-view/tab-view.component'
 
 @Component({
     selector: 'app-kea-app-tab',
     templateUrl: './kea-app-tab.component.html',
     styleUrls: ['./kea-app-tab.component.sass'],
 })
-export class KeaAppTabComponent implements AfterViewInit {
+export class KeaAppTabComponent {
     private _appTab: AppTab
     @Output() refreshApp = new EventEmitter<number>()
 
     daemons: KeaDaemon[] = []
 
-    activeTabDaemonID = -1
+    activeTabDaemonID: number
 
     /**
      * Holds a map of existing apps' names and ids.
@@ -301,7 +300,7 @@ export class KeaAppTabComponent implements AfterViewInit {
      * the app tab view. Additionally, the success message is displayed
      * in the message service.
      *
-     * @param event holds new app name.
+     * @param name holds new app name.
      */
     handleRenameDialogSubmitted(name: string) {
         this.servicesApi.renameApp(this.appTab.app.id, { name: name }).subscribe(
@@ -475,12 +474,5 @@ export class KeaAppTabComponent implements AfterViewInit {
                 })
             }
         )
-    }
-
-    @ViewChild('daemonsTabs') daemonsTabs: TabViewComponent<KeaDaemon>
-    ngAfterViewInit(): void {
-        if (this.activeTabDaemonID > -1) {
-            this.daemonsTabs?.openTab(this.activeTabDaemonID)
-        }
     }
 }

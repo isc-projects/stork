@@ -48,11 +48,6 @@ export class AppTabComponent {
     daemons: DaemonInfo[] = []
 
     /**
-     * Active tab index used by the tab view.
-     */
-    // activeTabIndex = 0
-
-    /**
      * Holds a map of existing apps' names and ids.
      *
      * The apps' names are used in rename-app-dialog component to validate
@@ -183,7 +178,7 @@ export class AppTabComponent {
      *
      * @param event holds new app name.
      */
-    handleRenameDialogSubmitted(event) {
+    handleRenameDialogSubmitted(event: string) {
         this.appRenameDialogVisible = false
         lastValueFrom(this.servicesApi.renameApp(this.appTab.app.id, { name: event }))
             .then((/* data */) => {

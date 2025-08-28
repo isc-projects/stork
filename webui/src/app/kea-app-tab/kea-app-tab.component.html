@@ -51,11 +51,11 @@
     </div>
     <div class="p-0 col-12">
         <app-tab-view
-            #daemonsTabs
             [entitiesCollection]="daemons"
-            entityNameKey="niceName"
+            entityTitleKey="niceName"
             [initWithEntitiesInCollection]="true"
             [closableTabs]="false"
+            [openEntityID]="activeTabDaemonID"
         >
             <ng-template #entityTab let-daemon>
                 <div class="flex flex-wrap px-2 border-1 border-round surface-border">

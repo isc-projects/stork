@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core'
-import { lastValueFrom, tap } from 'rxjs'
+import { lastValueFrom } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
@@ -8,7 +8,7 @@ import { ServicesService } from '../backend'
 import { App } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Menu } from 'primeng/menu'
-import { finalize } from 'rxjs/operators'
+import { finalize, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 /**
@@ -64,9 +64,10 @@ export class AppsPageComponent implements OnInit {
         this.dataLoading = true
         return lastValueFrom(
             this.servicesApi.getApp(appID).pipe(
-                tap((data) => {
+                map((data) => {
                     htmlizeExtVersion(data)
                     setDaemonStatusErred(data)
+                    return data
                 }),
                 finalize(() => (this.dataLoading = false))
             )

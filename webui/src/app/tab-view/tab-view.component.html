@@ -1,7 +1,7 @@
 <p-tabs [(value)]="activeTabEntityID" (valueChange)="logChange($event)">
     <p-tablist>
         @if (firstTabTemplate) {
-            <p-tab [value]="0" [routerLink]="firstTabRoute()">{{ firstTabLabel() }}</p-tab>
+            <p-tab [value]="0" [routerLink]="firstTabRoute()">{{ firstTabTitle() }}</p-tab>
         }
         @for (tab of openTabs; track tab.value) {
             <p-tab [value]="tab.value" [routerLink]="tab.route">

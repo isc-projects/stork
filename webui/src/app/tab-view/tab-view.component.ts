@@ -17,7 +17,10 @@ import { TimesIcon } from 'primeng/icons'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { getErrorMessage } from '../utils'
 
-export type StorkTab = {
+/**
+ * Type defining data structure of a tab displayed and managed by the TabView component.
+ */
+type ComponentTab = {
     title: string
     value: number
     route?: string | undefined
@@ -26,8 +29,8 @@ export type StorkTab = {
 }
 
 /**
- *
- * @param value
+ * Sanitizes given route path. Makes sure that the path has a trailing slash.
+ * @param value path to be sanitized
  */
 function sanitizePath(value: string | undefined): string | undefined {
     if (!value) {
@@ -41,6 +44,10 @@ function sanitizePath(value: string | undefined): string | undefined {
     }
 }
 
+/**
+ * Component responsible for displaying clickable tabs and tabs' content below in separate panels.
+ * It implements the logic for opening, closing, reopening already existing tabs etc.
+ */
 @Component({
     selector: 'app-tab-view',
     standalone: true,
@@ -49,50 +56,134 @@ function sanitizePath(value: string | undefined): string | undefined {
     styleUrl: './tab-view.component.sass',
 })
 export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
-    openTabs: StorkTab[] = []
+    /**
+     * Holds all open tabs.
+     */
+    openTabs: ComponentTab[] = []
 
+    /**
+     * Keeps the identifier value of currently active tab (this tab content is currently displayed,
+     * while other open tabs' content is hidden).
+     */
     activeTabEntityID: number = 0
 
+    /**
+     * Input flag which determines whether the tabs are closable (close button is displayed next to the tab title).
+     * Defaults to true.
+     */
     closableTabs = input(true, { transform: booleanAttribute })
 
+    /**
+     * Input flag which determines whether for all entities that exist in the entitiesCollection array a tab should
+     * be created and open when the component is initialized.
+     * Defaults to false.
+     */
     initWithEntitiesInCollection = input(false, { transform: booleanAttribute })
 
-    firstTabLabel = input('All')
+    /**
+     * Input string which holds the title displayed on the first tab.
+     * Defaults to 'All'.
+     */
+    firstTabTitle = input('All')
 
+    /**
+     * Input string which holds the route end to be appended to the router link path of the first tab.
+     * Defaults to 'all'.
+     */
     firstTabRouteEnd = input('all')
 
+    /**
+     * Input string which holds the router link base path for all the tabs.
+     * When provided, the tab view is using clickable tabs
+     * as clickable router links (router navigation will happen after clicking the tab).
+     * Defaults to undefined value, which means that router links are not used by default.
+     */
     routePath = input(undefined, { transform: sanitizePath })
 
+    /**
+     * Route path used for the router link of the first tab. It is computed using routePath and firstTabRouteEnd inputs.
+     * It remains undefined if the routePath input is undefined.
+     */
     firstTabRoute = computed(() => (this.routePath() ? this.routePath() + this.firstTabRouteEnd() : undefined))
 
+    /**
+     * Collection of entities for which the tabs are created and displayed.
+     */
     entitiesCollection = input<TEntity[]>(undefined)
 
+    /**
+     * Field name used to extract entity identifier value.
+     * The identifier value is also used as a tab identifier value.
+     * Defaults to 'id'.
+     */
     entityIDKey = input('id')
 
-    entityNameKey = input('name')
+    /**
+     * Field name used to extract entity title value.
+     * The title value is displayed as the tab title.
+     * Defaults to 'name'.
+     */
+    entityTitleKey = input('name')
 
-    entityRouteKey = input('route')
-
+    /**
+     * Field name used to extract entity icon.
+     * The icon value is used to display an icon on the tab.
+     * If the field does not exist in the entity or its value is undefined, the icon will not be displayed on the tab.
+     * Defaults to 'icon'.
+     */
     entityTabIconKey = input('icon')
 
+    /**
+     * If provided, this input number is the entity ID for which the tab will be open and activated when the component is initialized.
+     * Defaults to -1, which means that it is not used by default.
+     */
+    openEntityID = input(-1)
+
+    /**
+     * Input function used to asynchronously provide the entity based on given entity ID.
+     * The function takes only one argument - entity ID and returns the Promise of the entity.
+     */
     @Input() entityProvider: (id: number) => Promise<TEntity>
 
+    /**
+     * Defines the template for the first tab content (first tab is optional; very often it is a table with the entities).
+     */
     @ContentChild('firstTab', { descendants: false }) firstTabTemplate: TemplateRef<any> | undefined
 
+    /**
+     * Defines the template for the entity tab content.
+     */
     @ContentChild('entityTab', { descendants: false }) entityTabTemplate: TemplateRef<any> | undefined
 
+    /**
+     * Activated route injected to retrieve route params.
+     * @private
+     */
     private readonly route = inject(ActivatedRoute)
 
+    /**
+     * Message service injected to display feedback messages in UI.
+     * @private
+     */
     private readonly messageService = inject(MessageService)
 
+    /**
+     * Router injected to trigger navigations.
+     * @private
+     */
     private readonly router = inject(Router)
 
+    /**
+     * RxJS subscription to be unsubscribed when the component is destroyed.
+     * @private
+     */
     private subscriptions: Subscription
 
     /**
-     *
-     * @param id
-     * @param title
+     * Callback updating the tab title.
+     * It is called when the updateTabTitleFn function from the entityTabTemplate context is called.
+     * @param id tab ID which title should be updated
+     * @param title updated title
      */
     onUpdateTabTitle = (id: number, title: string) => {
         console.log('onUpdateTabTitle', id, title)
@@ -103,8 +194,10 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     * @param id
+     * Callback updating the tab entity.
+     * It is called when the updateTabEntityFn function from the entityTabTemplate or firstTabTemplate context is called.
+     * The callback is using entityProvider to update the entity value.
+     * @param id tab ID for which the entity should be updated
      */
     onUpdateTabEntity = (id: number) => {
         if (!this.entityProvider) {
@@ -139,24 +232,27 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     * @param entity
+     * Gets the identifier value of the entity.
+     * @param entity the entity used to retrieve the data
+     * @private
      */
-    getID(entity: TEntity): number {
+    private getID(entity: TEntity): number {
         return entity[this.entityIDKey()]
     }
 
     /**
-     *
-     * @param entity
+     * Gets the title value of the entity.
+     * @param entity the entity used to retrieve the data
+     * @private
      */
-    getName(entity: TEntity): string {
-        return entity[this.entityNameKey()]
+    private getTitle(entity: TEntity): string {
+        return entity[this.entityTitleKey()]
     }
 
     /**
-     *
-     * @param entity
+     * Gets the icon string value of the entity.
+     * @param entity the entity used to retrieve the data
+     * @return icon string or undefined if it was not found
      * @private
      */
     private getIcon(entity: TEntity): string | undefined {
@@ -164,8 +260,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     * @param entityID
+     * Opens (activates) the tab for given entity ID. If the tab was not open before, it is created and then activated.
+     * @param entityID entity ID for which the tab is open
      */
     openTab(entityID: number) {
         // console.log('openTab', entityID)
@@ -222,8 +318,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     * @param entityID
+     * Closes given tab.
+     * @param entityID entity ID for which the tab is closed
      */
     closeTab(entityID: number) {
         console.log('closeTab', entityID)
@@ -244,6 +340,9 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Activates first tab.
+     */
     goToFirstTab() {
         if (this.routePath()) {
             console.log('go to first tab using router')
@@ -255,12 +354,12 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     * @param entity
+     * Creates a tab data structure based on given entity.
+     * @param entity entity used to construct the tab
      */
-    createTab(entity: TEntity): StorkTab {
+    createTab(entity: TEntity): ComponentTab {
         return {
-            title: this.getName(entity),
+            title: this.getTitle(entity),
             value: this.getID(entity),
             entity: entity,
             route: this.routePath() ? this.routePath() + this.getID(entity) : undefined,
@@ -269,7 +368,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
-     *
+     * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
         console.log('storkTabViewComponent onInit')
@@ -312,17 +411,30 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                     console.log('ActivatedRoute paramMap complete')
                 },
             })
-        } else {
-            this.goToFirstTab()
+            return
         }
+
+        if (this.openEntityID() > -1) {
+            this.openTab(this.openEntityID())
+            return
+        }
+
+        this.goToFirstTab()
     }
 
+    /**
+     * Component lifecycle hook which destroys the component.
+     */
     ngOnDestroy(): void {
         console.log('storkTabViewComponent onDestroy')
         this.subscriptions?.unsubscribe()
     }
 
-    logChange($event) {
-        console.log('storkTabViewComponent log onValueChange', $event)
+    /**
+     * Debug string logger.
+     * @param event
+     */
+    logChange(event: string | number) {
+        console.log('storkTabViewComponent log onValueChange', event)
     }
 }
