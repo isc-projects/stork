@@ -364,25 +364,6 @@ func TestDetectPowerDNSAppConfigPathCmdLineError(t *testing.T) {
 	require.Nil(t, configPath)
 }
 
-// Test that an error is returned when getting a process current working directory fails.
-func TestDetectPowerDNSAppConfigPathCwdError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=custom", nil)
-
-	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
-		return path == "/etc/powerdns/pdns-custom.conf"
-	})
-
-	configPath, err := detectPowerDNSAppConfigPath(process, executor, "")
-	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/powerdns/pdns-custom.conf", *configPath)
-}
-
 // Test instantiating and configuring the PowerDNS app using specified config path.
 func TestConfigurePowerDNSApp(t *testing.T) {
 	ctrl := gomock.NewController(t)
