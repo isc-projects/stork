@@ -664,8 +664,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	if bind9Config.HasNoParse() {
 		// If some of the configuration parts are elided, it may cause issues with
 		// interactions of the Stork agent with BIND 9. The user should be warned.
-		log.Warn("BIND 9 config file contains @stork:no-parse directives.")
-		log.Warn("Skipping parsing selected config parts improves performance but may cause issues with interactions of the Stork agent with BIND 9.")
+		log.Warn("BIND 9 config file contains @stork:no-parse directives. Skipping parsing selected config parts improves performance but may cause issues with interactions of the Stork agent with BIND 9.")
 		log.Warn("Make sure that you understand the implications of eliding selected config parts, e.g., allow-transfer statements in zones.")
 	}
 
