@@ -7,6 +7,22 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Test checking if the zone contains no-parse directives.
+func TestZoneHasNoParse(t *testing.T) {
+	zone := &Zone{
+		Clauses: []*ZoneClause{
+			{NoParse: &NoParse{}},
+		},
+	}
+	require.True(t, zone.HasNoParse())
+}
+
+// Test checking if the zone does not contain no-parse directives.
+func TestZoneHasNoParseNone(t *testing.T) {
+	zone := &Zone{}
+	require.False(t, zone.HasNoParse())
+}
+
 // Tests that allow-transfer is returned when specified.
 func TestZoneGetAllowTransfer(t *testing.T) {
 	zone := &Zone{

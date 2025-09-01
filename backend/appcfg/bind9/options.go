@@ -1,5 +1,15 @@
 package bind9config
 
+// Checks if the options contain no-parse directives.
+func (o *Options) HasNoParse() bool {
+	for _, clause := range o.Clauses {
+		if clause.NoParse != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // Gets the allow-transfer clause from options.
 func (o *Options) GetAllowTransfer() *AllowTransfer {
 	for _, clause := range o.Clauses {

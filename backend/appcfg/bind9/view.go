@@ -1,5 +1,18 @@
 package bind9config
 
+// Checks if the view contains no-parse directives.
+func (v *View) HasNoParse() bool {
+	for _, clause := range v.Clauses {
+		switch {
+		case clause.NoParse != nil:
+			return true
+		case clause.Zone != nil:
+			return clause.Zone.HasNoParse()
+		}
+	}
+	return false
+}
+
 // Returns the allow-transfer clause for the view or nil if it is not found.
 func (v *View) GetAllowTransfer() *AllowTransfer {
 	for _, clause := range v.Clauses {

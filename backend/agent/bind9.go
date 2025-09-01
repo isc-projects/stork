@@ -520,6 +520,10 @@ func parseNamedDefaultPath(output []byte) string {
 //
 // It returns the BIND 9 app instance or an error if the BIND 9 is not
 // recognized or any error occurs.
+//
+// ToDo: Enable the linter check after splitting this function in #1991.
+//
+//nolint:gocyclo
 func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (App, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {
@@ -655,6 +659,14 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	bind9Config, err := parser.ParseFile(prefixedBind9ConfPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse BIND 9 config file %s", prefixedBind9ConfPath)
+	}
+
+	if bind9Config.HasNoParse() {
+		// If some of the configuration parts are elided, it may cause issues with
+		// interactions of the Stork agent with BIND 9. The user should be warned.
+		log.Warn("BIND 9 config file contains @stork:no-parse directives.")
+		log.Warn("Skipping parsing selected config parts improves performance but may cause issues with interactions of the Stork agent with BIND 9.")
+		log.Warn("Make sure that you understand the implications of eliding selected config parts, e.g., allow-transfer statements in zones.")
 	}
 
 	// look for control address in config

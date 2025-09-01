@@ -7,6 +7,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test checking if the configuration contains a no-parse directives.
+func TestConfigHasNoParse(t *testing.T) {
+	cfg := &Config{
+		Statements: []*Statement{
+			{Options: &Options{
+				Clauses: []*OptionClause{},
+			}},
+			{NoParse: &NoParse{}},
+		},
+	}
+	require.True(t, cfg.HasNoParse())
+}
+
+// Test checking if the configuration does not contain a no-parse directives.
+func TestConfigHasNoParseNone(t *testing.T) {
+	cfg := &Config{}
+	require.False(t, cfg.HasNoParse())
+}
+
 // Tests that GetView returns expected view.
 func TestGetView(t *testing.T) {
 	cfg, err := NewParser().ParseFile("testdata/named.conf")

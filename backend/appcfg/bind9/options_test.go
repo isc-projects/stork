@@ -7,6 +7,22 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Test checking if the options contains no-parse directives.
+func TestOptionsHasNoParse(t *testing.T) {
+	options := &Options{
+		Clauses: []*OptionClause{
+			{NoParse: &NoParse{}},
+		},
+	}
+	require.True(t, options.HasNoParse())
+}
+
+// Test checking if the options does not contain no-parse directives.
+func TestOptionsHasNoParseNone(t *testing.T) {
+	options := &Options{}
+	require.False(t, options.HasNoParse())
+}
+
 // Test getting the allow-transfer clause from options.
 func TestOptionsGetAllowTransferPort(t *testing.T) {
 	options := &Options{

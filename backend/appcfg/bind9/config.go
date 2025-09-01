@@ -10,6 +10,17 @@ import (
 
 const DefaultViewName = "_default"
 
+// Checks if the configuration contains no-parse directives.
+func (c *Config) HasNoParse() bool {
+	for _, statement := range c.Statements {
+		if statement.HasNoParse() {
+			return true
+		}
+	}
+	return false
+}
+
+// Returns the options or nil if the options are not found.
 func (c *Config) GetOptions() *Options {
 	for _, statement := range c.Statements {
 		if statement.Options != nil {

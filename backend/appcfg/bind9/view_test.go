@@ -7,6 +7,36 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Test checking if the view contains no-parse directives.
+func TestViewHasNoParse(t *testing.T) {
+	view := &View{
+		Clauses: []*ViewClause{
+			{NoParse: &NoParse{}},
+		},
+	}
+	require.True(t, view.HasNoParse())
+}
+
+// Test checking if the view contains no-parse directives in the zone.
+func TestViewZoneHasNoParseZone(t *testing.T) {
+	view := &View{
+		Clauses: []*ViewClause{
+			{Zone: &Zone{
+				Clauses: []*ZoneClause{
+					{NoParse: &NoParse{}},
+				},
+			}},
+		},
+	}
+	require.True(t, view.HasNoParse())
+}
+
+// Test checking if the view does not contain no-parse directives.
+func TestViewHasNoParseNone(t *testing.T) {
+	view := &View{}
+	require.False(t, view.HasNoParse())
+}
+
 // Tests that allow-transfer is returned when specified.
 func TestViewGetAllowTransfer(t *testing.T) {
 	view := &View{
