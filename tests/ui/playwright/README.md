@@ -10,12 +10,13 @@ playwright codegen https://stork.lab.isc.org/ --output test_example.py --target 
 # generated code copy into tests/ui/playwright/test_basic.py 
 
 
+
 ## run tests
-pytest --headed --base-url=https://stork.lab.isc.org/ --browser chromium --browser firefox --tracing on <path_to_test_file>
+pytest tests/ui/playwright/tests_poc/test_example.py --headed --slowmo=200 -q -s
 # options can be added to pytest.ini 
 
 
 ## debug failing tests
-1.playwright show-trace test-results/<test_name>/trace.zip
-2.PWDEBUG=1 pytest tests/ui/playwright/<test_name>.py
+2.PWDEBUG=1 pytest tests/ui/playwright/tests_poc/test_example.py -s
+
 
