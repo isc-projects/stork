@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test checking if the configuration contains a no-parse directives.
+// Test checking if the configuration contains no-parse directives.
 func TestConfigHasNoParse(t *testing.T) {
 	cfg := &Config{
 		Statements: []*Statement{
@@ -20,7 +20,7 @@ func TestConfigHasNoParse(t *testing.T) {
 	require.True(t, cfg.HasNoParse())
 }
 
-// Test checking if the configuration does not contain a no-parse directives.
+// Test checking if the configuration does not contain no-parse directives.
 func TestConfigHasNoParseNone(t *testing.T) {
 	cfg := &Config{}
 	require.False(t, cfg.HasNoParse())

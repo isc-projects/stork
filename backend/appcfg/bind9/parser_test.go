@@ -733,6 +733,7 @@ func TestParseOptionWithSuboptions(t *testing.T) {
 	require.Equal(t, "100", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0])
 }
 
+// Test parsing ACL with negated key.
 func TestParseACLWithNegatedKey(t *testing.T) {
 	cfgText := `
 		acl "trusted-networks" {
@@ -751,6 +752,7 @@ func TestParseACLWithNegatedKey(t *testing.T) {
 	require.Equal(t, "guest-key", cfg.Statements[0].ACL.AddressMatchList.Elements[0].KeyID)
 }
 
+// Test parsing ACL with a key.
 func TestParseACLWithKey(t *testing.T) {
 	cfgText := `
 		acl "guest-networks" {
@@ -769,6 +771,7 @@ func TestParseACLWithKey(t *testing.T) {
 	require.Equal(t, "guest-key", cfg.Statements[0].ACL.AddressMatchList.Elements[0].KeyID)
 }
 
+// Test parsing ACL with an unquoted ACL name.
 func TestParseACLWithUnquotedACLName(t *testing.T) {
 	cfgText := `
 		acl "trusted-networks" {
@@ -786,6 +789,7 @@ func TestParseACLWithUnquotedACLName(t *testing.T) {
 	require.Equal(t, "localnets", cfg.Statements[0].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
 }
 
+// Test parsing ACL with a quoted ACL name.
 func TestParseACLWithQuotedACLName(t *testing.T) {
 	cfgText := `
 		acl "trusted-networks" {
@@ -803,6 +807,7 @@ func TestParseACLWithQuotedACLName(t *testing.T) {
 	require.Equal(t, "localhosts", cfg.Statements[0].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
 }
 
+// Test parsing ACL with a quoted IPv4 address.
 func TestParseACLWithQuotedIPv4Address(t *testing.T) {
 	cfgText := `
 		acl "trusted-networks" {
