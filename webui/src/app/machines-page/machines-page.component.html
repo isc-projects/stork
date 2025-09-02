@@ -190,38 +190,49 @@ sudo ./stork-install-agent.sh</textarea
 <!--        </a>-->
 <!--    </ng-template>-->
 <!--</p-tabMenu>-->
-<app-tab-view routePath="/machines/" [entitiesCollection]="machines" [entityProvider]="machineProvider" entityTitleKey="address">
+<app-tab-view
+    [(loadTableDataOnInit)]="loadTableDataOnInit"
+    routePath="/machines/"
+    [entitiesCollection]="machines"
+    [entityProvider]="machineProvider"
+    entityTitleKey="address"
+    [table]="tableSignal()?.table"
+    [supportedQueryParamFilters]="{
+        authorized: { type: 'boolean', matchMode: 'equals' },
+        text: { type: 'string', matchMode: 'contains' },
+    }"
+>
     <ng-template #firstTab>
         <div class="flex flex-wrap gap-2 justify-content-end mb-3">
             <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
                 <div class="flex-auto"></div>
                 <button
-                        type="button"
-                        pButton
-                        label="Installing Stork Agent on a New Machine"
-                        icon="pi pi-download"
-                        (click)="showAgentInstallationInstruction()"
-                        id="show-agent-installation-instruction-button"
-                        appAccessEntity="machines-server-token"
-                        appAccessType="read"
+                    type="button"
+                    pButton
+                    label="Installing Stork Agent on a New Machine"
+                    icon="pi pi-download"
+                    (click)="showAgentInstallationInstruction()"
+                    id="show-agent-installation-instruction-button"
+                    appAccessEntity="machines-server-token"
+                    appAccessType="read"
                 ></button>
 
                 <p-selectButton
-                        [options]="selectButtonOptions"
-                        [ngModel]="showAuthorized"
-                        (onChange)="onSelectButtonChange($event)"
-                        [allowEmpty]="false"
-                        id="unauthorized-select-button"
+                    [options]="selectButtonOptions"
+                    [ngModel]="showAuthorized"
+                    (onChange)="onSelectButtonChange($event)"
+                    [allowEmpty]="false"
+                    id="unauthorized-select-button"
                 >
                     <ng-template #item let-item>
-                    <span class="p-button-label">{{ item.label }}</span
-                    ><p-badge
+                        <span class="p-button-label">{{ item.label }}</span
+                        ><p-badge
                             *ngIf="item.hasBadge"
                             severity="info"
                             [value]="unauthorizedMachinesCount$ | async"
                             styleClass="relative"
                             class="inline-flex"
-                    />
+                        />
                     </ng-template>
                 </p-selectButton>
             </div>
@@ -243,6 +254,7 @@ sudo ./stork-install-agent.sh</textarea
             (authorizeSelectedMachines)="onAuthorizeSelectedMachines($event)"
             (machineMenuDisplay)="onMachineMenuDisplay($event.e, $event.m)"
             [(dataCollection)]="machines"
+            [lazyLoadOnInit]="loadTableDataOnInit()"
         ></app-machines-table>
         <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
     </ng-template>
@@ -253,15 +265,15 @@ sudo ./stork-install-agent.sh</textarea
                     <i class="fa fa-server pr-2"></i> {{ machineTab?.address
                     }}<span class="text-primary-200">:{{ machineTab?.agentPort }}</span>
                     <p-button
-                            icon="pi pi-pencil"
-                            styleClass="ml-1"
-                            id="edit-machine-icon"
-                            (onClick)="editAddress(machineTab)"
-                            appAccessEntity="machine-address"
-                            appAccessType="update"
-                            [rounded]="true"
-                            [text]="true"
-                            severity="secondary"
+                        icon="pi pi-pencil"
+                        styleClass="ml-1"
+                        id="edit-machine-icon"
+                        (onClick)="editAddress(machineTab)"
+                        appAccessEntity="machine-address"
+                        appAccessType="update"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
                     />
                 </div>
 
@@ -287,9 +299,9 @@ sudo ./stork-install-agent.sh</textarea
                             <td>
                                 {{ machineTab?.agentVersion }}
                                 <app-version-status
-                                        *ngIf="machineTab?.authorized"
-                                        app="stork"
-                                        [version]="machineTab?.agentVersion"
+                                    *ngIf="machineTab?.authorized"
+                                    app="stork"
+                                    [version]="machineTab?.agentVersion"
                                 ></app-version-status>
                             </td>
                         </tr>
@@ -302,15 +314,15 @@ sudo ./stork-install-agent.sh</textarea
                                 <span>CPUs Load</span>
                                 <app-help-tip subject="CPU Load" id="cpu-load-2-help-button">
                                     <p>
-                                        These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15
-                                        minutes. This is the usual syntax used by the <b>top</b> command.
+                                        These three numbers are CPU load averages for the last 1 minute, 5 minutes, and
+                                        15 minutes. This is the usual syntax used by the <b>top</b> command.
                                     </p>
 
                                     <p>
-                                        High load averages imply that a system is overloaded. A value of 1.00 means one CPU
-                                        core is fully utilized. For example, if your system has load of 1.22 and you have
-                                        only one CPU core, the system is overloaded. However, if the load is 1.22 with four
-                                        cores, your system is working at slightly over 30% of its capacity.
+                                        High load averages imply that a system is overloaded. A value of 1.00 means one
+                                        CPU core is fully utilized. For example, if your system has load of 1.22 and you
+                                        have only one CPU core, the system is overloaded. However, if the load is 1.22
+                                        with four cores, your system is working at slightly over 30% of its capacity.
                                     </p>
                                 </app-help-tip>
                             </td>
@@ -370,44 +382,55 @@ sudo ./stork-install-agent.sh</textarea
                         </tr>
                     </table>
 
-                <button
-                    *ngIf="machineTab?.authorized"
-                    type="button"
-                    pButton
-                    label="Get Latest State"
-                    id="get-latest-state-button"
-                    icon="pi pi-refresh"
-                    class="mt-3 mr-2 mb-2"
-                    (click)="refreshMachineState(machineTab)"
-                ></button>
-                <button
-                    *ngIf="machineTab?.authorized"
-                    type="button"
-                    pButton
-                    label="Dump Troubleshooting Data"
-                    id="dump-single-machine"
-                    icon="pi pi-download"
-                    title="Download data archive for troubleshooting purposes"
-                    class="mt-3 mr-2 mb-2 p-button-secondary"
-                    (click)="downloadDump(machineTab)"
-                ></button>
-            </div>
-            <div class="col-12 md:col-6">
-                <h3 class="underlined">Applications</h3>
-                <div *ngFor="let app of machineTab?.apps">
-                    <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
-                    <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
-                    <h4 *ngIf="app.type === 'pdns'">PowerDNS App</h4>
-                    <a routerLink="/apps/{{ app.id }}">Version {{ app.version }}</a>
-                    <app-version-status [app]="app.type" [version]="app.version"></app-version-status>
-                    <br />
-                    <app-app-daemons-status [app]="app"></app-app-daemons-status>
+                    <button
+                            *ngIf="machineTab?.authorized"
+                            type="button"
+                            pButton
+                            label="Get Latest State"
+                            id="get-latest-state-button"
+                            icon="pi pi-refresh"
+                            class="mt-3 mr-2 mb-2"
+                            (click)="refreshMachineState(machineTab)"
+                    ></button>
+                    <button
+                            *ngIf="machineTab?.authorized"
+                            type="button"
+                            pButton
+                            label="Dump Troubleshooting Data"
+                            id="dump-single-machine"
+                            icon="pi pi-download"
+                            title="Download data archive for troubleshooting purposes"
+                            class="mt-3 mr-2 mb-2 p-button-secondary"
+                            (click)="downloadDump(machineTab)"
+                    ></button>
+                </div>
+                <div class="col-12 md:col-6">
+                    <h3 class="underlined">Applications</h3>
+                    <div *ngFor="let app of machineTab?.apps">
+                        <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
+                        <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
+                        <h4 *ngIf="app.type === 'pdns'">PowerDNS App</h4>
+                        <a routerLink="/apps/{{ app.id }}">Version {{ app.version }}</a>
+                        <app-version-status [app]="app.type" [version]="app.version"></app-version-status>
+                        <br />
+                        <app-app-daemons-status [app]="app"></app-app-daemons-status>
+                    </div>
                 </div>
             </div>
+            <div class="col-12 xl:col-5">
+                <h3 class="underlined">Events</h3>
+                <app-events-panel #eventsTable [filter]="{ machine: machineTab?.id }"></app-events-panel>
+            </div>
         </div>
-        <div class="col-12 xl:col-5">
-            <h3 class="underlined">Events</h3>
-            <app-events-panel #eventsTable [filter]="{ machine: machineTab?.id }"></app-events-panel>
-        </div>
-    </div>
-</div>
+    </ng-template>
+</app-tab-view>
+
+<!--&lt;!&ndash; Machines tab &ndash;&gt;-->
+<!--<div [hidden]="activeTabIdx !== 0">-->
+<!--    -->
+<!--</div>-->
+
+<!--&lt;!&ndash; Single machine tab &ndash;&gt;-->
+<!--<div *ngIf="activeTabIdx > 0" class="p-component">-->
+<!--    -->
+<!--</div>-->

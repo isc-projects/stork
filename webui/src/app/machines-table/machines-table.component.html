@@ -1,8 +1,8 @@
 <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
     <div class="flex align-items-center flex-auto">
-        <div *ngIf="filterTextFormatErrors?.length > 0">
-            <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
-        </div>
+        <!--        <div *ngIf="filterTextFormatErrors?.length > 0">-->
+        <!--            <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>-->
+        <!--        </div>-->
     </div>
     <p-button
         *ngIf="unauthorizedMachinesDisplayed()"
@@ -19,7 +19,7 @@
         label="Refresh List"
         icon="pi pi-refresh"
         styleClass="block p-button-primary no-underline"
-        (onClick)="reloadData(machinesTable)"
+        (onClick)="loadData(machinesTable.createLazyLoadMetadata())"
     ></p-button>
 </div>
 <p-table
@@ -30,16 +30,11 @@
     [lazy]="true"
     [loading]="dataLoading"
     (onLazyLoad)="loadData($event)"
-    [lazyLoadOnInit]="false"
-    (onStateRestore)="stateRestored($event, machinesTable)"
-    (onStateSave)="stateSaved(machinesTable)"
-    (onFilter)="onFilter()"
+    [lazyLoadOnInit]="lazyLoadOnInit()"
     [totalRecords]="totalRecords"
     [rowsPerPageOptions]="[10, 30, 100]"
     [showCurrentPageReport]="true"
-    stateStorage="session"
-    [stateKey]="stateKey"
-    [currentPageReportTemplate]="currentPageReportTemplate"
+    currentPageReportTemplate="{currentPage} of {totalPages} pages"
     styleClass="p-datatable-striped"
     [(selection)]="selectedMachines"
     (selectionChange)="onSelectionChange($event)"
@@ -64,7 +59,7 @@
                         icon="pi pi-check"
                         value="Filter applied"
                         severity="success"
-                        *ngIf="hasFilter(machinesTable)"
+                        *ngIf="hasFilter(machinesTable.filters)"
                         [rounded]="true"
                     ></p-tag>
                     <app-help-tip subject="Filtering" id="filtering-help-button">
@@ -98,11 +93,11 @@
                 <button
                     pButton
                     label="Clear"
-                    [class.p-button-warning]="hasFilter(machinesTable)"
-                    [class.p-button-secondary]="!hasFilter(machinesTable)"
+                    [class.p-button-warning]="hasFilter(machinesTable.filters)"
+                    [class.p-button-secondary]="!hasFilter(machinesTable.filters)"
                     icon="pi pi-filter-slash"
-                    (click)="clearFilters(machinesTable)"
-                    [disabled]="!hasFilter(machinesTable)"
+                    (click)="clearTableState()"
+                    [disabled]="!hasFilter(machinesTable.filters)"
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter
@@ -295,14 +290,14 @@
             <td colspan="3">
                 <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
                 No machines found.
-                <span *ngIf="hasFilter(machinesTable)">
+                <span *ngIf="hasFilter(machinesTable.filters)">
                     Clear filtering and try again.
                     <button
                         pButton
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
-                        (click)="clearFilters(machinesTable)"
+                        (click)="clearTableState()"
                     ></button>
                 </span>
                 <div class="mt-3">
@@ -310,7 +305,7 @@
                     Information about adding new machines to the Stork server is available after clicking on the
                     <b>Installing Stork Agent on a New Machine</b> button above.
                 </div>
-                <div *ngIf="validFilter?.authorized === true && unauthorizedMachinesCount > 0">
+                <div *ngIf="machinesTable?.filters['authorized']?.value === true && unauthorizedMachinesCount > 0">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                     There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                     <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
@@ -318,7 +313,7 @@
                     {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by selecting the <b>Unauthorized</b> button
                     above.
                 </div>
-                <div *ngIf="validFilter?.authorized === false && unauthorizedMachinesCount === 0">
+                <div *ngIf="machinesTable?.filters['authorized']?.value === false && unauthorizedMachinesCount === 0">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                     There are no machines waiting for authorization. Select the <b>Authorized</b>
                     button above to see all authorized machines.

@@ -1,21 +1,28 @@
 import {
+    AfterViewInit,
     booleanAttribute,
     Component,
     computed,
     ContentChild,
     Input,
+    InputSignal,
+    model,
     OnDestroy,
     OnInit,
     TemplateRef,
 } from '@angular/core'
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs'
-import { ActivatedRoute, Router, RouterLink } from '@angular/router'
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router'
 import { inject, input } from '@angular/core'
-import { Subscription } from 'rxjs'
+import { combineLatest, debounceTime, Subscription } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { TimesIcon } from 'primeng/icons'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { getErrorMessage } from '../utils'
+import { parseBoolean } from '../table'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { Table } from 'primeng/table'
+import { filter } from 'rxjs/operators'
 
 /**
  * Type defining data structure of a tab displayed and managed by the TabView component.
@@ -55,7 +62,7 @@ function sanitizePath(value: string | undefined): string | undefined {
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',
 })
-export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
+export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Holds all open tabs.
      */
@@ -138,6 +145,21 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      * Defaults to -1, which means that it is not used by default.
      */
     openEntityID = input(-1)
+
+    supportedQueryParamFilters: InputSignal<{
+        [k: string]: {
+            type: 'numeric' | 'enum' | 'string' | 'boolean'
+            matchMode: 'contains' | 'equals'
+            enumValues?: string[]
+            arrayType?: boolean
+        }
+    }> = input()
+
+    /**
+     * Boolean flag stating whether this component init is done or not.
+     * @private
+     */
+    private _initDone: boolean = false
 
     /**
      * Input function used to asynchronously provide the entity based on given entity ID.
@@ -230,6 +252,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                 })
         }
     }
+
+    loadTableDataOnInit = model(true)
 
     /**
      * Gets the identifier value of the entity.
@@ -367,6 +391,125 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
         }
     }
 
+    // private _queryParamFilters: { [p: string]: FilterMetadata } = {}
+
+    table: InputSignal<Table> = input()
+
+    /**
+     *
+     * @param queryParamMap
+     * @private
+     */
+    private _parseQueryParams(queryParamMap: ParamMap): { count: number; filters: { [p: string]: FilterMetadata } } {
+        // TODO: Move the queryParams filter validation logic to table.ts to replace existing, more complicated logic.
+        let validFilters = 0
+        let _queryParamFilters = {}
+        for (const paramKey of queryParamMap.keys) {
+            if (!(paramKey in this.supportedQueryParamFilters())) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Wrong URL parameter value',
+                    detail: `URL parameter ${paramKey} not supported!`,
+                    life: 10000,
+                })
+                continue
+            }
+
+            const paramValues = this.supportedQueryParamFilters()[paramKey].arrayType
+                ? queryParamMap.getAll(paramKey)
+                : [queryParamMap.get(paramKey)]
+            for (const paramValue of paramValues) {
+                if (!paramValue) {
+                    continue
+                }
+
+                let parsedValue = null
+                switch (this.supportedQueryParamFilters()[paramKey].type) {
+                    case 'numeric':
+                        const numV = parseInt(paramValue, 10)
+                        if (Number.isNaN(numV)) {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Wrong URL parameter value',
+                                detail: `URL parameter ${paramKey} requires numeric value!`,
+                                life: 10000,
+                            })
+                            break
+                        }
+
+                        parsedValue = numV
+                        validFilters += 1
+                        break
+                    case 'boolean':
+                        const booleanV = parseBoolean(paramValue)
+                        if (booleanV === null) {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Wrong URL parameter value',
+                                detail: `URL parameter ${paramKey} requires either true or false value!`,
+                                life: 10000,
+                            })
+                            break
+                        }
+
+                        parsedValue = booleanV
+                        validFilters += 1
+                        break
+                    case 'enum':
+                        if (this.supportedQueryParamFilters()[paramKey].enumValues?.includes(paramValue)) {
+                            parsedValue = paramValue
+                            validFilters += 1
+                            break
+                        }
+
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Wrong URL parameter value',
+                            detail: `URL parameter ${paramKey} requires one of the values: ${this.supportedQueryParamFilters()[paramKey].enumValues.join(', ')}!`,
+                            life: 10000,
+                        })
+                        break
+                    case 'string':
+                        parsedValue = paramValue
+                        validFilters += 1
+                        break
+                    default:
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Wrong URL parameter value',
+                            detail: `URL parameter ${paramKey} of type ${this.supportedQueryParamFilters()[paramKey].type} not supported!`,
+                            life: 10000,
+                        })
+                        break
+                }
+
+                if (parsedValue !== null) {
+                    const filterConstraint = {}
+                    if (this.supportedQueryParamFilters()[paramKey].arrayType) {
+                        parsedValue = _queryParamFilters[paramKey]?.value
+                            ? [..._queryParamFilters[paramKey]?.value, parsedValue]
+                            : [parsedValue]
+                    }
+
+                    filterConstraint[paramKey] = {
+                        value: parsedValue,
+                        matchMode: this.supportedQueryParamFilters()[paramKey].matchMode,
+                    }
+                    _queryParamFilters = { ..._queryParamFilters, ...filterConstraint }
+                }
+            }
+        }
+
+        return { count: validFilters, filters: _queryParamFilters }
+    }
+
+    private _filterTableByQueryParams(queryParamFilters: { [x: string]: FilterMetadata | FilterMetadata[] }): void {
+        this.table()?.clearFilterValues()
+        const metadata = this.table()?.createLazyLoadMetadata()
+        this.table().filters = { ...metadata.filters, ...queryParamFilters }
+        this.table()?._filter()
+    }
+
     /**
      * Component lifecycle hook which inits the component.
      */
@@ -383,26 +526,26 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
         if (this.routePath()) {
             this.subscriptions = this.route.paramMap.subscribe({
                 next: (params) => {
-                    console.log('ActivatedRoute paramMap emits next', params)
-                    const id = params.get('id')
-                    if (!id || id === this.firstTabRouteEnd()) {
-                        console.log('open first tab')
-                        this.activeTabEntityID = 0
-                        return
-                    }
-                    const numericId = parseInt(id, 10)
-                    if (!Number.isNaN(numericId)) {
-                        this.openTab(numericId)
-                        return
-                    } else {
-                        this.messageService.add({
-                            detail: `Couldn't parse provided id ${id} to numeric value!`,
-                            severity: 'error',
-                            summary: `Error opening tab`,
-                        })
-                        this.activeTabEntityID = 0
-                        return
-                    }
+                    console.log('ActivatedRoute paramMap emits next', params, Date.now())
+                    // const id = params.get('id')
+                    // if (!id || id === this.firstTabRouteEnd()) {
+                    //     console.log('open first tab')
+                    //     this.activeTabEntityID = 0
+                    //     return
+                    // }
+                    // const numericId = parseInt(id, 10)
+                    // if (!Number.isNaN(numericId)) {
+                    //     this.openTab(numericId)
+                    //     return
+                    // } else {
+                    //     this.messageService.add({
+                    //         detail: `Couldn't parse provided id ${id} to numeric value!`,
+                    //         severity: 'error',
+                    //         summary: `Error opening tab`,
+                    //     })
+                    //     this.activeTabEntityID = 0
+                    //     return
+                    // }
                 },
                 error: (err) => {
                     console.log('error emitted by ActivatedRoute paramMap', err)
@@ -411,7 +554,74 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                     console.log('ActivatedRoute paramMap complete')
                 },
             })
+            this.subscriptions.add(
+                combineLatest([this.route.queryParamMap, this.route.paramMap])
+                    .pipe(
+                        filter(() => this._initDone),
+                        debounceTime(100)
+                    )
+                    // .pipe(filter(() => this._initDone))
+                    .subscribe(
+                        //     (value) => {
+                        //     this._parseQueryParams(value)
+                        //     this._filterZonesByQueryParams()
+                        //     if (this.activeTabEntityID > 0) {
+                        //         // Go back to first tab.
+                        //         this.goToFirstTab()
+                        //     }
+                        // }
+                        {
+                            next: (combined) => {
+                                console.log(
+                                    'ActivatedRoute combined queryParamMap and paramMap emits next',
+                                    combined,
+                                    Date.now()
+                                )
+                                const queryParamMap = combined[0]
+                                const paramMap = combined[1]
+                                const id = paramMap.get('id')
+                                if (!id || id === this.firstTabRouteEnd()) {
+                                    console.log('open first tab')
+                                    this.activeTabEntityID = 0
+                                    if (this.table() && this.supportedQueryParamFilters()) {
+                                        const f = this._parseQueryParams(queryParamMap)
+                                        console.log('qParams filter parsing', f, this.table()?.filters)
+                                        this._filterTableByQueryParams(f.filters)
+                                    }
+                                    return
+                                }
+                                const numericId = parseInt(id, 10)
+                                if (!Number.isNaN(numericId)) {
+                                    this.openTab(numericId)
+                                    return
+                                } else {
+                                    this.messageService.add({
+                                        detail: `Couldn't parse provided id ${id} to numeric value!`,
+                                        severity: 'error',
+                                        summary: `Error opening tab`,
+                                    })
+                                    this.activeTabEntityID = 0
+                                    return
+                                }
+                            },
+                            error: (err) => {
+                                console.log('error emitted by ActivatedRoute queryParamMap', err)
+                            },
+                            complete: () => {
+                                console.log('ActivatedRoute queryParamMap complete')
+                            },
+                        }
+                    )
+            )
             return
+        }
+
+        const filters = this._parseQueryParams(this.route.snapshot.queryParamMap)
+        if (filters.count > 0) {
+            // Valid filters found, so do not load lazily table data on init, because appropriate filters
+            // will be applied later.
+            this.loadTableDataOnInit.set(false)
+            // this.dataLoading = true
         }
 
         if (this.openEntityID() > -1) {
@@ -428,6 +638,14 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         console.log('storkTabViewComponent onDestroy')
         this.subscriptions?.unsubscribe()
+    }
+
+    ngAfterViewInit() {
+        this._initDone = true
+        if (!this.loadTableDataOnInit()) {
+            const filters = this._parseQueryParams(this.route.snapshot.queryParamMap)
+            this._filterTableByQueryParams(filters.filters)
+        }
     }
 
     /**

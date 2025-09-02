@@ -1,12 +1,14 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
-import { PrefilteredTable } from '../table'
+import { Component, EventEmitter, input, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
+import { hasFilter, PrefilteredTable } from '../table'
 import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableSelectAllChangeEvent } from 'primeng/table'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
-import { lastValueFrom } from 'rxjs'
+import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Location } from '@angular/common'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 /**
  * Interface defining fields for Machines filter.
@@ -25,7 +27,9 @@ export interface MachinesFilter {
     templateUrl: './machines-table.component.html',
     styleUrl: './machines-table.component.sass',
 })
-export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Machine> implements OnInit, OnDestroy {
+export class MachinesTableComponent implements OnInit, OnDestroy {
+    lazyLoadOnInit = input(true)
+
     /**
      * Array of all numeric keys that are supported when filtering machines via URL queryParams.
      */
@@ -106,6 +110,9 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      * @private
      */
     private _unauthorizedInDataCollectionCount: number = 0
+    dataLoading: boolean
+    totalRecords: number
+    private _subscriptions: Subscription = new Subscription()
 
     /**
      * Callback called when Show machine's menu button was clicked by user.
@@ -132,26 +139,51 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      * @param location Location service used to update queryParams.
      */
     constructor(
-        private route: ActivatedRoute,
+        // private route: ActivatedRoute,
         private servicesApi: ServicesService,
         private messageService: MessageService,
-        private location: Location
+        private router: Router
+        // private location: Location
     ) {
-        super(route, location)
+        // super(route, location)
     }
 
     /**
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        super.onDestroy()
+        // super.onDestroy()
+        console.log('machines-table ngOnDestroy')
+        this._tableFilter$.complete()
+        this._subscriptions.unsubscribe()
     }
 
     /**
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        super.onInit()
+        // super.onInit()
+        console.log('machines-table ngOnInit')
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    map((f) => {
+                        return { ...f, value: f.value || null }
+                    }),
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        // this.zone.run(() =>
+                        this.router.navigate(
+                            [],
+                            { queryParams: this._tableFiltersToQueryParams() }
+                            // )
+                        )
+                    })
+                )
+                .subscribe()
+        )
     }
 
     /**
@@ -163,13 +195,13 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
         // Indicate that machines refresh is in progress.
         this.dataLoading = true
 
-        const authorized = this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
+        const authorized = (event.filters['authorized'] as FilterMetadata)?.value ?? null
 
         lastValueFrom(
             this.servicesApi.getMachines(
                 event.first,
                 event.rows,
-                this.getTableFilterValue('text', event.filters),
+                (event.filters['text'] as FilterMetadata)?.value || null,
                 null,
                 authorized
             )
@@ -179,7 +211,10 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
                 this.dataCollectionChange.emit(this.dataCollection)
                 this.totalRecords = data.total ?? 0
                 this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
-                if (authorized === false && this.hasFilter(this.table) === false) {
+                if (
+                    authorized === false &&
+                    this.hasFilter(this.table.filters, (filterKey) => filterKey === 'authorized') === false
+                ) {
                     this.unauthorizedMachinesCount = this.totalRecords
                     this.unauthorizedMachinesCountChange.emit(this.totalRecords)
                 } else {
@@ -301,5 +336,28 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
         }
 
         this.clearSelection()
+    }
+
+    protected readonly hasFilter = hasFilter
+
+    hasPrefilter() {
+        const prefilter = (this.table?.filters['authorized'] as FilterMetadata)?.value
+        return prefilter === true || prefilter === false
+    }
+
+    clearTableState() {
+        this.table?.clear()
+        this.router.navigate([])
+    }
+
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    filterTable(value: any, filterConstraint: FilterMetadata): void {
+        this._tableFilter$.next({ value, filterConstraint })
+    }
+
+    private _tableFiltersToQueryParams() {
+        const entries = Object.entries(this.table.filters).map((entry) => [entry[0], (<FilterMetadata>entry[1]).value])
+        return Object.fromEntries(entries)
     }
 }
