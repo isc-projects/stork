@@ -1,24 +1,13 @@
-import {
-    AfterViewInit,
-    ChangeDetectorRef,
-    Component,
-    input,
-    OnDestroy,
-    OnInit,
-    signal,
-    viewChild,
-    ViewChild,
-} from '@angular/core'
-import { ActivatedRoute, EventType, Router } from '@angular/router'
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
+import { ActivatedRoute, Router } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
-import { BehaviorSubject, concat, EMPTY, lastValueFrom, Observable, Subscription } from 'rxjs'
+import { BehaviorSubject, concat, lastValueFrom, Observable, Subscription } from 'rxjs'
 import { Machine, Settings } from '../backend'
 
 import { ServicesService, SettingsService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, deepCopy, getErrorMessage } from '../utils'
-import { catchError, filter } from 'rxjs/operators'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
 import { SelectButtonChangeEvent } from 'primeng/selectbutton'
@@ -219,7 +208,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * or null if both Authorized and Unauthorized machines are to be displayed.
      */
     get showAuthorized(): boolean | null {
-        return (this.machinesTable?.table?.filters['authorized'] as FilterMetadata)?.value ?? null
+        return (this.machinesTable?.machinesTable?.filters['authorized'] as FilterMetadata)?.value ?? null
     }
 
     /**
@@ -228,8 +217,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('machinesTable') machinesTable: MachinesTableComponent
 
     tableSignal = viewChild<MachinesTableComponent>('machinesTable')
-
-    loadTableDataOnInit = signal(true)
 
     /**
      * Machines popup menu component.
@@ -425,6 +412,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * It configures initial state of PrimeNG Menu tabs and fetches global settings.
      */
     ngOnInit() {
+        console.log('machines-page ngOnInit', Date.now())
         this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
         this.machineMenuItems = this.machineMenuItemsAuthorized
@@ -569,7 +557,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     summary: `Machine authorized`,
                     detail: `Machine ${m.address} authorization succeeded.`,
                 })
-                this.machinesTable?.loadData(this.machinesTable?.table?.createLazyLoadMetadata())
+                this.machinesTable?.loadData(this.machinesTable?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
@@ -856,7 +844,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 })
                 this.machinesTable?.setDataLoading(false)
                 // this.machinesTable?.loadDataWithValidFilter()
-                this.machinesTable?.loadData(this.machinesTable?.table?.createLazyLoadMetadata())
+                this.machinesTable?.loadData(this.machinesTable?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
@@ -864,7 +852,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             complete: () => {
                 this.machinesTable?.setDataLoading(false)
                 // this.machinesTable?.loadDataWithValidFilter()
-                this.machinesTable?.loadData(this.machinesTable?.table?.createLazyLoadMetadata())
+                this.machinesTable?.loadData(this.machinesTable?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()

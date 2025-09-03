@@ -1,28 +1,29 @@
 import {
-    AfterViewInit,
     booleanAttribute,
     Component,
     computed,
+    contentChild,
     ContentChild,
+    effect,
     Input,
     InputSignal,
-    model,
     OnDestroy,
     OnInit,
+    signal,
     TemplateRef,
 } from '@angular/core'
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs'
-import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router'
+import { ActivatedRoute, EventType, ParamMap, Params, Router, RouterLink } from '@angular/router'
 import { inject, input } from '@angular/core'
-import { combineLatest, debounceTime, Subscription } from 'rxjs'
+import { of, Subscription } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { TimesIcon } from 'primeng/icons'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { getErrorMessage } from '../utils'
-import { parseBoolean } from '../table'
+import { parseBoolean, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Table } from 'primeng/table'
-import { filter } from 'rxjs/operators'
+import { filter, switchMap } from 'rxjs/operators'
 
 /**
  * Type defining data structure of a tab displayed and managed by the TabView component.
@@ -62,7 +63,7 @@ function sanitizePath(value: string | undefined): string | undefined {
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',
 })
-export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewInit {
+export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     /**
      * Holds all open tabs.
      */
@@ -114,9 +115,21 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
     firstTabRoute = computed(() => (this.routePath() ? this.routePath() + this.firstTabRouteEnd() : undefined))
 
     /**
-     * Collection of entities for which the tabs are created and displayed.
+     * Query parameters used for the router link of the first tab.
      */
-    entitiesCollection = input<TEntity[]>(undefined)
+    firstTabQueryParams = signal<Params>(undefined)
+
+    /**
+     * Collection of entities for which the tabs are created and displayed.
+     * If #table PrimeNG table was found as content child, this collection refers to the table entities; otherwise
+     * it refers to the entities input.
+     */
+    entitiesCollection = computed<TEntity[]>(() => this.contentChildTable()?.value || this.entities())
+
+    /**
+     * Input array of entities.
+     */
+    entities = input<TEntity[]>(undefined)
 
     /**
      * Field name used to extract entity identifier value.
@@ -146,7 +159,10 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
      */
     openEntityID = input(-1)
 
-    supportedQueryParamFilters: InputSignal<{
+    /**
+     * Input table filters.
+     */
+    tableQueryParamFilters: InputSignal<{
         [k: string]: {
             type: 'numeric' | 'enum' | 'string' | 'boolean'
             matchMode: 'contains' | 'equals'
@@ -154,12 +170,6 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
             arrayType?: boolean
         }
     }> = input()
-
-    /**
-     * Boolean flag stating whether this component init is done or not.
-     * @private
-     */
-    private _initDone: boolean = false
 
     /**
      * Input function used to asynchronously provide the entity based on given entity ID.
@@ -177,11 +187,20 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
      */
     @ContentChild('entityTab', { descendants: false }) entityTabTemplate: TemplateRef<any> | undefined
 
+    givenTable = input<Table>()
+    foundTable = contentChild<Table>('table')
+
+    /**
+     * PrimeNG table used as a table of entities, usually displayed in the first tab.
+     * It must have #table template reference to be found.
+     */
+    contentChildTable = computed(() => this.foundTable() || this.givenTable())
+
     /**
      * Activated route injected to retrieve route params.
      * @private
      */
-    private readonly route = inject(ActivatedRoute)
+    private readonly activatedRoute = inject(ActivatedRoute)
 
     /**
      * Message service injected to display feedback messages in UI.
@@ -239,7 +258,9 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                     }
 
                     if (existingEntityInCollectionIdx > -1) {
-                        this.entitiesCollection().splice(existingEntityInCollectionIdx, 1, entity)
+                        this.contentChildTable()
+                            ? this.contentChildTable().value.splice(existingEntityInCollectionIdx, 1, entity)
+                            : this.entities().splice(existingEntityInCollectionIdx, 1, entity)
                     }
                 })
                 .catch((error) => {
@@ -252,8 +273,6 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                 })
         }
     }
-
-    loadTableDataOnInit = model(true)
 
     /**
      * Gets the identifier value of the entity.
@@ -308,8 +327,13 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
             entityToOpen = this.entitiesCollection().find((entity) => this.getID(entity) === entityID)
         }
 
+        if (entityToOpen) {
+            console.log('openTab - entity found in entitiesCollection')
+        }
+
         // At this step the entity must be retrieved asynchronously.
         if (!entityToOpen && this.entityProvider) {
+            console.log('openTab - retrieve entity using entityProvider')
             this.entityProvider(entityID)
                 .then((entity) => {
                     this.openTabs = [...this.openTabs, this.createTab(entity)]
@@ -370,7 +394,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
     goToFirstTab() {
         if (this.routePath()) {
             console.log('go to first tab using router')
-            this.router.navigate([this.firstTabRoute()])
+            this.router.navigate([this.firstTabRoute()], { queryParams: this.firstTabQueryParams() })
         } else {
             console.log('go to first tab without using router')
             this.activeTabEntityID = this.openTabs[0]?.value || 0
@@ -391,21 +415,20 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
         }
     }
 
-    // private _queryParamFilters: { [p: string]: FilterMetadata } = {}
-
-    table: InputSignal<Table> = input()
-
     /**
-     *
+     * Converts queryParamMap to PrimeNG table filters.
      * @param queryParamMap
      * @private
      */
-    private _parseQueryParams(queryParamMap: ParamMap): { count: number; filters: { [p: string]: FilterMetadata } } {
+    private queryParamMapToTableFilters(queryParamMap: ParamMap): {
+        count: number
+        filters: { [p: string]: FilterMetadata }
+    } {
         // TODO: Move the queryParams filter validation logic to table.ts to replace existing, more complicated logic.
         let validFilters = 0
         let _queryParamFilters = {}
         for (const paramKey of queryParamMap.keys) {
-            if (!(paramKey in this.supportedQueryParamFilters())) {
+            if (!(paramKey in this.tableQueryParamFilters())) {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Wrong URL parameter value',
@@ -415,7 +438,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                 continue
             }
 
-            const paramValues = this.supportedQueryParamFilters()[paramKey].arrayType
+            const paramValues = this.tableQueryParamFilters()[paramKey].arrayType
                 ? queryParamMap.getAll(paramKey)
                 : [queryParamMap.get(paramKey)]
             for (const paramValue of paramValues) {
@@ -424,7 +447,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                 }
 
                 let parsedValue = null
-                switch (this.supportedQueryParamFilters()[paramKey].type) {
+                switch (this.tableQueryParamFilters()[paramKey].type) {
                     case 'numeric':
                         const numV = parseInt(paramValue, 10)
                         if (Number.isNaN(numV)) {
@@ -456,7 +479,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                         validFilters += 1
                         break
                     case 'enum':
-                        if (this.supportedQueryParamFilters()[paramKey].enumValues?.includes(paramValue)) {
+                        if (this.tableQueryParamFilters()[paramKey].enumValues?.includes(paramValue)) {
                             parsedValue = paramValue
                             validFilters += 1
                             break
@@ -465,7 +488,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                         this.messageService.add({
                             severity: 'error',
                             summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} requires one of the values: ${this.supportedQueryParamFilters()[paramKey].enumValues.join(', ')}!`,
+                            detail: `URL parameter ${paramKey} requires one of the values: ${this.tableQueryParamFilters()[paramKey].enumValues.join(', ')}!`,
                             life: 10000,
                         })
                         break
@@ -477,7 +500,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
                         this.messageService.add({
                             severity: 'error',
                             summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} of type ${this.supportedQueryParamFilters()[paramKey].type} not supported!`,
+                            detail: `URL parameter ${paramKey} of type ${this.tableQueryParamFilters()[paramKey].type} not supported!`,
                             life: 10000,
                         })
                         break
@@ -485,7 +508,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
 
                 if (parsedValue !== null) {
                     const filterConstraint = {}
-                    if (this.supportedQueryParamFilters()[paramKey].arrayType) {
+                    if (this.tableQueryParamFilters()[paramKey].arrayType) {
                         parsedValue = _queryParamFilters[paramKey]?.value
                             ? [..._queryParamFilters[paramKey]?.value, parsedValue]
                             : [parsedValue]
@@ -493,7 +516,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
 
                     filterConstraint[paramKey] = {
                         value: parsedValue,
-                        matchMode: this.supportedQueryParamFilters()[paramKey].matchMode,
+                        matchMode: this.tableQueryParamFilters()[paramKey].matchMode,
                     }
                     _queryParamFilters = { ..._queryParamFilters, ...filterConstraint }
                 }
@@ -503,125 +526,119 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
         return { count: validFilters, filters: _queryParamFilters }
     }
 
-    private _filterTableByQueryParams(queryParamFilters: { [x: string]: FilterMetadata | FilterMetadata[] }): void {
-        this.table()?.clearFilterValues()
-        const metadata = this.table()?.createLazyLoadMetadata()
-        this.table().filters = { ...metadata.filters, ...queryParamFilters }
-        this.table()?._filter()
+    /**
+     * Filters PrimeNG table by applying all given filters at once.
+     * @param filters
+     * @private
+     */
+    private filterTableUsingMultipleFilters(filters: { [x: string]: FilterMetadata | FilterMetadata[] }): void {
+        this.contentChildTable()?.clearFilterValues()
+        const metadata = this.contentChildTable()?.createLazyLoadMetadata()
+        this.contentChildTable().filters = { ...metadata.filters, ...filters }
+        const qp = tableFiltersToQueryParams(this.contentChildTable())
+        console.log('apply queryParams to first tab', qp)
+        this.firstTabQueryParams.set(qp)
+        this.contentChildTable()?._filter()
     }
+
+    initializedTableEffect = effect(() => {
+        if (!this.contentChildTable()) {
+            return
+        }
+        console.log('content child #table', this.contentChildTable(), Date.now())
+        // const queryParamFilters = this._parseQueryParams(this.route.snapshot.queryParamMap)
+        // const metadata = this.contentChildTable().createLazyLoadMetadata()
+        // const filters = { ...metadata.filters, ...queryParamFilters.filters }
+        // this.contentChildTable().filters = filters
+        // const newMeta = { ...metadata, ...filters }
+        // this.contentChildTable().onLazyLoad.emit(newMeta)
+    })
 
     /**
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
-        console.log('storkTabViewComponent onInit')
+        console.log('storkTabViewComponent onInit', Date.now())
 
         if (this.initWithEntitiesInCollection()) {
             this.entitiesCollection().forEach((entity: TEntity) => {
                 this.openTabs.push(this.createTab(entity))
             })
-            // this.openTabs = [...this.openTabs]
         }
 
         if (this.routePath()) {
-            this.subscriptions = this.route.paramMap.subscribe({
-                next: (params) => {
-                    console.log('ActivatedRoute paramMap emits next', params, Date.now())
-                    // const id = params.get('id')
-                    // if (!id || id === this.firstTabRouteEnd()) {
-                    //     console.log('open first tab')
-                    //     this.activeTabEntityID = 0
-                    //     return
-                    // }
-                    // const numericId = parseInt(id, 10)
-                    // if (!Number.isNaN(numericId)) {
-                    //     this.openTab(numericId)
-                    //     return
-                    // } else {
-                    //     this.messageService.add({
-                    //         detail: `Couldn't parse provided id ${id} to numeric value!`,
-                    //         severity: 'error',
-                    //         summary: `Error opening tab`,
-                    //     })
-                    //     this.activeTabEntityID = 0
-                    //     return
-                    // }
-                },
-                error: (err) => {
-                    console.log('error emitted by ActivatedRoute paramMap', err)
-                },
-                complete: () => {
-                    console.log('ActivatedRoute paramMap complete')
-                },
-            })
-            this.subscriptions.add(
-                combineLatest([this.route.queryParamMap, this.route.paramMap])
-                    .pipe(
-                        filter(() => this._initDone),
-                        debounceTime(100)
+            this.subscriptions = this.router.events
+                .pipe(
+                    filter((e, idx) => e.type === EventType.NavigationEnd || idx === 0),
+                    switchMap((_e, idx) =>
+                        of({
+                            paramMap: this.activatedRoute.snapshot.paramMap,
+                            queryParamMap: this.activatedRoute.snapshot.queryParamMap,
+                            fragment: idx === 0 ? null : this.activatedRoute.snapshot.fragment,
+                        })
                     )
-                    // .pipe(filter(() => this._initDone))
-                    .subscribe(
-                        //     (value) => {
-                        //     this._parseQueryParams(value)
-                        //     this._filterZonesByQueryParams()
-                        //     if (this.activeTabEntityID > 0) {
-                        //         // Go back to first tab.
-                        //         this.goToFirstTab()
-                        //     }
-                        // }
-                        {
-                            next: (combined) => {
-                                console.log(
-                                    'ActivatedRoute combined queryParamMap and paramMap emits next',
-                                    combined,
-                                    Date.now()
-                                )
-                                const queryParamMap = combined[0]
-                                const paramMap = combined[1]
-                                const id = paramMap.get('id')
-                                if (!id || id === this.firstTabRouteEnd()) {
-                                    console.log('open first tab')
-                                    this.activeTabEntityID = 0
-                                    if (this.table() && this.supportedQueryParamFilters()) {
-                                        const f = this._parseQueryParams(queryParamMap)
-                                        console.log('qParams filter parsing', f, this.table()?.filters)
-                                        this._filterTableByQueryParams(f.filters)
-                                    }
-                                    return
-                                }
-                                const numericId = parseInt(id, 10)
-                                if (!Number.isNaN(numericId)) {
-                                    this.openTab(numericId)
-                                    return
-                                } else {
-                                    this.messageService.add({
-                                        detail: `Couldn't parse provided id ${id} to numeric value!`,
-                                        severity: 'error',
-                                        summary: `Error opening tab`,
-                                    })
-                                    this.activeTabEntityID = 0
-                                    return
-                                }
-                            },
-                            error: (err) => {
-                                console.log('error emitted by ActivatedRoute queryParamMap', err)
-                            },
-                            complete: () => {
-                                console.log('ActivatedRoute queryParamMap complete')
-                            },
-                        }
-                    )
-            )
-            return
-        }
+                )
+                .subscribe({
+                    next: (snapshot) => {
+                        const paramMap = snapshot.paramMap
+                        const queryParamMap = snapshot.queryParamMap
+                        const fragment = snapshot.fragment
+                        console.log('router events emits next', paramMap, queryParamMap, fragment, Date.now())
+                        const id = paramMap.get('id')
+                        if (!id || id === this.firstTabRouteEnd()) {
+                            console.log('no id in path or this is /all path - open first tab')
+                            this.activeTabEntityID = 0
+                            if (!this.contentChildTable()) {
+                                console.log('no table yet')
+                            }
 
-        const filters = this._parseQueryParams(this.route.snapshot.queryParamMap)
-        if (filters.count > 0) {
-            // Valid filters found, so do not load lazily table data on init, because appropriate filters
-            // will be applied later.
-            this.loadTableDataOnInit.set(false)
-            // this.dataLoading = true
+                            if (
+                                this.contentChildTable() &&
+                                this.tableQueryParamFilters() &&
+                                fragment !== 'tab-navigation'
+                            ) {
+                                const parsedFilters = this.queryParamMapToTableFilters(queryParamMap)
+                                console.log(
+                                    'qParams filter parsing',
+                                    parsedFilters,
+                                    'table has',
+                                    this.contentChildTable()?.filters
+                                )
+                                this.filterTableUsingMultipleFilters(parsedFilters.filters)
+                            }
+
+                            return
+                        }
+
+                        const numericId = parseInt(id, 10)
+                        if (!Number.isNaN(numericId)) {
+                            this.openTab(numericId)
+                            if (
+                                this.contentChildTable() &&
+                                !tableHasFilter(this.contentChildTable()) &&
+                                !(this.contentChildTable().value ?? []).length
+                            ) {
+                                console.log(
+                                    'numeric id found, opening specific tab, init table because it seems to be empty',
+                                    this.contentChildTable()?.value
+                                )
+                                const metadata = this.contentChildTable().createLazyLoadMetadata()
+                                this.contentChildTable().onLazyLoad.emit(metadata)
+                            }
+
+                            return
+                        } else {
+                            this.messageService.add({
+                                detail: `Couldn't parse provided id ${id} to numeric value!`,
+                                severity: 'error',
+                                summary: `Error opening tab`,
+                            })
+                            this.activeTabEntityID = 0
+                            return
+                        }
+                    },
+                })
+            return
         }
 
         if (this.openEntityID() > -1) {
@@ -638,14 +655,6 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy, AfterViewIn
     ngOnDestroy(): void {
         console.log('storkTabViewComponent onDestroy')
         this.subscriptions?.unsubscribe()
-    }
-
-    ngAfterViewInit() {
-        this._initDone = true
-        if (!this.loadTableDataOnInit()) {
-            const filters = this._parseQueryParams(this.route.snapshot.queryParamMap)
-            this._filterTableByQueryParams(filters.filters)
-        }
     }
 
     /**

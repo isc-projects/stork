@@ -1,12 +1,11 @@
-import { Component, EventEmitter, input, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
-import { hasFilter, PrefilteredTable } from '../table'
+import { Component, EventEmitter, input, Input, OnDestroy, OnInit, Output, viewChild, ViewChild } from '@angular/core'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableSelectAllChangeEvent } from 'primeng/table'
-import { ActivatedRoute, Router } from '@angular/router'
+import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
-import { Location } from '@angular/common'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
@@ -69,7 +68,9 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
     /**
      * PrimeNG table instance.
      */
-    @ViewChild('machinesTable') table: Table
+    @ViewChild('table') machinesTable: Table
+
+    tableSignal = viewChild<Table>('table')
 
     /**
      * Output property emitting events to parent component when Show machine's menu button was clicked by user.
@@ -97,8 +98,8 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      */
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
-    @Input() dataCollection: Machine[] = []
-    @Output() dataCollectionChange = new EventEmitter<Machine[]>()
+    dataCollection: Machine[] = []
+    // @Output() dataCollectionChange = new EventEmitter<Machine[]>()
 
     /**
      * Keeps state of the Select All checkbox in the table's header.
@@ -163,7 +164,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      */
     ngOnInit(): void {
         // super.onInit()
-        console.log('machines-table ngOnInit')
+        console.log('machines-table ngOnInit', Date.now())
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
@@ -177,7 +178,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
                         // this.zone.run(() =>
                         this.router.navigate(
                             [],
-                            { queryParams: this._tableFiltersToQueryParams() }
+                            { queryParams: tableFiltersToQueryParams(this.machinesTable) }
                             // )
                         )
                     })
@@ -208,12 +209,12 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         )
             .then((data) => {
                 this.dataCollection = data.items ?? []
-                this.dataCollectionChange.emit(this.dataCollection)
+                // this.dataCollectionChange.emit(this.dataCollection)
                 this.totalRecords = data.total ?? 0
                 this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
                 if (
                     authorized === false &&
-                    this.hasFilter(this.table.filters, (filterKey) => filterKey === 'authorized') === false
+                    this.tableHasFilter(this.machinesTable, (filterKey) => filterKey === 'authorized') === false
                 ) {
                     this.unauthorizedMachinesCount = this.totalRecords
                     this.unauthorizedMachinesCountChange.emit(this.totalRecords)
@@ -338,26 +339,38 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         this.clearSelection()
     }
 
-    protected readonly hasFilter = hasFilter
-
+    /**
+     *
+     */
     hasPrefilter() {
-        const prefilter = (this.table?.filters['authorized'] as FilterMetadata)?.value
+        const prefilter = (this.machinesTable?.filters['authorized'] as FilterMetadata)?.value
         return prefilter === true || prefilter === false
     }
 
     clearTableState() {
-        this.table?.clear()
+        this.machinesTable?.clear()
         this.router.navigate([])
     }
 
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
+    /**
+     *
+     * @param value
+     * @param filterConstraint
+     */
     filterTable(value: any, filterConstraint: FilterMetadata): void {
         this._tableFilter$.next({ value, filterConstraint })
     }
 
-    private _tableFiltersToQueryParams() {
-        const entries = Object.entries(this.table.filters).map((entry) => [entry[0], (<FilterMetadata>entry[1]).value])
-        return Object.fromEntries(entries)
+    protected readonly tableHasFilter = tableHasFilter
+
+    /**
+     *
+     * @param filterConstraint
+     */
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.machinesTable) })
     }
 }

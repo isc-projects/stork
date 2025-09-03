@@ -173,7 +173,7 @@
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
-                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="app-id"
@@ -190,7 +190,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="subnet-id"
@@ -206,7 +206,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="keaSubnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <p-floatlabel>
                             <p-inputNumber
                                 inputId="kea-subnet-id"
@@ -230,7 +230,7 @@
                     <p-columnFilter type="boolean" field="conflict" matchMode="equals"></p-columnFilter>
                 </div>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template #filter let-value let-filterMetadata="filterConstraint">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input

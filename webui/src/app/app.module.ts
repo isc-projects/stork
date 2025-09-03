@@ -55,6 +55,8 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import Aura from '@primeng/themes/aura'
 import { definePreset } from '@primeng/themes'
 import { providePrimeNG } from 'primeng/config'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -354,6 +356,8 @@ const AuraBluePreset = definePreset(Aura, {
         AutoCompleteModule,
         InputNumberModule,
         TabViewComponent,
+        IconField,
+        InputIcon,
     ],
     providers: [
         {

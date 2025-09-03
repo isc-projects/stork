@@ -30,7 +30,7 @@ import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { hasFilter, parseBoolean } from '../table'
+import { hasFilter, parseBoolean, tableFiltersToQueryParams } from '../table'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
 
@@ -916,11 +916,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @private
      */
     private _zoneFiltersToQueryParams() {
-        const entries = Object.entries(this.zonesTable.filters).map((entry) => [
-            entry[0],
-            (<FilterMetadata>entry[1]).value,
-        ])
-        return Object.fromEntries(entries)
+        return tableFiltersToQueryParams(this.zonesTable)
     }
 
     /**

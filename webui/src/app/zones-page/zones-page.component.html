@@ -69,7 +69,7 @@
         [rounded]="true"
         [text]="true"
         severity="secondary"
-        [styleClass]="value ? '' : 'p-hidden-space'"
+        [styleClass]="value ? '' : 'hidden-space'"
         (onClick)="clearFilter(filterConstraint)"
     />
 </ng-template>
@@ -357,7 +357,7 @@ to the number of configured zones.
                             [showMenu]="false"
                             [showClearButton]="false"
                         >
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-multiSelect
@@ -382,7 +382,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="rpz" matchMode="equals" [showMenu]="false" [showClearButton]="false">
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <span class="p-float-label">
                                         <p-select
@@ -409,7 +409,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="appId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-inputNumber
@@ -446,7 +446,7 @@ to the number of configured zones.
                             [showMenu]="false"
                             [showClearButton]="false"
                         >
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <input
@@ -477,7 +477,7 @@ to the number of configured zones.
                             [showMenu]="false"
                             [showClearButton]="false"
                         >
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-select
@@ -502,7 +502,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="appType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel>
                                         <p-select
@@ -529,7 +529,7 @@ to the number of configured zones.
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
-                            <ng-template #filter let-value let-filterConstraint="filterConstraint">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <span class="p-input-icon-left">
                                         <i class="pi pi-search"></i>

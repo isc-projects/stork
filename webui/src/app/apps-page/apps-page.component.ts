@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
-import { lastValueFrom } from 'rxjs'
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
@@ -8,8 +8,10 @@ import { ServicesService } from '../backend'
 import { App } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Menu } from 'primeng/menu'
-import { finalize, map } from 'rxjs/operators'
+import { distinctUntilChanged, finalize, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { Router } from '@angular/router'
 
 /**
  * Replaces the newlines in the versions with the HTML-compatible line breaks.
@@ -48,8 +50,8 @@ function setDaemonStatusErred(app) {
     templateUrl: './apps-page.component.html',
     styleUrls: ['./apps-page.component.sass'],
 })
-export class AppsPageComponent implements OnInit {
-    @ViewChild('appsTable') appsTable: Table
+export class AppsPageComponent implements OnInit, OnDestroy {
+    @ViewChild('table') appsTable: Table
     @ViewChild('appMenu') appMenu: Menu
 
     breadcrumbs: MenuItem[] = []
@@ -77,8 +79,27 @@ export class AppsPageComponent implements OnInit {
     constructor(
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
-        private confirmService: ConfirmationService
+        private confirmService: ConfirmationService,
+        private router: Router
     ) {}
+
+    private _subscriptions: Subscription
+
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
+     *
+     * @param value
+     * @param filterConstraint
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata): void {
+        this._tableFilter$.next({ value, filterConstraint })
+    }
+
+    clearTableState() {
+        this.appsTable?.clear()
+        this.router.navigate([])
+    }
 
     ngOnInit() {
         this.breadcrumbs = [{ label: 'Services' }, { label: 'Apps' }]
@@ -92,25 +113,44 @@ export class AppsPageComponent implements OnInit {
             },
         ]
 
-        if (this.appsTable) {
-            this.refreshAppsList()
-        }
+        this._subscriptions = this._tableFilter$
+            .pipe(
+                map((f) => {
+                    return { ...f, value: f.value || null }
+                }),
+                debounceTime(300),
+                distinctUntilChanged(),
+                map((f) => {
+                    f.filterConstraint.value = f.value
+                    this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.appsTable) })
+                })
+            )
+            .subscribe()
+    }
+
+    ngOnDestroy() {
+        this._tableFilter$.complete()
+        this._subscriptions.unsubscribe()
     }
 
     /**
      * Function called by the table data loader. Accepts the pagination event.
      */
     loadApps(event: TableLazyLoadEvent) {
+        console.log('loadApps', event, Date.now())
         this.dataLoading = true
-        let text
-        if (event.filters && event.filters.hasOwnProperty('text')) {
-            text = (event.filters['text'] as FilterMetadata).value
-        }
 
         // ToDo: Uncaught promise
         // If any HTTP exception will be thrown then the promise
         // fails, but a user doesn't get any message, popup, log.
-        lastValueFrom(this.servicesApi.getApps(event.first, event.rows, text))
+        lastValueFrom(
+            this.servicesApi.getApps(
+                event.first,
+                event.rows,
+                (event.filters['text'] as FilterMetadata)?.value || null,
+                (event.filters['apps'] as FilterMetadata)?.value ?? null
+            )
+        )
             .then((data) => {
                 this.apps = data.items ?? []
                 this.totalApps = data.total ?? 0
@@ -122,21 +162,6 @@ export class AppsPageComponent implements OnInit {
             .finally(() => {
                 this.dataLoading = false
             })
-    }
-
-    /**
-     * Callback called on input event emitted by the filter input box.
-     *
-     * @param table table on which the filtering will apply
-     * @param filterText text value of the filter input
-     * @param force force filtering for shorter lookup keywords
-     */
-    inputFilterText(table: Table, filterText: string, force: boolean = false) {
-        if (filterText.length >= 3 || (force && filterText != '')) {
-            table.filter(filterText, 'text', 'contains')
-        } else if (filterText.length == 0) {
-            this.clearFilters(table)
-        }
     }
 
     /**
@@ -209,12 +234,10 @@ export class AppsPageComponent implements OnInit {
         })
     }
 
-    /**
-     * Clears filtering on given table.
-     *
-     * @param table table where filtering is to be cleared
-     */
-    clearFilters(table: Table) {
-        table.filter(null, 'text', 'contains')
+    protected readonly tableHasFilter = tableHasFilter
+
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.appsTable) })
     }
 }

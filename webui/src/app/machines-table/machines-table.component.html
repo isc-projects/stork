@@ -19,23 +19,23 @@
         label="Refresh List"
         icon="pi pi-refresh"
         styleClass="block p-button-primary no-underline"
-        (onClick)="loadData(machinesTable.createLazyLoadMetadata())"
+        (onClick)="loadData(table.createLazyLoadMetadata())"
     ></p-button>
 </div>
 <p-table
-    #machinesTable
+    #table
     [value]="dataCollection"
     [paginator]="true"
     [rows]="10"
     [lazy]="true"
     [loading]="dataLoading"
     (onLazyLoad)="loadData($event)"
-    [lazyLoadOnInit]="lazyLoadOnInit()"
+    [lazyLoadOnInit]="false"
     [totalRecords]="totalRecords"
     [rowsPerPageOptions]="[10, 30, 100]"
     [showCurrentPageReport]="true"
     currentPageReportTemplate="{currentPage} of {totalPages} pages"
-    styleClass="p-datatable-striped"
+    [stripedRows]="true"
     [(selection)]="selectedMachines"
     (selectionChange)="onSelectionChange($event)"
     [selectAll]="selectAll"
@@ -59,7 +59,7 @@
                         icon="pi pi-check"
                         value="Filter applied"
                         severity="success"
-                        *ngIf="hasFilter(machinesTable.filters)"
+                        *ngIf="tableHasFilter(table)"
                         [rounded]="true"
                     ></p-tag>
                     <app-help-tip subject="Filtering" id="filtering-help-button">
@@ -93,44 +93,66 @@
                 <button
                     pButton
                     label="Clear"
-                    [class.p-button-warning]="hasFilter(machinesTable.filters)"
-                    [class.p-button-secondary]="!hasFilter(machinesTable.filters)"
+                    [class.p-button-warning]="tableHasFilter(table)"
+                    [class.p-button-secondary]="!tableHasFilter(table)"
                     icon="pi pi-filter-slash"
                     (click)="clearTableState()"
-                    [disabled]="!hasFilter(machinesTable.filters)"
+                    [disabled]="!tableHasFilter(table)"
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter
                     field="authorized"
                     matchMode="equals"
                     [showMenu]="false"
-                    [showClearButton]="!hasPrefilter()"
+                    [showClearButton]="false"
                     [hidden]="hasPrefilter()"
                 >
-                    <ng-template #filter let-value let-filterConstraint="filterConstraint">
-                        <label for="authorized-input">Authorized machines</label>
-                        <p-checkbox
-                            inputId="authorized-input"
-                            (onChange)="filterTable($event.value, filterConstraint)"
-                            [ngModel]="value"
-                            [disabled]="hasPrefilter()"
-                            styleClass="ml-2"
-                            [indeterminate]="true"
-                        ></p-checkbox>
+                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                        <div class="flex align-items-center">
+                            <label for="authorized-input">Authorized machines</label>
+                            <p-checkbox
+                                id="authorized-input"
+                                (onChange)="filterTable($event.value, filterConstraint)"
+                                [ngModel]="value"
+                                [disabled]="hasPrefilter()"
+                                styleClass="ml-2"
+                                [indeterminate]="true"
+                            ></p-checkbox>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterConstraint)"
+                            />
+                        </div>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template #filter let-value let-filterConstraint="filterConstraint">
-                        <span class="p-input-icon-left">
-                            <i class="pi pi-search"></i>
-                            <input
-                                pInputText
-                                type="text"
-                                (input)="filterTable($event.target.value, filterConstraint)"
-                                [ngModel]="value"
-                                placeholder="Search machines"
+                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                        <div class="flex">
+                            <p-iconfield iconPosition="left">
+                                <p-inputicon>
+                                    <i class="pi pi-search"></i>
+                                </p-inputicon>
+                                <input
+                                    pInputText
+                                    type="text"
+                                    (input)="filterTable($event.target.value, filterConstraint)"
+                                    [ngModel]="value"
+                                    placeholder="Search machines"
+                                />
+                            </p-iconfield>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterConstraint)"
                             />
-                        </span>
+                        </div>
                     </ng-template>
                 </p-columnFilter>
             </div>
@@ -290,7 +312,7 @@
             <td colspan="3">
                 <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
                 No machines found.
-                <span *ngIf="hasFilter(machinesTable.filters)">
+                <span *ngIf="tableHasFilter(table)">
                     Clear filtering and try again.
                     <button
                         pButton
@@ -305,7 +327,7 @@
                     Information about adding new machines to the Stork server is available after clicking on the
                     <b>Installing Stork Agent on a New Machine</b> button above.
                 </div>
-                <div *ngIf="machinesTable?.filters['authorized']?.value === true && unauthorizedMachinesCount > 0">
+                <div *ngIf="table?.filters['authorized']?.value === true && unauthorizedMachinesCount > 0">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                     There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                     <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
@@ -313,7 +335,7 @@
                     {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by selecting the <b>Unauthorized</b> button
                     above.
                 </div>
-                <div *ngIf="machinesTable?.filters['authorized']?.value === false && unauthorizedMachinesCount === 0">
+                <div *ngIf="table?.filters['authorized']?.value === false && unauthorizedMachinesCount === 0">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                     There are no machines waiting for authorization. Select the <b>Authorized</b>
                     button above to see all authorized machines.
