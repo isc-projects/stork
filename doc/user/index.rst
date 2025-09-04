@@ -23,7 +23,8 @@ along with other Stork resources, can be found on ISC's `Stork project homepage
    overview
    install
    usage
-   managing-kea
+   dhcp
+   dns
    troubleshooting
    backend-api
    demo
