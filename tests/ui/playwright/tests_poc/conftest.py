@@ -87,55 +87,92 @@ def _wait_http_ok(url: str, timeout: float = 90.0) -> None:
     raise RuntimeError(f"Timeout waiting for {url}")
 
 
+def _reset_db_and_server(base_url: str) -> None:
+    """Drop & recreate DB schema, restart server, wait until healthy."""
+    pg = f"{PROJECT_NAME}-postgres-1"
+    srv = f"{PROJECT_NAME}-server-1"
+
+    sql = "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
+    subprocess.run(
+        [
+            "docker",
+            "exec",
+            "-i",
+            pg,
+            "psql",
+            "-U",
+            "stork",
+            "-d",
+            "stork",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            sql,
+        ],
+        check=True,
+        text=True,
+    )
+
+    subprocess.run(["docker", "restart", srv], check=True, text=True)
+
+    _wait_http_ok(f"{base_url}/api/version", timeout=120)
+
+    try:
+        _dc_cmd("run", "--no-deps", "register", "register", "--non-interactive")
+    except Exception:
+        pass
+
+
 # --- pytest fixtures ---------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
-def stork_base_url() -> str:
+def setup() -> None:
     """
     SAME environment as system tests, with UI assets enabled via override file.
 
     Workflow:
       - If STORK_REUSE=1: just wait for health (reuse an already-running stack).
       - Else: build and start postgres, server, agent-kea; then try registering.
+
+    Note: This fixture performs environment setup once per test session.
+    Tests should use BASE_URL directly for the URL; this fixture returns nothing.
     """
-    # env used by system compose & for Apple Silicon
+
     os.environ.setdefault("IPWD", str(ROOT))
     os.environ.setdefault("DOCKER_DEFAULT_PLATFORM", "linux/amd64")
 
     if os.getenv("STORK_REUSE") == "1":
         _wait_http_ok(f"{BASE_URL}/api/version", timeout=120)
-        return BASE_URL
+        return
 
-    # Fresh stack
     _hard_cleanup()
 
-    # Build only what we need, then bring them up
     _dc_cmd("build", "--", "postgres", "server", "agent-kea")
     _dc_cmd("up", "-d", "--", "postgres")
-    _dc_cmd(
-        "up", "-d", "--", "server"
-    )  # NOTE: service name is 'server' (overridden to target server-ui)
+    _dc_cmd("up", "-d", "--", "server")
     _dc_cmd("up", "-d", "--", "agent-kea")
 
-    # Wait until API responds (verifies port mapping + UI-enabled image)
     _wait_http_ok(f"{BASE_URL}/api/version", timeout=120)
 
-    # Register the agent (non-fatal for UI flows)
     try:
         _dc_cmd("run", "--no-deps", "register", "register", "--non-interactive")
     except subprocess.CalledProcessError as e:
         print("WARN: 'register' helper failed; continuing for UI tests.\n", e)
 
-    return BASE_URL
-
 
 @pytest.fixture(scope="function")
-def logged_in_page(page: Page, stork_base_url: str):
+def logged_in_page(page: Page, setup):
     """Open login and authenticate with seeded admin credentials."""
-    from tests.ui.playwright.pages.login_page import LoginPage  # lazy import
+    from tests.ui.playwright.pages.login_page import LoginPage
 
     lp = LoginPage(page)
-    lp.open(stork_base_url)
+    lp.open(BASE_URL)
     lp.login("admin", "admin")
     return page
+
+
+@pytest.fixture(autouse=True, scope="function")
+def clean_before_each_test(setup):
+    """Ensure a clean environment before every test."""
+    _reset_db_and_server(BASE_URL)
