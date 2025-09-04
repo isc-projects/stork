@@ -59,7 +59,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.Equal(t, 42, pbe.Port)
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 20)
+	require.Len(t, pbe.serverStatsDesc, 25)
 	require.Len(t, pbe.viewStatsDesc, 18)
 }
 
@@ -281,10 +281,20 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.Zero(t, buckets[math.Inf(0)])
 	require.Nil(t, err)
 
-	// zone_transfer_failure_total
-	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])
 	// zone_transfer_rejected_total
 	require.EqualValues(t, 11.0, pbe.stats.NsStats["XfrRej"])
+	// zone_transfer_requests_done
+	require.EqualValues(t, 37.0, pbe.stats.NsStats["XfrReqDone"])
 	// zone_transfer_success_total
-	require.EqualValues(t, 22.0, pbe.stats.NsStats["XfrSuccess"])
+	require.EqualValues(t, 22.0, pbe.stats.ZoneStats["XfrSuccess"])
+	// zone_transfer_failure_total
+	require.EqualValues(t, 4.0, pbe.stats.ZoneStats["XfrFail"])
+	// zone_transfer_requests_ipv4
+	require.EqualValues(t, 6.0, pbe.stats.ZoneStats["AXFRReqv4"])
+	// zone_transfer_requests_ipv6
+	require.EqualValues(t, 10.0, pbe.stats.ZoneStats["AXFRReqv6"])
+	// zone_transfer_incremental_requests_ipv4
+	require.EqualValues(t, 5.0, pbe.stats.ZoneStats["IXFRReqv4"])
+	// zone_transfer_incremental_requests_ipv6
+	require.EqualValues(t, 4.0, pbe.stats.ZoneStats["IXFRReqv6"])
 }

@@ -30,9 +30,16 @@
         "QrySuccess": 111,
         "QryUDP": 404,
         "QryTCP": 303,
-        "XfrFail": 2,
         "XfrRej": 11,
-        "XfrSuccess": 22
+        "XfrReqDone": 37
+    },
+    "zonestats": {
+        "XfrSuccess": 22,
+        "XfrFail": 4,
+        "AXFRReqv4": 6,
+        "AXFRReqv6": 10,
+        "IXFRReqv4": 5,
+        "IXFRReqv6": 4
     },
     "taskmgr": {
         "tasks-running": 1,

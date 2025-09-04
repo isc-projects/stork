@@ -49,6 +49,7 @@ type PromBind9ExporterStats struct {
 	IncomingQueries  map[string]float64
 	IncomingRequests map[string]float64
 	NsStats          map[string]float64
+	ZoneStats        map[string]float64
 	TaskMgr          map[string]float64
 	TrafficStats     map[string]PromBind9TrafficStats
 	Views            map[string]PromBind9ViewStats
@@ -355,20 +356,45 @@ func NewPromBind9Exporter(host string, port int, appMonitor AppMonitor, httpClie
 		"Total number of available worker threads.",
 		nil, nil)
 
-	// zone_transfer_failure_total
-	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
-		"Number of failed zone transfers.",
-		nil, nil)
 	// zone_transfer_rejected_total
 	serverStatsDesc["XfrRej"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_rejected_total"),
 		"Number of rejected zone transfers.",
 		nil, nil)
+	// zone_transfer_requests_done
+	serverStatsDesc["XfrReqDone"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_requests_done"),
+		"Number of requested and completed zone transfers.",
+		nil, nil)
 	// zone_transfer_success_total
 	serverStatsDesc["XfrSuccess"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_success_total"),
 		"Number of successful zone transfers.",
+		nil, nil)
+	// zone_transfer_failure_total
+	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
+		"Number of failed zone transfers.",
+		nil, nil)
+	// zone_transfer_requests_ipv4
+	serverStatsDesc["AXFRReqv4"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_requests_ipv4"),
+		"Number of requested IPv4 zone transfers.",
+		nil, nil)
+	// zone_transfer_requests_ipv6
+	serverStatsDesc["AXFRReqv6"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_requests_ipv6"),
+		"Number of requested IPv6 zone transfers.",
+		nil, nil)
+	// zone_transfer_incremental_requests_ipv4
+	serverStatsDesc["IXFRReqv4"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_incremental_requests_ipv4"),
+		"Number of requested IPv4 incremental zone transfers.",
+		nil, nil)
+	// zone_transfer_incremental_requests_ipv6
+	serverStatsDesc["IXFRReqv6"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_incremental_requests_ipv6"),
+		"Number of requested IPv6 incremental zone transfers.",
 		nil, nil)
 
 	pbe.serverStatsDesc = serverStatsDesc
@@ -709,12 +735,28 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			prometheus.GaugeValue, value)
 	}
 
-	// zone_transfer_failure_total
 	// zone_transfer_rejected_total
-	// zone_transfer_success_total
-	xfrStats := []string{"XfrFail", "XfrRej", "XfrSuccess"}
-	for _, label := range xfrStats {
+	// zone_transfer_requests_done
+	nsXfrStats := []string{"XfrReqDone", "XfrRej"}
+	for _, label := range nsXfrStats {
 		value, ok = pbe.stats.NsStats[label]
+		if !ok {
+			value = 0
+		}
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc[label],
+			prometheus.CounterValue, value)
+	}
+
+	// zone_transfer_success_total
+	// zone_transfer_failure_total
+	// zone_transfer_requests_ipv4
+	// zone_transfer_requests_ipv6
+	// zone_transfer_incremental_requests_ipv4
+	// zone_transfer_incremental_requests_ipv6
+	zoneXfrStats := []string{"XfrSuccess", "XfrFail", "AXFRReqv4", "AXFRReqv6", "IXFRReqv4", "IXFRReqv6"}
+	for _, label := range zoneXfrStats {
+		value, ok = pbe.stats.ZoneStats[label]
 		if !ok {
 			value = 0
 		}
@@ -1108,12 +1150,22 @@ func (pbe *PromBind9Exporter) setDaemonStats(stats map[string]any) (ret error) {
 	// query_errors_total
 	// query_recursion_total
 	// recursive_clients
-	// zone_transfer_failure_total
 	// zone_transfer_rejected_total
-	// zone_transfer_success_total
+	// zone_transfer_requests_done
 	pbe.stats.NsStats, err = pbe.scrapeServerStat(stats, "nsstats")
 	if err != nil {
 		return pkgerrors.Errorf("problem parsing 'nsstats': %+v", err)
+	}
+
+	// zone_transfer_success_total
+	// zone_transfer_failure_total
+	// zone_transfer_requests_ipv4
+	// zone_transfer_requests_ipv6
+	// zone_transfer_incremental_requests_ipv4
+	// zone_transfer_incremental_requests_ipv6
+	pbe.stats.ZoneStats, err = pbe.scrapeServerStat(stats, "zonestats")
+	if err != nil {
+		return pkgerrors.Errorf("problem parsing 'zonestats': %+v", err)
 	}
 
 	// tasks_running
