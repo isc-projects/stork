@@ -1,6 +1,6 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <ng-container *ngIf="activeTabIdx === 0">
+        <ng-container *ngIf="activeTabEntityID() === 0">
             <p>
                 This page displays a list of all machines that have been configured in Stork. It allows machines to be
                 added and removed.
@@ -12,7 +12,7 @@
                 of the machine name and press the <em>Authorize selected</em> button, or click the blue button in the
                 Action column and select <em>Authorize</em>.
 
-                <ng-container *ngIf="!showAuthorized && unauthorizedMachinesCount > 0"
+                <ng-container *ngIf="!showAuthorized() && unauthorizedMachinesCount > 0"
                     >Unauthorized machines were registered using the agent token-based registration method. This view
                     allows to authorize one or more machines at once. Before authorizing a machine, ensure that the
                     agent token displayed on this list is the same as the agent token in the agent’s logs or the
@@ -22,13 +22,14 @@
                 >
             </p>
         </ng-container>
-        <ng-container *ngIf="activeTabIdx > 0">
+        <ng-container *ngIf="activeTabEntityID() > 0">
             <p>
-                This page displays details about {{ !!machineTab?.authorized === false ? 'un' : '' }}authorized machine
-                <span class="font-semibold">{{ machineTab?.hostname || machineTab?.address }}</span
+                This page displays details about {{ !!activeTabMachine()?.authorized === false ? 'un' : '' }}authorized
+                machine
+                <span class="font-semibold">{{ activeTabMachine()?.hostname || activeTabMachine()?.address }}</span
                 >.
             </p>
-            <p *ngIf="machineTab?.authorized">
+            <p *ngIf="activeTabMachine()?.authorized">
                 You can retrieve the latest machine's data from the Stork server by clicking
                 <em>Get Latest State</em> button. It is possible to download data archive for machine's troubleshooting
                 purposes by clicking <em>Dump Troubleshooting Data</em> button.
@@ -36,61 +37,6 @@
         </ng-container>
     </div>
 </app-breadcrumbs>
-
-<div appAccessEntity="machine-address" appAccessType="update" [appHideIfNoAccess]="true">
-    <p-dialog
-        header="Change Machine Address"
-        [(visible)]="changeMachineAddressDialogVisible"
-        [style]="{ 'max-width': '100rem' }"
-    >
-        <p class="pb-3">
-            The Stork server will use the new address and/or port to communicate with this machine. Please ensure that
-            the agent running on the machine is using this new address and/or port to avoid communication problems.
-        </p>
-        <div>
-            Address:
-            <input
-                type="text"
-                class="w-full"
-                pInputText
-                [(ngModel)]="machineAddress"
-                id="change-machine-address"
-                (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
-            />
-        </div>
-        <div class="mt-2">
-            Port:
-            <input
-                type="text"
-                class="w-full"
-                placeholder="8080"
-                pInputText
-                [(ngModel)]="agentPort"
-                id="change-machine-port"
-                (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
-            />
-        </div>
-        <p-footer>
-            <button
-                type="button"
-                (click)="changeMachineAddressDialogVisible = false"
-                pButton
-                icon="pi pi-times"
-                label="Cancel"
-                id="cancel-machine-edit-button"
-            ></button>
-            <button
-                type="button"
-                (click)="saveMachine(machineTab)"
-                pButton
-                icon="pi pi-check"
-                label="Change"
-                id="change-machine-button"
-                class="p-button-warning"
-            ></button>
-        </p-footer>
-    </p-dialog>
-</div>
 
 <div appAccessType="read" appAccessEntity="machines-server-token" [appHideIfNoAccess]="true">
     <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
@@ -166,30 +112,6 @@ sudo ./stork-install-agent.sh</textarea
 
 <p-confirmDialog styleClass="w-28rem" />
 
-<!--<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIdx]" styleClass="mb-2" [scrollable]="true">-->
-<!--    <ng-template pTemplate="item" let-item let-i="index">-->
-<!--        <a-->
-<!--            role="menuitem"-->
-<!--            pRipple-->
-<!--            [routerLink]="item.routerLink"-->
-<!--            [queryParams]="i === 0 ? machinesTable?.validFilter : null"-->
-<!--            class="p-ripple p-element p-menuitem-link"-->
-<!--        >-->
-<!--            <div class="flex justify-content-between">-->
-<!--                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>-->
-<!--                <div class="p-menuitem-text">-->
-<!--                    <b>{{ item.label }}</b>-->
-<!--                </div>-->
-<!--                <div-->
-<!--                    class="pi pi-times close-tab-btn"-->
-<!--                    (click)="closeTab($event, i)"-->
-<!--                    id="{{ 'close-machine-tab-' + item.label }}"-->
-<!--                    *ngIf="i !== 0"-->
-<!--                ></div>-->
-<!--            </div>-->
-<!--        </a>-->
-<!--    </ng-template>-->
-<!--</p-tabMenu>-->
 <app-tab-view
     routePath="/machines/"
     [entityProvider]="machineProvider"
@@ -198,7 +120,8 @@ sudo ./stork-install-agent.sh</textarea
         authorized: { type: 'boolean', matchMode: 'equals' },
         text: { type: 'string', matchMode: 'contains' },
     }"
-    [givenTable]="machinesTable?.machinesTable"
+    [inputTable]="machinesTable()?.machinesTable"
+    (activeTabChange)="activeTabEntityID.set($event)"
 >
     <ng-template #firstTab>
         <div class="flex flex-wrap gap-2 justify-content-end mb-3">
@@ -217,13 +140,13 @@ sudo ./stork-install-agent.sh</textarea
 
                 <p-selectButton
                     [options]="selectButtonOptions"
-                    [ngModel]="showAuthorized"
+                    [ngModel]="showAuthorized()"
                     (onChange)="onSelectButtonChange($event)"
                     [allowEmpty]="false"
                     id="unauthorized-select-button"
                 >
                     <ng-template #item let-item>
-                        <span class="p-button-label">{{ item.label }}</span
+                        <span class="p-togglebutton-label">{{ item.label }}</span
                         ><p-badge
                             *ngIf="item.hasBadge"
                             severity="info"
@@ -236,7 +159,7 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </div>
 
-        <p-messages *ngIf="showAuthorized === false && registrationDisabled" severity="warn">
+        <p-messages *ngIf="showAuthorized() === false && registrationDisabled" severity="warn">
             <ng-template pTemplate>
                 <span class="pi pi-exclamation-triangle"></span>
                 <div class="ml-2">
@@ -255,6 +178,61 @@ sudo ./stork-install-agent.sh</textarea
         <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
     </ng-template>
     <ng-template #entityTab let-machineTab>
+        <div appAccessEntity="machine-address" appAccessType="update" [appHideIfNoAccess]="true">
+            <p-dialog
+                header="Change Machine Address"
+                [(visible)]="changeMachineAddressDialogVisible"
+                [style]="{ 'max-width': '100rem' }"
+            >
+                <p class="pb-3">
+                    The Stork server will use the new address and/or port to communicate with this machine. Please
+                    ensure that the agent running on the machine is using this new address and/or port to avoid
+                    communication problems.
+                </p>
+                <div>
+                    Address:
+                    <input
+                        type="text"
+                        class="w-full"
+                        pInputText
+                        [(ngModel)]="machineAddress"
+                        id="change-machine-address"
+                        (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
+                    />
+                </div>
+                <div class="mt-2">
+                    Port:
+                    <input
+                        type="text"
+                        class="w-full"
+                        placeholder="8080"
+                        pInputText
+                        [(ngModel)]="agentPort"
+                        id="change-machine-port"
+                        (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
+                    />
+                </div>
+                <p-footer>
+                    <button
+                        type="button"
+                        (click)="changeMachineAddressDialogVisible = false"
+                        pButton
+                        icon="pi pi-times"
+                        label="Cancel"
+                        id="cancel-machine-edit-button"
+                    ></button>
+                    <button
+                        type="button"
+                        (click)="saveMachine(machineTab)"
+                        pButton
+                        icon="pi pi-check"
+                        label="Change"
+                        id="change-machine-button"
+                        class="p-button-warning"
+                    ></button>
+                </p-footer>
+            </p-dialog>
+        </div>
         <div class="grid w-full">
             <div class="col-12 flex gap-3 column-gap-8 row-gap-3 flex-wrap">
                 <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
@@ -420,13 +398,3 @@ sudo ./stork-install-agent.sh</textarea
         </div>
     </ng-template>
 </app-tab-view>
-
-<!--&lt;!&ndash; Machines tab &ndash;&gt;-->
-<!--<div [hidden]="activeTabIdx !== 0">-->
-<!--    -->
-<!--</div>-->
-
-<!--&lt;!&ndash; Single machine tab &ndash;&gt;-->
-<!--<div *ngIf="activeTabIdx > 0" class="p-component">-->
-<!--    -->
-<!--</div>-->

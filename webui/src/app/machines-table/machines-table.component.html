@@ -100,36 +100,30 @@
                     [disabled]="!tableHasFilter(table)"
                 ></button>
                 <div class="flex-auto"></div>
-                <p-columnFilter
-                    field="authorized"
-                    matchMode="equals"
-                    [showMenu]="false"
-                    [showClearButton]="false"
-                    [hidden]="hasPrefilter()"
-                >
-                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
-                        <div class="flex align-items-center">
-                            <label for="authorized-input">Authorized machines</label>
-                            <p-checkbox
-                                id="authorized-input"
-                                (onChange)="filterTable($event.value, filterConstraint)"
-                                [ngModel]="value"
-                                [disabled]="hasPrefilter()"
-                                styleClass="ml-2"
-                                [indeterminate]="true"
-                            ></p-checkbox>
-                            <p-button
-                                icon="pi pi-filter-slash"
-                                [rounded]="true"
-                                [text]="true"
-                                severity="secondary"
-                                [styleClass]="value ? '' : 'hidden-space'"
-                                (onClick)="clearFilter(filterConstraint)"
-                            />
-                        </div>
-                    </ng-template>
-                </p-columnFilter>
-                <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
+                <!--                <p-columnFilter-->
+                <!--                    field="authorized"-->
+                <!--                    matchMode="equals"-->
+                <!--                    [showMenu]="false"-->
+                <!--                    [showClearButton]="false"-->
+                <!--                    [hidden]="hasPrefilter()"-->
+                <!--                >-->
+                <!--                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">-->
+                <!--                        <div class="flex align-items-center">-->
+                <!--                            <label for="authorized-input">Authorized machines</label>-->
+                <!--                            <app-tri-state-checkbox [disabled]="true" [value]="value" inputID="authorized-input"></app-tri-state-checkbox>-->
+                <!--                            <p-button-->
+                <!--                                icon="pi pi-filter-slash"-->
+                <!--                                [rounded]="true"-->
+                <!--                                [text]="true"-->
+                <!--                                [disabled]="true"-->
+                <!--                                severity="secondary"-->
+                <!--                                [styleClass]="value ? '' : 'hidden-space'"-->
+                <!--                                (onClick)="clearFilter(filterConstraint)"-->
+                <!--                            />-->
+                <!--                        </div>-->
+                <!--                    </ng-template>-->
+                <!--                </p-columnFilter>-->
+                <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                         <div class="flex">
                             <p-iconfield iconPosition="left">

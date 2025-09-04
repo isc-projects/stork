@@ -1,4 +1,13 @@
-import { Component, EventEmitter, input, Input, OnDestroy, OnInit, Output, viewChild, ViewChild } from '@angular/core'
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    signal,
+    ViewChild,
+} from '@angular/core'
 import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableSelectAllChangeEvent } from 'primeng/table'
@@ -27,50 +36,10 @@ export interface MachinesFilter {
     styleUrl: './machines-table.component.sass',
 })
 export class MachinesTableComponent implements OnInit, OnDestroy {
-    lazyLoadOnInit = input(true)
-
-    /**
-     * Array of all numeric keys that are supported when filtering machines via URL queryParams.
-     */
-    queryParamNumericKeys: (keyof MachinesFilter)[] = []
-
-    /**
-     * Array of all boolean keys that are supported when filtering machines via URL queryParams.
-     */
-    queryParamBooleanKeys: (keyof MachinesFilter)[] = ['authorized']
-
-    /**
-     * Array of all numeric keys that can be used to filter machines.
-     */
-    filterNumericKeys: (keyof MachinesFilter)[] = []
-
-    /**
-     * Array of all boolean keys that can be used to filter machines.
-     */
-    filterBooleanKeys: (keyof MachinesFilter)[] = ['authorized']
-
-    /**
-     * Prefix of the stateKey. Will be used to evaluate stateKey.
-     */
-    stateKeyPrefix: string = 'machines-table-session'
-
-    /**
-     * queryParam keyword of the prefilter.
-     */
-    prefilterKey: keyof MachinesFilter = 'authorized'
-
-    /**
-     * Array of FilterValidators that will be used for validation of filters, which values are limited
-     * only to known values.
-     */
-    filterValidators = []
-
     /**
      * PrimeNG table instance.
      */
     @ViewChild('table') machinesTable: Table
-
-    tableSignal = viewChild<Table>('table')
 
     /**
      * Output property emitting events to parent component when Show machine's menu button was clicked by user.
@@ -134,19 +103,15 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
 
     /**
      * Component constructor.
-     * @param route ActivatedRoute used to get params from provided URL.
      * @param servicesApi Services API used to fetch machines from backend.
      * @param messageService Message service used to display feedback messages in UI.
-     * @param location Location service used to update queryParams.
+     * @param router Angular router used to trigger navigations.
      */
     constructor(
-        // private route: ActivatedRoute,
         private servicesApi: ServicesService,
         private messageService: MessageService,
         private router: Router
-        // private location: Location
     ) {
-        // super(route, location)
     }
 
     /**
@@ -187,6 +152,8 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         )
     }
 
+    authorizedShown = signal<boolean>(null)
+
     /**
      * Lazily loads machines table data.
      * @param event Event object containing an index of the first row, maximum
@@ -197,6 +164,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         this.dataLoading = true
 
         const authorized = (event.filters['authorized'] as FilterMetadata)?.value ?? null
+        this.authorizedShown.set(authorized)
 
         lastValueFrom(
             this.servicesApi.getMachines(
@@ -258,9 +226,8 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
 
     /**
      * Fetches Unauthorized Machines Count via getUnauthorizedMachinesCount API.
-     * @private
      */
-    private fetchUnauthorizedMachinesCount(): void {
+    fetchUnauthorizedMachinesCount(): void {
         lastValueFrom(this.servicesApi.getUnauthorizedMachinesCount())
             .then((count) => {
                 this.unauthorizedMachinesCount = count ?? 0
@@ -275,29 +242,6 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
             })
-    }
-
-    /**
-     * Deletes given machine from the table's data collection.
-     * @param machineId id of the machine to be deleted
-     */
-    deleteMachine(machineId: number) {
-        const idx = (this.dataCollection?.map((m) => m.id) || []).indexOf(machineId)
-        if (idx >= 0) {
-            this.dataCollection.splice(idx, 1)
-            this.fetchUnauthorizedMachinesCount()
-        }
-    }
-
-    /**
-     * Refreshes given machine in the table's data collection.
-     * @param machine machine to be refreshed
-     */
-    refreshMachineState(machine: Machine) {
-        const idx = (this.dataCollection?.map((m) => m.id) || []).indexOf(machine.id)
-        if (idx >= 0) {
-            this.dataCollection.splice(idx, 1, machine)
-        }
     }
 
     /**
@@ -343,8 +287,9 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      *
      */
     hasPrefilter() {
-        const prefilter = (this.machinesTable?.filters['authorized'] as FilterMetadata)?.value
-        return prefilter === true || prefilter === false
+        return false
+        // const prefilter = (this.machinesTable?.filters['authorized'] as FilterMetadata)?.value
+        // return prefilter === true || prefilter === false
     }
 
     clearTableState() {

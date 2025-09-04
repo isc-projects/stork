@@ -9,6 +9,7 @@ import {
     InputSignal,
     OnDestroy,
     OnInit,
+    output,
     signal,
     TemplateRef,
 } from '@angular/core'
@@ -75,6 +76,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      */
     activeTabEntityID: number = 0
 
+    activeTabChange = output<number>()
+
     /**
      * Input flag which determines whether the tabs are closable (close button is displayed next to the tab title).
      * Defaults to true.
@@ -124,7 +127,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      * If #table PrimeNG table was found as content child, this collection refers to the table entities; otherwise
      * it refers to the entities input.
      */
-    entitiesCollection = computed<TEntity[]>(() => this.contentChildTable()?.value || this.entities())
+    entitiesCollection = computed<TEntity[]>(() => this.entitiesTable()?.value || this.entities())
 
     /**
      * Input array of entities.
@@ -187,14 +190,23 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      */
     @ContentChild('entityTab', { descendants: false }) entityTabTemplate: TemplateRef<any> | undefined
 
-    givenTable = input<Table>()
-    foundTable = contentChild<Table>('table')
+    /**
+     * PrimeNG table used as a table of entities, usually displayed in the first tab.
+     * It is explicitly provided as component input.
+     */
+    inputTable = input<Table>()
 
     /**
      * PrimeNG table used as a table of entities, usually displayed in the first tab.
-     * It must have #table template reference to be found.
+     * It is provided as a content child; it must have #table template reference to be found.
      */
-    contentChildTable = computed(() => this.foundTable() || this.givenTable())
+    contentChildTable = contentChild<Table>('table')
+
+    /**
+     * PrimeNG table used as a table of entities, usually displayed in the first tab.
+     * It refers to either contentChildTable or inputTable.
+     */
+    entitiesTable = computed(() => this.contentChildTable() || this.inputTable())
 
     /**
      * Activated route injected to retrieve route params.
@@ -221,6 +233,14 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     private subscriptions: Subscription
 
     /**
+     *
+     * @param id
+     */
+    getOpenTabEntity(id: number) {
+        return this.openTabs.find((tab) => tab.value === id)?.entity as TEntity
+    }
+
+    /**
      * Callback updating the tab title.
      * It is called when the updateTabTitleFn function from the entityTabTemplate context is called.
      * @param id tab ID which title should be updated
@@ -237,11 +257,12 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     /**
      * Callback updating the tab entity.
      * It is called when the updateTabEntityFn function from the entityTabTemplate or firstTabTemplate context is called.
-     * The callback is using entityProvider to update the entity value.
+     * The callback is using entityProvider to update the entity value or explicitly provided entity as a parameter.
      * @param id tab ID for which the entity should be updated
+     * @param entity updated entity - optional; if provided, entityProvider will not be used
      */
-    onUpdateTabEntity = (id: number) => {
-        if (!this.entityProvider) {
+    onUpdateTabEntity = (id: number, entity?: TEntity) => {
+        if (!this.entityProvider && !entity) {
             return
         }
 
@@ -251,6 +272,20 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
         )
         console.log('onUpdateTabEntity', id, existingTab, existingEntityInCollectionIdx)
         if (existingTab || existingEntityInCollectionIdx > -1) {
+            if (entity) {
+                if (existingTab) {
+                    existingTab.entity = entity
+                }
+
+                if (existingEntityInCollectionIdx > -1) {
+                    this.entitiesTable()
+                        ? this.entitiesTable().value.splice(existingEntityInCollectionIdx, 1, entity)
+                        : this.entities().splice(existingEntityInCollectionIdx, 1, entity)
+                }
+
+                return
+            }
+
             this.entityProvider(id)
                 .then((entity) => {
                     if (existingTab) {
@@ -258,8 +293,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                     }
 
                     if (existingEntityInCollectionIdx > -1) {
-                        this.contentChildTable()
-                            ? this.contentChildTable().value.splice(existingEntityInCollectionIdx, 1, entity)
+                        this.entitiesTable()
+                            ? this.entitiesTable().value.splice(existingEntityInCollectionIdx, 1, entity)
                             : this.entities().splice(existingEntityInCollectionIdx, 1, entity)
                     }
                 })
@@ -272,6 +307,23 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                     })
                 })
         }
+    }
+
+    /**
+     * Deletes the entity from entities collection and closes this entity tab.
+     * @param id
+     */
+    onDeleteEntity = (id: number) => {
+        const existingEntityInCollectionIdx = this.entitiesCollection()?.findIndex(
+            (entity) => this.getID(entity) === id
+        )
+        if (existingEntityInCollectionIdx > -1) {
+            this.entitiesTable()
+                ? this.entitiesTable().value.splice(existingEntityInCollectionIdx, 1)
+                : this.entities().splice(existingEntityInCollectionIdx, 1)
+        }
+
+        this.closeTab(id)
     }
 
     /**
@@ -532,20 +584,20 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      * @private
      */
     private filterTableUsingMultipleFilters(filters: { [x: string]: FilterMetadata | FilterMetadata[] }): void {
-        this.contentChildTable()?.clearFilterValues()
-        const metadata = this.contentChildTable()?.createLazyLoadMetadata()
-        this.contentChildTable().filters = { ...metadata.filters, ...filters }
-        const qp = tableFiltersToQueryParams(this.contentChildTable())
+        this.entitiesTable()?.clearFilterValues()
+        const metadata = this.entitiesTable()?.createLazyLoadMetadata()
+        this.entitiesTable().filters = { ...metadata.filters, ...filters }
+        const qp = tableFiltersToQueryParams(this.entitiesTable())
         console.log('apply queryParams to first tab', qp)
         this.firstTabQueryParams.set(qp)
-        this.contentChildTable()?._filter()
+        this.entitiesTable()?._filter()
     }
 
     initializedTableEffect = effect(() => {
-        if (!this.contentChildTable()) {
+        if (!this.entitiesTable()) {
             return
         }
-        console.log('content child #table', this.contentChildTable(), Date.now())
+        console.log('content child #table', this.entitiesTable(), Date.now())
         // const queryParamFilters = this._parseQueryParams(this.route.snapshot.queryParamMap)
         // const metadata = this.contentChildTable().createLazyLoadMetadata()
         // const filters = { ...metadata.filters, ...queryParamFilters.filters }
@@ -588,12 +640,12 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                         if (!id || id === this.firstTabRouteEnd()) {
                             console.log('no id in path or this is /all path - open first tab')
                             this.activeTabEntityID = 0
-                            if (!this.contentChildTable()) {
+                            if (!this.entitiesTable()) {
                                 console.log('no table yet')
                             }
 
                             if (
-                                this.contentChildTable() &&
+                                this.entitiesTable() &&
                                 this.tableQueryParamFilters() &&
                                 fragment !== 'tab-navigation'
                             ) {
@@ -602,7 +654,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                                     'qParams filter parsing',
                                     parsedFilters,
                                     'table has',
-                                    this.contentChildTable()?.filters
+                                    this.entitiesTable()?.filters
                                 )
                                 this.filterTableUsingMultipleFilters(parsedFilters.filters)
                             }
@@ -614,16 +666,16 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                         if (!Number.isNaN(numericId)) {
                             this.openTab(numericId)
                             if (
-                                this.contentChildTable() &&
-                                !tableHasFilter(this.contentChildTable()) &&
-                                !(this.contentChildTable().value ?? []).length
+                                this.entitiesTable() &&
+                                !tableHasFilter(this.entitiesTable()) &&
+                                !(this.entitiesTable().value ?? []).length
                             ) {
                                 console.log(
                                     'numeric id found, opening specific tab, init table because it seems to be empty',
-                                    this.contentChildTable()?.value
+                                    this.entitiesTable()?.value
                                 )
-                                const metadata = this.contentChildTable().createLazyLoadMetadata()
-                                this.contentChildTable().onLazyLoad.emit(metadata)
+                                const metadata = this.entitiesTable().createLazyLoadMetadata()
+                                this.entitiesTable().onLazyLoad.emit(metadata)
                             }
 
                             return
@@ -663,5 +715,6 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      */
     logChange(event: string | number) {
         console.log('storkTabViewComponent log onValueChange', event)
+        this.activeTabChange.emit(event as number)
     }
 }

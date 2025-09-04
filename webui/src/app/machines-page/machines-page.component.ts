@@ -1,8 +1,17 @@
-import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
+import {
+    ChangeDetectorRef,
+    Component,
+    computed,
+    OnDestroy,
+    OnInit,
+    signal,
+    viewChild,
+    ViewChild,
+} from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
-import { BehaviorSubject, concat, lastValueFrom, Observable, Subscription } from 'rxjs'
+import { BehaviorSubject, concat, lastValueFrom, Observable } from 'rxjs'
 import { Machine, Settings } from '../backend'
 
 import { ServicesService, SettingsService } from '../backend'
@@ -12,7 +21,7 @@ import { MachinesTableComponent } from '../machines-table/machines-table.compone
 import { Menu } from 'primeng/menu'
 import { SelectButtonChangeEvent } from 'primeng/selectbutton'
 import { AuthService } from '../auth.service'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { TabViewComponent } from '../tab-view/tab-view.component'
 
 /**
  * This component implements a page which displays authorized
@@ -28,14 +37,7 @@ import { FilterMetadata } from 'primeng/api/filtermetadata'
     templateUrl: './machines-page.component.html',
     styleUrls: ['./machines-page.component.sass'],
 })
-export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
-    /**
-     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
-     * at once onDestroy.
-     * @private
-     */
-    private subscriptions = new Subscription()
-
+export class MachinesPageComponent implements OnInit, OnDestroy {
     /**
      * View breadcrumbs menu items.
      */
@@ -171,26 +173,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     agentPort = ''
 
     /**
-     * Index of active tab in the TabMenu.
+     * ID of machine displayed in active tab.
      */
-    activeTabIdx: number = 0
-
-    /**
-     * TabMenu menu items.
-     */
-    tabs: MenuItem[]
-
-    /**
-     * Keeps state of open TabMenu tabs.
-     */
-    openedMachines: Machine[]
-
-    /**
-     * Reference to currently open machine tab.
-     */
-    get machineTab(): Machine | null {
-        return this.openedMachines[this.activeTabIdx - 1] ?? null
-    }
+    activeTabEntityID = signal<number>(0)
 
     /**
      * Boolean flag keeping state whether the Agent Installation Instructions Dialog is visible or not.
@@ -203,20 +188,23 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     registrationDisabled = false
 
     /**
-     * Getter returning true if only Authorized machines are to be displayed,
+     * Computed signal returning true if only Authorized machines are to be displayed,
      * false if only Unauthorized machines are to be displayed,
      * or null if both Authorized and Unauthorized machines are to be displayed.
      */
-    get showAuthorized(): boolean | null {
-        return (this.machinesTable?.machinesTable?.filters['authorized'] as FilterMetadata)?.value ?? null
-    }
+    showAuthorized = computed(() => this.machinesTable()?.authorizedShown() ?? null)
+
+    activeTabMachine = computed<Machine>(() => this.tabView()?.getOpenTabEntity(this.activeTabEntityID()))
 
     /**
      * Machines table component.
      */
-    @ViewChild('machinesTable') machinesTable: MachinesTableComponent
+    machinesTable = viewChild<MachinesTableComponent>('machinesTable')
 
-    tableSignal = viewChild<MachinesTableComponent>('machinesTable')
+    /**
+     * Tab view component.
+     */
+    tabView = viewChild(TabViewComponent)
 
     /**
      * Machines popup menu component.
@@ -283,128 +271,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
         this.unauthorizedMachinesCount$.complete()
-    }
-
-    /**
-     * Component lifecycle hook called after Angular completed the initialization of the
-     * component's view.
-     *
-     * We subscribe to router events to act upon URL and/or queryParams changes.
-     * This is done at this step, because we have to be sure that all child components,
-     * especially PrimeNG table in MachinesTableComponent, are initialized.
-     */
-    ngAfterViewInit(): void {
-        console.log('machines-page ngAfterViewInit')
-        // this.subscriptions.add(
-        //     this.router.events
-        //         .pipe(
-        //             filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
-        //             catchError((err) => {
-        //                 const msg = getErrorMessage(err)
-        //                 this.msgSrv.add({
-        //                     severity: 'error',
-        //                     summary: 'Cannot process the URL query',
-        //                     detail: msg,
-        //                     life: 10000,
-        //                 })
-        //                 return EMPTY
-        //             })
-        //         )
-        //         .subscribe(() => {
-        //             const paramMap = this.route.snapshot.paramMap
-        //             const queryParamMap = this.route.snapshot.queryParamMap
-        //
-        //             // Apply to the changes of the machine id, e.g. from /machines/all to
-        //             // /machines/1. Those changes are triggered by switching between the
-        //             // tabs.
-        //
-        //             // Get machine id.
-        //             const id = paramMap.get('id')
-        //             if (!id || id === 'all') {
-        //                 // Update the filter only if the target is machine list.
-        //                 this.machinesTable?.updateFilterFromQueryParameters(queryParamMap)
-        //                 this.cd.detectChanges()
-        //                 // this.switchToTab(0)
-        //                 return
-        //             }
-        //             // const numericId = parseInt(id, 10)
-        //             // if (!Number.isNaN(numericId)) {
-        //             //     // The path has a numeric id indicating that we should
-        //             //     // open a tab with selected machine information or switch
-        //             //     // to this tab if it has been already opened.
-        //             //     for (let idx = 0; idx < this.openedMachines.length; idx++) {
-        //             //         const m = this.openedMachines[idx]
-        //             //         if (m.id === numericId) {
-        //             //             this.switchToTab(idx + 1)
-        //             //             return
-        //             //         }
-        //             //     }
-        //             //
-        //             //     // if tab is not opened then search for list of machines if the one is present there,
-        //             //     // if so then open it in new tab and switch to it
-        //             //     for (const m of this.machinesTable?.dataCollection || []) {
-        //             //         if (m.id === numericId) {
-        //             //             this.addMachineTab(m)
-        //             //             this.switchToTab(this.tabs.length - 1)
-        //             //             return
-        //             //         }
-        //             //     }
-        //             //
-        //             //     // if machine is not loaded in list fetch it individually
-        //             //     lastValueFrom(this.servicesApi.getMachine(numericId))
-        //             //         .then((machine) => {
-        //             //             this.addMachineTab(machine)
-        //             //             this.switchToTab(this.tabs.length - 1)
-        //             //         })
-        //             //         .catch((err) => {
-        //             //             const msg = getErrorMessage(err)
-        //             //             this.msgSrv.add({
-        //             //                 severity: 'error',
-        //             //                 summary: 'Cannot get machine',
-        //             //                 detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
-        //             //                 life: 10000,
-        //             //             })
-        //             //             this.machinesTable?.loadDataWithoutFilter()
-        //             //             this.switchToTab(0)
-        //             //         })
-        //             // } else {
-        //             //     // In case of failed Id parsing, open list tab.
-        //             //     this.machinesTable?.loadDataWithoutFilter()
-        //             //     this.switchToTab(0)
-        //             // }
-        //         })
-        // )
-    }
-
-    /**
-     * Switches to tab with the given index.
-     * @param index tab index to switch to
-     */
-    switchToTab(index: number) {
-        if (this.activeTabIdx === index) {
-            return
-        }
-
-        this.activeTabIdx = index
-    }
-
-    /**
-     * Adds new tab with machine details.
-     * @param machine machine for which the tab is added
-     */
-    addMachineTab(machine: Machine) {
-        this.openedMachines.push(machine)
-        this.tabs = [
-            ...this.tabs,
-            {
-                label: machine.address,
-                id: 'machine-tab' + machine.id,
-                routerLink: '/machines/' + machine.id,
-                machineId: machine.id,
-            },
-        ]
     }
 
     /**
@@ -413,10 +280,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     ngOnInit() {
         console.log('machines-page ngOnInit', Date.now())
-        this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
         this.machineMenuItems = this.machineMenuItemsAuthorized
-        this.openedMachines = []
 
         // Settings are needed to check whether the machines registration is disabled.
         lastValueFrom(this.settingsService.getSettings())
@@ -456,27 +321,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Closes a tab with the given index.
-     * @param event mouse click event
-     * @param idx index of the tab to be closed
-     */
-    closeTab(event: MouseEvent, idx: number) {
-        this.openedMachines.splice(idx - 1, 1)
-        this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
-        if (this.activeTabIdx === idx) {
-            // Closing the tab which is currently active.
-            this.switchToTab(idx - 1)
-            this.router.navigate([this.tabs[this.activeTabIdx].routerLink])
-        } else if (this.activeTabIdx > idx) {
-            // Closing the tab which is to the left from currently active tab.
-            this.switchToTab(this.activeTabIdx - 1)
-            this.router.navigate([this.tabs[this.activeTabIdx].routerLink])
-        }
-
-        event?.preventDefault()
-    }
-
-    /**
      * Fetches new machine state from API.
      * @param machine machine to be refreshed
      */
@@ -486,7 +330,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             return
         }
 
-        this.machinesTable?.setDataLoading(true)
+        this.machinesTable()?.setDataLoading(true)
         lastValueFrom(this.servicesApi.getMachineState(machine.id))
             .then((m: Machine) => {
                 if (m.error) {
@@ -506,14 +350,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     })
                 }
 
-                // refresh machine in machines list
-                this.machinesTable?.refreshMachineState(m)
-
-                // refresh machine in opened tab if present
-                const idx = this.openedMachines.map((m) => m.id).indexOf(machine.id)
-                if (idx >= 0) {
-                    this.openedMachines.splice(idx, 1, m)
-                }
+                this.tabView()?.onUpdateTabEntity(machine.id, m)
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -524,7 +361,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-            .finally(() => this.machinesTable?.setDataLoading(false))
+            .finally(() => this.machinesTable()?.setDataLoading(false))
     }
 
     /**
@@ -546,7 +383,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     authorizeMachine(machine: Machine) {
         // Block table UI when machine authorization is in progress.
-        this.machinesTable?.setDataLoading(true)
+        this.machinesTable()?.setDataLoading(true)
         const stateBackup = machine.authorized
 
         machine.authorized = true
@@ -557,7 +394,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     summary: `Machine authorized`,
                     detail: `Machine ${m.address} authorization succeeded.`,
                 })
-                this.machinesTable?.loadData(this.machinesTable?.machinesTable?.createLazyLoadMetadata())
+                this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
@@ -572,7 +409,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-            .finally(() => this.machinesTable?.setDataLoading(false))
+            .finally(() => this.machinesTable()?.setDataLoading(false))
     }
 
     /**
@@ -645,20 +482,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.machinesTable?.setDataLoading(true)
+                this.machinesTable()?.setDataLoading(true)
                 lastValueFrom(this.servicesApi.deleteMachine(machineId))
                     .then(() => {
                         // reload apps stats to reflect new state (adjust menu content)
                         this.serverData.forceReloadAppsStats()
 
-                        // remove from list of machines
-                        this.machinesTable?.deleteMachine(machineId)
+                        this.tabView()?.onDeleteEntity(machineId)
+                        this.machinesTable()?.fetchUnauthorizedMachinesCount()
 
-                        // remove from opened tabs if present
-                        const idx = this.openedMachines.map((m) => m.id).indexOf(machineId)
-                        if (idx >= 0) {
-                            this.closeTab(null, idx + 1)
-                        }
                         this.msgSrv.add({
                             severity: 'success',
                             summary: 'Machine deleted',
@@ -674,7 +506,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                             life: 10000,
                         })
                     })
-                    .finally(() => this.machinesTable?.setDataLoading(false))
+                    .finally(() => this.machinesTable()?.setDataLoading(false))
             },
         })
     }
@@ -732,10 +564,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.refreshMachineState(machine)
 
                 // refresh opened tab title
-                const tabMenuItem = this.tabs.find((tab) => tab.machineId === machine.id)
-                if (tabMenuItem) {
-                    tabMenuItem.label = machine.address
-                }
+                this.tabView()?.onUpdateTabTitle(machine.id, machine.address)
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -825,7 +654,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         const authorizations$: Observable<Machine> = concat(...updateObservables)
 
         // Block table UI when bulk machines authorization is in progress.
-        this.machinesTable?.setDataLoading(true)
+        this.machinesTable()?.setDataLoading(true)
         authorizations$.subscribe({
             next: (m) => {
                 this.msgSrv.add({
@@ -842,17 +671,17 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Machine authorization attempt failed: ' + msg,
                     life: 10000,
                 })
-                this.machinesTable?.setDataLoading(false)
+                this.machinesTable()?.setDataLoading(false)
                 // this.machinesTable?.loadDataWithValidFilter()
-                this.machinesTable?.loadData(this.machinesTable?.machinesTable?.createLazyLoadMetadata())
+                this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
             },
             complete: () => {
-                this.machinesTable?.setDataLoading(false)
+                this.machinesTable()?.setDataLoading(false)
                 // this.machinesTable?.loadDataWithValidFilter()
-                this.machinesTable?.loadData(this.machinesTable?.machinesTable?.createLazyLoadMetadata())
+                this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
@@ -860,7 +689,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         })
 
         // Clear selection after.
-        this.machinesTable?.clearSelection()
+        this.machinesTable()?.clearSelection()
     }
 
     /**
@@ -868,7 +697,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param event change event
      */
     onSelectButtonChange(event: SelectButtonChangeEvent) {
-        this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value ?? null } })
+        this.router.navigate(['machines', 'all'], {
+            queryParams: { authorized: event?.value ?? null },
+            queryParamsHandling: 'merge',
+        })
     }
 
     /**
