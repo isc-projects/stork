@@ -49,17 +49,9 @@ type Statement struct {
 	// The "zone" statement is used to define a DNS zone.
 	Zone *Zone `parser:"| 'zone' @@"`
 
-	// A generic catch-all named statement. It is used to parse any statement
-	// not covered explicitly above and having the following format:
-	//
-	//	<identifier> <name> { <block> }
-	NamedStatement *NamedStatement `parser:"| @@"`
-
-	// A generic catch-all unnamed statement. It is used to parse any statement
-	// not covered explicitly above and having the following format:
-	//
-	//	<identifier> { <block> }
-	UnnamedStatement *UnnamedStatement `parser:"| @@"`
+	// Any statement that looks like an option with potentially
+	// several switches followed by a block.
+	Option *Option `parser:"| @@"`
 }
 
 // A Stork-specific annotation to skip parsing statements between the
@@ -327,36 +319,6 @@ type ResponsePolicy struct {
 type ResponsePolicyZone struct {
 	Zone     string   `parser:"'zone' ( @String | @Ident )"`
 	Switches []string `parser:"( @String | @Ident )*"`
-}
-
-// NamedStatement is a generic catch-all named statement. It is used to parse
-// any statement having the following format:
-//
-//	<identifier> <name> { <block> };
-//
-// The "tls" statement is an example:
-// https://bind9.readthedocs.io/en/stable/reference.html#tls-block-grammar.
-type NamedStatement struct {
-	// The Identifier of the named statement.
-	Identifier string `parser:"@Ident"`
-	// The Name of the named statement.
-	Name string `parser:"( @String | @Ident )"`
-	// The Contents of the named statement.
-	Contents *GenericClauseContents `parser:"'{' @@ '}'"`
-}
-
-// unnamedStatement is a generic catch-all unnamed statement. It is used to parse
-// any statement having the following format:
-//
-//	<identifier> { <block> };
-//
-// The "managed-keys" statement is an example:
-// /https://bind9.readthedocs.io/en/stable/reference.html#managed-keys-block-grammar.
-type UnnamedStatement struct {
-	// The Identifier of the unnamed statement.
-	Identifier string `parser:"@Ident"`
-	// The Contents of the unnamed statement.
-	Contents *GenericClauseContents `parser:"'{' @@ '}'"`
 }
 
 // Option is a generic catch-all option clause. It is used to parse an option

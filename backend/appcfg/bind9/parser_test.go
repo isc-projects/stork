@@ -53,17 +53,18 @@ func TestParseFile(t *testing.T) {
 	require.Len(t, statement.ACL.AddressMatchList.Elements, 6)
 
 	statement, _ = next()
-	require.NotNil(t, statement.UnnamedStatement)
-	require.Equal(t, "controls", statement.UnnamedStatement.Identifier)
+	require.NotNil(t, statement.Option)
+	require.Equal(t, "controls", statement.Option.Identifier)
 
 	statement, _ = next()
-	require.NotNil(t, statement.UnnamedStatement)
-	require.Equal(t, "statistics-channels", statement.UnnamedStatement.Identifier)
+	require.NotNil(t, statement.Option)
+	require.Equal(t, "statistics-channels", statement.Option.Identifier)
 
 	statement, _ = next()
-	require.NotNil(t, statement.NamedStatement)
-	require.Equal(t, "tls", statement.NamedStatement.Identifier)
-	require.Equal(t, "domain.name", statement.NamedStatement.Name)
+	require.NotNil(t, statement.Option)
+	require.Equal(t, "tls", statement.Option.Identifier)
+	require.Len(t, statement.Option.Switches, 1)
+	require.Equal(t, "domain.name", statement.Option.Switches[0])
 
 	statement, _ = next()
 	require.NotNil(t, statement.Options)
@@ -176,8 +177,8 @@ func TestParseFile(t *testing.T) {
 	require.Equal(t, "/etc/bind/db.nsd.example.com", statement.Zone.Clauses[2].Option.Switches[0])
 
 	statement, _ = next()
-	require.NotNil(t, statement.UnnamedStatement)
-	require.Equal(t, "logging", statement.UnnamedStatement.Identifier)
+	require.NotNil(t, statement.Option)
+	require.Equal(t, "logging", statement.Option.Identifier)
 }
 
 // Test that the parser correctly handles the @stork:no-parse directive.
@@ -823,6 +824,33 @@ func TestParseACLWithQuotedIPv4Address(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].ACL.AddressMatchList)
 	require.Len(t, cfg.Statements[0].ACL.AddressMatchList.Elements, 1)
 	require.Equal(t, "10.0.0.1", cfg.Statements[0].ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
+}
+
+// Test parsing the dyndb statement.
+func TestParseDynDB(t *testing.T) {
+	cfgText := `
+		dyndb "ipa" "/usr/lib64/bind/ldap.so" {
+			uri "ldapi://%2fvar%2frun%2fslapd-EXAMPLE-CA.socket";
+			base "cn=dns,dc=example,dc=ca";
+			server_id "host.example.ca";
+			auth_method "sasl";
+			sasl_mech "EXTERNAL";
+			krb5_keytab "FILE:/etc/named.keytab";
+			library "ldap.so";
+		};
+	`
+	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Option)
+	require.Equal(t, "dyndb", cfg.Statements[0].Option.Identifier)
+	require.Len(t, cfg.Statements[0].Option.Switches, 2)
+	require.Equal(t, "ipa", cfg.Statements[0].Option.Switches[0])
+	require.Equal(t, "/usr/lib64/bind/ldap.so", cfg.Statements[0].Option.Switches[1])
+	require.NotNil(t, cfg.Statements[0].Option.Contents)
+	require.Empty(t, cfg.Statements[0].Option.Suboptions)
 }
 
 // A benchmark that measures the performance of the @stork:no-parse directive.
