@@ -5,7 +5,7 @@
                 [value]="0"
                 [routerLink]="firstTabRoute()"
                 [queryParams]="firstTabQueryParams()"
-                fragment="tab-navigation"
+                [fragment]="tabNavigationRouteFragment()"
                 >{{ firstTabTitle() }}</p-tab
             >
         }
@@ -41,9 +41,9 @@
             </p-tabpanel>
         }
 
-        @if (entityTabTemplate) {
-            @for (tab of openTabs; track tab.value) {
-                <p-tabpanel [value]="tab.value">
+        @for (tab of openTabs; track tab.value) {
+            <p-tabpanel [value]="tab.value">
+                @if (entityTabTemplate && tab.tabType === TabType.Display) {
                     <ng-container
                         *ngTemplateOutlet="
                             entityTabTemplate;
@@ -51,11 +51,29 @@
                                 $implicit: tab.entity,
                                 updateTabTitleFn: onUpdateTabTitle,
                                 updateTabEntityFn: onUpdateTabEntity,
+                                beginEntityEditFn: onBeginEntityEdit,
                             }
                         "
                     ></ng-container>
-                </p-tabpanel>
-            }
+                }
+                @if (formTabTemplate() && (tab.tabType === TabType.New || tab.tabType === TabType.Edit)) {
+                    <ng-container
+                        *ngTemplateOutlet="
+                            formTabTemplate();
+                            context: {
+                                $implicit: tab.entity,
+                                updateTabTitleFn: onUpdateTabTitle,
+                                updateTabEntityFn: onUpdateTabEntity,
+                                tabForm: tab.form,
+                                tabType: tab.tabType,
+                                destroyFormFn: onDestroyForm,
+                                submitFormFn: onSubmitForm,
+                                cancelFormFn: onCancelForm,
+                            }
+                        "
+                    ></ng-container>
+                }
+            </p-tabpanel>
         }
     </p-tabpanels>
 </p-tabs>

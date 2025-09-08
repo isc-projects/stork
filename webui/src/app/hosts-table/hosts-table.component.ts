@@ -1,27 +1,14 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { PrefilteredTable } from '../table'
+import { tableHasFilter, tableFiltersToQueryParams } from '../table'
 import { DHCPService, Host, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { ActivatedRoute, Router } from '@angular/router'
-import { Location } from '@angular/common'
+import { Router } from '@angular/router'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
-import { last, lastValueFrom } from 'rxjs'
+import { debounceTime, last, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-
-/**
- * Specifies the filter parameters for fetching hosts that may be specified
- * either in the URL query parameters or programmatically.
- */
-export interface HostsFilter {
-    text?: string
-    appId?: number
-    subnetId?: number
-    keaSubnetId?: number
-    isGlobal?: boolean
-    conflict?: boolean
-}
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 /**
  * This component implements a table of hosts reservations.
@@ -36,60 +23,22 @@ export interface HostsFilter {
     templateUrl: './hosts-table.component.html',
     styleUrls: ['./hosts-table.component.sass'],
 })
-export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> implements OnInit, OnDestroy {
-    /**
-     * Array of all numeric keys that are supported when filtering hosts via URL queryParams.
-     * Note that it doesn't have to contain hosts prefilterKey, which is 'appId'.
-     * prefilterKey by default is considered as a primary queryParam filter key.
-     */
-    queryParamNumericKeys: (keyof HostsFilter)[] = ['subnetId', 'keaSubnetId']
-
-    /**
-     * Array of all boolean keys that are supported when filtering hosts via URL queryParams.
-     */
-    queryParamBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict']
-
-    /**
-     * Array of all numeric keys that can be used to filter hosts.
-     */
-    filterNumericKeys: (keyof HostsFilter)[] = ['appId', 'subnetId', 'keaSubnetId']
-
-    /**
-     * Array of all boolean keys that can be used to filter hosts.
-     */
-    filterBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict']
-
-    /**
-     * Prefix of the stateKey. Will be used to evaluate stateKey.
-     */
-    stateKeyPrefix: string = 'hosts-table-session'
-
-    /**
-     * queryParam keyword of the filter by appId.
-     */
-    prefilterKey: keyof HostsFilter = 'appId'
-
-    /**
-     * Array of FilterValidators that will be used for validation of filters, which values are limited
-     * only to known values.
-     */
-    filterValidators = []
-
+export class HostsTableComponent implements OnInit, OnDestroy {
     /**
      * PrimeNG table instance.
      */
     @ViewChild('hostsTable') table: Table
+    dataLoading: boolean
+    totalRecords: number = 0
+    dataCollection: Host[] = []
+    private _subscriptions: Subscription = new Subscription()
 
     constructor(
-        route: ActivatedRoute,
         private router: Router,
         private dhcpApi: DHCPService,
         private messageService: MessageService,
-        location: Location,
         private confirmationService: ConfirmationService
-    ) {
-        super(route, location)
-    }
+    ) {}
 
     /**
      * Loads hosts from the database into the component.
@@ -107,12 +56,12 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
             this.dhcpApi.getHosts(
                 event.first,
                 event.rows,
-                this.prefilterValue ?? this.getTableFilterValue('appId', event.filters),
-                this.getTableFilterValue('subnetId', event.filters),
-                this.getTableFilterValue('keaSubnetId', event.filters),
-                this.getTableFilterValue('text', event.filters),
-                this.getTableFilterValue('isGlobal', event.filters),
-                this.getTableFilterValue('conflict', event.filters)
+                (event.filters['appId'] as FilterMetadata)?.value ?? null,
+                (event.filters['subnetId'] as FilterMetadata)?.value ?? null,
+                (event.filters['keaSubnetId'] as FilterMetadata)?.value ?? null,
+                (event.filters['text'] as FilterMetadata)?.value || null,
+                (event.filters['isGlobal'] as FilterMetadata)?.value ?? null,
+                (event.filters['conflict'] as FilterMetadata)?.value ?? null
             )
         )
             .then((data) => {
@@ -212,14 +161,34 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        super.onDestroy()
+        this._tableFilter$.complete()
+        this._subscriptions.unsubscribe()
     }
 
     /**
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        super.onInit()
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    map((f) => {
+                        return { ...f, value: f.value || null }
+                    }),
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        // this.zone.run(() =>
+                        this.router.navigate(
+                            [],
+                            { queryParams: tableFiltersToQueryParams(this.table) }
+                            // )
+                        )
+                    })
+                )
+                .subscribe()
+        )
     }
 
     /**
@@ -242,11 +211,11 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
                 // User confirmed the migration.
                 this.dhcpApi
                     .startHostsMigration(
-                        this.prefilterValue ?? this.getTableFilterValue('appId'),
-                        this.getTableFilterValue('subnetId'),
-                        this.getTableFilterValue('keaSubnetId'),
-                        this.getTableFilterValue('text'),
-                        this.getTableFilterValue('isGlobal')
+                        (this.table?.filters['appId'] as FilterMetadata)?.value ?? null,
+                        (this.table?.filters['subnetId'] as FilterMetadata)?.value ?? null,
+                        (this.table?.filters['keaSubnetId'] as FilterMetadata)?.value ?? null,
+                        (this.table?.filters['text'] as FilterMetadata)?.value || null,
+                        (this.table?.filters['isGlobal'] as FilterMetadata)?.value ?? null
                     )
                     .pipe(last())
                     .subscribe({
@@ -283,5 +252,32 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      */
     isFilteredByConflict(): boolean {
         return (<FilterMetadata>this.table?.filters['conflict'])?.value === true
+    }
+
+    clearTableState() {
+        this.table?.clear()
+        this.router.navigate([])
+    }
+
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
+     *
+     * @param value
+     * @param filterConstraint
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata): void {
+        this._tableFilter$.next({ value, filterConstraint })
+    }
+
+    protected readonly tableHasFilter = tableHasFilter
+
+    /**
+     *
+     * @param filterConstraint
+     */
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
     }
 }

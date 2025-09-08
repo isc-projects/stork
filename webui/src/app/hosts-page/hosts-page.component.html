@@ -27,49 +27,58 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [scrollable]="true" styleClass="mb-2">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a
-            role="menuitem"
-            pRipple
-            [routerLink]="item.routerLink"
-            [queryParams]="i === 0 ? hostsTableComponent?.validFilter : null"
-            class="p-ripple p-element p-menuitem-link"
-        >
-            <div class="flex justify-content-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeHostTab($event, i)"></div>
-            </div>
-        </a>
+<app-tab-view
+    #tabView
+    routePath="/dhcp/hosts/"
+    [entityProvider]="hostProvider"
+    [newFormProvider]="hostFormProvider"
+    [entityTitleProvider]="hostLabelProvider"
+    [tableQueryParamFilters]="{
+        subnetId: { type: 'numeric', matchMode: 'equals' },
+        keaSubnetId: { type: 'numeric', matchMode: 'equals' },
+        appId: { type: 'numeric', matchMode: 'equals' },
+        isGlobal: { type: 'boolean', matchMode: 'equals' },
+        conflict: { type: 'boolean', matchMode: 'equals' },
+        text: { type: 'string', matchMode: 'contains' },
+    }"
+    [inputTable]="hostsTable()?.table"
+    (tabClosed)="onTabClosed($event)"
+    entityTypeName="Host Reservation"
+>
+    <ng-template #firstTab>
+        <app-hosts-table #hostsTableComponent></app-hosts-table>
     </ng-template>
-</p-tabMenu>
-
-<div>
-    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
+    <ng-template #entityTab let-host let-onHostEditBegin="beginEntityEditFn">
         <app-host-tab
-            *ngSwitchCase="HostTabType.Display"
-            [host]="openedTabs[activeTabIndex - 1].tabSubject"
-            (hostEditBegin)="onHostEditBegin(openedTabs[activeTabIndex - 1].tabSubject)"
-            (hostDelete)="onHostDelete(openedTabs[activeTabIndex - 1].tabSubject)"
+            [host]="host"
+            (hostEditBegin)="onHostEditBegin(host.id)"
+            (hostDelete)="tabView.onDeleteEntity(host.id)"
         ></app-host-tab>
-        <app-host-form
-            [form]="openedTabs[activeTabIndex - 1].state"
-            (formDestroy)="onHostFormDestroy($event)"
-            (formSubmit)="onHostFormSubmit($event)"
-            (formCancel)="onHostFormCancel(0)"
-            *ngSwitchCase="HostTabType.New"
-        ></app-host-form>
-        <app-host-form
-            [form]="openedTabs[activeTabIndex - 1].state"
-            [hostId]="openedTabs[activeTabIndex - 1].tabSubject.id"
-            (formDestroy)="onHostFormDestroy($event)"
-            (formSubmit)="onHostFormSubmit($event)"
-            (formCancel)="onHostFormCancel(openedTabs[activeTabIndex - 1].tabSubject.id)"
-            *ngSwitchCase="HostTabType.Edit"
-        ></app-host-form>
-    </div>
-    <app-hosts-table #hostsTableComponent [hidden]="activeTabIndex !== 0"></app-hosts-table>
-</div>
+    </ng-template>
+    <ng-template
+        #formTab
+        let-host
+        let-tabType="tabType"
+        let-tabForm="tabForm"
+        let-onHostFormDestroy="destroyFormFn"
+        let-onHostFormSubmit="submitFormFn"
+        let-onHostFormCancel="cancelFormFn"
+    >
+        @if (tabType === TabType.New) {
+            <app-host-form
+                [form]="tabForm.formState"
+                (formDestroy)="onHostFormDestroy($event, tabType)"
+                (formSubmit)="onHostFormSubmit(tabType)"
+                (formCancel)="onHostFormCancel(tabType)"
+            ></app-host-form>
+        } @else if (tabType === TabType.Edit) {
+            <app-host-form
+                [form]="tabForm.formState"
+                [hostId]="host.id"
+                (formDestroy)="onHostFormDestroy($event, tabType, host.id)"
+                (formSubmit)="onHostFormSubmit(tabType, host.id)"
+                (formCancel)="cancelHostUpdateTransaction(host.id, $event); onHostFormCancel(tabType, host.id)"
+            ></app-host-form>
+        }
+    </ng-template>
+</app-tab-view>

@@ -1,13 +1,4 @@
-import {
-    ChangeDetectorRef,
-    Component,
-    computed,
-    OnDestroy,
-    OnInit,
-    signal,
-    viewChild,
-    ViewChild,
-} from '@angular/core'
+import { ChangeDetectorRef, Component, computed, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'

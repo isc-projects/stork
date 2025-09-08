@@ -1,13 +1,4 @@
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnDestroy,
-    OnInit,
-    Output,
-    signal,
-    ViewChild,
-} from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
 import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableSelectAllChangeEvent } from 'primeng/table'
@@ -17,14 +8,6 @@ import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-
-/**
- * Interface defining fields for Machines filter.
- */
-export interface MachinesFilter {
-    text?: string
-    authorized?: boolean
-}
 
 /**
  * This component is dedicated to display the table of Machines. It supports
@@ -111,8 +94,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         private servicesApi: ServicesService,
         private messageService: MessageService,
         private router: Router
-    ) {
-    }
+    ) {}
 
     /**
      * Component lifecycle hook called to perform clean-up when destroying the component.

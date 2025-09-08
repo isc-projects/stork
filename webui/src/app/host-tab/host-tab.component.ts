@@ -543,9 +543,9 @@ export class HostTabComponent {
      * Event handler called when user begins host editing.
      *
      * It emits an event to the parent component to notify that host is
-     * is now edited.
+     * now edited.
      */
-    onHostEditBegin(): void {
+    onEditHostClicked(): void {
         this.hostEditBegin.emit(this.host)
     }
 

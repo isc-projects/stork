@@ -26,16 +26,35 @@ import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Table } from 'primeng/table'
 import { filter, switchMap } from 'rxjs/operators'
 
+enum TabType {
+    List = 1,
+    New,
+    Edit,
+    Display,
+}
+
+type FormTab = {
+    formState: any
+    submitted: boolean
+}
+
 /**
  * Type defining data structure of a tab displayed and managed by the TabView component.
  */
-type ComponentTab = {
+export type ComponentTab = {
     title: string
     value: number
     route?: string | undefined
-    icon?: string
+    icon?: string | undefined
     entity: { [key: string]: any }
+    tabType: TabType
+    form?: FormTab | undefined
 }
+
+/**
+ *
+ */
+const NEW_ENTITY_FORM_TAB_ID = -1
 
 /**
  * Sanitizes given route path. Makes sure that the path has a trailing slash.
@@ -64,7 +83,7 @@ function sanitizePath(value: string | undefined): string | undefined {
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',
 })
-export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
+export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
     /**
      * Holds all open tabs.
      */
@@ -77,6 +96,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     activeTabEntityID: number = 0
 
     activeTabChange = output<number>()
+
+    tabClosed = output<ComponentTab>()
 
     /**
      * Input flag which determines whether the tabs are closable (close button is displayed next to the tab title).
@@ -104,6 +125,26 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     firstTabRouteEnd = input('all')
 
     /**
+     * Input string which holds the route end to be appended to the router link path of the tab with adding a new entity form.
+     * Defaults to 'new'.
+     */
+    newEntityTabRouteEnd = input('new')
+
+    /**
+     * Input string which holds the route fragment to be appended to the router link path of the first tab.
+     * When detected during navigation, if there exists a table of entities on the first tab, table's data will not be reloaded.
+     * This is to prevent backend load when switching between tabs.
+     * Defaults to 'tab-navigation'.
+     */
+    tabNavigationRouteFragment = input('tab-navigation')
+
+    /**
+     * Input string which holds the route fragment to be appended to the router link path of the tab with editing entity form.
+     * Defaults to 'edit'.
+     */
+    editEntityRouteFragment = input('edit')
+
+    /**
      * Input string which holds the router link base path for all the tabs.
      * When provided, the tab view is using clickable tabs
      * as clickable router links (router navigation will happen after clicking the tab).
@@ -116,6 +157,12 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      * It remains undefined if the routePath input is undefined.
      */
     firstTabRoute = computed(() => (this.routePath() ? this.routePath() + this.firstTabRouteEnd() : undefined))
+
+    /**
+     * Route path used for the router link of the tab with adding a new entity form. It is computed using routePath and newEntityTabRouteEnd inputs.
+     * It remains undefined if the routePath input is undefined.
+     */
+    newEntityTabRoute = computed(() => (this.routePath() ? this.routePath() + this.newEntityTabRouteEnd() : undefined))
 
     /**
      * Query parameters used for the router link of the first tab.
@@ -158,9 +205,15 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
 
     /**
      * If provided, this input number is the entity ID for which the tab will be open and activated when the component is initialized.
-     * Defaults to -1, which means that it is not used by default.
+     * Defaults to undefined, which means that it is not used by default.
      */
-    openEntityID = input(-1)
+    openEntityID = input<number>(undefined)
+
+    /**
+     * String input holding the name of the entity type.
+     * E.g. Subnet, Shared network etc.
+     */
+    entityTypeName = input('Entity')
 
     /**
      * Input table filters.
@@ -180,6 +233,10 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      */
     @Input() entityProvider: (id: number) => Promise<TEntity>
 
+    @Input() newFormProvider: () => TForm
+
+    @Input() entityTitleProvider: (entity: TEntity) => string = undefined
+
     /**
      * Defines the template for the first tab content (first tab is optional; very often it is a table with the entities).
      */
@@ -189,6 +246,11 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      * Defines the template for the entity tab content.
      */
     @ContentChild('entityTab', { descendants: false }) entityTabTemplate: TemplateRef<any> | undefined
+
+    /**
+     * Defines the template for the form tab content.
+     */
+    formTabTemplate = contentChild<TemplateRef<any> | undefined>('formTab')
 
     /**
      * PrimeNG table used as a table of entities, usually displayed in the first tab.
@@ -310,6 +372,85 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     }
 
     /**
+     * Callback updating entity form state in open tabs when the form component gets destroyed.
+     * It is called when the destroyFormFn function from the formTabTemplate context is called.
+     * @param formState form state to be stored
+     * @param tabType tab type to determine form type
+     * @param entityID optional ID of the entity; it can only be provided for Edit type of form
+     */
+    onDestroyForm = (formState: TForm, tabType: TabType, entityID?: number) => {
+        const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
+        const tabToUpdate = this.openTabs.find(
+            (tab) => tab.form && tab.tabType === tabType && tab.value === extendEntityID
+        )
+        if (tabToUpdate) {
+            console.log('onDestroyForm - form to update found', tabToUpdate, 'new one', formState)
+            tabToUpdate.form.formState = formState
+        }
+    }
+
+    /**
+     * Callback updating entity form state in open tabs when the form is submitted.
+     * It is called when the submitFormFn function from the formTabTemplate context is called.
+     * It marks the form as submitted to prevent the component from canceling
+     * the transaction. Next, it closes the form tab.
+     * @param tabType tab type to determine form type
+     * @param entityID optional ID of the entity; it can only be provided for Edit type of form
+     */
+    onSubmitForm = (tabType: TabType, entityID?: number) => {
+        const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
+        const tabToUpdate = this.openTabs.find(
+            (tab) => tab.form && tab.tabType === tabType && tab.value === extendEntityID
+        )
+        if (tabToUpdate) {
+            console.log('onSubmitForm - form to update found', tabToUpdate)
+            tabToUpdate.form.submitted = true
+            this.closeTab(extendEntityID)
+        }
+    }
+
+    /**
+     * Callback updating entity tab in open tabs when the form is cancelled.
+     * It is called when the cancelFormFn function from the formTabTemplate context is called.
+     * If the event comes from the new entity form, the tab is closed. If the
+     * event comes from the entity edit form, the tab is turned into the
+     * display type tab.
+     * @param tabType tab type to determine form type
+     * @param entityID optional ID of the entity; it can only be provided for Edit type of form
+     */
+    onCancelForm = (tabType: TabType, entityID?: number) => {
+        if (tabType === TabType.New) {
+            console.log('onCancelForm - just close the form')
+            this.closeTab(NEW_ENTITY_FORM_TAB_ID)
+            return
+        }
+
+        const tabToUpdate = this.openTabs.find((tab) => tab.form && tab.value === entityID && tab.tabType === tabType)
+        if (tabToUpdate) {
+            console.log('onCancelForm - form tab to cancel found', tabToUpdate)
+            tabToUpdate.tabType = TabType.Display
+            tabToUpdate.icon = undefined
+            tabToUpdate.form = undefined
+        }
+    }
+
+    onBeginEntityEdit = (entityID: number) => {
+        console.log('onBeginEntityEdit', entityID)
+        const existingTab = this.openTabs.find((tab) => tab.value === entityID)
+        console.log('onBeginEntityEdit found tab', existingTab)
+        if (existingTab && existingTab.tabType !== TabType.Edit) {
+            existingTab.tabType = TabType.Edit
+            existingTab.icon = 'pi pi-pencil'
+            if (!existingTab.form) {
+                existingTab.form = { submitted: false, formState: this.newFormProvider() }
+            }
+            console.log('onBeginEntityEdit found tab after', existingTab)
+        }
+
+        this.openTab(entityID)
+    }
+
+    /**
      * Deletes the entity from entities collection and closes this entity tab.
      * @param id
      */
@@ -341,7 +482,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      * @private
      */
     private getTitle(entity: TEntity): string {
-        return entity[this.entityTitleKey()]
+        return this.entityTitleProvider(entity) || entity[this.entityTitleKey()]
     }
 
     /**
@@ -368,6 +509,13 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
         if (existingTabIndex > -1) {
             console.log('openTab', entityID, 'this tab is already open, switch active tab')
             // this.router.navigate(['/communication', existingTabIndex])
+            this.activeTabEntityID = entityID
+            return
+        }
+
+        if (entityID === NEW_ENTITY_FORM_TAB_ID) {
+            console.log('openTab - requested new entity form, it doesnt exist yet')
+            this.openTabs = [...this.openTabs, this.createNewEntityFormTab()]
             this.activeTabEntityID = entityID
             return
         }
@@ -423,7 +571,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
      */
     closeTab(entityID: number) {
         console.log('closeTab', entityID)
-        if (!this.closableTabs || entityID <= 0) {
+        if (!this.closableTabs || entityID < NEW_ENTITY_FORM_TAB_ID) {
             return
         }
 
@@ -433,7 +581,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
             `tabToCloseIndex: ${tabToCloseIndex} activeTabIndex: ${activeTabIndex} activeTabEntityID: ${this.activeTabEntityID}`
         )
         if (tabToCloseIndex > -1) {
-            this.openTabs.splice(tabToCloseIndex, 1)
+            const closedTab = this.openTabs.splice(tabToCloseIndex, 1)
+            this.tabClosed.emit(closedTab[0])
             if (tabToCloseIndex <= activeTabIndex) {
                 this.goToFirstTab()
             }
@@ -456,14 +605,31 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
     /**
      * Creates a tab data structure based on given entity.
      * @param entity entity used to construct the tab
+     * @param tabType type of the tab; if not provided, it is by default set to type Display
      */
-    createTab(entity: TEntity): ComponentTab {
+    createTab(entity: TEntity, tabType?: TabType): ComponentTab {
         return {
             title: this.getTitle(entity),
             value: this.getID(entity),
             entity: entity,
             route: this.routePath() ? this.routePath() + this.getID(entity) : undefined,
             icon: this.getIcon(entity),
+            tabType: tabType ?? TabType.Display,
+        }
+    }
+
+    /**
+     * Creates a tab data structure for the tab with the form for adding a new entity.
+     */
+    createNewEntityFormTab(): ComponentTab {
+        return {
+            title: `New ${this.entityTypeName()}`,
+            value: NEW_ENTITY_FORM_TAB_ID,
+            entity: undefined,
+            route: this.newEntityTabRoute(),
+            icon: 'pi pi-pencil',
+            tabType: TabType.New,
+            form: { submitted: false, formState: this.newFormProvider() },
         }
     }
 
@@ -647,7 +813,7 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                             if (
                                 this.entitiesTable() &&
                                 this.tableQueryParamFilters() &&
-                                fragment !== 'tab-navigation'
+                                fragment !== this.tabNavigationRouteFragment()
                             ) {
                                 const parsedFilters = this.queryParamMapToTableFilters(queryParamMap)
                                 console.log(
@@ -662,21 +828,17 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
                             return
                         }
 
+                        if (id === this.newEntityTabRouteEnd()) {
+                            this.openTab(NEW_ENTITY_FORM_TAB_ID)
+                            this.forceLoadTableData()
+
+                            return
+                        }
+
                         const numericId = parseInt(id, 10)
                         if (!Number.isNaN(numericId)) {
                             this.openTab(numericId)
-                            if (
-                                this.entitiesTable() &&
-                                !tableHasFilter(this.entitiesTable()) &&
-                                !(this.entitiesTable().value ?? []).length
-                            ) {
-                                console.log(
-                                    'numeric id found, opening specific tab, init table because it seems to be empty',
-                                    this.entitiesTable()?.value
-                                )
-                                const metadata = this.entitiesTable().createLazyLoadMetadata()
-                                this.entitiesTable().onLazyLoad.emit(metadata)
-                            }
+                            this.forceLoadTableData()
 
                             return
                         } else {
@@ -693,7 +855,8 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
             return
         }
 
-        if (this.openEntityID() > -1) {
+        if (this.openEntityID()) {
+            // openEntityID input was provided, so let's open this tab.
             this.openTab(this.openEntityID())
             return
         }
@@ -717,4 +880,18 @@ export class TabViewComponent<TEntity> implements OnInit, OnDestroy {
         console.log('storkTabViewComponent log onValueChange', event)
         this.activeTabChange.emit(event as number)
     }
+
+    forceLoadTableData() {
+        if (
+            this.entitiesTable() &&
+            !tableHasFilter(this.entitiesTable()) &&
+            !(this.entitiesTable().value ?? []).length
+        ) {
+            console.log('forceLoadTableData, init table because it seems to be empty', this.entitiesTable()?.value)
+            const metadata = this.entitiesTable().createLazyLoadMetadata()
+            this.entitiesTable().onLazyLoad.emit(metadata)
+        }
+    }
+
+    protected readonly TabType = TabType
 }

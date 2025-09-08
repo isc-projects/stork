@@ -1270,6 +1270,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * It causes the parent component to close the form.
      */
     onCancel(): void {
-        this.formCancel.emit(this.hostId)
+        this.formCancel.emit(this.form.transactionId)
     }
 }
