@@ -102,15 +102,23 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
-        // Mute version checks for non-ISC apps.
-        if (!this.iscApp) {
-            return
+        switch (this.app) {
+            case 'bind9':
+                this._appName = 'BIND9'
+                break
+            case 'pdns':
+                this._appName = 'PowerDNS'
+                break
+            case 'stork':
+                this._appName = 'Stork agent'
+                break
+            default:
+                this._appName = this.app[0].toUpperCase() + this.app.slice(1)
+                break
         }
-        this._appName = this.app === 'bind9' ? this.app.toUpperCase() : this.app[0].toUpperCase() + this.app.slice(1)
-        this._appName += this.app === 'stork' ? ' agent' : ''
-        if (!this.version) {
-            // Version is a mandatory input. In case it is false (undefined, null, empty string),
-            // simply return. No feedback will be displayed.
+        // Mute version checks for non-ISC apps. Version is mandatory. In case it is
+        // false (undefined, null, empty string), simply return. No feedback will be displayed.
+        if (!this.iscApp || !this.version) {
             return
         }
 

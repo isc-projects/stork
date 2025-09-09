@@ -131,6 +131,11 @@ describe('VersionStatusComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
         expect(component.appName).toBe('BIND9')
+
+        fixture.componentRef.setInput('app', 'pdns')
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName).toBe('PowerDNS')
     })
 
     it('should get current versions data', () => {

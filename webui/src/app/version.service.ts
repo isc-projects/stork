@@ -35,7 +35,7 @@ export interface UpdateNotification {
 /**
  * Type for all possible ISC apps that have monitored software versions.
  */
-export type AppType = 'kea' | 'bind9' | 'stork'
+export type AppType = 'kea' | 'bind9' | 'pdns' | 'stork'
 
 /**
  * Severity assigned after assessment of software version is done.
