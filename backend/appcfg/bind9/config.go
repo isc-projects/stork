@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	storkutil "isc.org/stork/util"
 )
 
 const DefaultViewName = "_default"
@@ -74,6 +75,15 @@ func (c *Config) GetZone(zoneName string) *Zone {
 func (c *Config) GetKey(keyID string) *Key {
 	for _, statement := range c.Statements {
 		if statement.Key != nil && statement.Key.Name == keyID {
+			return statement.Key
+		}
+	}
+	return nil
+}
+
+func (c *Config) GetFirstKey() *Key {
+	for _, statement := range c.Statements {
+		if statement.Key != nil {
 			return statement.Key
 		}
 	}
@@ -371,23 +381,88 @@ func (c *Config) IsRPZ(viewName string, zoneName string) bool {
 	return responsePolicy != nil && responsePolicy.IsRPZ(zoneName)
 }
 
-// Returns the RNDC credentials.
-func (c *Config) GetRNDCCredentials() (address *string, port *int64, keyName *string, algorithm *string, secret *string, err error) {
-	if controls := c.GetControls(); controls != nil {
-		if inetClause := controls.GetInetClause(); inetClause != nil {
-			address, port := inetClause.GetAddressAndPort(defaultControlsPort)
+// Returns the rndc credentials. Credentials are used by the agent to send
+// commands to the BIND9 server using rndc. If controls statement is not found
+// in the configuration file, this function will return default address
+// 127.0.0.1 and port 953. If controls statement is empty the returned enabled
+// flag is set to false indicating that the control channel is disabled.
+// The controls clause may contain keys to be used to authenticate the commands.
+// If the keys are unspecified in the controls clause, the function will attempt
+// to use the first key found in the configuration file. If the key is not found,
+// it returns nil key, and the agent will send commands without authentication.
+func (c *Config) GetRndcCredentials(rndcConfig *Config) (address *string, port *int64, key *Key, enabled bool, err error) {
+	var (
+		controls   *Controls
+		inetClause *InetClause
+	)
+	if controls = c.GetControls(); controls != nil {
+		// controls statement should contain an inet clause. If it does not,
+		// it is empty, indicating that the control channel is disabled.
+		// In that case, we return nil values for the credentials and the
+		// enabled flag is set to false.
+		if inetClause = controls.GetInetClause(); inetClause == nil {
+			return
+		}
+	}
+	// The control channel is enabled. It is the case even when the controls
+	// statement is nil. In that case, we return default address 127.0.0.1
+	// and port 953.
+	enabled = true
+	address = storkutil.Ptr("127.0.0.1")
+	port = storkutil.Ptr(defaultControlsPort)
+
+	keyConfigs := []*Config{}
+	if rndcConfig != nil {
+		keyConfigs = append(keyConfigs, rndcConfig)
+	}
+	keyConfigs = append(keyConfigs, c)
+
+	if inetClause != nil {
+		// Non-default values specified.
+		a, p := inetClause.GetAddressAndPort(defaultControlsPort)
+		if a == "*" {
+			// When listening on the wildcard address, we return the default
+			// local address as this is recommended by the BIND 9 documentation.
+			address = storkutil.Ptr("127.0.0.1")
+		} else {
+			address = &a
+		}
+		port = &p
+		if inetClause.Keys != nil {
+			// The keys clause may contain a list of key names. Let's try to match
+			// the name with the key and return the first that matches.
 			keys := inetClause.Keys.KeyNames
-			for _, keyName := range keys {
-				if key := c.GetKey(keyName); key != nil {
-					if algorithm, secret, err = key.GetAlgorithmSecret(); err == nil {
-						return &address, &port, &keyName, algorithm, secret, nil
+			for _, keyConfig := range keyConfigs {
+				for _, name := range keys {
+					if key = keyConfig.GetKey(name); key != nil {
+						return
 					}
 				}
 			}
-			return &address, &port, nil, nil, nil, nil
 		}
 	}
-	return nil, nil, nil, nil, nil, errors.New("no RNDC credentials found")
+	// No inet clause so let's use the first key.
+	for _, keyConfig := range keyConfigs {
+		if key = keyConfig.GetFirstKey(); key != nil {
+			return
+		}
+	}
+	return
+}
+
+// Returns the address and port of the statistics channel. If the statistics-channels
+// statement is not found, it is assumed that the statistics channel is disabled.
+// In this case, the returned enabled flag is set to false.
+func (c *Config) GetStatisticsChannelCredentials() (address *string, port *int64, enabled bool) {
+	if statisticsChannels := c.GetStatisticsChannels(); statisticsChannels != nil {
+		if inetClause := statisticsChannels.GetInetClause(); inetClause != nil {
+			a, p := inetClause.GetAddressAndPort(defaultStatisticsChannelsPort)
+			address = &a
+			port = &p
+			enabled = true
+		}
+	}
+	return
 }
 
 // Returns the key associated with the given view or nil if the view is not found.

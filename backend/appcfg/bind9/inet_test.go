@@ -50,3 +50,36 @@ func TestGetAddressAndPortNonNumericPort(t *testing.T) {
 	require.Equal(t, "192.0.2.1", address)
 	require.EqualValues(t, 444, port)
 }
+
+// Test that localhost is returned for an asterisk, IPv4 zero
+// and IPv6 zero addresses.
+func TestGetAddressAndPortWildcard(t *testing.T) {
+	tests := []struct {
+		name    string
+		address string
+	}{
+		{
+			name:    "asterisk",
+			address: "*",
+		},
+		{
+			name:    "IPv4 zero",
+			address: "0.0.0.0",
+		},
+		{
+			name:    "IPv6 zero",
+			address: "::",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inetClause := &InetClause{
+				Address: test.address,
+			}
+			address, port := inetClause.GetAddressAndPort(int64(444))
+			require.Equal(t, "localhost", address)
+			require.EqualValues(t, 444, port)
+		})
+	}
+}

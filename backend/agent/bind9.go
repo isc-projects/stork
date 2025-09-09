@@ -2,11 +2,9 @@ package agent
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -44,18 +42,6 @@ type Bind9State struct {
 	Version string
 	Active  bool
 	Daemon  Bind9Daemon
-}
-
-// Represents the RNDC key entry.
-type Bind9RndcKey struct {
-	Name      string
-	Algorithm string
-	Secret    string
-}
-
-// Returns the string representation of the key.
-func (k *Bind9RndcKey) String() string {
-	return fmt.Sprintf("%s:%s:%s", k.Name, k.Algorithm, k.Secret)
 }
 
 // It holds common and BIND 9 specific runtime information.
@@ -96,7 +82,7 @@ const (
 	namedExec          = "named"
 )
 
-// RNDC-related file names.
+// rndc-related file names.
 const (
 	RndcKeyFile           = "rndc.key"
 	RndcConfigurationFile = "rndc.conf"
@@ -125,7 +111,7 @@ func NewRndcClient(ce storkutil.CommandExecutor) *RndcClient {
 // Determine rndc details in the system.
 // It find rndc executable and prepare base command with all necessary
 // parameters including rndc secret key.
-func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey *Bind9RndcKey) error {
+func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey *bind9config.Key) error {
 	rndcPath, err := determineBinPath(baseNamedDir, rndcExec, rc.executor)
 	if err != nil {
 		return err
@@ -146,7 +132,7 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 			cmd = append(cmd, "-c")
 			cmd = append(cmd, rndcKeyPath)
 		default:
-			log.Warnf("Could not determine RNDC key file in the %s directory. It may be wrong detected by BIND 9.", bind9ConfDir)
+			log.Warnf("Could not determine rndc key file in the %s directory. It may be wrong detected by BIND 9.", bind9ConfDir)
 		}
 	} else {
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
@@ -172,265 +158,6 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 	}
 
 	return rc.executor.Output(rndcCommand[0], rndcCommand[1:]...)
-}
-
-// getRndcKey looks for the key with a given `name` in `contents`.
-// If `name` is empty, first key is returned. This is useful, if parsing
-// the default /etc/bind/rndc.key file. No matter the name, we want to
-// take it (or first in case there are multiple)
-//
-// Example key clause:
-//
-//	key "name" {
-//		algorithm "hmac-sha256";
-//		secret "OmItW1lOyLVUEuvv+Fme+Q==";
-//	};
-func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
-	pattern := regexp.MustCompile(`(?s)key\s+\"(\S+)\"\s+\{(.*?)\}\s*;`)
-	keys := pattern.FindAllStringSubmatch(contents, -1)
-	if len(keys) == 0 {
-		return nil
-	}
-
-	for _, key := range keys {
-		// skip this key if the name doesn't match. If user didn't specify
-		// a name, use the first key.
-		if len(name) > 0 && key[1] != name {
-			continue
-		}
-
-		// This regex matches both quoted (algorithm "hmac-sha256") and
-		// unquoted (algorithm hmac-sha256).
-		pattern = regexp.MustCompile(`algorithm\s+"?(\S+?)"?;`)
-		algorithm := pattern.FindStringSubmatch(key[2])
-		if len(algorithm) < 2 {
-			log.Warnf("No key algorithm found for name %s", name)
-			return nil
-		}
-
-		pattern = regexp.MustCompile(`(?s)secret\s+\"(\S+)\";`)
-		secret := pattern.FindStringSubmatch(key[2])
-		if len(secret) < 2 {
-			log.Warnf("No key secret found for name %s", name)
-			return nil
-		}
-
-		// this key clause matches the name we are looking for
-		controlKey = &Bind9RndcKey{
-			Name:      key[1],
-			Algorithm: algorithm[1],
-			Secret:    secret[1],
-		}
-		break
-	}
-
-	return controlKey
-}
-
-// parseInetSpec parses an inet statement from a named configuration excerpt.
-// The inet statement is defined by inet_spec:
-//
-//	inet_spec = ( ip_addr | * ) [ port ip_port ]
-//				allow { address_match_list }
-//				keys { key_list };
-//
-// This function returns the ip_addr, port and the first key that is
-// referenced in the key_list.  If instead of an ip_addr, the asterisk (*) is
-// specified, this function will return 'localhost' as an address.
-func parseInetSpec(config, excerpt string) (address string, port int64, key *Bind9RndcKey) {
-	pattern := regexp.MustCompile(
-		`(?s)` + // Enable multiline mode (\s matches a new line).
-			`inet` + // Fixed prefix statement.
-			`\s+` + // Mandatory spacing.
-			// First matching group.
-			`(\S+\s*\S*\s*\d*)` + // ( ip_addr | * ) [ port ip_port ]
-			`\s+` + // Mandatory spacing.
-			`allow` + // Fixed statement.
-			`\s*\{\s*` + // Opening clause surrounded by optional spacing.
-			// Non-matching group repeated zero or more times.
-			`(?:\s*\S+\s*;\s*)*` + // address_match_list
-			`\s*\}` + // Closing clause prepended by an optional spacing.
-			// Second matching group.
-			`(.*)` + // keys { key_list }; (pattern matched below)
-			`;`, // Trailing semicolon.
-	)
-	match := pattern.FindStringSubmatch(excerpt)
-	if len(match) == 0 {
-		log.Warnf("Cannot parse BIND 9 inet configuration: no match (%+v)", config)
-		return "", 0, nil
-	}
-
-	inetSpec := regexp.MustCompile(`\s+`).Split(match[1], 3)
-	switch len(inetSpec) {
-	case 1:
-		address = inetSpec[0]
-	case 3:
-		address = inetSpec[0]
-		if inetSpec[1] != "port" {
-			log.Warnf("Cannot parse BIND 9 control port: bad port statement (%+v)", inetSpec)
-			return "", 0, nil
-		}
-
-		iPort, err := strconv.Atoi(inetSpec[2])
-		if err != nil {
-			log.Warnf("Cannot parse BIND 9 control port: %+v (%+v)", inetSpec, err)
-			return "", 0, nil
-		}
-		port = int64(iPort)
-	case 2:
-	default:
-		log.Warnf("Cannot parse BIND 9 inet_spec configuration: no match (%+v)", inetSpec)
-		return "", 0, nil
-	}
-
-	if len(match) == 3 {
-		// Find a key clause. This pattern is build up like this:
-		// keys\s*                - keys
-		// \{\s*                  - {
-		// \"(.*?)\"\s*;\s*       - key_list (first)
-		// (?:\s*\".*?\"\s*;\s*)* - key_list (remainder)
-		// \}                     - }
-		pattern = regexp.MustCompile(`(?s)keys\s*\{\s*\"(.*?)\"\s*;\s*(?:\s*\".*?\"\s*;\s*)*\}`)
-
-		keyName := pattern.FindStringSubmatch(match[2])
-		if len(keyName) > 1 {
-			key = getRndcKey(config, keyName[1])
-			if key == nil {
-				log.WithField("key", keyName[1]).Warn("Cannot find key details")
-			}
-		}
-	}
-
-	// The named-checkconf tool converts the asterisk (*) to the IPv4 wildcard
-	// address (0.0.0.0). I'm not sure if this worked the same way in previous
-	// versions of BIND9, so I keep the old behavior for now. I cannot find an
-	// exact place where the wildcard is converted in the BIND9 source code
-	// then I added the check for the zero IPv6 address too to be sure.
-	if address == "*" || address == "0.0.0.0" || address == "::" {
-		address = "localhost"
-	}
-
-	return address, port, key
-}
-
-// getCtrlAddressFromBind9Config retrieves the rndc control access address,
-// port, and secret key (if configured) from the configuration `text`.
-//
-// We need to cover the following cases:
-// - no controls clause - BIND9 will open a control socket on localhost
-// - empty controls clause - no control socket will be opened
-// - controls clause with keys - BIND9 will open a control socket
-//
-// Multiple controls clauses may be configured but currently this function
-// only matches the first one.  Multiple access points may be listed inside
-// a single controls clause, but this function currently only matches the
-// first in the list.  A controls clause may look like this:
-//
-//		controls {
-//			inet 127.0.0.1 allow {localhost;};
-//			inet * port 7766 allow {"rndc-users";};
-//	        keys {"rndc-remote";};
-//		};
-//
-// In this example, "rndc-users" and "rndc-remote" refer to an acl and key
-// clauses.
-//
-// Finding the key is done by looking if the control access point has a
-// keys parameter and if so, it looks in `path` for a key clause with the
-// same name.
-func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlPort int64, controlKey *Bind9RndcKey) {
-	// Match the following clause:
-	//     controls {
-	//         inet inet_spec [inet_spec] ;
-	//     };
-	// or
-	//     controls { /maybe some whitespace chars here/ };
-	pattern := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
-	controls := pattern.FindStringSubmatch(text)
-	if len(controls) == 0 {
-		// Try to load rndc key from the default locations.
-		for _, f := range getPotentialNamedConfLocations() {
-			rndcPath := path.Join(f, RndcKeyFile)
-			txt, err := os.ReadFile(rndcPath)
-			if err != nil {
-				log.Debugf("Tried to load %s, but failed: %v", rndcPath, err)
-			}
-
-			controlKey = getRndcKey(string(txt), "")
-			if controlKey != nil {
-				log.Debugf("Loaded rdnc key %s from the default location (%s)", controlKey.Name, rndcPath)
-				break
-			}
-		}
-
-		// We need to consider two cases here. First, there's rndc key file and we found it
-		// (the loop above found it). The rndc channel is configured, we detected the key
-		// and all is good. The alternative, however, is that there is no rndc key file on disk
-		// or we haven't found it. BIND will start without it, but will have rndc channel
-		// disabled. In this case we technically found BIND, but can't communicate with it.
-		// Our code doesn't have a good way to represent "BIND found, but can't communicate"
-		// scenario. In such case we return the defaults (127.0.0.0, port 953), but the key
-		// is nil and BIND doesn't listen.
-		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
-		return "127.0.0.1", 953, controlKey
-	}
-
-	// See if there's any non-whitespace characters in the controls clause.
-	// If not, there's `controls {};`, which means: disable control socket.
-	txt := strings.TrimSpace(controls[1])
-	if len(txt) == 0 {
-		log.Debugf("BIND9 has rndc support disabled (empty 'controls' found)")
-		return "", 0, nil
-	}
-
-	// We only pick the first match, but the controls clause
-	// can list multiple control access points.
-	controlAddress, controlPort, controlKey = parseInetSpec(text, controls[1])
-	if controlAddress != "" {
-		// If no port was provided, use the default rndc port.
-		if controlPort == 0 {
-			controlPort = RndcDefaultPort
-		}
-	}
-
-	return controlAddress, controlPort, controlKey
-}
-
-// getStatisticsChannelFromBind9Config retrieves the statistics channel access
-// address, port, and secret key (if configured) from the configuration `text`.
-//
-// Multiple statistics-channels clauses may be configured but currently this
-// function only matches the first one.  Multiple access points may be listed
-// inside a single controls clause, but this function currently only matches
-// the first in the list.  A statistics-channels clause may look like this:
-//
-//	statistics-channels {
-//		inet 10.1.10.10 port 8080 allow { 192.168.2.10; 10.1.10.2; };
-//		inet 127.0.0.1  port 8080 allow { "stats-clients" };
-//	};
-//
-// In this example, "stats-clients" refers to an acl clause.
-func getStatisticsChannelFromBind9Config(text string) (statsAddress string, statsPort int64) {
-	// Match the following clause:
-	//     statistics-channels {
-	//         inet inet_spec [inet_spec] ;
-	//     };
-	pattern := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
-	channels := pattern.FindStringSubmatch(text)
-	if len(channels) == 0 {
-		return "", 0
-	}
-
-	// We only pick the first match, but the statistics-channels clause
-	// can list multiple control access points.
-	statsAddress, statsPort, _ = parseInetSpec(text, channels[1])
-	if statsAddress != "" {
-		// If no port was provided, use the default statistics channel port.
-		if statsPort == 0 {
-			statsPort = StatsChannelDefaultPort
-		}
-	}
-	return statsAddress, statsPort
 }
 
 // Determine executable using base named directory or system default paths.
@@ -636,29 +363,16 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	}
 	prefixedBind9ConfPath := path.Join(rootPrefix, bind9ConfPath)
 
-	// run named-checkconf on main config file and get preprocessed content of whole config
-	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec, executor)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to determine BIND 9 executable %s", namedCheckconfExec)
-	}
-
-	// Prepare named-checkconf arguments.
-	args := []string{}
-	if rootPrefix != "" {
-		args = append(args, "-t", rootPrefix)
-	}
-	// The config path must be last.
-	args = append(args, "-p", bind9ConfPath)
-
-	out, err := executor.Output(namedCheckconfPath, args...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse BIND 9 config file %s", prefixedBind9ConfPath)
-	}
-	cfgText := string(out)
-
+	// Parse the BIND 9 config file.
 	bind9Config, err := parser.ParseFile(prefixedBind9ConfPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse BIND 9 config file %s", prefixedBind9ConfPath)
+	}
+
+	// Resolve include statements.
+	bind9Config, err = bind9Config.Expand(filepath.Dir(prefixedBind9ConfPath))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to expand BIND 9 config file %s", prefixedBind9ConfPath)
 	}
 
 	if bind9Config.HasNoParse() {
@@ -667,40 +381,60 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		log.Warn("BIND 9 config file contains @stork:no-parse directives. Skipping parsing selected config parts improves performance but may cause issues with interactions of the Stork agent with BIND 9. Make sure that you understand the implications of eliding selected config parts, e.g., allow-transfer statements in zones.")
 	}
 
+	// rndc.key file typically contains keys to be used for rndc authentication.
+	var rndcConfig *bind9config.Config
+	prefixedRndcKeyPath := filepath.Join(filepath.Dir(prefixedBind9ConfPath), "rndc.key")
+	if executor.IsFileExist(prefixedRndcKeyPath) {
+		rndcConfig, err = parser.ParseFile(prefixedRndcKeyPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse BIND 9 rndc key file %s", prefixedRndcKeyPath)
+		}
+	}
+
 	// look for control address in config
-	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
-	if ctrlPort == 0 || len(ctrlAddress) == 0 {
+	ctrlAddress, ctrlPort, ctrlKey, enabled, err := bind9Config.GetRndcCredentials(rndcConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get BIND 9 rndc credentials")
+	}
+	if !enabled {
 		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", prefixedBind9ConfPath)
 	}
 
 	rndcKey := ""
 	if ctrlKey != nil {
-		rndcKey = ctrlKey.String()
+		algorithm, secret, err := ctrlKey.GetAlgorithmSecret()
+		if err != nil {
+			return nil, err
+		}
+		rndcKey = fmt.Sprintf("%s:%s:%s", ctrlKey.Name, *algorithm, *secret)
+		log.WithFields(log.Fields{
+			"key": rndcKey,
+		}).Info("Found rndc key")
 	}
 
 	accessPoints := []AccessPoint{
 		{
 			Type:    AccessPointControl,
-			Address: ctrlAddress,
-			Port:    ctrlPort,
+			Address: *ctrlAddress,
+			Port:    *ctrlPort,
 			Key:     rndcKey,
 		},
 	}
 
 	// look for statistics channel address in config
 	var inventory *zoneInventory
-	address, port := getStatisticsChannelFromBind9Config(cfgText)
-	if port > 0 && len(address) != 0 {
+	address, port, enabled := bind9Config.GetStatisticsChannelCredentials()
+	if enabled {
 		accessPoints = append(accessPoints, AccessPoint{
 			Type:    AccessPointStatistics,
-			Address: address,
-			Port:    port,
+			Address: *address,
+			Port:    *port,
 		})
 		client := NewBind9StatsClient()
 		// For larger deployments, it may take several minutes to retrieve the
 		// zones from the BIND9 server.
 		client.SetRequestTimeout(time.Minute * 3)
-		inventory = newZoneInventory(newZoneInventoryStorageMemory(), bind9Config, client, address, port)
+		inventory = newZoneInventory(newZoneInventoryStorageMemory(), bind9Config, client, *address, *port)
 	} else {
 		log.Warn("BIND 9 `statistics-channels` clause unparsable or not found. Neither statistics export nor zone viewer will work.")
 		log.Warn("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")
@@ -711,10 +445,10 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	rndcClient := NewRndcClient(executor)
 	err = rndcClient.DetermineDetails(
 		baseNamedDir,
-		// RNDC client doesn't support chroot.
+		// rndc client doesn't support chroot.
 		path.Dir(prefixedBind9ConfPath),
-		ctrlAddress,
-		ctrlPort,
+		*ctrlAddress,
+		*ctrlPort,
 		ctrlKey,
 	)
 	if err != nil {

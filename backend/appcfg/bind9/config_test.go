@@ -844,6 +844,7 @@ func TestGetAPIKey(t *testing.T) {
 	require.Empty(t, cfg.GetAPIKey())
 }
 
+// Test getting the RNDC credentials when the controls statement is present.
 func TestGetRNDCCredentials(t *testing.T) {
 	config := `
 		key "rndc-key" {
@@ -858,20 +859,25 @@ func TestGetRNDCCredentials(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, keyName, algorithm, secret, err := cfg.GetRNDCCredentials()
+	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	require.True(t, enabled)
 	require.NoError(t, err)
 	require.NotNil(t, address)
 	require.Equal(t, "192.0.2.1", *address)
 	require.NotNil(t, port)
 	require.Equal(t, int64(953), *port)
-	require.NotNil(t, keyName)
-	require.Equal(t, "rndc-key", *keyName)
+	require.NotNil(t, key)
+	require.Equal(t, "rndc-key", key.Name)
+	algorithm, secret, err := key.GetAlgorithmSecret()
+	require.NoError(t, err)
 	require.NotNil(t, algorithm)
 	require.Equal(t, "hmac-sha256", *algorithm)
 	require.NotNil(t, secret)
 	require.Equal(t, "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=", *secret)
 }
 
+// Test getting the RNDC credentials when the key is not specified in the configuration
+// file.
 func TestGetRNDCCredentialsNoKey(t *testing.T) {
 	config := `
 		controls {
@@ -882,15 +888,16 @@ func TestGetRNDCCredentialsNoKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, keyName, algorithm, secret, err := cfg.GetRNDCCredentials()
+	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	require.True(t, enabled)
 	require.NoError(t, err)
 	require.Equal(t, "192.0.2.1", *address)
 	require.Equal(t, int64(953), *port)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Nil(t, key)
 }
 
+// Test that RNDC control channel is assumed to be disabled when the
+// controls statement does not contain an inet clause.
 func TestGetRNDCCredentialsNoInetClause(t *testing.T) {
 	config := `
 		controls {
@@ -901,10 +908,16 @@ func TestGetRNDCCredentialsNoInetClause(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	_, _, _, _, _, err = cfg.GetRNDCCredentials()
-	require.ErrorContains(t, err, "no RNDC credentials found")
+	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	require.False(t, enabled)
+	require.Nil(t, address)
+	require.Nil(t, port)
+	require.Nil(t, key)
+	require.NoError(t, err)
 }
 
+// Test that RNDC control channel is assumed to be disabled when the
+// controls statement is empty.
 func TestGetRNDCCredentialsEmptyControls(t *testing.T) {
 	config := `
 		controls { };
@@ -912,6 +925,182 @@ func TestGetRNDCCredentialsEmptyControls(t *testing.T) {
 	cfg, err := NewParser().Parse("", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
-	_, _, _, _, _, err = cfg.GetRNDCCredentials()
-	require.ErrorContains(t, err, "no RNDC credentials found")
+	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	require.False(t, enabled)
+	require.Nil(t, address)
+	require.Nil(t, port)
+	require.Nil(t, key)
+	require.NoError(t, err)
+}
+
+// Test that default credentials are assumed for the RNDC control channel
+// when the controls statement is not present.
+func TestGetRNDCCredentialsNoControls(t *testing.T) {
+	config := `
+		options {
+			directory "/var/cache/bind";
+			listen-on-v6  {
+				"any";
+			};
+			dnssec-validation auto;
+		};
+		zone "." {
+			type hint;
+			file "/usr/share/dns/root.hints";
+		};
+		zone "localhost" {
+			type master;
+			file "/etc/bind/db.local";
+		};
+		zone "127.in-addr.arpa" {
+			type master;
+			file "/etc/bind/db.127";
+		};`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	require.NoError(t, err)
+	require.True(t, enabled)
+	require.Equal(t, "127.0.0.1", *address)
+	require.EqualValues(t, 953, *port)
+	require.Nil(t, key)
+}
+
+// Test various cases of getting the rndc credentials when the keys
+// are specified in the config file or rndc.key file.
+func TestGetRNDCCredentialsNoControlsRNDCConfig(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		config                string
+		expectedRndcKey       string
+		expectedRndcKeySecret string
+	}{
+		{
+			name:                  "no controls",
+			config:                ``,
+			expectedRndcKey:       "rndc-key",
+			expectedRndcKeySecret: "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=",
+		},
+		{
+			name: "controls with rndc key",
+			config: `
+				controls {
+					inet 127.0.0.1 port 953 allow { 127.0.0.1; } keys { "rndc-key"; };
+				};
+			`,
+			expectedRndcKey:       "rndc-key",
+			expectedRndcKeySecret: "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=",
+		},
+		{
+			name: "controls with rndc key in config file",
+			config: `
+				key "rndc-key-in-config" {
+					algorithm hmac-sha256;
+					secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+				};
+				controls {
+					inet 127.0.0.1 port 953 allow { 127.0.0.1; } keys { "rndc-key-in-config"; };
+				};
+			`,
+			expectedRndcKey:       "rndc-key-in-config",
+			expectedRndcKeySecret: "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=",
+		},
+		{
+			name: "controls with rndc-key in rndc.key and config file",
+			config: `
+				key "rndc-key" {
+					algorithm hmac-sha256;
+					secret "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=";
+				};
+				controls {
+					inet 127.0.0.1 port 953 allow { 127.0.0.1; } keys { "rndc-key"; };
+				};
+			`,
+			expectedRndcKey:       "rndc-key",
+			expectedRndcKeySecret: "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=",
+		},
+	}
+	rndcConfig := `
+		key "rndc-key" {
+			algorithm hmac-sha256;
+			secret "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=";
+		};
+	`
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			rndcCfg, err := NewParser().Parse("", strings.NewReader(rndcConfig))
+			require.NoError(t, err)
+			require.NotNil(t, rndcCfg)
+
+			cfg, err := NewParser().Parse("", strings.NewReader(testCase.config))
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+
+			address, port, key, enabled, err := cfg.GetRndcCredentials(rndcCfg)
+			require.True(t, enabled)
+			require.NoError(t, err)
+			require.Equal(t, "127.0.0.1", *address)
+			require.EqualValues(t, 953, *port)
+			require.NotNil(t, key)
+			require.Equal(t, testCase.expectedRndcKey, key.Name)
+			algorithm, secret, err := key.GetAlgorithmSecret()
+			require.NoError(t, err)
+			require.NotNil(t, algorithm)
+			require.Equal(t, "hmac-sha256", *algorithm)
+			require.NotNil(t, secret)
+			require.Equal(t, testCase.expectedRndcKeySecret, *secret)
+		})
+	}
+}
+
+// Test parsing statistics-channels statement and returning the address and port.
+func TestGetStatisticsChannelCredentials(t *testing.T) {
+	config := `
+		statistics-channels {
+			inet 192.0.2.1 port 80 allow { 192.0.2.0/24; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, port, enabled := cfg.GetStatisticsChannelCredentials()
+	require.True(t, enabled)
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "192.0.2.1", *address)
+	require.NotNil(t, port)
+	require.Equal(t, int64(80), *port)
+}
+
+// Test that statistics-channels are not enabled when there is no inet clause.
+func TestGetStatisticsChannelCredentialsNoInetClause(t *testing.T) {
+	config := `
+		statistics-channels {};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, port, enabled := cfg.GetStatisticsChannelCredentials()
+	require.False(t, enabled)
+	require.Nil(t, address)
+	require.Nil(t, port)
+	require.NoError(t, err)
+}
+
+// Test that statistics-channels are not enabled when there is no statistics-channels statement.
+func TestGetStatisticsChannelCredentialsNoStatisticsChannels(t *testing.T) {
+	config := ``
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, port, enabled := cfg.GetStatisticsChannelCredentials()
+	require.False(t, enabled)
+	require.Nil(t, address)
+	require.Nil(t, port)
+	require.NoError(t, err)
 }

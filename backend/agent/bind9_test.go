@@ -124,63 +124,6 @@ threads support is enabled`
 	require.Equal(t, "", namedConf)
 }
 
-// Tests if getCtrlAddressFromBind9Config() can handle the right
-// cases:
-// - CASE 1: no controls block (use defaults)
-// - CASE 2: empty controls block (returns nothing)
-// - CASE 3: empty multi-line controls block with no options (returns nothing)
-// - CASE 4: controls block with options (return the address).
-func TestGetCtrlAddressFromBind9Config(t *testing.T) {
-	// Define test cases
-	type testCase struct {
-		config  string
-		expAddr string
-		expPort int64
-		expKey  string
-	}
-
-	testCases := map[string]testCase{
-		"CASE 1: default config from Ubuntu 22.04": {config: `
-		options {
-			directory "/var/cache/bind";
-			listen-on-v6  {
-				"any";
-			};
-			dnssec-validation auto;
-		};
-		zone "." {
-			type hint;
-			file "/usr/share/dns/root.hints";
-		};
-		zone "localhost" {
-			type master;
-			file "/etc/bind/db.local";
-		};
-		zone "127.in-addr.arpa" {
-			type master;
-			file "/etc/bind/db.127";
-		};`, expAddr: "127.0.0.1", expPort: 953, expKey: ""},
-		"CASE 2: empty controls section (disabled rndc)": {config: "controls { };", expAddr: "", expPort: 0, expKey: ""},
-		"CASE 3: empty multi-line controls section (disabled rndc)": {config: `controls
-	{
-
-};`, expAddr: "", expPort: 0, expKey: ""},
-		"CASE 4: added controls section with options": {config: `
-		controls {
-			inet 192.0.2.1 allow { localhost; };
-		};`, expAddr: "192.0.2.1", expPort: 953, expKey: ""},
-	}
-
-	for name, test := range testCases {
-		t.Run(name, func(t *testing.T) {
-			a, b, c := getCtrlAddressFromBind9Config(test.config)
-			require.Equal(t, a, test.expAddr)
-			require.Equal(t, b, test.expPort)
-			require.Nil(t, c, test.expKey)
-		})
-	}
-}
-
 // The command executor implementation for the testing purposes.
 // It implements the builder pattern for the configuration methods.
 type testCommandExecutor struct {
@@ -731,212 +674,6 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
-// Test that the empty string is returned if the configuration content is empty.
-func TestGetRndcKeyEmptyData(t *testing.T) {
-	require.Nil(t, getRndcKey("", "key"))
-}
-
-// Test that the empty string is returned if the configuration content contains
-// no 'key' clause.
-func TestGetRndcKeyInvalidData(t *testing.T) {
-	// Arrange
-	content := `
-		algorithm  "bar";
-		secret  "baz"
-	`
-
-	// Act & Assert
-	require.Nil(t, getRndcKey(content, "key"))
-}
-
-// Test that the empty string is returned if the key with a given name doesn't
-// exist.
-func TestGetRndcKeyUnknownKey(t *testing.T) {
-	// Arrange
-	content := `key "foo" {
-		algorithm  "bar";
-		secret  "baz";
-	};`
-
-	// Act & Assert
-	require.Nil(t, getRndcKey(content, "key"))
-}
-
-// Test that the first key is returned if a given key name is an empty string.
-func TestGetRndcKeyBlankName(t *testing.T) {
-	// Arrange
-	content := `key "foo" {
-		algorithm  "bar";
-		secret  "baz";
-	};`
-
-	// Act & Assert
-	require.NotNil(t, getRndcKey(content, ""))
-}
-
-// Test that the empty string is returned if the algorithm property is missing.
-func TestGetRndcKeyMissingAlgorithm(t *testing.T) {
-	// Arrange
-	content := `key "foo" {
-		secret  "baz";
-	};`
-
-	// Act & Assert
-	require.Nil(t, getRndcKey(content, "foo"))
-}
-
-// Test that the empty string is returned if the secret property is missing.
-func TestGetRndcKeyMissingSecret(t *testing.T) {
-	// Arrange
-	content := `key "foo" {
-		algorithm  "bar";
-	};`
-
-	// Act & Assert
-	require.Nil(t, getRndcKey(content, "foo"))
-}
-
-// Test that the combination of algorithm and secret is returned if the key
-// configuration entry is valid.
-func TestGetRndcKeyValidData(t *testing.T) {
-	// Arrange
-	content := `key "foo" {
-		algorithm  "bar";
-		secret  "baz";
-	};`
-
-	// Act
-	key := getRndcKey(content, "foo")
-
-	// Assert
-	require.NotNil(t, key)
-	require.EqualValues(t, "foo", key.Name)
-	require.EqualValues(t, "bar", key.Algorithm)
-	require.EqualValues(t, "baz", key.Secret)
-}
-
-// Test that the combination of algorithm and secret is returned if the key
-// configuration entry is valid.
-func TestGetRndcKeyValidDataMultipleKeys(t *testing.T) {
-	// Arrange
-	content := `key "oof" {
-		algorithm  "bar";
-		secret  "baz";
-	};
-
-	key "foo" {
-		algorithm  "bar";
-		secret  "baz";
-	};`
-
-	// Act
-	key := getRndcKey(content, "foo")
-
-	// Assert
-	require.NotNil(t, key)
-	require.EqualValues(t, "foo", key.Name)
-	require.EqualValues(t, "bar", key.Algorithm)
-	require.EqualValues(t, "baz", key.Secret)
-}
-
-// Test that the key name is recognized for various formatting styles of the
-// inet clause.
-func TestParseInetSpecForDifferentKeysFormatting(t *testing.T) {
-	// Arrange
-	keysClauses := map[string]string{
-		"single-name-single-space-around":    `keys { "rndc-key"; }`,
-		"single-name-redundant-space-around": `keys   {   "rndc-key"   ;   }  `,
-		"single-name-no-space-around":        `keys{"rndc-key";}`,
-		"multi-name-single-space-around":     `keys { "rndc-key"; "foo"; "bar"; }`,
-		"multi-name-redundant-space-around":  `keys  {   "rndc-key";   "foo";   "bar";   }  `,
-		"multi-name-no-space-around":         `keys{"rndc-key";"foo";"bar";}`,
-	}
-
-	allowClauses := map[string]string{
-		"localhost-hostname": "allow { localhost; }",
-		"localhost-ip":       "allow { 127.0.0.1; }",
-		"ip":                 "allow { 10.0.0.1; }",
-		"empty":              "allow { }",
-	}
-
-	for keysClauseName, keysClause := range keysClauses {
-		for allowClauseName, allowClause := range allowClauses {
-			testCaseName := fmt.Sprintf("%s_%s", keysClauseName, allowClauseName)
-			t.Run(testCaseName, func(t *testing.T) {
-				inetClause := fmt.Sprintf("inet 127.0.0.1 %s %s;", allowClause, keysClause)
-
-				config := fmt.Sprintf(`
-					controls {
-						%s
-					};
-
-					key "rndc-key" {
-						algorithm "algorithm";
-						secret "secret";
-					};
-				`, inetClause)
-
-				// Act
-				_, _, key := parseInetSpec(config, inetClause)
-
-				// Assert
-				require.NotNil(t, key)
-				require.EqualValues(t, "rndc-key", key.Name)
-				require.EqualValues(t, "algorithm", key.Algorithm)
-				require.EqualValues(t, "secret", key.Secret)
-			})
-		}
-	}
-}
-
-// Test that unquoted algorithm is parsed correctly. All other tests
-// use quoted input data.
-func TestGetRndcKeyUnquoted(t *testing.T) {
-	keyConfig := `key "rndc-key" {
-						algorithm hmac-sha256;
-						secret "secret";
-					};`
-	key := getRndcKey(keyConfig, "rndc-key")
-
-	require.NotNil(t, key)
-	require.EqualValues(t, "hmac-sha256", key.Algorithm)
-}
-
-// Test that the wildcard addresses are resolved to the localhost address.
-func TestParseInetSpecForDifferentWildcardAddresses(t *testing.T) {
-	// Arrange
-	addresses := []string{"*", "0.0.0.0", "::", "localhost"}
-
-	for _, address := range addresses {
-		inetClause := fmt.Sprintf("inet %s allow { };", address)
-
-		config := fmt.Sprintf(`
-			controls {
-				%s
-			};
-		`, inetClause)
-
-		// Act
-		address, _, _ := parseInetSpec(config, inetClause)
-
-		// Assert
-		require.Equal(t, "localhost", address)
-	}
-}
-
-// Test that the RNDC key is converted to string properly.
-func TestBind9RndcKeyString(t *testing.T) {
-	// Arrange
-	key := &Bind9RndcKey{
-		Name:      "foo",
-		Algorithm: "bar",
-		Secret:    "baz",
-	}
-
-	// Act & Assert
-	require.EqualValues(t, "foo:bar:baz", key.String())
-}
-
 // Test that the RNDC parameters are determined correctly if the RNDC key name
 // is not set and the default RNDC key exists.
 func TestDetermineDetailsUseDefaultKey(t *testing.T) {
@@ -987,7 +724,15 @@ func TestDetermineDetailsCustomKeyExistingConfig(t *testing.T) {
 		"-y", "name",
 		"-c", "/conf_dir/rndc.conf",
 	}
-	key := &Bind9RndcKey{Name: "name", Algorithm: "alg", Secret: "sec"}
+	key := &bind9config.Key{
+		Name: "name",
+		Clauses: []*bind9config.KeyClause{
+			{
+				Algorithm: "alg",
+				Secret:    "sec",
+			},
+		},
+	}
 
 	// Act
 	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
@@ -1013,7 +758,15 @@ func TestDetermineDetailsCustomKeyMissingConfigExistingKey(t *testing.T) {
 		// Use the -c flag instead of -k.
 		"-c", "/conf_dir/rndc.key",
 	}
-	key := &Bind9RndcKey{Name: "name", Algorithm: "alg", Secret: "sec"}
+	key := &bind9config.Key{
+		Name: "name",
+		Clauses: []*bind9config.KeyClause{
+			{
+				Algorithm: "alg",
+				Secret:    "sec",
+			},
+		},
+	}
 
 	// Act
 	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
@@ -1036,7 +789,15 @@ func TestDetermineDetailsCustomKeyMissingConfigMissingKey(t *testing.T) {
 		"-p", "42",
 		"-y", "name",
 	}
-	key := &Bind9RndcKey{Name: "name", Algorithm: "alg", Secret: "sec"}
+	key := &bind9config.Key{
+		Name: "name",
+		Clauses: []*bind9config.KeyClause{
+			{
+				Algorithm: "alg",
+				Secret:    "sec",
+			},
+		},
+	}
 
 	// Act
 	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
