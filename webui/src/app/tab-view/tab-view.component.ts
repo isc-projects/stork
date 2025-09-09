@@ -597,7 +597,10 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
     goToFirstTab(tabNavigation = false) {
         if (this.routePath()) {
             console.log('go to first tab using router')
-            this.router.navigate([this.firstTabRoute()], { queryParams: this.firstTabQueryParams(), fragment: tabNavigation ? this.tabNavigationRouteFragment() : undefined })
+            this.router.navigate([this.firstTabRoute()], {
+                queryParams: this.firstTabQueryParams(),
+                fragment: tabNavigation ? this.tabNavigationRouteFragment() : undefined,
+            })
         } else {
             console.log('go to first tab without using router')
             this.activeTabEntityID = this.openTabs[0]?.value || 0

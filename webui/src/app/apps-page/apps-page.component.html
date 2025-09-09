@@ -13,7 +13,7 @@
         apps: { type: 'enum', matchMode: 'equals', arrayType: true, enumValues: ['kea', 'pdns', 'bind9'] },
     }"
 >
-    <ng-template #firstTab let-onRefreshApp="updateTabEntityFn">
+    <ng-template #firstTab>
         <div class="my-2 flex gap-2 flex-wrap justify-content-end">
             <p-button
                 id="apps-refresh-button"
@@ -178,7 +178,7 @@
                             type="button"
                             pButton
                             icon="pi pi-bars"
-                            (click)="showAppMenu($event, onRefreshApp, a.id)"
+                            (click)="showAppMenu($event, a.id)"
                         ></button>
                     </td>
                 </tr>

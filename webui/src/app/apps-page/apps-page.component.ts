@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
@@ -12,6 +12,7 @@ import { distinctUntilChanged, finalize, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
+import { TabViewComponent } from '../tab-view/tab-view.component'
 
 /**
  * Replaces the newlines in the versions with the HTML-compatible line breaks.
@@ -164,17 +165,18 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             })
     }
 
+    tabView = viewChild(TabViewComponent)
+
     /**
      * Callback called on click on the application menu button.
      *
      * @param event
-     * @param onRefreshAppFn
      * @param appID
      */
-    showAppMenu(event: Event, onRefreshAppFn: (appID: number) => void, appID: number) {
+    showAppMenu(event: Event, appID: number) {
         // connect method to refresh machine state
         this.appMenuItems[0].command = () => {
-            onRefreshAppFn(appID)
+            this.tabView()?.onUpdateTabEntity(appID)
         }
 
         this.appMenu.toggle(event)

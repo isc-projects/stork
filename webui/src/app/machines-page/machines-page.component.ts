@@ -1,5 +1,5 @@
-import { ChangeDetectorRef, Component, computed, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
-import { ActivatedRoute, Router } from '@angular/router'
+import { Component, computed, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { Router } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 import { BehaviorSubject, concat, lastValueFrom, Observable } from 'rxjs'
@@ -202,34 +202,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      */
     @ViewChild('machineMenu') machineMenu: Menu
     machineProvider: (id: number) => Promise<Machine> = (machineID: number) => {
-        // this.dataLoading = true
-        return lastValueFrom(
-            this.servicesApi.getMachine(machineID)
-            // .pipe(
-            // map((data) => {
-            //     htmlizeExtVersion(data)
-            //     setDaemonStatusErred(data)
-            //     return data
-            // }),
-            // finalize(() => (this.dataLoading = false))
-            // )
-        )
-        // lastValueFrom(this.servicesApi.getMachine(numericId))
-        //     .then((machine) => {
-        //         this.addMachineTab(machine)
-        //         this.switchToTab(this.tabs.length - 1)
-        //     })
-        //     .catch((err) => {
-        //         const msg = getErrorMessage(err)
-        //         this.msgSrv.add({
-        //             severity: 'error',
-        //             summary: 'Cannot get machine',
-        //             detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
-        //             life: 10000,
-        //         })
-        //         this.machinesTable?.loadDataWithoutFilter()
-        //         this.switchToTab(0)
-        //     })
+        return lastValueFrom(this.servicesApi.getMachine(machineID))
     }
 
     machines: Machine[] = []
@@ -247,14 +220,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * @param authService authentication and authorization service for customizing the component based on user privileges
      */
     constructor(
-        private route: ActivatedRoute,
         private router: Router,
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         private serverData: ServerDataService,
         private settingsService: SettingsService,
         private confirmationService: ConfirmationService,
-        private cd: ChangeDetectorRef,
         private authService: AuthService
     ) {}
 

@@ -147,7 +147,7 @@ export class AppComponent implements OnInit, OnDestroy {
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/all',
-                        queryParams: {apps: 'kea'}
+                        queryParams: { apps: 'kea' },
                     },
                     {
                         label: 'DNS Apps',
@@ -155,7 +155,7 @@ export class AppComponent implements OnInit, OnDestroy {
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/all',
-                        queryParams: {apps: ['bind9', 'pdns']}
+                        queryParams: { apps: ['bind9', 'pdns'] },
                     },
                     {
                         label: 'Machines',
