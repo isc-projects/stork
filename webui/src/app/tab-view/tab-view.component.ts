@@ -524,6 +524,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
         let entityToOpen = undefined
         // First let's check entities collection. Maybe the entity is there.
         if (this.entitiesCollection()) {
+            console.log('openTab - collection check', this.entitiesCollection())
             entityToOpen = this.entitiesCollection().find((entity) => this.getID(entity) === entityID)
         }
 
@@ -546,6 +547,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
                         severity: 'error',
                         summary: `Error opening tab`,
                     })
+                    this.goToFirstTab()
                 })
             return
             // console.log('result in parent from child callable', res)
@@ -584,7 +586,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
             const closedTab = this.openTabs.splice(tabToCloseIndex, 1)
             this.tabClosed.emit(closedTab[0])
             if (tabToCloseIndex <= activeTabIndex) {
-                this.goToFirstTab()
+                this.goToFirstTab(true)
             }
         }
     }
@@ -592,10 +594,10 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
     /**
      * Activates first tab.
      */
-    goToFirstTab() {
+    goToFirstTab(tabNavigation = false) {
         if (this.routePath()) {
             console.log('go to first tab using router')
-            this.router.navigate([this.firstTabRoute()], { queryParams: this.firstTabQueryParams() })
+            this.router.navigate([this.firstTabRoute()], { queryParams: this.firstTabQueryParams(), fragment: tabNavigation ? this.tabNavigationRouteFragment() : undefined })
         } else {
             console.log('go to first tab without using router')
             this.activeTabEntityID = this.openTabs[0]?.value || 0
@@ -847,7 +849,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
                                 severity: 'error',
                                 summary: `Error opening tab`,
                             })
-                            this.activeTabEntityID = 0
+                            this.goToFirstTab()
                             return
                         }
                     },
