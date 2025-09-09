@@ -235,7 +235,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
 
     @Input() newFormProvider: () => TForm
 
-    @Input() entityTitleProvider: (entity: TEntity) => string = undefined
+    @Input() entityTitleProvider: (entity: TEntity) => string = () => undefined
 
     /**
      * Defines the template for the first tab content (first tab is optional; very often it is a table with the entities).
