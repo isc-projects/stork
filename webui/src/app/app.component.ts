@@ -142,11 +142,20 @@ export class AppComponent implements OnInit, OnDestroy {
                 id: 'services',
                 items: [
                     {
-                        label: 'Apps',
-                        id: 'apps',
+                        label: 'Kea Apps',
+                        id: 'kea-apps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/all',
+                        queryParams: {apps: 'kea'}
+                    },
+                    {
+                        label: 'DNS Apps',
+                        id: 'dns-apps',
+                        visible: false,
+                        icon: 'fa fa-server',
+                        routerLink: '/apps/all',
+                        queryParams: {apps: ['bind9', 'pdns']}
                     },
                     {
                         label: 'Machines',
@@ -327,15 +336,28 @@ export class AppComponent implements OnInit, OnDestroy {
                     )
 
                     this.serverData.getAppsStats().subscribe((data) => {
-                        // If there are any apps, show the Apps menu item.
-                        const appsMenuItem = this.getMenuItem('Apps')
-                        appsMenuItem['visible'] = !!data.keaAppsTotal || !!data.dnsAppsTotal
-                        // If there are Kea apps, show the DHCP menu item.
+                        // if there are Kea apps then show Kea related menu items
+                        // otherwise hide them
                         const dhcpMenuItem = this.getMenuItem('DHCP')
-                        dhcpMenuItem['visible'] = !!data.keaAppsTotal
-                        // If there are DNS apps, show the DNS menu item.
+                        const keaAppsMenuItem = this.getMenuItem('Kea Apps')
+                        if (data.keaAppsTotal) {
+                            dhcpMenuItem.visible = true
+                            keaAppsMenuItem['visible'] = true
+                        } else {
+                            dhcpMenuItem.visible = false
+                            keaAppsMenuItem['visible'] = false
+                        }
+                        // if there are DNS apps then show DNS related menu items
+                        // otherwise hide them
+                        const dnsAppsMenuItem = this.getMenuItem('DNS Apps')
                         const dnsMenuItem = this.getMenuItem('DNS')
-                        dnsMenuItem['visible'] = !!data.dnsAppsTotal
+                        if (data.dnsAppsTotal) {
+                            dnsAppsMenuItem['visible'] = true
+                            dnsMenuItem['visible'] = true
+                        } else {
+                            dnsAppsMenuItem['visible'] = false
+                            dnsMenuItem['visible'] = false
+                        }
 
                         // force refresh of top menu in UI
                         this.menuItems = [...this.menuItems]
