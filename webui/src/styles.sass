@@ -70,6 +70,10 @@
   button.app-disabled.p-disabled
     pointer-events: auto !important
 
+  // In case PrimeNG input element is an flex item, apply min-width value zero to allow flex shrinking.
+  .p-inputwrapper > .p-component
+    min-width: 0
+
   // Utility class to apply on form elements.
   // Take full width and limit that with one global width value.
   .max-w-form

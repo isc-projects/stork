@@ -173,7 +173,7 @@ export class HostsTableComponent implements OnInit, OnDestroy {
             this._tableFilter$
                 .pipe(
                     map((f) => {
-                        return { ...f, value: f.value || null }
+                        return { ...f, value: f.value ?? null }
                     }),
                     debounceTime(300),
                     distinctUntilChanged(),
@@ -265,9 +265,16 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      *
      * @param value
      * @param filterConstraint
+     * @param debounceMode
      */
-    filterTable(value: any, filterConstraint: FilterMetadata): void {
-        this._tableFilter$.next({ value, filterConstraint })
+    filterTable(value: any, filterConstraint: FilterMetadata, debounceMode = true): void {
+        if (debounceMode) {
+            this._tableFilter$.next({ value, filterConstraint })
+            return
+        }
+
+        filterConstraint.value = value
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
     }
 
     protected readonly tableHasFilter = tableHasFilter

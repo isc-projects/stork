@@ -117,7 +117,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         this._subscriptions = this._tableFilter$
             .pipe(
                 map((f) => {
-                    return { ...f, value: f.value || null }
+                    return { ...f, value: f.value ?? null }
                 }),
                 debounceTime(300),
                 distinctUntilChanged(),
