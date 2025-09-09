@@ -170,6 +170,7 @@ import { DaemonNiceNamePipe } from './pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from './bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from './pdns-daemon/pdns-daemon.component'
 import { TabViewComponent } from './tab-view/tab-view.component'
+import { TriStateCheckboxComponent } from './tri-state-checkbox/tri-state-checkbox.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -358,6 +359,7 @@ const AuraBluePreset = definePreset(Aura, {
         TabViewComponent,
         IconField,
         InputIcon,
+        TriStateCheckboxComponent,
     ],
     providers: [
         {

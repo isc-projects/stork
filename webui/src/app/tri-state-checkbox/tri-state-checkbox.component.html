@@ -1,0 +1,21 @@
+<!--<input-->
+<!--    type="checkbox"-->
+<!--    [checked]="value() ?? false"-->
+<!--    [indeterminate]="value() === null"-->
+<!--    (click)="onClick()"-->
+<!--    (keydown)="onKeyDown($event)"-->
+<!--    [id]="inputID()"-->
+<!--    [disabled]="disabled()"-->
+<!--/>-->
+@if (label() && inputID()) {
+    <label [for]="inputID()" class="mr-1">{{ label() }}</label>
+}
+<p-checkbox
+    [inputId]="inputID()"
+    [indeterminate]="value() === null"
+    [ngModel]="value() ?? false"
+    [disabled]="disabled()"
+    (click)="onClick()"
+    (keydown)="onKeyDown($event)"
+    [binary]="true"
+/>
