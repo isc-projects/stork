@@ -101,27 +101,27 @@
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter
-                        type="boolean"
-                        field="authorized"
-                        matchMode="equals"
-                        [showMenu]="false"
-                        [showClearButton]="false"
+                    type="boolean"
+                    field="authorized"
+                    matchMode="equals"
+                    [showMenu]="false"
+                    [showClearButton]="false"
                 >
                     <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                         <div class="flex align-items-center">
                             <app-tri-state-checkbox
-                                    label="Authorized"
-                                    inputID="authorized-filter"
-                                    [value]="value"
-                                    (valueChange)="filterTable($event, filterConstraint, false)"
+                                label="Authorized"
+                                inputID="authorized-filter"
+                                [value]="value"
+                                (valueChange)="filterTable($event, filterConstraint, false)"
                             />
                             <p-button
-                                    icon="pi pi-filter-slash"
-                                    [rounded]="true"
-                                    [text]="true"
-                                    severity="secondary"
-                                    [styleClass]="value === null ? 'hidden-space' : ''"
-                                    (onClick)="clearFilter(filterConstraint)"
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value === null ? 'hidden-space' : ''"
+                                (onClick)="clearFilter(filterConstraint)"
                             />
                         </div>
                     </ng-template>

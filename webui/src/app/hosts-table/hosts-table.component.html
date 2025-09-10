@@ -76,7 +76,7 @@
     [rowsPerPageOptions]="[10, 30, 100]"
     [showCurrentPageReport]="true"
     currentPageReportTemplate="{currentPage} of {totalPages} pages"
-    styleClass="p-datatable-striped"
+    [stripedRows]="true"
 >
     <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">

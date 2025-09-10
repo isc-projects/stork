@@ -1,9 +1,9 @@
 <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
-    <div class="flex align-items-center flex-auto">
-        <div *ngIf="filterTextFormatErrors?.length > 0">
-            <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
-        </div>
-    </div>
+    <!--    <div class="flex align-items-center flex-auto">-->
+    <!--        <div *ngIf="filterTextFormatErrors?.length > 0">-->
+    <!--            <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>-->
+    <!--        </div>-->
+    <!--    </div>-->
     <a
         label="New Subnet"
         icon="pi pi-plus"
@@ -18,7 +18,7 @@
         label="Refresh List"
         icon="pi pi-refresh"
         styleClass="block p-button-primary no-underline"
-        (onClick)="reloadData(subnetsTable)"
+        (onClick)="loadData(subnetsTable.createLazyLoadMetadata())"
     ></p-button>
 </div>
 
@@ -31,16 +31,11 @@
     [loading]="dataLoading"
     (onLazyLoad)="loadData($event)"
     [lazyLoadOnInit]="false"
-    (onStateRestore)="stateRestored($event, subnetsTable)"
-    (onStateSave)="stateSaved(subnetsTable)"
-    (onFilter)="onFilter()"
     [totalRecords]="totalRecords"
     [rowsPerPageOptions]="[10, 30, 100]"
     [showCurrentPageReport]="true"
-    stateStorage="session"
-    [stateKey]="stateKey"
-    [currentPageReportTemplate]="currentPageReportTemplate"
-    styleClass="p-datatable-striped"
+    currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    [stripedRows]="true"
 >
     <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -60,7 +55,7 @@
                         icon="pi pi-check"
                         value="Filter applied"
                         severity="success"
-                        *ngIf="hasFilter(subnetsTable)"
+                        *ngIf="tableHasFilter(subnetsTable)"
                         [rounded]="true"
                     ></p-tag>
                     <app-help-tip subject="filtering" id="filtering-help-button">
@@ -94,77 +89,118 @@
                 <button
                     pButton
                     label="Clear"
-                    [class.p-button-warning]="hasFilter(subnetsTable)"
-                    [class.p-button-secondary]="!hasFilter(subnetsTable)"
+                    [class.p-button-warning]="tableHasFilter(subnetsTable)"
+                    [class.p-button-secondary]="!tableHasFilter(subnetsTable)"
                     icon="pi pi-filter-slash"
-                    (click)="clearFilters(subnetsTable)"
-                    [disabled]="!hasFilter(subnetsTable)"
+                    (click)="clearTableState()"
+                    [disabled]="!tableHasFilter(subnetsTable)"
                 ></button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
+                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatlabel>
-                            <p-inputNumber
-                                inputId="app-id"
-                                mode="decimal"
-                                [useGrouping]="false"
-                                min="1"
-                                (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
-                                [ngModel]="value"
-                                [disabled]="hasPrefilter()"
-                                class="max-w-8rem"
-                            ></p-inputNumber>
-                            <label for="app-id">Kea App ID</label>
-                        </p-floatlabel>
-                    </ng-template>
-                </p-columnFilter>
-                <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatlabel>
-                            <p-inputNumber
-                                inputId="subnet-id"
-                                mode="decimal"
-                                [useGrouping]="false"
-                                min="1"
-                                (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
-                                [ngModel]="value"
-                                class="max-w-8rem"
-                            ></p-inputNumber>
-                            <label for="subnet-id">Subnet ID</label>
-                        </p-floatlabel>
-                    </ng-template>
-                </p-columnFilter>
-                <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <p-floatlabel>
-                            <p-select
-                                inputId="dhcp-version"
-                                [options]="[
-                                    { label: 'DHCPv4', value: 4 },
-                                    { label: 'DHCPv6', value: 6 },
-                                ]"
-                                optionLabel="label"
-                                optionValue="value"
-                                (onChange)="filterTable($event.value, filterMetadata)"
-                                [ngModel]="value"
-                                styleClass="w-10rem"
-                            ></p-select>
-                            <label for="dhcp-version">DHCP Version</label>
-                        </p-floatlabel>
-                    </ng-template>
-                </p-columnFilter>
-                <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <span class="p-input-icon-left">
-                            <i class="pi pi-search"></i>
-                            <input
-                                pInputText
-                                type="text"
-                                (input)="filterTable($event.target.value, filterMetadata)"
-                                [ngModel]="value"
-                                placeholder="Search IP or identifier"
+                        <div class="flex align-items-center">
+                            <p-floatlabel>
+                                <p-inputNumber
+                                    inputId="app-id"
+                                    mode="decimal"
+                                    [useGrouping]="false"
+                                    min="1"
+                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    class="max-w-8rem"
+                                ></p-inputNumber>
+                                <label for="app-id">Kea App ID</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
                             />
-                        </span>
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <p-floatlabel>
+                                <p-inputNumber
+                                    inputId="subnet-id"
+                                    mode="decimal"
+                                    [useGrouping]="false"
+                                    min="1"
+                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    class="max-w-8rem"
+                                ></p-inputNumber>
+                                <label for="subnet-id">Subnet ID</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <p-floatlabel>
+                                <p-select
+                                    inputId="dhcp-version"
+                                    [options]="[
+                                        { label: 'DHCPv4', value: '4' },
+                                        { label: 'DHCPv6', value: '6' },
+                                    ]"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    (onChange)="filterTable($event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    styleClass="w-10rem"
+                                ></p-select>
+                                <label for="dhcp-version">DHCP Version</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex">
+                            <p-iconfield iconPosition="left">
+                                <p-inputicon>
+                                    <i class="pi pi-search"></i>
+                                </p-inputicon>
+                                <input
+                                    pInputText
+                                    type="text"
+                                    (input)="filterTable($event.target.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    placeholder="Search IP or identifier"
+                                />
+                            </p-iconfield>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
                     </ng-template>
                 </p-columnFilter>
             </div>
@@ -298,14 +334,14 @@
         <tr>
             <td colspan="9">
                 No subnets found.
-                <span *ngIf="hasFilter(subnetsTable)">
+                <span *ngIf="tableHasFilter(subnetsTable)">
                     Clear filtering and try again.
                     <button
                         pButton
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
-                        (click)="clearFilters(subnetsTable)"
+                        (click)="clearTableState()"
                     ></button>
                 </span>
             </td>

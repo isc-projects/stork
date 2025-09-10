@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute, EventType } from '@angular/router'
 
 import { DHCPService } from '../backend/api/api'
@@ -12,6 +12,8 @@ import { MenuItem, MessageService } from 'primeng/api'
 import { SubnetFormState } from '../forms/subnet-form'
 import { Tab, TabType } from '../tab'
 import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
+import { SubnetForm } from '../forms/subnet-set-form.service'
+import {ComponentTab} from "../tab-view/tab-view.component";
 
 /**
  * Component for presenting DHCP subnets.
@@ -34,6 +36,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Table with subnets component.
      */
     @ViewChild('subnetsTableComponent') table: SubnetsTableComponent
+
+    tableSignal = viewChild<SubnetsTableComponent>('subnetsTableComponent')
 
     // Tab menu
 
@@ -84,6 +88,18 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * ID of the DHCPv6 dashboard in Grafana.
      */
     grafanaDhcp6DashboardId: string
+    subnetProvider: (id: number) => Promise<Subnet> = (id) =>
+        lastValueFrom(
+            // Fetch data from API.
+            this.dhcpApi.getSubnet(id).pipe(
+                map((subnet) => {
+                    parseSubnetStatisticValues(subnet)
+                    subnet = extractUniqueSubnetPools(subnet)[0]
+                    return subnet
+                })
+            )
+        )
+    subnetFormProvider: () => SubnetFormState = () => new SubnetFormState()
 
     constructor(
         private route: ActivatedRoute,
@@ -130,52 +146,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * especially PrimeNG table in SubnetsTableComponent, are initialized.
      */
     ngAfterViewInit(): void {
-        this.router.events
-            .pipe(
-                filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
-                catchError((err) => {
-                    const msg = getErrorMessage(err)
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Cannot process the URL query',
-                        detail: msg,
-                        life: 10000,
-                    })
-                    return EMPTY
-                })
-            )
-            .subscribe(() => {
-                const paramMap = this.route.snapshot.paramMap
-                const queryParamMap = this.route.snapshot.queryParamMap
-
-                // Apply to the changes of the subnet id, e.g. from /dhcp/subnets/all to
-                // /dhcp/subnets/1. Those changes are triggered by switching between the
-                // tabs.
-
-                // Get subnet id.
-                const id = paramMap.get('id')
-                if (!id || id === 'all') {
-                    // Update the filter only if the target is subnet list.
-                    this.table?.updateFilterFromQueryParameters(queryParamMap)
-                    this.switchToTab(0)
-                    return
-                }
-                if (id === 'new') {
-                    this.openNewSubnetTab()
-                    return
-                }
-                const numericId = parseInt(id, 10)
-                if (!Number.isNaN(numericId)) {
-                    // The path has a numeric id indicating that we should
-                    // open a tab with selected subnet information or switch
-                    // to this tab if it has been already opened.
-                    this.openTabBySubnetId(numericId)
-                } else {
-                    // In case of failed Id parsing, open list tab.
-                    this.switchToTab(0)
-                    this.table?.loadDataWithoutFilter()
-                }
-            })
+        console.log('subnets-page ngAfterViewInit')
     }
 
     /**
@@ -497,6 +468,49 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         if (index >= 0) {
             // Close the tab.
             this.closeTabByIndex(index)
+        }
+    }
+
+    protected readonly TabType = TabType;
+
+    cancelSubnetUpdateTransaction(subnetID: number, transactionID: number) {
+        lastValueFrom(this.dhcpApi.updateSubnetDelete(subnetID, transactionID)).catch((err) => {
+            const msg = getErrorMessage(err)
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Failed to delete configuration transaction',
+                detail: 'Failed to delete configuration transaction: ' + msg,
+                life: 10000,
+            })
+        })
+    }
+
+    /**
+     *
+     * @param tab
+     */
+    onTabClosed(tab: ComponentTab) {
+        if (!tab.form) {
+            return
+        }
+
+        const transactionID = (tab.form.formState as SubnetFormState).transactionId
+        if (tab.tabType === TabType.New && transactionID > 0 && !tab.form.submitted) {
+            lastValueFrom(this.dhcpApi.createSubnetDelete(transactionID)).catch((err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to delete configuration transaction',
+                    detail: 'Failed to delete configuration transaction: ' + msg,
+                    life: 10000,
+                })
+            })
+        } else if (tab.tabType === TabType.Edit && tab.value > 0 && transactionID > 0 && !tab.form.submitted) {
+            this.cancelSubnetUpdateTransaction(tab.value, transactionID)
         }
     }
 }

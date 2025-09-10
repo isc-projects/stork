@@ -1,11 +1,11 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { PrefilteredTable } from '../table'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { Location } from '@angular/common'
-import { lastValueFrom } from 'rxjs'
+import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
     getTotalAddresses,
@@ -14,7 +14,8 @@ import {
     SubnetWithUniquePools,
     extractUniqueSubnetPools,
 } from '../subnets'
-import { map } from 'rxjs/operators'
+import { distinctUntilChanged, map } from 'rxjs/operators'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 /**
  * Specifies the filter parameters for fetching subnets that may be specified
@@ -32,10 +33,7 @@ export interface SubnetsFilter {
     templateUrl: './subnets-table.component.html',
     styleUrl: './subnets-table.component.sass',
 })
-export class SubnetsTableComponent
-    extends PrefilteredTable<SubnetsFilter, SubnetWithUniquePools>
-    implements OnInit, OnDestroy
-{
+export class SubnetsTableComponent implements OnInit, OnDestroy {
     /**
      * Array of all numeric keys that are supported when filtering subnets via URL queryParams.
      * Note that it doesn't have to contain subnets prefilterKey, which is 'appId'.
@@ -98,15 +96,15 @@ export class SubnetsTableComponent
      * Indicates if the data is being fetched from the server.
      */
     @Input() dataLoading: boolean = false
+    dataCollection: Subnet[] = []
+    totalRecords: number = 0
+    private _subscriptions: Subscription = new Subscription()
 
     constructor(
-        route: ActivatedRoute,
         private dhcpApi: DHCPService,
         private messageService: MessageService,
-        location: Location
-    ) {
-        super(route, location)
-    }
+        private router: Router
+    ) {}
 
     /**
      * Loads subnets from the database into the component.
@@ -126,10 +124,10 @@ export class SubnetsTableComponent
                 .getSubnets(
                     event.first,
                     event.rows,
-                    this.prefilterValue ?? this.getTableFilterValue('appId', event.filters),
-                    this.getTableFilterValue('subnetId', event.filters),
-                    this.getTableFilterValue('dhcpVersion', event.filters),
-                    this.getTableFilterValue('text', event.filters)
+                    (event.filters['appId'] as FilterMetadata)?.value ?? null,
+                    (event.filters['subnetId'] as FilterMetadata)?.value ?? null,
+                    (event.filters['dhcpVersion'] as FilterMetadata)?.value ?? null,
+                    (event.filters['text'] as FilterMetadata)?.value || null
                 )
                 // Custom parsing for statistics
                 .pipe(
@@ -161,14 +159,34 @@ export class SubnetsTableComponent
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        super.onDestroy()
+        this._tableFilter$.complete()
+        this._subscriptions.unsubscribe()
     }
 
     /**
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        super.onInit()
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    map((f) => {
+                        return { ...f, value: f.value ?? null }
+                    }),
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        // this.zone.run(() =>
+                        this.router.navigate(
+                            [],
+                            { queryParams: tableFiltersToQueryParams(this.table) }
+                            // )
+                        )
+                    })
+                )
+                .subscribe()
+        )
     }
 
     /**
@@ -272,5 +290,39 @@ export class SubnetsTableComponent
      */
     getGrafanaTooltip(subnet: number, machine: string) {
         return getGrafanaSubnetTooltip(subnet, machine)
+    }
+
+    protected readonly tableHasFilter = tableHasFilter
+
+    clearTableState() {
+        this.table?.clear()
+        this.router.navigate([])
+    }
+
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
+     *
+     * @param value
+     * @param filterConstraint
+     * @param debounceMode
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata, debounceMode = true): void {
+        if (debounceMode) {
+            this._tableFilter$.next({ value, filterConstraint })
+            return
+        }
+
+        filterConstraint.value = value
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
+    }
+
+    /**
+     *
+     * @param filterConstraint
+     */
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
     }
 }

@@ -444,6 +444,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
             if (!existingTab.form) {
                 existingTab.form = { submitted: false, formState: this.newFormProvider() }
             }
+
             console.log('onBeginEntityEdit found tab after', existingTab)
         }
 

@@ -236,10 +236,10 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
      * @private
      */
     private specificComponents: any[] = [
-        HostsPageComponent,
-        SubnetsPageComponent,
-        SharedNetworksPageComponent,
-        MachinesPageComponent,
+        // HostsPageComponent,
+        // SubnetsPageComponent,
+        // SharedNetworksPageComponent,
+        // MachinesPageComponent,
     ]
 
     /**

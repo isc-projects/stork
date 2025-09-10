@@ -12,25 +12,84 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a
-            role="menuitem"
-            pRipple
-            [routerLink]="item.routerLink"
-            [queryParams]="i === 0 ? subnetsTableComponent?.validFilter : null"
-            class="p-ripple p-element p-menuitem-link"
-        >
-            <div class="flex justify-content-space-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>
-            </div>
-        </a>
+<!--<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">-->
+<!--    <ng-template pTemplate="item" let-item let-i="index">-->
+<!--        <a-->
+<!--            role="menuitem"-->
+<!--            pRipple-->
+<!--            [routerLink]="item.routerLink"-->
+<!--            [queryParams]="i === 0 ? subnetsTableComponent?.validFilter : null"-->
+<!--            class="p-ripple p-element p-menuitem-link"-->
+<!--        >-->
+<!--            <div class="flex justify-content-space-between">-->
+<!--                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>-->
+<!--                <div class="p-menuitem-text">-->
+<!--                    <b>{{ item.label }}</b>-->
+<!--                </div>-->
+<!--                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>-->
+<!--            </div>-->
+<!--        </a>-->
+<!--    </ng-template>-->
+<!--</p-tabMenu>-->
+<app-tab-view
+    #tabView
+    routePath="/dhcp/subnets/"
+    [entityProvider]="subnetProvider"
+    [newFormProvider]="subnetFormProvider"
+    entityTitleKey="subnet"
+    [tableQueryParamFilters]="{
+        subnetId: { type: 'numeric', matchMode: 'equals' },
+        appId: { type: 'numeric', matchMode: 'equals' },
+        dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
+        text: { type: 'string', matchMode: 'contains' },
+    }"
+    [inputTable]="tableSignal()?.table"
+    entityTypeName="Subnet"
+    (tabClosed)="onTabClosed($event)"
+>
+    <ng-template #firstTab>
+        <app-subnets-table
+            #subnetsTableComponent
+            [grafanaUrl]="grafanaUrl"
+            [grafanaDhcp4DashboardId]="grafanaDhcp4DashboardId"
+            [grafanaDhcp6DashboardId]="grafanaDhcp6DashboardId"
+            [dataLoading]="loading"
+        ></app-subnets-table>
     </ng-template>
-</p-tabMenu>
+    <ng-template #entityTab let-subnet let-onSubnetEditBegin="beginEntityEditFn">
+        <app-subnet-tab
+            [subnet]="subnet"
+            (subnetEditBegin)="onSubnetEditBegin(subnet.id)"
+            (subnetDelete)="tabView.onDeleteEntity(subnet.id)"
+        ></app-subnet-tab>
+    </ng-template>
+    <ng-template
+        #formTab
+        let-subnet
+        let-tabType="tabType"
+        let-tabForm="tabForm"
+        let-onSubnetFormDestroy="destroyFormFn"
+        let-onSubnetFormSubmit="submitFormFn"
+        let-onSubnetFormCancel="cancelFormFn"
+    >
+        @if (tabType === TabType.New) {
+            <app-subnet-form
+                    [state]="tabForm.formState"
+                    (formDestroy)="onSubnetFormDestroy($event, tabType)"
+                    (formSubmit)="onSubnetFormSubmit(tabType)"
+                    (formCancel)="onSubnetFormCancel(tabType)"
+            ></app-subnet-form>
+        } @else if (tabType === TabType.Edit) {
+            <app-subnet-form
+                    [state]="tabForm.formState"
+                    [subnetId]="subnet.id"
+                    (formDestroy)="onSubnetFormDestroy($event, tabType, subnet.id)"
+                    (formSubmit)="onSubnetFormSubmit(tabType, subnet.id)"
+                    (formCancel)="cancelSubnetUpdateTransaction(subnet.id, $event); onSubnetFormCancel(tabType, subnet.id)"
+            ></app-subnet-form>
+        }
+    </ng-template>
+</app-tab-view>
 
 <div>
     <!-- Subnet tab template -->
@@ -40,12 +99,7 @@
         class="p-component"
         [class.max-w-50rem]="openedTabs[activeTabIndex].tabType !== SubnetTabType.Display"
     >
-        <app-subnet-tab
-            *ngSwitchCase="SubnetTabType.Display"
-            [subnet]="openedTabs[activeTabIndex].tabSubject"
-            (subnetEditBegin)="onSubnetEditBegin(openedTabs[activeTabIndex].tabSubject)"
-            (subnetDelete)="onSubnetDelete(openedTabs[activeTabIndex].tabSubject)"
-        ></app-subnet-tab>
+
         <app-subnet-form
             *ngSwitchCase="SubnetTabType.New"
             [state]="openedTabs[activeTabIndex].state"
@@ -64,12 +118,4 @@
     </div>
 
     <!-- Subnet list tab -->
-    <app-subnets-table
-        #subnetsTableComponent
-        [hidden]="activeTabIndex !== 0"
-        [grafanaUrl]="grafanaUrl"
-        [grafanaDhcp4DashboardId]="grafanaDhcp4DashboardId"
-        [grafanaDhcp6DashboardId]="grafanaDhcp6DashboardId"
-        [dataLoading]="loading"
-    ></app-subnets-table>
 </div>
