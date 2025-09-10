@@ -1,10 +1,10 @@
 {
-  "date": "2025-08-07",
+  "date": "2025-08-27",
   "kea": {
     "currentStable": [
       {
-        "version": "3.0.0",
-        "releaseDate": "2025-06-25",
+        "version": "3.0.1",
+        "releaseDate": "2025-08-27",
         "eolDate": "2028-06-01"
       },
       {
@@ -14,10 +14,18 @@
       }
     ],
     "latestDev": {
-      "version": "3.1.0",
-      "releaseDate": "2025-07-30"
+      "version": "3.1.1",
+      "releaseDate": "2025-08-27"
     },
     "latestSecure": [
+      {
+        "version": "3.0.1",
+        "releaseDate": "2025-08-27"
+      },
+      {
+        "version": "3.1.1",
+        "releaseDate": "2025-08-27"
+      },
       {
         "version": "2.7.9",
         "releaseDate": "2025-05-28"
@@ -35,8 +43,8 @@
   "stork": {
     "currentStable": [
       {
-        "version": "2.2.0",
-        "releaseDate": "2025-06-11",
+        "version": "2.2.1",
+        "releaseDate": "2025-09-10",
         "eolDate": "2026-04-26"
       }
     ],
@@ -46,29 +54,29 @@
     },
     "latestSecure": [
       {
-        "version": "1.15.1",
-        "releaseDate": "2024-03-27"
+        "version": "2.2.1",
+        "releaseDate": "2025-09-10"
       }
     ]
   },
   "bind9": {
     "currentStable": [
       {
-        "version": "9.18.38",
-        "releaseDate": "2025-07-16",
-        "eolDate": "2026-07-01",
+        "version": "9.20.12",
+        "releaseDate": "2025-08-20",
+        "eolDate": "2028-07-01",
         "ESV": "true"
       },
       {
-        "version": "9.20.11",
-        "releaseDate": "2025-07-16",
-        "eolDate": "2028-07-01",
+        "version": "9.18.39",
+        "releaseDate": "2025-08-20",
+        "eolDate": "2026-07-01",
         "ESV": "true"
       }
     ],
     "latestDev": {
-      "version": "9.21.10",
-      "releaseDate": "2025-07-16"
+      "version": "9.21.11",
+      "releaseDate": "2025-08-20"
     },
     "latestSecure": [
       {
