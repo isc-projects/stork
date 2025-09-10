@@ -595,14 +595,8 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	// uptime_seconds (Uptime of the Stork Agent)
-	ch <- prometheus.MustNewConstMetric(
-		pbe.serverStatsDesc["uptime-seconds"],
-		prometheus.GaugeValue,
-		time.Since(pbe.StartTime).Seconds())
-
-	// up
-	ch <- prometheus.MustNewConstMetric(pbe.serverStatsDesc["up"], prometheus.GaugeValue, float64(pbe.up))
+	// Collect basic metrics (uptime, up status, time metrics)
+	pbe.collectBasicMetrics(ch)
 
 	if err != nil {
 		log.Errorf("Some errors were encountered while collecting stats from BIND 9: %+v", err)
@@ -613,13 +607,36 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
+	// Collect all other metrics
+	pbe.collectQueryMetrics(ch)
+	pbe.collectResponseMetrics(ch)
+	pbe.collectTaskMetrics(ch)
+	pbe.collectZoneTransferMetrics(ch)
+	pbe.collectTrafficMetrics(ch)
+	pbe.collectViewMetrics(ch)
+}
+
+// Collects basic server metrics like uptime, up status, and time metrics.
+func (pbe *PromBind9Exporter) collectBasicMetrics(ch chan<- prometheus.Metric) {
+	// uptime_seconds (Uptime of the Stork Agent)
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["uptime-seconds"],
+		prometheus.GaugeValue,
+		time.Since(pbe.StartTime).Seconds())
+
+	// up
+	ch <- prometheus.MustNewConstMetric(pbe.serverStatsDesc["up"], prometheus.GaugeValue, float64(pbe.up))
+
 	// boot_time_seconds
 	pbe.collectTime(ch, "boot-time", pbe.stats.BootTime)
 	// config_time_seconds
 	pbe.collectTime(ch, "config-time", pbe.stats.ConfigTime)
 	// current_time_seconds
 	pbe.collectTime(ch, "current-time", pbe.stats.CurrentTime)
+}
 
+// Collects query-related statistics.
+func (pbe *PromBind9Exporter) collectQueryMetrics(ch chan<- prometheus.Metric) {
 	// incoming_queries_total
 	for label, value := range pbe.stats.IncomingQueries {
 		ch <- prometheus.MustNewConstMetric(
@@ -699,8 +716,14 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			pbe.serverStatsDesc["RecursClients"],
 			prometheus.CounterValue, value)
 	}
+}
 
+// Collects server response statistics.
+func (pbe *PromBind9Exporter) collectResponseMetrics(ch chan<- prometheus.Metric) {
 	// responses_total
+	trimQryPrefix := func(name string) string {
+		return strings.TrimPrefix(name, "Qry")
+	}
 	serverResponses := []string{
 		"QrySuccess",
 		"QryReferral",
@@ -710,7 +733,7 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 		"QryNXDOMAIN",
 	}
 	for _, label := range serverResponses {
-		value, ok = pbe.stats.NsStats[label]
+		value, ok := pbe.stats.NsStats[label]
 		if !ok {
 			value = 0
 		}
@@ -720,12 +743,15 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			prometheus.CounterValue,
 			value, trimQryPrefix(label))
 	}
+}
 
+// Collects task manager statistics.
+func (pbe *PromBind9Exporter) collectTaskMetrics(ch chan<- prometheus.Metric) {
 	// tasks_running
 	// worker_threads
 	taskMgrStats := []string{"tasks-running", "worker-threads"}
 	for _, label := range taskMgrStats {
-		value, ok = pbe.stats.TaskMgr[label]
+		value, ok := pbe.stats.TaskMgr[label]
 		if !ok {
 			value = 0
 		}
@@ -734,12 +760,15 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			pbe.serverStatsDesc[label],
 			prometheus.GaugeValue, value)
 	}
+}
 
+// Collects zone transfer statistics.
+func (pbe *PromBind9Exporter) collectZoneTransferMetrics(ch chan<- prometheus.Metric) {
 	// zone_transfer_rejected_total
 	// zone_transfer_requests_done
 	nsXfrStats := []string{"XfrReqDone", "XfrRej"}
 	for _, label := range nsXfrStats {
-		value, ok = pbe.stats.NsStats[label]
+		value, ok := pbe.stats.NsStats[label]
 		if !ok {
 			value = 0
 		}
@@ -756,7 +785,7 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 	// zone_transfer_incremental_requests_ipv6
 	zoneXfrStats := []string{"XfrSuccess", "XfrFail", "AXFRReqv4", "AXFRReqv6", "IXFRReqv4", "IXFRReqv6"}
 	for _, label := range zoneXfrStats {
-		value, ok = pbe.stats.ZoneStats[label]
+		value, ok := pbe.stats.ZoneStats[label]
 		if !ok {
 			value = 0
 		}
@@ -764,7 +793,10 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			pbe.serverStatsDesc[label],
 			prometheus.CounterValue, value)
 	}
+}
 
+// Collects traffic statistics.
+func (pbe *PromBind9Exporter) collectTrafficMetrics(ch chan<- prometheus.Metric) {
 	// Traffic metrics.
 
 	// traffic_incoming_requests_udp4_size_{bucket,count,sum}
@@ -784,7 +816,10 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 				count, sum, buckets)
 		}
 	}
+}
 
+// Collects view-specific statistics.
+func (pbe *PromBind9Exporter) collectViewMetrics(ch chan<- prometheus.Metric) {
 	// View metrics.
 	for view, viewStats := range pbe.stats.Views {
 		// resolver_cache_rrsets
