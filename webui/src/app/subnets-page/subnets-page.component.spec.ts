@@ -587,7 +587,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
 
@@ -652,7 +652,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
 
@@ -697,7 +697,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
 
@@ -748,7 +748,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         component.closeTabByIndex(1)
 
@@ -790,7 +790,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         component.closeTabByIndex(1)
 
@@ -838,7 +838,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         component.onSubnetFormCancel()
 
@@ -882,7 +882,7 @@ describe('SubnetsPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(2)
         expect(component.openedTabs[1].state.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         // Cancel editing. It should close the form and the transaction should be deleted.
         component.onSubnetFormCancel(5)

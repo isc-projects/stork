@@ -182,7 +182,7 @@ describe('HostFormComponent', () => {
         tick()
         expect(component.form).toBeTruthy()
         expect(component.form.preserved).toBeFalse()
-        expect(component.form.transactionId).toBe(123)
+        expect(component.form.transactionID).toBe(123)
         expect(component.form.group).toBeTruthy()
         expect(component.form.allSubnets.length).toBe(4)
         expect(component.form.filteredSubnets.length).toBe(4)
@@ -860,7 +860,7 @@ describe('HostFormComponent', () => {
                 },
             ],
         }
-        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionID, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -908,7 +908,7 @@ describe('HostFormComponent', () => {
                 },
             ],
         }
-        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionID, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -976,7 +976,7 @@ describe('HostFormComponent', () => {
                 },
             ],
         }
-        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionID, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -1028,7 +1028,7 @@ describe('HostFormComponent', () => {
                 },
             ],
         }
-        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionID, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -1152,7 +1152,7 @@ describe('HostFormComponent', () => {
                 },
             ],
         }
-        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
+        expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionID, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
 
@@ -1653,7 +1653,7 @@ describe('HostFormComponent', () => {
                 },
             ],
         }
-        expect(dhcpApi.updateHostSubmit).toHaveBeenCalledWith(component.hostId, component.form.transactionId, host)
+        expect(dhcpApi.updateHostSubmit).toHaveBeenCalledWith(component.hostId, component.form.transactionID, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))

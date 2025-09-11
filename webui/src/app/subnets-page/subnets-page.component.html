@@ -32,7 +32,6 @@
 <!--    </ng-template>-->
 <!--</p-tabMenu>-->
 <app-tab-view
-    #tabView
     routePath="/dhcp/subnets/"
     [entityProvider]="subnetProvider"
     [newFormProvider]="subnetFormProvider"
@@ -56,11 +55,11 @@
             [dataLoading]="loading"
         ></app-subnets-table>
     </ng-template>
-    <ng-template #entityTab let-subnet let-onSubnetEditBegin="beginEntityEditFn">
+    <ng-template #entityTab let-subnet let-onSubnetEditBegin="beginEntityEditFn" let-onSubnetDelete="deleteEntityFn">
         <app-subnet-tab
             [subnet]="subnet"
             (subnetEditBegin)="onSubnetEditBegin(subnet.id)"
-            (subnetDelete)="tabView.onDeleteEntity(subnet.id)"
+            (subnetDelete)="onSubnetDelete(subnet.id)"
         ></app-subnet-tab>
     </ng-template>
     <ng-template
@@ -72,22 +71,13 @@
         let-onSubnetFormSubmit="submitFormFn"
         let-onSubnetFormCancel="cancelFormFn"
     >
-        @if (tabType === TabType.New) {
             <app-subnet-form
-                    [state]="tabForm.formState"
-                    (formDestroy)="onSubnetFormDestroy($event, tabType)"
-                    (formSubmit)="onSubnetFormSubmit(tabType)"
-                    (formCancel)="onSubnetFormCancel(tabType)"
+                [state]="tabForm.formState"
+                [subnetId]="subnet?.id"
+                (formDestroy)="onSubnetFormDestroy($event)"
+                (formSubmit)="onSubnetFormSubmit($event, subnet?.id)"
+                (formCancel)="cancelSubnetUpdateTransaction(subnet.id, $event); onSubnetFormCancel(tabType, subnet.id)"
             ></app-subnet-form>
-        } @else if (tabType === TabType.Edit) {
-            <app-subnet-form
-                    [state]="tabForm.formState"
-                    [subnetId]="subnet.id"
-                    (formDestroy)="onSubnetFormDestroy($event, tabType, subnet.id)"
-                    (formSubmit)="onSubnetFormSubmit(tabType, subnet.id)"
-                    (formCancel)="cancelSubnetUpdateTransaction(subnet.id, $event); onSubnetFormCancel(tabType, subnet.id)"
-            ></app-subnet-form>
-        }
     </ng-template>
 </app-tab-view>
 
@@ -99,7 +89,6 @@
         class="p-component"
         [class.max-w-50rem]="openedTabs[activeTabIndex].tabType !== SubnetTabType.Display"
     >
-
         <app-subnet-form
             *ngSwitchCase="SubnetTabType.New"
             [state]="openedTabs[activeTabIndex].state"

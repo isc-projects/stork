@@ -4,6 +4,7 @@ import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
 import { SubnetForm } from './subnet-set-form.service'
 import { SelectableSharedNetwork } from './selectable-shared-network'
+import {FormState} from "../tab-view/tab-view.component";
 
 /**
  * Holds the state of the form created by the SubnetFormComponent.
@@ -13,7 +14,7 @@ import { SelectableSharedNetwork } from './selectable-shared-network'
  * edited form data. It is particularly useful when the component is
  * destroyed as a result of switching between different tabs.
  */
-export class SubnetFormState {
+export class SubnetFormState implements FormState {
     /**
      * A boolean value indicating if the updated form was passed to
      * the parent component when the SubnetFormComponent was destroyed.
@@ -27,7 +28,7 @@ export class SubnetFormState {
      * A transaction id returned by the server after sending the
      * request to begin one.
      */
-    transactionId: number = 0
+    transactionID: number = 0
 
     /**
      * A subnet id of the modified or created subnet.

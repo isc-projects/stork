@@ -461,7 +461,7 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
-        expect(component.state.transactionId).toBe(123)
+        expect(component.state.transactionID).toBe(123)
         expect(component.state.group).toBeTruthy()
         expect(component.state.allDaemons.length).toBe(5)
         expect(component.state.filteredDaemons.length).toBe(5)
@@ -545,7 +545,7 @@ describe('SubnetFormComponent', () => {
             ],
         }
 
-        expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.state.transactionId, subnet)
+        expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.state.transactionID, subnet)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -558,7 +558,7 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
-        expect(component.state.transactionId).toBe(123)
+        expect(component.state.transactionID).toBe(123)
         expect(component.state.group).toBeTruthy()
         expect(component.state.allDaemons.length).toBe(5)
         expect(component.state.filteredDaemons.length).toBe(5)
@@ -636,7 +636,7 @@ describe('SubnetFormComponent', () => {
             ],
         }
 
-        expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.state.transactionId, subnet)
+        expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.state.transactionID, subnet)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -650,7 +650,7 @@ describe('SubnetFormComponent', () => {
 
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
-        expect(component.state.transactionId).toBe(123)
+        expect(component.state.transactionID).toBe(123)
         expect(component.state.group).toBeTruthy()
         expect(component.state.allDaemons.length).toBe(5)
         expect(component.state.filteredDaemons.length).toBe(2)
@@ -758,7 +758,7 @@ describe('SubnetFormComponent', () => {
 
         expect(dhcpApi.updateSubnetSubmit).toHaveBeenCalledWith(
             component.subnetId,
-            component.state.transactionId,
+            component.state.transactionID,
             subnet
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()
@@ -774,7 +774,7 @@ describe('SubnetFormComponent', () => {
 
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
-        expect(component.state.transactionId).toBe(345)
+        expect(component.state.transactionID).toBe(345)
         expect(component.state.group).toBeTruthy()
         expect(component.state.allDaemons.length).toBe(5)
         expect(component.state.filteredDaemons.length).toBe(3)
@@ -899,7 +899,7 @@ describe('SubnetFormComponent', () => {
 
         expect(dhcpApi.updateSubnetSubmit).toHaveBeenCalledWith(
             component.subnetId,
-            component.state.transactionId,
+            component.state.transactionID,
             subnet
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()

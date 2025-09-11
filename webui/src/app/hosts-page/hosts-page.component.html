@@ -48,11 +48,11 @@
     <ng-template #firstTab>
         <app-hosts-table #hostsTableComponent></app-hosts-table>
     </ng-template>
-    <ng-template #entityTab let-host let-onHostEditBegin="beginEntityEditFn">
+    <ng-template #entityTab let-host let-onHostEditBegin="beginEntityEditFn" let-onHostDelete="deleteEntityFn">
         <app-host-tab
             [host]="host"
             (hostEditBegin)="onHostEditBegin(host.id)"
-            (hostDelete)="tabView.onDeleteEntity(host.id)"
+            (hostDelete)="onHostDelete(host.id)"
         ></app-host-tab>
     </ng-template>
     <ng-template
@@ -64,21 +64,12 @@
         let-onHostFormSubmit="submitFormFn"
         let-onHostFormCancel="cancelFormFn"
     >
-        @if (tabType === TabType.New) {
-            <app-host-form
-                [form]="tabForm.formState"
-                (formDestroy)="onHostFormDestroy($event, tabType)"
-                (formSubmit)="onHostFormSubmit(tabType)"
-                (formCancel)="onHostFormCancel(tabType)"
-            ></app-host-form>
-        } @else if (tabType === TabType.Edit) {
-            <app-host-form
-                [form]="tabForm.formState"
-                [hostId]="host.id"
-                (formDestroy)="onHostFormDestroy($event, tabType, host.id)"
-                (formSubmit)="onHostFormSubmit(tabType, host.id)"
-                (formCancel)="cancelHostUpdateTransaction(host.id, $event); onHostFormCancel(tabType, host.id)"
-            ></app-host-form>
-        }
+        <app-host-form
+            [form]="tabForm.formState"
+            [hostId]="host?.id"
+            (formDestroy)="onHostFormDestroy($event)"
+            (formSubmit)="onHostFormSubmit($event, host?.id)"
+            (formCancel)="onFormCancel(tabForm.formState, tabType, host?.id)"
+        ></app-host-form>
     </ng-template>
 </app-tab-view>

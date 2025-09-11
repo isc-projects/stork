@@ -9,7 +9,7 @@ import { HostForm } from '../forms/host-form'
 import { Host } from '../backend'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
 import { TabType } from '../tab'
-import { ComponentTab } from '../tab-view/tab-view.component'
+import { ComponentTab, TabViewComponent } from '../tab-view/tab-view.component'
 
 /**
  * This component implements a page which displays hosts along with
@@ -33,6 +33,8 @@ export class HostsPageComponent {
      * Table with hosts component.
      */
     hostsTable = viewChild<HostsTableComponent>('hostsTableComponent')
+
+    tabView = viewChild(TabViewComponent)
 
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
 
@@ -106,11 +108,12 @@ export class HostsPageComponent {
      * @param tab
      */
     onTabClosed(tab: ComponentTab) {
+        console.log('onHostTabClosed', tab)
         if (!tab.form) {
             return
         }
 
-        const transactionID = (tab.form.formState as HostForm).transactionId
+        const transactionID = (tab.form.formState as HostForm).transactionID
         if (tab.tabType === TabType.New && transactionID > 0 && !tab.form.submitted) {
             lastValueFrom(this.dhcpApi.createHostDelete(transactionID)).catch((err) => {
                 let msg = err.statusText
@@ -131,4 +134,20 @@ export class HostsPageComponent {
     }
 
     protected readonly TabType = TabType
+
+    /**
+     *
+     * @param hostID
+     * @param formState
+     * @param tabType
+     */
+    onFormCancel(formState: HostForm, tabType: TabType, hostID?: number) {
+        console.log('onHostFormCancel', hostID, formState.transactionID, tabType)
+        if (hostID && formState.transactionID && tabType === TabType.Edit) {
+            this.cancelHostUpdateTransaction(hostID, formState.transactionID)
+            // formState.transactionID = 0
+        }
+
+        this.tabView()?.onCancelForm(tabType, hostID || undefined)
+    }
 }

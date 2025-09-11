@@ -34,8 +34,12 @@ enum TabType {
 }
 
 type FormTab = {
-    formState: any
+    formState: FormState
     submitted: boolean
+}
+
+export interface FormState {
+    transactionID: number
 }
 
 /**
@@ -83,7 +87,7 @@ function sanitizePath(value: string | undefined): string | undefined {
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',
 })
-export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
+export class TabViewComponent<TEntity, TForm extends FormState> implements OnInit, OnDestroy {
     /**
      * Holds all open tabs.
      */
@@ -318,8 +322,9 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
 
     /**
      * Callback updating the tab entity.
-     * It is called when the updateTabEntityFn function from the entityTabTemplate or firstTabTemplate context is called.
-     * The callback is using entityProvider to update the entity value or explicitly provided entity as a parameter.
+     * It may be called explicitly or when the updateTabEntityFn function from the entityTabTemplate context is called.
+     * To update the entity value, the callback is using the entity provided as a parameter (optional).
+     * If the entity parameter was not provided, entityProvider is called to retrieve the updated entity.
      * @param id tab ID for which the entity should be updated
      * @param entity updated entity - optional; if provided, entityProvider will not be used
      */
@@ -373,45 +378,75 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
 
     /**
      * Callback updating entity form state in open tabs when the form component gets destroyed.
-     * It is called when the destroyFormFn function from the formTabTemplate context is called.
+     * It may be called explicitly or when the destroyFormFn function from the formTabTemplate context is called.
      * @param formState form state to be stored
      * @param tabType tab type to determine form type
      * @param entityID optional ID of the entity; it can only be provided for Edit type of form
      */
-    onDestroyForm = (formState: TForm, tabType: TabType, entityID?: number) => {
-        const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
+    onDestroyForm = (formState: TForm) => {
+        console.log('onDestroyForm - transaction ID', formState.transactionID)
+        // const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
         const tabToUpdate = this.openTabs.find(
-            (tab) => tab.form && tab.tabType === tabType && tab.value === extendEntityID
+            (tab) => tab.form
+                && tab.form.formState.transactionID === formState.transactionID
         )
         if (tabToUpdate) {
-            console.log('onDestroyForm - form to update found', tabToUpdate, 'new one', formState)
+            const oldState = tabToUpdate.form.formState
+            console.log(
+                'onDestroyForm - form to update found',
+                // JSON.stringify
+                (oldState),
+                'new one',
+                // JSON.stringify
+                (formState)
+            )
             tabToUpdate.form.formState = formState
+            console.log('onDestroyForm - tab', tabToUpdate)
+            //TODO: transaction delete on form destroy? delete API endpoints as inputs (providers?) to have it generic? store form state as JSON in browser storage?
         }
     }
 
     /**
      * Callback updating entity form state in open tabs when the form is submitted.
-     * It is called when the submitFormFn function from the formTabTemplate context is called.
+     * It may be called explicitly or when the submitFormFn function from the formTabTemplate context is called.
      * It marks the form as submitted to prevent the component from canceling
-     * the transaction. Next, it closes the form tab.
-     * @param tabType tab type to determine form type
-     * @param entityID optional ID of the entity; it can only be provided for Edit type of form
+     * the transaction. Next, in case it was Edit form, the tab is changed to display the edited entity.
+     * In case it was New entity form and submitted ID is known, the tab is changed to display the new entity
+     * In case it was New entity form and submitted ID is unknown, it closes the form tab.
+     * @param entityID optional ID of the entity
+     * @param formState form state that was submitted
      */
-    onSubmitForm = (tabType: TabType, entityID?: number) => {
-        const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
+    onSubmitForm = (formState: TForm, entityID?: number) => {
+        console.log('onSubmitForm - transactionID', formState.transactionID)
+        // const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
         const tabToUpdate = this.openTabs.find(
-            (tab) => tab.form && tab.tabType === tabType && tab.value === extendEntityID
+            (tab) => tab.form?.formState.transactionID === formState.transactionID
         )
         if (tabToUpdate) {
-            console.log('onSubmitForm - form to update found', tabToUpdate)
+            console.log('onSubmitForm - form to update found in tab', tabToUpdate)
             tabToUpdate.form.submitted = true
-            this.closeTab(extendEntityID)
+
+            if (tabToUpdate.tabType === TabType.Edit) {
+                // Edit form was submitted, so let's stay on this tab, but let's change to Display type and refresh the entity.
+                tabToUpdate.tabType = TabType.Display
+                tabToUpdate.icon = undefined
+                // tabToUpdate.form.formState.transactionID = 0
+                tabToUpdate.form = undefined
+                this.onUpdateTabEntity(tabToUpdate.value)
+            } else if (tabToUpdate.tabType === TabType.New) {
+                this.forceLoadTableData()
+                this.closeTab(NEW_ENTITY_FORM_TAB_ID)
+                if (entityID) {
+                    // New entity form submitted and we have information about new entity ID. So let's display new entity.
+                    this.openTab(entityID)
+                }
+            }
         }
     }
 
     /**
      * Callback updating entity tab in open tabs when the form is cancelled.
-     * It is called when the cancelFormFn function from the formTabTemplate context is called.
+     * It may be called explicitly or when the cancelFormFn function from the formTabTemplate context is called.
      * If the event comes from the new entity form, the tab is closed. If the
      * event comes from the entity edit form, the tab is turned into the
      * display type tab.
@@ -419,33 +454,38 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
      * @param entityID optional ID of the entity; it can only be provided for Edit type of form
      */
     onCancelForm = (tabType: TabType, entityID?: number) => {
+        console.log('onCancelForm', tabType, entityID)
         if (tabType === TabType.New) {
             console.log('onCancelForm - just close the form')
             this.closeTab(NEW_ENTITY_FORM_TAB_ID)
             return
         }
 
-        const tabToUpdate = this.openTabs.find((tab) => tab.form && tab.value === entityID && tab.tabType === tabType)
+        const tabToUpdate = this.openTabs.find((tab) => tab.form?.formState.transactionID && tab.value === entityID && tab.tabType === tabType)
         if (tabToUpdate) {
-            console.log('onCancelForm - form tab to cancel found', tabToUpdate)
+            console.log('onCancelForm - form tab to cancel found', tabToUpdate, 'transactionID', tabToUpdate.form?.formState.transactionID)
             tabToUpdate.tabType = TabType.Display
             tabToUpdate.icon = undefined
+            // TODO: shall it be done?
             tabToUpdate.form = undefined
         }
     }
 
     onBeginEntityEdit = (entityID: number) => {
-        console.log('onBeginEntityEdit', entityID)
+        console.log('onBeginEntityEdit', entityID, Date.now())
         const existingTab = this.openTabs.find((tab) => tab.value === entityID)
-        console.log('onBeginEntityEdit found tab', existingTab)
+        console.log('onBeginEntityEdit find tab result', // JSON.stringify
+        (existingTab))
         if (existingTab && existingTab.tabType !== TabType.Edit) {
             existingTab.tabType = TabType.Edit
             existingTab.icon = 'pi pi-pencil'
             if (!existingTab.form) {
+                console.log('onBeginEntityEdit - no form yet, create new one')
                 existingTab.form = { submitted: false, formState: this.newFormProvider() }
+            } else {
+                // existingTab.form.submitted = false
+                console.log('onBeginEntityEdit - there is a form that exists', existingTab.form)
             }
-
-            console.log('onBeginEntityEdit found tab after', existingTab)
         }
 
         this.openTab(entityID)
@@ -836,7 +876,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
 
                         if (id === this.newEntityTabRouteEnd()) {
                             this.openTab(NEW_ENTITY_FORM_TAB_ID)
-                            this.forceLoadTableData()
+                            this.loadTableDataIfEmpty()
 
                             return
                         }
@@ -844,7 +884,7 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
                         const numericId = parseInt(id, 10)
                         if (!Number.isNaN(numericId)) {
                             this.openTab(numericId)
-                            this.forceLoadTableData()
+                            this.loadTableDataIfEmpty()
 
                             return
                         } else {
@@ -887,13 +927,23 @@ export class TabViewComponent<TEntity, TForm> implements OnInit, OnDestroy {
         this.activeTabChange.emit(event as number)
     }
 
-    forceLoadTableData() {
+    loadTableDataIfEmpty() {
         if (
             this.entitiesTable() &&
             !tableHasFilter(this.entitiesTable()) &&
             !(this.entitiesTable().value ?? []).length
         ) {
-            console.log('forceLoadTableData, init table because it seems to be empty', this.entitiesTable()?.value)
+            console.log('loadTableDataIfEmpty, init table because it seems to be empty', this.entitiesTable()?.value)
+            const metadata = this.entitiesTable().createLazyLoadMetadata()
+            this.entitiesTable().onLazyLoad.emit(metadata)
+        }
+    }
+
+    forceLoadTableData() {
+        if (
+            this.entitiesTable()
+        ) {
+            console.log('forceLoadTableData')
             const metadata = this.entitiesTable().createLazyLoadMetadata()
             this.entitiesTable().onLazyLoad.emit(metadata)
         }

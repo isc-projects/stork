@@ -96,7 +96,7 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
      * Indicates if the data is being fetched from the server.
      */
     @Input() dataLoading: boolean = false
-    dataCollection: Subnet[] = []
+    dataCollection: SubnetWithUniquePools[] = []
     totalRecords: number = 0
     private _subscriptions: Subscription = new Subscription()
 

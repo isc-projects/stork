@@ -3,7 +3,12 @@ import { Router, ActivatedRoute, EventType } from '@angular/router'
 
 import { DHCPService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
-import { parseSubnetsStatisticValues, extractUniqueSubnetPools, parseSubnetStatisticValues } from '../subnets'
+import {
+    parseSubnetsStatisticValues,
+    extractUniqueSubnetPools,
+    parseSubnetStatisticValues,
+    SubnetWithUniquePools,
+} from '../subnets'
 import { SettingService } from '../setting.service'
 import { Subscription, lastValueFrom, EMPTY } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
@@ -13,7 +18,7 @@ import { SubnetFormState } from '../forms/subnet-form'
 import { Tab, TabType } from '../tab'
 import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
 import { SubnetForm } from '../forms/subnet-set-form.service'
-import {ComponentTab} from "../tab-view/tab-view.component";
+import { ComponentTab } from '../tab-view/tab-view.component'
 
 /**
  * Component for presenting DHCP subnets.
@@ -88,14 +93,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * ID of the DHCPv6 dashboard in Grafana.
      */
     grafanaDhcp6DashboardId: string
-    subnetProvider: (id: number) => Promise<Subnet> = (id) =>
+    subnetProvider: (id: number) => Promise<SubnetWithUniquePools> = (id) =>
         lastValueFrom(
             // Fetch data from API.
             this.dhcpApi.getSubnet(id).pipe(
                 map((subnet) => {
                     parseSubnetStatisticValues(subnet)
                     subnet = extractUniqueSubnetPools(subnet)[0]
-                    return subnet
+                    return subnet as SubnetWithUniquePools
                 })
             )
         )
@@ -196,11 +201,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         if (
             this.openedTabs[index].tabType === TabType.Edit &&
             this.openedTabs[index].tabSubject?.id > 0 &&
-            this.openedTabs[index].state?.transactionId > 0 &&
+            this.openedTabs[index].state?.transactionID > 0 &&
             !this.openedTabs[index].submitted
         ) {
             this.dhcpApi
-                .updateSubnetDelete(this.openedTabs[index].tabSubject.id, this.openedTabs[index].state.transactionId)
+                .updateSubnetDelete(this.openedTabs[index].tabSubject.id, this.openedTabs[index].state.transactionID)
                 .toPromise()
                 .catch((err) => {
                     let msg = err.statusText
@@ -216,11 +221,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 })
         } else if (
             this.openedTabs[index].tabType === TabType.New &&
-            this.openedTabs[index].state?.transactionId > 0 &&
+            this.openedTabs[index].state?.transactionID > 0 &&
             !this.openedTabs[index].submitted
         ) {
             this.dhcpApi
-                .createSubnetDelete(this.openedTabs[index].state.transactionId)
+                .createSubnetDelete(this.openedTabs[index].state.transactionID)
                 .toPromise()
                 .catch((err) => {
                     let msg = getErrorMessage(err)
@@ -362,7 +367,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
     onSubnetFormSubmit(event): void {
         // Find the form matching the form for which the notification has
         // been sent.
-        const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
+        const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionID === event.transactionId)
         if (index >= 0) {
             this.dhcpApi
                 .getSubnet(event.subnetId)
@@ -416,11 +421,11 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         if (index >= 0) {
             if (
                 subnetId &&
-                this.openedTabs[index].state?.transactionId &&
+                this.openedTabs[index].state?.transactionID &&
                 this.openedTabs[index].tabType === TabType.Edit
             ) {
                 this.dhcpApi
-                    .updateSubnetDelete(subnetId, this.openedTabs[index].state.transactionId)
+                    .updateSubnetDelete(subnetId, this.openedTabs[index].state.transactionID)
                     .toPromise()
                     .catch((err) => {
                         let msg = getErrorMessage(err)
@@ -449,7 +454,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param event an event holding updated form data.
      */
     onSubnetFormDestroy(event): void {
-        const tab = this.openedTabs.find((t) => t.state?.transactionId === event.transactionId)
+        const tab = this.openedTabs.find((t) => t.state?.transactionID === event.transactionId)
         if (tab) {
             // Found the matching form. Update it.
             tab.state = event
@@ -471,7 +476,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    protected readonly TabType = TabType;
+    protected readonly TabType = TabType
 
     cancelSubnetUpdateTransaction(subnetID: number, transactionID: number) {
         lastValueFrom(this.dhcpApi.updateSubnetDelete(subnetID, transactionID)).catch((err) => {
@@ -494,7 +499,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
             return
         }
 
-        const transactionID = (tab.form.formState as SubnetFormState).transactionId
+        const transactionID = tab.form.formState.transactionID
         if (tab.tabType === TabType.New && transactionID > 0 && !tab.form.submitted) {
             lastValueFrom(this.dhcpApi.createSubnetDelete(transactionID)).catch((err) => {
                 let msg = err.statusText

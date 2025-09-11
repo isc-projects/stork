@@ -3,6 +3,7 @@ import { IPv4CidrRange, IPv6CidrRange, Validator } from 'ip-num'
 import { Subnet } from '../backend/model/subnet'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { SelectableClientClass } from './selectable-client-class'
+import {FormState} from "../tab-view/tab-view.component";
 
 /**
  * Holds the state of the form created by the HostFormComponent.
@@ -12,7 +13,7 @@ import { SelectableClientClass } from './selectable-client-class'
  * edited form data. It is particularly useful when the component is
  * destroyed as a result of switching between different tabs.
  */
-export class HostForm {
+export class HostForm implements FormState {
     /**
      * A boolean value indicating if the updated form was passed to
      * the parent component when the HostFormComponent was destroyed.
@@ -26,7 +27,7 @@ export class HostForm {
      * A transaction id returned by the server after sending the
      * request to begin one.
      */
-    transactionId: number = 0
+    transactionID: number = 0
 
     /**
      * An error to begin the transaction returned by the server.
@@ -162,4 +163,8 @@ export class HostForm {
         }
         return null
     }
+
+    // stringify() {
+    //     return JSON.stringify({preserved: this.preserved, transactionId: this.transactionId, initError: this.initError, group: this.group., allDaemons: this.allDaemons, filteredDaemons: this.filteredDaemons, allSubnets: this.allSubnets, filteredSubnets: this.filteredSubnets, clientClasses: this.clientClasses, dhcpv4: this.dhcpv4, dhcpv6: this.dhcpv6})
+    // }
 }

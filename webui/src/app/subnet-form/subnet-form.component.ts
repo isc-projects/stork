@@ -147,7 +147,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
 
         // The server should return new transaction id and a current list of
         // daemons to select.
-        this.state.transactionId = response.id
+        this.state.transactionID = response.id
         this.state.allDaemons = []
         for (let d of response.daemons) {
             this.state.allDaemons.push({
@@ -536,7 +536,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             }
             subnet.id = this.subnetId
             this.dhcpApi
-                .updateSubnetSubmit(this.subnetId, this.state.transactionId, subnet)
+                .updateSubnetSubmit(this.subnetId, this.state.transactionID, subnet)
                 .toPromise()
                 .then(() => {
                     this.messageService.add({
@@ -562,7 +562,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         }
         // Creating a new subnet.
         this.dhcpApi
-            .createSubnetSubmit(this.state.transactionId, subnet)
+            .createSubnetSubmit(this.state.transactionID, subnet)
             .toPromise()
             .then((data) => {
                 this.messageService.add({

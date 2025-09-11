@@ -291,6 +291,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * Otherwise, the form is initialized to defaults.
      */
     ngOnInit(): void {
+        console.log('host-form.component ngOnInit, this.form', this.form)
         // Initialize the form instance if the parent hasn't supplied one.
         if (!this.form) {
             this.form = new HostForm()
@@ -303,6 +304,10 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // parent component. If so, use it. The user will continue making
         // edits.
         if (this.form.preserved) {
+            if (!this.form.transactionID) {
+                this._beginTransaction()
+            }
+
             return
         }
 
@@ -310,6 +315,10 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this._createDefaultFormGroup()
 
         // Begin transaction.
+        this._beginTransaction()
+    }
+
+    private _beginTransaction(): void {
         if (this.hostId) {
             // Send POST to /hosts/{id}/transaction/new.
             this._updateHostBegin()
@@ -503,7 +512,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this.form.initError = null
         // The server should return new transaction id and a current list of
         // daemons and subnets to select.
-        this.form.transactionId = data.id
+        this.form.transactionID = data.id
         this.form.allDaemons = data.daemons
         this.form.allSubnets = data.subnets
         // Initially, list all daemons.
@@ -1197,7 +1206,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         if (this.hostId) {
             host.id = this.hostId
             this._dhcpApi
-                .updateHostSubmit(this.hostId, this.form.transactionId, host)
+                .updateHostSubmit(this.hostId, this.form.transactionID, host)
                 .toPromise()
                 .then(() => {
                     this._messageService.add({
@@ -1223,7 +1232,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         }
         // Submit new host.
         this._dhcpApi
-            .createHostSubmit(this.form.transactionId, host)
+            .createHostSubmit(this.form.transactionID, host)
             .toPromise()
             .then(() => {
                 this._messageService.add({
@@ -1270,6 +1279,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * It causes the parent component to close the form.
      */
     onCancel(): void {
-        this.formCancel.emit(this.form.transactionId)
+        this.formCancel.emit(this.form.transactionID)
     }
 }
