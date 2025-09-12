@@ -107,11 +107,18 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // edits.
         if (this.state.preserved) {
             this.state.loaded = true
+            if (!this.state.transactionID) {
+                this._beginTransaction()
+            }
+
             return
         }
 
-        // We currently only support updating a subnet. In this case the subnet
-        // id must be provided.
+        // Begin transaction.
+        this._beginTransaction()
+    }
+
+    private _beginTransaction() {
         if (this.subnetId) {
             // Send POST to /subnets/{id}/transaction/new.
             this.updateSubnetBegin()

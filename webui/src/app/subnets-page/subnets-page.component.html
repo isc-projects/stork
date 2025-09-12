@@ -12,29 +12,12 @@
     </div>
 </app-breadcrumbs>
 
-<!--<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">-->
-<!--    <ng-template pTemplate="item" let-item let-i="index">-->
-<!--        <a-->
-<!--            role="menuitem"-->
-<!--            pRipple-->
-<!--            [routerLink]="item.routerLink"-->
-<!--            [queryParams]="i === 0 ? subnetsTableComponent?.validFilter : null"-->
-<!--            class="p-ripple p-element p-menuitem-link"-->
-<!--        >-->
-<!--            <div class="flex justify-content-space-between">-->
-<!--                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>-->
-<!--                <div class="p-menuitem-text">-->
-<!--                    <b>{{ item.label }}</b>-->
-<!--                </div>-->
-<!--                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>-->
-<!--            </div>-->
-<!--        </a>-->
-<!--    </ng-template>-->
-<!--</p-tabMenu>-->
 <app-tab-view
     routePath="/dhcp/subnets/"
     [entityProvider]="subnetProvider"
     [newFormProvider]="subnetFormProvider"
+    [createTransactionDeleteAPICaller]="callCreateSubnetDeleteTransaction"
+    [updateTransactionDeleteAPICaller]="callUpdateSubnetDeleteTransaction"
     entityTitleKey="subnet"
     [tableQueryParamFilters]="{
         subnetId: { type: 'numeric', matchMode: 'equals' },
@@ -42,9 +25,8 @@
         dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
         text: { type: 'string', matchMode: 'contains' },
     }"
-    [inputTable]="tableSignal()?.table"
+    [inputTable]="table()?.table"
     entityTypeName="Subnet"
-    (tabClosed)="onTabClosed($event)"
 >
     <ng-template #firstTab>
         <app-subnets-table
@@ -71,40 +53,12 @@
         let-onSubnetFormSubmit="submitFormFn"
         let-onSubnetFormCancel="cancelFormFn"
     >
-            <app-subnet-form
-                [state]="tabForm.formState"
-                [subnetId]="subnet?.id"
-                (formDestroy)="onSubnetFormDestroy($event)"
-                (formSubmit)="onSubnetFormSubmit($event, subnet?.id)"
-                (formCancel)="cancelSubnetUpdateTransaction(subnet.id, $event); onSubnetFormCancel(tabType, subnet.id)"
-            ></app-subnet-form>
+        <app-subnet-form
+            [state]="tabForm.formState"
+            [subnetId]="subnet?.id"
+            (formDestroy)="onSubnetFormDestroy($event)"
+            (formSubmit)="onSubnetFormSubmit($event, $event.subnetId)"
+            (formCancel)="onSubnetFormCancel(tabType, subnet?.id)"
+        ></app-subnet-form>
     </ng-template>
 </app-tab-view>
-
-<div>
-    <!-- Subnet tab template -->
-    <div
-        *ngIf="activeTabIndex !== 0"
-        [ngSwitch]="openedTabs[activeTabIndex].tabType"
-        class="p-component"
-        [class.max-w-50rem]="openedTabs[activeTabIndex].tabType !== SubnetTabType.Display"
-    >
-        <app-subnet-form
-            *ngSwitchCase="SubnetTabType.New"
-            [state]="openedTabs[activeTabIndex].state"
-            (formDestroy)="onSubnetFormDestroy($event)"
-            (formSubmit)="onSubnetFormSubmit($event)"
-            (formCancel)="onSubnetFormCancel()"
-        ></app-subnet-form>
-        <app-subnet-form
-            *ngSwitchCase="SubnetTabType.Edit"
-            [state]="openedTabs[activeTabIndex].state"
-            [subnetId]="openedTabs[activeTabIndex].tabSubject.id"
-            (formDestroy)="onSubnetFormDestroy($event)"
-            (formSubmit)="onSubnetFormSubmit($event)"
-            (formCancel)="onSubnetFormCancel(openedTabs[activeTabIndex].tabSubject.id)"
-        ></app-subnet-form>
-    </div>
-
-    <!-- Subnet list tab -->
-</div>

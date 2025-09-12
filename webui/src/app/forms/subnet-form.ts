@@ -4,7 +4,7 @@ import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
 import { SubnetForm } from './subnet-set-form.service'
 import { SelectableSharedNetwork } from './selectable-shared-network'
-import {FormState} from "../tab-view/tab-view.component";
+import { FormState } from '../tab-view/tab-view.component'
 
 /**
  * Holds the state of the form created by the SubnetFormComponent.

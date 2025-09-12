@@ -2,9 +2,8 @@ import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { ActivatedRoute, Router } from '@angular/router'
+import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
-import { Location } from '@angular/common'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
@@ -17,61 +16,12 @@ import {
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 
-/**
- * Specifies the filter parameters for fetching subnets that may be specified
- * either in the URL query parameters or programmatically.
- */
-export interface SubnetsFilter {
-    text?: string
-    appId?: number
-    subnetId?: number
-    dhcpVersion?: 4 | 6
-}
-
 @Component({
     selector: 'app-subnets-table',
     templateUrl: './subnets-table.component.html',
     styleUrl: './subnets-table.component.sass',
 })
 export class SubnetsTableComponent implements OnInit, OnDestroy {
-    /**
-     * Array of all numeric keys that are supported when filtering subnets via URL queryParams.
-     * Note that it doesn't have to contain subnets prefilterKey, which is 'appId'.
-     * prefilterKey by default is considered as a primary queryParam filter key.
-     */
-    queryParamNumericKeys: (keyof SubnetsFilter)[] = ['dhcpVersion']
-
-    /**
-     * Array of all boolean keys that are supported when filtering subnets via URL queryParams.
-     */
-    queryParamBooleanKeys: (keyof SubnetsFilter)[] = []
-
-    /**
-     * Array of all numeric keys that can be used to filter subnets.
-     */
-    filterNumericKeys: (keyof SubnetsFilter)[] = ['appId', 'subnetId', 'dhcpVersion']
-
-    /**
-     * Array of all boolean keys that can be used to filter subnets.
-     */
-    filterBooleanKeys: (keyof SubnetsFilter)[] = []
-
-    /**
-     * Prefix of the stateKey. Will be used to evaluate stateKey.
-     */
-    stateKeyPrefix: string = 'subnets-table-session'
-
-    /**
-     * queryParam keyword of the filter by appId.
-     */
-    prefilterKey: keyof SubnetsFilter = 'appId'
-
-    /**
-     * Array of FilterValidators that will be used for validation of filters, which values are limited
-     * only to known values, e.g. dhcpVersion=4|6.
-     */
-    filterValidators = [{ filterKey: 'dhcpVersion', allowedValues: [4, 6] }]
-
     /**
      * PrimeNG table instance.
      */
