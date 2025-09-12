@@ -33,6 +33,8 @@
     [entityProvider]="hostProvider"
     [newFormProvider]="hostFormProvider"
     [entityTitleProvider]="hostLabelProvider"
+    [createTransactionDeleteAPICaller]="callCreateHostDeleteTransaction"
+    [updateTransactionDeleteAPICaller]="callUpdateHostDeleteTransaction"
     [tableQueryParamFilters]="{
         subnetId: { type: 'numeric', matchMode: 'equals' },
         keaSubnetId: { type: 'numeric', matchMode: 'equals' },
@@ -42,7 +44,6 @@
         text: { type: 'string', matchMode: 'contains' },
     }"
     [inputTable]="hostsTable()?.table"
-    (tabClosed)="onTabClosed($event)"
     entityTypeName="Host"
 >
     <ng-template #firstTab>
@@ -69,7 +70,7 @@
             [hostId]="host?.id"
             (formDestroy)="onHostFormDestroy($event)"
             (formSubmit)="onHostFormSubmit($event, host?.id)"
-            (formCancel)="onFormCancel(tabForm.formState, tabType, host?.id)"
+            (formCancel)="onHostFormCancel(tabType, host?.id)"
         ></app-host-form>
     </ng-template>
 </app-tab-view>

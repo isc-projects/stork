@@ -8,8 +8,6 @@ import { lastValueFrom } from 'rxjs'
 import { HostForm } from '../forms/host-form'
 import { Host } from '../backend'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
-import { TabType } from '../tab'
-import { ComponentTab, TabViewComponent } from '../tab-view/tab-view.component'
 
 /**
  * This component implements a page which displays hosts along with
@@ -34,11 +32,16 @@ export class HostsPageComponent {
      */
     hostsTable = viewChild<HostsTableComponent>('hostsTableComponent')
 
-    tabView = viewChild(TabViewComponent)
-
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
 
+    /**
+     * Function used to asynchronously provide the host reservation based on given host ID.
+     */
     hostProvider: (id: number) => Promise<Host> = (id) => lastValueFrom(this.dhcpApi.getHost(id))
+
+    /**
+     * Function used to provide new HostForm instance.
+     */
     hostFormProvider: () => HostForm = () => new HostForm()
 
     /**
@@ -87,12 +90,10 @@ export class HostsPageComponent {
     }
 
     /**
-     *
-     * @param hostID
-     * @param transactionID
+     * Function used to call REST API endpoint responsible for deleting the transaction of the 'create new host reservation' form.
      */
-    cancelHostUpdateTransaction(hostID: number, transactionID: number) {
-        lastValueFrom(this.dhcpApi.updateHostDelete(hostID, transactionID)).catch((err) => {
+    callCreateHostDeleteTransaction = (transactionID: number) => {
+        lastValueFrom(this.dhcpApi.createHostDelete(transactionID)).catch((err) => {
             const msg = getErrorMessage(err)
             this.messageService.add({
                 severity: 'error',
@@ -104,50 +105,17 @@ export class HostsPageComponent {
     }
 
     /**
-     *
-     * @param tab
+     * Function used to call REST API endpoint responsible for deleting the transaction of the 'eupdate existing host reservation' form.
      */
-    onTabClosed(tab: ComponentTab) {
-        console.log('onHostTabClosed', tab)
-        if (!tab.form) {
-            return
-        }
-
-        const transactionID = (tab.form.formState as HostForm).transactionID
-        if (tab.tabType === TabType.New && transactionID > 0 && !tab.form.submitted) {
-            lastValueFrom(this.dhcpApi.createHostDelete(transactionID)).catch((err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Failed to delete configuration transaction',
-                    detail: 'Failed to delete configuration transaction: ' + msg,
-                    life: 10000,
-                })
+    callUpdateHostDeleteTransaction = (hostID: number, transactionID) => {
+        lastValueFrom(this.dhcpApi.updateHostDelete(hostID, transactionID)).catch((err) => {
+            const msg = getErrorMessage(err)
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Failed to delete configuration transaction',
+                detail: 'Failed to delete configuration transaction: ' + msg,
+                life: 10000,
             })
-        } else if (tab.tabType === TabType.Edit && tab.value > 0 && transactionID > 0 && !tab.form.submitted) {
-            this.cancelHostUpdateTransaction(tab.value, transactionID)
-        }
-    }
-
-    protected readonly TabType = TabType
-
-    /**
-     *
-     * @param hostID
-     * @param formState
-     * @param tabType
-     */
-    onFormCancel(formState: HostForm, tabType: TabType, hostID?: number) {
-        console.log('onHostFormCancel', hostID, formState.transactionID, tabType)
-        if (hostID && formState.transactionID && tabType === TabType.Edit) {
-            this.cancelHostUpdateTransaction(hostID, formState.transactionID)
-            // formState.transactionID = 0
-        }
-
-        this.tabView()?.onCancelForm(tabType, hostID || undefined)
+        })
     }
 }

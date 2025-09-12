@@ -3,7 +3,7 @@ import { IPv4CidrRange, IPv6CidrRange, Validator } from 'ip-num'
 import { Subnet } from '../backend/model/subnet'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { SelectableClientClass } from './selectable-client-class'
-import {FormState} from "../tab-view/tab-view.component";
+import { FormState } from '../tab-view/tab-view.component'
 
 /**
  * Holds the state of the form created by the HostFormComponent.
@@ -163,8 +163,4 @@ export class HostForm implements FormState {
         }
         return null
     }
-
-    // stringify() {
-    //     return JSON.stringify({preserved: this.preserved, transactionId: this.transactionId, initError: this.initError, group: this.group., allDaemons: this.allDaemons, filteredDaemons: this.filteredDaemons, allSubnets: this.allSubnets, filteredSubnets: this.filteredSubnets, clientClasses: this.clientClasses, dhcpv4: this.dhcpv4, dhcpv6: this.dhcpv6})
-    // }
 }
