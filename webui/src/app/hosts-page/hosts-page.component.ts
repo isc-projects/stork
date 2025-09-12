@@ -105,7 +105,7 @@ export class HostsPageComponent {
     }
 
     /**
-     * Function used to call REST API endpoint responsible for deleting the transaction of the 'eupdate existing host reservation' form.
+     * Function used to call REST API endpoint responsible for deleting the transaction of the 'update existing host reservation' form.
      */
     callUpdateHostDeleteTransaction = (hostID: number, transactionID) => {
         lastValueFrom(this.dhcpApi.updateHostDelete(hostID, transactionID)).catch((err) => {

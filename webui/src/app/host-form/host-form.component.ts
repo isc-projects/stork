@@ -291,7 +291,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * Otherwise, the form is initialized to defaults.
      */
     ngOnInit(): void {
-        console.log('host-form.component ngOnInit, this.form', this.form)
         // Initialize the form instance if the parent hasn't supplied one.
         if (!this.form) {
             this.form = new HostForm()
