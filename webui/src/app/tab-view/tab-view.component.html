@@ -30,17 +30,16 @@
     <p-tabpanels>
         @if (firstTabTemplate) {
             <p-tabpanel [value]="0">
-                <ng-container *ngTemplateOutlet="firstTabTemplate"></ng-container>
+                <ng-container *ngTemplateOutlet="firstTabTemplate()"></ng-container>
             </p-tabpanel>
         }
 
         @for (tab of openTabs; track tab.value) {
             <p-tabpanel [value]="tab.value">
-                @if (entityTabTemplate && tab.tabType === TabType.Display) {
-                    <h1>disp</h1>
+                @if (entityTabTemplate() && tab.tabType === TabType.Display) {
                     <ng-container
                         *ngTemplateOutlet="
-                            entityTabTemplate;
+                            entityTabTemplate();
                             context: {
                                 $implicit: tab.entity,
                                 updateTabTitleFn: onUpdateTabTitle,
@@ -51,7 +50,6 @@
                         "
                     ></ng-container>
                 } @else if (formTabTemplate() && (tab.tabType === TabType.New || tab.tabType === TabType.Edit)) {
-                    <h1>form</h1>
                     <ng-container
                         *ngTemplateOutlet="
                             formTabTemplate();

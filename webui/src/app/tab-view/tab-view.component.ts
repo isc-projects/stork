@@ -546,7 +546,14 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      */
     onSubmitForm = (formState: TForm, entityID?: number) => {
         const foundTab = this.openTabs.find((tab) => tab.form?.formState.transactionID === formState.transactionID)
-        console.log('onSubmitForm - transactionID', formState.transactionID, 'found tab', foundTab)
+        console.log(
+            'onSubmitForm - transactionID',
+            formState.transactionID,
+            'entityID',
+            entityID,
+            'found tab',
+            foundTab
+        )
         if (foundTab) {
             foundTab.form.submitted = true
 
