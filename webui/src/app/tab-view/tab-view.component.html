@@ -1,4 +1,4 @@
-<p-tabs [(value)]="activeTabEntityID" (valueChange)="logChange($event)">
+<p-tabs [(value)]="activeTabEntityID" (valueChange)="onActiveTabChange($event)">
     <p-tablist>
         @if (firstTabTemplate) {
             <p-tab

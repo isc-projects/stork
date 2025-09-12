@@ -3,7 +3,6 @@ import {
     Component,
     computed,
     contentChild,
-    ContentChild,
     effect,
     Input,
     InputSignal,
@@ -26,6 +25,9 @@ import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Table } from 'primeng/table'
 import { filter, switchMap } from 'rxjs/operators'
 
+/**
+ * Enumeration of different Tab types.
+ */
 enum TabType {
     List = 1,
     New,
@@ -33,11 +35,17 @@ enum TabType {
     Display,
 }
 
+/**
+ * Data structure of the form that may be a part of the tab.
+ */
 type FormTab = {
     formState: FormState
     submitted: boolean
 }
 
+/**
+ * Interface that must be implemented by a class defining form state (as of now there are two types of forms: create or edit entity).
+ */
 export interface FormState {
     transactionID: number
 }
@@ -56,7 +64,7 @@ export type ComponentTab = {
 }
 
 /**
- *
+ * ID of the tab where create new entity form exists.
  */
 const NEW_ENTITY_FORM_TAB_ID = -1
 
@@ -79,6 +87,7 @@ function sanitizePath(value: string | undefined): string | undefined {
 /**
  * Component responsible for displaying clickable tabs and tabs' content below in separate panels.
  * It implements the logic for opening, closing, reopening already existing tabs etc.
+ * It implements the logic of the forms that may be part of the tabs.
  */
 @Component({
     selector: 'app-tab-view',
@@ -89,28 +98,13 @@ function sanitizePath(value: string | undefined): string | undefined {
 })
 export class TabViewComponent<TEntity, TForm extends FormState> implements OnInit, OnDestroy {
     /**
-     * Holds all open tabs.
-     */
-    openTabs: ComponentTab[] = []
-
-    /**
-     * Keeps the identifier value of currently active tab (this tab content is currently displayed,
-     * while other open tabs' content is hidden).
-     */
-    activeTabEntityID: number = 0
-
-    activeTabChange = output<number>()
-
-    tabClosed = output<ComponentTab>()
-
-    /**
      * Input flag which determines whether the tabs are closable (close button is displayed next to the tab title).
      * Defaults to true.
      */
     closableTabs = input(true, { transform: booleanAttribute })
 
     /**
-     * Input flag which determines whether for all entities that exist in the entitiesCollection array a tab should
+     * Input flag which determines whether for all entities that exist in the entitiesCollection array, a tab should
      * be created and open when the component is initialized.
      * Defaults to false.
      */
@@ -208,7 +202,8 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     entityTabIconKey = input('icon')
 
     /**
-     * If provided, this input number is the entity ID for which the tab will be open and activated when the component is initialized.
+     * If provided, this input number is the entity ID for which the tab will be open and activated up front
+     * when the component is initialized.
      * Defaults to undefined, which means that it is not used by default.
      */
     openEntityID = input<number>(undefined)
@@ -216,6 +211,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     /**
      * String input holding the name of the entity type.
      * E.g. Subnet, Shared network etc.
+     * Defaults to 'Entity'.
      */
     entityTypeName = input('Entity')
 
@@ -232,24 +228,14 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }> = input()
 
     /**
-     * Input function used to asynchronously provide the entity based on given entity ID.
-     * The function takes only one argument - entity ID and returns the Promise of the entity.
-     */
-    @Input() entityProvider: (id: number) => Promise<TEntity>
-
-    @Input() newFormProvider: () => TForm
-
-    @Input() entityTitleProvider: (entity: TEntity) => string = () => undefined
-
-    /**
      * Defines the template for the first tab content (first tab is optional; very often it is a table with the entities).
      */
-    @ContentChild('firstTab', { descendants: false }) firstTabTemplate: TemplateRef<any> | undefined
+    firstTabTemplate = contentChild<TemplateRef<any> | undefined>('firstTab', { descendants: false })
 
     /**
      * Defines the template for the entity tab content.
      */
-    @ContentChild('entityTab', { descendants: false }) entityTabTemplate: TemplateRef<any> | undefined
+    entityTabTemplate = contentChild<TemplateRef<any> | undefined>('entityTab', { descendants: false })
 
     /**
      * Defines the template for the form tab content.
@@ -273,6 +259,62 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      * It refers to either contentChildTable or inputTable.
      */
     entitiesTable = computed(() => this.contentChildTable() || this.inputTable())
+
+    /**
+     * Input function used to asynchronously provide the entity based on given entity ID.
+     * The function takes only one argument - entity ID and returns the Promise of the entity.
+     */
+    @Input() entityProvider: (id: number) => Promise<TEntity>
+
+    /**
+     * If the tab is supposed to provide the form functionality, this input function is used to provide new form instance.
+     */
+    @Input() newFormProvider: () => TForm
+
+    /**
+     * Input function used to provide custom title for the entities.
+     * The function takes the entity as an argument.
+     */
+    @Input() entityTitleProvider: (entity: TEntity) => string = () => undefined
+
+    /**
+     * Input function used to call REST API endpoint responsible for deleting the transaction of the 'create new entity' form.
+     * The function takes transactionID as an argument.
+     */
+    @Input() createTransactionDeleteAPICaller: (transactionID: number) => void
+
+    /**
+     * Input function used to call REST API endpoint responsible for deleting the transaction of the 'update existing entity' form.
+     * The function takes entityID and transactionID as arguments.
+     */
+    @Input() updateTransactionDeleteAPICaller: (entityID: number, transactionID: number) => void
+
+    /**
+     * Output emitting the identifier value of currently active tab whenever the value changes.
+     */
+    activeTabChange = output<number>()
+
+    /**
+     * Output emitting whole data structure of the tab that was closed.
+     */
+    tabClosed = output<ComponentTab>()
+
+    /**
+     * Holds all open tabs.
+     */
+    openTabs: ComponentTab[] = []
+
+    /**
+     * Keeps the identifier value of currently active tab (this tab content is currently displayed,
+     * while other open tabs' content is hidden).
+     */
+    activeTabEntityID: number = 0
+
+    /**
+     * Reference to the TabType enum so it could be used in the html template.
+     * @protected
+     */
+    protected readonly TabType = TabType
 
     /**
      * Activated route injected to retrieve route params.
@@ -299,16 +341,108 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     private subscriptions: Subscription
 
     /**
-     *
-     * @param id
+     * Component lifecycle hook which inits the component.
      */
-    getOpenTabEntity(id: number) {
-        return this.openTabs.find((tab) => tab.value === id)?.entity as TEntity
+    ngOnInit(): void {
+        console.log('storkTabViewComponent onInit', Date.now())
+
+        if (this.initWithEntitiesInCollection()) {
+            this.entitiesCollection().forEach((entity: TEntity) => {
+                this.openTabs.push(this.createTab(entity))
+            })
+        }
+
+        if (this.routePath()) {
+            this.subscriptions = this.router.events
+                .pipe(
+                    filter((e, idx) => e.type === EventType.NavigationEnd || idx === 0),
+                    switchMap((_e, idx) =>
+                        of({
+                            paramMap: this.activatedRoute.snapshot.paramMap,
+                            queryParamMap: this.activatedRoute.snapshot.queryParamMap,
+                            fragment: idx === 0 ? null : this.activatedRoute.snapshot.fragment,
+                        })
+                    )
+                )
+                .subscribe({
+                    next: (snapshot) => {
+                        const paramMap = snapshot.paramMap
+                        const queryParamMap = snapshot.queryParamMap
+                        const fragment = snapshot.fragment
+                        console.log('router events emits next', paramMap, queryParamMap, fragment, Date.now())
+                        const id = paramMap.get('id')
+                        if (!id || id === this.firstTabRouteEnd()) {
+                            console.log('no id in path or this is /all path - open first tab')
+                            this.activeTabEntityID = 0
+                            if (!this.entitiesTable()) {
+                                console.log('no table yet')
+                            }
+
+                            if (
+                                this.entitiesTable() &&
+                                this.tableQueryParamFilters() &&
+                                fragment !== this.tabNavigationRouteFragment()
+                            ) {
+                                const parsedFilters = this.queryParamMapToTableFilters(queryParamMap)
+                                console.log(
+                                    'qParams filter parsing',
+                                    parsedFilters,
+                                    'table has',
+                                    this.entitiesTable()?.filters
+                                )
+                                this.filterTableUsingMultipleFilters(parsedFilters.filters)
+                            }
+
+                            return
+                        }
+
+                        if (id === this.newEntityTabRouteEnd()) {
+                            this.openTab(NEW_ENTITY_FORM_TAB_ID)
+                            this.loadTableDataIfEmpty()
+
+                            return
+                        }
+
+                        const numericId = parseInt(id, 10)
+                        if (!Number.isNaN(numericId)) {
+                            this.openTab(numericId)
+                            this.loadTableDataIfEmpty()
+
+                            return
+                        } else {
+                            this.messageService.add({
+                                detail: `Couldn't parse provided id ${id} to numeric value!`,
+                                severity: 'error',
+                                summary: `Error opening tab`,
+                            })
+                            this.goToFirstTab()
+                            return
+                        }
+                    },
+                })
+            return
+        }
+
+        if (this.openEntityID()) {
+            // openEntityID input was provided, so let's open this tab.
+            this.openTab(this.openEntityID())
+            return
+        }
+
+        this.goToFirstTab()
+    }
+
+    /**
+     * Component lifecycle hook which destroys the component.
+     */
+    ngOnDestroy(): void {
+        console.log('storkTabViewComponent onDestroy')
+        this.subscriptions?.unsubscribe()
     }
 
     /**
      * Callback updating the tab title.
-     * It is called when the updateTabTitleFn function from the entityTabTemplate context is called.
+     * It may be called explicitly or when the updateTabTitleFn function from the entityTabTemplate context is called.
      * @param id tab ID which title should be updated
      * @param title updated title
      */
@@ -340,30 +474,13 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
         console.log('onUpdateTabEntity', id, existingTab, existingEntityInCollectionIdx)
         if (existingTab || existingEntityInCollectionIdx > -1) {
             if (entity) {
-                if (existingTab) {
-                    existingTab.entity = entity
-                }
-
-                if (existingEntityInCollectionIdx > -1) {
-                    this.entitiesTable()
-                        ? this.entitiesTable().value.splice(existingEntityInCollectionIdx, 1, entity)
-                        : this.entities().splice(existingEntityInCollectionIdx, 1, entity)
-                }
-
+                this.updateTabEntity(existingTab, existingEntityInCollectionIdx, entity)
                 return
             }
 
             this.entityProvider(id)
                 .then((entity) => {
-                    if (existingTab) {
-                        existingTab.entity = entity
-                    }
-
-                    if (existingEntityInCollectionIdx > -1) {
-                        this.entitiesTable()
-                            ? this.entitiesTable().value.splice(existingEntityInCollectionIdx, 1, entity)
-                            : this.entities().splice(existingEntityInCollectionIdx, 1, entity)
-                    }
+                    this.updateTabEntity(existingTab, existingEntityInCollectionIdx, entity)
                 })
                 .catch((error) => {
                     const msg = getErrorMessage(error)
@@ -377,32 +494,43 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
-     * Callback updating entity form state in open tabs when the form component gets destroyed.
+     * Helper method performing repeatable code in onUpdateTabEntity.
+     * @param tab tab where the entity is to be updated
+     * @param entityInCollectionIndex index in the entitiesCollection of the entity to be updated
+     * @param entity updated entity
+     * @private
+     */
+    private updateTabEntity(tab: ComponentTab, entityInCollectionIndex: number, entity: TEntity) {
+        if (tab) {
+            tab.entity = entity
+            tab.title = this.getTitle(entity)
+        }
+
+        if (entityInCollectionIndex > -1) {
+            this.entitiesTable()
+                ? this.entitiesTable().value.splice(entityInCollectionIndex, 1, entity)
+                : this.entities().splice(entityInCollectionIndex, 1, entity)
+        }
+    }
+
+    /**
+     * Callback doing cleanup when the form component gets destroyed.
      * It may be called explicitly or when the destroyFormFn function from the formTabTemplate context is called.
-     * @param formState form state to be stored
-     * @param tabType tab type to determine form type
-     * @param entityID optional ID of the entity; it can only be provided for Edit type of form
+     * If at this step destroyed form still has active create/update transaction, it calls the delete API endpoint.
+     * It is useful when e.g. user has active tab with the form and navigates away to other view in Stork.
+     * It requires provided inputs: createTransactionDeleteAPICaller and updateTransactionDeleteAPICaller.
+     * @param formState state of the form being destroyed
      */
     onDestroyForm = (formState: TForm) => {
-        console.log('onDestroyForm - transaction ID', formState.transactionID)
-        // const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
-        const tabToUpdate = this.openTabs.find(
-            (tab) => tab.form
-                && tab.form.formState.transactionID === formState.transactionID
-        )
-        if (tabToUpdate) {
-            const oldState = tabToUpdate.form.formState
-            console.log(
-                'onDestroyForm - form to update found',
-                // JSON.stringify
-                (oldState),
-                'new one',
-                // JSON.stringify
-                (formState)
-            )
-            tabToUpdate.form.formState = formState
-            console.log('onDestroyForm - tab', tabToUpdate)
-            //TODO: transaction delete on form destroy? delete API endpoints as inputs (providers?) to have it generic? store form state as JSON in browser storage?
+        const foundTab = this.openTabs.find((tab) => tab.form?.formState.transactionID === formState.transactionID)
+        console.log('onDestroyForm - transaction ID', formState.transactionID, 'found tab', foundTab)
+        if (foundTab) {
+            foundTab.form.formState = formState // TODO: this probably doesn't make sense?
+            if (foundTab.tabType === TabType.New && formState.transactionID) {
+                this.createTransactionDeleteAPICaller(formState.transactionID)
+            } else if (foundTab.tabType === TabType.Edit && formState.transactionID) {
+                this.updateTransactionDeleteAPICaller(foundTab.value, formState.transactionID)
+            }
         }
     }
 
@@ -411,33 +539,31 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      * It may be called explicitly or when the submitFormFn function from the formTabTemplate context is called.
      * It marks the form as submitted to prevent the component from canceling
      * the transaction. Next, in case it was Edit form, the tab is changed to display the edited entity.
-     * In case it was New entity form and submitted ID is known, the tab is changed to display the new entity
+     * In case it was New entity form and submitted ID is known, the tab is changed to display the new entity.
      * In case it was New entity form and submitted ID is unknown, it closes the form tab.
-     * @param entityID optional ID of the entity
      * @param formState form state that was submitted
+     * @param entityID optional ID of the entity
      */
     onSubmitForm = (formState: TForm, entityID?: number) => {
-        console.log('onSubmitForm - transactionID', formState.transactionID)
-        // const extendEntityID = tabType === TabType.New ? NEW_ENTITY_FORM_TAB_ID : entityID
-        const tabToUpdate = this.openTabs.find(
-            (tab) => tab.form?.formState.transactionID === formState.transactionID
-        )
-        if (tabToUpdate) {
-            console.log('onSubmitForm - form to update found in tab', tabToUpdate)
-            tabToUpdate.form.submitted = true
+        const foundTab = this.openTabs.find((tab) => tab.form?.formState.transactionID === formState.transactionID)
+        console.log('onSubmitForm - transactionID', formState.transactionID, 'found tab', foundTab)
+        if (foundTab) {
+            foundTab.form.submitted = true
 
-            if (tabToUpdate.tabType === TabType.Edit) {
+            if (foundTab.tabType === TabType.Edit) {
                 // Edit form was submitted, so let's stay on this tab, but let's change to Display type and refresh the entity.
-                tabToUpdate.tabType = TabType.Display
-                tabToUpdate.icon = undefined
-                // tabToUpdate.form.formState.transactionID = 0
-                tabToUpdate.form = undefined
-                this.onUpdateTabEntity(tabToUpdate.value)
-            } else if (tabToUpdate.tabType === TabType.New) {
+                foundTab.tabType = TabType.Display
+                foundTab.icon = undefined
+                // TODO: which one?
+                // foundTab.form.formState.transactionID = 0
+                // foundTab.form = undefined
+                foundTab.form = undefined
+                this.onUpdateTabEntity(foundTab.value)
+            } else if (foundTab.tabType === TabType.New) {
                 this.forceLoadTableData()
                 this.closeTab(NEW_ENTITY_FORM_TAB_ID)
                 if (entityID) {
-                    // New entity form submitted and we have information about new entity ID. So let's display new entity.
+                    // New entity form submitted, and we have information about new entity ID. So let's display new entity.
                     this.openTab(entityID)
                 }
             }
@@ -447,44 +573,61 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     /**
      * Callback updating entity tab in open tabs when the form is cancelled.
      * It may be called explicitly or when the cancelFormFn function from the formTabTemplate context is called.
-     * If the event comes from the new entity form, the tab is closed. If the
-     * event comes from the entity edit form, the tab is turned into the
-     * display type tab.
+     * If the create new entity form is cancelled, the tab is closed. If the entity edit form is cancelled,
+     * the tab is turned into the display type tab.
+     * If at this step cancelled form still has active create/update transaction, it calls the delete API endpoint.
+     * It requires provided inputs: createTransactionDeleteAPICaller and updateTransactionDeleteAPICaller.
      * @param tabType tab type to determine form type
-     * @param entityID optional ID of the entity; it can only be provided for Edit type of form
+     * @param entityID optional ID of the entity;
      */
     onCancelForm = (tabType: TabType, entityID?: number) => {
-        console.log('onCancelForm', tabType, entityID)
-        if (tabType === TabType.New) {
-            console.log('onCancelForm - just close the form')
-            this.closeTab(NEW_ENTITY_FORM_TAB_ID)
+        const foundTab = this.openTabs.find(
+            (tab) => tab.value === (entityID ?? NEW_ENTITY_FORM_TAB_ID) && tab.tabType === tabType
+        )
+        console.log('onCancelForm', tabType, entityID, 'found tab', foundTab)
+        if (!foundTab) {
             return
         }
 
-        const tabToUpdate = this.openTabs.find((tab) => tab.form?.formState.transactionID && tab.value === entityID && tab.tabType === tabType)
-        if (tabToUpdate) {
-            console.log('onCancelForm - form tab to cancel found', tabToUpdate, 'transactionID', tabToUpdate.form?.formState.transactionID)
-            tabToUpdate.tabType = TabType.Display
-            tabToUpdate.icon = undefined
-            // TODO: shall it be done?
-            tabToUpdate.form = undefined
+        if (tabType === TabType.New) {
+            console.log('onCancelForm - create form')
+            if (foundTab.form?.formState.transactionID && !foundTab.form.submitted) {
+                this.createTransactionDeleteAPICaller(foundTab.form.formState.transactionID)
+                foundTab.form.formState.transactionID = 0
+            }
+
+            this.closeTab(NEW_ENTITY_FORM_TAB_ID)
+        } else if (tabType === TabType.Edit) {
+            console.log('onCancelForm - edit form')
+            foundTab.tabType = TabType.Display
+            foundTab.icon = undefined
+
+            if (foundTab.form?.formState.transactionID && !foundTab.form.submitted) {
+                this.updateTransactionDeleteAPICaller(entityID, foundTab.form.formState.transactionID)
+                // TODO: shall it be done?
+                // foundTab.form = undefined
+                foundTab.form.formState.transactionID = 0
+            }
         }
     }
 
+    /**
+     * Callback updating entity tab in open tabs when user begins to edit the entity i.e. the edit form is created.
+     * It may be called explicitly or when the beginEntityEditFn function from the formTabTemplate context is called.
+     * @param entityID ID of the entity to be edited
+     */
     onBeginEntityEdit = (entityID: number) => {
-        console.log('onBeginEntityEdit', entityID, Date.now())
-        const existingTab = this.openTabs.find((tab) => tab.value === entityID)
-        console.log('onBeginEntityEdit find tab result', // JSON.stringify
-        (existingTab))
-        if (existingTab && existingTab.tabType !== TabType.Edit) {
-            existingTab.tabType = TabType.Edit
-            existingTab.icon = 'pi pi-pencil'
-            if (!existingTab.form) {
+        const foundTab = this.openTabs.find((tab) => tab.value === entityID)
+        console.log('onBeginEntityEdit', entityID, 'found tab', foundTab)
+        if (foundTab && foundTab.tabType !== TabType.Edit) {
+            foundTab.tabType = TabType.Edit
+            foundTab.icon = 'pi pi-pencil'
+            if (!foundTab.form) {
                 console.log('onBeginEntityEdit - no form yet, create new one')
-                existingTab.form = { submitted: false, formState: this.newFormProvider() }
+                foundTab.form = { submitted: false, formState: this.newFormProvider() }
             } else {
-                // existingTab.form.submitted = false
-                console.log('onBeginEntityEdit - there is a form that exists', existingTab.form)
+                foundTab.form.submitted = false
+                console.log('onBeginEntityEdit - there is a form that exists', foundTab.form)
             }
         }
 
@@ -493,7 +636,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
 
     /**
      * Deletes the entity from entities collection and closes this entity tab.
-     * @param id
+     * @param id ID of the entity to be deleted
      */
     onDeleteEntity = (id: number) => {
         const existingEntityInCollectionIdx = this.entitiesCollection()?.findIndex(
@@ -509,31 +652,11 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
-     * Gets the identifier value of the entity.
-     * @param entity the entity used to retrieve the data
-     * @private
+     * Gets the entity from the tab with given ID.
+     * @param id ID of the entity
      */
-    private getID(entity: TEntity): number {
-        return entity[this.entityIDKey()]
-    }
-
-    /**
-     * Gets the title value of the entity.
-     * @param entity the entity used to retrieve the data
-     * @private
-     */
-    private getTitle(entity: TEntity): string {
-        return this.entityTitleProvider(entity) || entity[this.entityTitleKey()]
-    }
-
-    /**
-     * Gets the icon string value of the entity.
-     * @param entity the entity used to retrieve the data
-     * @return icon string or undefined if it was not found
-     * @private
-     */
-    private getIcon(entity: TEntity): string | undefined {
-        return entity[this.entityTabIconKey()] || undefined
+    getOpenTabEntity(id: number): TEntity {
+        return this.openTabs.find((tab) => tab.value === id)?.entity as TEntity
     }
 
     /**
@@ -624,8 +747,24 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
             `tabToCloseIndex: ${tabToCloseIndex} activeTabIndex: ${activeTabIndex} activeTabEntityID: ${this.activeTabEntityID}`
         )
         if (tabToCloseIndex > -1) {
-            const closedTab = this.openTabs.splice(tabToCloseIndex, 1)
-            this.tabClosed.emit(closedTab[0])
+            const closedTab = this.openTabs.splice(tabToCloseIndex, 1)[0]
+            if (
+                closedTab.tabType === TabType.New &&
+                this.createTransactionDeleteAPICaller &&
+                closedTab.form?.formState.transactionID &&
+                !closedTab.form.submitted
+            ) {
+                this.createTransactionDeleteAPICaller(closedTab.form.formState.transactionID)
+            } else if (
+                closedTab.tabType === TabType.Edit &&
+                this.updateTransactionDeleteAPICaller &&
+                closedTab.form?.formState.transactionID &&
+                !closedTab.form.submitted
+            ) {
+                this.updateTransactionDeleteAPICaller(entityID, closedTab.form.formState.transactionID)
+            }
+
+            this.tabClosed.emit(closedTab)
             if (tabToCloseIndex <= activeTabIndex) {
                 this.goToFirstTab(true)
             }
@@ -634,6 +773,9 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
 
     /**
      * Activates first tab.
+     * @param tabNavigation optional boolean flag; if set to true, when the router navigation to the first tab happens,
+     * route fragment is set to mark the navigation as a tab-navigation (i.e. the table data in the first tab will not be reloaded).
+     * Defaults to false.
      */
     goToFirstTab(tabNavigation = false) {
         if (this.routePath()) {
@@ -649,25 +791,71 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
+     * This effect signal is used for dev purpose.
+     */
+    initializedTableEffect = effect(() => {
+        if (!this.entitiesTable()) {
+            return
+        }
+        console.log('content child #table', this.entitiesTable(), Date.now())
+    })
+
+    /**
+     * Callback called whenever active tab changes.
+     * @param activeTabID currently changed and active tab ID which is also the entity ID
+     */
+    onActiveTabChange(activeTabID: string | number) {
+        console.log('storkTabViewComponent log onValueChange', activeTabID)
+        this.activeTabChange.emit(activeTabID as number)
+    }
+
+    /**
+     * Loads the entities table data only if it is empty.
+     */
+    loadTableDataIfEmpty() {
+        if (
+            this.entitiesTable() &&
+            !tableHasFilter(this.entitiesTable()) &&
+            !(this.entitiesTable().value ?? []).length
+        ) {
+            console.log('loadTableDataIfEmpty, init table because it seems to be empty', this.entitiesTable()?.value)
+            const metadata = this.entitiesTable().createLazyLoadMetadata()
+            this.entitiesTable().onLazyLoad.emit(metadata)
+        }
+    }
+
+    /**
+     * Force loads the entities table data.
+     */
+    forceLoadTableData() {
+        if (this.entitiesTable()) {
+            console.log('forceLoadTableData')
+            const metadata = this.entitiesTable().createLazyLoadMetadata()
+            this.entitiesTable().onLazyLoad.emit(metadata)
+        }
+    }
+
+    /**
      * Creates a tab data structure based on given entity.
      * @param entity entity used to construct the tab
-     * @param tabType type of the tab; if not provided, it is by default set to type Display
+     * @private
      */
-    createTab(entity: TEntity, tabType?: TabType): ComponentTab {
+    private createTab(entity: TEntity): ComponentTab {
         return {
             title: this.getTitle(entity),
             value: this.getID(entity),
             entity: entity,
             route: this.routePath() ? this.routePath() + this.getID(entity) : undefined,
             icon: this.getIcon(entity),
-            tabType: tabType ?? TabType.Display,
+            tabType: TabType.Display,
         }
     }
 
     /**
      * Creates a tab data structure for the tab with the form for adding a new entity.
+     * @private
      */
-    createNewEntityFormTab(): ComponentTab {
+    private createNewEntityFormTab(): ComponentTab {
         return {
             title: `New ${this.entityTypeName()}`,
             value: NEW_ENTITY_FORM_TAB_ID,
@@ -680,15 +868,42 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
+     * Gets the identifier value of the entity.
+     * @param entity the entity used to retrieve the data
+     * @private
+     */
+    private getID(entity: TEntity): number {
+        return entity[this.entityIDKey()]
+    }
+
+    /**
+     * Gets the title value of the entity.
+     * @param entity the entity used to retrieve the data
+     * @private
+     */
+    private getTitle(entity: TEntity): string {
+        return this.entityTitleProvider(entity) || entity[this.entityTitleKey()]
+    }
+
+    /**
+     * Gets the icon string value of the entity.
+     * @param entity the entity used to retrieve the data
+     * @return icon string or undefined if it was not found
+     * @private
+     */
+    private getIcon(entity: TEntity): string | undefined {
+        return entity[this.entityTabIconKey()] || undefined
+    }
+
+    /**
      * Converts queryParamMap to PrimeNG table filters.
-     * @param queryParamMap
+     * @param queryParamMap queryParams map to be converted
      * @private
      */
     private queryParamMapToTableFilters(queryParamMap: ParamMap): {
         count: number
         filters: { [p: string]: FilterMetadata }
     } {
-        // TODO: Move the queryParams filter validation logic to table.ts to replace existing, more complicated logic.
         let validFilters = 0
         let _queryParamFilters = {}
         for (const paramKey of queryParamMap.keys) {
@@ -792,7 +1007,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
 
     /**
      * Filters PrimeNG table by applying all given filters at once.
-     * @param filters
+     * @param filters PrimeNG table filters
      * @private
      */
     private filterTableUsingMultipleFilters(filters: { [x: string]: FilterMetadata | FilterMetadata[] }): void {
@@ -804,150 +1019,4 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
         this.firstTabQueryParams.set(qp)
         this.entitiesTable()?._filter()
     }
-
-    initializedTableEffect = effect(() => {
-        if (!this.entitiesTable()) {
-            return
-        }
-        console.log('content child #table', this.entitiesTable(), Date.now())
-        // const queryParamFilters = this._parseQueryParams(this.route.snapshot.queryParamMap)
-        // const metadata = this.contentChildTable().createLazyLoadMetadata()
-        // const filters = { ...metadata.filters, ...queryParamFilters.filters }
-        // this.contentChildTable().filters = filters
-        // const newMeta = { ...metadata, ...filters }
-        // this.contentChildTable().onLazyLoad.emit(newMeta)
-    })
-
-    /**
-     * Component lifecycle hook which inits the component.
-     */
-    ngOnInit(): void {
-        console.log('storkTabViewComponent onInit', Date.now())
-
-        if (this.initWithEntitiesInCollection()) {
-            this.entitiesCollection().forEach((entity: TEntity) => {
-                this.openTabs.push(this.createTab(entity))
-            })
-        }
-
-        if (this.routePath()) {
-            this.subscriptions = this.router.events
-                .pipe(
-                    filter((e, idx) => e.type === EventType.NavigationEnd || idx === 0),
-                    switchMap((_e, idx) =>
-                        of({
-                            paramMap: this.activatedRoute.snapshot.paramMap,
-                            queryParamMap: this.activatedRoute.snapshot.queryParamMap,
-                            fragment: idx === 0 ? null : this.activatedRoute.snapshot.fragment,
-                        })
-                    )
-                )
-                .subscribe({
-                    next: (snapshot) => {
-                        const paramMap = snapshot.paramMap
-                        const queryParamMap = snapshot.queryParamMap
-                        const fragment = snapshot.fragment
-                        console.log('router events emits next', paramMap, queryParamMap, fragment, Date.now())
-                        const id = paramMap.get('id')
-                        if (!id || id === this.firstTabRouteEnd()) {
-                            console.log('no id in path or this is /all path - open first tab')
-                            this.activeTabEntityID = 0
-                            if (!this.entitiesTable()) {
-                                console.log('no table yet')
-                            }
-
-                            if (
-                                this.entitiesTable() &&
-                                this.tableQueryParamFilters() &&
-                                fragment !== this.tabNavigationRouteFragment()
-                            ) {
-                                const parsedFilters = this.queryParamMapToTableFilters(queryParamMap)
-                                console.log(
-                                    'qParams filter parsing',
-                                    parsedFilters,
-                                    'table has',
-                                    this.entitiesTable()?.filters
-                                )
-                                this.filterTableUsingMultipleFilters(parsedFilters.filters)
-                            }
-
-                            return
-                        }
-
-                        if (id === this.newEntityTabRouteEnd()) {
-                            this.openTab(NEW_ENTITY_FORM_TAB_ID)
-                            this.loadTableDataIfEmpty()
-
-                            return
-                        }
-
-                        const numericId = parseInt(id, 10)
-                        if (!Number.isNaN(numericId)) {
-                            this.openTab(numericId)
-                            this.loadTableDataIfEmpty()
-
-                            return
-                        } else {
-                            this.messageService.add({
-                                detail: `Couldn't parse provided id ${id} to numeric value!`,
-                                severity: 'error',
-                                summary: `Error opening tab`,
-                            })
-                            this.goToFirstTab()
-                            return
-                        }
-                    },
-                })
-            return
-        }
-
-        if (this.openEntityID()) {
-            // openEntityID input was provided, so let's open this tab.
-            this.openTab(this.openEntityID())
-            return
-        }
-
-        this.goToFirstTab()
-    }
-
-    /**
-     * Component lifecycle hook which destroys the component.
-     */
-    ngOnDestroy(): void {
-        console.log('storkTabViewComponent onDestroy')
-        this.subscriptions?.unsubscribe()
-    }
-
-    /**
-     * Debug string logger.
-     * @param event
-     */
-    logChange(event: string | number) {
-        console.log('storkTabViewComponent log onValueChange', event)
-        this.activeTabChange.emit(event as number)
-    }
-
-    loadTableDataIfEmpty() {
-        if (
-            this.entitiesTable() &&
-            !tableHasFilter(this.entitiesTable()) &&
-            !(this.entitiesTable().value ?? []).length
-        ) {
-            console.log('loadTableDataIfEmpty, init table because it seems to be empty', this.entitiesTable()?.value)
-            const metadata = this.entitiesTable().createLazyLoadMetadata()
-            this.entitiesTable().onLazyLoad.emit(metadata)
-        }
-    }
-
-    forceLoadTableData() {
-        if (
-            this.entitiesTable()
-        ) {
-            console.log('forceLoadTableData')
-            const metadata = this.entitiesTable().createLazyLoadMetadata()
-            this.entitiesTable().onLazyLoad.emit(metadata)
-        }
-    }
-
-    protected readonly TabType = TabType
 }
