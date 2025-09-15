@@ -14,7 +14,7 @@
         label="Refresh List"
         icon="pi pi-refresh"
         styleClass="block p-button-primary no-underline"
-        (onClick)="reloadData(configMigrationTable)"
+        (onClick)="loadData(configMigrationTable.createLazyLoadMetadata())"
     ></p-button>
 </div>
 
@@ -27,12 +27,12 @@
     [lazy]="true"
     [loading]="dataLoading"
     (onLazyLoad)="loadData($event)"
-    [lazyLoadOnInit]="true"
+    [lazyLoadOnInit]="false"
     [totalRecords]="totalRecords"
     [rowsPerPageOptions]="[10, 30, 100]"
     [showCurrentPageReport]="true"
-    [currentPageReportTemplate]="currentPageReportTemplate"
-    styleClass="p-datatable-striped"
+    currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    [stripedRows]="true"
 >
     <ng-template #header>
         <tr>

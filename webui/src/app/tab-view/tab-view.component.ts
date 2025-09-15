@@ -370,6 +370,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
                             paramMap: this.activatedRoute.snapshot.paramMap,
                             queryParamMap: this.activatedRoute.snapshot.queryParamMap,
                             fragment: idx === 0 ? null : this.activatedRoute.snapshot.fragment,
+                            firstNavigation: idx === 0,
                         })
                     )
                 )
@@ -378,6 +379,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
                         const paramMap = snapshot.paramMap
                         const queryParamMap = snapshot.queryParamMap
                         const fragment = snapshot.fragment
+                        const firstNavigation = snapshot.firstNavigation
                         console.log('router events emits next', paramMap, queryParamMap, fragment, Date.now())
                         const id = paramMap.get('id')
                         if (!id || id === this.firstTabRouteEnd()) {
@@ -400,6 +402,12 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
                                     this.entitiesTable()?.filters
                                 )
                                 this.filterTableUsingMultipleFilters(parsedFilters.filters)
+                            } else if (
+                                this.entitiesTable() &&
+                                !this.tableQueryParamFilters() &&
+                                fragment !== this.tabNavigationRouteFragment()
+                            ) {
+                                this.loadTableDataIfEmpty()
                             }
 
                             return
@@ -408,6 +416,9 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
                         if (id === this.newEntityTabRouteEnd()) {
                             this.openTab(NEW_ENTITY_FORM_TAB_ID)
                             this.loadTableDataIfEmpty()
+                            if (firstNavigation) {
+                                this.onActiveTabChange(NEW_ENTITY_FORM_TAB_ID)
+                            }
 
                             return
                         }
@@ -416,6 +427,9 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
                         if (!Number.isNaN(numericId)) {
                             this.openTab(numericId)
                             this.loadTableDataIfEmpty()
+                            if (firstNavigation) {
+                                this.onActiveTabChange(numericId)
+                            }
 
                             return
                         } else {
@@ -788,22 +802,49 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
+     * Closes all tabs that pass the testFn predicate function.
+     * @param testFn function which takes tab entity as parameter and must
+     *               either return true or false; if true returned, the tab will be closed
+     */
+    closeTabsConditionally(testFn: (entity: TEntity) => boolean) {
+        const activeTabIndex = this.openTabs.findIndex((tab) => tab.value === this.activeTabEntityID)
+        let goToFirst = false
+        this.openTabs.forEach((tab, index) => {
+            if (testFn(tab.entity as TEntity)) {
+                const closedTab = this.openTabs.splice(index, 1)[0]
+                this.tabClosed.emit(closedTab)
+                if (index <= activeTabIndex) {
+                    goToFirst = true
+                }
+            }
+        })
+
+        if (goToFirst) {
+            this.goToFirstTab(true)
+        }
+    }
+
+    /**
      * Activates first tab.
      * @param tabNavigation optional boolean flag; if set to true, when the router navigation to the first tab happens,
      * route fragment is set to mark the navigation as a tab-navigation (i.e. the table data in the first tab will not be reloaded).
      * Defaults to false.
      */
     goToFirstTab(tabNavigation = false) {
+        this.activeTabEntityID = this.openTabs[0]?.value || 0
+        this.onActiveTabChange(this.activeTabEntityID)
+
         if (this.routePath()) {
             console.log('go to first tab using router')
             this.router.navigate([this.firstTabRoute()], {
                 queryParams: this.firstTabQueryParams(),
                 fragment: tabNavigation ? this.tabNavigationRouteFragment() : undefined,
             })
-        } else {
-            console.log('go to first tab without using router')
-            this.activeTabEntityID = this.openTabs[0]?.value || 0
+
+            return
         }
+
+        console.log('go to first tab without using router')
     }
 
     /**

@@ -159,8 +159,8 @@ describe('ConfigMigrationPageComponent', () => {
 
         expect(dhcpApi.getMigration).toHaveBeenCalledWith(1)
         expect(component.tabs.length).toBe(2)
-        expect(component.activeTabIndex).toBe(1)
-        expect(component.tabItems[component.activeTabIndex]).toEqual(mockRunningMigration)
+        expect(component.activeTabMigrationID).toBe(1)
+        expect(component.tabItems[component.activeTabMigrationID]).toEqual(mockRunningMigration)
 
         flush()
     }))
@@ -206,7 +206,7 @@ describe('ConfigMigrationPageComponent', () => {
 
         expect(dhcpApi.getMigration).not.toHaveBeenCalled()
         expect(component.tabs.length).toBe(2)
-        expect(component.activeTabIndex).toBe(1)
+        expect(component.activeTabMigrationID).toBe(1)
     }))
 
     it('should close migration tab', fakeAsync(() => {
@@ -225,8 +225,8 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.tabs.length).toBe(1)
-        expect(component.activeTabIndex).toBe(0)
-        expect(component.tabItems[component.activeTabIndex]).toEqual({})
+        expect(component.activeTabMigrationID).toBe(0)
+        expect(component.tabItems[component.activeTabMigrationID]).toEqual({})
 
         flush()
     }))
@@ -238,7 +238,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.tabs.length).toBe(1)
-        expect(component.activeTabIndex).toBe(0)
+        expect(component.activeTabMigrationID).toBe(0)
     })
 
     it('should cancel migration', fakeAsync(() => {

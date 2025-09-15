@@ -1,13 +1,13 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <ng-container *ngIf="activeTabIndex === 0">
+        <ng-container *ngIf="activeTabMigrationID() === 0">
             <p>
                 This page displays a list of config migrations. The migration moves the entities from the Kea JSON
                 configuration to the Kea database. The migration is a one-time but time-consuming operation. On this
                 page, you can monitor the progress of the migration.
             </p>
         </ng-container>
-        <ng-container *ngIf="activeTabIndex !== 0">
+        <ng-container *ngIf="activeTabMigrationID() !== 0">
             <p>
                 This page displays the details of the specific migration. You can monitor the progress of the migration
                 and cancel it if necessary.
@@ -16,31 +16,25 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [scrollable]="true" styleClass="mb-2">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" [routerLink]="item.routerLink" class="p-menuitem-link">
-            <div class="flex justify-content-between">
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-            </div>
-            <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTab(i, $event)"></div>
-        </a>
+<app-tab-view
+    routePath="/config-migrations/"
+    [entityProvider]="migrationProvider"
+    firstTabTitle="Config migrations"
+    [entityTitleProvider]="tabTitleProvider"
+    [inputTable]="migrationsTableComponent()?.table"
+    (activeTabChange)="activeTabMigrationID.set($event)"
+>
+    <ng-template #firstTab>
+        <app-config-migration-table
+            (cancelMigration)="onCancelMigration($event)"
+            (clearMigrations)="onClearFinishedMigrations()"
+        ></app-config-migration-table>
     </ng-template>
-</p-tabMenu>
-
-<div>
-    <div *ngIf="activeTabIndex !== 0" class="p-component">
+    <ng-template #entityTab let-migration let-onRefreshMigration="updateTabEntityFn">
         <app-config-migration-tab
-            [migration]="this.tabItems[activeTabIndex]"
+            [migration]="migration"
             (cancelMigration)="onCancelMigration($event)"
             (refreshMigration)="onRefreshMigration($event)"
         ></app-config-migration-tab>
-    </div>
-    <app-config-migration-table
-        [hidden]="activeTabIndex !== 0"
-        (cancelMigration)="onCancelMigration($event)"
-        (clearMigrations)="onClearFinishedMigrations()"
-        [alteredStatuses]="alteredStatuses"
-    ></app-config-migration-table>
-</div>
+    </ng-template>
+</app-tab-view>
