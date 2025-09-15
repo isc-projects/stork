@@ -4,55 +4,51 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a
-            role="menuitem"
-            pRipple
-            [routerLink]="item.routerLink"
-            [queryParams]="i === 0 ? networksTableComponent?.validFilter : null"
-            class="p-ripple p-element p-menuitem-link"
-        >
-            <div class="flex justify-content-space-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>
-            </div>
-        </a>
+<app-tab-view
+    routePath="/dhcp/shared-networks/"
+    [entityProvider]="sharedNetworkProvider"
+    [newFormProvider]="sharedNetworkFormProvider"
+    [createTransactionDeleteAPICaller]="callCreateNetworkDeleteTransaction"
+    [updateTransactionDeleteAPICaller]="callUpdateNetworkDeleteTransaction"
+    [tableQueryParamFilters]="{
+        appId: { type: 'numeric', matchMode: 'equals' },
+        dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
+        text: { type: 'string', matchMode: 'contains' },
+    }"
+    [inputTable]="networksTableComponent()?.table"
+    [forceAsyncEntityFetch]="true"
+    entityTypeName="Shared Network"
+>
+    <ng-template #firstTab>
+        <app-shared-networks-table #networksTableComponent [dataLoading]="loading"></app-shared-networks-table>
     </ng-template>
-</p-tabMenu>
-
-<div>
-    <!-- Shared network tab template -->
-    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component max-w-50rem">
+    <ng-template
+        #entityTab
+        let-sharedNetwork
+        let-onSharedNetworkEditBegin="beginEntityEditFn"
+        let-onSharedNetworkDelete="deleteEntityFn"
+    >
         <app-shared-network-tab
-            *ngSwitchCase="SharedNetworkTabType.Display"
-            [sharedNetwork]="openedTabs[activeTabIndex].tabSubject"
-            (sharedNetworkEditBegin)="onSharedNetworkEditBegin(openedTabs[activeTabIndex].tabSubject)"
-            (sharedNetworkDelete)="onSharedNetworkDelete(openedTabs[activeTabIndex].tabSubject)"
+            [sharedNetwork]="sharedNetwork"
+            (sharedNetworkEditBegin)="onSharedNetworkEditBegin(sharedNetwork.id)"
+            (sharedNetworkDelete)="onSharedNetworkDelete(sharedNetwork.id)"
         ></app-shared-network-tab>
+    </ng-template>
+    <ng-template
+        #formTab
+        let-sharedNetwork
+        let-tabType="tabType"
+        let-tabForm="tabForm"
+        let-onSharedNetworkFormDestroy="destroyFormFn"
+        let-onSharedNetworkFormSubmit="submitFormFn"
+        let-onSharedNetworkFormCancel="cancelFormFn"
+    >
         <app-shared-network-form
-            *ngSwitchCase="SharedNetworkTabType.New"
-            [state]="openedTabs[activeTabIndex].state"
+            [state]="tabForm.formState"
+            [sharedNetworkId]="sharedNetwork?.id"
             (formDestroy)="onSharedNetworkFormDestroy($event)"
-            (formSubmit)="onSharedNetworkFormSubmit($event)"
-            (formCancel)="onSharedNetworkFormCancel()"
+            (formSubmit)="onSharedNetworkFormSubmit($event, $event.sharedNetworkId)"
+            (formCancel)="onSharedNetworkFormCancel(tabType, sharedNetwork?.id)"
         ></app-shared-network-form>
-        <app-shared-network-form
-            *ngSwitchCase="SharedNetworkTabType.Edit"
-            [state]="openedTabs[activeTabIndex].state"
-            [sharedNetworkId]="openedTabs[activeTabIndex].tabSubject.id"
-            (formDestroy)="onSharedNetworkFormDestroy($event)"
-            (formSubmit)="onSharedNetworkFormSubmit($event)"
-            (formCancel)="onSharedNetworkFormCancel(openedTabs[activeTabIndex].tabSubject.id)"
-        ></app-shared-network-form>
-    </div>
-
-    <app-shared-networks-table
-        #networksTableComponent
-        [hidden]="activeTabIndex !== 0"
-        [dataLoading]="loading"
-    ></app-shared-networks-table>
-</div>
+    </ng-template>
+</app-tab-view>

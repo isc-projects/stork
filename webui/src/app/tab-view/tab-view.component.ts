@@ -111,6 +111,15 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     initWithEntitiesInCollection = input(false, { transform: booleanAttribute })
 
     /**
+     * Input flag which determines whether when opening new tab for an entity, table entitiesCollection
+     * should be searched first or not for existing entity.
+     * When set to true, every time entityProvider will be called (if available) to retrieve the entity.
+     * Otherwise, this step may be skipped, if the entity exists in the entitiesCollection of the table.
+     * Defaults to false.
+     */
+    forceAsyncEntityFetch = input(false, { transform: booleanAttribute })
+
+    /**
      * Input string which holds the title displayed on the first tab.
      * Defaults to 'All'.
      */
@@ -694,7 +703,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
         console.log('openTab', entityID, 'need to fetch data and create new tab')
         let entityToOpen = undefined
         // First let's check entities collection. Maybe the entity is there.
-        if (this.entitiesCollection()) {
+        if (this.entitiesCollection() && !this.forceAsyncEntityFetch()) {
             console.log('openTab - collection check', this.entitiesCollection())
             entityToOpen = this.entitiesCollection().find((entity) => this.getID(entity) === entityID)
         }

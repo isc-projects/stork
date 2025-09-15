@@ -334,7 +334,7 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(component.state).toBeTruthy()
         expect(component.state.loaded).toBeTrue()
-        expect(component.state.transactionId).toBe(123)
+        expect(component.state.transactionID).toBe(123)
         expect(component.state.ipType).toBe(IPType.IPv4)
         expect(component.state.group).toBeTruthy()
         expect(component.state.filteredDaemons.length).toBe(3)
@@ -385,7 +385,7 @@ describe('SharedNetworkFormComponent', () => {
             ],
         }
 
-        expect(dhcpApi.createSharedNetworkSubmit).toHaveBeenCalledWith(component.state.transactionId, sharedNetwork)
+        expect(dhcpApi.createSharedNetworkSubmit).toHaveBeenCalledWith(component.state.transactionID, sharedNetwork)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     })
@@ -398,7 +398,7 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(component.state).toBeTruthy()
         expect(component.state.loaded).toBeTrue()
-        expect(component.state.transactionId).toBe(234)
+        expect(component.state.transactionID).toBe(234)
         expect(component.state.ipType).toBe(IPType.IPv4)
         expect(component.state.group).toBeTruthy()
         expect(component.state.filteredDaemons.length).toBe(3)
@@ -449,7 +449,7 @@ describe('SharedNetworkFormComponent', () => {
             ],
         }
 
-        expect(dhcpApi.createSharedNetworkSubmit).toHaveBeenCalledWith(component.state.transactionId, sharedNetwork)
+        expect(dhcpApi.createSharedNetworkSubmit).toHaveBeenCalledWith(component.state.transactionID, sharedNetwork)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     })
@@ -463,7 +463,7 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(component.state).toBeTruthy()
         expect(component.state.loaded).toBeTrue()
-        expect(component.state.transactionId).toBe(123)
+        expect(component.state.transactionID).toBe(123)
         expect(component.state.ipType).toBe(IPType.IPv4)
         expect(component.state.group).toBeTruthy()
         expect(component.state.filteredDaemons.length).toBe(3)
@@ -556,7 +556,7 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(dhcpApi.updateSharedNetworkSubmit).toHaveBeenCalledWith(
             component.sharedNetworkId,
-            component.state.transactionId,
+            component.state.transactionID,
             sharedNetwork
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()
@@ -572,7 +572,7 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(component.state).toBeTruthy()
         expect(component.state.loaded).toBeTrue()
-        expect(component.state.transactionId).toBe(234)
+        expect(component.state.transactionID).toBe(234)
         expect(component.state.ipType).toBe(IPType.IPv6)
         expect(component.state.group).toBeTruthy()
         expect(component.state.filteredDaemons.length).toBe(3)
@@ -645,7 +645,7 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(dhcpApi.updateSharedNetworkSubmit).toHaveBeenCalledWith(
             component.sharedNetworkId,
-            component.state.transactionId,
+            component.state.transactionID,
             sharedNetwork
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()

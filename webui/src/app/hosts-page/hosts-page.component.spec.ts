@@ -159,7 +159,7 @@ describe('HostsPageComponent', () => {
         }
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
-        component.table.table.clearFilterValues()
+        component.hostsTable().table.clearFilterValues()
 
         fixture.detectChanges()
     })

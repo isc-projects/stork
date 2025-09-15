@@ -379,8 +379,8 @@ describe('SharedNetworksPageComponent', () => {
         }
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
-        component.table.table.clearFilterValues()
-        component.table.filter$.next({})
+        component.networksTableComponent().table.clearFilterValues()
+        component.networksTableComponent().filter$.next({})
 
         fixture.detectChanges()
     }))
@@ -454,7 +454,7 @@ describe('SharedNetworksPageComponent', () => {
         expect(dhcpService.createSharedNetworkBegin).toHaveBeenCalled()
 
         expect(component.openedTabs.length).toBe(2)
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         // Cancel editing. It should close the form and the transaction should be deleted.
         component.onSharedNetworkFormCancel()
@@ -558,7 +558,7 @@ describe('SharedNetworksPageComponent', () => {
         expect(dhcpService.updateSharedNetworkBegin).toHaveBeenCalled()
 
         expect(component.openedTabs.length).toBe(2)
-        expect(component.openedTabs[1].state.transactionId).toBe(123)
+        expect(component.openedTabs[1].state.transactionID).toBe(123)
 
         // Cancel editing. It should close the form and the transaction should be deleted.
         component.onSharedNetworkFormCancel(1)

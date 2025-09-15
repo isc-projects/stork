@@ -4,6 +4,7 @@ import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
 import { SharedNetworkForm } from './subnet-set-form.service'
 import { IPType } from '../iptype'
+import { FormState } from '../tab-view/tab-view.component'
 
 /**
  * Holds the state of the form created by the SharedNetworkFormComponent.
@@ -13,12 +14,12 @@ import { IPType } from '../iptype'
  * already edited form data. It is particularly useful when the component
  * is destroyed as a result of switching between different tabs.
  */
-export class SharedNetworkFormState {
+export class SharedNetworkFormState implements FormState {
     /**
      * A transaction id returned by the server after sending the
      * request to begin one.
      */
-    private _transactionId: number = 0
+    private _transactionID: number = 0
 
     /**
      * An id of the modified or created shared network.
@@ -102,8 +103,16 @@ export class SharedNetworkFormState {
      * Returns transaction id returned by the server after sending the
      * request to begin one.
      */
-    get transactionId(): number {
-        return this._transactionId
+    get transactionID(): number {
+        return this._transactionID
+    }
+
+    /**
+     * Setter of the transactionID.
+     * @param value ID to be set
+     */
+    set transactionID(value: number) {
+        this._transactionID = value
     }
 
     /**
@@ -242,7 +251,7 @@ export class SharedNetworkFormState {
 
         // The server should return new transaction id and a current list of
         // daemons to select.
-        this._transactionId = response.id
+        this._transactionID = response.id
         this._allDaemons = []
         this._allDaemons = response.daemons.map((d) => {
             return {

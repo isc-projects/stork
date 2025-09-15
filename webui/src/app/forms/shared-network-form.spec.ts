@@ -95,7 +95,7 @@ describe('SharedNetworkFormState', () => {
         expect(state.savedSharedNetworkBeginData).toBeFalsy()
         expect(state.servers).toEqual([])
         expect(state.sharedNetworkId).toBe(0)
-        expect(state.transactionId).toBe(0)
+        expect(state.transactionID).toBe(0)
     })
 
     it('should initialize IPv4 form state', () => {
@@ -171,7 +171,7 @@ describe('SharedNetworkFormState', () => {
 
         // Identifiers.
         expect(state.sharedNetworkId).toBe(123)
-        expect(state.transactionId).toBe(5)
+        expect(state.transactionID).toBe(5)
     })
 
     it('should initialize IPv6 form state', () => {
@@ -322,7 +322,7 @@ describe('SharedNetworkFormState', () => {
 
         // Identifiers.
         expect(state.sharedNetworkId).toBe(234)
-        expect(state.transactionId).toBe(3)
+        expect(state.transactionID).toBe(3)
     })
 
     it('should mark form loaded', () => {

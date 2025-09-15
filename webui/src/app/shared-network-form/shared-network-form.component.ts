@@ -94,18 +94,15 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         }
 
         if (this.state.loaded) {
+            if (!this.state.transactionID) {
+                this._beginTransaction()
+            }
+
             return
         }
 
-        // We currently only support updating a shared network In this case the
-        // id must be provided.
-        if (this.sharedNetworkId) {
-            // Send POST to /shared-networks/{id}/transaction.
-            this.updateSharedNetworkBegin()
-        } else {
-            // Send POST to /shared-networks/new/transaction.
-            this.createSharedNetworkBegin()
-        }
+        // Begin transaction.
+        this._beginTransaction()
     }
 
     /**
@@ -373,7 +370,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
             // Updating an existing shared network.
             sharedNetwork.id = this.sharedNetworkId
             lastValueFrom(
-                this.dhcpApi.updateSharedNetworkSubmit(this.sharedNetworkId, this.state.transactionId, sharedNetwork)
+                this.dhcpApi.updateSharedNetworkSubmit(this.sharedNetworkId, this.state.transactionID, sharedNetwork)
             )
                 .then(() => {
                     this.messageService.add({
@@ -399,7 +396,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         }
 
         // Creating a new shared network.
-        lastValueFrom(this.dhcpApi.createSharedNetworkSubmit(this.state.transactionId, sharedNetwork))
+        lastValueFrom(this.dhcpApi.createSharedNetworkSubmit(this.state.transactionID, sharedNetwork))
             .then((data) => {
                 this.messageService.add({
                     severity: 'success',
@@ -430,5 +427,19 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         return index === undefined
             ? (this.state.group.get('options.data') as UntypedFormArray)
             : (this.getOptionsData().at(index) as UntypedFormArray)
+    }
+
+    /**
+     * Begins either update or create transaction.
+     * @private
+     */
+    private _beginTransaction() {
+        if (this.sharedNetworkId) {
+            // Send POST to /shared-networks/{id}/transaction.
+            this.updateSharedNetworkBegin()
+        } else {
+            // Send POST to /shared-networks/new/transaction.
+            this.createSharedNetworkBegin()
+        }
     }
 }

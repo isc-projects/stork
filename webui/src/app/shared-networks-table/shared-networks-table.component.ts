@@ -1,29 +1,20 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { PrefilteredTable } from '../table'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import {
     getTotalAddresses,
     getAssignedAddresses,
     parseSubnetsStatisticValues,
     SharedNetworkWithUniquePools,
+    extractUniqueSharedNetworkPools,
 } from '../subnets'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { ActivatedRoute } from '@angular/router'
+import { Router } from '@angular/router'
 import { DHCPService, SharedNetwork } from '../backend'
+import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, map } from 'rxjs/operators'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { MessageService } from 'primeng/api'
-import { Location } from '@angular/common'
-import { lastValueFrom } from 'rxjs'
-import { map } from 'rxjs/operators'
 import { getErrorMessage } from '../utils'
-
-/**
- * Specifies the filter parameters for fetching shared networks that may be specified
- * either in the URL query parameters or programmatically.
- */
-export interface SharedNetworksFilter {
-    text?: string
-    appId?: number
-    dhcpVersion?: 4 | 6
-}
 
 /**
  * Component for presenting shared networks in a table.
@@ -33,48 +24,7 @@ export interface SharedNetworksFilter {
     templateUrl: './shared-networks-table.component.html',
     styleUrl: './shared-networks-table.component.sass',
 })
-export class SharedNetworksTableComponent
-    extends PrefilteredTable<SharedNetworksFilter, SharedNetworkWithUniquePools>
-    implements OnInit, OnDestroy
-{
-    /**
-     * Array of all numeric keys that are supported when filtering shared networks via URL queryParams.
-     * Note that it doesn't have to contain shared networks prefilterKey, which is 'appId'.
-     * prefilterKey by default is considered as a primary queryParam filter key.
-     */
-    queryParamNumericKeys: (keyof SharedNetworksFilter)[] = ['dhcpVersion']
-
-    /**
-     * Array of all boolean keys that are supported when filtering shared networks via URL queryParams.
-     */
-    queryParamBooleanKeys: (keyof SharedNetworksFilter)[] = []
-
-    /**
-     * Array of all numeric keys that can be used to filter shared networks.
-     */
-    filterNumericKeys: (keyof SharedNetworksFilter)[] = ['appId', 'dhcpVersion']
-
-    /**
-     * Array of all boolean keys that can be used to filter shared networks.
-     */
-    filterBooleanKeys: (keyof SharedNetworksFilter)[] = []
-
-    /**
-     * Prefix of the stateKey. Will be used to evaluate stateKey.
-     */
-    stateKeyPrefix: string = 'networks-table-session'
-
-    /**
-     * queryParam keyword of the filter by appId.
-     */
-    prefilterKey: keyof SharedNetworksFilter = 'appId'
-
-    /**
-     * Array of FilterValidators that will be used for validation of filters, which values are limited
-     * only to known values, e.g. dhcpVersion=4|6.
-     */
-    filterValidators = [{ filterKey: 'dhcpVersion', allowedValues: [4, 6] }]
-
+export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     /**
      * PrimeNG table instance.
      */
@@ -85,14 +35,27 @@ export class SharedNetworksTableComponent
      */
     @Input() dataLoading: boolean = false
 
+    /**
+     * Data collection of shared networks that are currently displayed in the table.
+     */
+    dataCollection: SharedNetworkWithUniquePools[] = []
+
+    /**
+     * Total number of shared networks that are currently displayed in the table.
+     */
+    totalRecords: number = 0
+
+    /**
+     * RxJS subscriptions that may be all unsubscribed when the component gets destroyed.
+     * @private
+     */
+    private _subscriptions: Subscription = new Subscription()
+
     constructor(
-        private route: ActivatedRoute,
         private dhcpApi: DHCPService,
-        private messageService: MessageService,
-        private location: Location
-    ) {
-        super(route, location)
-    }
+        private router: Router,
+        private messageService: MessageService
+    ) {}
 
     /**
      * Loads shared networks from the database into the component.
@@ -112,19 +75,20 @@ export class SharedNetworksTableComponent
                 .getSharedNetworks(
                     event.first,
                     event.rows,
-                    this.prefilterValue ?? this.getTableFilterValue('appId', event.filters),
-                    this.getTableFilterValue('dhcpVersion', event.filters),
-                    this.getTableFilterValue('text', event.filters)
+                    (event.filters['appId'] as FilterMetadata)?.value ?? null,
+                    (event.filters['dhcpVersion'] as FilterMetadata)?.value ?? null,
+                    (event.filters['text'] as FilterMetadata)?.value || null
                 )
                 .pipe(
                     map((sharedNetworks) => {
                         parseSubnetsStatisticValues(sharedNetworks.items)
+                        sharedNetworks.items = extractUniqueSharedNetworkPools(sharedNetworks.items)
                         return sharedNetworks
                     })
                 )
         )
             .then((data) => {
-                this.dataCollection = data.items || []
+                this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
             })
             .catch((error) => {
@@ -143,14 +107,29 @@ export class SharedNetworksTableComponent
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        super.onDestroy()
+        this._tableFilter$.complete()
+        this._subscriptions.unsubscribe()
     }
 
     /**
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        super.onInit()
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    map((f) => {
+                        return { ...f, value: f.value ?? null }
+                    }),
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
+                    })
+                )
+                .subscribe()
+        )
     }
 
     /**
@@ -210,5 +189,51 @@ export class SharedNetworksTableComponent
         }
 
         return apps
+    }
+
+    /**
+     * Reference to tableHasFilter function so that it can be used in the html template.
+     * @protected
+     */
+    protected readonly tableHasFilter = tableHasFilter
+
+    /**
+     * Clears the PrimeNG table state (filtering, pagination are reset).
+     */
+    clearTableState() {
+        this.table?.clear()
+        this.router.navigate([])
+    }
+
+    /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
+     * Filters table data based on single UI filtering form input.
+     * @param value value of the filter to be applied
+     * @param filterConstraint PrimeNG table filter metadata to be set
+     * @param debounceMode if set to true, the filtering is applied by RxJS subject _tableFilter$, which has debounceTime operator applied.
+     *                      If set to false, the filtering is done immediately. Defaults to true.
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata, debounceMode = true): void {
+        if (debounceMode) {
+            this._tableFilter$.next({ value, filterConstraint })
+            return
+        }
+
+        filterConstraint.value = value
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
+    }
+
+    /**
+     * Clears single filter of the PrimeNG table.
+     * @param filterConstraint filter metadata to be cleared
+     */
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
     }
 }
