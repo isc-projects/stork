@@ -4,13 +4,13 @@ from tests.ui.playwright.pages.navigation import Navigation
 from tests.ui.playwright.pages.shared_network_page import SharedNetworkPage
 
 
-def test_shared_network_edit_bug(page: Page, stork_base_url: str):
+def test_shared_network_edit_bug(page: Page, base_url: str):
     login_page = LoginPage(page)
     navigation_page = Navigation(page)
     shared_page = SharedNetworkPage(page)
 
     # Open & login on the SAME stack the system tests start
-    login_page.open(stork_base_url)
+    login_page.open(base_url)
     login_page.login("admin", "admin")
 
     navigation_page.go_to_shared_network("esperanto")

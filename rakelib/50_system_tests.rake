@@ -465,3 +465,110 @@ namespace :check do
         check_deps(__FILE__)
     end
 end
+
+################################
+### UI (Playwright) test tasks #
+################################
+
+
+namespace :systemtestui do
+    system_tests_dir = "tests/system"
+    docker_compose_file_abs     = File.expand_path(File.join(system_tests_dir, "docker-compose.yaml"))
+    docker_compose_ui_file_abs  = File.expand_path(File.join(system_tests_dir, "docker-compose.ui.yaml"))
+
+
+    desc 'Run docker-compose command for the UI stack'
+    task :sh => volume_files + [DOCKER_COMPOSE, "systemtest:setup_version_envvars"] do |t, args|
+        if ENV["USE_BUILD_KIT"] != "false"
+            ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
+            ENV["DOCKER_BUILDKIT"]          = "1"
+        end
+
+
+        ENV["PWD"]  = Dir.pwd
+        ENV["IPWD"] = Dir.pwd
+        ENV["HOME"] = Dir.pwd
+
+        profiles = []
+        if ENV["CS_REPO_ACCESS_TOKEN"] || ENV["KEA_PRIOR_2_7_7"] == "false"
+            puts "Use the Kea premium containers"
+            profiles.append "--profile", "premium"
+        end
+
+
+        project_dir = File.realpath(Dir.pwd)
+
+        sh *DOCKER_COMPOSE,
+           "--project-directory", project_dir,
+           "--project-name", "stork_tests",
+           "-f", docker_compose_file_abs,
+           "-f", docker_compose_ui_file_abs,
+           *profiles,
+           *args
+    end
+
+    desc 'Build images needed for UI tests (server only, like your manual flow)'
+    task :build do
+        Rake::Task["systemtestui:sh"].invoke("build", "server", "agent-kea")
+    end
+
+    desc 'Bring up UI stack (postgres, server, agent-kea) without rebuilding'
+    task :up => [:build] do
+        Rake::Task["systemtestui:sh"].reenable
+        Rake::Task["systemtestui:sh"].invoke("up", "-d", "--no-build", "postgres", "server", "agent-kea")
+    end
+
+    desc 'Down UI stack and remove volumes and orphans (reset)'
+    task :down do
+        Rake::Task["systemtestui:sh"].invoke("down", "--remove-orphans", "--volumes")
+    end
+
+    desc 'Reset UI stack (alias)'
+    task :reset => :down
+
+
+    def ui_env
+        ENV["STORK_REUSE"]    = ENV["STORK_REUSE"]    || "1"
+        ENV["STORK_BASE_URL"] = ENV["STORK_BASE_URL"] || "http://localhost:42080"
+    end
+
+
+    task :prepare do
+        ui_env
+        vpy = File.join(".venv","bin","python")
+        if File.exist?(vpy)
+            sh vpy, "-m", "playwright", "install", "--with-deps"
+        end
+    end
+
+
+    desc 'Run Playwright UI tests. Args: pattern, pytest_args'
+    task :test, [:pattern, :pytest_args] => [:prepare, :up] do |_, args|
+        ui_env
+        pattern     = (args[:pattern] && args[:pattern].strip.size > 0) ? args[:pattern] : "tests/ui/playwright"
+        pytest_args = (args[:pytest_args] || "").split(/\s+/).reject(&:empty?)
+        python = File.exist?(File.join(".venv","bin","python")) ? File.join(".venv","bin","python") : "python3"
+        sh python, "-m", "pytest", pattern, *pytest_args
+    end
+
+
+    desc 'Debug mode for Playwright tests (headed, slowmo, inspector)'
+    task :test_debug, [:pattern, :pytest_args] => [:prepare, :up] do |_, args|
+        ui_env
+        pattern     = (args[:pattern] && args[:pattern].strip.size > 0) ? args[:pattern] : "tests/ui/playwright"
+        pytest_args = (args[:pytest_args] || "").split(/\s+/).reject(&:empty?)
+        python = File.exist?(File.join(".venv","bin","python")) ? File.join(".venv","bin","python") : "python3"
+        ENV["PWDEBUG"] = "1"
+        sh python, "-m", "pytest", pattern, "--headed", "--slowmo=200", *pytest_args
+    end
+
+
+    desc 'Check /etc/hosts for the UI stack'
+    task :check_etchosts do
+        unless check_hosts_and_print_hint([docker_compose_file_abs, docker_compose_ui_file_abs])
+            fail "Update the /etc/hosts file"
+        end
+    end
+end
+
+

@@ -1,7 +1,7 @@
 services:
   server:
     build:
-      context: ../..
+      context: ${IPWD:-../..}
       dockerfile: docker/images/stork.Dockerfile
       target: server-full-builder
     ports:

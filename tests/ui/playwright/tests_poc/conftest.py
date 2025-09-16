@@ -23,7 +23,7 @@ ROOT = TESTS_DIR.parent  # repo root
 COMPOSE_BASE = str(SYSTEM_DIR / "docker-compose.yaml")
 COMPOSE_UI = str(SYSTEM_DIR / "docker-compose.ui.yaml")
 
-PROJECT_NAME = os.getenv("STORK_PROJECT", "stork_tests")
+PROJECT_NAME = os.getenv("COMPOSE_PROJECT_NAME", "stork_tests")
 BASE_URL = os.getenv("STORK_BASE_URL", "http://localhost:42080")
 
 
@@ -176,3 +176,8 @@ def logged_in_page(page: Page, setup):
 def clean_before_each_test(setup):
     """Ensure a clean environment before every test."""
     _reset_db_and_server(BASE_URL)
+
+
+@pytest.fixture(scope="session")
+def base_url():
+    return BASE_URL
