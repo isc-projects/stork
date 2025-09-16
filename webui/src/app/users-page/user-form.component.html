@@ -1,0 +1,253 @@
+<div class="m-2 max-w-100rem">
+    <div class="grid">
+        <div class="col-12 lg:col-4">
+            @if (tabType === TabType.New) {
+                <p-panel header="Creating new account">
+                    <p>
+                        To create a new user account, please specify the user's login, first name, and last name. An
+                        email address is optional but strongly recommended. If an email is provided, the user can sign
+                        in either using the login or the email address. The password is mandatory and must be at least
+                        eight characters long.
+                    </p>
+                    <br />
+                    <p>
+                        The user must be associated with an existing system group. Currently there are three groups
+                        available: super-admin, admin and read-only. Users belonging to the super-admin group have full
+                        control over the system, including creating and modifying user accounts. Users belonging to the
+                        admin group have similar permissions, with the exception that they are not allowed to create
+                        and/or modify user accounts. However, they are allowed to update their own passwords. Users that
+                        belong to the read-only group cannot perform Create, Update nor Delete actions in Stork UI and
+                        in the REST API endpoints.
+                    </p>
+                </p-panel>
+            } @else if (tabType === TabType.Edit) {
+                <p-panel header="Editing an account">
+                    <p>
+                        Use this form to modify user account information, add a missing email address, or change the
+                        group that the user is associated with.
+                    </p>
+                    <br />
+                    <p>The user password remains unchanged if the field is left blank when the form is saved.</p>
+                    @if (!isInternalUser()) {
+                        <p-message
+                            severity="info"
+                            text="The external authorization service '{{
+                                user().authenticationMethodId
+                            }}' manages this user
+                            profile. It can be only modified via the administrator panel of the authentication service."
+                        >
+                        </p-message>
+                    }
+                </p-panel>
+            }
+        </div>
+        <div class="col-12 lg:col-8">
+            <form [formGroup]="formGroup">
+                <p-panel header="User account">
+                    @if (isInternalUser()) {
+                        <div class="field grid">
+                            <label for="userLogin" class="col-12 sm:col-3">Login*:</label>
+                            <div class="col-12 sm:col-9">
+                                <input
+                                    pInputText
+                                    type="text"
+                                    formControlName="userLogin"
+                                    id="userLogin"
+                                    class="max-w-form"
+                                    pattern="[a-zA-Z0-9_]+"
+                                    title="Login must only contain letters, digits, or an underscore."
+                                />
+                            </div>
+                            @if (isFeedbackNeeded('userLogin')) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message
+                                        severity="error"
+                                        [text]="
+                                            buildFeedbackMessage(
+                                                'userLogin',
+                                                'Login must only contain letters, digits, or an underscore.'
+                                            )
+                                        "
+                                    ></p-message>
+                                </div>
+                            }
+                        </div>
+                        <div class="field grid">
+                            <label for="userEmail" class="col-12 sm:col-3">Email:</label>
+                            <div class="col-12 sm:col-9">
+                                <input
+                                    pInputText
+                                    type="text"
+                                    class="max-w-form"
+                                    formControlName="userEmail"
+                                    id="userEmail"
+                                    title="User email address."
+                                />
+                            </div>
+                            @if (isFeedbackNeeded('userEmail')) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message severity="error" [text]="buildFeedbackMessage('userEmail')"></p-message>
+                                </div>
+                            }
+                        </div>
+                        <div class="field grid">
+                            <label for="userFirst" class="col-12 sm:col-3">First name*:</label>
+                            <div class="col-12 sm:col-9">
+                                <input
+                                    pInputText
+                                    type="text"
+                                    formControlName="userFirst"
+                                    id="userFirst"
+                                    class="max-w-form"
+                                    pattern="^[\w](?!.*\s{2,}).*[\w]$"
+                                    title="Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed."
+                                />
+                            </div>
+                            @if (isFeedbackNeeded('userFirst')) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message
+                                        severity="error"
+                                        [text]="
+                                            buildFeedbackMessage(
+                                                'userFirst',
+                                                'Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed.'
+                                            )
+                                        "
+                                    ></p-message>
+                                </div>
+                            }
+                        </div>
+                        <div class="field grid">
+                            <label for="userLast" class="col-12 sm:col-3">Last name*:</label>
+                            <div class="col-12 sm:col-9">
+                                <input
+                                    pInputText
+                                    type="text"
+                                    formControlName="userLast"
+                                    id="userLast"
+                                    class="max-w-form"
+                                    pattern="^[\w](?!.*\s{2,}).*[\w]$"
+                                    title="Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed."
+                                />
+                            </div>
+                            @if (isFeedbackNeeded('userLast')) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message
+                                        severity="error"
+                                        [text]="
+                                            buildFeedbackMessage(
+                                                'userLast',
+                                                'Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed.'
+                                            )
+                                        "
+                                    ></p-message>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="field grid">
+                        <label for="userGroup" class="col-12 sm:col-3">Group*:</label>
+                        <div class="col-12 sm:col-9">
+                            <p-select
+                                [options]="userGroups()"
+                                formControlName="userGroup"
+                                id="userGroup"
+                                [style]="{ width: '14em' }"
+                                title="Group which the user will belong to."
+                            ></p-select>
+                        </div>
+                        @if (isFeedbackNeeded('userGroup')) {
+                            <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                <p-message severity="error" [text]="buildFeedbackMessage('userGroup')"></p-message>
+                            </div>
+                        }
+                        <div class="col-12 sm:col-offset-3 sm:col-9">
+                            <small>{{ getGroupDescription(formGroup.controls['userGroup'].value?.id) }}</small>
+                        </div>
+                    </div>
+                    @if (isInternalUser()) {
+                        <div class="field grid">
+                            <label for="userPassword" class="col-12 sm:col-3">Password*:</label>
+                            <div class="col-12 sm:col-9">
+                                <p-password
+                                    formControlName="userPassword"
+                                    inputId="userPassword"
+                                    class="max-w-form"
+                                    [pattern]="passwordPattern"
+                                    title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
+                                    [toggleMask]="true"
+                                ></p-password>
+                            </div>
+                            @if (isFeedbackNeeded('userPassword')) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message
+                                        severity="error"
+                                        [text]="
+                                            buildFeedbackMessage(
+                                                'userPassword',
+                                                'Password must only contain letters, digits, special, or whitespace characters.'
+                                            )
+                                        "
+                                    ></p-message>
+                                </div>
+                            }
+                        </div>
+                        <div class="field grid">
+                            <label for="userPassword2" class="col-12 sm:col-3">Repeat password*:</label>
+                            <div class="col-12 sm:col-9">
+                                <p-password
+                                    [feedback]="false"
+                                    formControlName="userPassword2"
+                                    inputId="userPassword2"
+                                    class="max-w-form"
+                                    title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
+                                    [toggleMask]="true"
+                                ></p-password>
+                            </div>
+                            @if (isFeedbackNeeded('userPassword2', true)) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message
+                                        severity="error"
+                                        [text]="buildFeedbackMessage('userPassword2', '', true)"
+                                    ></p-message>
+                                </div>
+                            }
+                        </div>
+                        <div class="field grid">
+                            <label for="changePassword" class="col-12 sm:col-3">Force password change:</label>
+                            <div class="col-12 sm:col-9">
+                                <p-checkbox formControlName="changePassword" [binary]="true"></p-checkbox>
+                            </div>
+                            @if (isFeedbackNeeded('changePassword')) {
+                                <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
+                                    <p-message
+                                        severity="error"
+                                        [text]="buildFeedbackMessage('changePassword')"
+                                    ></p-message>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div>
+                        <p-button
+                            [disabled]="formGroup.invalid"
+                            icon="pi pi-pencil"
+                            label="Save"
+                            id="save-button"
+                            (click)="userFormSave()"
+                            appAccessEntity="users"
+                            [appAccessType]="tabType === TabType.New ? 'create' : 'update'"
+                        ></p-button>
+                        <p-button
+                            class="ml-2"
+                            icon="pi pi-times"
+                            label="Cancel"
+                            id="cancel-button"
+                            (click)="userFormCancel()"
+                        ></p-button>
+                    </div>
+                </p-panel>
+            </form>
+        </div>
+    </div>
+</div>

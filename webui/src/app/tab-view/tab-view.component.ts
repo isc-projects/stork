@@ -28,7 +28,7 @@ import { filter, switchMap } from 'rxjs/operators'
 /**
  * Enumeration of different Tab types.
  */
-enum TabType {
+export enum TabType {
     List = 1,
     New,
     Edit,
@@ -621,7 +621,11 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
 
         if (tabType === TabType.New) {
             console.log('onCancelForm - create form')
-            if (foundTab.form?.formState.transactionID && !foundTab.form.submitted) {
+            if (
+                foundTab.form?.formState.transactionID &&
+                !foundTab.form.submitted &&
+                this.createTransactionDeleteAPICaller
+            ) {
                 this.createTransactionDeleteAPICaller(foundTab.form.formState.transactionID)
                 foundTab.form.formState.transactionID = 0
             }
@@ -632,7 +636,11 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
             foundTab.tabType = TabType.Display
             foundTab.icon = undefined
 
-            if (foundTab.form?.formState.transactionID && !foundTab.form.submitted) {
+            if (
+                foundTab.form?.formState.transactionID &&
+                !foundTab.form.submitted &&
+                this.updateTransactionDeleteAPICaller
+            ) {
                 this.updateTransactionDeleteAPICaller(entityID, foundTab.form.formState.transactionID)
                 // TODO: shall it be done?
                 // foundTab.form = undefined

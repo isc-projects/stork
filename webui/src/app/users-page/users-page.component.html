@@ -31,433 +31,278 @@
         </dl>
     </div>
 </app-breadcrumbs>
-
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
-    <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
-            <div style="display: flex; justify-content: space-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
-                <div class="p-menuitem-text">
-                    <b>{{ item.label }}</b>
-                </div>
-                <div class="pi pi-times close-tab-btn" (click)="closeTab($event, i)" *ngIf="i !== 0"></div>
-            </div>
-        </a>
-    </ng-template>
-</p-tabMenu>
-
-<div *ngIf="activeTabIdx === 0">
-    <div style="display: flex; justify-content: space-between; margin: 10px">
-        <div style="display: flex">
-            <button
-                type="button"
-                pButton
+<app-tab-view
+    routePath="/users/"
+    firstTabRouteEnd="list"
+    firstTabTitle="Users"
+    [entityProvider]="userProvider"
+    [entityTitleProvider]="tabTitleProvider"
+    [newFormProvider]="userFormProvider"
+    entityTypeName="account"
+    [tableQueryParamFilters]="{
+        text: { type: 'string', matchMode: 'contains' },
+    }"
+>
+    <ng-template #firstTab>
+        <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
+            <p-button
                 label="Create User Account"
                 id="create-user-account-button"
                 icon="pi pi-plus"
-                style="margin-right: 20px"
-                (click)="showNewUserTab()"
+                routerLink="/users/new"
                 appAccessEntity="users"
                 appAccessType="create"
-            ></button>
+            ></p-button>
+            <p-button label="Refresh List" icon="pi pi-refresh" (onClick)="loadUsers(table.createLazyLoadMetadata())" />
         </div>
-    </div>
-
-    <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
-    <p-table
-        #usersTable
-        [value]="users"
-        [paginator]="true"
-        [rows]="10"
-        [lazy]="true"
-        (onLazyLoad)="loadUsers($event)"
-        [totalRecords]="totalUsers"
-        [rowsPerPageOptions]="[10, 30, 100]"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="{currentPage} of {totalPages} pages"
-        stateStorage="session"
-        stateKey="users-table-session"
-        styleClass="p-datatable-striped"
-    >
-        <ng-template #header>
-            <tr>
-                <th>Login</th>
-                <th>Email</th>
-                <th>First name</th>
-                <th>Last name</th>
-                <th>Group</th>
-                <th>Authentication</th>
-                <th>External ID</th>
-            </tr>
-        </ng-template>
-        <ng-template #body let-u>
-            <tr>
-                <td align="center">
-                    <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
-                    <sup *ngIf="auth.currentUserValue.id === u.id"
-                        ><p-tag styleClass="ml-1" severity="success" value="It's you"
-                    /></sup>
-                </td>
-                <td align="center">
-                    <a routerLink="/users/{{ u.id }}">{{ u.email | placeholder }}</a>
-                </td>
-                <td align="center">{{ u.name | placeholder }}</td>
-                <td align="center">{{ u.lastname | placeholder }}</td>
-                <td align="center">{{ getGroupName(u.groups[0]) }}</td>
-                <td align="center">{{ u.authenticationMethodId }}</td>
-                <td align="center">{{ u.externalId | placeholder }}</td>
-            </tr>
-        </ng-template>
-        <ng-template #emptymessage>
-            <tr>
-                <td colspan="7">No users found.</td>
-            </tr>
-        </ng-template>
-        <ng-template #paginatorright let-state>
-            Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
-            {{ state.totalRecords === 1 ? 'user' : 'users' }}
-        </ng-template>
-    </p-table>
-</div>
-
-<div *ngIf="existingUserTab" class="p-component" appAccessEntity="user">
-    <div style="display: flex; margin: 10px">
-        <div class="grid mt-2 max-w-50rem">
-            <div class="col-12 sm:col-3">
-                <b>ID:</b>
-            </div>
-            <div class="col-12 sm:col-9 word-break-all">
-                {{ userTab.user.id }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>Login:</b>
-            </div>
-            <div class="col-12 sm:col-9 word-break-all">
-                {{ userTab.user.login }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>Email:</b>
-            </div>
-            <div class="col-12 sm:col-9 word-break-all">
-                {{ userTab.user.email | placeholder }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>Last name:</b>
-            </div>
-            <div class="col-12 sm:col-9">
-                {{ userTab.user.lastname | placeholder }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>First name:</b>
-            </div>
-            <div class="col-12 sm:col-9">
-                {{ userTab.user.name | placeholder }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>Group:</b>
-            </div>
-            <div class="col-12 sm:col-9">
-                {{ getGroupName(userTab.user.groups[0]) }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>Authentication:</b>
-            </div>
-            <div class="col-12 sm:col-9 word-break-all">
-                {{ userTab.user.authenticationMethodId }}
-            </div>
-            <div class="col-12 sm:col-3">
-                <b>External ID:</b>
-            </div>
-            <div class="col-12 sm:col-9 word-break-all">
-                {{ userTab.user.externalId | placeholder }}
-            </div>
-            <ng-container *ngIf="isInternalUser">
+        <p-table
+            #table
+            [value]="users"
+            [paginator]="true"
+            [rows]="10"
+            [lazy]="true"
+            [lazyLoadOnInit]="false"
+            (onLazyLoad)="loadUsers($event)"
+            [totalRecords]="totalUsers"
+            [rowsPerPageOptions]="[10, 30, 100]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            stateStorage="session"
+            stateKey="users-table-session"
+            [stripedRows]="true"
+        >
+            <ng-template #caption>
+                <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
+                    <ng-template #header>
+                        <div class="flex align-items-center gap-2">
+                            <p-button
+                                type="button"
+                                [text]="true"
+                                [rounded]="true"
+                                [plain]="true"
+                                [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                                (click)="filtersPanel.toggle($event)"
+                            />
+                            <i class="pi pi-filter"></i>
+                            <span class="font-bold">Filters</span>
+                            <p-tag
+                                icon="pi pi-check"
+                                value="Filter applied"
+                                severity="success"
+                                *ngIf="tableHasFilter(table)"
+                                [rounded]="true"
+                            ></p-tag>
+                            <app-help-tip subject="filtering" id="filtering-help-button">
+                                <p>
+                                    The table below can be filtered by entering text in the search box; the table shows
+                                    all users matching the filter text. The currently supported fields for filtering
+                                    are:
+                                </p>
+                                <ul>
+                                    <li>Login</li>
+                                    <li>E-mail address</li>
+                                    <li>First name</li>
+                                    <li>Last name</li>
+                                </ul>
+                            </app-help-tip>
+                        </div>
+                    </ng-template>
+                    <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
+                        <button
+                            pButton
+                            label="Clear"
+                            [class.p-button-warning]="tableHasFilter(table)"
+                            [class.p-button-secondary]="!tableHasFilter(table)"
+                            icon="pi pi-filter-slash"
+                            (click)="clearTableState()"
+                            [disabled]="!tableHasFilter(table)"
+                        ></button>
+                        <div class="flex-auto"></div>
+                        <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                            <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                                <div class="flex">
+                                    <p-iconfield iconPosition="left">
+                                        <p-inputicon>
+                                            <i class="pi pi-search"></i>
+                                        </p-inputicon>
+                                        <input
+                                            pInputText
+                                            type="text"
+                                            (input)="filterTable($event.target.value, filterMetadata)"
+                                            [ngModel]="value"
+                                            placeholder="Search users"
+                                        />
+                                    </p-iconfield>
+                                    <p-button
+                                        icon="pi pi-filter-slash"
+                                        [rounded]="true"
+                                        [text]="true"
+                                        severity="secondary"
+                                        [styleClass]="value ? '' : 'hidden-space'"
+                                        (onClick)="clearFilter(filterMetadata)"
+                                    />
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                    </div>
+                </p-panel>
+            </ng-template>
+            <ng-template #header>
+                <tr>
+                    <th>Login</th>
+                    <th>Email</th>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>Group</th>
+                    <th>Authentication</th>
+                    <th>External ID</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-u>
+                <tr>
+                    <td align="center">
+                        <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
+                        <sup *ngIf="auth.currentUserValue.id === u.id"
+                            ><p-tag styleClass="ml-1" severity="success" value="It's you"
+                        /></sup>
+                    </td>
+                    <td align="center">
+                        <a routerLink="/users/{{ u.id }}">{{ u.email | placeholder }}</a>
+                    </td>
+                    <td align="center">{{ u.name | placeholder }}</td>
+                    <td align="center">{{ u.lastname | placeholder }}</td>
+                    <td align="center">{{ getGroupName(u.groups[0]) }}</td>
+                    <td align="center">{{ u.authenticationMethodId }}</td>
+                    <td align="center">{{ u.externalId | placeholder }}</td>
+                </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="7">
+                        No users found.
+                        @if (tableHasFilter(table)) {
+                            <span>
+                                Clear filtering and try again.
+                                <button
+                                    pButton
+                                    label="Clear"
+                                    class="p-button-outlined"
+                                    icon="pi pi-filter-slash"
+                                    (click)="clearTableState()"
+                                ></button>
+                            </span>
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template #paginatorright let-state>
+                Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
+                {{ state.totalRecords === 1 ? 'user' : 'users' }}
+            </ng-template>
+        </p-table>
+    </ng-template>
+    <ng-template #entityTab let-user let-onUserEditBegin="beginEntityEditFn">
+        <div appAccessEntity="user">
+            <div class="grid mt-2 max-w-50rem">
                 <div class="col-12 sm:col-3">
-                    <b>Needs to change password:</b>
+                    <b>ID:</b>
+                </div>
+                <div class="col-12 sm:col-9 word-break-all">
+                    {{ user.id }}
+                </div>
+                <div class="col-12 sm:col-3">
+                    <b>Login:</b>
+                </div>
+                <div class="col-12 sm:col-9 word-break-all">
+                    {{ user.login }}
+                </div>
+                <div class="col-12 sm:col-3">
+                    <b>Email:</b>
+                </div>
+                <div class="col-12 sm:col-9 word-break-all">
+                    {{ user.email | placeholder }}
+                </div>
+                <div class="col-12 sm:col-3">
+                    <b>Last name:</b>
                 </div>
                 <div class="col-12 sm:col-9">
-                    <p-checkbox
-                        [ngModel]="userTab.user.changePassword"
-                        [binary]="true"
-                        [disabled]="true"
-                        [readonly]="true"
-                    />
+                    {{ user.lastname | placeholder }}
                 </div>
-            </ng-container>
-            <div class="col-12 flex gap-3">
-                <button
-                    type="button"
-                    pButton
-                    label="Edit"
-                    id="edit-user-button"
-                    icon="pi pi-pencil"
-                    (click)="editUserInfo(userTab)"
-                    class="flex-none"
-                    appAccessEntity="users"
-                    appAccessType="update"
-                ></button>
-                <button
-                    type="submit"
-                    pButton
-                    class="p-button-danger flex-none"
-                    label="Delete"
-                    id="delete-user-button"
-                    icon="pi pi-trash"
-                    (click)="confirmDeleteUser()"
-                    appAccessEntity="user"
-                    appAccessType="delete"
-                ></button>
+                <div class="col-12 sm:col-3">
+                    <b>First name:</b>
+                </div>
+                <div class="col-12 sm:col-9">
+                    {{ user.name | placeholder }}
+                </div>
+                <div class="col-12 sm:col-3">
+                    <b>Group:</b>
+                </div>
+                <div class="col-12 sm:col-9">
+                    {{ getGroupName(user.groups[0]) }}
+                </div>
+                <div class="col-12 sm:col-3">
+                    <b>Authentication:</b>
+                </div>
+                <div class="col-12 sm:col-9 word-break-all">
+                    {{ user.authenticationMethodId }}
+                </div>
+                <div class="col-12 sm:col-3">
+                    <b>External ID:</b>
+                </div>
+                <div class="col-12 sm:col-9 word-break-all">
+                    {{ user.externalId | placeholder }}
+                </div>
+                <ng-container *ngIf="isInternalUser(user)">
+                    <div class="col-12 sm:col-3">
+                        <b>Needs to change password:</b>
+                    </div>
+                    <div class="col-12 sm:col-9">
+                        <p-checkbox
+                            [ngModel]="user.changePassword"
+                            [binary]="true"
+                            [disabled]="true"
+                            [readonly]="true"
+                        />
+                    </div>
+                </ng-container>
+                <div class="col-12 flex gap-3">
+                    <p-button
+                        label="Edit"
+                        id="edit-user-button"
+                        icon="pi pi-pencil"
+                        (click)="onUserEditBegin(user.id)"
+                        appAccessEntity="users"
+                        appAccessType="update"
+                    ></p-button>
+                    <p-button
+                        label="Delete"
+                        severity="danger"
+                        id="delete-user-button"
+                        icon="pi pi-trash"
+                        (click)="confirmDeleteUser(user.id)"
+                        appAccessEntity="user"
+                        appAccessType="delete"
+                    ></p-button>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div *ngIf="newUserTab || editedUserTab" class="p-component">
-    <div class="m-2 max-w-100rem">
-        <div class="grid">
-            <div class="col-12 lg:col-4">
-                <p-panel header="Creating new account" *ngIf="newUserTab">
-                    <p>
-                        To create a new user account, please specify the user's login, first name, and last name. An
-                        email address is optional but strongly recommended. If an email is provided, the user can sign
-                        in either using the login or the email address. The password is mandatory and must be at least
-                        eight characters long.
-                    </p>
-                    <br />
-                    <p>
-                        The user must be associated with an existing system group. Currently there are three groups
-                        available: super-admin, admin and read-only. Users belonging to the super-admin group have full
-                        control over the system, including creating and modifying user accounts. Users belonging to the
-                        admin group have similar permissions, with the exception that they are not allowed to create
-                        and/or modify user accounts. However, they are allowed to update their own passwords. Users that
-                        belong to the read-only group cannot perform Create, Update nor Delete actions in Stork UI and
-                        in the REST API endpoints.
-                    </p>
-                </p-panel>
-                <p-panel header="Editing an account" *ngIf="editedUserTab">
-                    <p>
-                        Use this form to modify user account information, add a missing email address, or change the
-                        group that the user is associated with.
-                    </p>
-                    <br />
-                    <p>The user password remains unchanged if the field is left blank when the form is saved.</p>
-                    <p-message
-                        *ngIf="!isInternalUser"
-                        severity="info"
-                        text="The external authorization service '{{
-                            userTab.user.authenticationMethodId
-                        }}' manages this user
-                            profile. It can be only modified via the administrator panel of the authentication service."
-                    >
-                    </p-message>
-                </p-panel>
-            </div>
-            <div class="col-12 lg:col-8">
-                <form [formGroup]="userForm">
-                    <p-panel header="User account">
-                        <div class="field grid" *ngIf="isInternalUser">
-                            <label for="userLogin" class="col-12 sm:col-3">Login*:</label>
-                            <div class="col-12 sm:col-9">
-                                <input
-                                    pInputText
-                                    type="text"
-                                    formControlName="userLogin"
-                                    id="userLogin"
-                                    class="max-w-form"
-                                    pattern="[a-zA-Z0-9_]+"
-                                    title="Login must only contain letters, digits, or an underscore."
-                                />
-                            </div>
-                            <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userLogin')">
-                                <p-message
-                                    severity="error"
-                                    [text]="
-                                        buildFeedbackMessage(
-                                            'userLogin',
-                                            'Login must only contain letters, digits, or an underscore.'
-                                        )
-                                    "
-                                ></p-message>
-                            </div>
-                        </div>
-                        <div class="field grid" *ngIf="isInternalUser">
-                            <label for="userEmail" class="col-12 sm:col-3">Email:</label>
-                            <div class="col-12 sm:col-9">
-                                <input
-                                    pInputText
-                                    type="text"
-                                    class="max-w-form"
-                                    formControlName="userEmail"
-                                    id="userEmail"
-                                    title="User email address."
-                                />
-                            </div>
-                            <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userEmail')">
-                                <p-message severity="error" [text]="buildFeedbackMessage('userEmail')"></p-message>
-                            </div>
-                        </div>
-                        <div class="field grid" *ngIf="isInternalUser">
-                            <label for="userFirst" class="col-12 sm:col-3">First name*:</label>
-                            <div class="col-12 sm:col-9">
-                                <input
-                                    pInputText
-                                    type="text"
-                                    formControlName="userFirst"
-                                    id="userFirst"
-                                    class="max-w-form"
-                                    pattern="^[\w](?!.*\s{2,}).*[\w]$"
-                                    title="Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed."
-                                />
-                            </div>
-                            <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userFirst')">
-                                <p-message
-                                    severity="error"
-                                    [text]="
-                                        buildFeedbackMessage(
-                                            'userFirst',
-                                            'Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed.'
-                                        )
-                                    "
-                                ></p-message>
-                            </div>
-                        </div>
-                        <div class="field grid" *ngIf="isInternalUser">
-                            <label for="userLast" class="col-12 sm:col-3">Last name*:</label>
-                            <div class="col-12 sm:col-9">
-                                <input
-                                    pInputText
-                                    type="text"
-                                    formControlName="userLast"
-                                    id="userLast"
-                                    class="max-w-form"
-                                    pattern="^[\w](?!.*\s{2,}).*[\w]$"
-                                    title="Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed."
-                                />
-                            </div>
-                            <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userLast')">
-                                <p-message
-                                    severity="error"
-                                    [text]="
-                                        buildFeedbackMessage(
-                                            'userLast',
-                                            'Must contain at least two word characters, and it cannot begin or end with whitespace. Only single whitespaces are allowed.'
-                                        )
-                                    "
-                                ></p-message>
-                            </div>
-                        </div>
-                        <div class="field grid">
-                            <label for="userGroup" class="col-12 sm:col-3">Group*:</label>
-                            <div class="col-12 sm:col-9">
-                                <p-select
-                                    [options]="userGroups"
-                                    formControlName="userGroup"
-                                    id="userGroup"
-                                    [style]="{ width: '14em' }"
-                                    title="Group which the user will belong to."
-                                ></p-select>
-                            </div>
-                            <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userGroup')">
-                                <p-message severity="error" [text]="buildFeedbackMessage('userGroup')"></p-message>
-                            </div>
-                            <div class="col-12 sm:col-offset-3 sm:col-9">
-                                <small>{{ getGroupDescription(userForm.controls.userGroup.value?.id) }}</small>
-                            </div>
-                        </div>
-                        <ng-container *ngIf="isInternalUser">
-                            <div class="field grid">
-                                <label for="userPassword" class="col-12 sm:col-3">Password*:</label>
-                                <div class="col-12 sm:col-9">
-                                    <p-password
-                                        formControlName="userPassword"
-                                        inputId="userPassword"
-                                        class="max-w-form"
-                                        [pattern]="passwordPattern"
-                                        title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
-                                        [toggleMask]="true"
-                                    ></p-password>
-                                </div>
-                                <div
-                                    class="col-12 sm:col-9 sm:col-offset-3 mt-2"
-                                    *ngIf="isFeedbackNeeded('userPassword')"
-                                >
-                                    <p-message
-                                        severity="error"
-                                        [text]="
-                                            buildFeedbackMessage(
-                                                'userPassword',
-                                                'Password must only contain letters, digits, special, or whitespace characters.'
-                                            )
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                            <div class="field grid">
-                                <label for="userPassword2" class="col-12 sm:col-3">Repeat password*:</label>
-                                <div class="col-12 sm:col-9">
-                                    <p-password
-                                        [feedback]="false"
-                                        formControlName="userPassword2"
-                                        inputId="userPassword2"
-                                        class="max-w-form"
-                                        title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
-                                        [toggleMask]="true"
-                                    ></p-password>
-                                </div>
-                                <div
-                                    class="col-12 sm:col-9 sm:col-offset-3 mt-2"
-                                    *ngIf="isFeedbackNeeded('userPassword2', true)"
-                                >
-                                    <p-message
-                                        severity="error"
-                                        [text]="buildFeedbackMessage('userPassword2', '', true)"
-                                    ></p-message>
-                                </div>
-                            </div>
-                            <div class="field grid">
-                                <label for="changePassword" class="col-12 sm:col-3">Force password change:</label>
-                                <div class="col-12 sm:col-9">
-                                    <p-checkbox formControlName="changePassword" [binary]="true"></p-checkbox>
-                                </div>
-                                <div
-                                    class="col-12 sm:col-9 sm:col-offset-3 mt-2"
-                                    *ngIf="isFeedbackNeeded('changePassword')"
-                                >
-                                    <p-message
-                                        *ngIf="isFeedbackNeeded('changePassword')"
-                                        severity="error"
-                                        [text]="buildFeedbackMessage('changePassword')"
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </ng-container>
-                        <div>
-                            <button
-                                type="submit"
-                                pButton
-                                [disabled]="userForm.invalid"
-                                class="p-button-success"
-                                icon="pi pi-pencil"
-                                label="Save"
-                                id="save-button"
-                                (click)="userFormSave()"
-                                appAccessEntity="users"
-                                [appAccessType]="newUserTab ? 'create' : 'update'"
-                            ></button>
-                            <button
-                                type="submit"
-                                pButton
-                                [disabled]="false"
-                                class="p-button-secondary ml-2"
-                                icon="pi pi-times"
-                                label="Cancel"
-                                id="cancel-button"
-                                (click)="userFormCancel()"
-                            ></button>
-                        </div>
-                    </p-panel>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+    </ng-template>
+    <ng-template
+        #formTab
+        let-user
+        let-tabForm="tabForm"
+        let-tabType="tabType"
+        let-onUserFormSubmit="submitFormFn"
+        let-onUserFormCancel="cancelFormFn"
+    >
+        <app-user-form
+            [user]="user"
+            [formState]="tabForm.formState"
+            [tabType]="tabType"
+            (formSubmit)="onUserFormSubmit($event, $event.user?.id)"
+            (formCancel)="onUserFormCancel(tabType, user?.id)"
+            [groups]="groups"
+        >
+        </app-user-form>
+    </ng-template>
+</app-tab-view>

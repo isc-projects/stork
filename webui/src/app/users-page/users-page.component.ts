@@ -1,70 +1,27 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
-import { UntypedFormBuilder, UntypedFormGroup, Validators, FormControl } from '@angular/forms'
-import { ActivatedRoute, ParamMap, Router } from '@angular/router'
-import { ConfirmationService, MenuItem, MessageService, SelectItem } from 'primeng/api'
+import { Component, computed, model, Input, OnDestroy, OnInit, output, effect, viewChild, input } from '@angular/core'
+import { FormControl, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
+import { ConfirmationService, MessageService, SelectItem } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
-import { UsersService } from '../backend/api/api'
-import { lastValueFrom, Subscription } from 'rxjs'
+import { UsersService } from '../backend'
+import { debounceTime, firstValueFrom, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Group, User } from '../backend'
-
-/**
- * An enum specifying tab types in the user view
- *
- * Currently supported types are:
- * - list: including a list of users
- * - new user: including a form for creating a new user account
- * - edited user: including a form for editing a user account
- * - user: including read-only information about the user
- */
-export enum UserTabType {
-    List = 1,
-    NewUser,
-    EditedUser,
-    User,
-}
-
-/**
- * Class representing a single tab on the user page
- */
-export class UserTab {
-    /**
-     * Instance of the reactive form belonging to the tab
-     */
-    public userForm: UntypedFormGroup
-
-    /**
-     * Constructor
-     */
-    constructor(
-        public tabType: UserTabType,
-        public user: User
-    ) {}
-
-    /**
-     * Returns route associated with this tab
-     *
-     * The returned value depends on the tab type.
-     */
-    get tabRoute(): string {
-        switch (this.tabType) {
-            case UserTabType.List: {
-                return '/users/list'
-            }
-            case UserTabType.NewUser: {
-                return '/users/new'
-            }
-            default: {
-                if (this.user) {
-                    return '/users/' + this.user.id
-                }
-            }
-        }
-        return '/users/list'
-    }
-}
+import { FormState, TabType, TabViewComponent } from '../tab-view/tab-view.component'
+import { Panel } from 'primeng/panel'
+import { Message } from 'primeng/message'
+import { Select } from 'primeng/select'
+import { Password } from 'primeng/password'
+import { Checkbox } from 'primeng/checkbox'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Button } from 'primeng/button'
+import { InputText } from 'primeng/inputtext'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { Table } from 'primeng/table'
+import { Router } from '@angular/router'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 /**
  * Form validator verifying if the confirmed password matches the password
@@ -86,6 +43,7 @@ export function matchPasswords(passwordKey: string, confirmPasswordKey: string) 
                 mismatchedPasswords: true,
             }
         }
+
         return null
     }
 }
@@ -110,8 +68,19 @@ export function differentPasswords(oldPasswordKey: string, newPasswordKey: strin
                 samePasswords: true,
             }
         }
+
         return null
     }
+}
+
+/**
+ * Indicates if the user in an active tab is managed by an internal
+ * authentication service
+ */
+export function isInternalUser(user: User) {
+    const authenticationMethodId = user.authenticationMethodId
+    // Empty or null or internal.
+    return !authenticationMethodId || authenticationMethodId === 'internal'
 }
 
 /**
@@ -123,263 +92,62 @@ export function differentPasswords(oldPasswordKey: string, newPasswordKey: strin
     styleUrls: ['./users-page.component.sass'],
 })
 export class UsersPageComponent implements OnInit, OnDestroy {
-    private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]
 
-    /**
-     * RegExp pattern to validate password fields.
-     * It allows uppercase and lowercase letters A-Z,
-     * numbers 0-9, all special characters and whitespace
-     * characters (i.e., space, tab, form feed, and line feed).
-     */
-    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$/
-
-    // ToDo: Strict typing
-    private groups: Group[] = []
+    groups: Group[] = []
     // users table
-    users: any[]
-    totalUsers: number
-    userMenuItems: MenuItem[]
+    users: User[] = []
+    totalUsers: number = 0
 
-    // user tabs
-    activeTabIdx = 0
-    tabs: MenuItem[]
-    activeItem: MenuItem
-    openedTabs: UserTab[]
-    userTab: UserTab
+    tabView = viewChild(TabViewComponent)
 
-    // form data
-    userGroups: SelectItem[]
+    table = viewChild(Table)
 
-    /**
-     * Max input length allowed to be provided by a user. This is used in form validation.
-     */
-    maxInputLen = 120
+    userProvider: (id: number) => Promise<User> = (id) => lastValueFrom(this.usersApi.getUser(id))
+
+    userFormProvider = () => new UserFormState()
+
+    tabTitleProvider: (user: User) => string = (user: User) => user.login || user.email
+
+    private _subscriptions: Subscription = new Subscription()
 
     constructor(
-        private route: ActivatedRoute,
-        private router: Router,
-        private formBuilder: UntypedFormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
         private serverData: ServerDataService,
         public auth: AuthService,
-        private confirmService: ConfirmationService
+        private confirmService: ConfirmationService,
+        private router: Router
     ) {}
 
-    ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    /**
-     * Returns user form from the current tab.
-     *
-     * @returns instance of the form or null if the current tab includes no form.
-     */
-    get userForm(): UntypedFormGroup {
-        return this.userTab ? this.userTab.userForm : null
-    }
-
-    /**
-     * Checks if the current tab displays a single user
-     *
-     * @returns true if the current tab displays information about selected user
-     */
-    get existingUserTab(): boolean {
-        return this.userTab && this.userTab.tabType === UserTabType.User
-    }
-
-    /**
-     * Checks if the current tab contains a form to edit user information
-     *
-     * @returns true if the current tab contains a form
-     */
-    get editedUserTab(): boolean {
-        return this.userTab && this.userTab.tabType === UserTabType.EditedUser
-    }
-
-    /**
-     * Checks if the current tab is for creating new user account
-     *
-     * @returns true if the current tab is for creating new account
-     */
-    get newUserTab(): boolean {
-        return this.userTab && this.userTab.tabType === UserTabType.NewUser
-    }
-
-    /**
-     * Actives a tab with the given index
-     */
-    private switchToTab(index) {
-        if (this.activeTabIdx !== index) {
-            this.activeTabIdx = Number(index)
-            if (index > 0) {
-                this.userTab = this.openedTabs[index]
-                this.router.navigate([this.userTab.tabRoute])
-            } else {
-                this.userTab = null
-                this.router.navigate(['/users/list'])
-            }
-        }
-        this.activeItem = this.tabs[index]
-    }
-
-    /**
-     * Opens new tab of the specified type and switches to it
-     *
-     * @param tabType Enumeration indicating type of the new tab
-     * @param user Structure holding user information
-     */
-    private addUserTab(tabType: UserTabType, user) {
-        const userTab = new UserTab(tabType, user)
-        this.openedTabs.push(userTab)
-        // The new tab is now current one
-        this.userTab = userTab
-        this.tabs = [
-            ...this.tabs,
-            {
-                label: tabType === UserTabType.NewUser ? 'New account' : user.login || user.email,
-                routerLink: userTab.tabRoute,
-            },
-        ]
-        this.switchToTab(this.tabs.length - 1)
-    }
-
-    /**
-     * Turns the current user tab into a tab with the user editing form
-     *
-     * This function is invoked when the user clicks on Edit button in
-     * the user tab.
-     *
-     * @param tab Current tab
-     */
-    editUserInfo(tab) {
-        // Specify validators for the form. The last validator is our custom
-        // validator which checks if the password and confirmed password
-        // match. The validator allows leaving an empty password in which
-        // case the password won't be modified.
-        const userForm = this.formBuilder.group(
-            {
-                userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
-                userFirst: ['', Validators.maxLength(this.maxInputLen)],
-                userLast: ['', Validators.maxLength(this.maxInputLen)],
-                userGroup: ['', Validators.required],
-                userPassword: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
-                userPassword2: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
-                changePassword: [''],
-            },
-            {
-                validators: [matchPasswords('userPassword', 'userPassword2')],
-            }
+    ngOnInit() {
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    map((f) => {
+                        return { ...f, value: f.value ?? null }
+                    }),
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        // this.zone.run(() =>
+                        this.router.navigate(
+                            [],
+                            { queryParams: tableFiltersToQueryParams(this.table()) }
+                            // )
+                        )
+                    })
+                )
+                .subscribe()
         )
 
-        // The authentication hooks may not support returning profile details
-        // as email, first and last names, or groups.
-        if (this.isInternalUser) {
-            userForm.setControl(
-                'userFirst',
-                new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
-            )
-            userForm.setControl(
-                'userLast',
-                new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
-            )
-        }
-
-        // Modify the current tab type to 'edit'.
-        tab.tabType = UserTabType.EditedUser
-
-        // Set default values for the fields which may be edited by the user.
-        userForm.patchValue({
-            userLogin: this.userTab.user.login,
-            userEmail: this.userTab.user.email,
-            userFirst: this.userTab.user.name,
-            userLast: this.userTab.user.lastname,
-            changePassword: this.userTab.user.changePassword,
-        })
-
-        if (this.groups.length > 0 && this.userTab.user.groups && this.userTab.user.groups.length > 0) {
-            userForm.patchValue({
-                userGroup: {
-                    id: this.groups[this.userTab.user.groups[0] - 1].id,
-                    name: this.groups[this.userTab.user.groups[0] - 1].name,
-                },
-            })
-        }
-
-        this.userTab.userForm = userForm
+        firstValueFrom(this.serverData.getGroups()).then((groups) => (this.groups = groups.items ?? []))
     }
 
-    /**
-     * Opens a tab for creating new user account
-     *
-     * It first checks if such tab has been already opened and activates it
-     * if it has. If the tab hasn't been opened this function will open it.
-     */
-    showNewUserTab() {
-        // Specify the validators for the new user form. The last two
-        // validators require password and confirmed password to exist.
-        const userForm = this.formBuilder.group(
-            {
-                userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
-                userFirst: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                userLast: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                userGroup: ['', Validators.required],
-                userPassword: [
-                    '',
-                    [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
-                ],
-                userPassword2: [
-                    '',
-                    [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
-                ],
-                changePassword: [true],
-            },
-            {
-                validators: [matchPasswords('userPassword', 'userPassword2')],
-            }
-        )
-
-        // Search opened tabs for the 'New account' type.
-        for (const i in this.openedTabs) {
-            if (this.openedTabs[i].tabType === UserTabType.NewUser) {
-                // The tab exists, simply activate it.
-                this.switchToTab(i)
-                return
-            }
-        }
-        // The tab doesn't exist, so open it and activate it.
-        this.addUserTab(UserTabType.NewUser, null)
-        this.userTab.userForm = userForm
-    }
-
-    /**
-     * Closes current tab
-     */
-    private closeActiveTab() {
-        this.openedTabs.splice(this.activeTabIdx, 1)
-        this.tabs = [...this.tabs.slice(0, this.activeTabIdx), ...this.tabs.slice(this.activeTabIdx + 1)]
-        this.switchToTab(0)
-    }
-
-    /**
-     * Closes selected tab
-     */
-    closeTab(event, idx) {
-        const i = Number(idx)
-
-        this.openedTabs.splice(i, 1)
-        this.tabs = [...this.tabs.slice(0, i), ...this.tabs.slice(i + 1)]
-        if (this.activeTabIdx === i) {
-            this.switchToTab(i - 1)
-        } else if (this.activeTabIdx > i) {
-            this.activeTabIdx = this.activeTabIdx - 1
-        }
-        if (event) {
-            event.preventDefault()
-        }
+    ngOnDestroy() {
+        this._tableFilter$.complete()
+        this._subscriptions.unsubscribe()
     }
 
     /**
@@ -389,7 +157,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned and the filter text.
      */
     loadUsers(event) {
-        lastValueFrom(this.usersApi.getUsers(event.first, event.rows, event.filters.text?.[0]?.value))
+        lastValueFrom(this.usersApi.getUsers(event.first, event.rows, event.filters['text'].value || null))
             .then((data) => {
                 this.users = data.items ?? []
                 this.totalUsers = data.total ?? 0
@@ -406,203 +174,16 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Initializes tabs depending on the active route
-     *
-     * The first/default tab is always opened. It comprises a list of users
-     * which have an account in the system. If the active route specifies
-     * any particular user id, a tab displaying the user information is also
-     * opened.
-     */
-    ngOnInit() {
-        this.users = []
-        const initUserGroups = [
-            {
-                label: 'Select Group',
-                value: null,
-            },
-        ]
-        this.userGroups = [...initUserGroups]
-        // Get all groups from the server.
-        this.subscriptions.add(
-            this.serverData.getGroups().subscribe((data) => {
-                if (data.items) {
-                    this.groups = data.items
-                    this.userGroups = [...initUserGroups]
-                    for (const i in this.groups) {
-                        if (this.groups.hasOwnProperty(i)) {
-                            this.userGroups.push({
-                                label: this.groups[i].name,
-                                value: { id: this.groups[i].id, name: this.groups[i].name },
-                            })
-                        }
-                    }
-                }
-            })
-        )
-
-        // Open the default tab
-        this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
-
-        // Store the default tab on the list
-        this.openedTabs = []
-        const defaultTab = new UserTab(UserTabType.List, null)
-        this.openedTabs.push(defaultTab)
-
-        this.subscriptions.add(
-            this.route.paramMap.subscribe((params: ParamMap) => {
-                const userIdStr = params.get('id')
-                if (!userIdStr || userIdStr === 'list') {
-                    // Open the tab with the list of users.
-                    this.switchToTab(0)
-                } else {
-                    // Deal with the case when specific user is selected or when the
-                    // new user is to be created.
-                    const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
-                    if (Number.isNaN(userId)) {
-                        // Given path parameter can't be parsed as number. Show list of users.
-                        this.msgSrv.add({
-                            severity: 'error',
-                            summary: 'Failed to parse user ID',
-                            detail: 'Failed to parse user ID from given: ' + userIdStr,
-                        })
-                        this.switchToTab(0)
-                        return
-                    }
-
-                    // Iterate over opened tabs and check if any of them matches the
-                    // given user id or is for new user.
-                    for (const i in this.openedTabs) {
-                        if (this.openedTabs.hasOwnProperty(i)) {
-                            const tab = this.openedTabs[i]
-                            if (
-                                (userId > 0 &&
-                                    (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
-                                    tab.user &&
-                                    tab.user.id === userId) ||
-                                (userId === 0 && tab.tabType === UserTabType.NewUser)
-                            ) {
-                                this.switchToTab(i)
-                                return
-                            }
-                        }
-                    }
-
-                    // If we are creating new user and the tab for the new user does not
-                    // exist, let's open the tab and bail.
-                    if (userId === 0) {
-                        this.showNewUserTab()
-                        return
-                    }
-
-                    // If we're interested in a tab for a specific user, let's see if we
-                    // already have the user information fetched.
-                    for (const u of this.users) {
-                        if (u.id === userId) {
-                            // Found user information, so let's open the tab using this
-                            // information and return.
-                            this.addUserTab(UserTabType.User, u)
-                            return
-                        }
-                    }
-
-                    // We have no information about the user, so let's try to fetch it
-                    // from the server.
-                    // ToDo: Non-catches promise
-                    lastValueFrom(this.usersApi.getUser(userId)).then((data) => {
-                        this.addUserTab(UserTabType.User, data)
-                    })
-                }
-            })
-        )
-    }
-
-    /**
-     * Action invoked when new user form is being saved
-     *
-     * As a result of this action a new user account is attempted to be
-     * created.
-     */
-    private newUserSave() {
-        const user = {
-            id: 0,
-            login: this.userForm.controls.userLogin.value,
-            email: this.userForm.controls.userEmail.value,
-            name: this.userForm.controls.userFirst.value,
-            lastname: this.userForm.controls.userLast.value,
-            groups: [this.userForm.controls.userGroup.value.id],
-            authenticationMethodId: '',
-            changePassword: this.userForm.controls.changePassword.value,
-        }
-        const password = this.userForm.controls.userPassword.value
-        const account = { user, password }
-        lastValueFrom(this.usersApi.createUser(account))
-            .then((/* data */) => {
-                this.msgSrv.add({
-                    severity: 'success',
-                    summary: 'New user account created',
-                    detail: 'Successfully added new user account.',
-                })
-                this.closeActiveTab()
-            })
-            .catch((err) => {
-                const msg = getErrorMessage(err)
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Failed to create new user account',
-                    detail: 'Failed to create new user account: ' + msg,
-                    life: 10000,
-                })
-            })
-    }
-
-    /**
-     * Action invoked when the form for editing the user information is saved
-     *
-     * As a result of this action, the user account information will be updated.
-     */
-    private editedUserSave() {
-        const user = {
-            id: this.userTab.user.id,
-            login: this.userForm.controls.userLogin.value,
-            email: this.userForm.controls.userEmail.value,
-            name: this.userForm.controls.userFirst.value,
-            lastname: this.userForm.controls.userLast.value,
-            groups: [this.userForm.controls.userGroup.value.id],
-            authenticationMethodId: '',
-            changePassword: this.userForm.controls.changePassword.value,
-        }
-        const password = this.userForm.controls.userPassword.value
-        const account = { user, password }
-        lastValueFrom(this.usersApi.updateUser(account))
-            .then((/* data */) => {
-                this.msgSrv.add({
-                    severity: 'success',
-                    summary: 'User account updated',
-                    detail: 'Successfully updated user account.',
-                })
-                this.closeActiveTab()
-            })
-            .catch((err) => {
-                const msg = getErrorMessage(err)
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Failed to update user account',
-                    detail: 'Failed to update user account: ' + msg,
-                    life: 10000,
-                })
-            })
-    }
-
-    /*
      * Displays a dialog to confirm user deletion.
+     * @param id
      */
-    confirmDeleteUser() {
+    confirmDeleteUser(id: number) {
         this.confirmService.confirm({
             message: 'Are you sure that you want to permanently delete this user?',
             header: 'Delete User',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.deleteUser()
+                this.deleteUser(id)
             },
         })
     }
@@ -613,15 +194,15 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * As a result of this action an existing user account is attempted to be
      * deleted.
      */
-    deleteUser() {
-        lastValueFrom(this.usersApi.deleteUser(this.userTab.user.id))
+    deleteUser(id: number) {
+        lastValueFrom(this.usersApi.deleteUser(id))
             .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account deleted',
                     detail: 'Successfully deleted user account.',
                 })
-                this.closeActiveTab()
+                this.tabView()?.onDeleteEntity(id)
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -632,90 +213,6 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
             })
-    }
-
-    /**
-     * Action invoked when a user form is saved
-     *
-     * It covers both the case of creating a new user account and editing
-     * an existing user account.
-     */
-    userFormSave() {
-        if (this.newUserTab) {
-            this.newUserSave()
-        } else if (this.editedUserTab) {
-            this.editedUserSave()
-        }
-    }
-
-    /**
-     * Action invoked when Cancel button is clicked under the form
-     *
-     * It closes current tab with no action.
-     */
-    userFormCancel() {
-        this.closeActiveTab()
-    }
-
-    /**
-     * Indicates if the user in an active tab is managed by an internal
-     * authentication service
-     */
-    get isInternalUser() {
-        const authenticationMethodId = this.userTab.user?.authenticationMethodId
-        // Empty or null or internal.
-        return !authenticationMethodId || authenticationMethodId === 'internal'
-    }
-
-    /**
-     * Utility function which builds feedback message when form field validation failed.
-     *
-     * @param name FormControl name for which the feedback is to be generated
-     * @param formatFeedback optional feedback message when pattern validation failed
-     * @param comparePasswords when true, feedback about passwords mismatch is also appended; defaults to false
-     */
-    buildFeedbackMessage(name: string, formatFeedback?: string, comparePasswords = false): string | null {
-        const errors: string[] = []
-
-        if (this.userTab.userForm.get(name).errors?.['required']) {
-            errors.push('This field is required.')
-        }
-
-        if (this.userTab.userForm.get(name).errors?.['minlength']) {
-            errors.push('This field value is too short.')
-        }
-
-        if (this.userTab.userForm.get(name).errors?.['maxlength']) {
-            errors.push('This field value is too long.')
-        }
-
-        if (this.userTab.userForm.get(name).errors?.['email']) {
-            errors.push('Email is invalid.')
-        }
-
-        if (this.userTab.userForm.get(name).errors?.['pattern']) {
-            errors.push(formatFeedback ?? 'This field value is incorrect.')
-        }
-
-        if (comparePasswords && this.userTab.userForm.errors?.['mismatchedPasswords']) {
-            errors.push('Passwords must match.')
-        }
-
-        return errors.join(' ')
-    }
-
-    /**
-     * Utility function which checks if feedback for given FormControl shall be displayed.
-     *
-     * @param name FormControl name for which the check is done
-     * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
-     */
-    isFeedbackNeeded(name: string, comparePasswords = false): boolean {
-        return (
-            (this.userTab.userForm.get(name).invalid ||
-                (comparePasswords && this.userTab.userForm.errors?.['mismatchedPasswords'])) &&
-            (this.userTab.userForm.get(name).dirty || this.userTab.userForm.get(name).touched)
-        )
     }
 
     /**
@@ -741,11 +238,379 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         return 'unknown'
     }
 
+    protected readonly isInternalUser = isInternalUser
+    protected readonly tableHasFilter = tableHasFilter
+
+    clearTableState() {
+        this.table()?.clear()
+        this.router.navigate([])
+    }
+
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
+     *
+     * @param value
+     * @param filterConstraint
+     * @param debounceMode
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata, debounceMode = true): void {
+        if (debounceMode) {
+            this._tableFilter$.next({ value, filterConstraint })
+            return
+        }
+
+        filterConstraint.value = value
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table()) })
+    }
+
+    /**
+     *
+     * @param filterConstraint
+     */
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table()) })
+    }
+}
+
+class UserFormState implements FormState {
+    /**
+     * Not used in this form
+     */
+    transactionID: number = 0
+
+    /**
+     * A form group comprising all form controls, arrays and other form
+     * groups (a parent group for the HostFormComponent form).
+     */
+    group: UntypedFormGroup
+
+    user: User
+}
+
+@Component({
+    selector: 'app-user-form',
+    templateUrl: './user-form.component.html',
+    standalone: true,
+    imports: [
+        Panel,
+        Message,
+        ReactiveFormsModule,
+        Select,
+        Password,
+        Checkbox,
+        ManagedAccessDirective,
+        Button,
+        InputText,
+    ],
+})
+export class UserFormComponent implements OnInit {
+    @Input() formState: UserFormState = null
+
+    user = model<User>()
+
+    isInternalUser = computed(() => (this.user() ? isInternalUser(this.user()) : true))
+
+    @Input() tabType!: TabType
+
+    groups = input<Group[]>([])
+
+    /**
+     * RegExp pattern to validate password fields.
+     * It allows uppercase and lowercase letters A-Z,
+     * numbers 0-9, all special characters and whitespace
+     * characters (i.e., space, tab, form feed, and line feed).
+     */
+    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$/
+
+    // form data
+    userGroups = computed<SelectItem[]>(() => {
+        const initUserGroups = [
+            {
+                label: 'Select Group',
+                value: null,
+            },
+        ]
+        this.groups().forEach((group: Group) => {
+            initUserGroups.push({
+                label: group.name,
+                value: { id: group.id, name: group.name },
+            })
+        })
+        return [...initUserGroups]
+    })
+
+    constructor(
+        private _formBuilder: UntypedFormBuilder,
+        private usersApi: UsersService,
+        private messageService: MessageService
+    ) {
+        effect(() => {
+            this.formState.user = this.user()
+        })
+    }
+
+    /**
+     * Returns main form group for the component.
+     *
+     * @returns form group.
+     */
+    get formGroup(): UntypedFormGroup {
+        return this.formState.group
+    }
+
+    /**
+     * Sets main form group for the component.
+     *
+     * @param fg new form group.
+     */
+    set formGroup(fg: UntypedFormGroup) {
+        this.formState.group = fg
+    }
+
+    /**
+     * Max input length allowed to be provided by a user. This is used in form validation.
+     */
+    maxInputLen = 120
+
+    ngOnInit() {
+        if (this.user()) {
+            // Edit user form.
+            this.formState.transactionID = this.user().id
+
+            this.formGroup = this._formBuilder.group(
+                {
+                    userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                    userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
+                    userFirst: ['', Validators.maxLength(this.maxInputLen)],
+                    userLast: ['', Validators.maxLength(this.maxInputLen)],
+                    userGroup: ['', Validators.required],
+                    userPassword: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
+                    userPassword2: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
+                    changePassword: [''],
+                },
+                {
+                    validators: [matchPasswords('userPassword', 'userPassword2')],
+                }
+            )
+
+            // The authentication hooks may not support returning profile details
+            // as email, first and last names, or groups.
+            if (this.isInternalUser()) {
+                this.formGroup.setControl(
+                    'userFirst',
+                    new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
+                )
+                this.formGroup.setControl(
+                    'userLast',
+                    new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
+                )
+            }
+
+            this.formGroup.patchValue({
+                userLogin: this.user().login,
+                userEmail: this.user().email,
+                userFirst: this.user().name,
+                userLast: this.user().lastname,
+                changePassword: this.user().changePassword,
+            })
+
+            if (this.groups().length && this.user().groups && this.user().groups.length) {
+                this.formGroup.patchValue({
+                    userGroup: {
+                        id: this.groups()[this.user().groups[0] - 1].id,
+                        name: this.groups()[this.user().groups[0] - 1].name,
+                    },
+                })
+            }
+        } else {
+            // New user form.
+            this.formState.transactionID = -1
+
+            this.formGroup = this._formBuilder.group(
+                {
+                    userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                    userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
+                    userFirst: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                    userLast: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                    userGroup: ['', Validators.required],
+                    userPassword: [
+                        '',
+                        [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
+                    ],
+                    userPassword2: [
+                        '',
+                        [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
+                    ],
+                    changePassword: [true],
+                },
+                {
+                    validators: [matchPasswords('userPassword', 'userPassword2')],
+                }
+            )
+        }
+    }
+
+    protected readonly TabType = TabType
+
+    /**
+     * Utility function which builds feedback message when form field validation failed.
+     *
+     * @param name FormControl name for which the feedback is to be generated
+     * @param formatFeedback optional feedback message when pattern validation failed
+     * @param comparePasswords when true, feedback about passwords mismatch is also appended; defaults to false
+     */
+    buildFeedbackMessage(name: string, formatFeedback?: string, comparePasswords = false): string | null {
+        const errors: string[] = []
+
+        if (this.formGroup.get(name).errors?.['required']) {
+            errors.push('This field is required.')
+        }
+
+        if (this.formGroup.get(name).errors?.['minlength']) {
+            errors.push('This field value is too short.')
+        }
+
+        if (this.formGroup.get(name).errors?.['maxlength']) {
+            errors.push('This field value is too long.')
+        }
+
+        if (this.formGroup.get(name).errors?.['email']) {
+            errors.push('Email is invalid.')
+        }
+
+        if (this.formGroup.get(name).errors?.['pattern']) {
+            errors.push(formatFeedback ?? 'This field value is incorrect.')
+        }
+
+        if (comparePasswords && this.formGroup.errors?.['mismatchedPasswords']) {
+            errors.push('Passwords must match.')
+        }
+
+        return errors.join(' ')
+    }
+
+    /**
+     * Utility function which checks if feedback for given FormControl shall be displayed.
+     *
+     * @param name FormControl name for which the check is done
+     * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
+     */
+    isFeedbackNeeded(name: string, comparePasswords = false): boolean {
+        return (
+            (this.formGroup.get(name).invalid ||
+                (comparePasswords && this.formGroup.errors?.['mismatchedPasswords'])) &&
+            (this.formGroup.get(name).dirty || this.formGroup.get(name).touched)
+        )
+    }
+
     /**
      * Returns group description for given group ID.
      * @param groupId numeric group ID
      */
     public getGroupDescription(groupId: number): string {
-        return this.groups.find((group) => group.id === groupId)?.description
+        return this.groups().find((group) => group.id === groupId)?.description
     }
+
+    /**
+     * Action invoked when new user form is being saved
+     *
+     * As a result of this action a new user account is attempted to be
+     * created.
+     */
+    private newUserSave() {
+        const user = {
+            id: 0,
+            login: this.formGroup.controls.userLogin.value,
+            email: this.formGroup.controls.userEmail.value,
+            name: this.formGroup.controls.userFirst.value,
+            lastname: this.formGroup.controls.userLast.value,
+            groups: [this.formGroup.controls.userGroup.value.id],
+            authenticationMethodId: '',
+            changePassword: this.formGroup.controls.changePassword.value,
+        }
+        const password = this.formGroup.controls.userPassword.value
+        const account = { user, password }
+        lastValueFrom(this.usersApi.createUser(account))
+            .then((user) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'New user account created',
+                    detail: 'Successfully added new user account.',
+                })
+                this.user.set(user)
+                this.formState.user = user
+                this.formSubmit.emit(this.formState)
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to create new user account',
+                    detail: 'Failed to create new user account: ' + msg,
+                    life: 10000,
+                })
+            })
+    }
+
+    /**
+     * Action invoked when the form for editing the user information is saved
+     *
+     * As a result of this action, the user account information will be updated.
+     */
+    private editedUserSave() {
+        const user = {
+            id: this.user().id,
+            login: this.formGroup.controls.userLogin.value,
+            email: this.formGroup.controls.userEmail.value,
+            name: this.formGroup.controls.userFirst.value,
+            lastname: this.formGroup.controls.userLast.value,
+            groups: [this.formGroup.controls.userGroup.value.id],
+            authenticationMethodId: '',
+            changePassword: this.formGroup.controls.changePassword.value,
+        }
+        const password = this.formGroup.controls.userPassword.value
+        const account = { user, password }
+        lastValueFrom(this.usersApi.updateUser(account))
+            .then(() => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'User account updated',
+                    detail: 'Successfully updated user account.',
+                })
+                this.formSubmit.emit(this.formState)
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to update user account',
+                    detail: 'Failed to update user account: ' + msg,
+                    life: 10000,
+                })
+            })
+    }
+
+    /**
+     * Action invoked when a user form is saved
+     *
+     * It covers both the case of creating a new user account and editing
+     * an existing user account.
+     */
+    userFormSave() {
+        if (this.tabType === TabType.New) {
+            this.newUserSave()
+        } else if (this.tabType === TabType.Edit) {
+            this.editedUserSave()
+        }
+    }
+
+    userFormCancel() {
+        this.formCancel.emit()
+    }
+
+    formSubmit = output<UserFormState>()
+
+    formCancel = output()
 }

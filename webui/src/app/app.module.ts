@@ -72,7 +72,7 @@ import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
 import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
-import { UsersPageComponent } from './users-page/users-page.component'
+import { UsersPageComponent, UserFormComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
 import { AppTabComponent } from './app-tab/app-tab.component'
 import { KeaAppTabComponent } from './kea-app-tab/kea-app-tab.component'
@@ -359,6 +359,7 @@ const AuraBluePreset = definePreset(Aura, {
         IconField,
         InputIcon,
         TriStateCheckboxComponent,
+        UserFormComponent,
     ],
     providers: [
         {
