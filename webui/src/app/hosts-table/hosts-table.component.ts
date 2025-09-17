@@ -254,11 +254,18 @@ export class HostsTableComponent implements OnInit, OnDestroy {
         return (<FilterMetadata>this.table?.filters['conflict'])?.value === true
     }
 
+    /**
+     * Clears the PrimeNG table state (filtering, pagination are reset).
+     */
     clearTableState() {
         this.table?.clear()
         this.router.navigate([])
     }
 
+    /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
@@ -280,8 +287,8 @@ export class HostsTableComponent implements OnInit, OnDestroy {
     protected readonly tableHasFilter = tableHasFilter
 
     /**
-     *
-     * @param filterConstraint
+     * Clears single filter of the PrimeNG table.
+     * @param filterConstraint filter metadata to be cleared
      */
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null

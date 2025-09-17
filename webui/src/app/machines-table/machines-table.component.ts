@@ -274,11 +274,18 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         // return prefilter === true || prefilter === false
     }
 
+    /**
+     * Clears the PrimeNG table state (filtering, pagination are reset).
+     */
     clearTableState() {
         this.machinesTable?.clear()
         this.router.navigate([])
     }
 
+    /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
@@ -300,8 +307,8 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
     protected readonly tableHasFilter = tableHasFilter
 
     /**
-     *
-     * @param filterConstraint
+     * Clears single filter of the PrimeNG table.
+     * @param filterConstraint filter metadata to be cleared
      */
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null

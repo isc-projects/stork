@@ -52,7 +52,14 @@ function setDaemonStatusErred(app) {
     styleUrls: ['./apps-page.component.sass'],
 })
 export class AppsPageComponent implements OnInit, OnDestroy {
+    /**
+     * PrimeNG Table with apps list.
+     */
     @ViewChild('table') appsTable: Table
+
+    /**
+     * Application menu component.
+     */
     @ViewChild('appMenu') appMenu: Menu
 
     breadcrumbs: MenuItem[] = []
@@ -63,6 +70,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     appMenuItems: MenuItem[]
     dataLoading: boolean
 
+    /**
+     * Asynchronously provides an App entity based on given App ID.
+     * @param appID application ID
+     */
     appProvider: (id: number) => Promise<App> = (appID: number) => {
         this.dataLoading = true
         return lastValueFrom(
@@ -84,19 +95,32 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         private router: Router
     ) {}
 
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
     private _subscriptions: Subscription
 
+    /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
-     *
-     * @param value
-     * @param filterConstraint
+     * Emits next value and filterConstraint for the table's filter,
+     * which in the end will result in applying the filter on the table's data.
+     * @param value value of the filter
+     * @param filterConstraint filter field which will be filtered
      */
     filterTable(value: any, filterConstraint: FilterMetadata): void {
         this._tableFilter$.next({ value, filterConstraint })
     }
 
+    /**
+     * Clears the PrimeNG table state (filtering, pagination are reset).
+     */
     clearTableState() {
         this.appsTable?.clear()
         this.router.navigate([])
@@ -165,6 +189,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             })
     }
 
+    /**
+     * TabView component which is a view child.
+     */
     tabView = viewChild(TabViewComponent)
 
     /**
@@ -238,6 +265,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
     protected readonly tableHasFilter = tableHasFilter
 
+    /**
+     * Clears single filter of the PrimeNG table.
+     * @param filterConstraint filter metadata to be cleared
+     */
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.appsTable) })

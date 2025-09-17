@@ -244,11 +244,18 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
 
     protected readonly tableHasFilter = tableHasFilter
 
+    /**
+     * Clears the PrimeNG table state (filtering, pagination are reset).
+     */
     clearTableState() {
         this.table?.clear()
         this.router.navigate([])
     }
 
+    /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
@@ -268,8 +275,8 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     * @param filterConstraint
+     * Clears single filter of the PrimeNG table.
+     * @param filterConstraint filter metadata to be cleared
      */
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
