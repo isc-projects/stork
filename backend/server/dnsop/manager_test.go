@@ -858,7 +858,7 @@ func TestGetZoneRRs(t *testing.T) {
 		require.Equal(t, original, rr.GetString())
 	}
 	// Make sure that the timestamp was set.
-	zone, err = dbmodel.GetZoneByID(db, zone.ID)
+	zone, err = dbmodel.GetZoneByID(db, zone.ID, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zone.LocalZones, 1)
 	require.NotNil(t, zone.LocalZones[0].ZoneTransferAt)
@@ -881,7 +881,7 @@ func TestGetZoneRRs(t *testing.T) {
 		require.Equal(t, original, rr.GetString())
 	}
 	// Make sure that the timestamp was not changed.
-	zone, err = dbmodel.GetZoneByID(db, zone.ID)
+	zone, err = dbmodel.GetZoneByID(db, zone.ID, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zone.LocalZones, 1)
 	require.Equal(t, lastRRsTransferAt, *zone.LocalZones[0].ZoneTransferAt)
@@ -903,7 +903,7 @@ func TestGetZoneRRs(t *testing.T) {
 		require.Equal(t, original, rr.GetString())
 	}
 	// Make sure that the timestamp was updated.
-	zone, err = dbmodel.GetZoneByID(db, zone.ID)
+	zone, err = dbmodel.GetZoneByID(db, zone.ID, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zone.LocalZones, 1)
 	require.NotNil(t, zone.LocalZones[0].ZoneTransferAt)

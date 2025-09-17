@@ -386,6 +386,88 @@ func TestGetZones(t *testing.T) {
 	})
 }
 
+// Test getting single zone from the database over the REST API.
+func TestGetZone(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db)
+	require.NoError(t, err)
+
+	// Store zones in the database and associate them with our app.
+	randomZones := testutil.GenerateRandomZones(5)
+	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 5, "CH")
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 5, "secondary")
+	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 5, 123456)
+	randomZones = testutil.GenerateMoreZonesWithRPZ(randomZones, 5, true)
+
+	var (
+		apps  []*dbmodel.App
+		zones []*dbmodel.Zone
+	)
+	for i, randomZone := range randomZones {
+		machine := &dbmodel.Machine{
+			ID:        0,
+			Address:   "localhost",
+			AgentPort: int64(8080 + i),
+		}
+		err = dbmodel.AddMachine(db, machine)
+		require.NoError(t, err)
+
+		app := &dbmodel.App{
+			ID:        0,
+			MachineID: machine.ID,
+			Type:      dbmodel.AppTypeBind9,
+			Name:      fmt.Sprintf("app-%d", i),
+			Daemons: []*dbmodel.Daemon{
+				dbmodel.NewBind9Daemon(true),
+			},
+		}
+		addedDaemons, err := dbmodel.AddApp(db, app)
+		require.NoError(t, err)
+		require.Len(t, addedDaemons, 1)
+		apps = append(apps, app)
+		zones = append(zones, &dbmodel.Zone{
+			Name: randomZones[i].Name,
+			LocalZones: []*dbmodel.LocalZone{
+				{
+					DaemonID: addedDaemons[0].ID,
+					View:     fmt.Sprintf("view-%d", i),
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					RPZ:      randomZone.RPZ,
+					LoadedAt: time.Now().UTC(),
+				},
+			},
+		})
+	}
+	err = dbmodel.AddZones(db, zones...)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	// Pass case test.
+	params := dns.GetZoneParams{
+		ZoneID: zones[0].ID,
+	}
+	rsp := rapi.GetZone(ctx, params)
+	require.IsType(t, &dns.GetZoneOK{}, rsp)
+	rspOK := (rsp).(*dns.GetZoneOK)
+	require.EqualValues(t, zones[0].Name, rspOK.Payload.Name)
+	require.EqualValues(t, zones[0].LocalZones[0].Serial, rspOK.Payload.LocalZones[0].Serial)
+
+	// Non-existing ID. GetZone should return a default response.
+	params = dns.GetZoneParams{
+		ZoneID: 456123,
+	}
+	rsp = rapi.GetZone(ctx, params)
+	require.IsType(t, &dns.GetZoneDefault{}, rsp)
+	defaultRsp := rsp.(*dns.GetZoneDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	require.Equal(t, "Cannot find DNS zone with ID 456123", *defaultRsp.Payload.Message)
+}
+
 // Test that the HTTP InternalServerError status is returned when the
 // database query fails.
 func TestGetZonesError(t *testing.T) {

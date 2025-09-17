@@ -96,6 +96,29 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /zone/{zoneId}:
+    get:
+      summary: Get a single DNS zone.
+      description: Get DNS zone by the database specific ID.
+      operationId: getZone
+      tags:
+        - DNS
+      parameters:
+        -   in: path
+            name: zoneId
+            type: integer
+            required: true
+            description: Zone ID.
+      responses:
+        200:
+          description: DNS zone.
+          schema:
+            $ref: "#/definitions/Zone"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /daemons/{daemonId}/{viewName}/zones/{zoneId}/rrs:
     get:
       summary: Get the resource records for the zone from a database.

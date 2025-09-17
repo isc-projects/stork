@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -16,6 +17,52 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/dns"
 	storkutil "isc.org/stork/util"
 )
+
+// Returns a single DNS zone.
+func (r *RestAPI) GetZone(ctx context.Context, params dns.GetZoneParams) middleware.Responder {
+	// Find the zone in the database.
+	dbZone, err := dbmodel.GetZoneByID(r.DB, params.ZoneID, dbmodel.ZoneRelationLocalZonesApp)
+	if err != nil {
+		// Error while communicating with the database.
+		msg := fmt.Sprintf("Problem fetching DNS zone with ID %d from db", params.ZoneID)
+		log.WithError(err).Error(msg)
+		rsp := dns.NewGetZoneDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbZone == nil {
+		// Zone not found.
+		msg := fmt.Sprintf("Cannot find DNS zone with ID %d", params.ZoneID)
+		rsp := dns.NewGetZoneDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Zone found. Convert it to the format used in REST API.
+	var restLocalZones []*models.LocalZone
+	for _, localZone := range dbZone.LocalZones {
+		restLocalZones = append(restLocalZones, &models.LocalZone{
+			AppID:    localZone.Daemon.App.ID,
+			AppName:  localZone.Daemon.App.Name,
+			Class:    localZone.Class,
+			DaemonID: localZone.DaemonID,
+			LoadedAt: strfmt.DateTime(localZone.LoadedAt),
+			Serial:   localZone.Serial,
+			Rpz:      localZone.RPZ,
+			View:     localZone.View,
+			ZoneType: localZone.Type,
+		})
+	}
+	restZone := models.Zone{
+		ID:         dbZone.ID,
+		Name:       dbZone.Name,
+		Rname:      dbZone.Rname,
+		LocalZones: restLocalZones,
+	}
+	rsp := dns.NewGetZoneOK().WithPayload(&restZone)
+	return rsp
+}
 
 // Returns a list DNS zones with paging.
 func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middleware.Responder {

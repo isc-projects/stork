@@ -336,10 +336,16 @@ func GetZoneCountStatsByDaemon(db pg.DBI, daemonID int64) (*ZoneCountStats, erro
 	return &stats, nil
 }
 
-// Retrieves a zone by its ID.
-func GetZoneByID(db pg.DBI, id int64) (*Zone, error) {
+// Retrieves a zone with optional relations by its ID.
+func GetZoneByID(db pg.DBI, id int64, relations ...ZoneRelation) (*Zone, error) {
 	var zone Zone
-	err := db.Model(&zone).Relation("LocalZones").Where("id = ?", id).Select()
+	q := db.Model(&zone)
+	// Add relations.
+	for _, relation := range relations {
+		q = q.Relation(string(relation))
+	}
+	q = q.Where("id = ?", id)
+	err := q.Select()
 	if err != nil {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil

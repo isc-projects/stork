@@ -578,7 +578,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		app := daemon.App
 
 		// We need a zone name, so let's get it from the database.
-		zone, err := dbmodel.GetZoneByID(manager.db, zoneID)
+		zone, err := dbmodel.GetZoneByID(manager.db, zoneID, dbmodel.ZoneRelationLocalZones)
 		if err != nil {
 			// Again, it should be rare, unless someone used a link to a non-existing
 			// zone or tempered with the ID in the URL.

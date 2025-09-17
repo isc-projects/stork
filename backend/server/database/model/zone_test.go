@@ -843,13 +843,13 @@ func TestGetZoneByID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get zone by valid ID.
-	zone, err = GetZoneByID(db, zone.ID)
+	zone, err = GetZoneByID(db, zone.ID, ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.NotNil(t, zone)
 	require.Equal(t, "example.org", zone.Name)
 
 	// Get zone by invalid ID.
-	zone, err = GetZoneByID(db, zone.ID+1)
+	zone, err = GetZoneByID(db, zone.ID+1, ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Nil(t, zone)
 }
@@ -966,7 +966,7 @@ func TestUpdateLocalZoneRRsTransferAt(t *testing.T) {
 	err = UpdateLocalZoneRRsTransferAt(db, zone.LocalZones[0].ID)
 	require.NoError(t, err)
 
-	returnedZone, err := GetZoneByID(db, zone.ID)
+	returnedZone, err := GetZoneByID(db, zone.ID, ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, returnedZone.LocalZones, 1)
 	require.NotNil(t, returnedZone.LocalZones[0].ZoneTransferAt)
