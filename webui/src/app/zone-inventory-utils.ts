@@ -31,7 +31,7 @@ export function getSeverity(status: StatusEnum) {
         case 'ok':
             return 'success'
         case 'busy':
-            return 'warning'
+            return 'warn'
         case 'erred':
             return 'danger'
         case 'uninitialized':

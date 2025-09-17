@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
 import {
     DNSAppType,
@@ -11,13 +11,11 @@ import {
     ZoneInventoryStates,
     ZonesFetchStatus,
 } from '../backend'
-import { TabViewCloseEvent } from 'primeng/tabview'
 import {
     catchError,
     concatMap,
     delay,
     distinctUntilChanged,
-    filter,
     finalize,
     map,
     share,
@@ -27,11 +25,11 @@ import {
 } from 'rxjs/operators'
 import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { getErrorMessage } from '../utils'
+import { getErrorMessage, unrootZone } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { hasFilter, parseBoolean, tableFiltersToQueryParams } from '../table'
-import { ActivatedRoute, ParamMap, Router } from '@angular/router'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { Router } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
 
 /**
@@ -47,7 +45,7 @@ interface ExtendedLocalZone extends LocalZone {
     templateUrl: './zones-page.component.html',
     styleUrl: './zones-page.component.sass',
 })
-export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
+export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * Configures the breadcrumbs for the component.
      */
@@ -118,16 +116,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Keeps total count of DNS apps for which zones fetch is currently in progress. This number comes from backend.
      */
     fetchTotalAppsCount: number = 0
-
-    /**
-     * Collection of open tabs with zones details.
-     */
-    openTabs: Zone[] = []
-
-    /**
-     * Keeps active zone details tab index.
-     */
-    activeTabIdx: number = 0
 
     /**
      * Flag stating whether Zones Fetch Status dialog is visible or not.
@@ -269,7 +257,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param dnsService service providing DNS REST APIs
      * @param messageService PrimeNG message service used to display feedback messages in UI
      * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
-     * @param activatedRoute Angular ActivatedRoute to retrieve information about current route queryParams
      * @param router Angular router service used to navigate when zones table filtering changes
      * @param zone Angular zone to call Router navigation inside the zone
      */
@@ -278,7 +265,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private dnsService: DNSService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
-        private activatedRoute: ActivatedRoute,
         private router: Router,
         private zone: NgZone
     ) {}
@@ -313,11 +299,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     appTypes: { name: string; value: string }[] = []
 
     /**
-     * Boolean flag stating whether zones table should lazily load zones from backend on component init.
-     */
-    loadZonesOnInit: boolean = true
-
-    /**
      * Returns label for the DNS App type.
      * @param appType DNS App type
      * @return App type label
@@ -326,33 +307,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         switch (appType) {
             case DNSAppType.Bind9:
                 return 'BIND9'
-            // case DNSAppType.Pdns:
-            //     return 'PowerDNS'
+            case DNSAppType.Pdns:
+                return 'PowerDNS'
             default:
                 return (<string>appType).toUpperCase()
         }
     }
-
-    /**
-     * Component lifecycle hook which executes after the component view was initialized.
-     * It is likely that filtering shall be done in PrimeNG table. Managing the filtering
-     * at this step is safe because all child components (also the PrimeNG table itself)
-     * should be initialized.
-     */
-    ngAfterViewInit() {
-        this._initDone = true
-        if (!this.loadZonesOnInit) {
-            // Valid zones filter was provided via URL queryParams.
-            this._filterZonesByQueryParams()
-        }
-    }
-
-    /**
-     * Keeps current valid zone filters parsed from URL queryParams.
-     * The type of this object is inline with PrimeNG table filters property.
-     * @private
-     */
-    private _queryParamFilters: { [p: string]: FilterMetadata } = {}
 
     /**
      * Object containing supported zone filters which values are provided via URL deep-link.
@@ -370,132 +330,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             enumValues?: string[]
             arrayType?: boolean
         }
-    } = {
-        appId: { type: 'numeric', matchMode: 'contains' },
-        appType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSAppType) },
-        zoneType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSZoneType), arrayType: true },
-        rpz: { type: 'enum', matchMode: 'equals', enumValues: ['include', 'exclude', 'only'] },
-        zoneClass: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSClass) },
-        text: { type: 'string', matchMode: 'contains' },
-        zoneSerial: { type: 'string', matchMode: 'contains' },
     }
-
-    /**
-     * Parses zone filters from given URL queryParamMap, validates them and applies to queryParamFilters property.
-     * Filter validation relies on correctly initialized supportedQueryParamFilters property.
-     * Returns number of valid filters found.
-     * @param queryParamMap URL queryParamMap that will be used for zone filters parsing
-     * @return number of valid filters
-     * @private
-     */
-    private _parseQueryParams(queryParamMap: ParamMap): number {
-        // TODO: Move the queryParams filter validation logic to table.ts to replace existing, more complicated logic.
-        let validFilters = 0
-        this._queryParamFilters = {}
-        for (const paramKey of queryParamMap.keys) {
-            if (!(paramKey in this.supportedQueryParamFilters)) {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Wrong URL parameter value',
-                    detail: `URL parameter ${paramKey} not supported!`,
-                    life: 10000,
-                })
-                continue
-            }
-
-            const paramValues = this.supportedQueryParamFilters[paramKey].arrayType
-                ? queryParamMap.getAll(paramKey)
-                : [queryParamMap.get(paramKey)]
-            for (const paramValue of paramValues) {
-                if (!paramValue) {
-                    continue
-                }
-
-                let parsedValue = null
-                switch (this.supportedQueryParamFilters[paramKey].type) {
-                    case 'numeric':
-                        const numV = parseInt(paramValue, 10)
-                        if (Number.isNaN(numV)) {
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Wrong URL parameter value',
-                                detail: `URL parameter ${paramKey} requires numeric value!`,
-                                life: 10000,
-                            })
-                            break
-                        }
-
-                        parsedValue = numV
-                        validFilters += 1
-                        break
-                    case 'boolean':
-                        const booleanV = parseBoolean(paramValue)
-                        if (booleanV === null) {
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Wrong URL parameter value',
-                                detail: `URL parameter ${paramKey} requires either true or false value!`,
-                                life: 10000,
-                            })
-                            break
-                        }
-
-                        parsedValue = booleanV
-                        validFilters += 1
-                        break
-                    case 'enum':
-                        if (this.supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
-                            parsedValue = paramValue
-                            validFilters += 1
-                            break
-                        }
-
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} requires one of the values: ${this.supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
-                            life: 10000,
-                        })
-                        break
-                    case 'string':
-                        parsedValue = paramValue
-                        validFilters += 1
-                        break
-                    default:
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} of type ${this.supportedQueryParamFilters[paramKey].type} not supported!`,
-                            life: 10000,
-                        })
-                        break
-                }
-
-                if (parsedValue !== null) {
-                    const filterConstraint = {}
-                    if (this.supportedQueryParamFilters[paramKey].arrayType) {
-                        parsedValue = this._queryParamFilters[paramKey]?.value
-                            ? [...this._queryParamFilters[paramKey]?.value, parsedValue]
-                            : [parsedValue]
-                    }
-
-                    filterConstraint[paramKey] = {
-                        value: parsedValue,
-                        matchMode: this.supportedQueryParamFilters[paramKey].matchMode,
-                    }
-                    this._queryParamFilters = { ...this._queryParamFilters, ...filterConstraint }
-                }
-            }
-        }
-
-        return validFilters
-    }
-
-    /**
-     * Boolean flag stating whether this component init is done or not.
-     * @private
-     */
-    private _initDone: boolean = false
 
     /**
      * Restores only rows per page count for the zones table from the state stored in user browser storage.
@@ -513,6 +348,16 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
+        this.supportedQueryParamFilters = {
+            appId: { type: 'numeric', matchMode: 'contains' },
+            appType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSAppType) },
+            zoneType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSZoneType), arrayType: true },
+            rpz: { type: 'enum', matchMode: 'equals', enumValues: ['include', 'exclude', 'only'] },
+            zoneClass: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSClass) },
+            text: { type: 'string', matchMode: 'contains' },
+            zoneSerial: { type: 'string', matchMode: 'contains' },
+        }
+
         // Initialize arrays that contain values for UI filter dropdowns.
         for (const t in DNSZoneType) {
             this.zoneTypes.push(DNSZoneType[t])
@@ -533,39 +378,21 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this._restoreZonesTableRowsPerPage()
 
         // Manage RxJS subscriptions on init.
-        this._subscriptions = this.activatedRoute.queryParamMap
-            .pipe(filter(() => this._initDone))
-            .subscribe((value) => {
-                this._parseQueryParams(value)
-                this._filterZonesByQueryParams()
-                if (this.activeTabIdx > 0) {
-                    // Go back to first tab with zones list.
-                    this.activateFirstTab()
-                }
-            })
-        this._subscriptions.add(
-            this._zonesTableFilter$
-                .pipe(
-                    map((f) => {
-                        return { ...f, value: f.value || null }
-                    }),
-                    debounceTime(300),
-                    distinctUntilChanged(),
-                    map((f) => {
-                        f.filterConstraint.value = f.value
-                        this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
-                    })
-                )
-                .subscribe()
-        )
-
-        const queryParamFiltersCount = this._parseQueryParams(this.activatedRoute.snapshot.queryParamMap)
-        if (queryParamFiltersCount > 0) {
-            // Valid filters found, so do not load lazily zones on init, because zones with appropriate filters
-            // will be loaded later.
-            this.loadZonesOnInit = false
-            this.zonesLoading = true
-        }
+        this._subscriptions = this._zonesTableFilter$
+            .pipe(
+                map((f) => {
+                    return { ...f, value: f.value ?? null }
+                }),
+                debounceTime(300),
+                distinctUntilChanged(),
+                map((f) => {
+                    f.filterConstraint.value = f.value
+                    this.zone.run(() =>
+                        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.zonesTable) })
+                    )
+                })
+            )
+            .subscribe()
 
         this.refreshFetchStatusTable()
     }
@@ -576,35 +403,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     ngOnDestroy() {
         this._subscriptions.unsubscribe()
         this._zonesTableFilter$.complete()
-    }
-
-    /**
-     * Callback called when detailed zone tab is closed.
-     * @param event closing event
-     */
-    onTabClose(event: TabViewCloseEvent) {
-        this.openTabs.splice(event.index - 1, 1)
-        this.cd.detectChanges()
-        if (event.index <= this.activeTabIdx) {
-            this.activeTabIdx = 0
-        }
-    }
-
-    /**
-     * Opens tab with zone details.
-     * @param zone zone to be displayed in details
-     */
-    openTab(zone: Zone) {
-        const openTabsZoneIds = this.openTabs.map((z) => z.id)
-        const zoneIdx = openTabsZoneIds.indexOf(zone.id)
-        if (zoneIdx >= 0) {
-            // Tab exists, just switch to it.
-            this.activeTabIdx = zoneIdx + 1
-        } else {
-            this.openTabs = [...this.openTabs, zone]
-            this.cd.detectChanges()
-            this.activeTabIdx = this.openTabs.length
-        }
     }
 
     /**
@@ -872,7 +670,19 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Reference to hasFilter() utility function so it can be used in the html template.
      * @protected
      */
-    protected readonly hasFilter = hasFilter
+    protected readonly tableHasFilter = tableHasFilter
+
+    /**
+     * Asynchronously provides DNS zone by given zone ID.
+     * @param id zone ID
+     */
+    zoneProvider: (id: number) => Promise<Zone> = (id) => lastValueFrom(this.dnsService.getZone(id))
+
+    /**
+     * Provides tab title for given zone.
+     * @param zone zone for which the title is computed
+     */
+    tabTitleProvider: (entity: Zone) => string = (zone: Zone) => unrootZone(zone.name)
 
     /**
      * Resets zones table state and reloads the table without any filters applied.
@@ -893,39 +703,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Filters zones table by filters provided via URL queryParams.
-     * @private
-     */
-    private _filterZonesByQueryParams(): void {
-        this.zonesTable?.clearFilterValues()
-        const metadata = this.zonesTable?.createLazyLoadMetadata()
-        this.zonesTable.filters = { ...metadata.filters, ...this._queryParamFilters }
-        this.zonesTable?._filter()
-    }
-
-    /**
-     * Activates the first tab in the view with the zones table.
-     */
-    activateFirstTab() {
-        this.activeTabIdx = 0
-    }
-
-    /**
-     * Returns zone table filters as queryParam object, which may be used for router navigation.
-     * @return filters as queryParam object
-     * @private
-     */
-    private _zoneFiltersToQueryParams() {
-        return tableFiltersToQueryParams(this.zonesTable)
-    }
-
-    /**
      * Clears a value for given zone table filter constraint and reloads the table with the new filtering.
      * @param filterConstraint
      */
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
-        this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
+        this.zone.run(() => this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.zonesTable) }))
     }
 
     /**
@@ -982,7 +765,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             : [...zoneTypeFilterMetadata.value, 'builtin']
 
         // Apply filters to the zones table.
-        this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
+        this.zone.run(() => this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.zonesTable) }))
     }
 
     /**

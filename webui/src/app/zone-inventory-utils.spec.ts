@@ -5,7 +5,7 @@ import StatusEnum = ZoneInventoryState.StatusEnum
 describe('ZoneInventoryUtils', () => {
     it('should get severity', () => {
         // Arrange + Act + Assert
-        expect(getSeverity(StatusEnum.Busy)).toEqual('warning')
+        expect(getSeverity(StatusEnum.Busy)).toEqual('warn')
         expect(getSeverity(StatusEnum.Ok)).toEqual('success')
         expect(getSeverity(StatusEnum.Erred)).toEqual('danger')
         expect(getSeverity(StatusEnum.Uninitialized)).toEqual('secondary')

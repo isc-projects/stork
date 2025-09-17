@@ -259,9 +259,9 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
 
     /**
      * PrimeNG table used as a table of entities, usually displayed in the first tab.
-     * It is provided as a content child; it must have #table template reference to be found.
+     * It is provided as a content child.
      */
-    contentChildTable = contentChild<Table>('table')
+    contentChildTable = contentChild<Table>(Table, { descendants: false })
 
     /**
      * PrimeNG table used as a table of entities, usually displayed in the first tab.

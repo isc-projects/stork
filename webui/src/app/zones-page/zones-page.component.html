@@ -79,20 +79,14 @@
         <a routerLink="/apps/{{ localZone.appId }}">{{ localZone.appName }}</a>
     </td>
     <td>
-        <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }" (click)="activateFirstTab()">{{
-            localZone.appId
-        }}</a>
+        <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }">{{ localZone.appId }}</a>
     </td>
     <td>
-        <a routerLink="/dns/zones" [queryParams]="{ text: localZone.view }" (click)="activateFirstTab()">{{
-            localZone.view
-        }}</a>
+        <a routerLink="/dns/zones" [queryParams]="{ text: localZone.view }">{{ localZone.view }}</a>
     </td>
     <td>
         <div class="flex flex-wrap justify-center align-items-center gap-2">
-            <a routerLink="/dns/zones" [queryParams]="{ zoneType: localZone.zoneType }" (click)="activateFirstTab()">{{
-                localZone.zoneType
-            }}</a>
+            <a routerLink="/dns/zones" [queryParams]="{ zoneType: localZone.zoneType }">{{ localZone.zoneType }}</a>
             <p-tag *ngIf="localZone.rpz" value="RPZ" severity="success" />
         </div>
     </td>
@@ -105,9 +99,7 @@
         ></i>
     </td>
     <td>
-        <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone.class }" (click)="activateFirstTab()">{{
-            localZone.class
-        }}</a>
+        <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone.class }">{{ localZone.class }}</a>
     </td>
     <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
 </ng-template>
@@ -224,8 +216,14 @@ to the number of configured zones.
 
 <p-confirmDialog styleClass="w-28rem" />
 
-<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeTabIdx" [scrollable]="true">
-    <p-tabPanel header="Zones">
+<app-tab-view
+    routePath="/dns/zones/"
+    [entityProvider]="zoneProvider"
+    firstTabTitle="Zones"
+    [entityTitleProvider]="tabTitleProvider"
+    [tableQueryParamFilters]="supportedQueryParamFilters"
+>
+    <ng-template #firstTab>
         <div class="my-2 flex gap-2 flex-wrap justify-content-end">
             <p-button
                 label="Fetch Status"
@@ -253,7 +251,7 @@ to the number of configured zones.
             #zonesTable
             id="zones-table"
             [value]="zones"
-            [lazyLoadOnInit]="loadZonesOnInit"
+            [lazyLoadOnInit]="false"
             [lazy]="true"
             (onLazyLoad)="onLazyLoadZones($event)"
             [paginator]="true"
@@ -262,7 +260,8 @@ to the number of configured zones.
             [showCurrentPageReport]="true"
             stateStorage="local"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            styleClass="p-datatable-striped datatable-responsive"
+            styleClass="datatable-responsive"
+            [stripedRows]="true"
             dataKey="id"
             [expandedRowKeys]="zonesExpandedRows"
             [loading]="zonesLoading"
@@ -277,7 +276,7 @@ to the number of configured zones.
                                 type="button"
                                 [text]="true"
                                 [rounded]="true"
-                                [plain]="true"
+                                severity="secondary"
                                 [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                                 (click)="filtersPanel.toggle($event)"
                             />
@@ -287,7 +286,7 @@ to the number of configured zones.
                                 icon="pi pi-check"
                                 value="Filter applied"
                                 severity="success"
-                                *ngIf="hasFilter(zonesTable.filters)"
+                                *ngIf="tableHasFilter(zonesTable)"
                                 [rounded]="true"
                             ></p-tag>
                             <app-help-tip subject="Filtering" id="filtering-help-button">
@@ -333,16 +332,15 @@ to the number of configured zones.
                     <div class="flex flex-wrap gap-2 mt-3 align-items-center">
                         <p-button
                             label="Clear"
-                            [severity]="hasFilter(zonesTable.filters) ? 'warning' : 'secondary'"
+                            [severity]="tableHasFilter(zonesTable) ? 'info' : 'secondary'"
                             icon="pi pi-filter-slash"
                             (click)="clearTableState()"
-                            [disabled]="!hasFilter(zonesTable.filters)"
+                            [disabled]="!tableHasFilter(zonesTable)"
                         />
                         <div class="flex-auto"></div>
                         <p-button
                             icon="pi {{ builtinZonesDisplayed ? 'pi-eye' : 'pi-eye-slash' }}"
                             id="builtin-type-filtered"
-                            class="p-inputwrapper-focus"
                             [severity]="builtinZonesDisplayed ? 'primary' : 'secondary'"
                             [pTooltip]="
                                 builtinZonesDisplayed ? 'Click to hide builtin zones' : 'Click to show builtin zones'
@@ -384,7 +382,7 @@ to the number of configured zones.
                         <p-columnFilter field="rpz" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <span class="p-float-label">
+                                    <p-floatlabel>
                                         <p-select
                                             inputId="rpz"
                                             [options]="rpzOptions"
@@ -395,7 +393,7 @@ to the number of configured zones.
                                             styleClass="w-10rem"
                                         ></p-select>
                                         <label for="rpz">RPZ</label>
-                                    </span>
+                                    </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -531,8 +529,10 @@ to the number of configured zones.
                         <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <span class="p-input-icon-left">
-                                        <i class="pi pi-search"></i>
+                                    <p-iconfield iconPosition="left">
+                                        <p-inputicon>
+                                            <i class="pi pi-search"></i>
+                                        </p-inputicon>
                                         <input
                                             pInputText
                                             type="text"
@@ -542,7 +542,7 @@ to the number of configured zones.
                                             placeholder="App name, Zone name or view"
                                             class="w-16rem sm:w-18rem"
                                         />
-                                    </span>
+                                    </p-iconfield>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -574,18 +574,13 @@ to the number of configured zones.
                             type="button"
                             [pRowToggler]="zone"
                             [text]="true"
+                            severity="secondary"
                             [rounded]="true"
-                            [plain]="true"
                             [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                         />
                     </td>
                     <td>
-                        <p-button
-                            [label]="zone.name | unroot"
-                            [link]="true"
-                            (click)="openTab(zone)"
-                            styleClass="px-0 md:px-2"
-                        />
+                        <a routerLink="/dns/zones/{{ zone.id }}" class="font-semibold">{{ zone.name | unroot }}</a>
                     </td>
                     <td>
                         <ng-container
@@ -653,7 +648,7 @@ to the number of configured zones.
                             $implicit: 5,
                             empty:
                                 'No zones were found in the Stork server database' +
-                                (hasFilter(zonesTable.filters) ? ' for the applied filter' : '') +
+                                (tableHasFilter(zonesTable) ? ' for the applied filter' : '') +
                                 '.',
                         }
                     "
@@ -663,26 +658,26 @@ to the number of configured zones.
                 Total: {{ paginatorState.totalRecords | pluralize: 'zone' }}
             </ng-template>
         </p-table>
-    </p-tabPanel>
-    <p-tabPanel *ngFor="let tab of openTabs" [header]="tab.name | unroot" [closable]="true">
+    </ng-template>
+    <ng-template #entityTab let-zone>
         <div class="max-w-100rem">
             <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
                 <div class="pi pi-sitemap mr-2"></div>
                 <div class="word-break-all">
-                    DNS Zone <span class="font-semibold">{{ tab.name | unroot }}</span>
+                    DNS Zone <span class="font-semibold">{{ zone.name | unroot }}</span>
                 </div>
             </div>
             <div class="mb-4">
                 <p-fieldset legend="Zone Data">
-                    <p-table [value]="[tab]">
-                        <ng-template #body let-zone>
+                    <p-table [value]="[zone]">
+                        <ng-template #body let-zoneData>
                             <tr>
                                 <td class="font-semibold w-14rem">Name</td>
-                                <td>{{ zone.name | unroot }}</td>
+                                <td>{{ zoneData.name | unroot }}</td>
                             </tr>
                             <tr>
                                 <td class="font-semibold w-14rem">Stork Internal Zone ID</td>
-                                <td>{{ zone.id }}</td>
+                                <td>{{ zoneData.id }}</td>
                             </tr>
                         </ng-template>
                     </p-table>
@@ -691,7 +686,7 @@ to the number of configured zones.
             <div class="mb-4">
                 <p-fieldset legend="DNS Views Associated with the Zone">
                     <p-table
-                        [value]="tab.localZones"
+                        [value]="zone.localZones"
                         dataKey="serial"
                         [paginator]="true"
                         [rows]="10"
@@ -712,7 +707,7 @@ to the number of configured zones.
                                 <ng-container
                                     *ngTemplateOutlet="
                                         localZoneCells;
-                                        context: { $implicit: localZone, serialInfo: getZoneSerialInfo(tab) }
+                                        context: { $implicit: localZone, serialInfo: getZoneSerialInfo(zone) }
                                     "
                                 ></ng-container>
                                 <td>
@@ -734,7 +729,12 @@ to the number of configured zones.
                                         severity="secondary"
                                         icon="pi pi-file-import"
                                         (click)="
-                                            setZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id, true)
+                                            setZoneViewerDialogVisible(
+                                                localZone.daemonId,
+                                                localZone.view,
+                                                zone.id,
+                                                true
+                                            )
                                         "
                                     />
                                     <!-- Dialog displaying a zone viewer for a selected view and daemon -->
@@ -742,7 +742,7 @@ to the number of configured zones.
                                         *ngIf="!localZone.disableShowZone"
                                         [modal]="true"
                                         [visible]="
-                                            getZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id)
+                                            getZoneViewerDialogVisible(localZone.daemonId, localZone.view, zone.id)
                                         "
                                         [maximizable]="true"
                                         [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
@@ -753,7 +753,7 @@ to the number of configured zones.
                                             setZoneViewerDialogVisible(
                                                 localZone.daemonId,
                                                 localZone.view,
-                                                tab.id,
+                                                zone.id,
                                                 $event
                                             )
                                         "
@@ -761,7 +761,7 @@ to the number of configured zones.
                                         <ng-template #header>
                                             <div class="inline-flex align-items-center justify-content-center gap-2">
                                                 <span>
-                                                    <span class="font-bold text-2xl">{{ tab.name | unroot }}</span>
+                                                    <span class="font-bold text-2xl">{{ zone.name | unroot }}</span>
                                                     <span class="text-lg">
                                                         for
                                                         <a routerLink="/apps/{{ localZone.appId }}">{{
@@ -775,10 +775,9 @@ to the number of configured zones.
                                                                 setZoneViewerDialogVisible(
                                                                     localZone.daemonId,
                                                                     localZone.view,
-                                                                    tab.id,
+                                                                    zone.id,
                                                                     false
-                                                                );
-                                                                activateFirstTab()
+                                                                )
                                                             "
                                                             >{{ localZone.view }}</a
                                                         >
@@ -789,15 +788,15 @@ to the number of configured zones.
                                         <app-zone-viewer-feeder
                                             [daemonId]="localZone.daemonId"
                                             [viewName]="localZone.view"
-                                            [zoneId]="tab.id"
+                                            [zoneId]="zone.id"
                                             [active]="
-                                                getZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id)
+                                                getZoneViewerDialogVisible(localZone.daemonId, localZone.view, zone.id)
                                             "
                                             (viewerError)="
                                                 setZoneViewerDialogVisible(
                                                     localZone.daemonId,
                                                     localZone.view,
-                                                    tab.id,
+                                                    zone.id,
                                                     false
                                                 )
                                             "
@@ -817,5 +816,5 @@ to the number of configured zones.
                 </p-fieldset>
             </div>
         </div>
-    </p-tabPanel>
-</p-tabView>
+    </ng-template>
+</app-tab-view>

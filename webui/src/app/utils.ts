@@ -747,3 +747,13 @@ export function deepEqual<T>(a: T, b: T, parents: [any, any][] = []): boolean {
 
     return true
 }
+
+/**
+ * Converts the root zone name or empty name to '(root)'.
+ */
+export function unrootZone(value: string | null | undefined): string {
+    if (value == null || value.trim() === '.') {
+        return '(root)'
+    }
+    return value
+}
