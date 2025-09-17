@@ -1,5 +1,41 @@
 package bind9config
 
+import "sync"
+
+var _ formattedElement = (*Options)(nil)
+
+// Options is the statement used to define global options.
+// This section has the following format:
+//
+//	options {
+//		<option-clauses> ...
+//	};
+//
+// See: https://bind9.readthedocs.io/en/latest/reference.html#options-block-grammar.
+type Options struct {
+	// Cache the response-policy only once.
+	responsePolicyOnce sync.Once
+	// The response-policy clause cache for better access performance.
+	responsePolicy *ResponsePolicy
+	// The list of clauses (e.g., allow-transfer, listen-on, response-policy etc.).
+	Clauses []*OptionClause `parser:"'{' ( @@ ';'* )* '}'"`
+}
+
+// Returns the serialized BIND 9 configuration for the options statement.
+func (o *Options) getFormattedOutput(filter *Filter) formatterOutput {
+	optionsClause := newFormatterClause()
+	optionsClause.addToken("options")
+	optionsClauseScope := newFormatterScope()
+	for _, clause := range o.Clauses {
+		c := clause.getFormattedOutput(filter)
+		if c != nil {
+			optionsClauseScope.add(c)
+		}
+	}
+	optionsClause.add(optionsClauseScope)
+	return optionsClause
+}
+
 // Checks if the options contain no-parse directives.
 func (o *Options) HasNoParse() bool {
 	for _, clause := range o.Clauses {
@@ -27,8 +63,6 @@ func (o *Options) GetListenOnSet() *ListenOnClauses {
 	for _, clause := range o.Clauses {
 		if clause.ListenOn != nil {
 			listenOnSet = append(listenOnSet, clause.ListenOn)
-		} else if clause.ListenOnV6 != nil {
-			listenOnSet = append(listenOnSet, clause.ListenOnV6)
 		}
 	}
 	return &listenOnSet

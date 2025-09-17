@@ -80,3 +80,41 @@ func TestGetAddressAndPortIPv6Zero(t *testing.T) {
 	require.Equal(t, "::1", address)
 	require.EqualValues(t, 444, port)
 }
+
+// Test that the full inet clause is formatted correctly.
+func TestInetClauseFormat(t *testing.T) {
+	inetClause := &InetClause{
+		Address: "127.0.0.1",
+		Port:    storkutil.Ptr("53"),
+		Allow: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{
+					KeyID: "guest",
+				},
+			},
+		},
+		Keys: &Keys{
+			KeyNames: []string{"trusted"},
+		},
+		ReadOnly: storkutil.Ptr(Boolean(true)),
+	}
+	output := inetClause.getFormattedOutput(nil)
+	require.NotNil(t, output)
+	cfgEq(t, `inet "127.0.0.1" port 53 allow { key "guest"; } keys { "trusted"; } read-only true;`, output)
+}
+
+// Test that the inet clause is formatted correctly when no optional flags are specified.
+func TestInetClauseFormatNoOptionalFlags(t *testing.T) {
+	inetClause := &InetClause{
+		Address: "127.0.0.1",
+	}
+	output := inetClause.getFormattedOutput(nil)
+	require.NotNil(t, output)
+	cfgEq(t, `inet "127.0.0.1";`, output)
+}
+
+// Test that serializing an inet clause with nil values does not panic.
+func TestInetClauseFormatNilValues(t *testing.T) {
+	inetClause := &InetClause{}
+	require.NotPanics(t, func() { inetClause.getFormattedOutput(nil) })
+}

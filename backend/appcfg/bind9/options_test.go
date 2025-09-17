@@ -50,7 +50,8 @@ func TestOptionsGetListenOnSet(t *testing.T) {
 		Clauses: []*OptionClause{
 			{
 				ListenOn: &ListenOn{
-					Port: storkutil.Ptr(int64(53)),
+					Variant: "listen-on",
+					Port:    storkutil.Ptr(int64(53)),
 				},
 			},
 			{
@@ -59,13 +60,15 @@ func TestOptionsGetListenOnSet(t *testing.T) {
 				},
 			},
 			{
-				ListenOnV6: &ListenOn{
-					Port: storkutil.Ptr(int64(54)),
+				ListenOn: &ListenOn{
+					Variant: "listen-on-v6",
+					Port:    storkutil.Ptr(int64(54)),
 				},
 			},
 			{
 				ListenOn: &ListenOn{
-					Port: storkutil.Ptr(int64(56)),
+					Variant: "listen-on",
+					Port:    storkutil.Ptr(int64(56)),
 				},
 			},
 		},
@@ -101,4 +104,16 @@ func TestOptionsGetResponsePolicy(t *testing.T) {
 	responsePolicy := options.GetResponsePolicy()
 	require.NotNil(t, responsePolicy)
 	require.Len(t, responsePolicy.Zones, 1)
+}
+
+// Test that serializing an options statement with nil values does not panic.
+func TestOptionsFormatNilValues(t *testing.T) {
+	options := &Options{}
+	require.NotPanics(t, func() { options.getFormattedOutput(nil) })
+}
+
+// Test that serializing an option clause with nil values does not panic.
+func TestOptionClauseFormatNilValues(t *testing.T) {
+	optionClause := &OptionClause{}
+	require.NotPanics(t, func() { optionClause.getFormattedOutput(nil) })
 }

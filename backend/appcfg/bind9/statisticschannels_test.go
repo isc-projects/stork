@@ -38,3 +38,9 @@ func TestStatisticsChannelsGetFirstInetClauseNone(t *testing.T) {
 	statisticsChannels := &StatisticsChannels{}
 	require.Nil(t, statisticsChannels.GetFirstInetClause())
 }
+
+// Test that serializing a statistics-channels statement with nil values does not panic.
+func TestStatisticsChannelsFormatNilValues(t *testing.T) {
+	statisticsChannels := &StatisticsChannels{}
+	require.NotPanics(t, func() { statisticsChannels.getFormattedOutput(nil) })
+}

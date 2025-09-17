@@ -179,3 +179,60 @@ func TestViewGetResponsePolicy(t *testing.T) {
 	require.NotNil(t, responsePolicy)
 	require.Len(t, responsePolicy.Zones, 1)
 }
+
+// Test that the view is formatted correctly.
+func TestViewGetFormattedOutput(t *testing.T) {
+	view := &View{
+		Name:  "trusted",
+		Class: "IN",
+		Clauses: []*ViewClause{
+			{
+				Zone: &Zone{
+					Name: "example.com",
+					Clauses: []*ZoneClause{
+						{
+							Option: &Option{
+								Identifier: "type",
+								Switches: []OptionSwitch{
+									{
+										IdentSwitch: storkutil.Ptr("forward"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Option: &Option{
+					Identifier: "test-option",
+					Switches: []OptionSwitch{
+						{
+							IdentSwitch: storkutil.Ptr("true"),
+						},
+					},
+				},
+			},
+		},
+	}
+	output := view.getFormattedOutput(nil)
+	require.NotNil(t, output)
+	cfgEq(t, `view "trusted" IN {
+		zone "example.com" {
+			type forward;
+		};
+		test-option true;
+	};`, output)
+}
+
+// Test that serializing a view with nil values does not panic.
+func TestViewFormatNilValues(t *testing.T) {
+	view := &View{}
+	require.NotPanics(t, func() { view.getFormattedOutput(nil) })
+}
+
+// Test that serializing a view clause with nil values does not panic.
+func TestViewClauseFormatNilValues(t *testing.T) {
+	viewClause := &ViewClause{}
+	require.NotPanics(t, func() { viewClause.getFormattedOutput(nil) })
+}

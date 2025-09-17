@@ -2,6 +2,25 @@ package bind9config
 
 import storkutil "isc.org/stork/util"
 
+var _ formattedElement = (*ListenOn)(nil)
+
+// ListenOn is the clause specifying the addresses the servers listens on the
+// DNS requests. It also contains additional options.
+//
+// The listen-on clause has the following format:
+//
+//	listen-on [ port <integer> ] [ proxy <string> ] [ tls <string> ] [ http <string> ] { <address_match_element>; ... };
+//
+// See: https://bind9.readthedocs.io/en/latest/reference.html#namedconf-statement-listen-on
+type ListenOn struct {
+	Variant          string            `parser:"@( 'listen-on' | 'listen-on-v6' )"`
+	Port             *int64            `parser:"( 'port' @Ident )?"`
+	Proxy            *string           `parser:"( 'proxy' ( @String | @Ident ) )?"`
+	TLS              *string           `parser:"( 'tls' ( @String | @Ident ) )?"`
+	HTTP             *string           `parser:"( 'http' ( @String | @Ident ) )?"`
+	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+}
+
 // Defines a collection of listen-on and listen-on-v6 clauses.
 // These clauses can be specified multiple times in the configuration file.
 // This object is used to extract best matching listen-on clauses from the
@@ -91,4 +110,28 @@ func (l *ListenOn) IncludesIPAddress(ipAddress string) bool {
 		}
 	}
 	return false
+}
+
+// Returns the serialized BIND 9 configuration for the listen-on and listen-on-v6 clauses.
+func (l *ListenOn) getFormattedOutput(filter *Filter) formatterOutput {
+	clause := newFormatterClause(l.Variant)
+	if l.Port != nil {
+		clause.addTokenf(`port %d`, l.GetPort())
+	}
+	if l.Proxy != nil {
+		clause.addTokenf(`proxy %s`, *l.Proxy)
+	}
+	if l.TLS != nil {
+		clause.addTokenf(`tls %s`, *l.TLS)
+	}
+	if l.HTTP != nil {
+		clause.addTokenf(`http %s`, *l.HTTP)
+	}
+	clauseScope := clause.addScope()
+	if l.AddressMatchList != nil {
+		for _, element := range l.AddressMatchList.Elements {
+			clauseScope.add(element.getFormattedOutput(filter))
+		}
+	}
+	return clause
 }

@@ -164,3 +164,53 @@ func TestGetMatchingListenOnMultipleLoopbackAddressPortNumberIPv6(t *testing.T) 
 	require.Equal(t, "2001:db8:1::1", listenOn.AddressMatchList.Elements[0].IPAddressOrACLName)
 	require.Equal(t, int64(853), listenOn.GetPort())
 }
+
+// Test that the listen-on clause is formatted correctly.
+func TestListenOnFormat(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		Port:    storkutil.Ptr(int64(853)),
+		Proxy:   storkutil.Ptr("plain"),
+		TLS:     storkutil.Ptr("domain.name"),
+		HTTP:    storkutil.Ptr("myserver"),
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{{IPAddressOrACLName: "127.0.0.1"}},
+		},
+	}
+	output := listenOn.getFormattedOutput(nil)
+	require.NotNil(t, output)
+	cfgEq(t, `listen-on port 853 proxy plain tls domain.name http myserver { "127.0.0.1"; };`, output)
+}
+
+// Test that the listen-on clause is formatted correctly when no optional flags are specified.
+func TestListenOnFormatNoOptionalFlags(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{{IPAddressOrACLName: "127.0.0.1"}},
+		},
+	}
+	output := listenOn.getFormattedOutput(nil)
+	require.NotNil(t, output)
+	cfgEq(t, `listen-on { "127.0.0.1"; };`, output)
+}
+
+// Test that the listen-on-v6 clause is formatted correctly.
+func TestListenOnFormatIPv6(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on-v6",
+		Port:    storkutil.Ptr(int64(853)),
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{{IPAddressOrACLName: "::1"}},
+		},
+	}
+	output := listenOn.getFormattedOutput(nil)
+	require.NotNil(t, output)
+	cfgEq(t, `listen-on-v6 port 853 { "::1"; };`, output)
+}
+
+// Test that serializing a listen-on clause with nil values does not panic.
+func TestListenOnFormatNilValues(t *testing.T) {
+	listenOn := &ListenOn{}
+	require.NotPanics(t, func() { listenOn.getFormattedOutput(nil) })
+}

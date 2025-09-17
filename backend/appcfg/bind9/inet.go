@@ -4,10 +4,21 @@ import (
 	"strconv"
 )
 
+var _ formattedElement = (*InetClause)(nil)
+
 const (
 	defaultControlsPort           int64 = 953
 	defaultStatisticsChannelsPort int64 = 80
 )
+
+// An inet clause within the controls statement.
+type InetClause struct {
+	Address  string            `parser:"( @String | @Ident )"`
+	Port     *string           `parser:"( 'port' @Ident )?"`
+	Allow    *AddressMatchList `parser:"( 'allow' '{' @@ '}' )?"`
+	Keys     *Keys             `parser:"( 'keys' '{' @@ '}' )?"`
+	ReadOnly *Boolean          `parser:"( 'read-only' @Ident )?"`
+}
 
 // Returns an address and port which the agent can connect to based on the
 // inet clause. If port is an asterisk, or not specified, the default port
@@ -31,4 +42,33 @@ func (i *InetClause) GetConnectableAddressAndPort(defaultPort int64) (address st
 		address = "::1"
 	}
 	return
+}
+
+// Returns the serialized BIND 9 configuration for the inet clause.
+func (i *InetClause) getFormattedOutput(filter *Filter) formatterOutput {
+	clause := newFormatterClause("inet")
+	clause.addQuotedToken(i.Address)
+	if i.Port != nil {
+		clause.addTokenf("port %s", *i.Port)
+	}
+	if i.Allow != nil {
+		allowClause := newFormatterClause("allow")
+		scope := allowClause.addScope()
+		for _, element := range i.Allow.Elements {
+			scope.add(element.getFormattedOutput(filter))
+		}
+		clause.add(allowClause)
+	}
+	if i.Keys != nil {
+		clause.add(i.Keys.getFormattedOutput(filter))
+	}
+	if i.ReadOnly != nil {
+		switch *i.ReadOnly {
+		case true:
+			clause.addToken("read-only true")
+		case false:
+			clause.addToken("read-only false")
+		}
+	}
+	return clause
 }

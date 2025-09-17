@@ -11,6 +11,31 @@ import (
 
 const DefaultViewName = "_default"
 
+// Config is the root of the Bind9 configuration. It contains a list of
+// top-level statements. The statements typically contain clauses with
+// configuration elements.
+type Config struct {
+	// The absolute source path of the configuration file. Note that it
+	// may be not set if getting the absolute path failed.
+	sourcePath string
+	// The configuration contains a list of Statements separated by semicolons.
+	Statements []*Statement `parser:"( @@ ';'* )*"`
+}
+
+// Returns serialized BIND 9 configuration with filtering and indentation.
+// The initial indentation level is specified with the argument. The filter
+// specifies which configuration elements should be included in the output.
+// If the filter is nil, all configuration elements are returned.
+func (c *Config) GetFormattedString(indentLevel int, filter *Filter) string {
+	formatter := newFormatter(indentLevel)
+	for _, statement := range c.Statements {
+		if o := statement.getFormattedOutput(filter); o != nil {
+			formatter.addClause(o)
+		}
+	}
+	return formatter.getFormattedText()
+}
+
 // Checks if the configuration contains no-parse directives.
 func (c *Config) HasNoParse() bool {
 	for _, statement := range c.Statements {
@@ -487,22 +512,6 @@ func (c *Config) GetZoneKey(viewName string, zoneName string) (*Key, error) {
 		}
 	}
 	return nil, nil
-}
-
-// Returns the algorithm and secret from the given key.
-func (key *Key) GetAlgorithmSecret() (algorithm *string, secret *string, err error) {
-	for _, clause := range key.Clauses {
-		if clause.Algorithm != "" {
-			algorithm = &clause.Algorithm
-		}
-		if clause.Secret != "" {
-			secret = &clause.Secret
-		}
-	}
-	if algorithm == nil || secret == nil {
-		err = errors.Errorf("no algorithm or secret found in key %s", key.Name)
-	}
-	return
 }
 
 // Expands the configuration by including the contents of the included files.
