@@ -28,6 +28,7 @@ import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { of, throwError } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { MultiSelectModule } from 'primeng/multiselect'
 
 class App {
     id: number
@@ -68,6 +69,7 @@ describe('AppsPageComponent', () => {
                 ProgressSpinnerModule,
                 ConfirmDialogModule,
                 ManagedAccessDirective,
+                MultiSelectModule,
             ],
             providers: [
                 ConfirmationService,
@@ -199,5 +201,22 @@ describe('AppsPageComponent', () => {
 
         expect(api.deleteKeaDaemonConfigHashes).not.toHaveBeenCalled()
         expect(msgSrv.add).not.toHaveBeenCalled()
+    }))
+    it('should request all types of apps by default', fakeAsync(() => {
+        spyOn(api, 'getApps')
+
+        component.refreshAppsList(component.appsTable)
+        fixture.detectChanges()
+
+        expect(api.getApps).toHaveBeenCalledWith(0, 10, undefined, ['bind9', 'kea', 'pdns'])
+    }))
+    it('should only request PowerDNS apps when set to PowerDNS', fakeAsync(() => {
+        spyOn(api, 'getApps')
+
+        component.selectedAppTypes = ['pdns']
+        component.refreshAppsList(component.appsTable)
+        fixture.detectChanges()
+
+        expect(api.getApps).toHaveBeenCalledWith(0, 10, undefined, ['pdns'])
     }))
 })

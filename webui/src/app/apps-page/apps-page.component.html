@@ -47,6 +47,13 @@
             icon="pi pi-filter-slash"
             (click)="clearFilters(appsTable)"
         ></button>
+        <p-multiSelect
+            [options]="appTypes"
+            [(ngModel)]="selectedAppTypes"
+            (ngModelChange)="updateAppTypesFilter($event)"
+            filter="false"
+            placeholder="Select App Types"
+        />
         <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
             <div class="flex-auto"></div>
             <p-button

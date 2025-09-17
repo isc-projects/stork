@@ -1,0 +1,5 @@
+[ui] william
+
+    Add drop-down menu to filter by app type (Kea, BIND9, PowerDNS) in
+    the Services > Apps page.
+    (Gitlab #1956)

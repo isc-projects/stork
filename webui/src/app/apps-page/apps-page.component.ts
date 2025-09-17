@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { lastValueFrom, Subject, Subscription } from 'rxjs'
+import { lastValueFrom, debounceTime, distinctUntilChanged, Subject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
@@ -47,6 +47,11 @@ function setDaemonStatusErred(app) {
     }
 }
 
+interface AppType {
+    label: string
+    value: string
+}
+
 @Component({
     selector: 'app-apps-page',
     templateUrl: './apps-page.component.html',
@@ -72,6 +77,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     appTab: AppTab = null
 
     refreshedAppTab = new Subject<AppTab>()
+    appTypes: AppType[] = []
+    selectedAppTypes$: Subject<string[]> = new Subject()
+    selectedAppTypes: string[] = []
 
     constructor(
         private route: ActivatedRoute,
@@ -127,6 +135,33 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         ]
 
         this.openedApps = []
+        this.appTypes = [
+            {
+                label: 'BIND9',
+                value: 'bind9',
+            },
+            {
+                label: 'Kea',
+                value: 'kea',
+            },
+            {
+                label: 'PowerDNS',
+                value: 'pdns',
+            },
+        ]
+        // Select all app types by default, so that the UI shows something
+        // useful when first loaded (rather than an empty list).
+        this.selectedAppTypes = this.appTypes.map((t) => t.value)
+        // Reload 450ms after the user stops changing filters.  Value chosen by
+        // messing around with it until it felt good to me.
+        this.subscriptions.add(
+            this.selectedAppTypes$.pipe(debounceTime(450), distinctUntilChanged()).subscribe((_) => {
+                // Ignore the value *in* the event, just use the existence of the
+                // event to cause a refresh.  This avoids rewriting large portions
+                // of this component just before the PrimeNG 17 -> 19 upgrade.
+                this.refreshAppsList(this.appsTable)
+            })
+        )
 
         if (this.appsTable) {
             this.refreshAppsList(this.appsTable)
@@ -193,6 +228,14 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Function called by the MultiSelect for choosing which app types to show,
+     * in order to emit an event which reloads the table.
+     */
+    updateAppTypesFilter(change_event: string[]) {
+        this.selectedAppTypes$.next(change_event)
+    }
+
+    /**
      * Function called by the table data loader. Accepts the pagination event.
      */
     loadApps(event) {
@@ -205,7 +248,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         // ToDo: Uncaught promise
         // If any HTTP exception will be thrown then the promise
         // fails, but a user doesn't get any message, popup, log.
-        lastValueFrom(this.servicesApi.getApps(event.first, event.rows, text))
+        lastValueFrom(this.servicesApi.getApps(event.first, event.rows, text, this.selectedAppTypes))
             .then((data) => {
                 this.apps = data.items ?? []
                 this.totalApps = data.total ?? 0
