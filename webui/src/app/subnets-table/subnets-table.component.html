@@ -86,15 +86,13 @@
                 </div>
             </ng-template>
             <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
-                <button
-                    pButton
+                <p-button
                     label="Clear"
-                    [class.p-button-warning]="tableHasFilter(subnetsTable)"
-                    [class.p-button-secondary]="!tableHasFilter(subnetsTable)"
+                    [severity]="tableHasFilter(subnetsTable) ? 'info' : 'secondary'"
                     icon="pi pi-filter-slash"
                     (click)="clearTableState()"
                     [disabled]="!tableHasFilter(subnetsTable)"
-                ></button>
+                ></p-button>
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">

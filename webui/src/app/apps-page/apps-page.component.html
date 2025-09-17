@@ -76,15 +76,13 @@
                         </div>
                     </ng-template>
                     <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
-                        <button
-                            pButton
+                        <p-button
                             label="Clear"
-                            [class.p-button-warning]="tableHasFilter(table)"
-                            [class.p-button-secondary]="!tableHasFilter(table)"
+                            [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
                             icon="pi pi-filter-slash"
                             (click)="clearTableState()"
                             [disabled]="!tableHasFilter(table)"
-                        ></button>
+                        ></p-button>
                         <div class="flex-auto"></div>
                         <p-columnFilter field="apps" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
