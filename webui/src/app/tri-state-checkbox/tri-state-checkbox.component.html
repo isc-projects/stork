@@ -1,21 +1,20 @@
-<!--<input-->
-<!--    type="checkbox"-->
-<!--    [checked]="value() ?? false"-->
-<!--    [indeterminate]="value() === null"-->
-<!--    (click)="onClick()"-->
-<!--    (keydown)="onKeyDown($event)"-->
-<!--    [id]="inputID()"-->
-<!--    [disabled]="disabled()"-->
-<!--/>-->
 @if (label() && inputID()) {
     <label [for]="inputID()" class="mr-1">{{ label() }}</label>
 }
 <p-checkbox
     [inputId]="inputID()"
     [indeterminate]="value() === null"
-    [ngModel]="value() ?? false"
+    [ngModel]="value()"
     [disabled]="disabled()"
-    (click)="onClick()"
+    (click)="onClick($event)"
     (keydown)="onKeyDown($event)"
-
-/>
+    [binary]="true"
+>
+    <ng-template #checkboxicon>
+        @if (value() === true) {
+            <CheckIcon [styleClass]="'p-checkbox-icon'" [attr.data-pc-section]="'icon'" />
+        } @else if (value() === false) {
+            <TimesIcon [styleClass]="'p-checkbox-icon'" [attr.data-pc-section]="'icon'" />
+        }
+    </ng-template>
+</p-checkbox>
