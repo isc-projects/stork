@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core'
-import { Routes, RouterModule, RouteReuseStrategy, ActivatedRouteSnapshot, DetachedRouteHandle } from '@angular/router'
+import { Routes, RouterModule } from '@angular/router'
 
 import { AuthGuard } from './auth.guard'
 import { DashboardComponent } from './dashboard/dashboard.component'
@@ -228,82 +228,3 @@ const routes: Routes = [
     exports: [RouterModule],
 })
 export class AppRoutingModule {}
-
-export class CustomRouteReuseStrategy implements RouteReuseStrategy {
-    /**
-     * Array of specific components that will have custom route reuse strategy.
-     *
-     * @private
-     */
-    private specificComponents: any[] = [
-        // HostsPageComponent,
-        // SubnetsPageComponent,
-        // SharedNetworksPageComponent,
-        // MachinesPageComponent,
-    ]
-
-    /**
-     * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
-     * Hence, this method is not implemented. Nothing will be retrieved.
-     */
-    retrieve(): DetachedRouteHandle | null {
-        return null
-    }
-
-    /**
-     * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
-     * Hence, this method always returns false.
-     */
-    shouldAttach(): boolean {
-        return false
-    }
-
-    /**
-     * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
-     * Hence, this method always returns false.
-     */
-    shouldDetach(): boolean {
-        return false
-    }
-
-    /**
-     * Determines whether the route should be reused.
-     * It returns false when navigation happens between two same specific components,
-     * e.g. between two HostsPageComponents,
-     * and when either of below conditions apply:
-     *   - curr and future routes contain param 'id=all' (for specific components it means that list view tab
-     *     with index 0 is displayed).
-     *   - future route queryParamMap contains 'gs' key i.e. global search was used
-     *     (e.g. future route looks like dhcp/hosts/all?text=foobar&gs=true).
-     * For other routes, true is returned whenever current route and future
-     * route have exactly the same routeConfig. In this case, default Angular
-     * route reuse strategy will work as usual.
-     * @param future route to which we are trying to navigate
-     * @param curr route from which we are leaving
-     */
-    shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
-        if (
-            this.specificComponents.includes(future.component) &&
-            future.component === curr.component &&
-            (future.queryParamMap.has('gs') ||
-                (curr.paramMap.get('id')?.includes('all') && future.paramMap.get('id')?.includes('all')))
-        ) {
-            // Do not reuse route when navigation happens between two same specific components,
-            // (e.g. between two HostsPageComponents)
-            // and when either of below conditions apply:
-            //   - curr and future routes display list view tab (tab index 0)
-            //   - future route queryParamMap contains 'gs' key i.e. global search was used
-            //     (e.g. future route looks like dhcp/hosts/all?text=foobar&gs=true).
-            return false
-        }
-        return future.routeConfig === curr.routeConfig
-    }
-
-    /**
-     * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
-     * Hence, this method is not implemented. Nothing will be stored.
-     */
-    store(): void {
-        // no-op
-    }
-}

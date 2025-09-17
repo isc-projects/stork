@@ -13,14 +13,14 @@
             <h4>Subnets</h4>
             <div *ngFor="let sn of searchResults.subnets.items">[{{ sn.id }}] {{ sn.subnet }}</div>
             <div style="margin-top: 10px">
-                <a routerLink="/dhcp/subnets" [queryParams]="{ text: searchText, gs: true }">more</a>
+                <a routerLink="/dhcp/subnets" [queryParams]="{ text: searchText }">more</a>
             </div>
         </div>
         <div *ngIf="searchResults.sharedNetworks.items.length > 0" style="margin-right: 20px; min-width: 9em">
             <h4>Shared Networks</h4>
             <div *ngFor="let net of searchResults.sharedNetworks.items">[{{ net.id }}] {{ net.name }}</div>
             <div style="margin-top: 10px">
-                <a routerLink="/dhcp/shared-networks" [queryParams]="{ text: searchText, gs: true }">more</a>
+                <a routerLink="/dhcp/shared-networks" [queryParams]="{ text: searchText }">more</a>
             </div>
         </div>
         <div *ngIf="searchResults.hosts.items.length > 0" style="margin-right: 20px; min-width: 17em">
@@ -32,7 +32,7 @@
                 </span>
             </div>
             <div style="margin-top: 10px">
-                <a routerLink="/dhcp/hosts" [queryParams]="{ text: searchText, gs: true }">more</a>
+                <a routerLink="/dhcp/hosts" [queryParams]="{ text: searchText }">more</a>
             </div>
         </div>
         <div *ngIf="searchResults.machines.items.length > 0" style="margin-right: 20px; min-width: 9em">
@@ -41,7 +41,7 @@
                 <a routerLink="/machines/{{ m.id }}">[{{ m.id }}] {{ m.hostname || m.address }}</a>
             </div>
             <div style="margin-top: 10px">
-                <a routerLink="/machines/all" [queryParams]="{ text: searchText, gs: true }">more</a>
+                <a routerLink="/machines/all" [queryParams]="{ text: searchText }">more</a>
             </div>
         </div>
         <div id="apps-div" *ngIf="searchResults.apps.items.length > 0" style="margin-right: 20px; min-width: 9em">
