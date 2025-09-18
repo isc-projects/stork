@@ -1,4 +1,4 @@
-import { Component, input, model } from '@angular/core'
+import { Component, input, model, signal, viewChild } from '@angular/core'
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms'
 import { Checkbox } from 'primeng/checkbox'
 import { CheckIcon, TimesIcon } from 'primeng/icons'
@@ -55,10 +55,24 @@ export class TriStateCheckboxComponent implements ControlValueAccessor {
     touched = false
 
     /**
+     * Checkbox view child.
+     */
+    checkbox = viewChild(Checkbox)
+
+    /**
+     * Internal signal keeping disabled state.
+     */
+    _disabled = signal<boolean>(false)
+
+    /**
      * Toggles input value in a chain true->false->null->true->...
      * @private
      */
     private toggleValue() {
+        if (this.isDisabled()) {
+            return
+        }
+
         this.markAsTouched()
         if (this.value() === true) {
             this.value.set(false)
@@ -146,5 +160,30 @@ export class TriStateCheckboxComponent implements ControlValueAccessor {
      */
     setDisabledState?(isDisabled: boolean): void {
         this.disabled.set(isDisabled)
+    }
+
+    /**
+     * Marks the component as disabled.
+     */
+    markAsDisabled() {
+        if (!this._disabled()) {
+            this._disabled.set(true)
+        }
+    }
+
+    /**
+     * Checks if the component is disabled. Apart from checking disabled input flag, it also checks internal PrimeNG
+     * checkbox component p-disabled class.
+     */
+    isDisabled(): boolean {
+        const isDisabled =
+            this.disabled() ||
+            this._disabled() ||
+            this.checkbox().el.nativeElement.childNodes?.[0]?.classList?.contains('p-disabled')
+        if (isDisabled) {
+            this.markAsDisabled()
+        }
+
+        return isDisabled
     }
 }

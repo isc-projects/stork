@@ -70,29 +70,14 @@ export class ManagedAccessDirective implements AfterViewInit {
                 return
             }
 
-            // If this is a PrimeNG element...
-            if (this.htmlElement.classList.contains('p-element')) {
-                this.setDisabledClasses(this.htmlElement)
-
-                // If this is a <button> element with PrimeNG pButton directive applied...
-                if (this.htmlElement.nodeName.toUpperCase() === 'BUTTON') {
-                    this.setDisabledAttributes(this.htmlElement)
-                    return
-                }
-
-                // This is other PrimeNG element, e.g. <p-button>, <p-tristatecheckbox>, <p-inputswitch>, etc.
-                this.htmlElement.querySelectorAll('.p-component').forEach((el) => {
-                    // For all elements inside with .p-component class add disabled classes.
-                    this.setDisabledClasses(<HTMLElement>el)
-                })
-                this.htmlElement.querySelectorAll('input,button').forEach((el) => {
-                    // Set attributes and classes for all input and button elements found inside.
+            // If this is a PrimeNG component...
+            const pComponent = this.htmlElement.querySelector('.p-component')
+            if (pComponent) {
+                this.htmlElement.querySelectorAll('.p-component,input,button').forEach((el) => {
+                    // Set attributes and classes for all input and button elements or elements with .p-component class.
                     this.setDisabledAttributes(<HTMLElement>el)
                     this.setDisabledClasses(<HTMLElement>el)
                 })
-
-                // p-tristatecheckbox has .p-checkbox inside which requires additional class.
-                this.htmlElement.querySelector('.p-checkbox')?.classList.add('p-checkbox-disabled')
                 return
             }
 
@@ -126,6 +111,7 @@ export class ManagedAccessDirective implements AfterViewInit {
      */
     private setDisabledAttributes(el: HTMLElement): void {
         this.renderer.setAttribute(el, 'disabled', 'disabled')
+        this.renderer.setAttribute(el, 'data-p-disabled', 'true')
         this.renderer.setAttribute(el, 'title', this._title)
     }
 

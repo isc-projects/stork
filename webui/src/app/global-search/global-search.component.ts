@@ -45,7 +45,7 @@ export class GlobalSearchComponent implements OnInit {
             this.resetResults()
             this.searchText = ''
             this.searchResultsBox.hide()
-        } else if (this.searchText.length >= 2 || event.key === 'Enter') {
+        } else if (this.searchText?.length >= 2 || event.key === 'Enter') {
             this.searchApi.searchRecords(this.searchText).subscribe((data) => {
                 this.resetResults()
                 for (const k of recordTypes) {

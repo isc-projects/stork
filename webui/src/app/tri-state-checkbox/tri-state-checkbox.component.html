@@ -5,7 +5,7 @@
     [inputId]="inputID()"
     [indeterminate]="value() === null"
     [ngModel]="value()"
-    [disabled]="disabled()"
+    [disabled]="disabled() || _disabled()"
     (click)="onClick($event)"
     (keydown)="onKeyDown($event)"
     [binary]="true"
