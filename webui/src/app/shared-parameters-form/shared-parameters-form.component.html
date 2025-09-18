@@ -126,15 +126,13 @@
                                     </ng-container>
                                     <ng-container *ngSwitchDefault> Something else </ng-container>
                                 </div>
-                                <button
-                                    pRipple
-                                    pButton
+                                <p-button
                                     [disabled]="control.value === (controls.data?.clearValue ?? null)"
                                     label="Clear"
                                     class="p-button-text p-button-sm hidden md:inline-flex flex-none ml-2"
                                     type="button"
                                     (click)="control.setValue(controls.data?.clearValue ?? null)"
-                                ></button>
+                                ></p-button>
                                 <p-button
                                     class="flex-none"
                                     [text]="true"

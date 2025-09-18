@@ -11,8 +11,7 @@
             <span class="panel-header__title flex-auto font-semibold">JSON</span>
 
             <!-- Collapse/expand button -->
-            <button
-                pButton
+            <p-button
                 class="flex-none"
                 type="button"
                 icon="fa fa-expand-alt"
@@ -20,9 +19,8 @@
                 (click)="onClickToggleNodes()"
                 *ngIf="autoExpand === 'none'"
                 [disabled]="configuration === null"
-            ></button>
-            <button
-                pButton
+            ></p-button>
+            <p-button
                 class="flex-none"
                 type="button"
                 icon="fa fa-compress-alt"
@@ -30,34 +28,21 @@
                 (click)="onClickToggleNodes()"
                 *ngIf="autoExpand === 'all'"
                 [disabled]="configuration === null"
-            ></button>
+            ></p-button>
 
             <!-- Refresh button -->
-            <button
-                pButton
+            <p-button
                 class="flex-none"
                 type="button"
                 icon="fa fa-sync"
                 label="Refresh"
                 (click)="onClickRefresh()"
                 [disabled]="configuration === null && !failedFetch"
-            ></button>
+            ></p-button>
 
             <!-- Download button -->
-            <a
-                class="flex-none"
-                type="button"
-                icon="fa fa-download"
-                [download]="downloadFilename"
-                [href]="'/api/daemons/' + daemonId + '/config'"
-            >
-                <button
-                    pButton
-                    type="button"
-                    icon="fa fa-download"
-                    label="Download"
-                    [disabled]="configuration === null"
-                ></button>
+            <a class="flex-none" [download]="downloadFilename" [href]="'/api/daemons/' + daemonId + '/config'">
+                <p-button icon="fa fa-download" label="Download" [disabled]="configuration === null"></p-button>
             </a>
         </div>
     </ng-template>

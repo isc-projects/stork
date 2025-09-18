@@ -121,8 +121,7 @@
             </div>
         </form>
 
-        <button
-            pButton
+        <p-button
             type="button"
             [disabled]="settingsForm.invalid"
             label="Save Settings"
@@ -132,13 +131,13 @@
             appAccessEntity="stork-settings"
             appAccessType="update"
             (appHasAccess)="$event === true ? settingsForm.enable() : settingsForm.disable()"
-        ></button>
+        ></p-button>
 
         <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues with the form values. </span>
     </ng-container>
     <ng-container *ngSwitchCase="'fail'">
         <div class="text-lg">Fetching current settings from the server failed. Click the button to retry.</div>
-        <button pButton type="button" label="Retry" id="retry-button" (click)="retry()" class="mt-4"></button>
+        <p-button type="button" label="Retry" id="retry-button" (click)="retry()" class="mt-4"></p-button>
     </ng-container>
     <ng-container *ngSwitchDefault>
         <p-progressSpinner></p-progressSpinner>

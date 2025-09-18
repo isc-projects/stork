@@ -36,14 +36,13 @@
                             strokeWidth="6"
                         ></p-progressSpinner>
                     </div>
-                    <button
+                    <p-button
                         type="button"
-                        pButton
                         label="Refresh App"
                         id="refresh-app-button"
                         icon="pi pi-refresh"
                         (click)="refreshAppState()"
-                    ></button>
+                    ></p-button>
                 </div>
             </ng-template>
             <app-app-overview [app]="appTab.app"></app-app-overview>
@@ -70,7 +69,7 @@
                         ></p-toggleswitch>
                         <label for="monitored-switch" class="ml-2 my-auto">Monitoring</label>
                     </div>
-                    <button
+                    <p-button
                         *ngIf="isDhcpDaemon(daemon)"
                         routerLink="/dhcp/hosts"
                         [queryParams]="{ appId: appTab.app.id }"
@@ -78,10 +77,9 @@
                         icon="fa fa-laptop"
                         class="p-button-secondary mr-2 my-2"
                         type="button"
-                        pButton
                         appAccessEntity="host-reservation"
-                    ></button>
-                    <button
+                    ></p-button>
+                    <p-button
                         *ngIf="isDhcpDaemon(daemon)"
                         routerLink="/dhcp/subnets"
                         [queryParams]="{ appId: appTab.app.id, dhcpVersion: daemon.name === 'dhcp4' ? 4 : 6 }"
@@ -89,10 +87,9 @@
                         icon="fa fa-project-diagram"
                         type="button"
                         class="p-button-secondary mr-2 my-2"
-                        pButton
                         appAccessEntity="subnet"
-                    ></button>
-                    <button
+                    ></p-button>
+                    <p-button
                         *ngIf="isDhcpDaemon(daemon)"
                         routerLink="/dhcp/shared-networks"
                         [queryParams]="{ appId: appTab.app.id, dhcpVersion: daemon.name === 'dhcp4' ? 4 : 6 }"
@@ -100,29 +97,26 @@
                         icon="fa fa-network-wired"
                         class="p-button-secondary mr-2 my-2"
                         type="button"
-                        pButton
                         appAccessEntity="shared-network"
-                    ></button>
-                    <button
+                    ></p-button>
+                    <p-button
                         *ngIf="isDhcpDaemon(daemon)"
                         routerLink="/apps/{{ appTab.app.id }}/daemons/{{ daemon.id }}/global-config"
                         label="Global Configuration"
                         icon="fa-solid fa-globe"
                         class="p-button-secondary mr-2 my-2"
                         type="button"
-                        pButton
                         appAccessEntity="daemon-global-config"
-                    ></button>
+                    ></p-button>
                     <!-- Using anchor tag allows to open page in new tab by hold Ctrl and click on it -->
-                    <a
+                    <p-button
                         label="Raw configuration"
                         icon="fa fa-file-alt"
-                        class="block p-button p-button-secondary mr-2 my-2 no-underline"
-                        type="button"
+                        severity="secondary"
+                        class="mr-2 my-2"
                         routerLink="/apps/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
-                        pButton
                         appAccessEntity="daemon-config"
-                    ></a>
+                    ></p-button>
                 </div>
 
                 <div class="grid" style="padding: 12px">
@@ -313,13 +307,12 @@
                                         <td align="center">{{ logTarget.severity }}</td>
                                         <td>
                                             <i *ngIf="!logTargetViewable(logTarget.output)">{{ logTarget.output }}</i>
-                                            <a
-                                                pButton
-                                                [text]="true"
+                                            <p-button
                                                 *ngIf="logTargetViewable(logTarget.output)"
                                                 routerLink="/logs/{{ logTarget.id }}"
                                                 appAccessEntity="logs"
-                                                ><i>{{ logTarget.output }}</i></a
+                                                [text]="true"
+                                                ><i>{{ logTarget.output }}</i></p-button
                                             >
                                         </td>
                                     </tr>

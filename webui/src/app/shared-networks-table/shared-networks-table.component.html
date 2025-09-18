@@ -1,14 +1,12 @@
 <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
-    <a
+    <p-button
         label="New Shared Network"
         icon="pi pi-plus"
-        class="p-button-primary no-underline block flex-none p-button"
         type="button"
         routerLink="/dhcp/shared-networks/new"
-        pButton
         appAccessEntity="shared-network"
         appAccessType="create"
-    ></a>
+    ></p-button>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"
@@ -246,13 +244,12 @@
                 No shared networks found.
                 <span *ngIf="tableHasFilter(networksTable)">
                     Clear filtering and try again.
-                    <button
-                        pButton
+                    <p-button
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
                         (click)="clearTableState()"
-                    ></button>
+                    ></p-button>
                 </span>
             </td>
         </tr>

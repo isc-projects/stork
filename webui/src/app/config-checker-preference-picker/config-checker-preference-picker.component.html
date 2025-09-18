@@ -94,23 +94,21 @@
     </ng-template>
     <ng-template #summary>
         <div class="picker__buttons">
-            <button
-                pButton
+            <p-button
                 label="Submit"
                 [disabled]="!hasChanges"
                 (click)="onSubmit()"
                 [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
                 appAccessType="update"
-            ></button>
-            <button
-                pButton
+            ></p-button>
+            <p-button
                 label="Reset"
                 [disabled]="!hasChanges"
                 class="p-button-secondary"
                 (click)="onReset()"
                 [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
                 appAccessType="update"
-            ></button>
+            ></p-button>
         </div>
     </ng-template>
 </p-table>

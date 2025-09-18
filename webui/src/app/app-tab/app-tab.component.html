@@ -36,14 +36,13 @@
                             strokeWidth="6"
                         ></p-progressSpinner>
                     </div>
-                    <button
+                    <p-button
                         type="button"
-                        pButton
                         label="Refresh App"
                         id="refresh-app-button"
                         icon="pi pi-refresh"
                         (click)="refreshAppState()"
-                    ></button>
+                    ></p-button>
                 </div>
             </ng-template>
             <app-app-overview [app]="appTab.app"></app-app-overview>

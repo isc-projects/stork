@@ -66,10 +66,9 @@
 
             <!-- Actions Section -->
             <div class="mt-4 flex gap-2 flex-wrap">
-                <button type="button" pButton label="Refresh" icon="pi pi-refresh" (click)="onRefresh()"></button>
-                <button
+                <p-button type="button" label="Refresh" icon="pi pi-refresh" (click)="onRefresh()"></p-button>
+                <p-button
                     type="button"
-                    pButton
                     label="Cancel Migration"
                     icon="pi pi-times"
                     class="p-button-danger"
@@ -77,7 +76,7 @@
                     (click)="onCancel()"
                     appAccessEntity="migrations"
                     appAccessType="update"
-                ></button>
+                ></p-button>
             </div>
         </div>
 

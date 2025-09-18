@@ -87,9 +87,8 @@
                 {{ m.estimatedLeftTime | duration }}
             </td>
             <td>
-                <button
+                <p-button
                     [class.hidden]="!!m.endDate || m.canceling"
-                    pButton
                     class="p-button-danger p-button-sm"
                     icon="pi pi-times"
                     pTooltip="Cancel Migration"
@@ -97,7 +96,7 @@
                     (click)="cancel(m.id)"
                     appAccessEntity="migrations"
                     appAccessType="update"
-                ></button>
+                ></p-button>
             </td>
         </tr>
     </ng-template>

@@ -30,18 +30,16 @@
                     [(ngModel)]="issuesOnly"
                     (onChange)="refreshDaemonConfigReports($event)"
                 ></p-toggleButton>
-                <button
+                <p-button
                     #selectCheckersPanelTarget
-                    pButton
                     type="button"
                     label="Checkers"
                     class="p-button-sm mb-2 sm:my-0"
                     icon="fa fa-cog"
                     (click)="selectCheckersPanel.show($event, selectCheckersPanelTarget)"
-                ></button>
-                <button
+                ></p-button>
+                <p-button
                     id="review-button"
-                    pButton
                     #selectCheckersPanelTarget
                     *ngIf="!refreshFailed; else refreshFailedElse"
                     type="button"
@@ -52,18 +50,17 @@
                     (click)="runReview()"
                     appAccessEntity="daemon-config-review"
                     appAccessType="update"
-                ></button>
+                ></p-button>
                 <ng-template #refreshFailedElse>
-                    <button
+                    <p-button
                         id="refresh-button"
-                        pButton
                         type="button"
                         label="Refresh reports"
                         class="p-button-sm mb-2 sm:my-0"
                         icon="pi pi-refresh"
                         [loading]="busy"
                         (click)="refreshDaemonConfigReports(null)"
-                    ></button>
+                    ></p-button>
                 </ng-template>
             </div>
         </div>

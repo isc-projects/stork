@@ -250,14 +250,12 @@
                         </ng-container>
                         <ng-template #ipDeleteButton>
                             <div class="col-2 sm:col-1">
-                                <button
-                                    pButton
-                                    pRipple
+                                <p-button
                                     type="button"
                                     icon="pi pi-times"
                                     class="mr-2 p-button-rounded p-button-danger p-button-text"
                                     (click)="deleteIPInput(i)"
-                                ></button>
+                                ></p-button>
                             </div>
                         </ng-template>
                     </ng-container>
@@ -265,13 +263,12 @@
             </ng-container>
         </div>
         <div>
-            <button
+            <p-button
                 *ngIf="ipGroups.length === 0 || ipTypes.length > 1"
-                pButton
                 class="p-button-rounded p-button-text mt-2"
                 label="Add IP Reservation"
                 (click)="addIPInput()"
-            ></button>
+            ></p-button>
         </div>
     </p-fieldset>
 

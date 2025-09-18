@@ -292,13 +292,12 @@
                 </td>
             </ng-container>
             <td>
-                <button
+                <p-button
                     type="button"
-                    pButton
                     icon="pi pi-bars"
                     id="show-machines-menu-{{ m.id }}"
                     (click)="onMachineMenuDisplayClicked($event, m)"
-                ></button>
+                ></p-button>
             </td>
         </tr>
     </ng-template>
@@ -309,13 +308,12 @@
                 No machines found.
                 <span *ngIf="tableHasFilter(table)">
                     Clear filtering and try again.
-                    <button
-                        pButton
+                    <p-button
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
                         (click)="clearTableState()"
-                    ></button>
+                    ></p-button>
                 </span>
                 <div class="mt-3">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>

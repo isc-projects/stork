@@ -45,16 +45,13 @@
         (appHasAccess)="canStartMigration = $event"
     ></p-button>
 
-    <a
+    <p-button
         label="New Host"
         icon="pi pi-plus"
-        class="block p-button p-button-primary no-underline"
-        type="button"
         routerLink="/dhcp/hosts/new"
-        pButton
         appAccessEntity="host-reservation"
         appAccessType="create"
-    ></a>
+    ></p-button>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"
@@ -334,13 +331,12 @@
                 No hosts found.
                 <span *ngIf="tableHasFilter(hostsTable)">
                     Clear filtering and try again.
-                    <button
-                        pButton
+                    <p-button
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
                         (click)="clearTableState()"
-                    ></button>
+                    ></p-button>
                 </span>
             </td>
         </tr>
@@ -425,13 +421,12 @@
                 No hosts found.
                 <span *ngIf="tableHasFilter(hostsTable)">
                     Clear filtering and try again.
-                    <button
-                        pButton
+                    <p-button
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
                         (click)="clearTableState()"
-                    ></button>
+                    ></p-button>
                 </span>
             </td>
         </tr>

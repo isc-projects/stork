@@ -73,7 +73,7 @@
         pTooltip="Clear all events (on all pages)"
         tooltipPosition="left"
         label="Clear"
-        severity="warning"
+        severity="warn"
         icon="pi pi-trash"
         appAccessEntity="events"
         appAccessType="delete"
@@ -139,15 +139,13 @@
 
             <td *ngIf="isTable" [innerHTML]="ev.details"></td>
             <td *ngIf="isBare">
-                <button
+                <p-button
                     *ngIf="ev.details"
                     type="button"
-                    pButton
-                    pRipple
                     (click)="onToggleExpandEventDetails(ev.id)"
                     class="p-button-text p-button-plain p-button-sm"
                     [icon]="expandedEvents.has(ev.id) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                ></button>
+                ></p-button>
             </td>
         </tr>
     </ng-template>

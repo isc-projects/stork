@@ -24,6 +24,7 @@ import { parseBoolean, tableFiltersToQueryParams, tableHasFilter } from '../tabl
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Table } from 'primeng/table'
 import { filter, switchMap } from 'rxjs/operators'
+import { Button } from 'primeng/button'
 
 /**
  * Enumeration of different Tab types.
@@ -92,7 +93,7 @@ function sanitizePath(value: string | undefined): string | undefined {
 @Component({
     selector: 'app-tab-view',
     standalone: true,
-    imports: [Tabs, TabList, Tab, TabPanels, TabPanel, RouterLink, TimesIcon, NgTemplateOutlet, NgClass],
+    imports: [Tabs, TabList, Tab, TabPanels, TabPanel, RouterLink, TimesIcon, NgTemplateOutlet, NgClass, Button],
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',
 })

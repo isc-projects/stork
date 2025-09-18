@@ -72,20 +72,18 @@
             </div>
         </div>
         <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
-            <button
+            <p-button
                 *ngIf="subnet.localSubnets?.length > 0"
                 type="button"
-                pButton
                 label="Edit"
                 icon="pi pi-pencil"
                 class="p-button-info"
                 (click)="onSubnetEditBegin()"
                 appAccessEntity="subnet"
                 appAccessType="update"
-            ></button>
-            <button
+            ></p-button>
+            <p-button
                 type="button"
-                pButton
                 [disabled]="subnetDeleting"
                 label="Delete"
                 icon="pi pi-times"
@@ -93,7 +91,7 @@
                 (click)="confirmDeleteSubnet()"
                 appAccessEntity="subnet"
                 appAccessType="delete"
-            ></button>
+            ></p-button>
         </div>
     </div>
     <div class="my-4">

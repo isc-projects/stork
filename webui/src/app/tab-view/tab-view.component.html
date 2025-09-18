@@ -16,13 +16,14 @@
                 }
                 {{ tab.title }}
                 @if (closableTabs()) {
-                    <button
-                        type="button"
-                        class="p-message-close-button p-tabs-tab-closebutton"
+                    <p-button
+                        icon="pi pi-times"
                         (click)="closeTab(tab.value)"
-                    >
-                        <TimesIcon styleClass="p-message-close-icon" />
-                    </button>
+                        size="small"
+                        [rounded]="true"
+                        severity="secondary"
+                        [text]="true"
+                    />
                 }
             </p-tab>
         }

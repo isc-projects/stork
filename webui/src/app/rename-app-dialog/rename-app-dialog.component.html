@@ -21,16 +21,15 @@
         <p id="app-name-input-error" class="text-red-700" *ngIf="invalid">{{ errorText }}</p>
     </div>
     <p-footer>
-        <button type="button" pButton icon="pi pi-times" label="Cancel" (click)="cancel()"></button>
-        <button
+        <p-button type="button" icon="pi pi-times" label="Cancel" (click)="cancel()"></p-button>
+        <p-button
             id="rename-button"
             type="button"
-            pButton
             icon="pi pi-check"
             label="Rename"
             class="p-button-warning"
             [disabled]="invalid"
             (click)="save()"
-        ></button>
+        ></p-button>
     </p-footer>
 </p-dialog>

@@ -4,16 +4,14 @@
     <!--            <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>-->
     <!--        </div>-->
     <!--    </div>-->
-    <a
+    <p-button
         label="New Subnet"
         icon="pi pi-plus"
-        class="block p-button p-button-primary no-underline"
         type="button"
         routerLink="/dhcp/subnets/new"
-        pButton
         appAccessEntity="subnet"
         appAccessType="create"
-    ></a>
+    ></p-button>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"
@@ -334,13 +332,12 @@
                 No subnets found.
                 <span *ngIf="tableHasFilter(subnetsTable)">
                     Clear filtering and try again.
-                    <button
-                        pButton
+                    <p-button
                         label="Clear"
                         class="p-button-outlined"
                         icon="pi pi-filter-slash"
                         (click)="clearTableState()"
-                    ></button>
+                    ></p-button>
                 </span>
             </td>
         </tr>

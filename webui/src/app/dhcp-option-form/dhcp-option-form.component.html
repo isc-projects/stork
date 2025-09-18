@@ -91,14 +91,13 @@
             (onClick)="lastFieldCommand()"
         >
         </p-splitButton>
-        <button
-            pButton
+        <p-button
             type="button"
             icon="pi pi-times"
             [label]="topLevel ? 'Delete Option' : 'Delete Suboption'"
             class="p-button-sm p-button-danger p-button-text"
             (click)="deleteOption()"
-        ></button>
+        ></p-button>
     </div>
     <div
         *ngIf="optionFields.length !== 0; else emptyOption"
@@ -330,13 +329,12 @@
                     </div>
                 </ng-container>
                 <div class="flex flex-column align-items-start">
-                    <button
-                        pButton
+                    <p-button
                         type="button"
                         icon="pi pi-times"
                         class="p-button-text p-button p-button-danger"
                         (click)="deleteField(i)"
-                    ></button>
+                    ></p-button>
                     <app-help-tip
                         *ngIf="fieldControl.data.fieldType === FieldType.Binary"
                         subject="binary Option Field"

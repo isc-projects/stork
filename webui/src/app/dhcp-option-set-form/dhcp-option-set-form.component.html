@@ -12,22 +12,19 @@
     ></app-dhcp-option-form>
 </div>
 <ng-container *ngIf="nestLevel === 0">
-    <button
+    <p-button
         *ngIf="formArray.length === 0; else nonEmptyFormArray"
-        pButton
         class="p-button-text p-button-sm ml-0"
         label="Add Option"
         type="button"
         (click)="notifyOptionAdded()"
-    ></button>
+    ></p-button>
     <ng-template #nonEmptyFormArray>
-        <button
-            pRipple
-            pButton
+        <p-button
             label="Add More Options"
             class="p-button-text p-button-sm ml-0"
             type="button"
             (click)="notifyOptionAdded()"
-        ></button>
+        ></p-button>
     </ng-template>
 </ng-container>

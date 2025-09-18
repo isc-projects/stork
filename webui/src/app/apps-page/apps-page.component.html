@@ -171,13 +171,12 @@
                         <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.hostname }}</a>
                     </td>
                     <td>
-                        <button
+                        <p-button
                             id="{{ 'menu-of-' + a.machine.id }}"
                             type="button"
-                            pButton
                             icon="pi pi-bars"
                             (click)="showAppMenu($event, a.id)"
-                        ></button>
+                        ></p-button>
                     </td>
                 </tr>
             </ng-template>
@@ -191,13 +190,12 @@
                         No apps were found.
                         <span *ngIf="tableHasFilter(table)">
                             Clear filtering and try again.
-                            <button
-                                pButton
+                            <p-button
                                 label="Clear"
                                 class="p-button-outlined"
                                 icon="pi pi-filter-slash"
                                 (click)="clearTableState()"
-                            ></button>
+                            ></p-button>
                         </span>
                     </td>
                 </tr>
