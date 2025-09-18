@@ -9,6 +9,7 @@
     (click)="onClick($event)"
     (keydown)="onKeyDown($event)"
     [binary]="true"
+    [name]="name()"
 >
     <ng-template #checkboxicon>
         @if (value() === true) {

@@ -1,5 +1,5 @@
 import { Component, input, model } from '@angular/core'
-import { FormsModule } from '@angular/forms'
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms'
 import { Checkbox } from 'primeng/checkbox'
 import { CheckIcon, TimesIcon } from 'primeng/icons'
 
@@ -7,7 +7,7 @@ import { CheckIcon, TimesIcon } from 'primeng/icons'
  * This component is an HTML input type=checkbox implementation which allows to hold and visualize 3 states:
  * - true (checkbox is filled with a tick icon)
  * - false (checkbox is filled with an x-cross icon)
- * - null (checkbox is empty - not filled).
+ * - null/unset (checkbox is empty - not filled).
  */
 @Component({
     selector: 'app-tri-state-checkbox',
@@ -15,8 +15,15 @@ import { CheckIcon, TimesIcon } from 'primeng/icons'
     imports: [FormsModule, Checkbox, CheckIcon, TimesIcon],
     templateUrl: './tri-state-checkbox.component.html',
     styleUrl: './tri-state-checkbox.component.sass',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            multi: true,
+            useExisting: TriStateCheckboxComponent,
+        },
+    ],
 })
-export class TriStateCheckboxComponent {
+export class TriStateCheckboxComponent implements ControlValueAccessor {
     /**
      * Holds input value. Also emits the value whenever value changes.
      */
@@ -30,7 +37,7 @@ export class TriStateCheckboxComponent {
     /**
      * Flag controlling input disabled state. Defaults to false.
      */
-    disabled = input<boolean>(false)
+    disabled = model<boolean>(false)
 
     /**
      * Label of the checkbox.
@@ -38,10 +45,21 @@ export class TriStateCheckboxComponent {
     label = input<string | undefined>(undefined)
 
     /**
+     * Name of the checkbox input.
+     */
+    name = input<string | undefined>(undefined)
+
+    /**
+     * Boolean flag keeping form input touched state.
+     */
+    touched = false
+
+    /**
      * Toggles input value in a chain true->false->null->true->...
      * @private
      */
     private toggleValue() {
+        this.markAsTouched()
         if (this.value() === true) {
             this.value.set(false)
         } else if (this.value() === false) {
@@ -49,6 +67,8 @@ export class TriStateCheckboxComponent {
         } else {
             this.value.set(true)
         }
+
+        this.onChange(this.value())
     }
 
     /**
@@ -69,5 +89,62 @@ export class TriStateCheckboxComponent {
             this.toggleValue()
             event.preventDefault()
         }
+    }
+
+    /**
+     * Sets input touched state if it wasn't touched before.
+     */
+    markAsTouched() {
+        if (!this.touched) {
+            this.onTouched()
+            this.touched = true
+        }
+    }
+
+    /**
+     * ControlValueAccessor implementation.
+     * Writes input value.
+     * @param value boolean or null value
+     */
+    writeValue(value: boolean | null): void {
+        this.value.set(value)
+    }
+
+    /**
+     * Callback called when input value changes.
+     * @param _value changed value
+     */
+    onChange = (_value: boolean | null): void => {}
+
+    /**
+     * ControlValueAccessor implementation.
+     * Registers onChange callback function.
+     * @param onChange callback function
+     */
+    registerOnChange(onChange: (value: boolean | null) => void): void {
+        this.onChange = onChange
+    }
+
+    /**
+     * ControlValueAccessor implementation.
+     * Callback called when the form input is touched.
+     */
+    onTouched = (): void => {}
+
+    /**
+     * Registers onTouched callback function.
+     * @param onTouched callback function
+     */
+    registerOnTouched(onTouched: () => void): void {
+        this.onTouched = onTouched
+    }
+
+    /**
+     * ControlValueAccessor implementation.
+     * Sets input disabled state.
+     * @param isDisabled boolean flag
+     */
+    setDisabledState?(isDisabled: boolean): void {
+        this.disabled.set(isDisabled)
     }
 }
