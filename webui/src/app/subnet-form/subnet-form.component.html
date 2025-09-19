@@ -110,9 +110,9 @@
             </ng-container>
         </p-fieldset>
         <p-fieldset *ngIf="!state.wizard" legend="Pools" styleClass="mt-4">
-            <p-accordion>
-                <p-accordionTab *ngFor="let pool of state.group.get('pools')?.controls; let i = index">
-                    <ng-template pTemplate="header">
+            <p-accordion [value]="0">
+                <p-accordion-panel *ngFor="let pool of state.group.get('pools')?.controls; let i = index" [value]="i">
+                    <p-accordion-header>
                         <div class="flex align-items-center">
                             <span class="vertical-align-middle">{{ getPoolHeader(i)[0] }}</span>
                             <span
@@ -123,8 +123,8 @@
                                 class="ml-2 pi pi-exclamation-triangle text-red-500 text-decoration-none"
                             ></span>
                         </div>
-                    </ng-template>
-                    <ng-template pTemplate="content">
+                    </p-accordion-header>
+                    <p-accordion-content>
                         <app-address-pool-form
                             [subnet]="subnet"
                             [formGroup]="pool"
@@ -142,8 +142,8 @@
                                 ></p-button>
                             </div>
                         </div>
-                    </ng-template>
-                </p-accordionTab>
+                    </p-accordion-content>
+                </p-accordion-panel>
             </p-accordion>
             <div class="flex justify-content-start">
                 <div class="flex align-items-center">
@@ -152,16 +152,19 @@
                         size="small"
                         icon="fa-solid fa-plus"
                         label="Add Pool"
-                        severity="warning"
+                        severity="info"
                         (click)="onAddressPoolAdd()"
                     ></p-button>
                 </div>
             </div>
         </p-fieldset>
         <p-fieldset *ngIf="!state.wizard && subnet.includes(':')" legend="Prefix Delegation Pools" styleClass="mt-4">
-            <p-accordion>
-                <p-accordionTab *ngFor="let pool of state.group.get('prefixPools')?.controls; let i = index">
-                    <ng-template pTemplate="header">
+            <p-accordion [value]="0">
+                <p-accordion-panel
+                    *ngFor="let pool of state.group.get('prefixPools')?.controls; let i = index"
+                    [value]="i"
+                >
+                    <p-accordion-header>
                         <div class="flex align-items-center">
                             <span class="vertical-align-middle">{{ getPrefixPoolHeader(i)[0] }}</span>
                             <span
@@ -172,8 +175,8 @@
                                 class="ml-2 pi pi-exclamation-triangle text-red-500 text-decoration-none"
                             ></span>
                         </div>
-                    </ng-template>
-                    <ng-template pTemplate="content">
+                    </p-accordion-header>
+                    <p-accordion-content>
                         <app-prefix-pool-form
                             [subnet]="subnet"
                             [formGroup]="pool"
@@ -191,8 +194,8 @@
                                 ></p-button>
                             </div>
                         </div>
-                    </ng-template>
-                </p-accordionTab>
+                    </p-accordion-content>
+                </p-accordion-panel>
             </p-accordion>
             <div class="flex justify-content-start">
                 <div class="flex align-items-center">
@@ -201,7 +204,7 @@
                         size="small"
                         icon="fa-solid fa-plus"
                         label="Add Pool"
-                        severity="warn"
+                        severity="info"
                         (click)="onPrefixPoolAdd()"
                     ></p-button>
                 </div>
