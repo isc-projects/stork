@@ -246,7 +246,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
             return 'success'
         }
         if (this.levels?.length >= 2 && node.data?.level === this.levels[1]) {
-            return 'warning'
+            return 'warn'
         }
         if (this.levels?.length >= 3 && node.data?.level === this.levels[2]) {
             return 'danger'

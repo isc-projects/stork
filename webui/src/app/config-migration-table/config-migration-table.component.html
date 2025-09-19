@@ -65,7 +65,7 @@
                         [pTooltip]="m.generalError"
                         tooltipPosition="top"
                     ></p-tag>
-                    <p-tag *ngIf="m.canceling" severity="warning" value="Canceling"></p-tag>
+                    <p-tag *ngIf="m.canceling" severity="warn" value="Canceling"></p-tag>
                     <p-tag *ngIf="!m.endDate" severity="info" value="Running"></p-tag>
                     <p-tag
                         *ngIf="m.errors?.total > 0"

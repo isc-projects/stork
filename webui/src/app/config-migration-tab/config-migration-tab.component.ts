@@ -101,9 +101,9 @@ export class ConfigMigrationTabComponent {
     /**
      * Gets the severity level for the status tag.
      */
-    get statusSeverity(): 'info' | 'warning' | 'success' | 'danger' | 'secondary' {
+    get statusSeverity(): 'info' | 'warn' | 'success' | 'danger' | 'secondary' {
         if (this.isRunning) return 'info'
-        if (this.isCanceling) return 'warning'
+        if (this.isCanceling) return 'warn'
         if (this.isCompleted) return 'success'
         if (this.isFailed) return 'danger'
         return 'secondary'

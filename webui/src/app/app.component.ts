@@ -60,8 +60,10 @@ export class AppComponent implements OnInit, OnDestroy {
         },
     }
 
-
-    storkMenubar = {
+    /**
+     * Top menubar style.
+     */
+    appMenubar = {
         root: {
             padding: '0',
             borderRadius: '0',

@@ -69,7 +69,7 @@
     <ng-template #list let-reports>
         <div class="w-full" *ngFor="let report of reports">
             <p-divider styleClass="report-divider" type="solid" align="left">
-                <p-tag [severity]="!report.content ? 'success' : ''">
+                <p-tag [severity]="!report.content ? 'success' : undefined">
                     {{ report.checker }}
                 </p-tag>
             </p-divider>

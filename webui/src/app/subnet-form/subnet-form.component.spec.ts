@@ -1041,7 +1041,7 @@ describe('SubnetFormComponent', () => {
 
     it('should return correct server tag severity', () => {
         expect(component.getServerTagSeverity(0)).toBe('success')
-        expect(component.getServerTagSeverity(1)).toBe('warning')
+        expect(component.getServerTagSeverity(1)).toBe('warn')
         expect(component.getServerTagSeverity(2)).toBe('danger')
         expect(component.getServerTagSeverity(3)).toBe('info')
         expect(component.getServerTagSeverity(4)).toBe('info')

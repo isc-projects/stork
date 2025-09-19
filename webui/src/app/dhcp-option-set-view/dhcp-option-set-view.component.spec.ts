@@ -404,7 +404,7 @@ describe('DhcpOptionSetViewComponent', () => {
         expect(component.getLevelTagSeverity(node)).toBe('success')
 
         node.data.level = 'shared network'
-        expect(component.getLevelTagSeverity(node)).toBe('warning')
+        expect(component.getLevelTagSeverity(node)).toBe('warn')
 
         node.data.level = 'global'
         expect(component.getLevelTagSeverity(node)).toBe('danger')

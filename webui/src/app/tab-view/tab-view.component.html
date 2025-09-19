@@ -23,6 +23,7 @@
                         [rounded]="true"
                         severity="secondary"
                         [text]="true"
+                        class="close-tab-btn"
                     />
                 }
             </p-tab>
@@ -51,19 +52,21 @@
                         "
                     ></ng-container>
                 } @else if (formTabTemplate() && (tab.tabType === TabType.New || tab.tabType === TabType.Edit)) {
-                    <ng-container
-                        *ngTemplateOutlet="
-                            formTabTemplate();
-                            context: {
-                                $implicit: tab.entity,
-                                tabForm: tab.form,
-                                tabType: tab.tabType,
-                                destroyFormFn: onDestroyForm,
-                                submitFormFn: onSubmitForm,
-                                cancelFormFn: onCancelForm,
-                            }
-                        "
-                    ></ng-container>
+                    <div class="max-w-50rem">
+                        <ng-container
+                            *ngTemplateOutlet="
+                                formTabTemplate();
+                                context: {
+                                    $implicit: tab.entity,
+                                    tabForm: tab.form,
+                                    tabType: tab.tabType,
+                                    destroyFormFn: onDestroyForm,
+                                    submitFormFn: onSubmitForm,
+                                    cancelFormFn: onCancelForm,
+                                }
+                            "
+                        ></ng-container>
+                    </div>
                 }
             </p-tabpanel>
         }

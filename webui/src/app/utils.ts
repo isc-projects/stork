@@ -634,7 +634,7 @@ export function getSeverityByIndex(index: number): string {
         case 0:
             return 'success'
         case 1:
-            return 'warning'
+            return 'warn'
         case 2:
             return 'danger'
         default:
