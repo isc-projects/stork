@@ -182,6 +182,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             message: 'Are you sure that you want to permanently delete this user?',
             header: 'Delete User',
             icon: 'pi pi-exclamation-triangle',
+            rejectButtonProps: { text: true },
             accept: () => {
                 this.deleteUser(id)
             },

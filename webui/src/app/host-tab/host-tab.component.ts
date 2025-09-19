@@ -557,6 +557,7 @@ export class HostTabComponent {
             message: 'Are you sure that you want to permanently delete this host reservation?',
             header: 'Delete Host',
             icon: 'pi pi-exclamation-triangle',
+            rejectButtonProps: { text: true },
             accept: () => {
                 this.deleteHost()
             },

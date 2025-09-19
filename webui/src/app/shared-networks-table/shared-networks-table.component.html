@@ -2,7 +2,6 @@
     <p-button
         label="New Shared Network"
         icon="pi pi-plus"
-        type="button"
         routerLink="/dhcp/shared-networks/new"
         appAccessEntity="shared-network"
         appAccessType="create"
@@ -10,7 +9,6 @@
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"
-        styleClass="block p-button-primary no-underline"
         (onClick)="loadData(networksTable.createLazyLoadMetadata())"
     ></p-button>
 </div>
@@ -35,10 +33,9 @@
             <ng-template #header>
                 <div class="flex align-items-center gap-2">
                     <p-button
-                        type="button"
                         [text]="true"
                         [rounded]="true"
-                        [plain]="true"
+                        severity="secondary"
                         [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                         (click)="filtersPanel.toggle($event)"
                     />
@@ -246,7 +243,7 @@
                     Clear filtering and try again.
                     <p-button
                         label="Clear"
-                        class="p-button-outlined"
+                        [outlined]="true"
                         icon="pi pi-filter-slash"
                         (click)="clearTableState()"
                     ></p-button>

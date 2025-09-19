@@ -55,7 +55,6 @@ chmod a+x stork-install-agent.sh
 sudo ./stork-install-agent.sh</textarea
             >
             <p-button
-                type="button"
                 (click)="copyToClipboard(agentInstallationText)"
                 icon="pi pi-copy"
                 pTooltip="Copy commands to clipboard"
@@ -68,7 +67,6 @@ sudo ./stork-install-agent.sh</textarea
             <input [value]="serverToken" class="monospace server-token" size="32" readonly="" #serverTokenInput />
 
             <p-button
-                type="button"
                 (click)="copyToClipboard(serverTokenInput)"
                 icon="pi pi-copy"
                 pTooltip="Copy server token to clipboard"
@@ -76,11 +74,10 @@ sudo ./stork-install-agent.sh</textarea
             ></p-button>
 
             <p-button
-                type="button"
                 icon="pi pi-refresh"
                 label="Regenerate"
                 pTooltip="If the server token has been compromised, regenerate it."
-                class="p-button-secondary"
+                severity="secondary"
                 (click)="regenerateServerToken()"
                 id="regenerate-server-token-button"
                 appAccessEntity="machines-server-token"
@@ -96,7 +93,6 @@ sudo ./stork-install-agent.sh</textarea
         </p>
         <div class="flex justify-content-end">
             <p-button
-                type="button"
                 icon="pi pi-times"
                 label="Close"
                 (click)="displayAgentInstallationInstruction = false"
@@ -124,7 +120,6 @@ sudo ./stork-install-agent.sh</textarea
             <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
                 <div class="flex-auto"></div>
                 <p-button
-                    type="button"
                     label="Installing Stork Agent on a New Machine"
                     icon="pi pi-download"
                     (click)="showAgentInstallationInstruction()"
@@ -209,19 +204,17 @@ sudo ./stork-install-agent.sh</textarea
                 </div>
                 <p-footer>
                     <p-button
-                        type="button"
                         (click)="changeMachineAddressDialogVisible = false"
                         icon="pi pi-times"
                         label="Cancel"
                         id="cancel-machine-edit-button"
                     ></p-button>
                     <p-button
-                        type="button"
                         (click)="saveMachine(machineTab)"
                         icon="pi pi-check"
                         label="Change"
                         id="change-machine-button"
-                        class="p-button-warning"
+                        severity="warn"
                     ></p-button>
                 </p-footer>
             </p-dialog>
@@ -349,27 +342,23 @@ sudo ./stork-install-agent.sh</textarea
                         </tr>
                     </table>
 
-                    <button
+                    <p-button
                         *ngIf="machineTab?.authorized"
-                        type="button"
-                        pButton
                         label="Get Latest State"
                         id="get-latest-state-button"
                         icon="pi pi-refresh"
                         class="mt-3 mr-2 mb-2"
                         (click)="refreshMachineState(machineTab)"
-                    ></button>
-                    <button
+                    ></p-button>
+                    <p-button
                         *ngIf="machineTab?.authorized"
-                        type="button"
-                        pButton
                         label="Dump Troubleshooting Data"
                         id="dump-single-machine"
                         icon="pi pi-download"
                         title="Download data archive for troubleshooting purposes"
                         class="mt-3 mr-2 mb-2 p-button-secondary"
                         (click)="downloadDump(machineTab)"
-                    ></button>
+                    ></p-button>
                 </div>
                 <div class="col-12 md:col-6">
                     <h3 class="underlined">Applications</h3>

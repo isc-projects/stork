@@ -37,7 +37,6 @@
                         ></p-progressSpinner>
                     </div>
                     <p-button
-                        type="button"
                         label="Refresh App"
                         id="refresh-app-button"
                         icon="pi pi-refresh"
@@ -75,8 +74,8 @@
                         [queryParams]="{ appId: appTab.app.id }"
                         label="Host Reservations"
                         icon="fa fa-laptop"
-                        class="p-button-secondary mr-2 my-2"
-                        type="button"
+                        severity="secondary"
+                        class="mr-2 my-2"
                         appAccessEntity="host-reservation"
                     ></p-button>
                     <p-button
@@ -85,8 +84,8 @@
                         [queryParams]="{ appId: appTab.app.id, dhcpVersion: daemon.name === 'dhcp4' ? 4 : 6 }"
                         label="Subnets"
                         icon="fa fa-project-diagram"
-                        type="button"
-                        class="p-button-secondary mr-2 my-2"
+                        class="mr-2 my-2"
+                        severity="secondary"
                         appAccessEntity="subnet"
                     ></p-button>
                     <p-button
@@ -95,8 +94,8 @@
                         [queryParams]="{ appId: appTab.app.id, dhcpVersion: daemon.name === 'dhcp4' ? 4 : 6 }"
                         label="Shared Networks"
                         icon="fa fa-network-wired"
-                        class="p-button-secondary mr-2 my-2"
-                        type="button"
+                        class="mr-2 my-2"
+                        severity="secondary"
                         appAccessEntity="shared-network"
                     ></p-button>
                     <p-button
@@ -104,8 +103,8 @@
                         routerLink="/apps/{{ appTab.app.id }}/daemons/{{ daemon.id }}/global-config"
                         label="Global Configuration"
                         icon="fa-solid fa-globe"
-                        class="p-button-secondary mr-2 my-2"
-                        type="button"
+                        class="mr-2 my-2"
+                        severity="secondary"
                         appAccessEntity="daemon-global-config"
                     ></p-button>
                     <!-- Using anchor tag allows to open page in new tab by hold Ctrl and click on it -->

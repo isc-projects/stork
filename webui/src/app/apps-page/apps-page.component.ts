@@ -232,6 +232,9 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: 'Continue',
             rejectLabel: 'Cancel',
+            rejectButtonProps: {
+                text: true,
+            },
             accept: () => {
                 // User confirmed. Clear the hashes in the server.
                 this.servicesApi

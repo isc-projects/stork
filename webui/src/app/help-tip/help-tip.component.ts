@@ -36,6 +36,23 @@ export class HelpTipComponent {
      */
     @Input() variant: 'big' | '' = ''
 
+    /**
+     * Custom button style.
+     */
+    helpTipButton = {
+        root: {
+            lgFontSize: '2rem',
+        },
+        colorScheme: {
+            dark: {
+                root: {
+                    textPrimaryColor: '{primary.300}',
+                    textPrimaryHoverBackground: '{primary.900}',
+                },
+            },
+        },
+    }
+
     constructor() {}
 
     /** Show/hide the help tip content. */

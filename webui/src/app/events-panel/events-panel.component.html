@@ -85,7 +85,6 @@
     closable="false"
     icon="pi pi-exclamation-triangle"
     acceptIcon="pi pi-trash mr-2"
-    rejectButtonStyleClass="p-button-text"
 ></p-confirmDialog>
 
 <!-- events table -->
@@ -141,9 +140,11 @@
             <td *ngIf="isBare">
                 <p-button
                     *ngIf="ev.details"
-                    type="button"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="secondary"
+                    size="small"
                     (click)="onToggleExpandEventDetails(ev.id)"
-                    class="p-button-text p-button-plain p-button-sm"
                     [icon]="expandedEvents.has(ev.id) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                 ></p-button>
             </td>

@@ -1,8 +1,9 @@
 <!-- Control is not clicked yet. -->
 <!-- Or control is clicked and key is loading. -->
 <p-button
-    class="p-button-text p-button-plain p-0 border-none vertical-align-top"
     icon="fas fa-eye-slash"
+    [text]="true"
+    severity="secondary"
     (click)="onAuthenticationKeyRequest()"
     [loading]="isKeyLoading"
     *ngIf="!isKeyFetched"

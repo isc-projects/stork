@@ -21,7 +21,7 @@
                 ></p-progressSpinner>
                 <form [formGroup]="loginForm" *ngIf="authenticationMethods">
                     <div class="login-screen__authentication-selector" *ngIf="authenticationMethods.length > 1">
-                        <p-floatlabel class="authentication-methods-wrapper">
+                        <p-floatlabel class="authentication-methods-wrapper" [dt]="whiteFloatLabel">
                             <p-select
                                 [options]="authenticationMethods"
                                 formControlName="authenticationMethod"
@@ -62,7 +62,7 @@
                     </div>
                     <div class="login-screen__authentication-inputs">
                         <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier">
-                            <p-floatlabel>
+                            <p-floatlabel [dt]="whiteFloatLabel">
                                 <input
                                     type="text"
                                     name="identifier"
@@ -77,7 +77,7 @@
                             </p-floatlabel>
                         </div>
                         <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret">
-                            <p-floatlabel>
+                            <p-floatlabel [dt]="whiteFloatLabel">
                                 <p-password
                                     id="secret"
                                     formControlName="secret"
@@ -94,7 +94,6 @@
                         <div>
                             <p-button
                                 id="sign-in-button"
-                                type="button"
                                 label="Sign In"
                                 (click)="signIn()"
                                 [disabled]="!loginForm.valid"

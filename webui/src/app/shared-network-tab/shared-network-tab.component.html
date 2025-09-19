@@ -1,4 +1,4 @@
-<p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
+<p-confirmDialog />
 <div *ngIf="sharedNetwork" class="mt-4 ml-2">
     <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
         <div class="flex text-xl font-normal text-primary align-items-center">
@@ -53,20 +53,18 @@
         <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
             <p-button
                 *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
-                type="button"
                 label="Edit"
                 icon="pi pi-pencil"
-                class="p-button-info"
+                severity="info"
                 (click)="onSharedNetworkEditBegin()"
                 appAccessEntity="shared-network"
                 appAccessType="update"
             ></p-button>
             <p-button
-                type="button"
                 [disabled]="sharedNetworkDeleting"
                 label="Delete"
                 icon="pi pi-times"
-                class="p-button-danger"
+                severity="danger"
                 (click)="confirmDeleteSharedNetwork()"
                 appAccessEntity="shared-network"
                 appAccessType="delete"

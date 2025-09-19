@@ -87,15 +87,17 @@
             label="{{ 'Add ' + lastFieldType }}"
             [model]="fieldTypes"
             pTooltip="Adds a new option field - a binary field or last-added field type by default. Use the dropdown to select another type, if desired."
-            styleClass="p-button-secondary p-button-sm p-button-text"
+            severity="secondary"
+            size="small"
             (onClick)="lastFieldCommand()"
         >
         </p-splitButton>
         <p-button
-            type="button"
             icon="pi pi-times"
             [label]="topLevel ? 'Delete Option' : 'Delete Suboption'"
-            class="p-button-sm p-button-danger p-button-text"
+            severity="danger"
+            size="small"
+            [text]="true"
             (click)="deleteOption()"
         ></p-button>
     </div>
@@ -117,7 +119,7 @@
                         <textarea
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pTextarea
-                            class="option-field h-full"
+                            class="option-field h-full w-full"
                             formControlName="control"
                         ></textarea>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
@@ -322,6 +324,7 @@
                             onLabel="Use Full FQDN"
                             offLabel="Use Partial FQDN"
                             styleClass="option-field"
+                            class="flex-none"
                             formControlName="isPartialFqdn"
                             (onChange)="togglePartialFqdn($event, i)"
                         >
@@ -329,12 +332,7 @@
                     </div>
                 </ng-container>
                 <div class="flex flex-column align-items-start">
-                    <p-button
-                        type="button"
-                        icon="pi pi-times"
-                        class="p-button-text p-button p-button-danger"
-                        (click)="deleteField(i)"
-                    ></p-button>
+                    <p-button icon="pi pi-times" [text]="true" severity="danger" (click)="deleteField(i)"></p-button>
                     <app-help-tip
                         *ngIf="fieldControl.data.fieldType === FieldType.Binary"
                         subject="binary Option Field"

@@ -13,15 +13,11 @@
     // on the left and panel title on the right.
     .p-panel .p-panel-header
       justify-content: space-between
+      gap: 0.5rem
 
-    // Custom Primary-like style for toggler button, because PrimeNG does not allow to use custom button class
-    // nor style in the panel template.
+    // Custom padding for toggler button, to make it look like round button.
     button.p-panel-toggler
-      color: var(--primary-color-text)
-      background: var(--primary-color)
-      &:hover
-        color: var(--highlight-text-color)
-        background: var(--highlight-bg)
+      padding: 0.5rem
 
 h1.section-heading
   font-size: 1.4em

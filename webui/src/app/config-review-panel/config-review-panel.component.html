@@ -26,15 +26,16 @@
                     offLabel="All reports"
                     onIcon="pi pi-filter"
                     offIcon="pi pi-filter-slash"
-                    styleClass="p-button-sm mb-2 sm:my-0"
+                    class="mb-2 sm:my-0"
+                    size="small"
                     [(ngModel)]="issuesOnly"
                     (onChange)="refreshDaemonConfigReports($event)"
                 ></p-toggleButton>
                 <p-button
                     #selectCheckersPanelTarget
-                    type="button"
                     label="Checkers"
-                    class="p-button-sm mb-2 sm:my-0"
+                    class="mb-2 sm:my-0"
+                    size="small"
                     icon="fa fa-cog"
                     (click)="selectCheckersPanel.show($event, selectCheckersPanelTarget)"
                 ></p-button>
@@ -42,9 +43,9 @@
                     id="review-button"
                     #selectCheckersPanelTarget
                     *ngIf="!refreshFailed; else refreshFailedElse"
-                    type="button"
                     label="Run review"
-                    class="p-button-sm mb-2 sm:my-0"
+                    class="mb-2 sm:my-0"
+                    size="small"
                     icon="fas fa-tasks"
                     [loading]="busy"
                     (click)="runReview()"
@@ -54,9 +55,9 @@
                 <ng-template #refreshFailedElse>
                     <p-button
                         id="refresh-button"
-                        type="button"
                         label="Refresh reports"
-                        class="p-button-sm mb-2 sm:my-0"
+                        size="small"
+                        class="mb-2 sm:my-0"
                         icon="pi pi-refresh"
                         [loading]="busy"
                         (click)="refreshDaemonConfigReports(null)"

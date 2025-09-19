@@ -75,7 +75,6 @@
                     optionValue="id"
                     [options]="state.selectableSharedNetworks"
                     [showClear]="true"
-                    placeholder="not selected"
                     class="max-w-form"
                     (onChange)="onSharedNetworkChange($event)"
                 >
@@ -135,7 +134,8 @@
                         <div class="flex justify-content-start mt-4 mb-4">
                             <div class="flex align-items-center">
                                 <p-button
-                                    styleClass="p-button-sm p-button-danger"
+                                    size="small"
+                                    severity="danger"
                                     icon="pi pi-times"
                                     label="Delete Pool"
                                     (click)="onAddressPoolDelete(i)"
@@ -148,7 +148,8 @@
             <div class="flex justify-content-start">
                 <div class="flex align-items-center">
                     <p-button
-                        styleClass="p-button-sm ml-0 mt-4"
+                        styleClass="ml-0 mt-4"
+                        size="small"
                         icon="fa-solid fa-plus"
                         label="Add Pool"
                         severity="warning"
@@ -182,7 +183,8 @@
                         <div class="flex justify-content-start mt-4 mb-4">
                             <div class="flex align-items-center">
                                 <p-button
-                                    styleClass="p-button-sm p-button-danger"
+                                    size="small"
+                                    severity="danger"
                                     icon="pi pi-times"
                                     label="Delete Pool"
                                     (click)="onPrefixPoolDelete(i)"
@@ -195,10 +197,11 @@
             <div class="flex justify-content-start">
                 <div class="flex align-items-center">
                     <p-button
-                        styleClass="p-button-sm ml-0 mt-4"
+                        styleClass="ml-0 mt-4"
+                        size="small"
                         icon="fa-solid fa-plus"
                         label="Add Pool"
-                        severity="warning"
+                        severity="warn"
                         (click)="onPrefixPoolAdd()"
                     ></p-button>
                 </div>
@@ -258,7 +261,6 @@
                 *ngIf="state.wizard"
                 [disabled]="state.group?.get('subnet').invalid"
                 label="Proceed"
-                styleClass="p-button-primary"
                 (onClick)="onSubnetProceed()"
             ></p-button>
         </div>

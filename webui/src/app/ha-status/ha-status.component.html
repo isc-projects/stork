@@ -15,9 +15,11 @@
                         <div class="flex align-items-center justify-content-between">
                             <div class="flex align-items-center">
                                 <p-button
-                                    type="button"
+                                    [text]="true"
+                                    [rounded]="true"
+                                    severity="secondary"
                                     [pRowToggler]="statusRow"
-                                    class="p-button-text p-button-rounded p-button-plain mr-2"
+                                    class="mr-2"
                                     [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                                 ></p-button>
                                 <span *ngIf="statusRow.relationship.name">

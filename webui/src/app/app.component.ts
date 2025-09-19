@@ -51,6 +51,32 @@ export class AppComponent implements OnInit, OnDestroy {
      */
     private swVersionBadgeSeverity: Severity
 
+    /**
+     * Custom style of the toggle button.
+     */
+    darkModeToggleButton = {
+        root: {
+            padding: '0.5rem',
+        },
+    }
+
+
+    storkMenubar = {
+        root: {
+            padding: '0',
+            borderRadius: '0',
+            background: '{primary.600}',
+            borderColor: '{primary.600}',
+        },
+        colorScheme: {
+            light: {
+                root: {
+                    mobileButtonColor: '{primary.contrast.color}',
+                },
+            },
+        },
+    }
+
     constructor(
         private router: Router,
         private serverData: ServerDataService,

@@ -88,6 +88,14 @@
     & > .p-inputwrapper
       max-width: var(--max-form-width)
 
+  // Reapply confirmation dialog icon size rule, so it has higher priority than usually smaller 1rem icon.
+  .p-confirmdialog-icon
+    font-size: var(--p-confirmdialog-icon-size)
+
+  // Limit maximum width for the confirmation dialog message.
+  .p-confirmdialog-message
+    max-width: 50vw
+
   @media screen and (max-width: 640px)
     .p-toast.stork-toast
       // Make toasts visible on smaller screens.

@@ -273,7 +273,6 @@ to the number of configured zones.
                     <ng-template #header>
                         <div class="flex align-items-center gap-2">
                             <p-button
-                                type="button"
                                 [text]="true"
                                 [rounded]="true"
                                 severity="secondary"
@@ -329,7 +328,7 @@ to the number of configured zones.
                             </app-help-tip>
                         </div>
                     </ng-template>
-                    <div class="flex flex-wrap gap-2 mt-3 align-items-center">
+                    <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
                         <p-button
                             label="Clear"
                             [severity]="tableHasFilter(zonesTable) ? 'info' : 'secondary'"
@@ -571,7 +570,6 @@ to the number of configured zones.
                 <tr>
                     <td>
                         <p-button
-                            type="button"
                             [pRowToggler]="zone"
                             [text]="true"
                             severity="secondary"
@@ -724,7 +722,6 @@ to the number of configured zones.
                                 </td>
                                 <td>
                                     <p-button
-                                        type="button"
                                         [disabled]="localZone.disableShowZone"
                                         severity="secondary"
                                         icon="pi pi-file-import"

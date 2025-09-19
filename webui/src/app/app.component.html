@@ -1,7 +1,7 @@
 <div *ngIf="currentUser">
     <div class="flex align-items-center top-navbar">
         <div class="flex-grow-1">
-            <p-menubar [model]="menuItems" styleClass="app-menubar">
+            <p-menubar [model]="menuItems" breakpoint="1390px" [dt]="storkMenubar" styleClass="app-menubar">
                 <ng-template #start>
                     <div class="flex align-items-center gap-2 mr-2 sm:mr-4 ml-1 sm:ml-2">
                         <a
@@ -24,6 +24,9 @@
                             onIcon="pi pi-moon"
                             offIcon="pi pi-sun"
                             ariaLabel="Dark/light mode"
+                            [onLabel]="null"
+                            [offLabel]="null"
+                            [dt]="darkModeToggleButton"
                         />
                         <p-progressSpinner
                             *ngIf="(loadingInProgress | async)['state']"

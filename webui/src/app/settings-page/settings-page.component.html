@@ -122,7 +122,6 @@
         </form>
 
         <p-button
-            type="button"
             [disabled]="settingsForm.invalid"
             label="Save Settings"
             id="save-settings-button"
@@ -137,7 +136,7 @@
     </ng-container>
     <ng-container *ngSwitchCase="'fail'">
         <div class="text-lg">Fetching current settings from the server failed. Click the button to retry.</div>
-        <p-button type="button" label="Retry" id="retry-button" (click)="retry()" class="mt-4"></p-button>
+        <p-button label="Retry" id="retry-button" (click)="retry()" class="mt-4"></p-button>
     </ng-container>
     <ng-container *ngSwitchDefault>
         <p-progressSpinner></p-progressSpinner>

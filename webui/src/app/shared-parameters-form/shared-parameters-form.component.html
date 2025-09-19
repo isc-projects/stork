@@ -129,8 +129,9 @@
                                 <p-button
                                     [disabled]="control.value === (controls.data?.clearValue ?? null)"
                                     label="Clear"
-                                    class="p-button-text p-button-sm hidden md:inline-flex flex-none ml-2"
-                                    type="button"
+                                    class="hidden md:inline-flex flex-none ml-2"
+                                    [text]="true"
+                                    size="small"
                                     (click)="control.setValue(controls.data?.clearValue ?? null)"
                                 ></p-button>
                                 <p-button

@@ -104,7 +104,7 @@
             <p-button
                 label="Reset"
                 [disabled]="!hasChanges"
-                class="p-button-secondary"
+                severity="secondary"
                 (click)="onReset()"
                 [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
                 appAccessType="update"

@@ -14,16 +14,18 @@
 <ng-container *ngIf="nestLevel === 0">
     <p-button
         *ngIf="formArray.length === 0; else nonEmptyFormArray"
-        class="p-button-text p-button-sm ml-0"
+        class="ml-0"
+        [text]="true"
+        size="small"
         label="Add Option"
-        type="button"
         (click)="notifyOptionAdded()"
     ></p-button>
     <ng-template #nonEmptyFormArray>
         <p-button
             label="Add More Options"
-            class="p-button-text p-button-sm ml-0"
-            type="button"
+            class="ml-0"
+            [text]="true"
+            size="small"
             (click)="notifyOptionAdded()"
         ></p-button>
     </ng-template>

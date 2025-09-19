@@ -17,9 +17,11 @@
         <tr class="text-blue-500">
             <td *ngIf="showCascaded">
                 <p-button
-                    type="button"
                     [pRowToggler]="row"
-                    class="p-button-text p-button-rounded p-button-plain mr-2"
+                    class="mr-2"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="secondary"
                     [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                 ></p-button>
             </td>

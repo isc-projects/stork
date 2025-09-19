@@ -6,162 +6,27 @@
   min-height: 58px
 
 // logo styling
-.logo
-  &:hover
-    text-decoration: none
-
-  span
-    font-family: 'Mansalva'
-    // Don't use any particular variant to keep consistency with the logo on
-    // the project webpage.
-    font-variant: none
-    font-size: 2.3rem
-    color: var(--p-surface-0)
-    vertical-align: super
+.logo span
+  font-family: 'Mansalva'
+  // Don't use any particular variant to keep consistency with the logo on
+  // the project webpage.
+  font-variant: none
+  font-size: 2.3rem
+  color: var(--p-surface-0)
+  vertical-align: super
 
 @layer high
-  :host ::ng-deep
-    .app-menubar.p-menubar
-      // Inherit background color after .top-navbar which is a layer below the menu.
-      background-color: inherit
-      // Remove the border.
-      border-width: 0
-      // Remove unnecessary spacing.
-      padding: 0
+  ::ng-deep
+    // Make text more visible on primary background of the navbar in the light mode.
+    :root.light
+      .app-menubar:not(.p-menubar-mobile) .p-menubar-root-list > .p-menubar-item:not(.p-focus):not(.p-menubar-item-active) > .p-menubar-item-content
+        color: var(--p-primary-contrast-color)
+        &:hover
+          // Restore the default color on hover.
+          color: var(--p-navigation-item-focus-color)
+      #logout-button .p-button:hover
+        background: var(--p-primary-700)
 
-      // Style defining Stork menu accessible under the "hamburger" button.
-      // It is mostly a repeated PrimeNG theme style only that it has a custom breakpoint (default PrimeNG: 960px)
-      // and uses CSS variables for colors.
-      // TODO: This custom style will no longer be required once we upgrade to PrimeNG version >= 18 which allows to set menubar breakpoints as a component input.
-      @media screen and (max-width: 1390px)
-        position: relative
-        &.p-menubar-mobile-active .p-menubar-root-list
-          display: flex
-          flex-direction: column
-          top: 100%
-          left: 0
-          z-index: 1
-
-        .p-menubar-button
-          // Use white color for the hamburger icon for better contrast on the blue
-          // background.
-          color: var(--primary-color-text) !important
-          display: flex
-          width: 1.75rem
-          height: 1.75rem
-          border-radius: 50%
-          transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, outline-color 0.2s
-
-          &:hover
-            // On hover the background is white, so use black text.
-            color: var(--p-text-color) !important
-          &:focus
-            outline: 1px solid var(--p-focus-ring-color)
-            outline-offset: 2px
-            box-shadow: none
-
-        .p-menubar-root-list
-          position: absolute
-          display: none
-          padding: 0.25rem 0.25rem
-          background: var(--p-surface-0)
-          border: 1px solid var(--p-content-border-color)
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)
-          width: 100%
-
-          .p-menuitem-separator
-            border-top: 1px solid var(--p-content-border-color)
-            margin: 2px 0
-
-          .p-submenu-icon
-            font-size: 0.875rem
-
-          .p-menuitem
-            width: 100%
-            position: static
-
-            .p-menuitem-content .p-menuitem-link .p-submenu-icon
-              margin-left: auto
-              transition: transform 0.2s
-
-            &.p-menuitem-active > .p-menuitem-content > .p-menuitem-link > .p-submenu-icon
-              transform: rotate(-180deg)
-
-          .p-submenu-list
-            width: 100%
-            position: static
-            box-shadow: none
-            border: 0 none
-
-            .p-submenu-icon
-              transition: transform 0.2s
-              transform: rotate(90deg)
-
-            .p-menuitem-active > .p-menuitem-content > .p-menuitem-link > .p-submenu-icon
-              transform: rotate(-90deg)
-
-            .p-menuitem
-              .p-menuitem-content .p-menuitem-link
-                padding-left: 1.5rem
-              .p-submenu-list .p-menuitem
-                .p-menuitem-content .p-menuitem-link
-                  padding-left: 2.5rem
-                .p-submenu-list .p-menuitem
-                  .p-menuitem-content .p-menuitem-link
-                    padding-left: 3.5rem
-                  .p-submenu-list .p-menuitem
-                    .p-menuitem-content .p-menuitem-link
-                      padding-left: 4.5rem
-                    .p-submenu-list .p-menuitem
-                      .p-menuitem-content .p-menuitem-link
-                        padding-left: 5.5rem
-
-      // When Stork menubar .p-menubar-root-list is a flex container
-      .p-menubar-root-list
-        // Don't wrap menu items when shrinking the viewport.
-        flex-wrap: nowrap
-
-      // Apply the below changes only if the hamburger menu is not used.
-      &:not(.p-menubar-mobile-active) .p-menubar-root-list > .p-menuitem
-        // Custom style for not highlighted menu items.
-        &:not(.p-highlight)
-          & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
-            // Make text more visible on primary background of the navbar.
-            color: var(--primary-color-text)
-
-          &:not(.p-disabled).p-focus > .p-menuitem-content
-            // In the newest PrimeNG version, the menu item is grayed out after clicking
-            // it. This is a workaround to restore the original color.
-            background: inherit
-
-        // Custom style for highlighted menu items.
-        &.p-highlight > .p-menuitem-content
-            // Makes highlighted menu item more visible in light mode.
-            background-color: var(--highlight-bg)
-            .p-menuitem-link .p-menuitem-text
-              // Highlighted menu has light background color, so use contrasting font color.
-              color: var(--p-text-color)
-
-      // Custom responsive style for the Logout split button inside the Stork menubar.
-      .p-splitbutton
-        span.p-button-label
-          // Don't wrap button label when viewport shrinks.
-          white-space: nowrap
-          // When longer login name does not fit, show the ellipsis.
-          overflow: hidden
-          text-overflow: ellipsis
-          @media screen and (max-width: 1270px)
-            // Button label is very wide, so make it disappear on smaller viewports.
-            // Logout icon remains visible.
-            display: none
-
-        .p-splitbutton-defaultbutton
-          // For long username this button may become very wide and cause overflow.
-          // Limit max width.
-          max-width: 12rem
-          // Minimize horizontal padding.
-          padding-left: 0.5rem
-          padding-right: 0.5rem
 
     // set nice look of stork version tooltip
     .p-tooltip.stork-version-tooltip
@@ -173,3 +38,29 @@
       .p-tooltip-arrow
         // hide arrow
         display: none
+
+  :host ::ng-deep
+    // Custom responsive style for the Logout split button inside the Stork menubar.
+    .p-splitbutton
+      span.p-button-label
+        // Don't wrap button label when viewport shrinks.
+        white-space: nowrap
+        // When longer login name does not fit, show the ellipsis.
+        overflow: hidden
+        text-overflow: ellipsis
+        @media screen and (max-width: 1270px)
+          // Button label is very wide, so make it disappear on smaller viewports.
+          // Logout icon remains visible.
+          display: none
+
+      .p-splitbutton-button
+        // For long username this button may become very wide and cause overflow.
+        // Limit max width.
+        max-width: 12rem
+        // Minimize horizontal padding.
+        padding-left: 0.5rem
+        padding-right: 0.5rem
+
+    .app-menubar .p-togglebutton-label
+      // Dark/light mode toggle button is an icon only button, so hide the empty label.
+      display: none

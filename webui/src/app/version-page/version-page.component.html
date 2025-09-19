@@ -179,9 +179,11 @@
                     <td colspan="5" class="row-toggle">
                         <div class="flex align-items-center">
                             <p-button
-                                type="button"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="secondary"
                                 [pRowToggler]="m"
-                                class="p-button-text p-button-rounded p-button-plain mr-2 flex-none"
+                                class="mr-2 flex-none"
                                 [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                             ></p-button>
                             <p-badge

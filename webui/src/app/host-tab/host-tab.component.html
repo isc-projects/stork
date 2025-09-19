@@ -1,4 +1,4 @@
-<p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
+<p-confirmDialog />
 <div *ngIf="host" class="mt-4 mx-2 max-w-50rem">
     <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
         <div class="flex text-xl font-normal text-primary align-items-center">
@@ -22,7 +22,6 @@
         </div>
         <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
             <p-button
-                type="button"
                 [disabled]="leasesSearchInProgress"
                 label="Leases"
                 id="refresh-app-button"
@@ -33,21 +32,19 @@
             ></p-button>
             <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
                 <p-button
-                    type="button"
                     [disabled]="hostDeleted"
                     label="Edit"
                     icon="pi pi-pencil"
-                    class="p-button-info"
+                    severity="info"
                     (click)="onEditHostClicked()"
                     appAccessEntity="host-reservation"
                     appAccessType="update"
                 ></p-button>
                 <p-button
-                    type="button"
                     [disabled]="hostDeleted"
                     label="Delete"
                     icon="pi pi-times"
-                    class="p-button-danger"
+                    severity="danger"
                     (click)="confirmDeleteHost()"
                     appAccessEntity="host-reservation"
                     appAccessType="delete"
@@ -169,9 +166,10 @@
                                     <div class="flex align-items-center">
                                         <div class="flex-initial">
                                             <p-button
-                                                type="button"
+                                                [text]="true"
+                                                [rounded]="true"
+                                                severity="secondary"
                                                 [pRowToggler]="r"
-                                                class="p-button-text p-button-rounded p-button-plain"
                                                 [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                                             ></p-button>
                                         </div>

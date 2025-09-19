@@ -61,6 +61,17 @@ export class LoginScreenComponent implements OnInit {
      */
     welcomeMessage: string = null
 
+    /**
+     * Custom style of the PrimeNG FloatLabel component.
+     */
+    whiteFloatLabel = {
+        // Overwrite default FloatLabel color with white to be better visible on blue background.
+        root: {
+            activeColor: '{surface.0}',
+            focusColor: '{surface.0}',
+        },
+    }
+
     constructor(
         protected api: GeneralService,
         private auth: AuthService,

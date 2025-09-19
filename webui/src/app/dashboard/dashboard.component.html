@@ -39,6 +39,7 @@
                 [collapsed]="isDHCPDashboardHidden()"
                 iconPos="start"
                 (onAfterToggle)="storeDHCPDashboardHidden($event.collapsed)"
+                [toggleButtonProps]="{ severity: 'primary', text: false }"
             >
                 <ng-template #headericons let-collapsed>
                     <i
@@ -46,7 +47,6 @@
                             pi: true,
                             'pi-chevron-down': !collapsed,
                             'pi-chevron-right': collapsed,
-                            primary: collapsed,
                         }"
                     ></i>
                 </ng-template>
@@ -390,6 +390,7 @@
                 [collapsed]="isDNSDashboardHidden()"
                 iconPos="start"
                 (onAfterToggle)="storeDNSDashboardHidden($event.collapsed)"
+                [toggleButtonProps]="{ severity: 'primary', text: false }"
             >
                 <ng-template #headericons let-collapsed>
                     <i [class]="{ pi: true, 'pi-chevron-down': !collapsed, 'pi-chevron-right': collapsed }"></i>
