@@ -76,7 +76,7 @@ RUN \
     apt-get update && apt-get install -y --no-install-recommends \
         # Install curl.
         curl=7.* \
-        ca-certificates=20230311 \
+        ca-certificates=20230311* \
         gnupg=2.2.* \
         apt-transport-https=2.6.* \
     # Configure the ISC repository.
