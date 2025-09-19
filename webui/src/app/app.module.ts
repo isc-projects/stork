@@ -72,7 +72,7 @@ import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
 import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
-import { UsersPageComponent, UserFormComponent } from './users-page/users-page.component'
+import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
 import { AppTabComponent } from './app-tab/app-tab.component'
 import { KeaAppTabComponent } from './kea-app-tab/kea-app-tab.component'
@@ -170,6 +170,7 @@ import { Bind9DaemonComponent } from './bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from './pdns-daemon/pdns-daemon.component'
 import { TabViewComponent } from './tab-view/tab-view.component'
 import { TriStateCheckboxComponent } from './tri-state-checkbox/tri-state-checkbox.component'
+import { UserFormComponent } from './user-form/user-form.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
