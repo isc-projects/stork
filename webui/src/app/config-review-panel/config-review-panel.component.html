@@ -7,7 +7,7 @@
     [rows]="limit"
     [first]="start"
     [totalRecords]="total"
-    pageLinkSize="3"
+    pageLinks="3"
     [showCurrentPageReport]="true"
     [loading]="loading"
     layout="list"
@@ -32,16 +32,14 @@
                     (onChange)="refreshDaemonConfigReports($event)"
                 ></p-toggleButton>
                 <p-button
-                    #selectCheckersPanelTarget
                     label="Checkers"
                     class="mb-2 sm:my-0"
                     size="small"
                     icon="fa fa-cog"
-                    (click)="selectCheckersPanel.show($event, selectCheckersPanelTarget)"
+                    (click)="selectCheckersPanel.show($event)"
                 ></p-button>
                 <p-button
                     id="review-button"
-                    #selectCheckersPanelTarget
                     *ngIf="!refreshFailed; else refreshFailedElse"
                     label="Run review"
                     class="mb-2 sm:my-0"

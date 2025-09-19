@@ -202,11 +202,12 @@ sudo ./stork-install-agent.sh</textarea
                         (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
                     />
                 </div>
-                <p-footer>
+                <ng-template #footer>
                     <p-button
                         (click)="changeMachineAddressDialogVisible = false"
                         icon="pi pi-times"
                         label="Cancel"
+                        [text]="true"
                         id="cancel-machine-edit-button"
                     ></p-button>
                     <p-button
@@ -214,9 +215,8 @@ sudo ./stork-install-agent.sh</textarea
                         icon="pi pi-check"
                         label="Change"
                         id="change-machine-button"
-                        severity="warn"
                     ></p-button>
-                </p-footer>
+                </ng-template>
             </p-dialog>
         </div>
         <div class="grid w-full">
