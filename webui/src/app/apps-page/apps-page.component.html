@@ -71,7 +71,22 @@
                                 *ngIf="tableHasFilter(table)"
                             ></p-tag>
                             <app-help-tip subject="Filtering" id="filtering-help-button">
-                                help for filtering to be written
+                                <p>
+                                    Apps in the table below can be filtered by entering text in the search box; the
+                                    table shows all apps matching the filter text. The currently supported fields for
+                                    filtering are:
+                                </p>
+                                <ul>
+                                    <li>App Type</li>
+                                    <li>App Name</li>
+                                    <li>App Version</li>
+                                    <li>Machine Address</li>
+                                    <li>Machine Hostname</li>
+                                </ul>
+                                <p>
+                                    Apps can also be filtered by an explicitly selected App Type, using the multiselect
+                                    filter.
+                                </p>
                             </app-help-tip>
                         </div>
                     </ng-template>
