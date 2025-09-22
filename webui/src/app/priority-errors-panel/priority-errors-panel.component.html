@@ -8,17 +8,19 @@
         [text]="message.summary"
         class="custom-message"
     >
-        @if (message.key === EventStream.Registration) {
-            Found {{ formatNoun(registrationIssuesCount(), 'machine', 's') }} requesting registration and awaiting
-            approval. Visit the list of
-            <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">unauthorized machines</a> to review
-            the requests.
-        } @else if (message.key === EventStream.Connectivity) {
-            Stork server reports communication problems for
-            {{ formatNoun(connectivityIssuesCount(), 'app', 's') }} on the monitored machines. You can check the details
-            <a routerLink="/communication">here</a>.
-        } @else {
-            {{ message.detail }}
-        }
+        <div class="inline">
+            @if (message.key === EventStream.Registration) {
+                Found {{ formatNoun(registrationIssuesCount(), 'machine', 's') }} requesting registration and awaiting
+                approval. Visit the list of
+                <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">unauthorized machines</a> to
+                review the requests.
+            } @else if (message.key === EventStream.Connectivity) {
+                Stork server reports communication problems for
+                {{ formatNoun(connectivityIssuesCount(), 'app', 's') }} on the monitored machines. You can check the
+                details <a routerLink="/communication">here</a>.
+            } @else {
+                {{ message.detail }}
+            }
+        </div>
     </p-message>
 }

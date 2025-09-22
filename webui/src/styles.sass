@@ -88,16 +88,8 @@
     & > .p-inputwrapper
       max-width: var(--max-form-width)
 
-  // Reapply confirmation dialog icon size rule, so it has higher priority than usually smaller 1rem icon.
-  // TODO: check why this is needed, @layer issue in primeNG or?
-  .p-confirmdialog-icon
-    font-size: var(--p-confirmdialog-icon-size)
-
-  // Reapply message icon style rule, so it has higher priority than usually smaller 1rem icon.
+  // Add small margin next to message icon.
   .p-message-icon
-    font-size: var(--p-message-icon-size)
-    width: var(--p-message-icon-size)
-    height: var(--p-message-icon-size)
     margin-right: 0.5rem
 
   // Apply by default small vertical margin for PrimeNG Message component.
