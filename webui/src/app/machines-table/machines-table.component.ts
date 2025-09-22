@@ -50,8 +50,10 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      */
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
+    /**
+     * Machines currently displayed in the table.
+     */
     dataCollection: Machine[] = []
-    // @Output() dataCollectionChange = new EventEmitter<Machine[]>()
 
     /**
      * Keeps state of the Select All checkbox in the table's header.
@@ -63,8 +65,22 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      * @private
      */
     private _unauthorizedInDataCollectionCount: number = 0
+
+    /**
+     * Flag keeping track of whether table data is loading.
+     */
     dataLoading: boolean
+
+    /**
+     * Number of records currently displayed in the table.
+     */
     totalRecords: number
+
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
     private _subscriptions: Subscription = new Subscription()
 
     /**
@@ -100,8 +116,6 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        // super.onDestroy()
-        console.log('machines-table ngOnDestroy')
         this._tableFilter$.complete()
         this._subscriptions.unsubscribe()
     }
@@ -133,6 +147,9 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         )
     }
 
+    /**
+     * Keeps state whether authorized machines are shown.
+     */
     authorizedShown = signal<boolean>(null)
 
     /**
@@ -158,7 +175,6 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         )
             .then((data) => {
                 this.dataCollection = data.items ?? []
-                // this.dataCollectionChange.emit(this.dataCollection)
                 this.totalRecords = data.total ?? 0
                 this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
                 if (
@@ -265,15 +281,6 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
     }
 
     /**
-     *
-     */
-    hasPrefilter() {
-        return false
-        // const prefilter = (this.machinesTable?.filters['authorized'] as FilterMetadata)?.value
-        // return prefilter === true || prefilter === false
-    }
-
-    /**
      * Clears the PrimeNG table state (filtering, pagination are reset).
      */
     clearTableState() {
@@ -303,6 +310,10 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.machinesTable) })
     }
 
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
     protected readonly tableHasFilter = tableHasFilter
 
     /**

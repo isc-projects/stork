@@ -31,8 +31,19 @@ export class ConfigMigrationTableComponent {
      */
     @ViewChild('configMigrationTable') table: Table
 
+    /**
+     * Flag keeping track of whether table data is loading.
+     */
     dataLoading: boolean
+
+    /**
+     * Data collection of migrations in the table.
+     */
     dataCollection: MigrationStatus[] = []
+
+    /**
+     * Total number of records in the table.
+     */
     totalRecords: number = 0
 
     constructor(

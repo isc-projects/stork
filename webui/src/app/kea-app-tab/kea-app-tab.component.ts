@@ -30,6 +30,9 @@ export class KeaAppTabComponent {
 
     daemons: KeaDaemon[] = []
 
+    /**
+     * Keeps track of daemon ID currently displayed in the tab.
+     */
     activeTabDaemonID: number
 
     /**

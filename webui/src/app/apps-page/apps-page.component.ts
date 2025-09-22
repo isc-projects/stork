@@ -164,7 +164,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      * Function called by the table data loader. Accepts the pagination event.
      */
     loadApps(event: TableLazyLoadEvent) {
-        console.log('loadApps', event, Date.now())
         this.dataLoading = true
 
         // ToDo: Uncaught promise
@@ -199,8 +198,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     /**
      * Callback called on click on the application menu button.
      *
-     * @param event
-     * @param appID
+     * @param event click event
+     * @param appID app identifier
      */
     showAppMenu(event: Event, appID: number) {
         // connect method to refresh machine state
@@ -268,6 +267,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         })
     }
 
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
     protected readonly tableHasFilter = tableHasFilter
 
     /**

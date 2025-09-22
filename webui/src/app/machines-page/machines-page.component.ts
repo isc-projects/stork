@@ -185,6 +185,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      */
     showAuthorized = computed(() => this.machinesTable()?.authorizedShown() ?? null)
 
+    /**
+     * The machine of currently active tab.
+     */
     activeTabMachine = computed<Machine>(() => this.tabView()?.getOpenTabEntity(this.activeTabEntityID()))
 
     /**
@@ -201,22 +204,23 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * Machines popup menu component.
      */
     @ViewChild('machineMenu') machineMenu: Menu
+
+    /**
+     * Asynchronously provides a machine based on given machine ID.
+     * @param machineID machine identifier
+     */
     machineProvider: (id: number) => Promise<Machine> = (machineID: number) => {
         return lastValueFrom(this.servicesApi.getMachine(machineID))
     }
 
-    machines: Machine[] = []
-
     /**
      * Component's constructor.
-     * @param route activated route used to gather parameters from the URL.
      * @param router router used to navigate between tabs.
      * @param servicesApi services API to do all CRUD machine related operations
      * @param msgSrv Message service used to display feedback messages in UI.
      * @param serverData Server Data service used to reload Apps stats whenever machines registration state changes.
      * @param settingsService Settings service used to retrieve global settings.
      * @param confirmationService Confirmation used to handle confirmation dialogs.
-     * @param cd Change detection used to manually detect changes to avoid error NG0100: ExpressionChangedAfterItHasBeenCheckedError
      * @param authService authentication and authorization service for customizing the component based on user privileges
      */
     constructor(
@@ -241,8 +245,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * It configures initial state of PrimeNG Menu tabs and fetches global settings.
      */
     ngOnInit() {
-        console.log('machines-page ngOnInit', Date.now())
-
         this.machineMenuItems = this.machineMenuItemsAuthorized
 
         // Settings are needed to check whether the machines registration is disabled.
@@ -634,7 +636,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
                 this.machinesTable()?.setDataLoading(false)
-                // this.machinesTable?.loadDataWithValidFilter()
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
@@ -642,7 +643,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             },
             complete: () => {
                 this.machinesTable()?.setDataLoading(false)
-                // this.machinesTable?.loadDataWithValidFilter()
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.

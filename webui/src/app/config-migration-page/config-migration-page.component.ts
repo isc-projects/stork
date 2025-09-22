@@ -24,13 +24,31 @@ export class ConfigMigrationPageComponent {
      */
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Config Migrations' }]
 
+    /**
+     * Asynchronously provides a migration entity based on given ID.
+     * @param id migration ID
+     */
     migrationProvider: (id: number) => Promise<MigrationStatus> = (id) => lastValueFrom(this.dhcpApi.getMigration(id))
+
+    /**
+     * Provides tab title for migration.
+     * @param entity migration for which the title is generated
+     */
     tabTitleProvider: (entity: MigrationStatus) => string = (entity: MigrationStatus) => `Migration ${entity.id}`
 
+    /**
+     * View child ConfigMigrationTableComponent.
+     */
     migrationsTableComponent = viewChild(ConfigMigrationTableComponent)
 
+    /**
+     * View child TabViewComponent.
+     */
     tabView = viewChild(TabViewComponent)
 
+    /**
+     * Keeps track of migration ID that is currently displayed in the tab.
+     */
     activeTabMigrationID = signal<number>(undefined)
 
     /**

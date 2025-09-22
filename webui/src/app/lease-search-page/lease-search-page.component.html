@@ -15,9 +15,11 @@
 
 <div class="flex flex-wrap gap-2 align-items-center">
     <span class="hidden sm:inline-block">Search leases:</span>
-    <div>
-        <span class="p-input-icon-left">
-            <i class="pi pi-search"></i>
+    <div class="flex">
+        <p-iconfield iconPosition="left">
+            <p-inputicon>
+                <i class="pi pi-search"></i>
+            </p-inputicon>
             <input
                 id="leases-search-input"
                 (keyup)="handleKeyUp($event)"
@@ -29,7 +31,7 @@
                 class="w-18rem sm:w-25rem"
                 #searchInput
             />
-        </span>
+        </p-iconfield>
         <app-help-tip subject="Lease Search" id="leases-search-help-button" width="40vw" [target]="searchInput">
             <p>Use the input box to specify a lease for searching, using one of the following lease properties:</p>
             <p-table

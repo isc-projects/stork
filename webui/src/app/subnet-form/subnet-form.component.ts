@@ -118,6 +118,10 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         this._beginTransaction()
     }
 
+    /**
+     * Begins either create or update transaction.
+     * @private
+     */
     private _beginTransaction() {
         if (this.subnetId) {
             // Send POST to /subnets/{id}/transaction/new.

@@ -14,6 +14,9 @@ import { Popover } from 'primeng/popover'
     styleUrls: ['./help-tip.component.sass'],
 })
 export class HelpTipComponent {
+    /**
+     * View child Popover component.
+     */
     @ViewChild(Popover) popover: Popover
 
     /**

@@ -28,9 +28,27 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * PrimeNG table instance.
      */
     @ViewChild('hostsTable') table: Table
+
+    /**
+     * Flag stating whether table data is loading or not.
+     */
     dataLoading: boolean
+
+    /**
+     * Total number of records displayed currently in the table.
+     */
     totalRecords: number = 0
+
+    /**
+     * Data collection displayed currently in the table.
+     */
     dataCollection: Host[] = []
+
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
     private _subscriptions: Subscription = new Subscription()
 
     constructor(
@@ -286,6 +304,10 @@ export class HostsTableComponent implements OnInit, OnDestroy {
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
     }
 
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
     protected readonly tableHasFilter = tableHasFilter
 
     /**

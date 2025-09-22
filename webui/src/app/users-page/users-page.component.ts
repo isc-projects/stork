@@ -234,7 +234,16 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         return 'unknown'
     }
 
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
     protected readonly isInternalUser = isInternalUser
+
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
     protected readonly tableHasFilter = tableHasFilter
 
     /**

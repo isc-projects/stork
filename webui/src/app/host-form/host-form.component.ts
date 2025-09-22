@@ -317,6 +317,10 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this._beginTransaction()
     }
 
+    /**
+     * Begins create/update host transaction.
+     * @private
+     */
     private _beginTransaction(): void {
         if (this.hostId) {
             // Send POST to /hosts/{id}/transaction/new.

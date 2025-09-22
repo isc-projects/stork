@@ -46,8 +46,22 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
      * Indicates if the data is being fetched from the server.
      */
     @Input() dataLoading: boolean = false
+
+    /**
+     * Collection of subnets currently displayed in the table.
+     */
     dataCollection: SubnetWithUniquePools[] = []
+
+    /**
+     * Total number of subnets currently displayed in the table.
+     */
     totalRecords: number = 0
+
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
     private _subscriptions: Subscription = new Subscription()
 
     constructor(
@@ -244,6 +258,10 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
         return getGrafanaSubnetTooltip(subnet, machine)
     }
 
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
     protected readonly tableHasFilter = tableHasFilter
 
     /**

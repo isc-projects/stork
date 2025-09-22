@@ -14,5 +14,8 @@ export class UserFormState implements FormState {
      */
     group: UntypedFormGroup
 
+    /**
+     * User that is being edited. For new user form it is undefined.
+     */
     user: User
 }
