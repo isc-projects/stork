@@ -22,7 +22,7 @@
     #subnetsTable
     [value]="dataCollection"
     [paginator]="true"
-    [rows]="10"
+    [rows]="rows"
     [lazy]="true"
     [loading]="dataLoading"
     (onLazyLoad)="loadData($event)"
@@ -32,6 +32,8 @@
     [showCurrentPageReport]="true"
     currentPageReportTemplate="{currentPage} of {totalPages} pages"
     [stripedRows]="true"
+    stateStorage="local"
+    (rowsChange)="storeTableRowsPerPage($event)"
 >
     <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -51,7 +53,6 @@
                         value="Filter applied"
                         severity="success"
                         *ngIf="tableHasFilter(subnetsTable)"
-                        [rounded]="true"
                     ></p-tag>
                     <app-help-tip subject="filtering" id="filtering-help-button">
                         <p>

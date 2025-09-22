@@ -33,7 +33,8 @@
         <app-help-tip subject="Lease Search" id="leases-search-help-button" width="40vw" [target]="searchInput">
             <p>Use the input box to specify a lease for searching, using one of the following lease properties:</p>
             <p-table
-                styleClass="p-datatable-striped p-datatable-sm"
+                size="small"
+                [stripedRows]="true"
                 [value]="[
                     { h: 'IP address', dhcp4: true, dhcp6: true },
                     { h: 'hostname', dhcp4: true, dhcp6: true },

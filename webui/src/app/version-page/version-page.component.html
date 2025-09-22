@@ -257,7 +257,7 @@
         </p-table>
     </p-panel>
     <p-panel header="Kea current releases" styleClass="mt-3">
-        <p-table [value]="keaVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
+        <p-table [value]="keaVersions" [stripedRows]="true" [loading]="swVersionsDataLoading">
             <ng-template #header>
                 <tr>
                     <th class="xl:w-10rem">Version</th>
@@ -310,7 +310,7 @@
         </p-table>
     </p-panel>
     <p-panel header="BIND 9 current releases" styleClass="mt-3">
-        <p-table [value]="bind9Versions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
+        <p-table [value]="bind9Versions" [stripedRows]="true" [loading]="swVersionsDataLoading">
             <ng-template #header>
                 <tr>
                     <th class="xl:w-10rem">Version</th>
@@ -362,7 +362,7 @@
         </p-table>
     </p-panel>
     <p-panel header="Stork current releases" styleClass="mt-3">
-        <p-table [value]="storkVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
+        <p-table [value]="storkVersions" [stripedRows]="true" [loading]="swVersionsDataLoading">
             <ng-template #header>
                 <tr>
                     <th class="xl:w-10rem">Version</th>

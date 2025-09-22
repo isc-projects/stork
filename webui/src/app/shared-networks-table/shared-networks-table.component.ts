@@ -13,7 +13,7 @@ import { DHCPService, SharedNetwork } from '../backend'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { MessageService } from 'primeng/api'
+import { MessageService, TableState } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 
 /**
@@ -115,6 +115,8 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
+        this._restoreTableRowsPerPage()
+
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
@@ -235,5 +237,37 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
+    }
+
+    /**
+     * Keeps number of rows per page in the table.
+     */
+    rows: number = 10
+
+    /**
+     * Key to be used in browser storage for keeping table state.
+     * @private
+     */
+    private readonly _tableStateStorageKey = 'networks-table-state'
+
+    /**
+     * Stores only rows per page count for the table in user browser storage.
+     */
+    storeTableRowsPerPage(rows: number) {
+        const state: TableState = { rows: rows }
+        const storage = this.table?.getStorage()
+        storage?.setItem(this._tableStateStorageKey, JSON.stringify(state))
+    }
+
+    /**
+     * Restores only rows per page count for the table from the state stored in user browser storage.
+     * @private
+     */
+    private _restoreTableRowsPerPage() {
+        const stateString = localStorage.getItem(this._tableStateStorageKey)
+        if (stateString) {
+            const state: TableState = JSON.parse(stateString)
+            this.rows = state.rows ?? 10
+        }
     }
 }

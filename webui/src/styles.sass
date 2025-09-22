@@ -131,8 +131,9 @@
       max-width: calc(100vw - 2rem)
 
   @media screen and (max-width: 359px)
-    .p-panel .p-panel-content
+    .p-panel .p-panel-content, app-tab-view > .p-tabs > .p-tabpanels
       // Decrease panel content horizontal padding to save the space on smaller viewports.
+      // Apply the same for tabPanels container.
       padding-right: 0.5rem
       padding-left: 0.5rem
 

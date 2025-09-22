@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
+import { MessageService, MenuItem, ConfirmationService, TableState } from 'primeng/api'
 
 import { daemonStatusErred } from '../utils'
 import { ServicesService } from '../backend'
@@ -137,6 +137,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 icon: 'pi pi-refresh',
             },
         ]
+
+        this._restoreTableRowsPerPage()
 
         this._subscriptions = this._tableFilter$
             .pipe(
@@ -275,5 +277,37 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.appsTable) })
+    }
+
+    /**
+     * Keeps number of rows per page in the table.
+     */
+    rows: number = 10
+
+    /**
+     * Key to be used in browser storage for keeping table state.
+     * @private
+     */
+    private readonly _tableStateStorageKey = 'apps-table-state'
+
+    /**
+     * Stores only rows per page count for the table in user browser storage.
+     */
+    storeTableRowsPerPage(rows: number) {
+        const state: TableState = { rows: rows }
+        const storage = this.appsTable?.getStorage()
+        storage?.setItem(this._tableStateStorageKey, JSON.stringify(state))
+    }
+
+    /**
+     * Restores only rows per page count for the table from the state stored in user browser storage.
+     * @private
+     */
+    private _restoreTableRowsPerPage() {
+        const stateString = localStorage.getItem(this._tableStateStorageKey)
+        if (stateString) {
+            const state: TableState = JSON.parse(stateString)
+            this.rows = state.rows ?? 10
+        }
     }
 }

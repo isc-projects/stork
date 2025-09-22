@@ -3,7 +3,7 @@ import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Router } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { MessageService, TableState } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
@@ -117,6 +117,8 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
+        this._restoreTableRowsPerPage()
+
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
@@ -281,5 +283,37 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
+    }
+
+    /**
+     * Keeps number of rows per page in the table.
+     */
+    rows: number = 10
+
+    /**
+     * Key to be used in browser storage for keeping table state.
+     * @private
+     */
+    private readonly _tableStateStorageKey = 'subnets-table-state'
+
+    /**
+     * Stores only rows per page count for the table in user browser storage.
+     */
+    storeTableRowsPerPage(rows: number) {
+        const state: TableState = { rows: rows }
+        const storage = this.table?.getStorage()
+        storage?.setItem(this._tableStateStorageKey, JSON.stringify(state))
+    }
+
+    /**
+     * Restores only rows per page count for the table from the state stored in user browser storage.
+     * @private
+     */
+    private _restoreTableRowsPerPage() {
+        const stateString = localStorage.getItem(this._tableStateStorageKey)
+        if (stateString) {
+            const state: TableState = JSON.parse(stateString)
+            this.rows = state.rows ?? 10
+        }
     }
 }

@@ -38,7 +38,7 @@
             #table
             [value]="apps"
             [paginator]="true"
-            [rows]="10"
+            [rows]="rows"
             [lazy]="true"
             [loading]="dataLoading"
             (onLazyLoad)="loadApps($event)"
@@ -48,6 +48,8 @@
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
             [lazyLoadOnInit]="false"
             [stripedRows]="true"
+            stateStorage="local"
+            (rowsChange)="storeTableRowsPerPage($event)"
         >
             <ng-template #caption>
                 <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -67,7 +69,6 @@
                                 value="Filter applied"
                                 severity="success"
                                 *ngIf="tableHasFilter(table)"
-                                [rounded]="true"
                             ></p-tag>
                             <app-help-tip subject="Filtering" id="filtering-help-button">
                                 help for filtering to be written

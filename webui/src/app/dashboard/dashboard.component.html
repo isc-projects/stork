@@ -316,7 +316,7 @@
 
                 <h1 class="section-heading">Service Status</h1>
 
-                <p-table [value]="overview.dhcpDaemons" styleClass="p-datatable-sm p-datatable-striped max-w-100vw">
+                <p-table [value]="overview.dhcpDaemons" size="small" [stripedRows]="true" styleClass="max-w-100vw">
                     <ng-template #header>
                         <tr>
                             <th>Host</th>
@@ -409,7 +409,9 @@
                 <p-table
                     #dnsServiceStatusTable
                     [value]="dnsApps"
-                    styleClass="p-datatable-sm p-datatable-striped max-w-100vw"
+                    size="small"
+                    [stripedRows]="true"
+                    styleClass="max-w-100vw"
                     [lazy]="true"
                     (onLazyLoad)="refreshDnsOverview($event)"
                     [totalRecords]="dnsAppsTotalCount"

@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, viewChild } from '@angular/core'
 import { UntypedFormGroup } from '@angular/forms'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
@@ -114,6 +114,8 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
+        this._restoreTableRowsPerPage()
+
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
@@ -272,5 +274,37 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
         this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table()) })
+    }
+
+    /**
+     * Keeps number of rows per page in the table.
+     */
+    rows: number = 10
+
+    /**
+     * Key to be used in browser storage for keeping table state.
+     * @private
+     */
+    private readonly _tableStateStorageKey = 'users-table-state'
+
+    /**
+     * Stores only rows per page count for the table in user browser storage.
+     */
+    storeTableRowsPerPage(rows: number) {
+        const state: TableState = { rows: rows }
+        const storage = this.table()?.getStorage()
+        storage?.setItem(this._tableStateStorageKey, JSON.stringify(state))
+    }
+
+    /**
+     * Restores only rows per page count for the table from the state stored in user browser storage.
+     * @private
+     */
+    private _restoreTableRowsPerPage() {
+        const stateString = localStorage.getItem(this._tableStateStorageKey)
+        if (stateString) {
+            const state: TableState = JSON.parse(stateString)
+            this.rows = state.rows ?? 10
+        }
     }
 }

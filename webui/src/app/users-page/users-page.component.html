@@ -59,7 +59,7 @@
             #table
             [value]="users"
             [paginator]="true"
-            [rows]="10"
+            [rows]="rows"
             [lazy]="true"
             [lazyLoadOnInit]="false"
             (onLazyLoad)="loadUsers($event)"
@@ -67,8 +67,8 @@
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            stateStorage="session"
-            stateKey="users-table-session"
+            stateStorage="local"
+            (rowsChange)="storeTableRowsPerPage($event)"
             [stripedRows]="true"
         >
             <ng-template #caption>
@@ -89,7 +89,6 @@
                                 value="Filter applied"
                                 severity="success"
                                 *ngIf="tableHasFilter(table)"
-                                [rounded]="true"
                             ></p-tag>
                             <app-help-tip subject="filtering" id="filtering-help-button">
                                 <p>

@@ -91,7 +91,7 @@
 <p-table
     [value]="events.items"
     class="events-table"
-    styleClass="p-datatable-striped"
+    [stripedRows]="true"
     [ngClass]="{
         'events-table--table': isTable,
         'events-table--bare': isBare,

@@ -136,7 +136,8 @@
         [totalRecords]="zonesFetchStatesTotal"
         [loading]="zonesFetchStatesLoading"
         [alwaysShowPaginator]="false"
-        styleClass="p-datatable-striped datatable-responsive"
+        styleClass="datatable-responsive"
+        [stripedRows]="true"
     >
         <ng-template #header>
             <tr>
@@ -286,7 +287,6 @@ to the number of configured zones.
                                 value="Filter applied"
                                 severity="success"
                                 *ngIf="tableHasFilter(zonesTable)"
-                                [rounded]="true"
                             ></p-tag>
                             <app-help-tip subject="Filtering" id="filtering-help-button">
                                 <p>
@@ -609,7 +609,8 @@ to the number of configured zones.
                                 [rowsPerPageOptions]="[10, 30, 100]"
                                 [alwaysShowPaginator]="false"
                                 [columns]="localZoneColumns"
-                                styleClass="p-datatable-striped datatable-responsive"
+                                [stripedRows]="true"
+                                styleClass="datatable-responsive"
                             >
                                 <ng-template #header let-columns>
                                     <tr>
@@ -691,7 +692,8 @@ to the number of configured zones.
                         [rowsPerPageOptions]="[10, 30, 100]"
                         [alwaysShowPaginator]="false"
                         [columns]="localZoneColumns"
-                        styleClass="p-datatable-striped datatable-responsive"
+                        [stripedRows]="true"
+                        styleClass="datatable-responsive"
                     >
                         <ng-template #header let-columns>
                             <tr>

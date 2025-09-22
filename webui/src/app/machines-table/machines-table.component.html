@@ -20,7 +20,7 @@
     #table
     [value]="dataCollection"
     [paginator]="true"
-    [rows]="10"
+    [rows]="rows"
     [lazy]="true"
     [loading]="dataLoading"
     (onLazyLoad)="loadData($event)"
@@ -34,6 +34,8 @@
     (selectionChange)="onSelectionChange($event)"
     [selectAll]="selectAll"
     (selectAllChange)="onSelectAllChange($event)"
+    stateStorage="local"
+    (rowsChange)="storeTableRowsPerPage($event)"
 >
     <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -53,7 +55,6 @@
                         value="Filter applied"
                         severity="success"
                         *ngIf="tableHasFilter(table)"
-                        [rounded]="true"
                     ></p-tag>
                     <app-help-tip subject="Filtering" id="filtering-help-button">
                         <p>
