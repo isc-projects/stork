@@ -7,6 +7,7 @@ import { ActivatedRoute } from '@angular/router'
  */
 @Component({
     selector: 'app-events-page',
+    standalone: false,
     templateUrl: './events-page.component.html',
     styleUrls: ['./events-page.component.sass'],
 })

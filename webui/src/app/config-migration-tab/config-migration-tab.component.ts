@@ -7,6 +7,7 @@ import { AuthService } from '../auth.service'
  */
 @Component({
     selector: 'app-config-migration-tab',
+    standalone: false,
     templateUrl: './config-migration-tab.component.html',
     styleUrl: './config-migration-tab.component.sass',
 })

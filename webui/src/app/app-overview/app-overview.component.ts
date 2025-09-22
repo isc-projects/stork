@@ -8,6 +8,7 @@ import { App } from '../backend'
  */
 @Component({
     selector: 'app-app-overview',
+    standalone: false,
     templateUrl: './app-overview.component.html',
     styleUrls: ['./app-overview.component.sass'],
 })

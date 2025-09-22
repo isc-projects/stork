@@ -23,6 +23,7 @@ import { HostsTableComponent } from '../hosts-table/hosts-table.component'
  */
 @Component({
     selector: 'app-hosts-page',
+    standalone: false,
     templateUrl: './hosts-page.component.html',
     styleUrls: ['./hosts-page.component.sass'],
 })

@@ -9,6 +9,7 @@ import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
  */
 @Component({
     selector: 'app-array-value-set-form',
+    standalone: false,
     templateUrl: './array-value-set-form.component.html',
     styleUrls: ['./array-value-set-form.component.sass'],
 })

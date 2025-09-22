@@ -3,6 +3,7 @@ import { unhyphen } from '../utils'
 
 @Pipe({
     name: 'unhyphen',
+    standalone: false,
 })
 export class UnhyphenPipe implements PipeTransform {
     /**

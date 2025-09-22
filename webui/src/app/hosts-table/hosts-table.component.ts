@@ -20,6 +20,7 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
  */
 @Component({
     selector: 'app-hosts-table',
+    standalone: false,
     templateUrl: './hosts-table.component.html',
     styleUrls: ['./hosts-table.component.sass'],
 })

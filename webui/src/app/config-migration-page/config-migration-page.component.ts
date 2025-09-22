@@ -15,6 +15,7 @@ import { TabViewComponent } from '../tab-view/tab-view.component'
  */
 @Component({
     selector: 'app-config-migration-page',
+    standalone: false,
     templateUrl: './config-migration-page.component.html',
     styleUrl: './config-migration-page.component.sass',
 })

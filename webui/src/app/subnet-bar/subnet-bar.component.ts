@@ -7,6 +7,7 @@ import { Subnet } from '../backend'
  */
 @Component({
     selector: 'app-subnet-bar',
+    standalone: false,
     templateUrl: './subnet-bar.component.html',
     styleUrls: ['./subnet-bar.component.sass'],
 })

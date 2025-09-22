@@ -6,6 +6,7 @@ import { Bind9Daemon, Bind9DaemonView, DNSZoneType } from '../backend'
  */
 @Component({
     selector: 'app-bind9-daemon',
+    standalone: false,
     templateUrl: './bind9-daemon.component.html',
     styleUrl: './bind9-daemon.component.sass',
 })

@@ -12,6 +12,7 @@ import { IPType } from '../iptype'
  */
 @Component({
     selector: 'app-prefix-pool-form',
+    standalone: false,
     templateUrl: './prefix-pool-form.component.html',
     styleUrls: ['./prefix-pool-form.component.sass'],
 })

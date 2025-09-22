@@ -5,6 +5,7 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-host-data-source-label',
+    standalone: false,
     templateUrl: './host-data-source-label.component.html',
     styleUrls: ['./host-data-source-label.component.sass'],
 })

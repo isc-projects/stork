@@ -9,6 +9,7 @@ import { daemonNameToFriendlyName } from '../utils'
  */
 @Pipe({
     name: 'daemonNiceName',
+    standalone: false,
 })
 export class DaemonNiceNamePipe implements PipeTransform {
     /**

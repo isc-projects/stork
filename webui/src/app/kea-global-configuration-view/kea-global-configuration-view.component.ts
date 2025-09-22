@@ -10,6 +10,7 @@ import { DHCPOption } from '../backend'
  */
 @Component({
     selector: 'app-kea-global-configuration-view',
+    standalone: false,
     templateUrl: './kea-global-configuration-view.component.html',
     styleUrl: './kea-global-configuration-view.component.sass',
 })

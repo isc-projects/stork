@@ -3,6 +3,7 @@ import { datetimeToLocal, epochToLocal } from '../utils'
 
 @Pipe({
     name: 'localtime',
+    standalone: false,
 })
 export class LocaltimePipe implements PipeTransform {
     /**

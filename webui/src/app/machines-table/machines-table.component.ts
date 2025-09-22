@@ -15,6 +15,7 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
  */
 @Component({
     selector: 'app-machines-table',
+    standalone: false,
     templateUrl: './machines-table.component.html',
     styleUrl: './machines-table.component.sass',
 })

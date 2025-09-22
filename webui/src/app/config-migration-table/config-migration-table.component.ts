@@ -11,6 +11,7 @@ import { lastValueFrom } from 'rxjs'
  */
 @Component({
     selector: 'app-config-migration-table',
+    standalone: false,
     templateUrl: './config-migration-table.component.html',
     styleUrl: './config-migration-table.component.sass',
 })

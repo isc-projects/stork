@@ -6,6 +6,7 @@ import { Pool } from '../backend'
  */
 @Component({
     selector: 'app-address-pool-bar',
+    standalone: false,
     templateUrl: './address-pool-bar.component.html',
     styleUrls: ['./address-pool-bar.component.sass'],
 })

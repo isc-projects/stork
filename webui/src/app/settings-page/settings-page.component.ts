@@ -37,6 +37,7 @@ interface SettingsItem {
  */
 @Component({
     selector: 'app-settings-page',
+    standalone: false,
     templateUrl: './settings-page.component.html',
     styleUrls: ['./settings-page.component.sass'],
 })

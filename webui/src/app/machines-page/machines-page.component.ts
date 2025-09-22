@@ -25,6 +25,7 @@ import { TabViewComponent } from '../tab-view/tab-view.component'
  */
 @Component({
     selector: 'app-machines-page',
+    standalone: false,
     templateUrl: './machines-page.component.html',
     styleUrls: ['./machines-page.component.sass'],
 })

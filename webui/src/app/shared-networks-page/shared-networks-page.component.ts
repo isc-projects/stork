@@ -14,6 +14,7 @@ import { SharedNetworksTableComponent } from '../shared-networks-table/shared-ne
  */
 @Component({
     selector: 'app-shared-networks-page',
+    standalone: false,
     templateUrl: './shared-networks-page.component.html',
     styleUrls: ['./shared-networks-page.component.sass'],
 })

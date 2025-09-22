@@ -21,6 +21,7 @@ import { SelectableClientClass } from '../forms/selectable-client-class'
  */
 @Component({
     selector: 'app-shared-parameters-form',
+    standalone: false,
     templateUrl: './shared-parameters-form.component.html',
     styleUrls: ['./shared-parameters-form.component.sass'],
 })

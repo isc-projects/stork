@@ -81,6 +81,7 @@ export function isInternalUser(user: User) {
  */
 @Component({
     selector: 'app-users-page',
+    standalone: false,
     templateUrl: './users-page.component.html',
     styleUrls: ['./users-page.component.sass'],
 })

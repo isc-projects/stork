@@ -16,6 +16,7 @@ import { map } from 'rxjs/operators'
  */
 @Component({
     selector: 'app-version-status',
+    standalone: false,
     templateUrl: './version-status.component.html',
     styleUrl: './version-status.component.sass',
 })

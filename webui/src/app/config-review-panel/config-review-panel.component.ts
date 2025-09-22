@@ -29,6 +29,7 @@ import { ConfigReport, ConfigReview } from '../backend'
  */
 @Component({
     selector: 'app-config-review-panel',
+    standalone: false,
     templateUrl: './config-review-panel.component.html',
     styleUrls: ['./config-review-panel.component.sass'],
 })

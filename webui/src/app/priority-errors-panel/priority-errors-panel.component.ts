@@ -15,6 +15,7 @@ import { formatNoun, getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-priority-errors-panel',
+    standalone: false,
     templateUrl: './priority-errors-panel.component.html',
     styleUrls: ['./priority-errors-panel.component.sass'],
 })

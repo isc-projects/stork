@@ -10,6 +10,7 @@ import { AuthService } from '../auth.service'
  */
 @Component({
     selector: 'app-settings-menu',
+    standalone: false,
     templateUrl: './settings-menu.component.html',
     styleUrls: ['./settings-menu.component.sass'],
 })

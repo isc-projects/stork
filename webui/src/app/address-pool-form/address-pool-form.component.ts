@@ -12,6 +12,7 @@ import { getSeverityByIndex, getVersionRange } from '../utils'
  */
 @Component({
     selector: 'app-address-pool-form',
+    standalone: false,
     templateUrl: './address-pool-form.component.html',
     styleUrls: ['./address-pool-form.component.sass'],
 })

@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core'
 
 @Pipe({
     name: 'surround',
+    standalone: false,
 })
 export class SurroundPipe implements PipeTransform {
     /**

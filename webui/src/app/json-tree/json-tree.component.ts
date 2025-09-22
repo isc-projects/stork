@@ -27,6 +27,7 @@ interface PageChangedEvent {
  */
 @Component({
     selector: 'app-json-tree',
+    standalone: false,
     templateUrl: './json-tree.component.html',
     styleUrls: ['./json-tree.component.sass'],
 })

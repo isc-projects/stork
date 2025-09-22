@@ -17,6 +17,7 @@ import { IPType } from '../iptype'
  */
 @Component({
     selector: 'app-kea-global-configuration-form',
+    standalone: false,
     templateUrl: './kea-global-configuration-form.component.html',
     styleUrl: './kea-global-configuration-form.component.sass',
 })

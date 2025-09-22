@@ -3,6 +3,7 @@ import { humanCount } from '../utils'
 
 @Pipe({
     name: 'humanCount',
+    standalone: false,
 })
 export class HumanCountPipe implements PipeTransform {
     /**

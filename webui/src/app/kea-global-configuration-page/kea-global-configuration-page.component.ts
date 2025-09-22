@@ -13,6 +13,7 @@ import { DHCPOption } from '../backend'
  */
 @Component({
     selector: 'app-kea-global-configuration-page',
+    standalone: false,
     templateUrl: './kea-global-configuration-page.component.html',
     styleUrl: './kea-global-configuration-page.component.sass',
 })

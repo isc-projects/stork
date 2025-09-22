@@ -3,6 +3,7 @@ import { uncamelCase } from '../utils'
 
 @Pipe({
     name: 'uncamel',
+    standalone: false,
 })
 export class UncamelPipe implements PipeTransform {
     /**

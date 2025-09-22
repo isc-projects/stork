@@ -18,6 +18,7 @@ import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 @Component({
     selector: 'app-subnets-table',
+    standalone: false,
     templateUrl: './subnets-table.component.html',
     styleUrl: './subnets-table.component.sass',
 })

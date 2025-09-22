@@ -8,6 +8,7 @@ import { getErrorMessage } from '../utils'
 
 @Component({
     selector: 'app-shared-network-tab',
+    standalone: false,
     templateUrl: './shared-network-tab.component.html',
     styleUrls: ['./shared-network-tab.component.sass'],
 })

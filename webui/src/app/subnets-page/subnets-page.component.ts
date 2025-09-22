@@ -16,6 +16,7 @@ import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
  */
 @Component({
     selector: 'app-subnets-page',
+    standalone: false,
     templateUrl: './subnets-page.component.html',
     styleUrls: ['./subnets-page.component.sass'],
 })

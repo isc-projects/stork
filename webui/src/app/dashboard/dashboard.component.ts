@@ -81,6 +81,7 @@ type DhcpOverviewParsed = ModifyDeep<
  */
 @Component({
     selector: 'app-dashboard',
+    standalone: false,
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.sass'],
 })

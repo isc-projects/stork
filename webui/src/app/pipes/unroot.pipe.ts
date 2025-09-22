@@ -3,6 +3,7 @@ import { unrootZone } from '../utils'
 
 @Pipe({
     name: 'unroot',
+    standalone: false,
 })
 export class UnrootPipe implements PipeTransform {
     /**

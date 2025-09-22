@@ -11,6 +11,7 @@ import { getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-zone-viewer-feeder',
+    standalone: false,
     templateUrl: './zone-viewer-feeder.component.html',
     styleUrl: './zone-viewer-feeder.component.sass',
 })

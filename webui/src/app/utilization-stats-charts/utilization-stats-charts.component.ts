@@ -13,6 +13,7 @@ import { IPType } from '../iptype'
  */
 @Component({
     selector: 'app-utilization-stats-charts',
+    standalone: false,
     templateUrl: './utilization-stats-charts.component.html',
     styleUrls: ['./utilization-stats-charts.component.sass'],
 })

@@ -15,6 +15,7 @@ import { ServerSentEventsService } from '../server-sent-events.service'
  */
 @Component({
     selector: 'app-events-panel',
+    standalone: false,
     templateUrl: './events-panel.component.html',
     styleUrls: ['./events-panel.component.sass'],
     providers: [ConfirmationService],

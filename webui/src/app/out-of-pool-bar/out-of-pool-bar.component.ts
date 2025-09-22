@@ -6,6 +6,7 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-out-of-pool-bar',
+    standalone: false,
     templateUrl: './out-of-pool-bar.component.html',
     styleUrl: './out-of-pool-bar.component.sass',
 })

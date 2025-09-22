@@ -8,6 +8,7 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-parameter-view',
+    standalone: false,
     templateUrl: './parameter-view.component.html',
     styleUrl: './parameter-view.component.sass',
 })

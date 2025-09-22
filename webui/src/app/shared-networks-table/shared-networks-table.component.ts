@@ -21,6 +21,7 @@ import { getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-shared-networks-table',
+    standalone: false,
     templateUrl: './shared-networks-table.component.html',
     styleUrl: './shared-networks-table.component.sass',
 })

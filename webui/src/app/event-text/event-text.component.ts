@@ -8,6 +8,7 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-event-text',
+    standalone: false,
     templateUrl: './event-text.component.html',
     styleUrls: ['./event-text.component.sass'],
 })

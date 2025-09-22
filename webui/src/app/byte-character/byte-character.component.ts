@@ -13,6 +13,7 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-byte-character',
+    standalone: false,
     templateUrl: './byte-character.component.html',
     styleUrl: './byte-character.component.sass',
 })

@@ -49,6 +49,7 @@ interface LeaseInfo {
  */
 @Component({
     selector: 'app-host-tab',
+    standalone: false,
     templateUrl: './host-tab.component.html',
     styleUrls: ['./host-tab.component.sass'],
 })

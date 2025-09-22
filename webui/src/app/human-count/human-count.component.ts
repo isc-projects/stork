@@ -9,6 +9,7 @@ type ValueType = number | string | bigint | null
  */
 @Component({
     selector: 'app-human-count',
+    standalone: false,
     templateUrl: './human-count.component.html',
     styleUrls: ['./human-count.component.sass'],
 })

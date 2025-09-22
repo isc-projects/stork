@@ -16,6 +16,7 @@ import { getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-log-view-page',
+    standalone: false,
     templateUrl: './log-view-page.component.html',
     styleUrls: ['./log-view-page.component.sass'],
 })

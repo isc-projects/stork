@@ -14,6 +14,7 @@ import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
  */
 @Component({
     selector: 'app-dhcp-client-class-set-form',
+    standalone: false,
     templateUrl: './dhcp-client-class-set-form.component.html',
     styleUrls: ['./dhcp-client-class-set-form.component.sass'],
 })

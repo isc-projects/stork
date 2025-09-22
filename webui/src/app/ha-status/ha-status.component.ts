@@ -55,6 +55,7 @@ type RelationshipNodeCellFunction = (serverStatus: KeaHAServerStatus) => Relatio
  */
 @Component({
     selector: 'app-ha-status',
+    standalone: false,
     templateUrl: './ha-status.component.html',
     styleUrls: ['./ha-status.component.sass'],
 })

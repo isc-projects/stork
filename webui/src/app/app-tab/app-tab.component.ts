@@ -25,6 +25,7 @@ type DaemonInfo = Bind9Daemon & {
 
 @Component({
     selector: 'app-app-tab',
+    standalone: false,
     templateUrl: './app-tab.component.html',
     styleUrls: ['./app-tab.component.sass'],
 })

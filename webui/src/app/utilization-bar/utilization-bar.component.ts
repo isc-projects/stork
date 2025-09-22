@@ -15,6 +15,7 @@ import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
  */
 @Component({
     selector: 'app-utilization-bar',
+    standalone: false,
     templateUrl: './utilization-bar.component.html',
     styleUrl: './utilization-bar.component.sass',
 })

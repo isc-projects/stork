@@ -42,6 +42,7 @@ interface ExtendedLocalZone extends LocalZone {
 
 @Component({
     selector: 'app-zones-page',
+    standalone: false,
     templateUrl: './zones-page.component.html',
     styleUrl: './zones-page.component.sass',
 })

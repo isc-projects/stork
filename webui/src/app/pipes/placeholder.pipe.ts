@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core'
 
 @Pipe({
     name: 'placeholder',
+    standalone: false,
 })
 export class PlaceholderPipe implements PipeTransform {
     /**

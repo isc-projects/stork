@@ -5,6 +5,7 @@ import { Pipe, PipeTransform } from '@angular/core'
  */
 @Pipe({
     name: 'positive',
+    standalone: false,
 })
 export class PositivePipe implements PipeTransform {
     /**

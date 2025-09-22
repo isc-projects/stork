@@ -174,6 +174,7 @@ export interface MappedHostBeginData {
  */
 @Component({
     selector: 'app-host-form',
+    standalone: false,
     templateUrl: './host-form.component.html',
     styleUrls: ['./host-form.component.sass'],
 })

@@ -12,6 +12,7 @@ import { lastValueFrom } from 'rxjs'
  */
 @Component({
     selector: 'app-subnet-tab',
+    standalone: false,
     templateUrl: './subnet-tab.component.html',
     styleUrls: ['./subnet-tab.component.sass'],
 })

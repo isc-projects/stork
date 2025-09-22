@@ -18,6 +18,7 @@ import { StorkValidators } from '../validators'
 
 @Component({
     selector: 'app-shared-network-form',
+    standalone: false,
     templateUrl: './shared-network-form.component.html',
     styleUrl: './shared-network-form.component.sass',
 })

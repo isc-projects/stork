@@ -41,6 +41,7 @@ export interface OptionFieldNode {
  */
 @Component({
     selector: 'app-dhcp-option-set-view',
+    standalone: false,
     templateUrl: './dhcp-option-set-view.component.html',
     styleUrls: ['./dhcp-option-set-view.component.sass'],
 })

@@ -25,6 +25,7 @@ import { lastValueFrom } from 'rxjs'
  */
 @Component({
     selector: 'app-login-screen',
+    standalone: false,
     templateUrl: './login-screen.component.html',
     styleUrls: ['./login-screen.component.sass'],
 })

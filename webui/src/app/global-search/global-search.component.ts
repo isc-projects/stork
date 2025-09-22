@@ -12,6 +12,7 @@ const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', '
  */
 @Component({
     selector: 'app-global-search',
+    standalone: false,
     templateUrl: './global-search.component.html',
     styleUrls: ['./global-search.component.sass'],
 })

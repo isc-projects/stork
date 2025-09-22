@@ -11,6 +11,7 @@ import { ZoneRR } from '../backend/model/zoneRR'
  */
 @Component({
     selector: 'app-zone-viewer',
+    standalone: false,
     templateUrl: './zone-viewer.component.html',
     styleUrl: './zone-viewer.component.sass',
 })

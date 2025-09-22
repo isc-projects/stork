@@ -16,6 +16,7 @@ import { getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-config-checker-preference-updater',
+    standalone: false,
     templateUrl: './config-checker-preference-updater.component.html',
     styleUrls: ['./config-checker-preference-updater.component.sass'],
 })

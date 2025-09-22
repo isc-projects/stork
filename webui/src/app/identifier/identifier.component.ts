@@ -27,6 +27,7 @@ import { Component, Input, OnInit } from '@angular/core'
  */
 @Component({
     selector: 'app-identifier',
+    standalone: false,
     templateUrl: './identifier.component.html',
     styleUrls: ['./identifier.component.sass'],
 })

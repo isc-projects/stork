@@ -16,6 +16,7 @@ import { KeaDaemonConfig } from '../backend'
  */
 @Component({
     selector: 'app-kea-daemon-configuration-page',
+    standalone: false,
     templateUrl: './kea-daemon-configuration-page.component.html',
     styleUrls: ['./kea-daemon-configuration-page.component.sass'],
 })

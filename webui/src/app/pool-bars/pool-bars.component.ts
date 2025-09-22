@@ -9,6 +9,7 @@ import { SharedNetworkWithUniquePools, SubnetWithUniquePools } from '../subnets'
  */
 @Component({
     selector: 'app-pool-bars',
+    standalone: false,
     templateUrl: './pool-bars.component.html',
     styleUrl: './pool-bars.component.sass',
 })

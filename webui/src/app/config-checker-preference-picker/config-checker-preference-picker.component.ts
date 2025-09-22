@@ -12,6 +12,7 @@ import { ConfigChecker, ConfigCheckerPreference } from '../backend'
  */
 @Component({
     selector: 'app-config-checker-preference-picker',
+    standalone: false,
     templateUrl: './config-checker-preference-picker.component.html',
     styleUrls: ['./config-checker-preference-picker.component.sass'],
 })

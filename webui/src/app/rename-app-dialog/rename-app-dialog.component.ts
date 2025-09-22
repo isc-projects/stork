@@ -15,6 +15,7 @@ import { Component, OnInit, Input, OnChanges, SimpleChanges, Output, EventEmitte
  */
 @Component({
     selector: 'app-rename-app-dialog',
+    standalone: false,
     templateUrl: './rename-app-dialog.component.html',
     styleUrls: ['./rename-app-dialog.component.sass'],
 })

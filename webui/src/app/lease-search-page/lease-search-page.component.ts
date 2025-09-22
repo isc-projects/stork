@@ -39,6 +39,7 @@ enum LeasesSearchStatus {
  */
 @Component({
     selector: 'app-lease-search-page',
+    standalone: false,
     templateUrl: './lease-search-page.component.html',
     styleUrls: ['./lease-search-page.component.sass'],
 })

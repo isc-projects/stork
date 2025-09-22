@@ -10,6 +10,7 @@ import { Popover } from 'primeng/popover'
  */
 @Component({
     selector: 'app-help-tip',
+    standalone: false,
     templateUrl: './help-tip.component.html',
     styleUrls: ['./help-tip.component.sass'],
 })

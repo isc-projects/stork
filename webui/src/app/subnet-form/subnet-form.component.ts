@@ -24,6 +24,7 @@ import { lastValueFrom } from 'rxjs'
  */
 @Component({
     selector: 'app-subnet-form',
+    standalone: false,
     templateUrl: './subnet-form.component.html',
     styleUrls: ['./subnet-form.component.sass'],
 })

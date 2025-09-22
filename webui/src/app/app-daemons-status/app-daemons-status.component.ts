@@ -5,6 +5,7 @@ import { App } from '../backend'
 
 @Component({
     selector: 'app-app-daemons-status',
+    standalone: false,
     templateUrl: './app-daemons-status.component.html',
     styleUrls: ['./app-daemons-status.component.sass'],
 })

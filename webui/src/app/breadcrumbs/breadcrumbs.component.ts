@@ -4,6 +4,7 @@ import { MenuItem } from 'primeng/api'
 
 @Component({
     selector: 'app-breadcrumbs',
+    standalone: false,
     templateUrl: './breadcrumbs.component.html',
     styleUrls: ['./breadcrumbs.component.sass'],
 })

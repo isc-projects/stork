@@ -21,6 +21,7 @@ import { KeaDaemon, ModelFile } from '../backend'
 
 @Component({
     selector: 'app-kea-app-tab',
+    standalone: false,
     templateUrl: './kea-app-tab.component.html',
     styleUrls: ['./kea-app-tab.component.sass'],
 })

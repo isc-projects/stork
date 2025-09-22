@@ -33,6 +33,7 @@ type AddFieldFn = () => void
  */
 @Component({
     selector: 'app-dhcp-option-form',
+    standalone: false,
     templateUrl: './dhcp-option-form.component.html',
     styleUrls: ['./dhcp-option-form.component.sass'],
 })

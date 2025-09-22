@@ -8,6 +8,7 @@ import { AuthService } from '../auth.service'
  */
 @Component({
     selector: 'app-json-tree-root',
+    standalone: false,
     templateUrl: './json-tree-root.component.html',
     styleUrls: [],
 })

@@ -5,6 +5,7 @@ import { Pipe, PipeTransform } from '@angular/core'
  */
 @Pipe({
     name: 'localNumber',
+    standalone: false,
 })
 export class LocalNumberPipe implements PipeTransform {
     /**

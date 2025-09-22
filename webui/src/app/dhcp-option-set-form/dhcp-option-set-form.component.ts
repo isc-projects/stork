@@ -10,6 +10,7 @@ import { UntypedFormArray, UntypedFormBuilder } from '@angular/forms'
  */
 @Component({
     selector: 'app-dhcp-option-set-form',
+    standalone: false,
     templateUrl: './dhcp-option-set-form.component.html',
     styleUrls: ['./dhcp-option-set-form.component.sass'],
 })

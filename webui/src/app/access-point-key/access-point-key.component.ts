@@ -6,6 +6,7 @@ import { ServicesService } from '../backend'
  */
 @Component({
     selector: 'app-access-point-key',
+    standalone: false,
     templateUrl: './access-point-key.component.html',
     styleUrls: ['./access-point-key.component.sass'],
 })

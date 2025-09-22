@@ -16,6 +16,7 @@ import { MessageService } from 'primeng/api'
  */
 @Component({
     selector: 'app-version-page',
+    standalone: false,
     templateUrl: './version-page.component.html',
     styleUrl: './version-page.component.sass',
 })

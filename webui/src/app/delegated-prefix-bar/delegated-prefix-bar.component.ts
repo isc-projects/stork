@@ -9,6 +9,7 @@ import { formatShortExcludedPrefix } from '../utils'
  */
 @Component({
     selector: 'app-delegated-prefix-bar',
+    standalone: false,
     templateUrl: './delegated-prefix-bar.component.html',
     styleUrls: ['./delegated-prefix-bar.component.sass'],
 })

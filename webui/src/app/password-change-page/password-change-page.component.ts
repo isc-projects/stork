@@ -14,6 +14,7 @@ import { ActivatedRoute, Router } from '@angular/router'
  */
 @Component({
     selector: 'app-settings-page',
+    standalone: false,
     templateUrl: './password-change-page.component.html',
     styleUrls: ['./password-change-page.component.sass'],
 })

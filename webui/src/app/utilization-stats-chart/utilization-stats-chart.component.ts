@@ -17,6 +17,7 @@ import {} from 'chart.js'
  */
 @Component({
     selector: 'app-utilization-stats-chart',
+    standalone: false,
     templateUrl: './utilization-stats-chart.component.html',
     styleUrls: ['./utilization-stats-chart.component.sass'],
 })

@@ -68,6 +68,7 @@ export interface NamedCascadedParameters<T> {
  */
 @Component({
     selector: 'app-cascaded-parameters-board',
+    standalone: false,
     templateUrl: './cascaded-parameters-board.component.html',
     styleUrls: ['./cascaded-parameters-board.component.sass'],
 })

@@ -9,6 +9,7 @@ import { Subscription } from 'rxjs'
  */
 @Component({
     selector: 'app-profile-page',
+    standalone: false,
     templateUrl: './profile-page.component.html',
     styleUrls: ['./profile-page.component.sass'],
 })

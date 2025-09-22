@@ -12,6 +12,7 @@ import { daemonNameToFriendlyName } from '../utils'
  */
 @Component({
     selector: 'app-entity-link',
+    standalone: false,
     templateUrl: './entity-link.component.html',
     styleUrls: ['./entity-link.component.sass'],
 })

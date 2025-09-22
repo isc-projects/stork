@@ -48,6 +48,7 @@ function setDaemonStatusErred(app) {
 
 @Component({
     selector: 'app-apps-page',
+    standalone: false,
     templateUrl: './apps-page.component.html',
     styleUrls: ['./apps-page.component.sass'],
 })

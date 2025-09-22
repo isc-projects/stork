@@ -6,6 +6,7 @@ import { Component } from '@angular/core'
  */
 @Component({
     selector: 'app-config-checker-preference-page',
+    standalone: false,
     templateUrl: './config-checker-preference-page.component.html',
     styleUrls: ['./config-checker-preference-page.component.sass'],
 })

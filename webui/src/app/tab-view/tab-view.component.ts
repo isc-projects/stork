@@ -16,7 +16,6 @@ import { ActivatedRoute, EventType, ParamMap, Params, Router, RouterLink } from 
 import { inject, input } from '@angular/core'
 import { of, Subscription } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { TimesIcon } from 'primeng/icons'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { getErrorMessage } from '../utils'
 import { parseBoolean, tableFiltersToQueryParams, tableHasFilter } from '../table'
@@ -92,7 +91,7 @@ function sanitizePath(value: string | undefined): string | undefined {
 @Component({
     selector: 'app-tab-view',
     standalone: true,
-    imports: [Tabs, TabList, Tab, TabPanels, TabPanel, RouterLink, TimesIcon, NgTemplateOutlet, NgClass, Button],
+    imports: [Tabs, TabList, Tab, TabPanels, TabPanel, RouterLink, NgTemplateOutlet, NgClass, Button],
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',
 })
