@@ -53,34 +53,30 @@
         </div>
     </div>
     <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()">
-        <p-messages severity="warn">
-            <ng-template pTemplate>
-                <p>
-                    The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations affect
-                    only the configurations stored in the host database (<app-host-data-source-label
-                        dataSource="api"
-                    ></app-host-data-source-label
-                    >).
-                </p>
-            </ng-template>
-        </p-messages>
+        <p-message severity="warn">
+            <p>
+                The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations affect only
+                the configurations stored in the host database (<app-host-data-source-label
+                    dataSource="api"
+                ></app-host-data-source-label
+                >).
+            </p>
+        </p-message>
     </div>
     <div *ngIf="erredApps && erredApps.length > 0">
-        <p-messages id="erred-apps-message" [closable]="false" severity="warn">
-            <ng-template pTemplate>
-                <div>
-                    Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
-                    error in response to the control commands. The reservation usage status may not take into account
-                    all matching leases because some of them may reside on the servers, which returned an error. Issues
-                    were found for the following Kea servers:
-                    <ul style="list-style-type: disc">
-                        <li *ngFor="let erredApp of erredApps">
-                            <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
-                        </li>
-                    </ul>
-                </div>
-            </ng-template>
-        </p-messages>
+        <p-message id="erred-apps-message" severity="warn">
+            <div>
+                Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
+                error in response to the control commands. The reservation usage status may not take into account all
+                matching leases because some of them may reside on the servers, which returned an error. Issues were
+                found for the following Kea servers:
+                <ul style="list-style-type: disc">
+                    <li *ngFor="let erredApp of erredApps">
+                        <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                    </li>
+                </ul>
+            </div>
+        </p-message>
     </div>
     <div>
         <div class="my-4">

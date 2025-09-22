@@ -89,8 +89,36 @@
       max-width: var(--max-form-width)
 
   // Reapply confirmation dialog icon size rule, so it has higher priority than usually smaller 1rem icon.
+  // TODO: check why this is needed, @layer issue in primeNG or?
   .p-confirmdialog-icon
     font-size: var(--p-confirmdialog-icon-size)
+
+  // Reapply message icon style rule, so it has higher priority than usually smaller 1rem icon.
+  .p-message-icon
+    font-size: var(--p-message-icon-size)
+    width: var(--p-message-icon-size)
+    height: var(--p-message-icon-size)
+    margin-right: 0.5rem
+
+  // Apply by default small vertical margin for PrimeNG Message component.
+  .p-message
+    margin-bottom: 0.5rem
+    margin-top: 0.5rem
+
+  // Custom style of PrimeNG message component.
+  // When two text spans are injected to the component (first using "text" input; second using <ng-content></ng-content>),
+  // make the first span bold to act as a message summary.
+  .custom-message
+    .p-message-content
+      span:nth-of-type(1)
+        font-weight: 700
+    &.wrap-message
+      // Custom wrapped message. Make the icon and summary (provided via "text" input) appear in the first line of the component.
+      // Text content of the message (provided via <ng-content></ng-content>) will appear in the second line.
+      .p-message-content
+        flex-wrap: wrap
+        span:nth-of-type(1)
+          flex: 1 1 90%
 
   // Limit maximum width for the confirmation dialog message.
   .p-confirmdialog-message

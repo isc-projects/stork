@@ -126,7 +126,7 @@
             label="Save Settings"
             id="save-settings-button"
             (click)="saveSettings()"
-            class="mt-2 ml-1"
+            styleClass="mt-2 ml-1"
             appAccessEntity="stork-settings"
             appAccessType="update"
             (appHasAccess)="$event === true ? settingsForm.enable() : settingsForm.disable()"

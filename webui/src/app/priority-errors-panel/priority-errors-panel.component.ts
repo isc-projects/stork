@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, signal } from '@angular/core'
 import { ServicesService } from '../backend'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { EventStream, ServerSentEventsService } from '../server-sent-events.service'
@@ -89,6 +89,16 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Keeps track of numer of connectivity issues.
+     */
+    connectivityIssuesCount = signal<number>(0)
+
+    /**
+     * Keeps track of number of registration issues.
+     */
+    registrationIssuesCount = signal<number>(0)
+
+    /**
      * Inserts new message under the specified key.
      *
      * If the message with this key (stream name) already exists, it is
@@ -145,16 +155,15 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
             try {
                 const data = await lastValueFrom(this.servicesApi.getAppsWithCommunicationIssues())
                 if (data.total > 0) {
+                    this.connectivityIssuesCount.set(data.total)
                     const message: ToastMessageOptions = {
                         key: EventStream.Connectivity,
                         severity: 'warn',
                         summary: 'Communication issues',
-                        detail:
-                            `Stork server reports communication problems for ${formatNoun(data.total, 'app', 's')} ` +
-                            `on the monitored machines. You can check the details <a href="/communication">here</a>.`,
                     }
                     this.insertMessage(EventStream.Connectivity, message)
                 } else {
+                    this.connectivityIssuesCount.set(0)
                     this.deleteMessage(EventStream.Connectivity)
                 }
             } catch (err) {
@@ -189,16 +198,15 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
             try {
                 const count = await lastValueFrom(this.servicesApi.getUnauthorizedMachinesCount())
                 if (count > 0) {
+                    this.registrationIssuesCount.set(count)
                     const message: ToastMessageOptions = {
                         key: EventStream.Registration,
                         severity: 'warn',
                         summary: 'Unregistered machines',
-                        detail:
-                            `Found ${formatNoun(count, 'machine', 's')} requesting registration and awaiting approval. ` +
-                            `Visit the list of <a href="/machines/all?authorized=false">unauthorized machines</a> to review the requests.`,
                     }
                     this.insertMessage(EventStream.Registration, message)
                 } else {
+                    this.registrationIssuesCount.set(0)
                     this.deleteMessage(EventStream.Registration)
                 }
             } catch (err) {
@@ -333,4 +341,16 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
             callback()
         }
     }
+
+    /**
+     * Reference to the enum so it can be used in html template.
+     * @protected
+     */
+    protected readonly EventStream = EventStream
+
+    /**
+     * Reference to the function so it can be used in html template.
+     * @protected
+     */
+    protected readonly formatNoun = formatNoun
 }

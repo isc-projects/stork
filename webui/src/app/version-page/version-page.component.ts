@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { AppType, Severity, UpdateNotification, VersionService } from '../version.service'
 import { App as BackendApp, AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
-import { deepCopy, getErrorMessage } from '../utils'
+import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
@@ -336,4 +336,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
 
         return daemons.join(', ')
     }
+
+    /**
+     * Reference to the function so it can be used in the html template.
+     * @protected
+     */
+    protected readonly getIconBySeverity = getIconBySeverity
 }

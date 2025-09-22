@@ -85,21 +85,19 @@
     }}</span>
 </div>
 <div *ngIf="erredApps && erredApps.length > 0" class="max-w-40rem mt-2">
-    <p-messages id="erred-apps-message" [closable]="false" severity="warn">
-        <ng-template pTemplate>
-            <div>
-                Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
-                error in response to the control commands. The results presented in the table below may not include all
-                leases matching the query because some matching leases may reside on a server that returned an error.
-                Issues were found for the following Kea servers:
-                <ul style="list-style-type: disc">
-                    <li *ngFor="let erredApp of erredApps">
-                        <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
-                    </li>
-                </ul>
-            </div>
-        </ng-template>
-    </p-messages>
+    <p-message id="erred-apps-message" severity="warn">
+        <div>
+            Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an error
+            in response to the control commands. The results presented in the table below may not include all leases
+            matching the query because some matching leases may reside on a server that returned an error. Issues were
+            found for the following Kea servers:
+            <ul style="list-style-type: disc">
+                <li *ngFor="let erredApp of erredApps">
+                    <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                </li>
+            </ul>
+        </div>
+    </p-message>
 </div>
 <p-table id="leases-table" [value]="leases" dataKey="id" styleClass="mt-3 max-width-100vw">
     <ng-template #header>

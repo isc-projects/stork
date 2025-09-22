@@ -21,7 +21,6 @@ import { SelectModule } from 'primeng/select'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { MessageModule } from 'primeng/message'
-import { MessagesModule } from 'primeng/messages'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
 import { ChipModule } from 'primeng/chip'
@@ -360,7 +359,6 @@ const AuraBluePreset = definePreset(Aura, {
         SelectModule,
         ToastModule,
         MessageModule,
-        MessagesModule,
         TabMenuModule,
         MenuModule,
         ProgressSpinnerModule,

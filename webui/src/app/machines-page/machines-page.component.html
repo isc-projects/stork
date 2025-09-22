@@ -149,16 +149,17 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </div>
 
-        <p-messages *ngIf="showAuthorized() === false && registrationDisabled" severity="warn">
-            <ng-template pTemplate>
-                <span class="pi pi-exclamation-triangle"></span>
-                <div class="ml-2">
-                    Registration of new machines is disabled. Navigate to the
-                    <a routerLink="/settings" class="font-semibold">Settings</a>
-                    page to enable registration, if you expect new machines on the list below.
-                </div>
-            </ng-template>
-        </p-messages>
+        <p-message
+            icon="pi pi-exclamation-triangle"
+            *ngIf="showAuthorized() === false && registrationDisabled"
+            severity="warn"
+        >
+            <div>
+                Registration of new machines is disabled. Navigate to the
+                <a routerLink="/settings" class="font-semibold">Settings</a>
+                page to enable registration, if you expect new machines on the list below.
+            </div>
+        </p-message>
         <app-machines-table
             #machinesTable
             [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"

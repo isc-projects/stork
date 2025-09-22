@@ -109,11 +109,9 @@
             assets/static-page-content/login-screen-welcome.html
         -->
         <div *ngIf="welcomeMessage" class="login-screen__welcome">
-            <p-messages severity="warn">
-                <ng-template pTemplate>
-                    <div [innerHTML]="welcomeMessage"></div>
-                </ng-template>
-            </p-messages>
+            <p-message severity="warn">
+                <div [innerHTML]="welcomeMessage"></div>
+            </p-message>
         </div>
 
         <div class="login-screen__footer">Copyright 2019-2025 by ISC. All Rights Reserved.</div>

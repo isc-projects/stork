@@ -43,22 +43,20 @@
 </ng-template>
 <ng-template #showInitError>
     <p-fieldset legend="Errors" styleClass="mt-4">
-        <p-messages severity="error">
-            <ng-template pTemplate>
-                <div class="flex flex-column">
-                    <div class="flex align-items-center m-4">
-                        In order to apply configuration changes, the server should begin a transaction between the user
-                        and the server. The server should also return the current data required, in the form where the
-                        subnet information is specified. Unfortunately, starting the new transaction failed with the
-                        following error:
-                    </div>
-                    <div class="flex align-items-center m-4 font-italic">
-                        {{ initError }}
-                    </div>
-                    <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+        <p-message severity="error">
+            <div class="flex flex-column">
+                <div class="flex align-items-center m-4">
+                    In order to apply configuration changes, the server should begin a transaction between the user and
+                    the server. The server should also return the current data required, in the form where the subnet
+                    information is specified. Unfortunately, starting the new transaction failed with the following
+                    error:
                 </div>
-            </ng-template>
-        </p-messages>
+                <div class="flex align-items-center m-4 font-italic">
+                    {{ initError }}
+                </div>
+                <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+            </div>
+        </p-message>
         <div class="mt-3">
             <p-button label="Retry" (onClick)="onRetry()"></p-button>
         </div>

@@ -2,6 +2,7 @@ import moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { gt, lt, valid } from 'semver'
 import { Bind9Daemon, KeaDaemon, PdnsDaemon } from './backend'
+import { Severity } from './version.service'
 
 /**
  * Formats the date-like object as local date-time string.
@@ -756,4 +757,23 @@ export function unrootZone(value: string | null | undefined): string {
         return '(root)'
     }
     return value
+}
+
+/**
+ * Returns message icon matching the severity.
+ * @param severity message severity
+ */
+export function getIconBySeverity(severity: Severity): string {
+    switch (severity) {
+        case Severity.success:
+            return 'pi pi-check'
+        case Severity.warn:
+            return 'pi pi-exclamation-triangle'
+        case Severity.info:
+            return 'pi pi-info-circle'
+        case Severity.error:
+            return 'pi pi-times-circle'
+        case Severity.secondary:
+            return 'pi pi-info-circle'
+    }
 }

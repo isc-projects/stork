@@ -80,48 +80,42 @@
 <div>
     <div class="flex flex-wrap gap-2 justify-content-between mb-3">
         <div class="max-w-50rem header-message">
-            <p-messages
+            <p-message
                 styleClass="mb-2"
                 *ngIf="showAlert$ | async"
-                [escape]="false"
-                [enableService]="false"
+                [closable]="true"
                 (onClose)="dismissAlert()"
-                [value]="[
-                    {
-                        summary: 'Action required',
-                        severity: 'warn',
-                        detail: 'Stork has detected an ISC software version in use that requires your attention. Please review the Summary table below.',
-                    },
-                ]"
-            ></p-messages>
-            <p-messages
+                text="Action required"
+                severity="warn"
+                [icon]="getIconBySeverity(Severity.warn)"
+                class="custom-message"
+            >
+                Stork has detected an ISC software version in use that requires your attention. Please review the
+                Summary table below.
+            </p-message>
+            <p-message
                 styleClass="mb-2"
                 *ngIf="isOfflineData$ | async"
-                [escape]="false"
-                [enableService]="false"
-                [value]="[
-                    {
-                        summary: 'Note',
-                        severity: 'info',
-                        detail:
-                            'The information below about ISC software versions relies on an offline built-in JSON file that was generated on ' +
-                            (dataDate$ | async) +
-                            '. To see up-to-date information, please visit the <a target=\'_blank\' href=\'https:\/\/www.isc.org\/download\/\'>ISC website</a>.',
-                    },
-                ]"
-            ></p-messages>
-            <p-messages
+                [closable]="true"
+                text="Note"
+                severity="info"
+                [icon]="getIconBySeverity(Severity.info)"
+                class="custom-message"
+            >
+                The information below about ISC software versions relies on an offline built-in JSON file that was
+                generated on {{ dataDate$ | async }}. To see up-to-date information, please visit the
+                <a target="_blank" href="https://www.isc.org/download/">ISC website</a>
+            </p-message>
+            <p-message
                 styleClass="mb-2"
                 *ngIf="errorOccurred"
-                [value]="[
-                    {
-                        summary: 'Error while fetching data!',
-                        severity: 'error',
-                        detail: 'An error occurred while retrieving software version data from the Stork server!',
-                    },
-                ]"
-                [enableService]="false"
-            ></p-messages>
+                [closable]="true"
+                severity="error"
+                text="Error while fetching data!"
+                [icon]="getIconBySeverity(Severity.error)"
+                class="custom-message"
+                >An error occurred while retrieving software version data from the Stork server!</p-message
+            >
         </div>
         <p-button
             *ngIf="!errorOccurred"
@@ -134,26 +128,21 @@
     </div>
     <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
     <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
-        <p-messages
+        <p-message
             *ngIf="(storkServerUpdateAvailable$ | async).available === true"
             styleClass="mb-2 inline-block"
-            [escape]="false"
-            [enableService]="false"
-            [closable]="false"
-            [value]="[
-                {
-                    summary: 'Stork server update available!',
-                    severity:
-                        (storkServerUpdateAvailable$ | async).feedback?.severity === Severity.error ? 'error' : 'warn',
-                    detail:
-                        (storkServerUpdateAvailable$ | async)?.feedback?.messages?.[0] ||
-                        'A Stork server version update is available.',
-                },
-            ]"
-        ></p-messages>
+            class="custom-message"
+            [severity]="(storkServerUpdateAvailable$ | async).feedback?.severity === Severity.error ? 'error' : 'warn'"
+            [icon]="getIconBySeverity((storkServerUpdateAvailable$ | async).feedback?.severity ?? Severity.warn)"
+            text="Stork server update available!"
+            >{{
+                (storkServerUpdateAvailable$ | async)?.feedback?.messages?.[0] ||
+                    'A Stork server version update is available.'
+            }}</p-message
+        >
         <p-table
             [value]="machines"
-            styleClass="p-datatable-striped"
+            [stripedRows]="true"
             responsiveLayout="stack"
             [breakpoint]="'48rem'"
             id="summary-table"
@@ -189,24 +178,18 @@
                             <p-badge
                                 [value]="counters[m.versionCheckSeverity]"
                                 [severity]="
-                                    m.versionCheckSeverity === Severity.warn
-                                        ? 'warning'
-                                        : m.versionCheckSeverity === Severity.error
-                                          ? 'danger'
-                                          : Severity[m.versionCheckSeverity]
+                                    m.versionCheckSeverity === Severity.error
+                                        ? 'danger'
+                                        : Severity[m.versionCheckSeverity]
                                 "
                                 styleClass="flex-none mr-2"
                             ></p-badge>
-                            <p-messages
-                                [value]="[
-                                    {
-                                        severity: Severity[m.versionCheckSeverity],
-                                        summary: getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async),
-                                    },
-                                ]"
-                                [closable]="false"
-                                [enableService]="false"
-                            ></p-messages>
+                            <p-message
+                                [severity]="Severity[m.versionCheckSeverity]"
+                                [icon]="getIconBySeverity(m.versionCheckSeverity)"
+                                [text]="getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async)"
+                                class="custom-message"
+                            ></p-message>
                         </div>
                     </td>
                 </tr>
@@ -214,45 +197,37 @@
             <ng-template #expandedrow let-m>
                 <tr>
                     <td>
-                        <span class="p-column-title">Hostname</span>
+                        <span class="p-datatable-column-title">Hostname</span>
                         <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
                     </td>
-                    <td><span class="p-column-title">Location</span>{{ m.address }}:{{ m.agentPort }}</td>
+                    <td><span class="p-datatable-column-title">Location</span>{{ m.address }}:{{ m.agentPort }}</td>
                     <td>
-                        <span class="p-column-title">Agent Version</span>
+                        <span class="p-datatable-column-title">Agent Version</span>
                         {{ m.agentVersion }}
                     </td>
                     <td>
-                        <span class="p-column-title">App(s) Version</span>
+                        <span class="p-datatable-column-title">App(s) Version</span>
                         <ng-container *ngFor="let a of m.apps; let i = index"
                             ><br *ngIf="i > 0" />{{ a.type === 'bind9' ? '' : (a.type | titlecase) }}
                             {{ a.version }}</ng-container
                         >
                     </td>
                     <td>
-                        <span class="p-column-title">Summary</span>
+                        <span class="p-datatable-column-title">Summary</span>
                         <ng-container *ngFor="let a of m.apps">
                             <ng-container *ngIf="a.mismatchingDaemons">
-                                <p-messages
-                                    [value]="[
-                                        {
-                                            summary: 'Kea daemons version mismatch!',
-                                            severity: 'error',
-                                            detail:
-                                                'The Kea <a href=\'/apps/' +
-                                                a.id +
-                                                '\'>' +
-                                                a.name +
-                                                '</a> daemons are using mismatching versions:<br>' +
-                                                (getDaemonsVersions(a) | uppercase) +
-                                                '.<br>All daemons should have the same version!',
-                                        },
-                                    ]"
+                                <p-message
+                                    severity="error"
+                                    text="Kea daemons version mismatch!"
+                                    [icon]="getIconBySeverity(Severity.error)"
                                     styleClass="max-w-50rem"
-                                    [enableService]="false"
-                                    [closable]="false"
-                                    [escape]="false"
-                                ></p-messages>
+                                    class="custom-message"
+                                >
+                                    The Kea <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a> daemons are using
+                                    mismatching versions:<br />
+                                    {{ getDaemonsVersions(a) | uppercase }}.<br />
+                                    All daemons should have the same version!
+                                </p-message>
                             </ng-container>
                             <app-version-status
                                 [app]="a.type"

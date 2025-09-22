@@ -6,10 +6,14 @@
 </div>
 
 <div *ngIf="loaded && loadingError" class="w-full max-w-50rem mt-1">
-    <p-messages
-        [value]="[{ severity: 'error', summary: 'Failed to fetch log file contents.', detail: loadingError }]"
-        [closable]="false"
-    ></p-messages>
+    <p-message
+        severity="error"
+        text="Failed to fetch log file contents."
+        icon="pi pi-times-circle"
+        class="custom-message wrap-message"
+    >
+        {{ loadingError }}
+    </p-message>
 </div>
 
 <p-panel styleClass="log-tail-panel" [style]="{ 'margin-top': '10px' }">

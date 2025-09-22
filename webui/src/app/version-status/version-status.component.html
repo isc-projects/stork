@@ -4,11 +4,15 @@
         <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
     </a>
 </div>
-<p-messages
-    *ngIf="!inline && iscApp"
-    [(value)]="messages"
-    [enableService]="false"
-    [closable]="false"
-    [escape]="false"
-    [styleClass]="styleClass"
-></p-messages>
+@if (!inline && iscApp) {
+    @for (message of messages; track message.summary) {
+        <p-message
+            [styleClass]="styleClass"
+            [severity]="message.severity"
+            [text]="message.summary"
+            [icon]="getIconBySeverity(Severity[message.severity])"
+            class="custom-message"
+            ><div [innerHTML]="message.detail"></div>
+        </p-message>
+    }
+}

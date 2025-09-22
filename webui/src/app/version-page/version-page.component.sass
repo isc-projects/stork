@@ -11,6 +11,11 @@
         flex-wrap: wrap
         gap: 0.5rem
 
+      // Hide redundant column titles when responsive table stack layout is not applied.
+      @media screen and (min-width: 48rem)
+        .p-datatable-column-title
+          display: none
+
       .p-messages
         // Apply flex-wrap to .p-message-wrapper container for better
         // messages visibility - the icon and short summary should fit in first line.

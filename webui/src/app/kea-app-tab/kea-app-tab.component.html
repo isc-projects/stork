@@ -129,42 +129,43 @@
 
                     <!-- warning about not-active and not-monitored -->
                     <div *ngIf="!daemon.active" class="col-12 xl:col-4">
-                        <p-messages *ngIf="!daemon.monitored && isNeverFetchedDaemon(daemon)" severity="warn">
-                            <ng-template pTemplate>
-                                <i class="pi pi-exclamation-triangle"></i>
-                                <div class="ml-2">
-                                    <p>
-                                        This daemon is currently not monitored by Stork. The daemon has not been active
-                                        since being added to the Stork server. This daemon appears in the list because
-                                        its configuration was detected in the Kea Control Agent's configuration file.
-                                    </p>
-                                    <p>
-                                        If the daemon is operational (e.g. it allocates leases), make sure it has the
-                                        <code>control-socket</code> entry in its configuration file.
-                                        <!-- The daemon version is unknown. -->
-                                        <a
-                                            *ngIf="daemon.name === 'dhcp4'"
-                                            href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server"
-                                            target="_blank"
-                                            >See the Kea ARM</a
-                                        >
-                                        <a
-                                            *ngIf="daemon.name === 'dhcp6'"
-                                            href="https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#management-api-for-the-dhcpv6-server"
-                                            target="_blank"
-                                            >See the Kea ARM</a
-                                        >
-                                        <a
-                                            *ngIf="daemon.name === 'd2'"
-                                            href="https://kea.readthedocs.io/en/latest/arm/ddns.html#management-api-for-the-d2-server"
-                                            target="_blank"
-                                            >See the Kea ARM</a
-                                        >
-                                        for details.
-                                    </p>
-                                </div>
-                            </ng-template>
-                        </p-messages>
+                        <p-message
+                            icon="pi pi-exclamation-triangle"
+                            *ngIf="!daemon.monitored && isNeverFetchedDaemon(daemon)"
+                            severity="warn"
+                        >
+                            <div>
+                                <p>
+                                    This daemon is currently not monitored by Stork. The daemon has not been active
+                                    since being added to the Stork server. This daemon appears in the list because its
+                                    configuration was detected in the Kea Control Agent's configuration file.
+                                </p>
+                                <p>
+                                    If the daemon is operational (e.g. it allocates leases), make sure it has the
+                                    <code>control-socket</code> entry in its configuration file.
+                                    <!-- The daemon version is unknown. -->
+                                    <a
+                                        *ngIf="daemon.name === 'dhcp4'"
+                                        href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server"
+                                        target="_blank"
+                                        >See the Kea ARM</a
+                                    >
+                                    <a
+                                        *ngIf="daemon.name === 'dhcp6'"
+                                        href="https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#management-api-for-the-dhcpv6-server"
+                                        target="_blank"
+                                        >See the Kea ARM</a
+                                    >
+                                    <a
+                                        *ngIf="daemon.name === 'd2'"
+                                        href="https://kea.readthedocs.io/en/latest/arm/ddns.html#management-api-for-the-d2-server"
+                                        target="_blank"
+                                        >See the Kea ARM</a
+                                    >
+                                    for details.
+                                </p>
+                            </div>
+                        </p-message>
 
                         <p-message
                             *ngIf="!daemon.monitored && !isNeverFetchedDaemon(daemon)"

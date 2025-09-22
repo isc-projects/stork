@@ -2,7 +2,7 @@ import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { AppType, Severity, VersionFeedback, VersionService } from '../version.service'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
-import { getErrorMessage } from '../utils'
+import { getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
 
 /**
@@ -220,4 +220,16 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                 break
         }
     }
+
+    /**
+     * Reference to the function so it can be used in the html template.
+     * @protected
+     */
+    protected readonly getIconBySeverity = getIconBySeverity
+
+    /**
+     * Reference to the enum so it can be used in the html template.
+     * @protected
+     */
+    protected readonly Severity = Severity
 }

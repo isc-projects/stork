@@ -422,24 +422,23 @@
 <ng-template #showInitError>
     <p-fieldset legend="Errors" styleClass="mt-4">
         <div class="max-w-40rem">
-            <p-messages severity="error">
-                <ng-template pTemplate>
-                    <div class="flex flex-column">
-                        <div class="flex align-items-center m-4">
-                            In order to apply configuration changes, the server should begin a transaction between the
-                            user and the server. The server should also return the current data required, in the form
-                            where the host information is specified. Unfortunately, starting the new transaction failed
-                            with the following error:
-                        </div>
-                        <div class="flex align-items-center m-4 font-italic">
-                            {{ form.initError }}
-                        </div>
-                        <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+            <p-message severity="error">
+                <div class="flex flex-column">
+                    <div class="flex align-items-center m-4">
+                        In order to apply configuration changes, the server should begin a transaction between the user
+                        and the server. The server should also return the current data required, in the form where the
+                        host information is specified. Unfortunately, starting the new transaction failed with the
+                        following error:
                     </div>
-                </ng-template>
-            </p-messages>
+                    <div class="flex align-items-center m-4 font-italic">
+                        {{ form.initError }}
+                    </div>
+                    <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+                </div>
+            </p-message>
             <div class="mt-3">
-                <p-button label="Retry" (onClick)="onRetry()"></p-button>
+                <p-button label="Retry" (onClick)="onRetry()" class="mr-2"></p-button>
+                <p-button label="Back" (onClick)="onCancel()" />
             </div>
         </div>
     </p-fieldset>

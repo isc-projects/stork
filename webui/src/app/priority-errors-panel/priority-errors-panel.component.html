@@ -1,8 +1,24 @@
-<p-messages
-    [(value)]="messages"
-    [enableService]="false"
-    [escape]="false"
-    [closable]="true"
-    [showTransitionOptions]="'0ms'"
-    [hideTransitionOptions]="'0ms'"
-></p-messages>
+@for (message of messages; track message.key) {
+    <p-message
+        [closable]="true"
+        showTransitionOptions="0ms"
+        hideTransitionOptions="0ms"
+        [severity]="message.severity"
+        [icon]="message.severity === 'warn' ? 'pi pi-exclamation-triangle' : undefined"
+        [text]="message.summary"
+        class="custom-message"
+    >
+        @if (message.key === EventStream.Registration) {
+            Found {{ formatNoun(registrationIssuesCount(), 'machine', 's') }} requesting registration and awaiting
+            approval. Visit the list of
+            <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">unauthorized machines</a> to review
+            the requests.
+        } @else if (message.key === EventStream.Connectivity) {
+            Stork server reports communication problems for
+            {{ formatNoun(connectivityIssuesCount(), 'app', 's') }} on the monitored machines. You can check the details
+            <a routerLink="/communication">here</a>.
+        } @else {
+            {{ message.detail }}
+        }
+    </p-message>
+}
