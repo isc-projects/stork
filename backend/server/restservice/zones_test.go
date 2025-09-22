@@ -401,11 +401,7 @@ func TestGetZone(t *testing.T) {
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 5, "secondary")
 	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 5, 123456)
 	randomZones = testutil.GenerateMoreZonesWithRPZ(randomZones, 5, true)
-
-	var (
-		apps  []*dbmodel.App
-		zones []*dbmodel.Zone
-	)
+	var zones []*dbmodel.Zone
 	for i, randomZone := range randomZones {
 		machine := &dbmodel.Machine{
 			ID:        0,
@@ -427,7 +423,6 @@ func TestGetZone(t *testing.T) {
 		addedDaemons, err := dbmodel.AddApp(db, app)
 		require.NoError(t, err)
 		require.Len(t, addedDaemons, 1)
-		apps = append(apps, app)
 		zones = append(zones, &dbmodel.Zone{
 			Name: randomZones[i].Name,
 			LocalZones: []*dbmodel.LocalZone{
