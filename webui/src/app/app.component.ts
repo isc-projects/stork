@@ -57,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
      */
     darkModeToggleButton = {
         root: {
-            contentPadding: '0.5rem',
+            contentSmPadding: '0.25rem',
         },
     }
 
