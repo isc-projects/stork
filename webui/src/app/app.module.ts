@@ -195,6 +195,45 @@ const AuraBluePreset = definePreset(Aura, {
             900: '{blue.900}',
             950: '{blue.950}',
         },
+        colorScheme: {
+            // Adding custom 'inverted' color scheme which mimics old PrimeNG 'surface' color scheme,
+            // which for light scheme was changing from white to dark colors, and for
+            // dark scheme it was changing from dark colors to white.
+            // In new PrimeNG (v18 and following), the 'surface' color scheme behaves similarly for both light and dark mode,
+            // i.e. it changes from white to darker colors.
+            dark: {
+                inverted: {
+                    0: '{zinc.900}',
+                    50: '{zinc.800}',
+                    100: '{zinc.700}',
+                    200: '{zinc.600}',
+                    300: '{zinc.500}',
+                    400: '{zinc.400}',
+                    500: '{zinc.300}',
+                    600: '{zinc.200}',
+                    700: '{zinc.100}',
+                    800: '{zinc.50}',
+                    900: '#ffffff',
+                    950: '#ffffff',
+                },
+            },
+            light: {
+                inverted: {
+                    0: '#ffffff',
+                    50: '{slate.50}',
+                    100: '{slate.100}',
+                    200: '{slate.200}',
+                    300: '{slate.300}',
+                    400: '{slate.400}',
+                    500: '{slate.500}',
+                    600: '{slate.600}',
+                    700: '{slate.700}',
+                    800: '{slate.800}',
+                    900: '{slate.900}',
+                    950: '{slate.950}',
+                },
+            },
+        },
     },
     components: {
         // Apply primary background color for Chips instead of the default greyish surface color.

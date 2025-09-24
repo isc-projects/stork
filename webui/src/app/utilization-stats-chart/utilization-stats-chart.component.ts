@@ -181,12 +181,12 @@ export class UtilizationStatsChartComponent {
                                 backgroundColor: [
                                     documentStyle.getPropertyValue('--p-green-500'),
                                     documentStyle.getPropertyValue('--p-orange-500'),
-                                    documentStyle.getPropertyValue('--p-surface-700'),
+                                    documentStyle.getPropertyValue('--p-inverted-700'),
                                 ],
                                 hoverBackgroundColor: [
                                     documentStyle.getPropertyValue('--p-green-400'),
                                     documentStyle.getPropertyValue('--p-orange-400'),
-                                    documentStyle.getPropertyValue('--p-surface-600'),
+                                    documentStyle.getPropertyValue('--p-inverted-600'),
                                 ],
                             },
                         ],
