@@ -1,8 +1,3 @@
----
-name: A.B.C release checklist
-about: Create a new issue using this checklist for each release.
----
-
 # Stork Release Checklist
 
 #### Legend

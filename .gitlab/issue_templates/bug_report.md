@@ -1,9 +1,3 @@
----
-name: Bug report
-about: Create a report to help us improve
-
----
-
 If you believe your bug report is a security issue (e.g. a packet that can kill the server), DO NOT
 REPORT IT HERE. Please use https://www.isc.org/community/report-bug/ instead or send mail to
 security-office(at)isc(dot)org.

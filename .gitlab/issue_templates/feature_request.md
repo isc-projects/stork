@@ -1,9 +1,3 @@
----
-name: Feature request
-about: Suggest an idea for this project
-
----
-
 **Some initial questions**
 - Are you sure what you would like to do is not possible using some other mechanisms?
 - Stork is in very early stages of development. If your request is not simple, it
