@@ -123,17 +123,13 @@
             visibility: hidden
 
 
-::ng-deep .p-paginator
+:host ::ng-deep .p-paginator
     @layer high
         // Scale paginator. Default is little too big to put inside tree
         scale: 0.85
-        // Pull to the left to better expose assigned node
-        // Align to a key with pad for collapse marker
-        margin-left: 0
 
         .p-paginator__jump-to-page
-            width: 5em
-            margin-left: 0.5em
+            width: 6rem
 
 
 .sensitive-data

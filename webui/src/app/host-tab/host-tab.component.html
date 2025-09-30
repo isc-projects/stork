@@ -1,4 +1,4 @@
-<p-confirmDialog />
+<p-confirmDialog [key]="host?.id.toString()" />
 <div *ngIf="host" class="mt-4 mx-2 max-w-50rem">
     <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
         <div class="flex text-xl font-normal text-primary align-items-center">
@@ -45,7 +45,7 @@
                     label="Delete"
                     icon="pi pi-times"
                     severity="danger"
-                    (click)="confirmDeleteHost()"
+                    (click)="confirmDeleteHost(host.id.toString())"
                     appAccessEntity="host-reservation"
                     appAccessType="delete"
                 ></p-button>
@@ -218,7 +218,9 @@
                                 <td class="border-none pl-6 pt-0 pb-4">
                                     <div
                                         *ngIf="
-                                            !leasesSearchInProgress && currentLeases.get(r.address) as leaseInfo;
+                                            !leasesSearchInProgress &&
+                                                currentLeases &&
+                                                currentLeases.get(r.address) as leaseInfo;
                                             else leaseFoundBlock
                                         "
                                     >

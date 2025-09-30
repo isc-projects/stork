@@ -86,8 +86,10 @@
                             ></p-inputNumber
                             ><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                         </div>
-                        <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">It is required.</div>
-                        <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">
+                        <div *ngIf="hasError(setting.formControlName, 'required')" class="app-error">
+                            It is required.
+                        </div>
+                        <div *ngIf="hasError(setting.formControlName, 'min')" class="app-error">
                             It must not be negative.
                         </div>
                     </div>
@@ -132,11 +134,11 @@
             (appHasAccess)="$event === true ? settingsForm.enable() : settingsForm.disable()"
         ></p-button>
 
-        <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues with the form values. </span>
+        <span *ngIf="settingsForm.invalid" class="app-error ml-3"> There are issues with the form values. </span>
     </ng-container>
     <ng-container *ngSwitchCase="'fail'">
         <div class="text-lg">Fetching current settings from the server failed. Click the button to retry.</div>
-        <p-button label="Retry" id="retry-button" (click)="retry()" class="mt-4"></p-button>
+        <p-button label="Retry" id="retry-button" (click)="retry()" styleClass="mt-4"></p-button>
     </ng-container>
     <ng-container *ngSwitchDefault>
         <p-progressSpinner></p-progressSpinner>

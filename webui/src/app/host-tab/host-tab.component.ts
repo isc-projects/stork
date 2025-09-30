@@ -130,6 +130,7 @@ export class HostTabComponent {
      *
      * @param msgService service displaying error messages upon a communication
      *                   error with the server.
+     * @param confirmService PrimeNG confirmation service
      * @param dhcpApi service used to communicate with the server over REST API.
      */
     constructor(
@@ -550,11 +551,13 @@ export class HostTabComponent {
         this.hostEditBegin.emit(this.host)
     }
 
-    /*
+    /**
      * Displays a dialog to confirm host deletion.
+     * @param id host ID
      */
-    confirmDeleteHost() {
+    confirmDeleteHost(id: string) {
         this.confirmService.confirm({
+            key: id,
             message: 'Are you sure that you want to permanently delete this host reservation?',
             header: 'Delete Host',
             icon: 'pi pi-exclamation-triangle',

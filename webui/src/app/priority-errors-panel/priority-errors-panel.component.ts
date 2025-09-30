@@ -354,4 +354,14 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly formatNoun = formatNoun
+
+    /**
+     * Custom message style.
+     */
+    messageDesign = {
+        root: {
+            borderRadius: '0',
+            contentPadding: '0.25rem 0.75rem',
+        },
+    }
 }

@@ -23,10 +23,10 @@
             <div class="flex gap-2 md:block md:w-20-perc md:flex-none">
                 <div class="font-semibold text-color-secondary flex-auto">
                     {{ uncamelCase(parameterName) }}
-                    <small *ngIf="controls.data.versionLowerBound" class="p-error block mt-2 pr-4 md:pr-6 text-left"
+                    <small *ngIf="controls.data.versionLowerBound" class="app-error block mt-2 pr-4 md:pr-6 text-left"
                         >Kea {{ controls.data.versionLowerBound }} and later only
                     </small>
-                    <small *ngIf="controls.data.versionUpperBound" class="p-error block mt-2 pr-4 md:pr-6 text-left"
+                    <small *ngIf="controls.data.versionUpperBound" class="app-error block mt-2 pr-4 md:pr-6 text-left"
                         >Kea earlier than {{ controls.data.versionUpperBound }} only
                     </small>
                 </div>
@@ -148,7 +148,7 @@
                         </div>
                         <small
                             *ngIf="control.invalid && (control.dirty || control.touched)"
-                            class="p-error block mt-2 pr-4 md:pr-6 text-right"
+                            class="app-error block mt-2 pr-4 md:pr-6 text-right"
                             >{{ controls.data.invalidText }}
                         </small>
                     </ng-container>

@@ -1,4 +1,4 @@
-<div class="flex flex-wrap gap-2 align-items-baseline">
+<div class="flex flex-wrap gap-2 align-items-baseline pool-bars-root">
     <!-- Address pools -->
     <!-- Out-of-pool utilization -->
     <app-out-of-pool-bar
@@ -16,7 +16,7 @@
         <!-- Multiple pools in a group. Wrap with a border. -->
         <ng-template #multipleAddressPools>
             <div
-                class="border border-round border-dashed border-1 flex flex-row align-items-center"
+                class="border border-round border-dashed border-1 flex flex-row align-items-center min-w-0"
                 pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
                     Kea merges statistics of pools with the same pool ID, so all of these pools have the same
                     utilization. It means that the bars in each group do not reflect the utilization for the individual
@@ -30,8 +30,12 @@
                     [ngTemplateOutletContext]="{ poolId: group[0] }"
                 ></ng-container>
                 <!-- Display all pools in the group. -->
-                <div class="flex-1 flex flex-row flex-wrap gap-2 p-0">
-                    <app-address-pool-bar [pool]="pool" *ngFor="let pool of group[1]"></app-address-pool-bar>
+                <div class="flex-1 flex flex-row flex-wrap gap-2 p-0 min-w-0">
+                    <app-address-pool-bar
+                        class="min-w-0"
+                        [pool]="pool"
+                        *ngFor="let pool of group[1]"
+                    ></app-address-pool-bar>
                 </div>
             </div>
         </ng-template>
@@ -55,7 +59,7 @@
         <!-- Multiple pools in a group. Wrap with a border. -->
         <ng-template #multiplePDPools>
             <div
-                class="border border-round border-dashed border-1 flex flex-row align-items-center"
+                class="border border-round border-dashed border-1 flex flex-row align-items-center min-w-0"
                 pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
                     Kea merges statistics of pools with the same pool ID, so all of these pools have the same
                     utilization. It means that the bars in each group do not reflect the utilization for the individual
@@ -69,8 +73,12 @@
                     [ngTemplateOutletContext]="{ poolId: group[0] }"
                 ></ng-container>
                 <!-- Display all pools in the group. -->
-                <div class="flex-1 flex flex-row flex-wrap gap-2 p-0">
-                    <app-delegated-prefix-bar [pool]="pool" *ngFor="let pool of group[1]"></app-delegated-prefix-bar>
+                <div class="flex-1 flex flex-row flex-wrap gap-2 p-0 min-w-0">
+                    <app-delegated-prefix-bar
+                        class="min-w-0"
+                        [pool]="pool"
+                        *ngFor="let pool of group[1]"
+                    ></app-delegated-prefix-bar>
                 </div>
             </div>
         </ng-template>

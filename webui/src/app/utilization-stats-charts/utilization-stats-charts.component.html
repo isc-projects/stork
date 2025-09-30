@@ -1,21 +1,21 @@
 <ng-container *ngIf="network; else noNetworkBlock">
     <div class="flex flex-wrap">
-        <div *ngIf="network.addrUtilization || hasAddressPools">
+        <div *ngIf="network.addrUtilization || hasAddressPools" class="min-w-0 overflow-auto">
             <app-utilization-stats-chart title="Total" leaseType="na" [network]="network"></app-utilization-stats-chart>
         </div>
-        <div *ngIf="network.pdUtilization || hasPrefixPools">
+        <div *ngIf="network.pdUtilization || hasPrefixPools" class="min-w-0 overflow-auto">
             <app-utilization-stats-chart title="Total" leaseType="pd" [network]="network"></app-utilization-stats-chart>
         </div>
         <ng-container class="flex flex-wrap" *ngIf="localSubnets && localSubnets.length > 1">
             <ng-container *ngFor="let localSubnet of localSubnets">
-                <div *ngIf="localSubnet.pools?.length > 0">
+                <div *ngIf="localSubnet.pools?.length > 0" class="min-w-0 overflow-auto">
                     <app-utilization-stats-chart
                         [title]="localSubnet.appName"
                         leaseType="na"
                         [network]="localSubnet"
                     ></app-utilization-stats-chart>
                 </div>
-                <div *ngIf="localSubnet.prefixDelegationPools?.length > 0">
+                <div *ngIf="localSubnet.prefixDelegationPools?.length > 0" class="min-w-0 overflow-auto">
                     <app-utilization-stats-chart
                         [title]="localSubnet.appName"
                         leaseType="pd"

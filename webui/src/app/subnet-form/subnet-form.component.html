@@ -24,7 +24,7 @@
                         state.group.get('selectedDaemons').invalid &&
                         (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
                     "
-                    class="p-error block"
+                    class="app-error block"
                     >At least one server must be selected.
                 </small>
                 <div *ngIf="state.group.get('selectedDaemons')?.disabled" class="flex align-items-center">
@@ -51,10 +51,10 @@
                     (state.group.get('subnet').dirty || state.group.get('subnet').touched)
                 "
             >
-                <small *ngIf="state.group.get('subnet').hasError('prefixInList')" class="p-error block"
+                <small *ngIf="state.group.get('subnet').hasError('prefixInList')" class="app-error block"
                     >A subnet with this prefix already exists.
                 </small>
-                <small *ngIf="state.group.get('subnet').hasError('ipPrefix')" class="p-error block"
+                <small *ngIf="state.group.get('subnet').hasError('ipPrefix')" class="app-error block"
                     >{{ state.group.get('subnet').errors.ipPrefix }}
                 </small>
                 <small
@@ -62,7 +62,7 @@
                         !state.group.get('subnet').hasError('prefixInList') &&
                         !state.group.get('subnet').hasError('ipPrefix')
                     "
-                    class="p-error block"
+                    class="app-error block"
                     >A valid subnet prefix is required.</small
                 >
             </ng-container>
@@ -114,7 +114,7 @@
                 <p-accordion-panel *ngFor="let pool of state.group.get('pools')?.controls; let i = index" [value]="i">
                     <p-accordion-header>
                         <div class="flex align-items-center">
-                            <span class="vertical-align-middle">{{ getPoolHeader(i)[0] }}</span>
+                            <span class="word-break-all">{{ getPoolHeader(i)[0] }}</span>
                             <span
                                 *ngIf="
                                     pool.invalid &&
@@ -166,7 +166,7 @@
                 >
                     <p-accordion-header>
                         <div class="flex align-items-center">
-                            <span class="vertical-align-middle">{{ getPrefixPoolHeader(i)[0] }}</span>
+                            <span class="word-break-all">{{ getPrefixPoolHeader(i)[0] }}</span>
                             <span
                                 *ngIf="
                                     pool.invalid &&
@@ -245,16 +245,15 @@
                 </div>
             </ng-container>
         </p-fieldset>
-        <div class="flex align-items-center m-5">
+        <div class="flex align-items-center m-5 flex-wrap gap-2">
             <p-button
                 *ngIf="subnetId"
                 icon="pi pi-replay"
                 label="Revert Changes"
                 severity="secondary"
-                styleClass="mr-2"
                 (onClick)="onRevert()"
             ></p-button>
-            <p-button label="Cancel" severity="secondary" styleClass="mr-2" (onClick)="onCancel()"></p-button>
+            <p-button label="Cancel" severity="secondary" (onClick)="onCancel()"></p-button>
             <p-button
                 *ngIf="!state.wizard"
                 label="Submit"

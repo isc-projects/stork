@@ -9,15 +9,15 @@
 
   ::ng-deep .help-tip-inserted.p-popover
     // help-tip component is using PrimeNG p-popover.
-    // Sometimes, for specific viewport sizes, the OverlayPanel is displayed above the target, instead of below the target.
+    // Sometimes, for specific viewport sizes, the popover is displayed above the target, instead of below the target.
     // In this case PrimeNG adds class .p-popover-flipped to the panel and custom margin-top is applied, which
     // in our case makes the header of the help-tip invisible. Overwrite this rule below to make it always look ok.
     &.p-popover-flipped
-      margin-top: 10px !important
+      margin-top: 10px
 
     // PrimeNG p-popover displays by default chevron pointing to the target.
-    // When the target is close to the right side of the viewport, it overlaps
-    // panel's close button, which is always in the top right corner of the panel.
-    // To prevent the overlapping, do not display the chevron in the help-tip component.
+    // In many cases the chevron does not point correctly (e.g. due to small viewport or
+    // the target being close to viewport edge).
+    // To prevent this, do not display the chevron in the help-tip component.
     &::after, &::before
       content: none

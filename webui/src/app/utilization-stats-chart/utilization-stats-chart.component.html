@@ -3,8 +3,8 @@
     <div *ngIf="chartCase !== 'invalid' && hasUtilization" class="flex justify-content-center">
         {{ isPD ? 'Prefix' : 'Address' }} Utilization ({{ utilization.toFixed(0) }}%)
     </div>
-    <div class="flex justify-content-center mb-3" *ngIf="!!data">
-        <p-chart type="pie" [data]="data"></p-chart>
+    <div class="flex mb-3" *ngIf="!!data">
+        <p-chart type="pie" [data]="data" width="300px" height="300px"></p-chart>
     </div>
     <div class="flex justify-content-center" *ngIf="hasStats">
         <table>

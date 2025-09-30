@@ -114,8 +114,9 @@ export class SharedNetworkTabComponent implements OnInit {
     /**
      * Displays a dialog to confirm shared network deletion.
      */
-    confirmDeleteSharedNetwork() {
+    confirmDeleteSharedNetwork(id: string) {
         this.confirmService.confirm({
+            key: id,
             message: 'Are you sure that you want to permanently delete this shared network and its subnets?',
             header: 'Delete Shared Network',
             icon: 'pi pi-exclamation-triangle',

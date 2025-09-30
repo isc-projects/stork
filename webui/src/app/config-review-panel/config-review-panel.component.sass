@@ -40,20 +40,15 @@
 @layer high
   :host ::ng-deep
     .p-paginator
-      border: 0
       margin-top: 10px
 
-    .p-togglebutton .p-button-label
+    .p-togglebutton .p-togglebutton-label
       // Prevent to resize button while label is changed.
       min-width: 5rem
 
     .p-dataview.p-dataview-list
-      .p-dataview-content > .p-grid > div
-        border-top: none
-      .p-dataview-content > .p-grid > div:not(:last-child)
-        border-bottom: none
-      .p-dataview-content > .p-grid > div:last-child
-        padding-bottom: 1em
+      .p-dataview-content > div:last-child
+        padding-bottom: 1rem
 
   ::ng-deep .p-popover.checker-panel
     @media screen and (max-width: 1199px)

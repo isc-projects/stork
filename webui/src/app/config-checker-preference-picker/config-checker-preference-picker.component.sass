@@ -31,9 +31,10 @@
     // Sets the vertical gaps between chips.
     row-gap: 0.5rem
 
-    ::ng-deep .p-chip-text
-        // Disables the word wrap for chips.
-        white-space: nowrap
+    :host ::ng-deep & .p-chip-label
+        @layer high
+            // Disables the word wrap for chips.
+            white-space: nowrap
 
 .picker__empty
     td
@@ -41,6 +42,7 @@
         text-align: center
 
 .picker__buttons
+    margin-top: 1rem
     // Enables the flex features.
     display: flex
     // Specifies the gap between the buttons.

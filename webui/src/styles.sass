@@ -18,6 +18,10 @@
     margin-top: 2px
     border-bottom: 2px solid var(--p-content-border-color)
 
+  // Generic error red font style.
+  .app-error
+    color: var(--p-form-field-invalid-placeholder-color)
+
 // "high" is higher priority CSS layer.
 // Put here all rules that overwrite PrimeNG styling.
 @layer high
@@ -32,28 +36,13 @@
   .p-panel-icons-hidden .p-panel-icons
     display: none
 
-  // Padding (0.5rem 0.75rem) was added in PrimeNG aura theme to all span elements inside of Fieldset legend.
-  // This breaks many custom Fieldset legends in Stork, because span elements are used there quite often.
-  // Overwrite PrimeNG styling to be more specific.
-  .p-fieldset .p-fieldset-legend span
-    // Reset padding to zero for all span-s inside.
-    padding: 0
+  // Apply minimal width to all PrimeNG Fieldset components so that they may shrink for smaller viewports.
+  .p-fieldset
+    min-width: 0
 
-    // Restore default PrimeNG padding only to span elements with specific classes.
-    &.p-fieldset-legend-text, &.stork-fieldset-legend-text
-      padding: 0.5rem 0.75rem
-
-    // When stork-fieldset-legend-text class is used, do not apply padding to preceding span.p-fieldset-legend-text.
-    &.p-fieldset-legend-text:has(+.stork-fieldset-legend-text)
-      padding: 0
-
-    // Sometimes p-tag is used inside Fieldset legend and it is also a span, so restore default p-tag padding.
-    &.p-tag
-      padding: 0.25rem 0.4rem
-
-  // Do not display underline for the p-fieldset legend when mouse is hovering.
-  .p-fieldset.p-fieldset-toggleable .p-fieldset-legend a:hover
-    text-decoration: none
+  // Apply bold font for custom legend in PrimeNG Fieldset components.
+  .stork-fieldset-legend-text
+    font-weight: var(--p-fieldset-legend-font-weight)
 
   // Overwrite default margin-left: auto for the right hand side paginator.
   .p-paginator > :last-child:not(.p-paginator-last):not(.p-inputwrapper)
@@ -98,19 +87,30 @@
     margin-top: 0.5rem
 
   // Custom style of PrimeNG message component.
-  // When two text spans are injected to the component (first using "text" input; second using <ng-content></ng-content>),
-  // make the first span bold to act as a message summary.
+  // When two text spans are injected to the component (first using "text" input; second using <ng-content></ng-content>
+  // content projection), make the first span bold to act as a message summary.
   .custom-message
     .p-message-content
-      span:nth-of-type(1)
+      > span:nth-of-type(1)
         font-weight: 700
-    &.wrap-message
-      // Custom wrapped message. Make the icon and summary (provided via "text" input) appear in the first line of the component.
-      // Text content of the message (provided via <ng-content></ng-content>) will appear in the second line.
+    @mixin reorder-and-wrap-message-content
+      // Custom wrapped message. Make the icon, summary (provided via "text" input) and close button appear in the first
+      // line of the component.
+      // Text content of the message (provided via <ng-content></ng-content> content projection) will appear in the second line.
       .p-message-content
         flex-wrap: wrap
-        span:nth-of-type(1)
-          flex: 1 1 90%
+        > span:nth-of-type(1)
+          flex: 1 1 75%
+          order: -1
+        .p-message-icon, .p-message-close-button
+          order: -1
+
+    // Apply custom wrapped message style when .custom-message.wrap-message class is used.
+    &.wrap-message
+      @include reorder-and-wrap-message-content
+    // Apply custom wrapped message style when .wrap-message class is used and viewport size is below 576px (sm breakpoint in primeflex).
+    @media screen and (max-width: 575px)
+      @include reorder-and-wrap-message-content
 
   // Limit maximum width for the confirmation dialog message.
   .p-confirmdialog-message
@@ -122,24 +122,18 @@
       // Prevent width overflow.
       max-width: calc(100vw - 2rem)
 
-  @media screen and (max-width: 359px)
+  // Apply smaller padding to PrimeNG Fieldset component for smaller viewports to save horizontal space.
+  @media screen and (max-width: 575px)
+    :root
+      // Overwrite PrimeNG CSS variable.
+      --p-fieldset-padding: 0 0.5rem 0.5rem 0.5rem
+
+  @media screen and (max-width: 575px)
     .p-panel .p-panel-content, app-tab-view > .p-tabs > .p-tabpanels
       // Decrease panel content horizontal padding to save the space on smaller viewports.
       // Apply the same for tabPanels container.
       padding-right: 0.5rem
       padding-left: 0.5rem
-
-  // Custom styling for PrimeNG p-multiselect component.
-  .p-multiselect.p-multiselect-chip.adaptive-chips-background .p-multiselect-token
-    background: var(--p-primary-100)
-    color: var(--p-text-color)
-    margin-right: 4px
-    margin-top: 2px
-    margin-bottom: 2px
-
-    html.dark &
-      // Make chips background darker in dark mode.
-      background: var(--p-primary-400)
 
   // Define gray-colored spinner.
   @keyframes progress-spinner-color-gray
@@ -155,13 +149,13 @@
     100%
       stroke: #fff
 
-  .gray-spinner .p-progress-spinner-circle
+  .gray-spinner .p-progressspinner-circle
     // Overwrite PrimeNG default colorful spinner with gray-colored spinner.
-    animation-name: p-progress-spinner-dash, progress-spinner-color-gray
+    animation-name: p-progressspinner-dash, progress-spinner-color-gray
 
-  .white-spinner .p-progress-spinner-circle
+  .white-spinner .p-progressspinner-circle
     // Overwrite PrimeNG default colorful spinner with white-colored spinner.
-    animation-name: p-progress-spinner-dash, progress-spinner-color-white
+    animation-name: p-progressspinner-dash, progress-spinner-color-white
 
 // No css @layer - global styles, that have the highest priority.
 // These rules overwrite low, primeng and high layers if necessary.
@@ -241,11 +235,6 @@ body
   // Missing css variables that were used before PrimeNG v18. They differ in the dark mode.
   --surface-ground: var(--p-surface-50)
   --surface-hover: var(--p-surface-100)
-  // Overwrite PrimeNG accordion colors.
-  --p-accordion-header-active-background: var(--surface-ground)
-  --p-accordion-header-background: var(--surface-ground)
-  --p-accordion-header-active-hover-background: var(--surface-hover)
-  --p-accordion-header-hover-background: var(--surface-hover)
   &.dark
     --surface-ground: var(--p-surface-950)
     --surface-hover: var(--p-surface-800)

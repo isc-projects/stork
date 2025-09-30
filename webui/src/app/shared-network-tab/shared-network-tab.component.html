@@ -1,4 +1,4 @@
-<p-confirmDialog />
+<p-confirmDialog [key]="sharedNetwork?.id.toString()" />
 <div *ngIf="sharedNetwork" class="mt-4 ml-2">
     <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
         <div class="flex text-xl font-normal text-primary align-items-center">
@@ -65,7 +65,7 @@
                 label="Delete"
                 icon="pi pi-times"
                 severity="danger"
-                (click)="confirmDeleteSharedNetwork()"
+                (click)="confirmDeleteSharedNetwork(sharedNetwork.id.toString())"
                 appAccessEntity="shared-network"
                 appAccessType="delete"
             ></p-button>

@@ -38,7 +38,7 @@
                     formGroup.get('selectedDaemons').invalid &&
                     (formGroup.get('selectedDaemons').dirty || formGroup.get('selectedDaemons').touched)
                 "
-                class="p-error block"
+                class="app-error block"
                 >At least one server must be selected.
             </small>
         </div>
@@ -64,7 +64,7 @@
                     formGroup.controls['selectedSubnet'].invalid &&
                     (formGroup.controls['selectedSubnet'].dirty || formGroup.controls['selectedSubnet'].touched)
                 "
-                class="p-error block"
+                class="app-error block"
                 >A subnet must be selected if the reservation is not global.
             </small>
         </div>
@@ -101,7 +101,7 @@
                         (formGroup.get('hostIdGroup.idInputHex').dirty ||
                             formGroup.get('hostIdGroup.idInputHex').touched)
                     "
-                    class="p-error block"
+                    class="app-error block"
                     >{{
                         formGroup.get('hostIdGroup.idInputHex').hasError('pattern')
                             ? 'Please specify valid hexadecimal digits (e.g., ab:09:ef:01).'
@@ -125,7 +125,7 @@
                             (formGroup.get('hostIdGroup.idInputText').dirty ||
                                 formGroup.get('hostIdGroup.idInputText').touched)
                         "
-                        class="p-error block"
+                        class="app-error block"
                         >{{
                             formGroup.get('hostIdGroup.idInputText').hasError('maxlength')
                                 ? 'The identifier length exceeds the maximum value of ' +
@@ -150,7 +150,7 @@
                     formGroup.get('hostname').invalid &&
                     (formGroup.get('hostname').dirty || formGroup.get('hostname').touched)
                 "
-                class="p-error block"
+                class="app-error block"
                 >Please specify a valid hostname (e.g. alice-laptop or bob.example.org.).
             </small>
         </div>
@@ -176,7 +176,7 @@
                                             ipGroup.get('inputIPv4').invalid &&
                                             (ipGroup.get('inputIPv4').dirty || ipGroup.get('inputIPv4').touched)
                                         "
-                                        class="p-error block"
+                                        class="app-error block"
                                     >
                                         {{
                                             ipGroup.get('inputIPv4').hasError('ip-subnet-range')
@@ -201,7 +201,7 @@
                                             ipGroup.get('inputNA').invalid &&
                                             (ipGroup.get('inputNA').dirty || ipGroup.get('inputNA').touched)
                                         "
-                                        class="p-error block"
+                                        class="app-error block"
                                     >
                                         <ng-container
                                             *ngIf="
@@ -241,7 +241,7 @@
                                             ipGroup.get('inputPD').invalid &&
                                             (ipGroup.get('inputPD').dirty || ipGroup.get('inputPD').touched)
                                         "
-                                        class="p-error block"
+                                        class="app-error block"
                                         >Please specify a valid IPv6 prefix.
                                     </small>
                                 </div>
@@ -321,7 +321,7 @@
                             (getBootFieldsGroup(i).get('nextServer').dirty ||
                                 getBootFieldsGroup(i).get('nextServer').touched)
                         "
-                        class="p-error block"
+                        class="app-error block"
                         >Please specify a valid IPv4 address.
                     </small>
                 </div>
@@ -341,7 +341,7 @@
                             (getBootFieldsGroup(i).get('serverHostname').dirty ||
                                 getBootFieldsGroup(i).get('serverHostname').touched)
                         "
-                        class="p-error block"
+                        class="app-error block"
                         >Please specify a valid hostname (e.g. alice-laptop or bob.example.org.).
                     </small>
                 </div>
@@ -401,16 +401,15 @@
         </ng-container>
     </ng-container>
 
-    <div class="flex align-items-center m-5">
+    <div class="flex align-items-center m-5 flex-wrap gap-2">
         <p-button
             *ngIf="savedUpdateHostBeginData"
             icon="pi pi-replay"
             label="Revert Changes"
-            styleClass="mr-2"
             severity="secondary"
             (onClick)="onRevert()"
         ></p-button>
-        <p-button label="Cancel" severity="secondary" styleClass="mr-2" (onClick)="onCancel()"></p-button>
+        <p-button label="Cancel" severity="secondary" (onClick)="onCancel()"></p-button>
         <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>
         <app-help-tip subject="Host Reservation Submission">
             <p>

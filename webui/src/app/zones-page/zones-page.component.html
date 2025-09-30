@@ -90,7 +90,7 @@
             <p-tag *ngIf="localZone.rpz" value="RPZ" severity="success" />
         </div>
     </td>
-    <td [class.p-error]="serialInfo.hasMismatch">
+    <td [class.app-error]="serialInfo.hasMismatch">
         {{ localZone.serial
         }}<i
             *ngIf="serialInfo.hasMismatch"

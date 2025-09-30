@@ -23,7 +23,7 @@
                         state.group.get('selectedDaemons').invalid &&
                         (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
                     "
-                    class="p-error block"
+                    class="app-error block"
                     >At least one server must be selected.
                 </small>
             </div>
@@ -39,10 +39,10 @@
                     (state.group.get('name').dirty || state.group.get('name').touched)
                 "
             >
-                <small *ngIf="state.group.get('name').hasError('valueInList')" class="p-error block"
+                <small *ngIf="state.group.get('name').hasError('valueInList')" class="app-error block"
                     >A shared network with this name already exists.
                 </small>
-                <small *ngIf="!state.group.get('name').hasError('valueInList')" class="p-error block"
+                <small *ngIf="!state.group.get('name').hasError('valueInList')" class="app-error block"
                     >A shared network name is required.</small
                 >
             </ng-container>
@@ -77,16 +77,15 @@
                 </div>
             </ng-container>
         </p-fieldset>
-        <div class="flex align-items-center m-5">
+        <div class="flex align-items-center m-5 flex-wrap gap-2">
             <p-button
                 *ngIf="sharedNetworkId"
                 icon="pi pi-replay"
                 label="Revert Changes"
-                styleClass="mr-2"
                 severity="secondary"
                 (onClick)="onRevert()"
             ></p-button>
-            <p-button label="Cancel" severity="secondary" styleClass="mr-2" (onClick)="onCancel()"></p-button>
+            <p-button label="Cancel" severity="secondary" (onClick)="onCancel()"></p-button>
             <p-button label="Submit" [disabled]="state.group?.invalid" (onClick)="onSubmit()"></p-button>
         </div>
     </ng-container>

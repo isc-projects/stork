@@ -13,9 +13,8 @@
 
         // When small button is inside flex container that has .align-items-end class applied,
         // add some bottom margin to align the button vertically with other higher flex items.
-        .align-items-end >
-            .p-button-sm, .p-element:has(> .p-button-sm)
-                margin-bottom: 0.25rem
+        .align-items-end > p-button > .p-button-sm
+            margin-bottom: 0.25rem
 
 // Add border between shared parameters.
 .shared-parameter-wrapper:not(:last-child)
@@ -25,7 +24,8 @@
     // PrimeNG wraps form input components inside of .p-inputwrapper class.
     // Let them take full available width inside of .shared-parameter-form parent block.
     & > .p-inputwrapper
-        width: 100%
+        @layer high
+            width: 100%
     // When .shared-parameter-form block has checkbox form component inside,
     // add little padding for better checkbox vertical alignment.
     &:has(.p-checkbox)

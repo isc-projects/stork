@@ -29,7 +29,7 @@
                     (formGroup.get('prefixes').get(control).dirty || formGroup.get('prefixes').get(control).touched) &&
                     formGroup.get('prefixes').get(control).hasError('ipv6Prefix')
                 "
-                class="p-error block"
+                class="app-error block"
                 >{{ formGroup.get('prefixes').get(control).errors.ipv6Prefix }}
             </small>
         </ng-container>
@@ -45,7 +45,7 @@
         >
             <small
                 *ngIf="formGroup.get('prefixes').invalid && formGroup.get('prefixes').hasError(err)"
-                class="p-error block"
+                class="app-error block"
                 >{{ formGroup.get('prefixes').errors[err] }}
             </small>
         </ng-container>
@@ -73,7 +73,7 @@
                     formGroup.get('selectedDaemons').invalid &&
                     (formGroup.get('selectedDaemons').dirty || formGroup.get('selectedDaemons').touched)
                 "
-                class="p-error block"
+                class="app-error block"
                 >At least one server must be selected.
             </small>
         </div>

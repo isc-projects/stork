@@ -7,6 +7,7 @@
         [icon]="message.severity === 'warn' ? 'pi pi-exclamation-triangle' : undefined"
         [text]="message.summary"
         class="custom-message"
+        [dt]="messageDesign"
     >
         <div class="inline">
             @if (message.key === EventStream.Registration) {

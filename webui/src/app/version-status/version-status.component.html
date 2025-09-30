@@ -11,7 +11,7 @@
             [severity]="message.severity"
             [text]="message.summary"
             [icon]="getIconBySeverity(Severity[message.severity])"
-            class="custom-message"
+            class="custom-message wrap-message"
             ><div [innerHTML]="message.detail"></div>
         </p-message>
     }

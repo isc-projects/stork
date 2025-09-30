@@ -1,15 +1,26 @@
 <p-button
     [size]="variant === 'big' ? 'large' : undefined"
-    (onClick)="toggleOverlay($event)"
+    (onClick)="togglePopover($event)"
     icon="pi pi-question-circle"
     [text]="true"
     title="Help for {{ subject }}"
     [dt]="helpTipButton"
     [rounded]="true"
 ></p-button>
-<p-popover styleClass="help-tip-inserted">
+<p-popover #po styleClass="help-tip-inserted">
     <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + subject }}">
-        <h3 class="underlined">Help for {{ subject }}</h3>
+        <div class="flex gap-2">
+            <h3 class="underlined flex-auto">Help for {{ subject }}</h3>
+            <p-button
+                icon="pi pi-times"
+                (click)="po.hide()"
+                size="small"
+                [rounded]="true"
+                severity="secondary"
+                [text]="true"
+                class="flex-none"
+            />
+        </div>
         <ng-content></ng-content>
     </div>
 </p-popover>

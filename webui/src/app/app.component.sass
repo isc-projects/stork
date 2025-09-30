@@ -41,26 +41,27 @@
 
   :host ::ng-deep
     // Custom responsive style for the Logout split button inside the Stork menubar.
-    .p-splitbutton
-      span.p-button-label
-        // Don't wrap button label when viewport shrinks.
-        white-space: nowrap
-        // When longer login name does not fit, show the ellipsis.
-        overflow: hidden
-        text-overflow: ellipsis
-        @media screen and (max-width: 1270px)
-          // Button label is very wide, so make it disappear on smaller viewports.
-          // Logout icon remains visible.
-          display: none
+    .app-menubar
+      .p-splitbutton
+        span.p-button-label
+          // Don't wrap button label when viewport shrinks.
+          white-space: nowrap
+          // When longer login name does not fit, show the ellipsis.
+          overflow: hidden
+          text-overflow: ellipsis
+          @media screen and (max-width: 1270px)
+            // Button label is very wide, so make it disappear on smaller viewports.
+            // Logout icon remains visible.
+            display: none
 
-      .p-splitbutton-button
-        // For long username this button may become very wide and cause overflow.
-        // Limit max width.
-        max-width: 12rem
-        // Minimize horizontal padding.
-        padding-left: 0.5rem
-        padding-right: 0.5rem
+        .p-splitbutton-button
+          // For long username this button may become very wide and cause overflow.
+          // Limit max width.
+          max-width: 12rem
+          // Minimize horizontal padding.
+          padding-left: 0.5rem
+          padding-right: 0.5rem
 
-    .app-menubar .p-togglebutton-label
-      // Dark/light mode toggle button is an icon only button, so hide the empty label.
-      display: none
+      .p-togglebutton-label
+        // Dark/light mode toggle button is an icon only button, so hide the empty label.
+        display: none

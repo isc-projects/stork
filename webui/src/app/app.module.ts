@@ -268,8 +268,40 @@ const AuraBluePreset = definePreset(Aura, {
         },
         // Apply regular padding for all panel headers.
         panel: {
-            root: {
-                toggleableHeaderPadding: '1.125rem',
+            colorScheme: {
+                light: {
+                    root: {
+                        toggleableHeaderPadding: '1.125rem',
+                    },
+                },
+                dark: {
+                    root: {
+                        toggleableHeaderPadding: '1.125rem',
+                    },
+                },
+            },
+        },
+        // Customize accordion header background colors and apply smaller padding for accordion panel content.
+        accordion: {
+            colorScheme: {
+                light: {
+                    root: {
+                        headerBackground: '{surface.50}',
+                        headerActiveBackground: '{surface.50}',
+                        headerHoverBackground: '{surface.100}',
+                        headerActiveHoverBackground: '{surface.100}',
+                        contentPadding: '0 0.5rem 0.5rem 0.5rem',
+                    },
+                },
+                dark: {
+                    root: {
+                        headerBackground: '{surface.950}',
+                        headerActiveBackground: '{surface.950}',
+                        headerHoverBackground: '{surface.800}',
+                        headerActiveHoverBackground: '{surface.800}',
+                        contentPadding: '0 0.5rem 0.5rem 0.5rem',
+                    },
+                },
             },
         },
     },

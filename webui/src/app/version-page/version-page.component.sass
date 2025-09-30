@@ -16,25 +16,6 @@
         .p-datatable-column-title
           display: none
 
-      .p-messages
-        // Apply flex-wrap to .p-message-wrapper container for better
-        // messages visibility - the icon and short summary should fit in first line.
-        // Message details will wrap to new line.
-        .p-message-wrapper
-          flex-wrap: wrap
-          gap: 0.5rem
-
-        .p-message-detail
-          // flex-basis set to 100% makes .p-message-detail div always wrap to new line
-          flex-basis: 100%
-          // .p-message-detail div will be wrapped to new line,
-          // so left margin is not needed.
-          margin-left: 0
-
-        .p-message
-          // Disable top margin to decrease the gap between message containers.
-          margin-top: 0
-
     .header-message
       .p-message
         // Decrease vertical margins for p-messages component that are used in the view's header.
@@ -44,5 +25,7 @@
 
       // Make consecutive header messages having vertically aligned summary and detail parts.
       // This is achieved by disabling flex-shrink and setting flex-basis for message summary.
-      .p-message-summary
-        flex: 0 0 5rem
+      .custom-message .p-message-content > span:nth-of-type(1)
+        @media screen and (min-width: 576px)
+          // Apply this only for bigger viewports.
+          flex: 0 0 5rem

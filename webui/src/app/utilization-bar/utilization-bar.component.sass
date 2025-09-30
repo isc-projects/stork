@@ -5,6 +5,8 @@
   position: relative
   // A little spacing around.
   padding: 0.2em
+  // Make it flex container to handle flex items shrink.
+  display: flex
 
   ::ng-deep html.dark & a
     // In the dark mode, make the anchors lighter to be better visible on the utilization bars.
@@ -67,6 +69,10 @@
   display: inline-flex
   // Center the text vertically using flex.
   align-items: center
+  // If label can't fit into parent flex container, display scroll bar to prevent overflow.
+  overflow: auto
+  // Take full width of parent container.
+  width: 100%
 
 // Bar label indicating the kind of the utilization.
 .utilization__kind

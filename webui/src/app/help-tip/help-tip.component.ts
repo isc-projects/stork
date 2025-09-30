@@ -18,10 +18,10 @@ export class HelpTipComponent {
     /**
      * View child Popover component.
      */
-    @ViewChild(Popover) popover: Popover
+    @ViewChild('po') popover: Popover
 
     /**
-     * Target component to align the overlay of the help-tip.
+     * Target component to align the popover of the help-tip.
      */
     @Input() target: any
 
@@ -60,7 +60,7 @@ export class HelpTipComponent {
     constructor() {}
 
     /** Show/hide the help tip content. */
-    toggleOverlay(ev) {
+    togglePopover(ev) {
         this.popover.toggle(ev, this.target)
     }
 }

@@ -101,10 +101,11 @@
                 severity="info"
                 [icon]="getIconBySeverity(Severity.info)"
                 class="custom-message"
-            >
-                The information below about ISC software versions relies on an offline built-in JSON file that was
-                generated on {{ dataDate$ | async }}. To see up-to-date information, please visit the
-                <a target="_blank" href="https://www.isc.org/download/">ISC website</a>
+                ><div>
+                    The information below about ISC software versions relies on an offline built-in JSON file that was
+                    generated on {{ dataDate$ | async }}. To see up-to-date information, please visit the
+                    <a target="_blank" href="https://www.isc.org/download/">ISC website</a>
+                </div>
             </p-message>
             <p-message
                 styleClass="mb-2"

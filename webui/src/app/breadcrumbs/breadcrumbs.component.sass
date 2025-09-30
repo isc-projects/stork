@@ -1,6 +1,7 @@
 @layer high
-  :host ::ng-deep .p-breadcrumb .p-breadcrumb-list li .p-menuitem-link
-      .p-menuitem-text, .p-menuitem-icon
-        // Make breadcrumbs bigger and use bold font.
-        font-size: 1.5em
-        font-weight: bold
+  :host ::ng-deep .p-breadcrumb .p-breadcrumb-list li
+      .p-breadcrumb-item-icon, .p-breadcrumb-item-label
+        @media screen and (min-width: 576px)
+          // Make breadcrumbs bigger and use bold font.
+          font-size: 1.5em
+          font-weight: bold
