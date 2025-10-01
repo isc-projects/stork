@@ -20,6 +20,7 @@ import { MessageModule } from 'primeng/message'
 import { AuthService } from '../auth.service'
 import { DialogModule } from 'primeng/dialog'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ButtonModule } from 'primeng/button'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
@@ -40,6 +41,7 @@ describe('PasswordChangePageComponent', () => {
                 PasswordModule,
                 MessageModule,
                 DialogModule,
+                ButtonModule,
             ],
             providers: [
                 UntypedFormBuilder,

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page.component'
-import { ActivatedRoute, convertToParamMap } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router'
 import { MockParamMap } from '../utils'
 import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
@@ -29,6 +29,7 @@ import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-
 import { TagModule } from 'primeng/tag'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { AppsPageComponent } from '../apps-page/apps-page.component'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
     let component: KeaGlobalConfigurationPageComponent
@@ -76,6 +77,12 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([
+                    {
+                        path: 'apps/:id',
+                        component: AppsPageComponent,
+                    },
+                ]),
             ],
         }).compileComponents()
 

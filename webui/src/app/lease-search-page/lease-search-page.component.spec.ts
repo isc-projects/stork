@@ -20,13 +20,15 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { MessagesModule } from 'primeng/messages'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { IconFieldModule } from 'primeng/iconfield'
+import { InputIconModule } from 'primeng/inputicon'
+import { ButtonModule } from 'primeng/button'
 
 describe('LeaseSearchPageComponent', () => {
     let component: LeaseSearchPageComponent
@@ -58,8 +60,11 @@ describe('LeaseSearchPageComponent', () => {
                 PopoverModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
-                MessagesModule,
+                MessageModule,
                 ToggleButtonModule,
+                IconFieldModule,
+                InputIconModule,
+                ButtonModule,
             ],
             providers: [
                 DHCPService,

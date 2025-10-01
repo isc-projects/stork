@@ -348,7 +348,7 @@ describe('utils', () => {
 
     it('should return severity by index', () => {
         expect(getSeverityByIndex(0)).toBe('success')
-        expect(getSeverityByIndex(1)).toBe('warning')
+        expect(getSeverityByIndex(1)).toBe('warn')
         expect(getSeverityByIndex(2)).toBe('danger')
         expect(getSeverityByIndex(3)).toBe('info')
         expect(getSeverityByIndex(4)).toBe('info')

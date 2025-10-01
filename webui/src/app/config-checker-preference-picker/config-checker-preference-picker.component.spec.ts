@@ -16,6 +16,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { AuthService } from '../auth.service'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('ConfigCheckerPreferencePickerComponent', () => {
     let component: ConfigCheckerPreferencePickerComponent
@@ -34,6 +35,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
                 CheckboxModule,
                 TagModule,
                 ManagedAccessDirective,
+                TriStateCheckboxComponent,
             ],
             declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
             providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],

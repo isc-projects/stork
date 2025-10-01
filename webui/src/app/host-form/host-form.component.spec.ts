@@ -11,7 +11,7 @@ import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { ToggleSwitchModule } from 'primeng/toggleswitch'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { PopoverModule } from 'primeng/popover'
 import { HostFormComponent } from './host-form.component'
@@ -141,7 +141,7 @@ describe('HostFormComponent', () => {
                 FormsModule,
                 InputNumberModule,
                 ToggleSwitchModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 PopoverModule,

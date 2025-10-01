@@ -14,7 +14,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from './server-sent-events.service'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { SettingService } from './setting.service'
 import { of } from 'rxjs'
@@ -52,7 +52,7 @@ describe('AppComponent', () => {
                 PopoverModule,
                 NoopAnimationsModule,
                 FormsModule,
-                MessagesModule,
+                MessageModule,
                 ToggleButtonModule,
             ],
             providers: [

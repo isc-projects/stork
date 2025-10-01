@@ -6,7 +6,7 @@ import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform
 import { FieldsetModule } from 'primeng/fieldset'
 import { MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -22,6 +22,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
+import { ButtonModule } from 'primeng/button'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -41,13 +42,14 @@ describe('SettingsPageComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 ReactiveFormsModule,
-                MessagesModule,
+                MessageModule,
                 NoopAnimationsModule,
                 PopoverModule,
                 ProgressSpinnerModule,
                 RouterModule,
                 InputNumberModule,
                 ManagedAccessDirective,
+                ButtonModule,
             ],
             providers: [
                 SettingsService,

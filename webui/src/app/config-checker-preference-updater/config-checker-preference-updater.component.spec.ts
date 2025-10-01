@@ -18,6 +18,7 @@ import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { TagModule } from 'primeng/tag'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     let component: ConfigCheckerPreferenceUpdaterComponent
@@ -44,6 +45,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 CheckboxModule,
                 TagModule,
                 ManagedAccessDirective,
+                TriStateCheckboxComponent,
             ],
             providers: [
                 MessageService,

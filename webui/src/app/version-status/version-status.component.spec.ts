@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api'
 import { TooltipModule } from 'primeng/tooltip'
 import { Severity, VersionService } from '../version.service'
 import { of } from 'rxjs'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -88,7 +88,7 @@ describe('VersionStatusComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [VersionStatusComponent],
-            imports: [TooltipModule, MessagesModule, BrowserAnimationsModule],
+            imports: [TooltipModule, MessageModule, BrowserAnimationsModule],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 

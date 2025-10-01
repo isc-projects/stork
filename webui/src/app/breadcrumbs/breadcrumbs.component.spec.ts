@@ -5,6 +5,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { PopoverModule } from 'primeng/popover'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { provideRouter, RouterModule } from '@angular/router'
+import { ButtonModule } from 'primeng/button'
 
 describe('BreadcrumbsComponent', () => {
     let component: BreadcrumbsComponent
@@ -12,7 +13,7 @@ describe('BreadcrumbsComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterModule, BreadcrumbModule, PopoverModule, NoopAnimationsModule],
+            imports: [RouterModule, BreadcrumbModule, PopoverModule, NoopAnimationsModule, ButtonModule],
             declarations: [BreadcrumbsComponent, HelpTipComponent],
             providers: [provideRouter([])],
         }).compileComponents()

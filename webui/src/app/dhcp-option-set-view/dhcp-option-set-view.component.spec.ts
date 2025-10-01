@@ -13,6 +13,7 @@ import { DividerModule } from 'primeng/divider'
 import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { IPType } from '../iptype'
+import { ButtonModule } from 'primeng/button'
 
 describe('DhcpOptionSetViewComponent', () => {
     let component: DhcpOptionSetViewComponent
@@ -29,6 +30,7 @@ describe('DhcpOptionSetViewComponent', () => {
                 TagModule,
                 TooltipModule,
                 TreeModule,
+                ButtonModule,
             ],
             declarations: [DhcpOptionSetViewComponent, HelpTipComponent],
         }).compileComponents()

@@ -15,7 +15,7 @@ import { RouterModule } from '@angular/router'
 import { Severity, VersionAlert, VersionService } from '../version.service'
 import { of } from 'rxjs'
 import { AppsVersions, ServicesService } from '../backend'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { BadgeModule } from 'primeng/badge'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -261,7 +261,7 @@ describe('VersionPageComponent', () => {
                         component: VersionPageComponent,
                     },
                 ]),
-                MessagesModule,
+                MessageModule,
                 BadgeModule,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],

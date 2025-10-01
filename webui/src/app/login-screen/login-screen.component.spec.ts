@@ -11,7 +11,7 @@ import { ButtonModule } from 'primeng/button'
 import { of } from 'rxjs'
 import { By } from '@angular/platform-browser'
 import { RouterModule } from '@angular/router'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { AuthService } from '../auth.service'
 import { SelectModule } from 'primeng/select'
 import { PasswordModule } from 'primeng/password'
@@ -57,7 +57,7 @@ describe('LoginScreenComponent', () => {
                 ProgressSpinnerModule,
                 SelectButtonModule,
                 ButtonModule,
-                MessagesModule,
+                MessageModule,
                 SelectModule,
                 PasswordModule,
                 BrowserAnimationsModule,

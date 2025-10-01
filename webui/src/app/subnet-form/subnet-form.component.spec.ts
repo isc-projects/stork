@@ -29,7 +29,7 @@ import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/d
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { By } from '@angular/platform-browser'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
@@ -425,7 +425,7 @@ describe('SubnetFormComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 TableModule,

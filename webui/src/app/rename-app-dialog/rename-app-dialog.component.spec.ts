@@ -7,6 +7,7 @@ import { RenameAppDialogComponent } from './rename-app-dialog.component'
 import { DialogModule } from 'primeng/dialog'
 import { SharedModule } from 'primeng/api'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { ButtonModule } from 'primeng/button'
 
 describe('RenameAppDialogComponent', () => {
     let component: RenameAppDialogComponent
@@ -14,7 +15,7 @@ describe('RenameAppDialogComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [FormsModule, DialogModule, SharedModule, NoopAnimationsModule],
+            imports: [FormsModule, DialogModule, SharedModule, NoopAnimationsModule, ButtonModule],
             declarations: [RenameAppDialogComponent],
         }).compileComponents()
     }))

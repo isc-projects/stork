@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angul
 
 import { AppTabComponent } from './app-tab.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { TabViewModule } from 'primeng/tabview'
 import { MessageService } from 'primeng/api'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { MockLocationStrategy } from '@angular/common/testing'
@@ -35,6 +34,7 @@ import { ButtonModule } from 'primeng/button'
 import { DurationPipe } from '../pipes/duration.pipe'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
 
 class Daemon {
     name = 'named'
@@ -93,7 +93,6 @@ describe('AppTabComponent', () => {
                 FormsModule,
                 RouterModule,
                 TooltipModule,
-                TabViewModule,
                 DialogModule,
                 NoopAnimationsModule,
                 PanelModule,
@@ -103,6 +102,7 @@ describe('AppTabComponent', () => {
                 ManagedAccessDirective,
                 ButtonModule,
                 ConfirmDialogModule,
+                TabViewComponent,
             ],
             providers: [
                 UsersService,

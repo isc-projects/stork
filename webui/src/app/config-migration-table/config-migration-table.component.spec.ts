@@ -108,7 +108,7 @@ describe('ConfigMigrationTableComponent', () => {
         expect(dialog).not.toBeNull()
         const confirmDialog = dialog.componentInstance as ConfirmDialog
         expect(confirmDialog).not.toBeNull()
-        confirmDialog.accept()
+        confirmDialog.onAccept()
         tick()
 
         expect(component.clearMigrations.emit).toHaveBeenCalled()

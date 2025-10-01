@@ -278,7 +278,7 @@ describe('ConfigMigrationTabComponent', () => {
         tagElement = fixture.debugElement.query(By.directive(Tag))
         expect(tagElement).toBeTruthy()
         tag = tagElement.componentInstance as Tag
-        expect(tag.severity).toBe('warning')
+        expect(tag.severity).toBe('warn')
         expect(tag.value).toBe('Canceling')
 
         // Completed

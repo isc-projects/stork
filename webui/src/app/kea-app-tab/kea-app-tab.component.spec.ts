@@ -3,7 +3,6 @@ import { KeaAppTabComponent } from './kea-app-tab.component'
 import { ActivatedRoute, provideRouter, RouterModule } from '@angular/router'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
-import { TabViewModule } from 'primeng/tabview'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { PanelModule } from 'primeng/panel'
@@ -13,7 +12,7 @@ import { MessageService } from 'primeng/api'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
-import { BehaviorSubject, of, throwError } from 'rxjs'
+import { of, throwError } from 'rxjs'
 
 import { AppsVersions, DHCPService, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
@@ -42,6 +41,9 @@ import { VersionStatusComponent } from '../version-status/version-status.compone
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
+import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 
 class Details {
     daemons: any = [
@@ -131,11 +133,12 @@ describe('KeaAppTabComponent', () => {
                 AppOverviewComponent,
                 EventTextComponent,
                 VersionStatusComponent,
+                ConfigCheckerPreferenceUpdaterComponent,
+                ConfigCheckerPreferencePickerComponent,
             ],
             imports: [
                 RouterModule,
                 TableModule,
-                TabViewModule,
                 PanelModule,
                 TooltipModule,
                 MessageModule,
@@ -155,6 +158,7 @@ describe('KeaAppTabComponent', () => {
                 TagModule,
                 ManagedAccessDirective,
                 ConfirmDialogModule,
+                TabViewComponent,
             ],
             providers: [
                 UsersService,
@@ -179,7 +183,7 @@ describe('KeaAppTabComponent', () => {
         route = fixture.debugElement.injector.get(ActivatedRoute)
         fixture.debugElement.injector.get(VersionService)
         const appTab = new AppTab()
-        component.refreshedAppTab = new BehaviorSubject(appTab)
+        // component.refreshedAppTab = new BehaviorSubject(appTab)
         component.appTab = appTab
         fixture.detectChanges()
     })
@@ -307,9 +311,9 @@ describe('KeaAppTabComponent', () => {
 
     it('should select tab according to the daemon parameter', () => {
         spyOn(route.snapshot.queryParamMap, 'get').and.returnValue('dhcp6')
-        component.ngOnInit()
-        expect(component.activeTabIndex).toBe(1)
+        component.appTab = new AppTab()
         fixture.detectChanges()
+        expect(component.activeTabDaemonID).toBe(2)
         expect(fixture.debugElement.nativeElement.innerText).toContain('1.9.5')
     })
 

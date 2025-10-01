@@ -3,8 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { TabViewComponent } from './tab-view.component'
 
 describe('StorkTabViewComponent', () => {
-    let component: TabViewComponent
-    let fixture: ComponentFixture<TabViewComponent>
+    let component: TabViewComponent<any, any>
+    let fixture: ComponentFixture<TabViewComponent<any, any>>
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({

@@ -15,24 +15,40 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { PanelModule } from 'primeng/panel'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { TagModule } from 'primeng/tag'
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
-import { DHCPService, Host } from '../backend'
+import { DHCPService, Host, LocalHost } from '../backend'
 import { By } from '@angular/platform-browser'
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { IconFieldModule } from 'primeng/iconfield'
+import { InputIconModule } from 'primeng/inputicon'
+import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
+import { IdentifierComponent } from '../identifier/identifier.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
     let fixture: ComponentFixture<HostsTableComponent>
-    let dhcpServiceSpy: jasmine.SpyObj<DHCPService>
+    let dhcpService: DHCPService
+    let getHostsSpy: jasmine.Spy
+    let startMigrationSpy: jasmine.Spy
 
     beforeEach(waitForAsync(() => {
-        const spy = jasmine.createSpyObj('DHCPService', ['startHostsMigration', 'getHosts'])
-
         TestBed.configureTestingModule({
-            declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe],
+            declarations: [
+                HostsTableComponent,
+                HelpTipComponent,
+                PluralizePipe,
+                IdentifierComponent,
+                HostDataSourceLabelComponent,
+                EntityLinkComponent,
+                ByteCharacterComponent,
+            ],
             imports: [
                 TableModule,
                 RouterModule.forRoot([
@@ -60,17 +76,21 @@ describe('HostsTableComponent', () => {
                 ManagedAccessDirective,
                 ConfirmDialogModule,
                 FloatLabelModule,
+                TriStateCheckboxComponent,
+                IconFieldModule,
+                InputIconModule,
             ],
             providers: [
                 MessageService,
                 ConfirmationService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                { provide: DHCPService, useValue: spy },
             ],
         }).compileComponents()
 
-        dhcpServiceSpy = TestBed.inject(DHCPService) as jasmine.SpyObj<DHCPService>
+        dhcpService = TestBed.inject(DHCPService)
+        getHostsSpy = spyOn(dhcpService, 'getHosts')
+        startMigrationSpy = spyOn(dhcpService, 'startHostsMigration')
     }))
 
     beforeEach(() => {
@@ -144,7 +164,7 @@ describe('HostsTableComponent', () => {
     })
 
     it('should ask for confirmation before migrating hosts', fakeAsync(() => {
-        dhcpServiceSpy.startHostsMigration.and.returnValue(of({}) as any)
+        startMigrationSpy.and.returnValue(of({}) as any)
 
         component.canStartMigration = true
 
@@ -161,10 +181,10 @@ describe('HostsTableComponent', () => {
         expect(dialog).not.toBeNull()
         const confirmDialog = dialog.componentInstance as ConfirmDialog
         expect(confirmDialog).not.toBeNull()
-        confirmDialog.accept()
+        confirmDialog.onAccept()
         tick()
 
-        expect(dhcpServiceSpy.startHostsMigration).toHaveBeenCalledWith(1, null, null, 'foo', true)
+        expect(dhcpService.startHostsMigration).toHaveBeenCalledWith(1, null, null, 'foo', true)
     }))
 
     it('should extract filter entries properly', () => {
@@ -234,9 +254,303 @@ describe('HostsTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(dhcpServiceSpy.getHosts).toHaveBeenCalledTimes(4)
+        expect(dhcpService.getHosts).toHaveBeenCalledTimes(4)
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
-        expect(dhcpServiceSpy.getHosts).toHaveBeenCalledWith(0, 10, 1, 1, 1, null, null, null)
+        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, 1, 1, 1, null, null, null)
         flush()
     }))
+
+    it('should display well formatted host identifiers', () => {
+        // Create a list with three hosts. One host uses a duid convertible
+        // to a textual format. Another host uses a hw-address which is
+        // by default displayed in the hex format. Third host uses a
+        // flex-id which is not convertible to a textual format.
+        component.hosts = [
+            {
+                id: 1,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '61:62:63:64',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 1,
+                        appName: 'frog',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+            {
+                id: 2,
+                hostIdentifiers: [
+                    {
+                        idType: 'hw-address',
+                        idHexValue: '51:52:53:54:55:56',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.2',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 2,
+                        appName: 'mouse',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+            {
+                id: 3,
+                hostIdentifiers: [
+                    {
+                        idType: 'flex-id',
+                        idHexValue: '01:02:03:04:05',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.2',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 3,
+                        appName: 'lion',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // There should be 3 hosts listed.
+        const identifierEl = fixture.debugElement.queryAll(By.css('app-identifier'))
+        expect(identifierEl.length).toBe(3)
+
+        // Each host identifier should be a link.
+        const firstIdEl = identifierEl[0].query(By.css('a'))
+        expect(firstIdEl).toBeTruthy()
+        // The DUID is displayed by default as a hex.
+        expect(firstIdEl.nativeElement.textContent).toContain('duid=(61:62:63:64)')
+        expect(firstIdEl.attributes.href).toBe('/dhcp/hosts/1')
+
+        const secondIdEl = identifierEl[1].query(By.css('a'))
+        expect(secondIdEl).toBeTruthy()
+        // The HW address is convertible but by default should be in hex format.
+        expect(secondIdEl.nativeElement.textContent).toContain('hw-address=(51:52:53:54:55:56)')
+        expect(secondIdEl.attributes.href).toBe('/dhcp/hosts/2')
+
+        const thirdIdEl = identifierEl[2].query(By.css('a'))
+        expect(thirdIdEl).toBeTruthy()
+        // The flex-id is not convertible to text so should be in hex format.
+        expect(thirdIdEl.nativeElement.textContent).toContain('flex-id=(\\0x01\\0x02\\0x03\\0x04\\0x05)')
+        expect(thirdIdEl.attributes.href).toBe('/dhcp/hosts/3')
+    })
+
+    it('should contain a refresh button', () => {
+        const refreshBtn = fixture.debugElement.query(By.css('[label="Refresh List"]'))
+        expect(refreshBtn).toBeTruthy()
+
+        getHostsSpy.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })))
+        refreshBtn.nativeElement.click()
+        fixture.detectChanges()
+        expect(dhcpService.getHosts).toHaveBeenCalled()
+    })
+
+    it('hosts list should be filtered by appId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        getHostsSpy.and.callThrough()
+
+        component.filterTable(2, <FilterMetadata>component.table.filters['appId'])
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, 2, null, null, null, null, null)
+
+        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+    }))
+
+    it('hosts list should be filtered by subnetId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        getHostsSpy.and.callThrough()
+
+        component.filterTable(89, <FilterMetadata>component.table.filters['subnetId'])
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, 89, null, null, null, null)
+
+        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+    }))
+
+    it('hosts list should be filtered by conflicts', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        getHostsSpy.and.callThrough()
+
+        component.filterTable(true, <FilterMetadata>component.table.filters['conflict'])
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, true)
+
+        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+    }))
+
+    it('hosts list should be filtered by non-conflicts', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        getHostsSpy.and.callThrough()
+
+        component.filterTable(false, <FilterMetadata>component.table.filters['conflict'])
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, false)
+
+        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+    }))
+
+    it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+
+        getHostsSpy.and.callThrough()
+
+        component.filterTable(101, <FilterMetadata>component.table.filters['keaSubnetId'])
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, null, 101, null, null, null)
+
+        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+    }))
+
+    it('should group the local hosts by appId', () => {
+        const host = {
+            id: 42,
+            localHosts: [
+                {
+                    appId: 3,
+                    daemonId: 31,
+                },
+                {
+                    appId: 3,
+                    daemonId: 32,
+                },
+                {
+                    appId: 3,
+                    daemonId: 33,
+                },
+                {
+                    appId: 2,
+                    daemonId: 21,
+                },
+                {
+                    appId: 2,
+                    daemonId: 22,
+                },
+                {
+                    appId: 1,
+                    daemonId: 11,
+                },
+            ],
+        } as Host
+
+        component.hosts = [host]
+        const groups = component.localHostsGroupedByApp[host.id]
+
+        expect(groups.length).toBe(3)
+        for (let group of groups) {
+            expect(group.length).toBeGreaterThanOrEqual(1)
+            const appId = group[0].appId
+            expect(group.length).toBe(appId)
+            for (let item of group) {
+                expect(item.daemonId).toBeGreaterThan(10 * appId)
+                expect(item.daemonId).toBeLessThan(10 * (appId + 1))
+            }
+        }
+    })
+
+    it('should recognize the state of local hosts', () => {
+        // Conflict
+        let localHosts = [
+            {
+                appId: 1,
+                daemonId: 1,
+                nextServer: 'foo',
+            },
+            {
+                appId: 1,
+                daemonId: 2,
+                nextServer: 'bar',
+            },
+        ] as LocalHost[]
+
+        let state = component.getLocalHostsState(localHosts)
+        expect(state).toBe('conflict')
+
+        // Duplicate
+        localHosts = [
+            {
+                appId: 1,
+                daemonId: 1,
+                nextServer: 'foo',
+            },
+            {
+                appId: 1,
+                daemonId: 2,
+                nextServer: 'foo',
+            },
+        ] as LocalHost[]
+
+        state = component.getLocalHostsState(localHosts)
+        expect(state).toBe('duplicate')
+
+        // Null
+        localHosts = [
+            {
+                appId: 1,
+                daemonId: 1,
+                nextServer: 'foo',
+            },
+        ] as LocalHost[]
+
+        state = component.getLocalHostsState(localHosts)
+        expect(state).toBeNull()
+    })
+
+    it('host table should have valid app name and app link', () => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+        // Table rows have ids created by appending host id to the host-row- string.
+        const row = fixture.debugElement.query(By.css('#host-row-1'))
+        // There should be 6 table cells in the row.
+        expect(row.children.length).toBe(6)
+        // The last one includes the app name.
+        const appNameTd = row.children[5]
+        // The cell includes a link to the app.
+        expect(appNameTd.children.length).toBe(1)
+        const appLink = appNameTd.children[0]
+        expect(appLink.nativeElement.textContent).toBe('frog config')
+        // Verify that the link to the app is correct.
+        const appLinkAnchor = appLink.query(By.css('a'))
+        expect(appLinkAnchor.properties.hasOwnProperty('pathname')).toBeTrue()
+        expect(appLinkAnchor.properties.pathname).toBe('/apps/1')
+    })
 })

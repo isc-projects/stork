@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedNetworkFormComponent } from './shared-network-form.component'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { of, throwError } from 'rxjs'
@@ -299,7 +299,7 @@ describe('SharedNetworkFormComponent', () => {
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 TableModule,

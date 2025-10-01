@@ -13,7 +13,6 @@ import { ButtonModule } from 'primeng/button'
 import { MenubarModule } from 'primeng/menubar'
 import { PanelModule } from 'primeng/panel'
 import { TableModule } from 'primeng/table'
-import { TabViewModule } from 'primeng/tabview'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { DialogModule } from 'primeng/dialog'
 import { InputTextModule } from 'primeng/inputtext'
@@ -21,7 +20,6 @@ import { SelectModule } from 'primeng/select'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { MessageModule } from 'primeng/message'
-import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
 import { ChipModule } from 'primeng/chip'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
@@ -461,14 +459,12 @@ const AuraBluePreset = definePreset(Aura, {
         MenubarModule,
         PanelModule,
         TableModule,
-        TabViewModule,
         ProgressBarModule,
         DialogModule,
         InputTextModule,
         SelectModule,
         ToastModule,
         MessageModule,
-        TabMenuModule,
         MenuModule,
         ProgressSpinnerModule,
         TooltipModule,

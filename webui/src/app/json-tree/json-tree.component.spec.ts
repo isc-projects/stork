@@ -678,6 +678,7 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
             <ng-template #bar>BAR</ng-template>
             <app-json-tree [customValueTemplates]="{ foo: foo, bar: bar }"></app-json-tree>
         `,
+        standalone: false,
     })
     class WrapperComponent {
         @ViewChild(JsonTreeComponent, { static: true })

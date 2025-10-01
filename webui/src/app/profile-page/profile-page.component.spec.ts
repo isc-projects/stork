@@ -17,6 +17,7 @@ import { MenuModule } from 'primeng/menu'
 import { PopoverModule } from 'primeng/popover'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ButtonModule } from 'primeng/button'
 
 describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
@@ -39,6 +40,7 @@ describe('ProfilePageComponent', () => {
                 PopoverModule,
                 NoopAnimationsModule,
                 RouterModule,
+                ButtonModule,
             ],
             providers: [
                 MessageService,

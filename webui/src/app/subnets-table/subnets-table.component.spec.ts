@@ -30,6 +30,8 @@ import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.comp
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { FloatLabelModule } from 'primeng/floatlabel'
 import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
+import { IconFieldModule } from 'primeng/iconfield'
+import { InputIconModule } from 'primeng/inputicon'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -74,6 +76,8 @@ describe('SubnetsTableComponent', () => {
                 TooltipModule,
                 ManagedAccessDirective,
                 FloatLabelModule,
+                IconFieldModule,
+                InputIconModule,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()

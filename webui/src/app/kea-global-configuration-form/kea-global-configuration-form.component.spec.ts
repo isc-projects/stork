@@ -12,7 +12,7 @@ import {
 } from '../backend'
 import { of, throwError } from 'rxjs'
 import { FieldsetModule } from 'primeng/fieldset'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { ReactiveFormsModule } from '@angular/forms'
@@ -253,7 +253,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 SelectModule,
                 FieldsetModule,
                 InputNumberModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 ProgressSpinnerModule,

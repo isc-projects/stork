@@ -27,11 +27,12 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
+import { ButtonModule } from 'primeng/button'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -66,9 +67,10 @@ describe('HostTabComponent', () => {
                 ToggleButtonModule,
                 TreeModule,
                 TagModule,
-                MessagesModule,
+                MessageModule,
                 ProgressSpinnerModule,
                 ManagedAccessDirective,
+                ButtonModule,
             ],
             providers: [
                 DHCPService,

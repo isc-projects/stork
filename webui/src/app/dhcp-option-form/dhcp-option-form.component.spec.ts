@@ -22,6 +22,8 @@ import { IPType } from '../iptype'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DividerModule } from 'primeng/divider'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { ButtonModule } from 'primeng/button'
+import { TagModule } from 'primeng/tag'
 
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
@@ -42,6 +44,8 @@ describe('DhcpOptionFormComponent', () => {
                 ToggleButtonModule,
                 DividerModule,
                 FloatLabelModule,
+                ButtonModule,
+                TagModule,
             ],
             declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent],
         }).compileComponents()

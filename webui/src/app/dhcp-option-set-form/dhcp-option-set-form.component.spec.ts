@@ -13,6 +13,8 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { IPType } from '../iptype'
+import { ButtonModule } from 'primeng/button'
+import { TagModule } from 'primeng/tag'
 
 describe('DhcpOptionSetFormComponent', () => {
     let component: DhcpOptionSetFormComponent
@@ -32,6 +34,8 @@ describe('DhcpOptionSetFormComponent', () => {
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToggleButtonModule,
+                ButtonModule,
+                TagModule,
             ],
             declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent],
         }).compileComponents()
