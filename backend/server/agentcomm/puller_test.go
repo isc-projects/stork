@@ -137,10 +137,11 @@ func TestPullerSavesLastExecutionTime(t *testing.T) {
 	startTime := time.Now()
 
 	// Act
+	var finishTime time.Time
 	require.Eventually(t, func() bool {
-		return pullTimeWrapper.Load() != (*time.Time)(nil)
+		finishTime = puller.GetLastFinishedAt()
+		return pullTimeWrapper.Load() != (*time.Time)(nil) && !finishTime.IsZero()
 	}, 5*time.Second, 500*time.Millisecond)
-	finishTime := puller.GetLastFinishedAt()
 
 	// Assert
 	puller.Shutdown()
@@ -171,10 +172,11 @@ func TestPullerSavesLastInvokedTime(t *testing.T) {
 	startTime := time.Now()
 
 	// Act
+	var invokedTime time.Time
 	require.Eventually(t, func() bool {
-		return pullTimeWrapper.Load() != (*time.Time)(nil)
+		invokedTime = puller.GetLastInvokedAt()
+		return pullTimeWrapper.Load() != (*time.Time)(nil) && !invokedTime.IsZero()
 	}, 5*time.Second, 500*time.Millisecond)
-	invokedTime := puller.GetLastInvokedAt()
 
 	// Assert
 	puller.Shutdown()
