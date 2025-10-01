@@ -23,17 +23,20 @@ func init() {
 			UPDATE service SET service_type = 'ha_dhcp';
 
 			-- Create the function.
-			CREATE FUNCTION ha_service_type_set() RETURNS TRIGGER AS $$
+			CREATE FUNCTION ha_service_type_set()
+				RETURNS trigger
+				language 'plpgsql'
+				AS $function$
 			BEGIN
 				NEW.service_type := 'ha_dhcp';
 				RETURN NEW;
 			END;
-			$$ LANGUAGE plpgsql;
+			$function$;
 
 			-- Create the trigger.
 			CREATE TRIGGER ha_service_before_insert_update
 			BEFORE INSERT OR UPDATE ON ha_service
-			FOR EACH ROW EXECUTE FUNCTION ha_service_type_set();
+			FOR EACH ROW EXECUTE PROCEDURE ha_service_type_set();
 		`)
 		return err
 	})
