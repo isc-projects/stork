@@ -353,6 +353,9 @@ func GetAppByID(dbi dbops.DBI, id int64) (*App, error) {
 	q := dbi.Model(&app)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons", func(q *orm.Query) (*orm.Query, error) {
+		return q.OrderExpr("daemon.id ASC"), nil
+	})
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Relation("Daemons.PDNSDaemon")
@@ -373,6 +376,9 @@ func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 
 	q := dbi.Model(&apps)
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons", func(q *orm.Query) (*orm.Query, error) {
+		return q.OrderExpr("daemon.id ASC"), nil
+	})
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Relation("Daemons.PDNSDaemon")
@@ -394,6 +400,9 @@ func GetAppsByType(dbi dbops.DBI, appTypes ...AppType) ([]App, error) {
 	q := dbi.Model(&apps)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons", func(q *orm.Query) (*orm.Query, error) {
+		return q.OrderExpr("daemon.id ASC"), nil
+	})
 	q = q.Relation("Daemons.LogTargets")
 
 	for _, appType := range appTypes {
@@ -438,6 +447,9 @@ func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string,
 	q := dbi.Model(&apps)
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Machine")
+	q = q.Relation("Daemons", func(q *orm.Query) (*orm.Query, error) {
+		return q.OrderExpr("daemon.id ASC"), nil
+	})
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Relation("Daemons.PDNSDaemon")
