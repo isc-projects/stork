@@ -561,45 +561,61 @@ func sumStatAddressPoolsIPv4(subnet *dbmodel.Subnet, statName string, excludedDa
 func (c *statisticsCounter) GetStatistics() dbmodel.Stats {
 	stats := dbmodel.Stats{}
 
-	value := storkutil.NewBigCounter(0).AddUint64(c.global.totalIPv4Addresses, c.outOfPoolShifts.outOfPoolGlobalAddresses)
-	stats[dbmodel.StatNameTotalAddresses] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalIPv4AddressesInPools)
-	stats[dbmodel.StatNameTotalOutOfPoolAddresses] = value.ConvertToNativeType()
+	// Calculate the total number of IPv4 addresses.
+	totalIPv4Addresses := storkutil.NewBigCounter(0).AddUint64(c.global.totalIPv4Addresses, c.outOfPoolShifts.outOfPoolGlobalAddresses)
+	stats[dbmodel.StatNameTotalAddresses] = totalIPv4Addresses.ConvertToNativeType()
+	// Calculate the total number of out-of-pool IPv4 addresses.
+	totalOutOfPoolIPv4Addresses := storkutil.NewBigCounter(0).Subtract(totalIPv4Addresses, c.global.totalIPv4AddressesInPools)
+	stats[dbmodel.StatNameTotalOutOfPoolAddresses] = totalOutOfPoolIPv4Addresses.ConvertToNativeType()
 
-	value = c.global.totalAssignedIPv4Addresses
-	stats[dbmodel.StatNameAssignedAddresses] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalAssignedIPv4AddressesInPools)
-	stats[dbmodel.StatNameAssignedOutOfPoolAddresses] = value.ConvertToNativeType()
+	// Calculate the total number of assigned IPv4 addresses.
+	assignedIPv4Addresses := c.global.totalAssignedIPv4Addresses
+	stats[dbmodel.StatNameAssignedAddresses] = assignedIPv4Addresses.ConvertToNativeType()
+	// Calculate the total number of assigned out-of-pool IPv4 addresses.
+	assignedOutOfPoolIPv4Addresses := storkutil.NewBigCounter(0).Subtract(assignedIPv4Addresses, c.global.totalAssignedIPv4AddressesInPools)
+	stats[dbmodel.StatNameAssignedOutOfPoolAddresses] = assignedOutOfPoolIPv4Addresses.ConvertToNativeType()
 
-	value = c.global.totalDeclinedIPv4Addresses
-	stats[dbmodel.StatNameDeclinedAddresses] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalDeclinedIPv4AddressesInPools)
-	stats[dbmodel.StatNameDeclinedOutOfPoolAddresses] = value.ConvertToNativeType()
+	// Calculate the total number of declined IPv4 addresses.
+	declinedIPv4Addresses := c.global.totalDeclinedIPv4Addresses
+	stats[dbmodel.StatNameDeclinedAddresses] = declinedIPv4Addresses.ConvertToNativeType()
+	// Calculate the total number of declined out-of-pool IPv4 addresses.
+	declinedOutOfPoolIPv4Addresses := storkutil.NewBigCounter(0).Subtract(declinedIPv4Addresses, c.global.totalDeclinedIPv4AddressesInPools)
+	stats[dbmodel.StatNameDeclinedOutOfPoolAddresses] = declinedOutOfPoolIPv4Addresses.ConvertToNativeType()
 
-	value = storkutil.NewBigCounter(0).AddUint64(c.global.totalIPv6Addresses, c.outOfPoolShifts.outOfPoolGlobalNAs)
-	stats[dbmodel.StatNameTotalNAs] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalIPv6AddressesInPools)
-	stats[dbmodel.StatNameTotalOutOfPoolNAs] = value.ConvertToNativeType()
+	// Calculate the total number of IPv6 addresses.
+	totalIPv6Addresses := storkutil.NewBigCounter(0).AddUint64(c.global.totalIPv6Addresses, c.outOfPoolShifts.outOfPoolGlobalNAs)
+	stats[dbmodel.StatNameTotalNAs] = totalIPv6Addresses.ConvertToNativeType()
+	// Calculate the total number of out-of-pool IPv6 addresses.
+	totalOutOfPoolIPv6Addresses := storkutil.NewBigCounter(0).Subtract(totalIPv6Addresses, c.global.totalIPv6AddressesInPools)
+	stats[dbmodel.StatNameTotalOutOfPoolNAs] = totalOutOfPoolIPv6Addresses.ConvertToNativeType()
 
-	value = c.global.totalAssignedIPv6Addresses
-	stats[dbmodel.StatNameAssignedNAs] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalAssignedIPv6AddressesInPools)
-	stats[dbmodel.StatNameAssignedOutOfPoolNAs] = value.ConvertToNativeType()
+	// Calculate the total number of assigned IPv6 addresses.
+	assignedIPv6Addresses := c.global.totalAssignedIPv6Addresses
+	stats[dbmodel.StatNameAssignedNAs] = assignedIPv6Addresses.ConvertToNativeType()
+	// Calculate the total number of assigned out-of-pool IPv6 addresses.
+	assignedOutOfPoolIPv6Addresses := storkutil.NewBigCounter(0).Subtract(assignedIPv6Addresses, c.global.totalAssignedIPv6AddressesInPools)
+	stats[dbmodel.StatNameAssignedOutOfPoolNAs] = assignedOutOfPoolIPv6Addresses.ConvertToNativeType()
 
-	value = c.global.totalDeclinedIPv6Addresses
-	stats[dbmodel.StatNameDeclinedNAs] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalDeclinedIPv6AddressesInPools)
-	stats[dbmodel.StatNameDeclinedOutOfPoolNAs] = value.ConvertToNativeType()
+	// Calculate the total number of declined IPv6 addresses.
+	declinedIPv6Addresses := c.global.totalDeclinedIPv6Addresses
+	stats[dbmodel.StatNameDeclinedNAs] = declinedIPv6Addresses.ConvertToNativeType()
+	// Calculate the total number of declined out-of-pool IPv6 addresses.
+	declinedOutOfPoolIPv6Addresses := storkutil.NewBigCounter(0).Subtract(declinedIPv6Addresses, c.global.totalDeclinedIPv6AddressesInPools)
+	stats[dbmodel.StatNameDeclinedOutOfPoolNAs] = declinedOutOfPoolIPv6Addresses.ConvertToNativeType()
 
-	value = storkutil.NewBigCounter(0).AddUint64(c.global.totalDelegatedPrefixes, c.outOfPoolShifts.outOfPoolGlobalPrefixes)
-	stats[dbmodel.StatNameTotalPDs] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalDelegatedPrefixesInPools)
-	stats[dbmodel.StatNameTotalOutOfPoolPDs] = value.ConvertToNativeType()
+	// Calculate the total number of delegated prefixes.
+	totalDelegatedPrefixes := storkutil.NewBigCounter(0).AddUint64(c.global.totalDelegatedPrefixes, c.outOfPoolShifts.outOfPoolGlobalPrefixes)
+	stats[dbmodel.StatNameTotalPDs] = totalDelegatedPrefixes.ConvertToNativeType()
+	// Calculate the total number of out-of-pool delegated prefixes.
+	totalOutOfPoolDelegatedPrefixes := storkutil.NewBigCounter(0).Subtract(totalDelegatedPrefixes, c.global.totalDelegatedPrefixesInPools)
+	stats[dbmodel.StatNameTotalOutOfPoolPDs] = totalOutOfPoolDelegatedPrefixes.ConvertToNativeType()
 
-	value = c.global.totalAssignedDelegatedPrefixes
-	stats[dbmodel.StatNameAssignedPDs] = value.ConvertToNativeType()
-	value = storkutil.NewBigCounter(0).Subtract(value, c.global.totalAssignedDelegatedPrefixesInPools)
-	stats[dbmodel.StatNameAssignedOutOfPoolPDs] = value.ConvertToNativeType()
+	// Calculate the total number of assigned delegated prefixes.
+	assignedDelegatedPrefixes := c.global.totalAssignedDelegatedPrefixes
+	stats[dbmodel.StatNameAssignedPDs] = assignedDelegatedPrefixes.ConvertToNativeType()
+	// Calculate the total number of assigned out-of-pool delegated prefixes.
+	assignedOutOfPoolDelegatedPrefixes := storkutil.NewBigCounter(0).Subtract(assignedDelegatedPrefixes, c.global.totalAssignedDelegatedPrefixesInPools)
+	stats[dbmodel.StatNameAssignedOutOfPoolPDs] = assignedOutOfPoolDelegatedPrefixes.ConvertToNativeType()
 
 	return stats
 }
