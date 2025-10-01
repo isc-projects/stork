@@ -20,14 +20,14 @@ type BigCounter struct {
 	extended *big.Int
 }
 
-// Indicates that two uint64 can be added without integer overflow.
-func canAdd(a, b uint64) bool {
-	return a <= math.MaxUint64-b
+// Indicates that two uint64 would cause integer overflow if added together.
+func addWouldOverflow(a, b uint64) bool {
+	return a > math.MaxUint64-b
 }
 
-// Indicates that two uint64 can be subtracted without integer underflow.
-func canSubtract(a, b uint64) bool {
-	return a >= b
+// Indicates that subtracting `b` from `a` would cause integer underflow.
+func subWouldUnderflow(a, b uint64) bool {
+	return a < b
 }
 
 // Indicates that this counter uses big-int based counter.
@@ -45,7 +45,7 @@ func (n *BigCounter) normalize() {
 
 // Adds two big counters and puts the result into the receiver.
 func (n *BigCounter) Add(a, b *BigCounter) *BigCounter {
-	if a.extended != nil || b.extended != nil || !canAdd(a.base, b.base) {
+	if a.extended != nil || b.extended != nil || addWouldOverflow(a.base, b.base) {
 		outBigInt := n.extended
 		if outBigInt == nil {
 			outBigInt = big.NewInt(0)
@@ -63,7 +63,7 @@ func (n *BigCounter) Add(a, b *BigCounter) *BigCounter {
 
 // Subtracts the big counters and puts the result into the receiver.
 func (n *BigCounter) Subtract(a, b *BigCounter) *BigCounter {
-	if a.isExtended() || b.isExtended() || !canSubtract(a.base, b.base) {
+	if a.isExtended() || b.isExtended() || subWouldUnderflow(a.base, b.base) {
 		outBigInt := n.extended
 		if outBigInt == nil {
 			outBigInt = big.NewInt(0)
@@ -82,7 +82,7 @@ func (n *BigCounter) Subtract(a, b *BigCounter) *BigCounter {
 // Adds the big counter and the uint64 value and puts the result into the
 // receiver.
 func (n *BigCounter) AddUint64(a *BigCounter, b uint64) *BigCounter {
-	if a.isExtended() || !canAdd(a.base, b) {
+	if a.isExtended() || addWouldOverflow(a.base, b) {
 		outBigInt := n.extended
 		if outBigInt == nil {
 			outBigInt = big.NewInt(0)
@@ -100,7 +100,7 @@ func (n *BigCounter) AddUint64(a *BigCounter, b uint64) *BigCounter {
 // Adds big counter and the big int value and puts the result into the
 // receiver.
 func (n *BigCounter) AddBigInt(a *BigCounter, b *big.Int) *BigCounter {
-	if !a.isExtended() && b.IsUint64() && canAdd(a.base, b.Uint64()) {
+	if !a.isExtended() && b.IsUint64() && !addWouldOverflow(a.base, b.Uint64()) {
 		n.extended = nil
 		n.base = a.base + b.Uint64()
 	} else {
