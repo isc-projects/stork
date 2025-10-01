@@ -335,7 +335,7 @@ describe('VersionPageComponent', () => {
         expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
         expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(1)
 
-        const de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-info'))
+        const de = fixture.debugElement.query(By.css('.header-message .p-message.p-message-info'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain(
             'The information below about ISC software versions relies on an' +
@@ -423,7 +423,7 @@ describe('VersionPageComponent', () => {
         let alert: VersionAlert
         versionService.getVersionAlert().subscribe((a) => (alert = a))
         apisWorkingFine()
-        const de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-warn'))
+        const de = fixture.debugElement.query(By.css('.header-message .p-message.p-message-warn'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Action required')
 
@@ -482,12 +482,12 @@ describe('VersionPageComponent', () => {
     it('should display stork server update notification message', () => {
         // Arrange & Act & Assert
         apisWorkingFine()
-        const wrappers = fixture.debugElement.queryAll(By.css('.p-panel-content .p-message-wrapper'))
-        expect(wrappers).toBeTruthy()
-        expect(wrappers.length).toBeGreaterThan(0)
+        const messages = fixture.debugElement.queryAll(By.css('[data-testid="stork-server-update-message"]'))
+        expect(messages).toBeTruthy()
+        expect(messages.length).toBeGreaterThan(0)
 
         // This should be first message of all.
-        const de = wrappers[0]
+        const de = messages[0]
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Stork server update available')
         expect(de.nativeElement.innerText).toContain('Stork server update is available (1.19.0)')

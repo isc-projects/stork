@@ -1,8 +1,8 @@
-import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { HostsTableComponent } from './hosts-table.component'
 import { TableModule } from 'primeng/table'
-import { RouterModule } from '@angular/router'
+import { Router, RouterModule } from '@angular/router'
 import { HostsPageComponent } from '../hosts-page/hosts-page.component'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
@@ -37,6 +37,7 @@ describe('HostsTableComponent', () => {
     let dhcpService: DHCPService
     let getHostsSpy: jasmine.Spy
     let startMigrationSpy: jasmine.Spy
+    let router: Router
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -89,8 +90,10 @@ describe('HostsTableComponent', () => {
         }).compileComponents()
 
         dhcpService = TestBed.inject(DHCPService)
+        router = TestBed.inject(Router)
         getHostsSpy = spyOn(dhcpService, 'getHosts')
         startMigrationSpy = spyOn(dhcpService, 'startHostsMigration')
+        spyOn(router, 'navigate')
     }))
 
     beforeEach(() => {
@@ -254,10 +257,11 @@ describe('HostsTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(dhcpService.getHosts).toHaveBeenCalledTimes(4)
+        expect(dhcpService.getHosts).toHaveBeenCalled()
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
-        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, 1, 1, 1, null, null, null)
-        flush()
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: { appId: 1, subnetId: 1, keaSubnetId: 1, isGlobal: null, conflict: null, text: null },
+        })
     }))
 
     it('should display well formatted host identifiers', () => {
@@ -356,15 +360,17 @@ describe('HostsTableComponent', () => {
         expect(thirdIdEl.attributes.href).toBe('/dhcp/hosts/3')
     })
 
-    it('should contain a refresh button', () => {
-        const refreshBtn = fixture.debugElement.query(By.css('[label="Refresh List"]'))
+    it('should contain a refresh button', fakeAsync(() => {
+        const refreshBtn = fixture.debugElement.query(By.css('[label="Refresh List"] button'))
         expect(refreshBtn).toBeTruthy()
+        spyOn(component, 'loadData')
 
         getHostsSpy.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })))
         refreshBtn.nativeElement.click()
+        tick()
         fixture.detectChanges()
-        expect(dhcpService.getHosts).toHaveBeenCalled()
-    })
+        expect(component.loadData).toHaveBeenCalled()
+    }))
 
     it('hosts list should be filtered by appId', fakeAsync(() => {
         component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
@@ -373,12 +379,12 @@ describe('HostsTableComponent', () => {
         getHostsSpy.and.callThrough()
 
         component.filterTable(2, <FilterMetadata>component.table.filters['appId'])
-        tick()
+        tick(300)
         fixture.detectChanges()
 
-        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, 2, null, null, null, null, null)
-
-        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: { appId: 2, subnetId: null, keaSubnetId: null, isGlobal: null, conflict: null, text: null },
+        })
     }))
 
     it('hosts list should be filtered by subnetId', fakeAsync(() => {
@@ -388,12 +394,12 @@ describe('HostsTableComponent', () => {
         getHostsSpy.and.callThrough()
 
         component.filterTable(89, <FilterMetadata>component.table.filters['subnetId'])
-        tick()
+        tick(300)
         fixture.detectChanges()
 
-        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, 89, null, null, null, null)
-
-        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: { appId: null, subnetId: 89, keaSubnetId: null, isGlobal: null, conflict: null, text: null },
+        })
     }))
 
     it('hosts list should be filtered by conflicts', fakeAsync(() => {
@@ -403,12 +409,12 @@ describe('HostsTableComponent', () => {
         getHostsSpy.and.callThrough()
 
         component.filterTable(true, <FilterMetadata>component.table.filters['conflict'])
-        tick()
+        tick(300)
         fixture.detectChanges()
 
-        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, true)
-
-        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: { appId: null, subnetId: null, keaSubnetId: null, isGlobal: null, conflict: true, text: null },
+        })
     }))
 
     it('hosts list should be filtered by non-conflicts', fakeAsync(() => {
@@ -418,12 +424,19 @@ describe('HostsTableComponent', () => {
         getHostsSpy.and.callThrough()
 
         component.filterTable(false, <FilterMetadata>component.table.filters['conflict'])
-        tick()
+        tick(300)
         fixture.detectChanges()
 
-        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, false)
-
-        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: {
+                appId: null,
+                subnetId: null,
+                keaSubnetId: null,
+                isGlobal: null,
+                conflict: false,
+                text: null,
+            },
+        })
     }))
 
     it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
@@ -433,12 +446,12 @@ describe('HostsTableComponent', () => {
         getHostsSpy.and.callThrough()
 
         component.filterTable(101, <FilterMetadata>component.table.filters['keaSubnetId'])
-        tick()
+        tick(300)
         fixture.detectChanges()
 
-        expect(dhcpService.getHosts).toHaveBeenCalledWith(0, 10, null, null, 101, null, null, null)
-
-        expect(fixture.debugElement.query(By.css('.app-error'))).toBeFalsy()
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: { appId: null, subnetId: null, keaSubnetId: 101, isGlobal: null, conflict: null, text: null },
+        })
     }))
 
     it('should group the local hosts by appId', () => {

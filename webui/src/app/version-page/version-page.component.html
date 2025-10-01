@@ -130,6 +130,7 @@
     <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
     <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
         <p-message
+            data-testid="stork-server-update-message"
             *ngIf="(storkServerUpdateAvailable$ | async).available === true"
             styleClass="mb-2 inline-block"
             class="custom-message"
