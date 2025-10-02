@@ -1018,14 +1018,14 @@ end
 add_version_guard(GOVULNCHECK, govulncheck_ver)
 
 # Python version and requirements.
-python3_version, status = Open3.capture2(PYTHON3_SYSTEM, "--version")
-if status != 0
-    python3_version = "unknown"
-else
+begin
+    python3_version, _ = Open3.capture2(PYTHON3_SYSTEM, "--version")
     # Split the "Python" prefix and get only the version.
     python3_version = python3_version.strip.split()[1]
     # Trim the patch version to have only major-minor.
     python3_version = python3_version.split(".")[0..1].join("_")
+rescue
+    python3_version = "unknown"
 end
 PYTHON3_VERSION = python3_version
 
