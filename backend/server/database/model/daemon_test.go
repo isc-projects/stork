@@ -496,7 +496,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	var result pg.Result
 	mutex := &sync.Mutex{}
 	mutex.Lock()
-	cond := sync.NewCond(mutex)
+	ch := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -505,7 +505,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 		defer wg.Done()
 		// The main thread is waiting for this conditional to ensure that the
 		// goroutine is started before the test continues.
-		cond.Signal()
+		ch <- struct{}{}
 		// Attempt to delete the app while the main transaction is in progress
 		// and the daemons are locked for update. This should block until the
 		// main transaction is committed or rolled back.
@@ -513,7 +513,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	}()
 
 	// Wait for the goroutine to begin.
-	cond.Wait()
+	<-ch
 
 	// We want to ensure that the goroutine executes db.Delete() before we
 	// run the tx.Delete() from this transaction. If the tx.Delete() is
