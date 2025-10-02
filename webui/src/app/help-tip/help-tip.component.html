@@ -11,16 +11,16 @@
     <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + subject }}">
         <div class="flex gap-2">
             <h3 class="underlined flex-auto">Help for {{ subject }}</h3>
-            <p-button
-                icon="pi pi-times"
-                (click)="po.hide()"
-                size="small"
-                [rounded]="true"
-                severity="secondary"
-                [text]="true"
-                class="flex-none"
-            />
         </div>
+        <p-button
+            icon="pi pi-times"
+            (click)="po.hide()"
+            size="small"
+            [rounded]="true"
+            severity="secondary"
+            [text]="true"
+            class="close-help-tip-button"
+        />
         <ng-content></ng-content>
     </div>
 </p-popover>
