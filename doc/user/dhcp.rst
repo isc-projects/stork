@@ -75,7 +75,7 @@ choose to see IPv4 only, IPv6 only, or both. There is also an
 omnisearch box available where users can type a search string.
 For strings of four characters or more, the filtering takes place
 automatically, while shorter strings require the user to hit
-Enter. For example, in the above example it is possible to show only
+Enter. In the above example, it is possible to show only
 the first (192.0.2.0/24) subnet by searching for the *0.2* string. One
 can also search for specific pools, and easily filter the subnet with
 a specific pool, by searching for part of the pool range,
