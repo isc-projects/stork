@@ -236,8 +236,11 @@ end
 # It accepts a task to be guarded and the dependency file.
 # The dependency file should not be included in the prerequisite list of the task.
 def add_hash_guard(task_name, prerequisite_file)
-    Rake::Task[prerequisite_file].invoke
-    hash = Digest::SHA256.file(prerequisite_file).hexdigest
+    if File.exist?(prerequisite_file)
+        hash = Digest::SHA256.file(prerequisite_file).hexdigest
+    else
+        hash = "missing"
+    end
     add_guard(task_name, hash, "hash")
 end
 
@@ -1027,7 +1030,7 @@ begin
 rescue
     python3_version = "unknown"
 end
-PYTHON3_VERSION = python3_version 
+PYTHON3_VERSION = python3_version
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
