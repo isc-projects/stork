@@ -16,7 +16,7 @@ CLEAN.append "webui/documentation.json"
 python_requirement_files = [
     "doc/src/requirements.in",
     "tests/sim/requirements.in",
-] + FileList["rakelib/init_deps/*.in"]
+] + FileList["rakelib/init_deps/*.in"].exclude("rakelib/init_deps/all.in")
 
 #################
 ### Functions ###
@@ -881,7 +881,7 @@ namespace :audit do
     task :python => [PIP_AUDIT] do
         opts = []
         python_requirement_files.each do |r|
-            opts.append "-r", r.ext('txt')
+            opts.append "-r", r.ext(PYTHON3_VERSION + '.txt')
         end
 
         sh PIP_AUDIT, *opts
@@ -1073,7 +1073,7 @@ namespace :gen do
     desc 'Regenerate Python requirements file'
     task :python_requirements => [PIP_COMPILE] do
         python_requirement_files.each do |r|
-            sh PIP_COMPILE, "--strip-extras", r
+            sh PIP_COMPILE, "--strip-extras", "--output-file", r.ext(PYTHON3_VERSION + '.txt'), r
         end
     end
 
@@ -1172,7 +1172,16 @@ namespace :update do
 
     desc 'Update all Python dependencies
         DRY_RUN - do not update the packages, just re-generate using the local versions - default: false'
-    task :python_requirements => [PIP_COMPILE, PIP_SYNC] do
+    task :python_requirements => [PYTHON3_SYSTEM, PIP_COMPILE, PIP_SYNC] do
+        # The update task should be called with Python 3.11 because it is the
+        # lowest supported version by CI.
+        if PYTHON3_VERSION != '3_11'
+            fail "Python 3.11 is required to update the requirements, found: #{PYTHON3_VERSION}"
+        end
+        # We expect that the requirements file generated for the above version
+        # will be compatible with the below versions.
+        copy_versions = ['3_12', '3_13']
+
         require 'pathname'
 
         opts = ["--strip-extras"]
@@ -1209,8 +1218,23 @@ namespace :update do
         python_requirement_files.each do |r|
             # The TXT files must be removed; otherwise, they will
             # not be updated due to missing the --upgrade flag.
-            FileUtils.rm r.ext('txt')
-            sh PIP_COMPILE, *opts, r
+            output_file = r.ext(PYTHON3_VERSION + '.txt')
+            FileUtils.rm_f output_file
+            sh PIP_COMPILE, *opts, '--output-file', output_file, r
+
+            # For requirements outside the init_deps directory, trim the
+            # version suffix for compatibility with third-party tools that
+            # install dependencies out of the build system.
+            if !r.start_with? all_requirements_dir
+                target = r.ext('txt')
+                FileUtils.mv output_file, target
+            else
+                # Make copies to other compatible Python versions.
+                copy_versions.each do |v|
+                    link_target = r.ext(v + '.txt')
+                    FileUtils.cp output_file, link_target
+                end
+            end
         end
 
         # Clean-up

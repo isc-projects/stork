@@ -234,8 +234,9 @@ end
 # tasks that depend on the external files while their dependencies are
 # refreshed but not changed (e.g., the repository is re-cloned).
 # It accepts a task to be guarded and the dependency file.
-# The dependency file should not be included in the prerequite list of the task.
+# The dependency file should not be included in the prerequisite list of the task.
 def add_hash_guard(task_name, prerequisite_file)
+    Rake::Task[prerequisite_file].invoke
     hash = Digest::SHA256.file(prerequisite_file).hexdigest
     add_guard(task_name, hash, "hash")
 end
@@ -1016,6 +1017,18 @@ file GOVULNCHECK => [GO] do
 end
 add_version_guard(GOVULNCHECK, govulncheck_ver)
 
+# Python version and requirements.
+python3_version, status = Open3.capture2(PYTHON3_SYSTEM, "--version")
+if status != 0
+    python3_version = "unknown"
+else
+    # Split the "Python" prefix and get only the version.
+    python3_version = python3_version.strip.split()[1]
+    # Trim the patch version to have only major-minor.
+    python3_version = python3_version.split(".")[0..1].join("_")
+end
+PYTHON3_VERSION = python3_version
+
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
     sh "rm", "-rf", File.join(python_tools_dir, "*")
@@ -1032,8 +1045,28 @@ file PIP => [PYTHON] do
     sh PIP, "--version"
 end
 
+PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
+file PIP_COMPILE => [PIP] do
+    sh PIP, "install", "--prefer-binary", "pip-tools==#{pip_tools_ver}"
+    sh "touch", "-c", PIP_COMPILE
+    sh PIP_COMPILE, "--version"
+end
+add_version_guard(PIP_COMPILE, pip_tools_ver)
+
+PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
+file PIP_SYNC => [PIP_COMPILE]
+
+rule Regexp.new("init_deps/.*\.#{PYTHON3_VERSION}\.txt") => [PIP_COMPILE] do |t|
+    # Trim the extension and the Python version from the filename.
+    # E.g. "init_deps/pytest.3_11.txt" -> "init_deps/pytest"
+    base = t.name[0..-('.'.length + PYTHON3_VERSION.length + '.txt'.length + 1)]
+    in_file = "#{base}.in"
+    sh PIP_COMPILE, "--output-file", t.name, in_file
+    sh "touch", "-c", t.name
+end
+
 SPHINX_BUILD = File.join(python_tools_dir, "bin", "sphinx-build")
-sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
+sphinx_requirements_file = File.expand_path("init_deps/sphinx.#{PYTHON3_VERSION}.txt", __dir__)
 file SPHINX_BUILD => [PIP] do
     sh PIP, "install", "--prefer-binary", "-r", sphinx_requirements_file
     sh "touch", "-c", SPHINX_BUILD
@@ -1042,7 +1075,7 @@ end
 add_hash_guard(SPHINX_BUILD, sphinx_requirements_file)
 
 PYTEST = File.join(python_tools_dir, "bin", "pytest")
-pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
+pytests_requirements_file = File.expand_path("init_deps/pytest.#{PYTHON3_VERSION}.txt", __dir__)
 file PYTEST => [PIP] do
     sh PIP, "install", "--prefer-binary", "-r", pytests_requirements_file
     sh "touch", "-c", PYTEST
@@ -1059,17 +1092,6 @@ file PROTOC_GEN_PYTHON_GRPC => [PYTEST] do
     end
 end
 
-PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
-file PIP_COMPILE => [PIP] do
-    sh PIP, "install", "--prefer-binary", "pip-tools==#{pip_tools_ver}"
-    sh "touch", "-c", PIP_COMPILE
-    sh PIP_COMPILE, "--version"
-end
-add_version_guard(PIP_COMPILE, pip_tools_ver)
-
-PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
-file PIP_SYNC => [PIP_COMPILE]
-
 PIP_AUDIT = File.join(python_tools_dir, "bin", "pip-audit")
 file PIP_AUDIT => [PIP] do
     sh PIP, "install", "pip-audit==#{pip_audit_ver}"
@@ -1078,7 +1100,7 @@ file PIP_AUDIT => [PIP] do
 end
 
 PYLINT = File.join(python_tools_dir, "bin", "pylint")
-python_linters_requirements_file = File.expand_path("init_deps/pylinters.txt", __dir__)
+python_linters_requirements_file = File.expand_path("init_deps/pylinters.#{PYTHON3_VERSION}.txt", __dir__)
 file PYLINT => [PIP] do
     sh PIP, "install", "--prefer-binary", "-r", python_linters_requirements_file
     sh "touch", "-c", PYLINT
@@ -1098,7 +1120,7 @@ file BLACK => [PYLINT] do
     sh BLACK, "--version"
 end
 
-flask_requirements_file = File.expand_path("init_deps/flask.txt", __dir__)
+flask_requirements_file = File.expand_path("init_deps/flask.#{PYTHON3_VERSION}.txt", __dir__)
 FLASK = File.join(python_tools_dir, "bin", "flask")
 file FLASK => [PIP] do
     sh PIP, "install", "--prefer-binary", "-r", flask_requirements_file
