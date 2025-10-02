@@ -266,7 +266,7 @@ the settings expected by the agent:
 
     # The API must be explicitly enabled.
     api=yes
-    api-key=stork
+    api-key=changeme
     webserver=yes
 
     # The webserver-address and webserver-port settings are optional.
@@ -274,6 +274,10 @@ the settings expected by the agent:
     webserver-address=0.0.0.0
     webserver-port=8085
 
+.. note::
+
+    Please specify a random, strong API key in the ``api-key`` setting. Do not use
+    ``changeme`` nor other easy to guess value in production.
 
 Zone Transfer Settings
 ----------------------
