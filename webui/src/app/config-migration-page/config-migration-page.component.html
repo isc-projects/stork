@@ -19,7 +19,7 @@
 <app-tab-view
     routePath="/config-migrations/"
     [entityProvider]="migrationProvider"
-    firstTabTitle="Config migrations"
+    firstTabTitle="Config Migrations"
     [entityTitleProvider]="tabTitleProvider"
     [entitiesTable]="migrationsTableComponent()?.table"
     (activeTabChange)="activeTabMigrationID.set($event)"
