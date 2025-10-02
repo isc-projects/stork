@@ -196,7 +196,10 @@ export class SubnetTabComponent implements OnInit {
             message: 'Are you sure that you want to permanently delete this subnet?',
             header: 'Delete Subnet',
             icon: 'pi pi-exclamation-triangle',
-            rejectButtonProps: { text: true },
+            rejectButtonProps: { text: true, icon: 'pi pi-times' },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
+            },
             accept: () => {
                 this.deleteSubnet()
             },

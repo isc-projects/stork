@@ -236,6 +236,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             rejectLabel: 'Cancel',
             rejectButtonProps: {
                 text: true,
+                icon: 'pi pi-times',
+            },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
             },
             accept: () => {
                 // User confirmed. Clear the hashes in the server.

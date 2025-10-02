@@ -501,6 +501,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 icon: 'pi pi-exclamation-triangle',
                 acceptLabel: 'Continue',
                 rejectLabel: 'Cancel',
+                rejectButtonProps: { icon: 'pi pi-times' },
+                acceptButtonProps: {
+                    icon: 'pi pi-check',
+                },
                 accept: () => {
                     this._sendPutZonesFetch()
                 },

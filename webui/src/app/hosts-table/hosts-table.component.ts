@@ -223,6 +223,10 @@ export class HostsTableComponent implements OnInit, OnDestroy {
             key: 'migrationToDatabaseDialog',
             header: 'Migrate host reservations to database',
             icon: 'pi pi-exclamation-triangle',
+            rejectButtonProps: { icon: 'pi pi-times' },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
+            },
             accept: () => {
                 // User confirmed the migration.
                 this.dhcpApi

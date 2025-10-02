@@ -369,7 +369,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             acceptLabel: 'Clear',
             rejectLabel: 'Cancel',
             defaultFocus: 'none',
-            rejectButtonProps: { text: true },
+            rejectButtonProps: { text: true, icon: 'pi pi-times' },
             accept: () => {
                 this.loading = true
                 lastValueFrom(this.eventsApi.deleteEvents())

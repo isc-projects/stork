@@ -446,6 +446,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             message: `Are you sure you want to delete the machine with ID ${machineId}?`,
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
+            rejectButtonProps: { icon: 'pi pi-times' },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
+            },
             accept: () => {
                 this.machinesTable()?.setDataLoading(true)
                 lastValueFrom(this.servicesApi.deleteMachine(machineId))

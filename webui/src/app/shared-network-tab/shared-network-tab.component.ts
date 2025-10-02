@@ -120,7 +120,10 @@ export class SharedNetworkTabComponent implements OnInit {
             message: 'Are you sure that you want to permanently delete this shared network and its subnets?',
             header: 'Delete Shared Network',
             icon: 'pi pi-exclamation-triangle',
-            rejectButtonProps: { text: true },
+            rejectButtonProps: { text: true, icon: 'pi pi-times' },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
+            },
             accept: () => {
                 this.deleteSharedNetwork()
             },

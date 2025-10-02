@@ -91,6 +91,12 @@ export class ConfigMigrationTableComponent {
             message: 'Are you sure you want to clear finished migrations?',
             header: 'Clear finished migrations',
             icon: 'pi pi-exclamation-triangle',
+            rejectButtonProps: {
+                icon: 'pi pi-times',
+            },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
+            },
             accept: () => {
                 this.clearMigrations.emit()
             },
