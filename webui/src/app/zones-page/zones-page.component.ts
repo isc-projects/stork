@@ -382,7 +382,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         this._subscriptions = this._zonesTableFilter$
             .pipe(
                 map((f) => {
-                    return { ...f, value: f.value ?? null }
+                    return { ...f, value: f.value === '' ? null : f.value }
                 }),
                 debounceTime(300),
                 distinctUntilChanged(),

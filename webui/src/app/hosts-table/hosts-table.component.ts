@@ -194,18 +194,13 @@ export class HostsTableComponent implements OnInit, OnDestroy {
             this._tableFilter$
                 .pipe(
                     map((f) => {
-                        return { ...f, value: f.value ?? null }
+                        return { ...f, value: f.value === '' ? null : f.value }
                     }),
                     debounceTime(300),
                     distinctUntilChanged(),
                     map((f) => {
                         f.filterConstraint.value = f.value
-                        // this.zone.run(() =>
-                        this.router.navigate(
-                            [],
-                            { queryParams: tableFiltersToQueryParams(this.table) }
-                            // )
-                        )
+                        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
                     })
                 )
                 .subscribe()

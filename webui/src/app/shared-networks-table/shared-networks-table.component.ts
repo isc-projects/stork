@@ -122,7 +122,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
             this._tableFilter$
                 .pipe(
                     map((f) => {
-                        return { ...f, value: f.value ?? null }
+                        return { ...f, value: f.value === '' ? null : f.value }
                     }),
                     debounceTime(300),
                     distinctUntilChanged(),
