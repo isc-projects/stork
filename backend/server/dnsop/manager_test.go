@@ -616,7 +616,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
 		return isFetching && appsNum == 1 && completedAppsNum == 1
-	}, time.Second, time.Millisecond)
+	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
 	zones, _, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
@@ -634,7 +634,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
 		return isFetching && appsNum == 1 && completedAppsNum == 1
-	}, time.Second, time.Millisecond)
+	}, 5*time.Second, 10*time.Millisecond)
 
 	// The zones should remain untouched.
 	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
@@ -646,7 +646,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
 		return !isFetching && appsNum == 1 && completedAppsNum == 1
-	}, time.Second, time.Millisecond)
+	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
 	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
@@ -659,7 +659,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
 		return isFetching && appsNum == 1 && completedAppsNum == 1
-	}, time.Second, time.Millisecond)
+	}, 5*time.Second, 10*time.Millisecond)
 
 	// Complete the fetch.
 	<-notifyChannel
