@@ -82,7 +82,7 @@ func TestGetZones(t *testing.T) {
 		require.Len(t, addedDaemons, 1)
 		apps = append(apps, app)
 		zones = append(zones, &dbmodel.Zone{
-			Name: randomZones[i].Name,
+			Name: fmt.Sprintf("zone.%s", randomZones[i].Name),
 			LocalZones: []*dbmodel.LocalZone{
 				{
 					DaemonID: addedDaemons[0].ID,
