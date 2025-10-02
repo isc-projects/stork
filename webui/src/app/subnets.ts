@@ -434,7 +434,7 @@ export function hasDifferentSubnetUserContexts(subnet: Subnet): boolean {
  */
 export function extractUniqueSharedNetworkPools(sharedNetworks: SharedNetwork[]): SharedNetworkWithUniquePools[] {
     let convertedSharedNetworks: SharedNetworkWithUniquePools[] = []
-    for (const sharedNetwork of sharedNetworks) {
+    for (const sharedNetwork of sharedNetworks || []) {
         let pools: Array<Pool> = []
         let prefixDelegationPools: Array<DelegatedPrefixPool> = []
         let convertedSharedNetwork: SharedNetworkWithUniquePools = sharedNetwork
