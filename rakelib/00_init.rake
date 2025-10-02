@@ -1027,7 +1027,7 @@ begin
 rescue
     python3_version = "unknown"
 end
-PYTHON3_VERSION = python3_version
+PYTHON3_VERSION = python3_version 
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
