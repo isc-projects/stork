@@ -686,9 +686,6 @@ func (pbe *PromBind9Exporter) collectQueryMetrics(ch chan<- prometheus.Metric) {
 		pbe.serverStatsDesc["QryDuplicate"],
 		prometheus.CounterValue, value)
 	// query_errors_total
-	trimQryPrefix := func(name string) string {
-		return strings.TrimPrefix(name, "Qry")
-	}
 	qryErrors := []string{"QryDropped", "QryFailure"}
 	for _, label := range qryErrors {
 		value, ok = pbe.stats.NsStats[label]
@@ -699,7 +696,7 @@ func (pbe *PromBind9Exporter) collectQueryMetrics(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			pbe.serverStatsDesc["QryErrors"],
 			prometheus.CounterValue,
-			value, trimQryPrefix(label))
+			value, strings.TrimPrefix(label, "Qry"))
 	}
 	// query_recursion_total
 	value, ok = pbe.stats.NsStats["QryRecursion"]
@@ -721,9 +718,6 @@ func (pbe *PromBind9Exporter) collectQueryMetrics(ch chan<- prometheus.Metric) {
 // Collects server response statistics.
 func (pbe *PromBind9Exporter) collectResponseMetrics(ch chan<- prometheus.Metric) {
 	// responses_total
-	trimQryPrefix := func(name string) string {
-		return strings.TrimPrefix(name, "Qry")
-	}
 	serverResponses := []string{
 		"QrySuccess",
 		"QryReferral",
@@ -741,7 +735,7 @@ func (pbe *PromBind9Exporter) collectResponseMetrics(ch chan<- prometheus.Metric
 		ch <- prometheus.MustNewConstMetric(
 			pbe.serverStatsDesc["ServerResponses"],
 			prometheus.CounterValue,
-			value, trimQryPrefix(label))
+			value, strings.TrimPrefix(label, "Qry"))
 	}
 }
 
