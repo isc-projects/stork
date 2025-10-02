@@ -15,6 +15,15 @@ export class BreadcrumbsComponent implements OnInit {
         routerLink: '/',
     }
 
+    /**
+     * Custom breadcrumbs style.
+     */
+    breadcrumbDesign = {
+        root: {
+            itemColor: '{content.color}',
+        },
+    }
+
     constructor(private titleService: Title) {}
 
     ngOnInit(): void {
