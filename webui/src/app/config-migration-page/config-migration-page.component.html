@@ -21,7 +21,7 @@
     [entityProvider]="migrationProvider"
     firstTabTitle="Config migrations"
     [entityTitleProvider]="tabTitleProvider"
-    [inputTable]="migrationsTableComponent()?.table"
+    [entitiesTable]="migrationsTableComponent()?.table"
     (activeTabChange)="activeTabMigrationID.set($event)"
 >
     <ng-template #firstTab>

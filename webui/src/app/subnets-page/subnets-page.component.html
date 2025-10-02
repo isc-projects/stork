@@ -25,7 +25,7 @@
         dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
         text: { type: 'string', matchMode: 'contains' },
     }"
-    [inputTable]="table()?.table"
+    [entitiesTable]="table()?.table"
     entityTypeName="Subnet"
 >
     <ng-template #firstTab>

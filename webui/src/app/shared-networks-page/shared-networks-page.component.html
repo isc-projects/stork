@@ -15,7 +15,7 @@
         dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
         text: { type: 'string', matchMode: 'contains' },
     }"
-    [inputTable]="networksTableComponent()?.table"
+    [entitiesTable]="networksTableComponent()?.table"
     [forceAsyncEntityFetch]="true"
     entityTypeName="Shared Network"
 >

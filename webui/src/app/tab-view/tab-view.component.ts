@@ -254,19 +254,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      * PrimeNG table used as a table of entities, usually displayed in the first tab.
      * It is explicitly provided as component input.
      */
-    inputTable = input<Table>()
-
-    /**
-     * PrimeNG table used as a table of entities, usually displayed in the first tab.
-     * It is provided as a content child.
-     */
-    contentChildTable = contentChild<Table>(Table, { descendants: false })
-
-    /**
-     * PrimeNG table used as a table of entities, usually displayed in the first tab.
-     * It refers to either contentChildTable or inputTable.
-     */
-    entitiesTable = computed(() => this.contentChildTable() || this.inputTable())
+    entitiesTable = input<Table>()
 
     /**
      * Input function used to asynchronously provide the entity based on given entity ID.

@@ -112,7 +112,7 @@ sudo ./stork-install-agent.sh</textarea
         authorized: { type: 'boolean', matchMode: 'equals' },
         text: { type: 'string', matchMode: 'contains' },
     }"
-    [inputTable]="machinesTable()?.machinesTable"
+    [entitiesTable]="machinesTable()?.machinesTable"
     (activeTabChange)="activeTabEntityID.set($event)"
 >
     <ng-template #firstTab>
