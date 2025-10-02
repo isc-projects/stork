@@ -42,13 +42,6 @@ $layout-breakpoint: 640px
         width: 95%
 
 .login-screen__logo
-    // Use fancy font.
-    font-family: 'Mansalva'
-    // Don't use any particular variant to keep consistency with the logo on
-    // the project webpage.
-    font-variant: none
-    // Use big font - but the text should be lower than logo.
-    font-size: 10rem
     // Set the top spacing.
     margin-top: 5vh
     // Enable flex.
@@ -56,23 +49,33 @@ $layout-breakpoint: 640px
     // Center align items.
     align-items: center
     // Responsive view for smaller screens.
+    min-height: 250px
+    // For bigger screens display big Stork title.
+    .medium-title
+        display: none
+    .big-title
+        display: block
     @media screen and (max-width: $layout-breakpoint)
-        // Smaller font size for smaller screens.
-        font-size: 7rem
         // Change flex container direction to column.
         flex-direction: column
+        // For smaller screens display medium Stork title.
+        .medium-title
+            display: block
+            margin-top: 2.5rem
+            margin-bottom: 2.5rem
+        .big-title
+            display: none
 
     a
-        // Override default color for links.
-        color: var(--p-surface-0) !important
-        // Center logo text vertically.
-        vertical-align: middle
-        // Short spacing between icon and text.
-        margin-left: 2rem
-        // Responsive view for smaller screens.
-        @media screen and (max-width: $layout-breakpoint)
-            // Margin is not needed because of column layout for smaller screens.
-            margin-left: 0
+        @layer high
+            // Override default color for links.
+            color: var(--p-surface-0)
+            // Short spacing between icon and text.
+            margin-left: 2rem
+            // Responsive view for smaller screens.
+            @media screen and (max-width: $layout-breakpoint)
+                // Margin is not needed because of column layout for smaller screens.
+                margin-left: 0
     img
         // Center logo icon vertically.
         vertical-align: middle
@@ -87,10 +90,11 @@ $layout-breakpoint: 640px
     // Small space between version and intro text.
     margin-top: 1rem
     a
-        // Override default color for links.
-        color: var(--p-surface-0) !important
-        // Add underline to links.
-        text-decoration: underline
+        @layer high
+            // Override default color for links.
+            color: var(--p-surface-0)
+            // Add underline to links.
+            text-decoration: underline
 
 .login-screen__authentication
     // Add top spacing.
