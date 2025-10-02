@@ -118,7 +118,8 @@
 
   // Limit maximum width for the confirmation dialog message.
   .p-confirmdialog-message
-    max-width: 50vw
+    @media screen and (min-width: 992px)
+      max-width: 50vw
 
   @media screen and (max-width: 640px)
     .p-toast.stork-toast

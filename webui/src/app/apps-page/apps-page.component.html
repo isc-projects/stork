@@ -1,4 +1,4 @@
-<p-confirmDialog styleClass="w-4"></p-confirmDialog>
+<p-confirmDialog styleClass="w-10 xl:w-4"></p-confirmDialog>
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
         <p>This page displays a list of apps.</p>
@@ -91,7 +91,7 @@
                             </app-help-tip>
                         </div>
                     </ng-template>
-                    <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
+                    <div class="flex flex-wrap gap-3 mt-3 align-items-center">
                         <p-button
                             label="Clear"
                             [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
@@ -103,7 +103,7 @@
                         <p-columnFilter field="apps" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <p-multiSelect
                                             id="apps-input"
                                             [ngModel]="value"
@@ -137,6 +137,7 @@
                                             <i class="pi pi-search"></i>
                                         </p-inputicon>
                                         <input
+                                            class="max-w-13rem sm:max-w-20rem"
                                             pInputText
                                             type="text"
                                             (input)="filterTable($event.target.value, filterConstraint)"

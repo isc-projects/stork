@@ -329,7 +329,7 @@ to the number of configured zones.
                             </app-help-tip>
                         </div>
                     </ng-template>
-                    <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
+                    <div class="flex flex-wrap gap-3 mt-3 align-items-center">
                         <p-button
                             label="Clear"
                             [severity]="tableHasFilter(zonesTable) ? 'info' : 'secondary'"
@@ -357,7 +357,7 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <p-multiSelect
                                             inputId="zone-type"
                                             [options]="zoneTypes"
@@ -382,7 +382,7 @@ to the number of configured zones.
                         <p-columnFilter field="rpz" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <p-select
                                             inputId="rpz"
                                             [options]="rpzOptions"
@@ -409,7 +409,7 @@ to the number of configured zones.
                         <p-columnFilter field="appId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <p-inputNumber
                                             inputId="app-id"
                                             mode="decimal"
@@ -446,7 +446,7 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <input
                                             pInputText
                                             type="text"
@@ -477,7 +477,7 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <p-select
                                             inputId="zone-class"
                                             [options]="zoneClasses"
@@ -502,7 +502,7 @@ to the number of configured zones.
                         <p-columnFilter field="appType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel>
+                                    <p-floatlabel variant="on">
                                         <p-select
                                             inputId="app-type"
                                             [options]="appTypes"
@@ -540,7 +540,7 @@ to the number of configured zones.
                                             (input)="filterZonesTable($event.target.value, filterConstraint)"
                                             [ngModel]="value"
                                             placeholder="App name, Zone name or view"
-                                            class="w-16rem sm:w-18rem"
+                                            class="max-w-13rem sm:w-18rem sm:max-w-18rem"
                                         />
                                     </p-iconfield>
                                     <ng-container

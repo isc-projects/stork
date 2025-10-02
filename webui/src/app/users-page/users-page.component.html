@@ -106,7 +106,7 @@
                             </app-help-tip>
                         </div>
                     </ng-template>
-                    <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
+                    <div class="flex flex-wrap gap-3 mt-3 align-items-center">
                         <p-button
                             label="Clear"
                             [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
@@ -124,6 +124,7 @@
                                         </p-inputicon>
                                         <input
                                             pInputText
+                                            class="max-w-13rem sm:max-w-20rem"
                                             type="text"
                                             (input)="filterTable($event.target.value, filterMetadata)"
                                             [ngModel]="value"
