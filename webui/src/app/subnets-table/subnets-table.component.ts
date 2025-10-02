@@ -137,17 +137,16 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
-                    map((f) => {
-                        return { ...f, value: f.value === '' ? null : f.value }
-                    }),
+                    map((f) => ({ ...f, value: f.value === '' ? null : f.value })), // replace empty string filter value with null
                     debounceTime(300),
-                    distinctUntilChanged(),
-                    map((f) => {
-                        f.filterConstraint.value = f.value
-                        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
-                    })
+                    distinctUntilChanged()
                 )
-                .subscribe()
+                .subscribe((f) => {
+                    // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                    // so it's value must be set according to UI columnFilter value.
+                    f.filterConstraint.value = f.value
+                    this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
+                })
         )
     }
 

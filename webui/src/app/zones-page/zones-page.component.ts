@@ -381,19 +381,18 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         // Manage RxJS subscriptions on init.
         this._subscriptions = this._zonesTableFilter$
             .pipe(
-                map((f) => {
-                    return { ...f, value: f.value === '' ? null : f.value }
-                }),
+                map((f) => ({ ...f, value: f.value === '' ? null : f.value })), // replace empty string filter value with null
                 debounceTime(300),
-                distinctUntilChanged(),
-                map((f) => {
-                    f.filterConstraint.value = f.value
-                    this.zone.run(() =>
-                        this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.zonesTable) })
-                    )
-                })
+                distinctUntilChanged()
             )
-            .subscribe()
+            .subscribe((f) => {
+                // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                // so it's value must be set according to UI columnFilter value.
+                f.filterConstraint.value = f.value
+                this.zone.run(() =>
+                    this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.zonesTable) })
+                )
+            })
 
         this.refreshFetchStatusTable()
     }
