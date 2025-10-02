@@ -18,6 +18,7 @@
     [entitiesTable]="networksTableComponent()?.table"
     [forceAsyncEntityFetch]="true"
     entityTypeName="Shared Network"
+    firstTabTitle="Shared Networks"
 >
     <ng-template #firstTab>
         <app-shared-networks-table #networksTableComponent [dataLoading]="loading"></app-shared-networks-table>

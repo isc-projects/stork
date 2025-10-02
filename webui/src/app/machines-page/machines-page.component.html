@@ -114,6 +114,7 @@ sudo ./stork-install-agent.sh</textarea
     }"
     [entitiesTable]="machinesTable()?.machinesTable"
     (activeTabChange)="activeTabEntityID.set($event)"
+    firstTabTitle="Machines"
 >
     <ng-template #firstTab>
         <div class="flex flex-wrap gap-2 justify-content-end mb-3">
