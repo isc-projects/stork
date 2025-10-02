@@ -64,12 +64,14 @@
         let-onHostFormSubmit="submitFormFn"
         let-onHostFormCancel="cancelFormFn"
     >
-        <app-host-form
-            [form]="tabForm.formState"
-            [hostId]="host?.id"
-            (formDestroy)="onHostFormDestroy($event)"
-            (formSubmit)="onHostFormSubmit($event, host?.id)"
-            (formCancel)="onHostFormCancel(tabType, host?.id)"
-        ></app-host-form>
+        <div class="max-w-50rem">
+            <app-host-form
+                [form]="tabForm.formState"
+                [hostId]="host?.id"
+                (formDestroy)="onHostFormDestroy($event)"
+                (formSubmit)="onHostFormSubmit($event, host?.id)"
+                (formCancel)="onHostFormCancel(tabType, host?.id)"
+            ></app-host-form>
+        </div>
     </ng-template>
 </app-tab-view>

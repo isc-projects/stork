@@ -53,12 +53,14 @@
         let-onSubnetFormSubmit="submitFormFn"
         let-onSubnetFormCancel="cancelFormFn"
     >
-        <app-subnet-form
-            [state]="tabForm.formState"
-            [subnetId]="subnet?.id"
-            (formDestroy)="onSubnetFormDestroy($event)"
-            (formSubmit)="onSubnetFormSubmit($event, $event.subnetId)"
-            (formCancel)="onSubnetFormCancel(tabType, subnet?.id)"
-        ></app-subnet-form>
+        <div class="max-w-50rem">
+            <app-subnet-form
+                [state]="tabForm.formState"
+                [subnetId]="subnet?.id"
+                (formDestroy)="onSubnetFormDestroy($event)"
+                (formSubmit)="onSubnetFormSubmit($event, $event.subnetId)"
+                (formCancel)="onSubnetFormCancel(tabType, subnet?.id)"
+            ></app-subnet-form>
+        </div>
     </ng-template>
 </app-tab-view>

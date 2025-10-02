@@ -52,21 +52,19 @@
                         "
                     ></ng-container>
                 } @else if (formTabTemplate() && (tab.tabType === TabType.New || tab.tabType === TabType.Edit)) {
-                    <div class="max-w-50rem">
-                        <ng-container
-                            *ngTemplateOutlet="
-                                formTabTemplate();
-                                context: {
-                                    $implicit: tab.entity,
-                                    tabForm: tab.form,
-                                    tabType: tab.tabType,
-                                    destroyFormFn: onDestroyForm,
-                                    submitFormFn: onSubmitForm,
-                                    cancelFormFn: onCancelForm,
-                                }
-                            "
-                        ></ng-container>
-                    </div>
+                    <ng-container
+                        *ngTemplateOutlet="
+                            formTabTemplate();
+                            context: {
+                                $implicit: tab.entity,
+                                tabForm: tab.form,
+                                tabType: tab.tabType,
+                                destroyFormFn: onDestroyForm,
+                                submitFormFn: onSubmitForm,
+                                cancelFormFn: onCancelForm,
+                            }
+                        "
+                    ></ng-container>
                 }
             </p-tabpanel>
         }

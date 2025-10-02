@@ -43,12 +43,14 @@
         let-onSharedNetworkFormSubmit="submitFormFn"
         let-onSharedNetworkFormCancel="cancelFormFn"
     >
-        <app-shared-network-form
-            [state]="tabForm.formState"
-            [sharedNetworkId]="sharedNetwork?.id"
-            (formDestroy)="onSharedNetworkFormDestroy($event)"
-            (formSubmit)="onSharedNetworkFormSubmit($event, $event.sharedNetworkId)"
-            (formCancel)="onSharedNetworkFormCancel(tabType, sharedNetwork?.id)"
-        ></app-shared-network-form>
+        <div class="max-w-50rem">
+            <app-shared-network-form
+                [state]="tabForm.formState"
+                [sharedNetworkId]="sharedNetwork?.id"
+                (formDestroy)="onSharedNetworkFormDestroy($event)"
+                (formSubmit)="onSharedNetworkFormSubmit($event, $event.sharedNetworkId)"
+                (formCancel)="onSharedNetworkFormCancel(tabType, sharedNetwork?.id)"
+            ></app-shared-network-form>
+        </div>
     </ng-template>
 </app-tab-view>

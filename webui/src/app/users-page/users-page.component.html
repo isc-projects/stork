@@ -290,14 +290,16 @@
         let-onUserFormSubmit="submitFormFn"
         let-onUserFormCancel="cancelFormFn"
     >
-        <app-user-form
-            [user]="user"
-            [formState]="tabForm.formState"
-            [tabType]="tabType"
-            (formSubmit)="onUserFormSubmit($event, $event.user?.id)"
-            (formCancel)="onUserFormCancel(tabType, user?.id)"
-            [groups]="groups"
-        >
-        </app-user-form>
+        <div class="max-w-100rem">
+            <app-user-form
+                [user]="user"
+                [formState]="tabForm.formState"
+                [tabType]="tabType"
+                (formSubmit)="onUserFormSubmit($event, $event.user?.id)"
+                (formCancel)="onUserFormCancel(tabType, user?.id)"
+                [groups]="groups"
+            >
+            </app-user-form>
+        </div>
     </ng-template>
 </app-tab-view>
