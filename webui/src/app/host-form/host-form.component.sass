@@ -1,7 +1,7 @@
-@layer high
-    :host ::ng-deep
-        .host-form
-            .p-fieldset
+:host ::ng-deep
+    .host-form
+        .p-fieldset
+            @layer high
                 // Distance between form fieldsets.
                 margin-top: 1.5rem
 
@@ -18,6 +18,6 @@
                             // Little margin between form input and feedback text.
                             margin-top: 0.5rem
 
-                        & > div:first-child
-                            // Add top margin for first div inside of fieldset.
-                            margin-top: 1.5rem !important
+            &.host-form-section .p-fieldset-content > div:first-child
+                // Add top margin for first div inside of fieldset.
+                margin-top: 1.5rem
