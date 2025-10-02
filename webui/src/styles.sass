@@ -40,9 +40,13 @@
   .p-fieldset
     min-width: 0
 
-  // Apply bold font for custom legend in PrimeNG Fieldset components.
-  .stork-fieldset-legend-text
-    font-weight: var(--p-fieldset-legend-font-weight)
+    // Apply bold font for custom legend in PrimeNG Fieldset components.
+    .stork-fieldset-legend-text
+      font-weight: var(--p-fieldset-legend-font-weight)
+      &, .p-fieldset-legend
+        // Force the correct font size.
+        font-size: 1rem
+
 
   // Overwrite default margin-left: auto for the right hand side paginator.
   .p-paginator > :last-child:not(.p-paginator-last):not(.p-inputwrapper)
