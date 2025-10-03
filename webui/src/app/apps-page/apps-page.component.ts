@@ -47,11 +47,6 @@ function setDaemonStatusErred(app) {
     }
 }
 
-interface AppType {
-    label: string
-    value: string
-}
-
 @Component({
     selector: 'app-apps-page',
     templateUrl: './apps-page.component.html',
@@ -77,8 +72,14 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     appTab: AppTab = null
 
     refreshedAppTab = new Subject<AppTab>()
-    appTypes: AppType[] = []
+
+    /**
+     * Event pipeline to react to changes in the App Types filter dropdown.
+     */
     selectedAppTypes$: Subject<string[]> = new Subject()
+    /**
+     * Storage for the currently selected App Types in the filter dropdown.
+     */
     selectedAppTypes: string[] = []
 
     constructor(
@@ -135,23 +136,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         ]
 
         this.openedApps = []
-        this.appTypes = [
-            {
-                label: 'BIND9',
-                value: 'bind9',
-            },
-            {
-                label: 'Kea',
-                value: 'kea',
-            },
-            {
-                label: 'PowerDNS',
-                value: 'pdns',
-            },
-        ]
-        // Select all app types by default, so that the UI shows something
-        // useful when first loaded (rather than an empty list).
-        this.selectedAppTypes = this.appTypes.map((t) => t.value)
         // Reload 450ms after the user stops changing filters.  Value chosen by
         // messing around with it until it felt good to me.
         this.subscriptions.add(
@@ -431,5 +415,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      */
     clearFilters(table: Table) {
         table.filter(null, 'text', 'contains')
+        this.selectedAppTypes = []
+        this.refreshAppsList(this.appsTable)
     }
 }
