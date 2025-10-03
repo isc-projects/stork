@@ -75,19 +75,19 @@ describe('DhcpClientClassSetFormComponent', () => {
 
         const autoCompleteDe = fixture.debugElement.query(By.directive(AutoComplete))
         expect(autoCompleteDe).toBeTruthy()
-        const dropdownButton = autoCompleteDe.query(By.css('button'))
+        const dropdownButton = autoCompleteDe.query(By.css('.p-autocomplete-dropdown'))
         expect(dropdownButton).toBeTruthy()
         dropdownButton.nativeElement.click()
         fixture.detectChanges()
 
-        const classSpans = fixture.debugElement.queryAll(By.css('ul.p-autocomplete-items li span'))
+        const classSpans = fixture.debugElement.queryAll(By.css('ul.p-autocomplete-list li span'))
         expect(classSpans).toBeTruthy()
         expect(classSpans.length).toBe(3)
         expect(classSpans.map((de) => de.nativeElement.innerText)).toEqual(
             jasmine.arrayContaining(['router', 'cable-modem', 'DROP'])
         )
 
-        classSpans[0].parent.nativeElement.dispatchEvent(new Event('mousedown'))
+        classSpans[0].parent.nativeElement.click()
         fixture.detectChanges()
 
         expect(component.classFormControl.value).toBeTruthy()
@@ -98,12 +98,12 @@ describe('DhcpClientClassSetFormComponent', () => {
     it('should handle empty class list', () => {
         const autoCompleteDe = fixture.debugElement.query(By.directive(AutoComplete))
         expect(autoCompleteDe).toBeTruthy()
-        const dropdownButton = autoCompleteDe.query(By.css('button'))
+        const dropdownButton = autoCompleteDe.query(By.css('.p-autocomplete-dropdown'))
         expect(dropdownButton).toBeTruthy()
         dropdownButton.nativeElement.click()
         fixture.detectChanges()
 
-        const classListItems = fixture.debugElement.queryAll(By.css('ul.p-autocomplete-items li'))
+        const classListItems = fixture.debugElement.queryAll(By.css('ul.p-autocomplete-list li'))
         expect(classListItems).toBeTruthy()
         expect(classListItems.length).toBe(1)
         expect(classListItems[0].nativeElement.innerText).toMatch('No results found')

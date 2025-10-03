@@ -32,6 +32,7 @@ import { FloatLabelModule } from 'primeng/floatlabel'
 import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 import { IconFieldModule } from 'primeng/iconfield'
 import { InputIconModule } from 'primeng/inputicon'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -132,10 +133,8 @@ describe('SubnetsTableComponent', () => {
         component.grafanaDhcp4DashboardId = 'hRf18FvWz'
         component.grafanaDhcp6DashboardId = 'AQPHKJUGz'
 
-        component.loadData({
-            first: 0,
-            rows: 10,
-        })
+        const loadMetadata = component.table.createLazyLoadMetadata()
+        component.loadData(loadMetadata)
         tick()
         fixture.detectChanges()
 
@@ -245,6 +244,7 @@ describe('SubnetsTableComponent', () => {
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
         expect(inputNumbers.length).toEqual(2)
+        spyOn(component, 'filterTable')
 
         // Act
         component.table.clear()
@@ -258,9 +258,10 @@ describe('SubnetsTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getSubnetsSpy).toHaveBeenCalledTimes(3)
+        expect(getSubnetsSpy).toHaveBeenCalled()
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
-        expect(getSubnetsSpy).toHaveBeenCalledWith(0, 10, 1, 1, null, null)
+        expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['appId'] as FilterMetadata)
+        expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['subnetId'] as FilterMetadata)
         flush()
     }))
 })

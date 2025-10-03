@@ -136,12 +136,12 @@ describe('DhcpOptionFormComponent', () => {
         expect(fixture.debugElement.query(By.css('[title="Help for binary Option Field"]'))).toBeTruthy()
 
         // Find the last button. It should delete the option field.
-        const allBtns = fixture.debugElement.queryAll(By.css('button'))
+        const allBtns = fixture.debugElement.queryAll(By.css('button.p-button-danger'))
         const deleteFieldBtn = allBtns[allBtns.length - 1]
         expect(deleteFieldBtn).toBeTruthy()
 
         // Click the button to delete the field.
-        deleteFieldBtn.nativeElement.dispatchEvent(new Event('click'))
+        deleteFieldBtn.nativeElement.click()
         fixture.detectChanges()
 
         // There should be no option fields and the tag should be back.
@@ -203,11 +203,11 @@ describe('DhcpOptionFormComponent', () => {
         let numberFieldEls = containerEl.queryAll(By.css('p-inputNumber'))
         expect(numberFieldEls.length).toBe(9)
 
-        const deleteBtns = containerEl.queryAll(By.css('button'))
+        const deleteBtns = containerEl.queryAll(By.css('button.p-button-danger'))
         expect(deleteBtns.length).toBe(14)
 
         // Delete uint32 option field.
-        deleteBtns[5].nativeElement.dispatchEvent(new Event('click'))
+        deleteBtns[5].nativeElement.click()
         fixture.detectChanges()
 
         // Make sure it is gone.
@@ -249,7 +249,7 @@ describe('DhcpOptionFormComponent', () => {
         expect(suboptionEl.query(By.css('textarea'))).toBeTruthy()
 
         // Simulate deleting the suboption.
-        deleteBtn.parent.nativeElement.dispatchEvent(new Event('click'))
+        deleteBtn.parent.nativeElement.click()
         fixture.detectChanges()
 
         // It should be gone.

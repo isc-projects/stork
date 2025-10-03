@@ -40,6 +40,6 @@ describe('HostDataSourceLabelComponent', () => {
         component.dataSource = 'unknown'
         fixture.detectChanges()
         const compiled = fixture.nativeElement
-        expect(compiled.querySelector('span').textContent).toContain('unknown')
+        expect(compiled.innerText).toContain('unknown')
     })
 })

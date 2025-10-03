@@ -296,21 +296,27 @@ describe('HostsPageComponent', () => {
         //
         // // Ensure an error is emitted when transaction is deleted.
         // component.openedTabs[0].state.transactionId = 123
-        spyOn(dhcpApi, 'createHostDelete').and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })))
+        spyOn(dhcpApi, 'createHostDelete').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: 404, statusText: 'no transaction' }))
+        )
         spyOn(messageService, 'add')
 
         // Close the tab for adding new host.
         // component.closeHostTab(null, 1)
-        // tick()
-        // fixture.detectChanges()
+        component.callCreateHostDeleteTransaction(123)
+        tick()
+        fixture.detectChanges()
         // expect(component.tabs.length).toBe(1)
         // expect(component.activeTabIndex).toBe(0)
         // expect(messageService.add).toHaveBeenCalled()
 
-        expect(() => component.callCreateHostDeleteTransaction(123)).toThrowMatching((err) => err.status === 401)
-
-        // TODO: correct below message
-        expect(messageService.add).toHaveBeenCalledOnceWith({ detail: 'message' })
+        expect(messageService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Failed to delete configuration transaction',
+                detail: 'Failed to delete configuration transaction: no transaction',
+            })
+        )
     }))
 
     xit('should switch a tab to host editing mode', fakeAsync(() => {
@@ -442,7 +448,9 @@ describe('HostsPageComponent', () => {
 
         // Make sure an error is returned when closing the tab.
         // component.openedTabs[0].state.transactionId = 123
-        spyOn(dhcpApi, 'updateHostDelete').and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })))
+        spyOn(dhcpApi, 'updateHostDelete').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: 404, statusText: 'no transaction' }))
+        )
         spyOn(messageService, 'add')
 
         // Close the tab.
@@ -451,8 +459,16 @@ describe('HostsPageComponent', () => {
         // fixture.detectChanges()
         // expect(component.tabs.length).toBe(1)
         // expect(component.activeTabIndex).toBe(0)
-        expect(() => component.callUpdateHostDeleteTransaction(123, 321)).toThrowMatching((err) => err.status === 401)
-        expect(messageService.add).toHaveBeenCalledOnceWith({ detail: 'message' })
+        component.callUpdateHostDeleteTransaction(123, 321)
+        tick()
+        fixture.detectChanges()
+        expect(messageService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Failed to delete configuration transaction',
+                detail: 'Failed to delete configuration transaction: no transaction',
+            })
+        )
     }))
 
     xit('should open a tab when hosts have not been loaded', fakeAsync(() => {
