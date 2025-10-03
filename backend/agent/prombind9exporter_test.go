@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 )
@@ -30,6 +31,7 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 	})
 	ba := &Bind9App{
 		BaseApp: BaseApp{
+			Pid:          1234,
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
@@ -297,4 +299,50 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 5.0, pbe.stats.ZoneStats["IXFRReqv4"])
 	// zone_transfer_incremental_requests_ipv6
 	require.EqualValues(t, 4.0, pbe.stats.ZoneStats["IXFRReqv6"])
+}
+
+// Check that stats can be exported to Prometheus format and that the
+// number of returned metrics is correct.
+func TestPromBind9ExporterCollect(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:1234/").
+		Get("json/(.+)/server").
+		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
+			// Require empty body
+			return r1.Body == nil, nil
+		}).
+		Persist().
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9PromServerStats))
+
+	gock.New("http://localhost:1234/").
+		Get("json/(.+)/traffic").
+		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
+			// Require empty body
+			return r1.Body == nil, nil
+		}).
+		Persist().
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9PromTrafficStats))
+
+	fam := &PromFakeBind9AppMonitor{}
+	httpClient := NewBind9StatsClient()
+	pbe := NewPromBind9Exporter("localhost", 1234, fam, httpClient)
+	defer pbe.Shutdown()
+
+	gock.InterceptClient(pbe.HTTPClient.innerClient.GetClient())
+
+	// start exporter
+	pbe.Start()
+	require.EqualValues(t, 1, pbe.up)
+
+	// Collect stats into the channel.
+	ch := make(chan prometheus.Metric, 1000)
+	defer close(ch)
+	pbe.Collect(ch)
+
+	// Make sure that the number of returned metrics is correct.
+	require.Len(t, ch, 71)
 }

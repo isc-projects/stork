@@ -217,17 +217,6 @@ namespace :unittest do
                     'backend/util/util.go:SetupLogging',
                     'backend/util/util.go:UTCNow',
                     'backend/server/restservice/restservice.go:prepareTLS',
-                    'backend/agent/prombind9exporter.go:Collect',
-                    'backend/agent/prombind9exporter.go:collectBasicMetrics',
-                    'backend/agent/prombind9exporter.go:collectQueryMetrics',
-                    'backend/agent/prombind9exporter.go:collectResponseMetrics',
-                    'backend/agent/prombind9exporter.go:collectTaskMetrics',
-                    'backend/agent/prombind9exporter.go:collectZoneTransferMetrics',
-                    'backend/agent/prombind9exporter.go:collectTrafficMetrics',
-                    'backend/agent/prombind9exporter.go:collectViewMetrics',
-                    'backend/agent/prombind9exporter.go:collectTime',
-                    'backend/agent/prombind9exporter.go:collectResolverStat',
-                    'backend/agent/prombind9exporter.go:collectResolverLabelStat',
 
                     # Test function is currently no-op for Kea and thus it is sometimes reported
                     # as untested even though the actual test exists.
