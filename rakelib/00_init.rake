@@ -236,11 +236,13 @@ end
 # It accepts a task to be guarded and the dependency file.
 # The dependency file should not be included in the prerequisite list of the task.
 def add_hash_guard(task_name, prerequisite_file)
-    if File.exist?(prerequisite_file)
-        hash = Digest::SHA256.file(prerequisite_file).hexdigest
-    else
-        hash = "missing"
+    if !File.exist?(prerequisite_file)
+        # Add the file as a standard prerequisite.
+        task = Rake::Task[task_name]
+        task.enhance [prerequisite_file]
+        return
     end
+    hash = Digest::SHA256.file(prerequisite_file).hexdigest
     add_guard(task_name, hash, "hash")
 end
 
@@ -1044,13 +1046,13 @@ PIP = File.join(python_tools_dir, "bin", "pip")
 file PIP => [PYTHON] do
     sh PYTHON, "-m", "ensurepip", "-U", "--default-pip"
     sh "touch", "-c", PIP
-    sh PIP, "install", "--prefer-binary", "wheel"
+    sh PIP, "install", "wheel"
     sh PIP, "--version"
 end
 
 PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
-    sh PIP, "install", "--prefer-binary", "pip-tools==#{pip_tools_ver}"
+    sh PIP, "install", "pip-tools<=#{pip_tools_ver}"
     sh "touch", "-c", PIP_COMPILE
     sh PIP_COMPILE, "--version"
 end
@@ -1071,7 +1073,7 @@ end
 SPHINX_BUILD = File.join(python_tools_dir, "bin", "sphinx-build")
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.#{PYTHON3_VERSION}.txt", __dir__)
 file SPHINX_BUILD => [PIP] do
-    sh PIP, "install", "--prefer-binary", "-r", sphinx_requirements_file
+    sh PIP, "install", "-r", sphinx_requirements_file
     sh "touch", "-c", SPHINX_BUILD
     sh SPHINX_BUILD, "--version"
 end
@@ -1080,7 +1082,7 @@ add_hash_guard(SPHINX_BUILD, sphinx_requirements_file)
 PYTEST = File.join(python_tools_dir, "bin", "pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.#{PYTHON3_VERSION}.txt", __dir__)
 file PYTEST => [PIP] do
-    sh PIP, "install", "--prefer-binary", "-r", pytests_requirements_file
+    sh PIP, "install", "-r", pytests_requirements_file
     sh "touch", "-c", PYTEST
     sh PYTEST, "--version"
 end
@@ -1105,7 +1107,7 @@ end
 PYLINT = File.join(python_tools_dir, "bin", "pylint")
 python_linters_requirements_file = File.expand_path("init_deps/pylinters.#{PYTHON3_VERSION}.txt", __dir__)
 file PYLINT => [PIP] do
-    sh PIP, "install", "--prefer-binary", "-r", python_linters_requirements_file
+    sh PIP, "install", "-r", python_linters_requirements_file
     sh "touch", "-c", PYLINT
     sh PYLINT, "--version"
 end
@@ -1126,7 +1128,7 @@ end
 flask_requirements_file = File.expand_path("init_deps/flask.#{PYTHON3_VERSION}.txt", __dir__)
 FLASK = File.join(python_tools_dir, "bin", "flask")
 file FLASK => [PIP] do
-    sh PIP, "install", "--prefer-binary", "-r", flask_requirements_file
+    sh PIP, "install", "-r", flask_requirements_file
     sh "touch", "-c", FLASK
     sh FLASK, "--version"
 end
