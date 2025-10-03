@@ -466,10 +466,14 @@ var (
 			lexer.Return(),
 		},
 		"NoParseScope": {
+			// The [\s\S]* matches whitespace and non-whitespace characters, so
+			// includes new lines.
 			{Name: "NoParseContents", Pattern: `[\S\s]*?//@stork:no-parse:`, Action: lexer.Pop()},
 			lexer.Return(),
 		},
 		"NoParseGlobal": {
+			// The [\s\S]* matches whitespace and non-whitespace characters, so
+			// includes new lines.
 			{Name: "NoParseGlobalContents", Pattern: `[\s\S]*`},
 		},
 	})
