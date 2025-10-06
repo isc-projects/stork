@@ -43,9 +43,10 @@
     // Apply bold font for custom legend in PrimeNG Fieldset components.
     .stork-fieldset-legend-text
       font-weight: var(--p-fieldset-legend-font-weight)
-      &, .p-fieldset-legend
-        // Force the correct font size.
-        font-size: 1rem
+
+    // Force the correct font size.
+    .stork-fieldset-legend-text, .p-fieldset-legend-label
+      font-size: 1rem
 
 
   // Overwrite default margin-left: auto for the right hand side paginator.
