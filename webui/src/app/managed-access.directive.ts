@@ -9,7 +9,7 @@ import {
     ViewContainerRef,
 } from '@angular/core'
 import { AccessType, AuthService, ManagedAccessEntity } from './auth.service'
-import { Messages } from 'primeng/messages'
+import { Message } from 'primeng/message'
 
 /**
  * This directive is meant to check authorization privileges for given entity.
@@ -81,18 +81,12 @@ export class ManagedAccessDirective implements AfterViewInit {
                 return
             }
 
-            const messages = this.viewRef.createComponent(Messages)
-            messages.instance.severity = 'warn'
-            messages.instance.closable = false
-            messages.instance.value = [
-                {
-                    severity: 'warn',
-                    summary: 'Access Denied',
-                    detail: `You don\'t have ${this.appAccessType} privileges to display this UI component.`,
-                    closable: false,
-                },
-            ]
-            this.htmlElement.replaceChildren(messages.instance.el.nativeElement)
+            const message = this.viewRef.createComponent(Message)
+            message.instance.severity = 'warn'
+            message.instance.closable = false
+            message.instance.escape = false
+            message.instance.text = `<span><b>Access Denied!</b><br>You don't have ${this.appAccessType} privileges to display this UI component.</span>`
+            this.htmlElement.replaceChildren(message.instance.el.nativeElement)
         }
     }
 
