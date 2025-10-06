@@ -33,11 +33,15 @@ import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.compon
 import { IconFieldModule } from 'primeng/iconfield'
 import { InputIconModule } from 'primeng/inputicon'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { MessageModule } from 'primeng/message'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
+import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
     let fixture: ComponentFixture<SubnetsTableComponent>
     let dhcpApi: DHCPService
+    let fakeResponse: any
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -52,6 +56,8 @@ describe('SubnetsTableComponent', () => {
                 UtilizationBarComponent,
                 PoolBarsComponent,
                 OutOfPoolBarComponent,
+                LocalNumberPipe,
+                AddressPoolBarComponent,
             ],
             imports: [
                 TableModule,
@@ -79,6 +85,7 @@ describe('SubnetsTableComponent', () => {
                 FloatLabelModule,
                 IconFieldModule,
                 InputIconModule,
+                MessageModule,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
@@ -86,9 +93,104 @@ describe('SubnetsTableComponent', () => {
         dhcpApi = TestBed.inject(DHCPService)
         fixture = TestBed.createComponent(SubnetsTableComponent)
         component = fixture.componentInstance
+        fakeResponse = {
+            items: [
+                {
+                    clientClass: 'class-00-00',
+                    id: 5,
+                    localSubnets: [
+                        {
+                            appId: 27,
+                            appName: 'kea@localhost',
+                            id: 1,
+                            machineAddress: 'localhost',
+                            machineHostname: 'lv-pc',
+                            pools: [
+                                {
+                                    pool: '1.0.0.4-1.0.255.254',
+                                },
+                            ],
+                        },
+                        {
+                            appId: 28,
+                            appName: 'kea2@localhost',
+                            // Misconfiguration,  all local subnets in a
+                            // subnet should share the same subnet ID. In
+                            // this case, we display a value from the first
+                            // local subnet.
+                            id: 2,
+                            machineAddress: 'host',
+                            machineHostname: 'lv-pc2',
+                            pools: [
+                                {
+                                    pool: '1.0.0.4-1.0.255.254',
+                                },
+                            ],
+                        },
+                    ],
+                    stats: {
+                        'assigned-addresses':
+                            '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                        'total-addresses':
+                            '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                        'declined-addresses': '-2',
+                    },
+                    statsCollectedAt: '2022-01-19T12:10:22.513Z',
+                    subnet: '1.0.0.0/16',
+                },
+                {
+                    clientClass: 'class-00-01',
+                    id: 42,
+                    localSubnets: [
+                        {
+                            appId: 27,
+                            appName: 'kea@localhost',
+                            machineAddress: 'localhost',
+                            machineHostname: 'lv-pc',
+                            pools: [
+                                {
+                                    pool: '1.1.0.4-1.1.255.254',
+                                },
+                            ],
+                        },
+                    ],
+                    statsCollectedAt: null,
+                    subnet: '1.1.0.0/16',
+                },
+                {
+                    id: 67,
+                    localSubnets: [
+                        {
+                            id: 4,
+                            appId: 28,
+                            appName: 'ha@localhost',
+                            machineAddress: 'localhost',
+                            machineHostname: 'ha-cluster-1',
+                        },
+                        {
+                            id: 4,
+                            appId: 28,
+                            appName: 'ha@localhost',
+                            machineAddress: 'localhost',
+                            machineHostname: 'ha-cluster-2',
+                        },
+                        {
+                            id: 4,
+                            appId: 28,
+                            appName: 'ha@localhost',
+                            machineAddress: 'localhost',
+                            machineHostname: 'ha-cluster-3',
+                        },
+                    ],
+                    statsCollectedAt: '2022-01-16T14:16:00.000Z',
+                    subnet: '1.1.1.0/24',
+                },
+            ],
+            total: 10496,
+        }
         fixture.detectChanges()
         // Do not save table state between tests, because that makes tests unstable.
-        spyOn(component.table, 'saveState').and.callFake(() => {})
+        // spyOn(component.table, 'saveState').and.callFake(() => {})
     })
 
     it('should create', () => {
@@ -264,4 +366,47 @@ describe('SubnetsTableComponent', () => {
         expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['subnetId'] as FilterMetadata)
         flush()
     }))
+
+    it('should display the Kea subnet ID', async () => {
+        // Act
+        spyOn(dhcpApi, 'getSubnets').and.returnValue(of(fakeResponse as any))
+        const metadata = component.table.createLazyLoadMetadata()
+        component.loadData(metadata)
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        const cells = fixture.debugElement.queryAll(By.css('table tbody tr td:last-child'))
+        expect(cells.length).toBe(3)
+        const cellValues = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
+        // First subnet has various Kea subnet IDs.
+        expect(cellValues).toContain('1  2 Inconsistent IDs')
+        // Second subnet misses the Kea subnet ID.
+        expect(cellValues).toContain('')
+        // Third subnet has identical Kea subnet IDs.
+        expect(cellValues).toContain('4')
+    })
+
+    it('should convert statistics to big integers', async () => {
+        // Act
+        spyOn(dhcpApi, 'getSubnets').and.returnValue(of(fakeResponse as any))
+        const metadata = component.table.createLazyLoadMetadata()
+        component.loadData(metadata)
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        expect(component.dataCollection).toBeTruthy()
+        expect(component.dataCollection.length).toBeGreaterThan(0)
+        const stats: { [key: string]: BigInt } = component.dataCollection[0].stats as any
+        expect(stats['assigned-addresses']).toBe(
+            BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
+        )
+        expect(stats['total-addresses']).toBe(
+            BigInt(
+                '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'
+            )
+        )
+        expect(stats['declined-addresses']).toBe(BigInt('-2'))
+    })
 })

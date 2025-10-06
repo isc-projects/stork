@@ -394,25 +394,6 @@ describe('SubnetsPageComponent', () => {
         expect(component.grafanaDhcp6DashboardId).toBe('dhcp6-dashboard-id')
     })
 
-    it('should convert statistics to big integers', async () => {
-        // Act
-        await fixture.whenStable()
-
-        // Assert
-        expect(component.table().dataCollection).toBeTruthy()
-        expect(component.table().dataCollection.length).toBeGreaterThan(0)
-        const stats: { [key: string]: BigInt } = component.table().dataCollection[0].stats as any
-        expect(stats['assigned-addresses']).toBe(
-            BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
-        )
-        expect(stats['total-addresses']).toBe(
-            BigInt(
-                '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'
-            )
-        )
-        expect(stats['declined-addresses']).toBe(BigInt('-2'))
-    })
-
     it('should not fail on empty statistics', async () => {
         // Filter by text to get subnet without stats.
         component.table().filterTable('1.0.0.0/16', <FilterMetadata>component.table().table.filters['text'], false)
@@ -443,24 +424,6 @@ describe('SubnetsPageComponent', () => {
 
         subnets.push({ subnet: 'fe80::/64' })
         expect(component.table().isAnyIPv6SubnetVisible).toBeTrue()
-    })
-
-    it('should display the Kea subnet ID', async () => {
-        // Act
-        await fixture.whenStable()
-        fixture.detectChanges()
-        await fixture.whenRenderingDone()
-
-        // Assert
-        const cells = fixture.debugElement.queryAll(By.css('table tbody tr td:last-child'))
-        expect(cells.length).toBe(3)
-        const cellValues = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
-        // First subnet has various Kea subnet IDs.
-        expect(cellValues).toContain('1  2 Inconsistent IDs')
-        // Second subnet misses the Kea subnet ID.
-        expect(cellValues).toContain('')
-        // Third subnet has identical Kea subnet IDs.
-        expect(cellValues).toContain('4')
     })
 
     it('should filter subnets by the Kea subnet ID', async () => {
@@ -939,7 +902,7 @@ describe('SubnetsPageComponent', () => {
             jasmine.objectContaining({
                 summary: 'Failed to delete configuration transaction',
                 severity: 'error',
-                detail: 'Failed to delete configuration transaction: ',
+                detail: 'Failed to delete configuration transaction: transaction not found',
             })
         )
     }))
@@ -960,7 +923,7 @@ describe('SubnetsPageComponent', () => {
             jasmine.objectContaining({
                 summary: 'Failed to delete configuration transaction',
                 severity: 'error',
-                detail: 'Failed to delete configuration transaction: ',
+                detail: 'Failed to delete configuration transaction: transaction not found',
             })
         )
     }))
