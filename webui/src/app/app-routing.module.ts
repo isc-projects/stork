@@ -211,7 +211,7 @@ const routes: Routes = [
     },
     {
         path: 'swagger-ui',
-        loadChildren: () => import('./swagger-ui/swagger-ui.module').then(m => m.SwaggerUiModule),
+        loadChildren: () => import('./swagger-ui/swagger-ui.module').then((m) => m.SwaggerUiModule),
         canActivate: [AuthGuard],
         data: { key: 'swagger' },
     },
