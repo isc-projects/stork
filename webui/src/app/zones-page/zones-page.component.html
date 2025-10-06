@@ -269,6 +269,7 @@ to the number of configured zones.
             [loading]="zonesLoading"
             [totalRecords]="zonesTotal"
             (rowsChange)="storeZonesTableRowsPerPage($event)"
+            class="full-w-table"
         >
             <ng-template #caption>
                 <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -329,7 +330,7 @@ to the number of configured zones.
                             </app-help-tip>
                         </div>
                     </ng-template>
-                    <div class="flex flex-wrap gap-3 mt-3 align-items-center">
+                    <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
                         <p-button
                             label="Clear"
                             [severity]="tableHasFilter(zonesTable) ? 'info' : 'secondary'"

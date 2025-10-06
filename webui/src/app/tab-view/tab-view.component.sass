@@ -1,5 +1,12 @@
-:host ::ng-deep .close-tab-btn > button
-  // Keep the close tab button as small as possible.
-  padding: 0
-  width: 1rem
-  height: 1rem
+:host ::ng-deep
+  .close-tab-btn > button
+    // Keep the close tab button as small as possible.
+    padding: 0
+    width: 1rem
+    height: 1rem
+
+  .p-tabpanels:has(.full-w-table)
+    // Don't add horizontal padding to the tab panel when it contains a table inside that is supposed to take full width.
+    @layer high
+      padding-left: 0
+      padding-right: 0
