@@ -485,14 +485,14 @@ describe('ConfigReviewPanelComponent', () => {
 
     it('should open the config review checkers panel with minimal layout on click the button', () => {
         // The button should exist.
-        const buttonElement = fixture.debugElement.query(By.css('button[label=Checkers]'))
+        const buttonElement = fixture.debugElement.query(By.css('p-button[label=Checkers] button'))
         expect(buttonElement).not.toBeNull()
 
         // The checker updater shouldn't exist yet.
         let pickerElement = fixture.debugElement.query(By.directive(ConfigCheckerPreferenceUpdaterComponent))
         expect(pickerElement).toBeNull()
 
-        buttonElement.triggerEventHandler('click', new Event('click'))
+        buttonElement.nativeElement.click()
         fixture.detectChanges()
 
         // The checker picker should be presented.

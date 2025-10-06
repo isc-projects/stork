@@ -28,6 +28,7 @@ import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.co
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('KeaGlobalConfigurationFormComponent', () => {
     let component: KeaGlobalConfigurationFormComponent
@@ -260,6 +261,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 ReactiveFormsModule,
                 SplitButtonModule,
                 FloatLabelModule,
+                TriStateCheckboxComponent,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
@@ -414,9 +416,9 @@ describe('KeaGlobalConfigurationFormComponent', () => {
 
         expect(component.initError).toEqual('status: 404')
 
-        const messagesElement = fixture.debugElement.query(By.css('p-messages'))
-        expect(messagesElement).toBeTruthy()
-        expect(messagesElement.nativeElement.outerText).toContain(component.initError)
+        const messageElement = fixture.debugElement.query(By.css('p-message'))
+        expect(messageElement).toBeTruthy()
+        expect(messageElement.nativeElement.outerText).toContain(component.initError)
 
         const retryButton = fixture.debugElement.query(By.css('[label="Retry"]'))
         expect(retryButton).toBeTruthy()

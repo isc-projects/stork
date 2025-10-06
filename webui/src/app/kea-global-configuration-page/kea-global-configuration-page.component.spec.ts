@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page.component'
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
 import { MockParamMap } from '../utils'
 import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
@@ -64,6 +64,12 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 TagModule,
                 ManagedAccessDirective,
                 FloatLabelModule,
+                RouterModule.forRoot([
+                    {
+                        path: 'apps/:id',
+                        component: AppsPageComponent,
+                    },
+                ]),
             ],
             providers: [
                 {
@@ -77,12 +83,6 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([
-                    {
-                        path: 'apps/:id',
-                        component: AppsPageComponent,
-                    },
-                ]),
             ],
         }).compileComponents()
 

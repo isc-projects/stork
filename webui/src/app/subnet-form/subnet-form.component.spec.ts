@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing'
 
 import { SubnetFormComponent } from './subnet-form.component'
 import { ButtonModule } from 'primeng/button'
@@ -36,6 +36,7 @@ import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.co
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { provideRouter, RouterModule } from '@angular/router'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -437,6 +438,7 @@ describe('SubnetFormComponent', () => {
                 SplitButtonModule,
                 ToastModule,
                 FloatLabelModule,
+                TriStateCheckboxComponent,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()
@@ -1055,11 +1057,9 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         // Expand the tab.
-        const tab = fixture.debugElement.query(By.css('p-accordionTab'))
+        const tab = fixture.debugElement.query(By.css('.p-accordionheader'))
         expect(tab).toBeTruthy()
-        const link = tab.query(By.css('a'))
-        expect(link).toBeTruthy()
-        link.nativeElement.click()
+        tab.nativeElement.click()
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.length).toBe(1)
@@ -1088,6 +1088,9 @@ describe('SubnetFormComponent', () => {
 
         expect(component.state.servers.length).toBe(1)
         expect(component.state.servers[0]).toBe('second/dhcp4')
+
+        flush()
+        // TODO this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
     }))
 
     it('should create the form for the selected server', fakeAsync(() => {
@@ -1098,11 +1101,9 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         // Expand the tab.
-        const tab = fixture.debugElement.query(By.css('p-accordionTab'))
+        const tab = fixture.debugElement.query(By.css('.p-accordionheader'))
         expect(tab).toBeTruthy()
-        const link = tab.query(By.css('a'))
-        expect(link).toBeTruthy()
-        link.nativeElement.click()
+        tab.nativeElement.click()
         tick()
         fixture.detectChanges()
 
@@ -1165,6 +1166,9 @@ describe('SubnetFormComponent', () => {
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(2)
         expect(parameters.get('allocator.values.0')?.value).toBe('random')
         expect(parameters.get('allocator.values.1')?.value).toBe('iterative')
+
+        flush()
+        // TODO this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
     }))
 
     it('should add and remove the pool', fakeAsync(() => {
@@ -1182,9 +1186,9 @@ describe('SubnetFormComponent', () => {
         expect(poolsPanel).toBeTruthy()
 
         // Expand the tab.
-        const tabs = poolsPanel.queryAll(By.css('p-accordionTab'))
+        const tabs = poolsPanel.queryAll(By.css('.p-accordionpanel'))
         expect(tabs.length).toBe(2)
-        const link = tabs[1].query(By.css('a'))
+        const link = tabs[1].query(By.css('.p-accordionheader'))
         expect(link).toBeTruthy()
         link.nativeElement.click()
         tick()
@@ -1223,9 +1227,9 @@ describe('SubnetFormComponent', () => {
         expect(poolsPanel).toBeTruthy()
 
         // Expand the tab.
-        const tabs = poolsPanel.queryAll(By.css('p-accordionTab'))
+        const tabs = poolsPanel.queryAll(By.css('.p-accordionpanel'))
         expect(tabs.length).toBe(2)
-        const link = tabs[1].query(By.css('a'))
+        const link = tabs[1].query(By.css('.p-accordionheader'))
         expect(link).toBeTruthy()
         link.nativeElement.click()
         tick()
@@ -1268,9 +1272,9 @@ describe('SubnetFormComponent', () => {
 
         expect(component.state.initError).toEqual('status: 404')
 
-        const messagesElement = fixture.debugElement.query(By.css('p-messages'))
-        expect(messagesElement).toBeTruthy()
-        expect(messagesElement.nativeElement.outerText).toContain(component.state.initError)
+        const messageElement = fixture.debugElement.query(By.css('p-message'))
+        expect(messageElement).toBeTruthy()
+        expect(messageElement.nativeElement.outerText).toContain(component.state.initError)
 
         const retryButton = fixture.debugElement.query(By.css('[label="Retry"]'))
         expect(retryButton).toBeTruthy()

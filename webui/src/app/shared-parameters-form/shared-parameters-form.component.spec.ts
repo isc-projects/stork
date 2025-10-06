@@ -26,6 +26,7 @@ import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { InputTextModule } from 'primeng/inputtext'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 /**
  * Intrface to the form used in the unit tests.
@@ -68,6 +69,7 @@ describe('SharedParametersFormComponent', () => {
                 PopoverModule,
                 ReactiveFormsModule,
                 InputTextModule,
+                TriStateCheckboxComponent,
             ],
         }).compileComponents()
 
