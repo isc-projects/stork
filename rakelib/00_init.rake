@@ -236,7 +236,7 @@ end
 # It accepts a task to be guarded and the dependency file.
 # The dependency file should not be included in the prerequisite list of the task.
 def add_hash_guard(task_name, prerequisite_file)
-    if !File.exist?(prerequisite_file)
+    unless File.exist?(prerequisite_file)
         # Add the file as a standard prerequisite.
         task = Rake::Task[task_name]
         task.enhance [prerequisite_file]
