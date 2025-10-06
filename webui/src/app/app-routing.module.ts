@@ -4,7 +4,6 @@ import { Routes, RouterModule } from '@angular/router'
 import { AuthGuard } from './auth.guard'
 import { DashboardComponent } from './dashboard/dashboard.component'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
-import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
@@ -137,12 +136,6 @@ const routes: Routes = [
         data: { key: 'daemon-global-config' },
     },
     {
-        path: 'swagger-ui',
-        component: SwaggerUiComponent,
-        canActivate: [AuthGuard],
-        data: { key: 'swagger' },
-    },
-    {
         path: 'profile',
         component: ProfilePageComponent,
         canActivate: [AuthGuard],
@@ -215,6 +208,12 @@ const routes: Routes = [
         component: ConfigMigrationPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'migrations' },
+    },
+    {
+        path: 'swagger-ui',
+        loadChildren: () => import('./swagger-ui/swagger-ui.module').then(m => m.SwaggerUiModule),
+        canActivate: [AuthGuard],
+        data: { key: 'swagger' },
     },
     {
         path: '**',

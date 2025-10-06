@@ -67,7 +67,6 @@ import { AuthInterceptor } from './auth-interceptor'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
-import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
@@ -314,7 +313,6 @@ const AuraBluePreset = definePreset(Aura, {
         LoginScreenComponent,
         DashboardComponent,
         HostsTableComponent,
-        SwaggerUiComponent,
         MachinesPageComponent,
         LocaltimePipe,
         UsersPageComponent,
