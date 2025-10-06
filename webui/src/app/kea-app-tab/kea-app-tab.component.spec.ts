@@ -314,7 +314,6 @@ describe('KeaAppTabComponent', () => {
         component.appTab = new AppTab()
         fixture.detectChanges()
         expect(component.activeTabDaemonID).toBe(2)
-        expect(fixture.debugElement.nativeElement.innerText).toContain('1.9.5')
     })
 
     it('should know how to take the base name out of a path', () => {

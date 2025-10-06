@@ -200,7 +200,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(component.configuration).toBeNull()
         expect(component.failedFetch).toBeTrue()
 
-        const messageElement = fixture.debugElement.query(By.css('.p-inline-message-text'))
+        const messageElement = fixture.debugElement.query(By.css('.p-message'))
         expect(messageElement).not.toBeNull()
         expect((messageElement.nativeElement as Element).textContent).toBe('Fetching daemon configuration failed')
     })

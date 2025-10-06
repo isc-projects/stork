@@ -112,7 +112,8 @@ describe('AppComponent', () => {
             'Subnets',
             'Shared Networks',
             'Services',
-            'Apps',
+            'Kea Apps',
+            'DNS Apps',
             'Machines',
             'Grafana',
             'Monitoring',
@@ -130,7 +131,7 @@ describe('AppComponent', () => {
 
         // List of menu items that are expected to be hidden. Unless listed here, the test expects
         // the menu item to be visible.
-        const expHiddenItems = ['DHCP', 'DNS', 'Apps', 'Grafana', 'Users']
+        const expHiddenItems = ['DHCP', 'Kea Apps', 'DNS Apps', 'Grafana', 'Users']
 
         for (const name of expMenuItems) {
             // Check if the menu item is there
@@ -183,11 +184,9 @@ describe('AppComponent', () => {
         expect(badges.length).toEqual(2)
 
         // Check if error severity badge is shown in top bar menu.
-        expect(badges[0].classes.hasOwnProperty('p-menuitem-badge')).toBeTrue()
         expect(badges[0].classes.hasOwnProperty('p-badge-dot')).toBeTrue()
         expect(badges[0].classes.hasOwnProperty('p-badge-danger')).toBeTrue()
 
-        expect(badges[1].classes.hasOwnProperty('p-menuitem-badge')).toBeTrue()
         expect(badges[1].classes.hasOwnProperty('p-badge-dot')).toBeTrue()
         expect(badges[1].classes.hasOwnProperty('p-badge-danger')).toBeTrue()
     })

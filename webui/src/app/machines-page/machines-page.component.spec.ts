@@ -722,7 +722,7 @@ describe('MachinesPageComponent', () => {
 
         // Initially, we show authorized machines. In that case we don't show a warning.
         expect(component.showAuthorized()).toBeTrue()
-        let messages = fixture.debugElement.query(By.css('p-messages'))
+        let messages = fixture.debugElement.query(By.css('p-message'))
         expect(messages).toBeFalsy()
 
         // Show unauthorized machines.
@@ -733,7 +733,7 @@ describe('MachinesPageComponent', () => {
         expect(component.showAuthorized()).toBeFalse()
 
         // This time we should show the warning that the machines registration is disabled.
-        messages = fixture.debugElement.query(By.css('p-messages'))
+        messages = fixture.debugElement.query(By.css('p-message'))
         expect(messages).toBeTruthy()
         expect(messages.nativeElement.innerText).toContain('Registration of new machines is disabled')
     }))
@@ -754,7 +754,7 @@ describe('MachinesPageComponent', () => {
 
         // Showing authorized machines. The warning is never displayed in such a case.
         expect(component.showAuthorized()).toBeTrue()
-        let messages = fixture.debugElement.query(By.css('p-messages'))
+        let messages = fixture.debugElement.query(By.css('p-message'))
         expect(messages).toBeFalsy()
 
         // Show unauthorized machines.
@@ -765,7 +765,7 @@ describe('MachinesPageComponent', () => {
         expect(component.showAuthorized()).toBeFalse()
 
         // The warning should not be displayed because the registration is enabled.
-        messages = fixture.debugElement.query(By.css('p-messages'))
+        messages = fixture.debugElement.query(By.css('p-message'))
         expect(messages).toBeFalsy()
     }))
 })

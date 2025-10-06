@@ -429,7 +429,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         fixture.detectChanges()
         tick()
 
-        expect(fixture.debugElement.query(By.css('p-messages'))).toBeFalsy()
+        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
     }))

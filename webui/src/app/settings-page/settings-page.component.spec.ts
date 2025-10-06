@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -221,5 +221,6 @@ describe('SettingsPageComponent', () => {
         }
         // The form should eventually be valid.
         expect(component.settingsForm.invalid).toBeFalse()
+        flush()
     }))
 })

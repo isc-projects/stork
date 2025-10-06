@@ -252,7 +252,7 @@ describe('SharedParametersFormComponent', () => {
         labelDiv = allWrapperDivs[4].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
         expect(labelDiv[0].nativeElement.innerText).toBe('DDNS Override Client Update')
-        controls = allWrapperDivs[4].queryAll(By.css('p-checkbox'))
+        controls = allWrapperDivs[4].queryAll(By.css('div:not(.hidden) > p-checkbox'))
         expect(controls.length).toBe(1)
         tags = allWrapperDivs[4].queryAll(By.css('p-tag'))
         expect(tags.length).toBe(0)
@@ -367,7 +367,7 @@ describe('SharedParametersFormComponent', () => {
         fixture.detectChanges()
 
         // The expanded list should contain the client classes.
-        const classSpans = divs[1].queryAll(By.css('ul.p-autocomplete-items li span'))
+        const classSpans = divs[1].queryAll(By.css('ul.p-autocomplete-list li span'))
         expect(classSpans).toBeTruthy()
         expect(classSpans.length).toBe(2)
         expect(classSpans.map((de) => de.nativeElement.innerText)).toEqual(jasmine.arrayContaining(['foo', 'bar']))

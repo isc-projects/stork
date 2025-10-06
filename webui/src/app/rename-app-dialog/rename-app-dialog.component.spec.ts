@@ -183,9 +183,8 @@ describe('RenameAppDialogComponent', () => {
         expect(appNameInputError.nativeElement.innerText).toBe('An app with this name already exists.')
 
         // Ensure that the submit button is disabled.
-        const renameButton = fixture.debugElement.query(By.css('#rename-button'))
-        expect(renameButton.properties.hasOwnProperty('disabled')).toBeTrue()
-        expect(renameButton.properties.disabled).toBeTrue()
+        const renameButton = fixture.debugElement.query(By.css('#rename-button button[disabled]'))
+        expect(renameButton).toBeTruthy()
     })
 
     it('should reject a name referencing non-existing machine', () => {

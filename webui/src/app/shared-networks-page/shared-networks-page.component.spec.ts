@@ -450,7 +450,7 @@ describe('SharedNetworksPageComponent', () => {
             jasmine.objectContaining({
                 summary: 'Failed to delete configuration transaction',
                 severity: 'error',
-                detail: 'Failed to delete configuration transaction: ',
+                detail: 'Failed to delete configuration transaction: transaction not found',
             })
         )
     }))
@@ -471,7 +471,7 @@ describe('SharedNetworksPageComponent', () => {
             jasmine.objectContaining({
                 summary: 'Failed to delete configuration transaction',
                 severity: 'error',
-                detail: 'Failed to delete configuration transaction: ',
+                detail: 'Failed to delete configuration transaction: transaction not found',
             })
         )
     }))

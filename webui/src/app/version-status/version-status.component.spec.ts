@@ -215,7 +215,7 @@ describe('VersionStatusComponent', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()
-        const messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
+        const messagesDiv = fixture.nativeElement.querySelector('div.p-message')
         expect(messagesDiv).toBeNull()
     })
 
@@ -225,7 +225,7 @@ describe('VersionStatusComponent', () => {
 
         // Act & Assert
         setCorrectInputs()
-        const messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
+        const messagesDiv = fixture.nativeElement.querySelector('div.p-message')
         expect(messagesDiv).toBeTruthy()
     })
 

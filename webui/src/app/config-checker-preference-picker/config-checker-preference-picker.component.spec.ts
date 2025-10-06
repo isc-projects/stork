@@ -240,7 +240,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         fixture.detectChanges()
 
         const checker = component.checkers[0]
-        let submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
+        let submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
         expect(submitButton).not.toBeNull()
 
         // No changes
@@ -256,7 +256,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.onCheckerStateChanged(checker)
         fixture.detectChanges()
         expect(component.hasChanges).toBeTrue()
-        submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
+        submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
         expect(submitButton.attributes).not.toEqual(
             jasmine.objectContaining({
                 disabled: '',
@@ -266,7 +266,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.onCheckerStateChanged(checker)
         fixture.detectChanges()
         expect(component.hasChanges).toBeTrue()
-        submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
+        submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
         expect(submitButton.attributes).not.toEqual(
             jasmine.objectContaining({
                 disabled: '',
@@ -277,7 +277,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.onCheckerStateChanged(checker)
         fixture.detectChanges()
         expect(component.hasChanges).toBeFalse()
-        submitButton = fixture.debugElement.query(By.css('button[label=Submit]'))
+        submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
         expect(submitButton.attributes).toEqual(
             jasmine.objectContaining({
                 disabled: '',

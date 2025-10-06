@@ -35,6 +35,7 @@ import { By } from '@angular/platform-browser'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
 import { provideRouter, RouterModule } from '@angular/router'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('SharedNetworkFormComponent', () => {
     let component: SharedNetworkFormComponent
@@ -311,6 +312,7 @@ describe('SharedNetworkFormComponent', () => {
                 SplitButtonModule,
                 ToastModule,
                 FloatLabelModule,
+                TriStateCheckboxComponent,
             ],
             providers: [DHCPService, MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()
@@ -836,7 +838,7 @@ describe('SharedNetworkFormComponent', () => {
         expect(messageService.add).toHaveBeenCalled()
         expect(component.state.initError.length).not.toBe(0)
 
-        const messagesElement = fixture.debugElement.query(By.css('p-messages'))
+        const messagesElement = fixture.debugElement.query(By.css('p-message'))
         expect(messagesElement).toBeTruthy()
         expect(messagesElement.nativeElement.outerText).toContain(component.state.initError)
 
@@ -848,7 +850,7 @@ describe('SharedNetworkFormComponent', () => {
         await fixture.whenStable()
         fixture.detectChanges()
 
-        expect(fixture.debugElement.query(By.css('p-messages'))).toBeFalsy()
+        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
 

@@ -766,7 +766,7 @@ describe('HostFormComponent', () => {
 
         expect(component.form.initError).toEqual('status: 404')
 
-        const messagesElement = fixture.debugElement.query(By.css('p-messages'))
+        const messagesElement = fixture.debugElement.query(By.css('p-message'))
         expect(messagesElement).toBeTruthy()
         expect(messagesElement.nativeElement.outerText).toContain(component.form.initError)
 
@@ -778,7 +778,7 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(fixture.debugElement.query(By.css('p-messages'))).toBeFalsy()
+        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
     }))

@@ -122,6 +122,7 @@ describe('SubnetTabComponent', () => {
 
     it('should display an IPv4 subnet', () => {
         component.subnet = {
+            id: 1,
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 30,
@@ -225,6 +226,7 @@ describe('SubnetTabComponent', () => {
 
     it('should display an IPv4 subnet without pools', () => {
         component.subnet = {
+            id: 1,
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 30,
@@ -270,6 +272,7 @@ describe('SubnetTabComponent', () => {
 
     it('should display an IPv6 subnet', () => {
         component.subnet = {
+            id: 1,
             subnet: '2001:db8:1::/64',
             addrUtilization: 60,
             stats: {
@@ -325,6 +328,7 @@ describe('SubnetTabComponent', () => {
 
     it('should display an IPv6 subnet with address pools and prefixes', () => {
         component.subnet = {
+            id: 1,
             subnet: '2001:db8:1::/64',
             addrUtilization: 88,
             pdUtilization: 60,
@@ -395,6 +399,7 @@ describe('SubnetTabComponent', () => {
 
     it('should display an IPv6 subnet with different fieldsets for different servers', () => {
         component.subnet = {
+            id: 2,
             subnet: '2001:db8:1::/64',
             addrUtilization: 88,
             pdUtilization: 60,

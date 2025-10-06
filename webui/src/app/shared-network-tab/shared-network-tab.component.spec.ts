@@ -119,6 +119,7 @@ describe('SharedNetworkTabComponent', () => {
 
     it('should display an IPv4 shared network', () => {
         component.sharedNetwork = {
+            id: 1,
             name: 'foo',
             addrUtilization: 30,
             pools: [
@@ -432,6 +433,7 @@ describe('SharedNetworkTabComponent', () => {
 
     it('should display an IPv4 shared network with minimal data', () => {
         component.sharedNetwork = {
+            id: 1,
             name: 'bar',
             localSharedNetworks: [
                 {
@@ -467,6 +469,7 @@ describe('SharedNetworkTabComponent', () => {
 
     it('should display an IPv6 shared network', () => {
         component.sharedNetwork = {
+            id: 1,
             name: 'foo',
             universe: IPType.IPv6,
             addrUtilization: 30,
@@ -557,6 +560,7 @@ describe('SharedNetworkTabComponent', () => {
 
     it('should display shared network delete button', () => {
         component.sharedNetwork = {
+            id: 1,
             name: 'foo',
             universe: IPType.IPv6,
             addrUtilization: 30,

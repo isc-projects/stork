@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
 
 import { AppsPageComponent } from './apps-page.component'
 import { MenuModule } from 'primeng/menu'
@@ -161,6 +161,7 @@ describe('AppsPageComponent', () => {
 
         expect(api.deleteKeaDaemonConfigHashes).toHaveBeenCalled()
         expect(msgSrv.add).toHaveBeenCalled()
+        flush()
     }))
 
     it('should report an error while requesting synchronization configurations from Kea', fakeAsync(() => {
@@ -182,6 +183,7 @@ describe('AppsPageComponent', () => {
 
         expect(api.deleteKeaDaemonConfigHashes).toHaveBeenCalled()
         expect(msgSrv.add).toHaveBeenCalled()
+        flush()
     }))
 
     it('should cancel synchronizing configurations from Kea', fakeAsync(() => {
@@ -202,6 +204,7 @@ describe('AppsPageComponent', () => {
 
         expect(api.deleteKeaDaemonConfigHashes).not.toHaveBeenCalled()
         expect(msgSrv.add).not.toHaveBeenCalled()
+        flush()
     }))
     it('should request no app types by default', fakeAsync(() => {
         spyOn(api, 'getApps')
