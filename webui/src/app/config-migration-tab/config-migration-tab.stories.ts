@@ -11,13 +11,14 @@ import { ConfigMigrationTabComponent } from './config-migration-tab.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { SurroundPipe } from '../pipes/surround.pipe'
 import { provideRouter, RouterModule } from '@angular/router'
+import { MessageService } from 'primeng/api'
 
 export default {
     title: 'App/ConfigMigrationTab',
     component: ConfigMigrationTabComponent,
     decorators: [
         applicationConfig({
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideRouter([]), MessageService],
         }),
         moduleMetadata({
             imports: [

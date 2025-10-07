@@ -1,6 +1,6 @@
 import { HostFormComponent } from './host-form.component'
 
-import { StoryObj, Meta, moduleMetadata } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule, ReactiveFormsModule, UntypedFormBuilder } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -27,6 +27,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { provideRouter, RouterModule } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 const mockCreateHostBeginData: CreateHostBeginResponse = {
     id: 123,
@@ -156,6 +157,9 @@ export default {
     title: 'App/HostForm',
     component: HostFormComponent,
     decorators: [
+        applicationConfig({
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), provideRouter([])],
+        }),
         moduleMetadata({
             imports: [
                 ButtonModule,
@@ -176,6 +180,7 @@ export default {
                 TableModule,
                 ToastModule,
                 ToggleButtonModule,
+                FloatLabelModule,
             ],
             declarations: [
                 DhcpClientClassSetFormComponent,
@@ -183,9 +188,6 @@ export default {
                 DhcpOptionSetFormComponent,
                 HelpTipComponent,
                 HostFormComponent,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
-                provideRouter([]),
             ],
             providers: [UntypedFormBuilder, DHCPService, MessageService],
         }),
