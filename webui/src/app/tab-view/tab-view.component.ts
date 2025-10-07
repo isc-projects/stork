@@ -145,12 +145,6 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     tabNavigationRouteFragment = input('tab-navigation')
 
     /**
-     * Input string which holds the route fragment to be appended to the router link path of the tab with editing entity form.
-     * Defaults to 'edit'.
-     */
-    editEntityRouteFragment = input('edit')
-
-    /**
      * Input string which holds the router link base path for all the tabs.
      * When provided, the tab view is using clickable tabs
      * as clickable router links (router navigation will happen after clicking the tab).
@@ -712,7 +706,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      * @param entityID entity ID for which the tab is closed
      */
     closeTab(entityID: number) {
-        if (!this.closableTabs || entityID < NEW_ENTITY_FORM_TAB_ID) {
+        if (!this.closableTabs() || entityID < NEW_ENTITY_FORM_TAB_ID) {
             return
         }
 
