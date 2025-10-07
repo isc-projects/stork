@@ -206,21 +206,4 @@ describe('AppsPageComponent', () => {
         expect(msgSrv.add).not.toHaveBeenCalled()
         flush()
     }))
-    it('should request no app types by default', fakeAsync(() => {
-        spyOn(api, 'getApps')
-
-        component.refreshAppsList(component.appsTable)
-        fixture.detectChanges()
-
-        expect(api.getApps).toHaveBeenCalledWith(0, 10, undefined, [])
-    }))
-    it('should only request PowerDNS apps when set to PowerDNS', fakeAsync(() => {
-        spyOn(api, 'getApps')
-
-        component.selectedAppTypes = ['pdns']
-        component.refreshAppsList(component.appsTable)
-        fixture.detectChanges()
-
-        expect(api.getApps).toHaveBeenCalledWith(0, 10, undefined, ['pdns'])
-    }))
 })

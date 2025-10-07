@@ -303,44 +303,6 @@ const AuraBluePreset = definePreset(Aura, {
             },
         },
     },
-    components: {
-        // Apply primary background color for Chips instead of the default greyish surface color.
-        chip: {
-            colorScheme: {
-                light: {
-                    root: {
-                        background: '{primary.100}',
-                    },
-                },
-                dark: {
-                    root: {
-                        background: '{primary.400}',
-                    },
-                },
-            },
-        },
-        // Make messages text lighter (500 by default).
-        message: {
-            colorScheme: {
-                light: {
-                    root: {
-                        textFontWeight: '400',
-                    },
-                },
-                dark: {
-                    root: {
-                        textFontWeight: '400',
-                    },
-                },
-            },
-        },
-        // Apply regular padding for all panel headers.
-        panel: {
-            root: {
-                toggleableHeaderPadding: '1.125rem',
-            },
-        },
-    },
 })
 
 @NgModule({
