@@ -27,6 +27,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { DividerModule } from 'primeng/divider'
 import { StorkValidators } from '../validators'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { InputTextModule } from 'primeng/inputtext'
 
 export default {
     title: 'App/AddressPoolForm',
@@ -60,6 +61,7 @@ export default {
                 TagModule,
                 ToastModule,
                 FloatLabelModule,
+                InputTextModule,
             ],
             declarations: [
                 AddressPoolFormComponent,

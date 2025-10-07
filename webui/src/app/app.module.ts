@@ -531,3 +531,5 @@ const AuraBluePreset = definePreset(Aura, {
     ],
 })
 export class AppModule {}
+
+export default AuraBluePreset

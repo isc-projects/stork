@@ -10,7 +10,6 @@ import { of } from 'rxjs'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { PanelModule } from 'primeng/panel'
 import { AppOverviewComponent } from '../app-overview/app-overview.component'
-import { TabViewModule } from 'primeng/tabview'
 import { DialogModule } from 'primeng/dialog'
 import { ButtonModule } from 'primeng/button'
 import { provideRouter, RouterModule } from '@angular/router'
@@ -32,6 +31,8 @@ import { ServerSentEventsService, ServerSentEventsTestingService } from '../serv
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 // Mock directive that always grants access
 @Directive({
@@ -163,7 +164,6 @@ export default {
                 DialogModule,
                 FormsModule,
                 RouterModule,
-                TabViewModule,
                 TooltipModule,
                 PanelModule,
                 PopoverModule,
@@ -172,6 +172,8 @@ export default {
                 MockManagedAccessDirective,
                 ToastModule,
                 ProgressSpinnerModule,
+                TabViewComponent,
+                ConfirmDialogModule,
             ],
             declarations: [
                 AppOverviewComponent,

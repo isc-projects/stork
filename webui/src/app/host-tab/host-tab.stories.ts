@@ -17,14 +17,15 @@ import { TreeModule } from 'primeng/tree'
 import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { HostTabComponent } from '../host-tab/host-tab.component'
+import { HostTabComponent } from './host-tab.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { toastDecorator } from '../utils-stories'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessagesModule } from 'primeng/messages'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
+import { ButtonModule } from 'primeng/button'
+import { MessageModule } from 'primeng/message'
 
 export default {
     title: 'App/HostTab',
@@ -45,11 +46,12 @@ export default {
         }),
         moduleMetadata({
             imports: [
+                ButtonModule,
                 ChipModule,
                 ConfirmDialogModule,
                 FieldsetModule,
                 FormsModule,
-                MessagesModule,
+                MessageModule,
                 PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,

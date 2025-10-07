@@ -17,6 +17,8 @@ import { importProvidersFrom } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CheckboxModule } from 'primeng/checkbox'
 import { TagModule } from 'primeng/tag'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 const mockData: ConfigCheckers = {
     items: [
@@ -57,6 +59,8 @@ export default {
                 FormsModule,
                 CheckboxModule,
                 TagModule,
+                TriStateCheckboxComponent,
+                ManagedAccessDirective,
             ],
             declarations: [
                 HelpTipComponent,

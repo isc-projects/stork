@@ -25,7 +25,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
@@ -492,7 +492,7 @@ export default {
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 TableModule,
                 TagModule,

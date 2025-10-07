@@ -22,6 +22,7 @@ import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { FormsModule } from '@angular/forms'
 import { importProvidersFrom } from '@angular/core'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -71,6 +72,7 @@ export default {
                 FormsModule,
                 ToggleButtonModule,
                 DataViewModule,
+                TriStateCheckboxComponent,
             ],
             declarations: [
                 ConfigReviewPanelComponent,

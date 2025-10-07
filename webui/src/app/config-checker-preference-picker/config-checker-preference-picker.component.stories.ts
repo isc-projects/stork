@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button'
 import { FormsModule } from '@angular/forms'
 import { CheckboxModule } from 'primeng/checkbox'
 import { TagModule } from 'primeng/tag'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 export default {
     title: 'App/ConfigCheckerPreferencePicker',
@@ -29,6 +30,7 @@ export default {
                 FormsModule,
                 CheckboxModule,
                 TagModule,
+                ManagedAccessDirective,
             ],
             declarations: [ConfigCheckerPreferencePickerComponent, HelpTipComponent],
         }),

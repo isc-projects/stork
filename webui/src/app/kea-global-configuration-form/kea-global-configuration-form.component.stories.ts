@@ -21,7 +21,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete'
 import { SelectModule } from 'primeng/select'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { TagModule } from 'primeng/tag'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { MultiSelectModule } from 'primeng/multiselect'
@@ -226,7 +226,7 @@ export default {
                 FieldsetModule,
                 FormsModule,
                 InputNumberModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 PopoverModule,

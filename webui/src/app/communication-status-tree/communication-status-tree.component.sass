@@ -1,9 +1,10 @@
 :host ::ng-deep
-    .communication-ok
-        color: var(--p-text-color)
+    @layer high
+        .communication-ok > .p-tree-node-content
+            color: var(--p-text-color)
 
-    .communication-failing
-        color: var(--p-red-600)
+        .communication-failing > .p-tree-node-content
+            color: var(--p-red-600)
 
-    .communication-disabled
-        color: var(--p-inverted-300)
+        .communication-disabled > .p-tree-node-content
+            color: var(--p-inverted-300)

@@ -25,7 +25,7 @@ import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TreeModule } from 'primeng/tree'
 import { TagModule } from 'primeng/tag'
@@ -235,7 +235,7 @@ export default {
                 BreadcrumbModule,
                 ButtonModule,
                 FieldsetModule,
-                MessagesModule,
+                MessageModule,
                 PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,

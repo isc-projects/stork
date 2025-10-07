@@ -1,4 +1,4 @@
-import { HttpClientModule, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
@@ -15,9 +15,11 @@ import { toastDecorator } from '../utils-stories'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { ButtonModule } from 'primeng/button'
-import { importProvidersFrom } from '@angular/core'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideRouter, RouterModule } from '@angular/router'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { CheckboxModule } from 'primeng/checkbox'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -51,7 +53,13 @@ export default {
     component: ConfigCheckerPreferencePageComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, ServicesService, importProvidersFrom(HttpClientModule)],
+            providers: [
+                MessageService,
+                ServicesService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
+            ],
         }),
         moduleMetadata({
             imports: [
@@ -63,6 +71,9 @@ export default {
                 BreadcrumbModule,
                 RouterModule,
                 ButtonModule,
+                CheckboxModule,
+                TriStateCheckboxComponent,
+                ManagedAccessDirective,
             ],
             declarations: [
                 HelpTipComponent,
@@ -70,9 +81,6 @@ export default {
                 ConfigCheckerPreferencePickerComponent,
                 ConfigCheckerPreferenceUpdaterComponent,
                 BreadcrumbsComponent,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
-                provideRouter([]),
             ],
         }),
         toastDecorator,

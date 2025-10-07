@@ -9,6 +9,7 @@ import { CheckboxModule } from 'primeng/checkbox'
 import { DividerModule } from 'primeng/divider'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { ButtonModule } from 'primeng/button'
 
 export default {
     title: 'App/DhcpOptionSetView',
@@ -27,6 +28,7 @@ export default {
                 TagModule,
                 TooltipModule,
                 TreeModule,
+                ButtonModule,
             ],
             declarations: [DhcpOptionSetViewComponent, HelpTipComponent],
         }),

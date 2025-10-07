@@ -12,7 +12,7 @@ import { SelectModule } from 'primeng/select'
 import { FieldsetModule } from 'primeng/fieldset'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { ToggleSwitchModule } from 'primeng/toggleswitch'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { PopoverModule } from 'primeng/popover'
 import { SplitButtonModule } from 'primeng/splitbutton'
@@ -166,7 +166,7 @@ export default {
                 FormsModule,
                 InputNumberModule,
                 ToggleSwitchModule,
-                MessagesModule,
+                MessageModule,
                 MultiSelectModule,
                 NoopAnimationsModule,
                 PopoverModule,

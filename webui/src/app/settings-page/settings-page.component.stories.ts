@@ -4,7 +4,7 @@ import { provideAnimations, provideNoopAnimations } from '@angular/platform-brow
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { FieldsetModule } from 'primeng/fieldset'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { MessagesModule } from 'primeng/messages'
+import { MessageModule } from 'primeng/message'
 import { PopoverModule } from 'primeng/popover'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -56,7 +56,7 @@ export default {
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
-                MessagesModule,
+                MessageModule,
                 PopoverModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
