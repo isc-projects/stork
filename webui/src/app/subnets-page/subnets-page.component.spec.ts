@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
