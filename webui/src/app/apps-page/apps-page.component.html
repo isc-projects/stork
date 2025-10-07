@@ -109,15 +109,15 @@
                                             id="apps-input"
                                             [ngModel]="value"
                                             [options]="[
-                                                { label: 'Kea', value: 'kea' },
                                                 { label: 'BIND9', value: 'bind9' },
+                                                { label: 'Kea', value: 'kea' },
                                                 { label: 'PowerDNS', value: 'pdns' },
                                             ]"
                                             (onChange)="filterTable($event.value, filterConstraint)"
                                             class="w-10rem"
                                         >
                                         </p-multiSelect>
-                                        <label for="apps-input">App type</label>
+                                        <label for="apps-input">App Type</label>
                                     </p-floatlabel>
                                     <p-button
                                         icon="pi pi-filter-slash"

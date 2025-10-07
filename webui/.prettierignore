@@ -14,6 +14,7 @@ dist
 src/assets/arm
 src/assets/pkgs
 src/assets/static-page-content
+src/assets/stork-title.svg
 .angular
 documentation.json
 src/app/*.ts.template
