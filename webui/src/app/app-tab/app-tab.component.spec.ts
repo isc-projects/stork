@@ -39,6 +39,7 @@ import { TabViewComponent } from '../tab-view/tab-view.component'
 class Daemon {
     name = 'named'
     version = '9.18.30'
+    id = 7
 }
 
 class Details {
@@ -203,8 +204,8 @@ describe('AppTabComponent', () => {
         expect(servicesApi.renameApp).not.toHaveBeenCalled()
     }))
 
-    it('should include events', fakeAsync(() => {
-        const eventsPanel = fixture.debugElement.query(By.css('app-events-panel'))
+    it('should include events', () => {
+        const eventsPanel = fixture.debugElement.query(By.directive(EventsPanelComponent))
         expect(eventsPanel).toBeTruthy()
-    }))
+    })
 })

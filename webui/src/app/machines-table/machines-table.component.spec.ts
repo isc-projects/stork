@@ -479,12 +479,58 @@ describe('MachinesTableComponent', () => {
     })
 
     it('should display status of all daemons from all applications', async () => {
-        // Arrange
-        const oneMachineResponse = {
-            items: [{ hostname: 'zzz', id: 4, authorized: true }],
+        // Prepare the data
+        const getMachinesResp: any = {
+            items: [
+                {
+                    id: 1,
+                    authorized: true,
+                    hostname: 'zzz',
+                    apps: [
+                        {
+                            id: 1,
+                            name: 'kea@localhost',
+                            type: 'kea',
+                            details: {
+                                daemons: [
+                                    {
+                                        active: true,
+                                        extendedVersion: '2.2.0',
+                                        id: 1,
+                                        name: 'dhcp4',
+                                    },
+                                    {
+                                        active: false,
+                                        extendedVersion: '2.3.0',
+                                        id: 2,
+                                        name: 'ca',
+                                    },
+                                ],
+                            },
+                            version: '2.2.0',
+                        },
+                        {
+                            id: 2,
+                            name: 'bind9@localhost',
+                            type: 'bind9',
+                            details: {
+                                daemon: {
+                                    active: true,
+                                    id: 3,
+                                    name: 'named',
+                                },
+                            },
+                            version: '9.18.30',
+                        },
+                    ],
+                    agentVersion: '1.19.0',
+                },
+            ],
             total: 1,
         }
-        getMachinesSpy.and.returnValue(of(oneMachineResponse))
+
+        // Arrange
+        getMachinesSpy.and.returnValue(of(getMachinesResp))
         component.loadData({ first: 0, rows: 10, filters: {} })
         expect(component.dataLoading).withContext('data is loading').toBeTrue()
         await fixture.whenStable()
@@ -612,8 +658,9 @@ describe('MachinesTableComponent', () => {
         await fixture.whenStable()
         fixture.detectChanges()
         expect(component.dataLoading).withContext('data loading done').toBeFalse()
+        expect(component.dataCollection.length).toBeGreaterThan(0)
 
-        const checkboxes = fixture.debugElement.queryAll(By.css('table .p-checkbox'))
+        const checkboxes = fixture.debugElement.queryAll(By.css('table input[type="checkbox"]'))
         expect(checkboxes).toBeTruthy()
         expect(checkboxes.length)
             .withContext('there should be 1 "select all" checkbox and 5 checkboxes for each machine')
@@ -621,7 +668,8 @@ describe('MachinesTableComponent', () => {
         const selectAllCheckbox = checkboxes[0]
         expect(selectAllCheckbox).toBeTruthy()
 
-        selectAllCheckbox.nativeElement.click()
+        selectAllCheckbox.nativeElement.checked = true
+        selectAllCheckbox.nativeElement.dispatchEvent(new Event('change'))
         await fixture.whenStable()
         fixture.detectChanges()
         fixture.detectChanges() // PrimeNG TableHeaderCheckbox has complicated chain of change detection, so call detectChanges additionally.
