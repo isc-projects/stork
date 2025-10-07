@@ -206,9 +206,6 @@ describe('MachinesPageComponent', () => {
         fixture.detectChanges()
         unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('.p-togglebutton .p-badge')
 
-        // Do not save table state between tests, because that makes tests unstable.
-        // spyOn(component.machinesTable().table, 'saveState').and.callFake(() => {})
-
         // Wait until table's data loading is finished.
         await fixture.whenStable()
         fixture.detectChanges()
@@ -361,6 +358,7 @@ describe('MachinesPageComponent', () => {
     })
 
     xit('should list machines', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Data loading should be done by now.
         expect(component.machinesTable().dataLoading).toBeFalse()
 
@@ -448,6 +446,7 @@ describe('MachinesPageComponent', () => {
     }))
 
     xit('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - first machine fails', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Navigate to Unauthorized machines only view.
         navigate({ id: 'all' }, { authorized: 'false' })
         await fixture.whenStable()
@@ -532,6 +531,7 @@ describe('MachinesPageComponent', () => {
     })
 
     xit('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // prepare 502 error response for the second machine of the bulk of machines to be authorized
         // first machine authorization shall succeed, third shall be skipped because it was after the 502 error
         const fakeError = new HttpErrorResponse({ status: 502 })

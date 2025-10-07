@@ -125,6 +125,7 @@ describe('UsersPageComponent', () => {
     })
 
     xit('should delete user when pressing delete button', async () => {
+        // TODO: this test should be moved away from Karma tests.
         spyOn(confirmService, 'confirm').and.callThrough()
         spyOn(usersApi, 'deleteUser')
         component.ngOnInit()

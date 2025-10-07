@@ -189,8 +189,6 @@ describe('SubnetsTableComponent', () => {
             total: 10496,
         }
         fixture.detectChanges()
-        // Do not save table state between tests, because that makes tests unstable.
-        // spyOn(component.table, 'saveState').and.callFake(() => {})
     })
 
     it('should create', () => {

@@ -182,9 +182,7 @@ describe('KeaAppTabComponent', () => {
         serverData = fixture.debugElement.injector.get(ServerDataService)
         route = fixture.debugElement.injector.get(ActivatedRoute)
         fixture.debugElement.injector.get(VersionService)
-        const appTab = new AppTab()
-        // component.refreshedAppTab = new BehaviorSubject(appTab)
-        component.appTab = appTab
+        component.appTab = new AppTab()
         fixture.detectChanges()
     })
 

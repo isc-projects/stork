@@ -461,6 +461,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should retrieve list of zones', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange + Act
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
@@ -530,6 +531,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should open and close tabs', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
@@ -704,6 +706,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should activate first tab', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         // component.activeTabIdx = 1
         // Act
@@ -799,6 +802,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should filter zones table by app type', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const inputDropdown = fixture.debugElement.query(By.css('[inputId="app-type"] .p-select'))
         expect(inputDropdown).toBeTruthy()
@@ -828,6 +832,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should filter zones table by class', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const inputDropdown = fixture.debugElement.query(By.css('[inputId="zone-class"] .p-select'))
         expect(inputDropdown).toBeTruthy()
@@ -848,6 +853,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should filter zones table by type', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         expect(component.builtinZonesDisplayed).toBeTrue()
         const inputMultiselect = fixture.debugElement.query(By.css('[inputId="zone-type"] .p-multiselect'))
@@ -888,6 +894,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should filter zones table with including RPZ', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-select'))
         expect(inputDropdown).toBeTruthy()
@@ -908,6 +915,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should filter zones table with excluding RPZ', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-select'))
         expect(inputDropdown).toBeTruthy()
@@ -928,6 +936,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should filter zones table with RPZ only', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-select'))
         expect(inputDropdown).toBeTruthy()
@@ -948,6 +957,7 @@ describe('ZonesPageComponent', () => {
     }))
 
     xit('should display feedback when wrong filter in query params', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange + Act + Assert
         getZonesSpy.and.returnValue(of(noZones))
         const zone = fixture.debugElement.injector.get(NgZone)
@@ -1005,6 +1015,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should filter zones when correct filter in query params', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const zone = fixture.debugElement.injector.get(NgZone)
         const r = fixture.debugElement.injector.get(Router)
@@ -1045,6 +1056,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should clear zones filter and reset zones table', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         getZonesSpy.and.returnValue(of(noZones))
         const zone = fixture.debugElement.injector.get(NgZone)
@@ -1235,6 +1247,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should open zone viewer dialog', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange the zones list.
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
@@ -1309,6 +1322,7 @@ describe('ZonesPageComponent', () => {
     })
 
     xit('should not filter zones table by app id value zero', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const inputNumber = fixture.debugElement.query(By.css('[inputId="app-id"]'))
         expect(inputNumber).toBeTruthy()

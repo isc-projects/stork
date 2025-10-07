@@ -149,6 +149,7 @@ describe('ConfigMigrationPageComponent', () => {
     })
 
     xit('should open migration tab when route changes', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         dhcpApi.getMigration.and.returnValue(wrapInHttpResponse(mockRunningMigration))
         fixture.detectChanges()
 
@@ -179,6 +180,7 @@ describe('ConfigMigrationPageComponent', () => {
     }))
 
     xit('should switch to existing tab without API call', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         dhcpApi.getMigration.and.returnValue(wrapInHttpResponse(mockRunningMigration))
         fixture.detectChanges()
 
@@ -205,6 +207,7 @@ describe('ConfigMigrationPageComponent', () => {
     }))
 
     xit('should close migration tab', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         dhcpApi.getMigration.and.returnValue(wrapInHttpResponse(mockRunningMigration))
         fixture.detectChanges()
 
@@ -227,6 +230,7 @@ describe('ConfigMigrationPageComponent', () => {
     }))
 
     xit('should not allow closing the main tab', () => {
+        // TODO: this test should be moved away from Karma tests.
         fixture.detectChanges()
 
         component.tabView().closeTab(0)
@@ -268,8 +272,6 @@ describe('ConfigMigrationPageComponent', () => {
         spyOn(messageService, 'add')
         fixture.detectChanges()
 
-        // spyOn(component.alteredStatuses, 'next')
-
         // Open tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
@@ -286,7 +288,6 @@ describe('ConfigMigrationPageComponent', () => {
                 summary: 'Failed to cancel migration',
             })
         )
-        // expect(component.alteredStatuses.next).not.toHaveBeenCalled()
     }))
 
     it('should clean up finished migrations', fakeAsync(() => {
@@ -298,8 +299,6 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.deleteFinishedMigrations.and.returnValue(wrapEmptyResponse())
         fixture.detectChanges()
 
-        // spyOn(component.alteredStatuses, 'next')
-
         // Open completed migration tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
@@ -308,18 +307,12 @@ describe('ConfigMigrationPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        // expect(component.tabs.length).toBe(3)
-
         // Clean up
         component.onClearFinishedMigrations()
         tick()
         fixture.detectChanges()
 
         expect(dhcpApi.deleteFinishedMigrations).toHaveBeenCalled()
-        // expect(component.tabs.length).toBe(2)
-        // Running migration tab should remain
-        // expect(component.tabs[1].label).toBe('Migration 1')
-        // expect(component.alteredStatuses.next).toHaveBeenCalledWith(null)
     }))
 
     it('should handle error when cleaning up finished migrations', fakeAsync(() => {
@@ -343,8 +336,6 @@ describe('ConfigMigrationPageComponent', () => {
         spyOn(messageService, 'add')
         fixture.detectChanges()
 
-        // spyOn(component.alteredStatuses, 'next')
-
         component.onClearFinishedMigrations()
         tick()
         fixture.detectChanges()
@@ -355,10 +346,10 @@ describe('ConfigMigrationPageComponent', () => {
                 summary: 'Failed to clean up finished migrations',
             })
         )
-        // expect(component.alteredStatuses.next).not.toHaveBeenCalled()
     }))
 
     xit('should refresh migration status', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         const updatedMigration: MigrationStatus = {
             ...mockRunningMigration,
             processedItemsCount: 75,
@@ -391,6 +382,7 @@ describe('ConfigMigrationPageComponent', () => {
     }))
 
     xit('should handle error when refreshing migration status', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         dhcpApi.getMigration.and.returnValues(
             wrapInHttpResponse(mockRunningMigration),
             throwError(() => new Error('Failed to refresh'))

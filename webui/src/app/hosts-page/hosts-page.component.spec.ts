@@ -54,11 +54,8 @@ import { InputIconModule } from 'primeng/inputicon'
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
     let fixture: ComponentFixture<HostsPageComponent>
-    // let route: ActivatedRoute
-    // let router: Router
     let dhcpApi: DHCPService
     let messageService: MessageService
-    // let routerEventSubject: BehaviorSubject<NavigationEnd>
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -135,58 +132,18 @@ describe('HostsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(HostsPageComponent)
         component = fixture.componentInstance
-        // route = fixture.debugElement.injector.get(ActivatedRoute)
-        // router = fixture.debugElement.injector.get(Router)
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
 
-        // route.snapshot = {
-        //     paramMap: convertToParamMap({}),
-        //     queryParamMap: convertToParamMap({}),
-        // } as ActivatedRouteSnapshot
-        //
-        // routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'dhcp/hosts', 'dhcp/hosts/all'))
-        // spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
-        //
         fixture.detectChanges()
-
-        // // PrimeNG TabMenu is using setTimeout() logic when scrollable property is set to true.
-        // // This makes testing in fakeAsync zone unexpected, so disable 'scrollable' feature in tests.
-        // const m = fixture.debugElement.query(By.directive(TabMenu))
-        // if (m?.context) {
-        //     m.context.scrollable = false
-        // }
-        //
-        // // PrimeNG table is stateful in the component, so clear stored filter between tests.
-        // component.hostsTable().table.clearFilterValues()
-        //
-        // fixture.detectChanges()
     })
-
-    /**
-     * Triggers the component handler called when the route changes.
-     * @param params The parameters to pass to the route.
-     */
-    // function navigate(params: { id?: number | string }) {
-    //     route.snapshot = {
-    //         paramMap: convertToParamMap(params),
-    //         queryParamMap: convertToParamMap({}),
-    //     } as ActivatedRouteSnapshot
-    //
-    //     const eid = routerEventSubject.getValue().id + 1
-    //     routerEventSubject.next(new NavigationEnd(eid, `dhcp/hosts/${params.id}`, `dhcp/hosts/${params.id}`))
-    //
-    //     flush()
-    //     fixture.detectChanges()
-    // }
 
     it('should create', () => {
         expect(component).toBeTruthy()
-        // expect(component.tabs.length).toBe(1)
-        // expect(component.activeTabIndex).toBe(0)
     })
 
     xit('should open and close host tabs', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Create a list with two hosts.
         component.hostsTable().hosts = [
             {
@@ -289,26 +246,14 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should emit error message when there is an error deleting transaction for new host', fakeAsync(() => {
-        // Open the tab for creating a host.
-        // navigate({ id: 'new' })
-        // expect(component.tabs.length).toBe(2)
-        // expect(component.activeTabIndex).toBe(1)
-        //
-        // // Ensure an error is emitted when transaction is deleted.
-        // component.openedTabs[0].state.transactionId = 123
         spyOn(dhcpApi, 'createHostDelete').and.returnValue(
             throwError(() => new HttpErrorResponse({ status: 404, statusText: 'no transaction' }))
         )
         spyOn(messageService, 'add')
 
-        // Close the tab for adding new host.
-        // component.closeHostTab(null, 1)
         component.callCreateHostDeleteTransaction(123)
         tick()
         fixture.detectChanges()
-        // expect(component.tabs.length).toBe(1)
-        // expect(component.activeTabIndex).toBe(0)
-        // expect(messageService.add).toHaveBeenCalled()
 
         expect(messageService.add).toHaveBeenCalledOnceWith(
             jasmine.objectContaining({
@@ -320,6 +265,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should switch a tab to host editing mode', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Create a list with two hosts.
         // component.hostsTable().hosts = [
         //     {
@@ -435,17 +381,6 @@ describe('HostsPageComponent', () => {
         // hosts structure.
         spyOn(dhcpApi, 'getHost')
 
-        // Open tab with host with id 1.
-        // navigate({ id: 1 })
-        // expect(component.tabs.length).toBe(2)
-        // expect(component.activeTabIndex).toBe(1)
-
-        // Simulate clicking on Edit.
-        // component.onHostEditBegin(component.hostsTable().hosts[0])
-        // fixture.detectChanges()
-        // expect(component.tabs.length).toBe(2)
-        // expect(component.activeTabIndex).toBe(1)
-
         // Make sure an error is returned when closing the tab.
         // component.openedTabs[0].state.transactionId = 123
         spyOn(dhcpApi, 'updateHostDelete').and.returnValue(
@@ -453,12 +388,6 @@ describe('HostsPageComponent', () => {
         )
         spyOn(messageService, 'add')
 
-        // Close the tab.
-        // component.closeHostTab(null, 1)
-        // tick()
-        // fixture.detectChanges()
-        // expect(component.tabs.length).toBe(1)
-        // expect(component.activeTabIndex).toBe(0)
         component.callUpdateHostDeleteTransaction(123, 321)
         tick()
         fixture.detectChanges()
@@ -472,6 +401,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should open a tab when hosts have not been loaded', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         const host: any = {
             id: 1,
             hostIdentifiers: [
@@ -504,6 +434,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should not open a tab when getting host information erred', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Simulate the getHost call to return an error.
         spyOn(dhcpApi, 'getHost').and.returnValue(throwError({ status: 404 }))
         spyOn(messageService, 'add')
@@ -586,6 +517,7 @@ describe('HostsPageComponent', () => {
     })
 
     xit('should close new host tab when form is submitted', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         const createHostBeginResp: any = {
             id: 123,
             subnets: [
@@ -633,6 +565,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should cancel transaction when a tab is closed', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         const createHostBeginResp: any = {
             id: 123,
             subnets: [
@@ -680,6 +613,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should cancel transaction when cancel button is clicked', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         const createHostBeginResp: any = {
             id: 123,
             subnets: [
@@ -727,6 +661,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should cancel update transaction when a tab is closed', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         component.hostsTable().hosts = [
             {
                 id: 1,
@@ -818,6 +753,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should cancel update transaction cancel button is clicked', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         component.hostsTable().hosts = [
             {
                 id: 1,
@@ -912,6 +848,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should close a tab after deleting a host', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Create a list with two hosts.
         component.hostsTable().hosts = [
             {
@@ -1029,6 +966,7 @@ describe('HostsPageComponent', () => {
     })
 
     xit('should display error message when appId is invalid', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         component.hostsTable().hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
@@ -1047,6 +985,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should display error message when subnetId is invalid', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         component.hostsTable().hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
@@ -1066,6 +1005,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should display error message when keaSubnetId is invalid', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         component.hostsTable().hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
@@ -1085,6 +1025,7 @@ describe('HostsPageComponent', () => {
     }))
 
     xit('should display multiple error message for each invalid value', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         component.hostsTable().hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 

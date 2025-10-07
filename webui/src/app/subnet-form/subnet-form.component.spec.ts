@@ -1090,7 +1090,7 @@ describe('SubnetFormComponent', () => {
         expect(component.state.servers[0]).toBe('second/dhcp4')
 
         flush()
-        // TODO this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
+        // TODO: this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
     }))
 
     it('should create the form for the selected server', fakeAsync(() => {
@@ -1168,7 +1168,7 @@ describe('SubnetFormComponent', () => {
         expect(parameters.get('allocator.values.1')?.value).toBe('iterative')
 
         flush()
-        // TODO this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
+        // TODO: this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
     }))
 
     it('should add and remove the pool', fakeAsync(() => {

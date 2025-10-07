@@ -423,6 +423,7 @@ describe('SharedNetworksTableComponent', () => {
     })
 
     xit('should display error about wrong query params filter', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Filter with query params that have wrong syntax.
         // component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'xyz', dhcpVersion: 7 }))
         await fixture.whenStable()
@@ -469,6 +470,7 @@ describe('SharedNetworksTableComponent', () => {
         expect(component.filterTable).toHaveBeenCalledWith(5, component.table.filters['appId'] as FilterMetadata)
 
         // Filter by DHCP version.
+        // TODO: this part of test should be moved away from Karma tests.
         // const dropdownContainer = fixture.debugElement.query(By.css('.p-column-filter .p-select')).nativeElement
         // dropdownContainer.click()
         // tick()

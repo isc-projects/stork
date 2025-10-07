@@ -71,9 +71,6 @@ describe('SubnetsPageComponent', () => {
     let dhcpService: DHCPService
     let messageService: MessageService
     let settingService: SettingService
-    // let route: ActivatedRoute
-    // let router: Router
-    // let routerEventSubject: BehaviorSubject<NavigationEnd>
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -165,14 +162,6 @@ describe('SubnetsPageComponent', () => {
         settingService = TestBed.inject(SettingService)
         fixture = TestBed.createComponent(SubnetsPageComponent)
         component = fixture.componentInstance
-        // route = fixture.debugElement.injector.get(ActivatedRoute)
-        // route.snapshot = {
-        //     paramMap: convertToParamMap({}),
-        //     queryParamMap: convertToParamMap({}),
-        // } as ActivatedRouteSnapshot
-        // router = fixture.debugElement.injector.get(Router)
-        // routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'dhcp/subnets', 'dhcp/subnets/all'))
-        // spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
 
         const fakeResponses: any = [
             {
@@ -343,19 +332,6 @@ describe('SubnetsPageComponent', () => {
 
         fixture.detectChanges()
 
-        // // PrimeNG TabMenu is using setTimeout() logic when scrollable property is set to true.
-        // // This makes testing in fakeAsync zone unexpected, so disable 'scrollable' feature in tests.
-        // const m = fixture.debugElement.query(By.directive(TabMenu))
-        // if (m?.context) {
-        //     m.context.scrollable = false
-        // }
-        //
-        // // PrimeNG table is stateful in the component, so clear stored filter between tests.
-        // component.table().table().clearFilterValues()
-        // component.table().filter$.next({})
-        //
-        // fixture.detectChanges()
-
         spyOn(settingService, 'getSettings').and.returnValue(
             of({
                 grafanaUrl: 'http://localhost:3000',
@@ -364,23 +340,6 @@ describe('SubnetsPageComponent', () => {
             } as any)
         )
     }))
-
-    /**
-     * Triggers the component handler called when the route changes.
-     * @param params The parameters to pass to the route.
-     */
-    // function navigate(params: { id?: number | string }) {
-    //     route.snapshot = {
-    //         paramMap: convertToParamMap(params),
-    //         queryParamMap: convertToParamMap({}),
-    //     } as ActivatedRouteSnapshot
-    //
-    //     const eid = routerEventSubject.getValue().id + 1
-    //     routerEventSubject.next(new NavigationEnd(eid, `dhcp/subnets/${params.id}`, `dhcp/subnets/${params.id}`))
-    //
-    //     flush()
-    //     fixture.detectChanges()
-    // }
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -490,6 +449,7 @@ describe('SubnetsPageComponent', () => {
     })
 
     xit('should close new subnet form when form is submitted', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 
@@ -562,6 +522,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should close subnet update form when form is submitted', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 
@@ -627,6 +588,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should keep the tab open when getting a subnet after submission fails', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         const okResp: any = {
             status: 200,
         }
@@ -672,6 +634,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should cancel a new subnet transaction when a tab is closed', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 
@@ -720,6 +683,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should cancel an update transaction when a tab is closed', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 
@@ -762,6 +726,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should cancel a new subnet transaction when cancel button is clicked', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 
@@ -812,6 +777,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should cancel transaction when cancel button is clicked', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 
@@ -929,6 +895,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     xit('should close subnet tab when subnet is deleted', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         tick()
         fixture.detectChanges()
 

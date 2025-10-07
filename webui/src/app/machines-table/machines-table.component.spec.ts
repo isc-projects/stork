@@ -167,9 +167,6 @@ describe('MachinesTableComponent', () => {
         spyOn(authService, 'superAdmin').and.returnValue(true)
         fixture.detectChanges()
 
-        // Do not save table state between tests, because that makes tests unstable.
-        // spyOn(component.table, 'saveState').and.callFake(() => {})
-
         unauthorizedMachinesCountChangeSpy = spyOn(component.unauthorizedMachinesCountChange, 'emit')
     })
 
@@ -243,6 +240,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should apply queryParam filter value when requesting unauthorized machines data', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         getMachinesSpy.and.returnValue(of(getUnauthorizedMachinesResp))
 
@@ -269,6 +267,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should apply queryParam filter value when requesting unauthorized machines data filtered also by text', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const filter: { [k: string]: FilterMetadata } = {
             authorized: { value: null, matchMode: 'equals' },
@@ -303,6 +302,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should apply queryParam filter value when requesting authorized machines data', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         getMachinesSpy.and.returnValue(of(getAuthorizedMachinesResp))
         servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(3))
@@ -329,6 +329,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should respect queryParam filter value when table was filtered by other value', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         const filter: { [k: string]: FilterMetadata } = {
             authorized: { value: true, matchMode: 'equals' },
@@ -413,6 +414,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should delete a machine from data collection', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         component.dataCollection = deepCopy(getUnauthorizedMachinesResp.items)
 
@@ -427,6 +429,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should not delete a machine from data collection', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         component.dataCollection = getUnauthorizedMachinesResp.items
 
@@ -440,6 +443,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should not fail when trying to delete a machine when data collection is undefined', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange & Act & Assert
         // component.deleteMachine(4)
         expect(component.dataCollection).toBeFalsy()
@@ -447,6 +451,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should refresh machine state', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         component.dataCollection = deepCopy(getAuthorizedMachinesResp.items)
 
@@ -460,6 +465,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should not refresh machine state', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         component.dataCollection = getUnauthorizedMachinesResp.items
 
@@ -473,6 +479,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should not fail when trying to refresh a machine when data collection is undefined', () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange & Act & Assert
         // component.refreshMachineState(refreshed)
         expect(component.dataCollection).toBeFalsy()
@@ -538,7 +545,6 @@ describe('MachinesTableComponent', () => {
         expect(component.dataLoading).withContext('data loading done').toBeFalse()
 
         // Act
-        // component.refreshMachineState(refreshed)
         await fixture.whenStable()
         fixture.detectChanges()
 
@@ -582,6 +588,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should clear selected machines', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         component.loadData({ first: 0, rows: 10, filters: {} })
         expect(component.dataLoading).withContext('data is loading').toBeTrue()
@@ -688,6 +695,7 @@ describe('MachinesTableComponent', () => {
     })
 
     xit('should select or deselect only unauthorized machines', async () => {
+        // TODO: this test should be moved away from Karma tests.
         // Arrange
         component.loadData({ first: 0, rows: 10, filters: {} })
         expect(component.dataLoading).withContext('data is loading').toBeTrue()

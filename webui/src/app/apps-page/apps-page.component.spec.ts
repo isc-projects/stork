@@ -96,6 +96,7 @@ describe('AppsPageComponent', () => {
     })
 
     xit('should render good app tab title and link', () => {
+        // TODO: this test should be moved away from Karma tests.
         // const app = new App()
         // app.id = 1
         // app.name = 'test-app'
@@ -110,6 +111,7 @@ describe('AppsPageComponent', () => {
     })
 
     xit('should change app tab label after rename', () => {
+        // TODO: this test should be moved away from Karma tests.
         // const app = new App()
         // app.id = 1
         // app.name = 'kea@@machine1'

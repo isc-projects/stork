@@ -62,9 +62,6 @@ describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
     let fixture: ComponentFixture<SharedNetworksPageComponent>
     let dhcpService: DHCPService
-    // let route: ActivatedRoute
-    // let router: Router
-    // let routerEventSubject: BehaviorSubject<NavigationEnd>
     let messageService: MessageService
 
     beforeEach(waitForAsync(() => {
@@ -147,17 +144,6 @@ describe('SharedNetworksPageComponent', () => {
         messageService = TestBed.inject(MessageService)
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
         component = fixture.componentInstance
-        // route = fixture.debugElement.injector.get(ActivatedRoute)
-        // route.snapshot = {
-        //     paramMap: convertToParamMap({}),
-        //     queryParamMap: convertToParamMap({}),
-        // } as ActivatedRouteSnapshot
-        // router = fixture.debugElement.injector.get(Router)
-        // routerEventSubject = new BehaviorSubject(
-        //     new NavigationEnd(1, 'dhcp/shared-networks', 'dhcp/shared-networks/all')
-        // )
-        //
-        // spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
 
         const fakeResponses: any[] = [
             {
@@ -385,6 +371,7 @@ describe('SharedNetworksPageComponent', () => {
     })
 
     xit('should open and close tabs', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // component.openTabBySharedNetworkId(1)
         // tick()
         // fixture.detectChanges()
@@ -477,6 +464,7 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     xit('should close tab when shared network is deleted', fakeAsync(() => {
+        // TODO: this test should be moved away from Karma tests.
         // tick()
         // fixture.detectChanges()
         //
