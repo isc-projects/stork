@@ -81,6 +81,7 @@ func (c *Config) GetKey(keyID string) *Key {
 	return nil
 }
 
+// Returns the first key in the configuration file or nil if no key is found.
 func (c *Config) GetFirstKey() *Key {
 	for _, statement := range c.Statements {
 		if statement.Key != nil {

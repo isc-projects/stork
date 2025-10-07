@@ -88,12 +88,6 @@ const (
 	RndcConfigurationFile = "rndc.conf"
 )
 
-// Default ports for rndc and stats channel.
-const (
-	RndcDefaultPort         = 953
-	StatsChannelDefaultPort = 80
-)
-
 // Object for interacting with named using rndc.
 type RndcClient struct {
 	executor    storkutil.CommandExecutor
@@ -383,7 +377,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 
 	// rndc.key file typically contains keys to be used for rndc authentication.
 	var rndcConfig *bind9config.Config
-	prefixedRndcKeyPath := filepath.Join(filepath.Dir(prefixedBind9ConfPath), "rndc.key")
+	prefixedRndcKeyPath := filepath.Join(filepath.Dir(prefixedBind9ConfPath), RndcKeyFile)
 	if executor.IsFileExist(prefixedRndcKeyPath) {
 		rndcConfig, err = parser.ParseFile(prefixedRndcKeyPath)
 		if err != nil {
@@ -407,9 +401,6 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 			return nil, err
 		}
 		rndcKey = fmt.Sprintf("%s:%s:%s", ctrlKey.Name, *algorithm, *secret)
-		log.WithFields(log.Fields{
-			"key": rndcKey,
-		}).Info("Found rndc key")
 	}
 
 	accessPoints := []AccessPoint{

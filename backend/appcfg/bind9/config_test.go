@@ -102,6 +102,23 @@ func TestGetKey(t *testing.T) {
 	require.Nil(t, key)
 }
 
+// Test getting the first key in the configuration file.
+func TestGetFirstKey(t *testing.T) {
+	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	key := cfg.GetFirstKey()
+	require.NotNil(t, key)
+	require.Equal(t, "trusted-key", key.Name)
+}
+
+// Test that nil is returned while getting the first key when no key is found.
+func TestGetFirstKeyNone(t *testing.T) {
+	cfg := &Config{}
+	require.Nil(t, cfg.GetFirstKey())
+}
+
 // Tests that GetACL returns expected ACL.
 func TestGetACL(t *testing.T) {
 	cfg, err := NewParser().ParseFile("testdata/named.conf")
@@ -844,8 +861,8 @@ func TestGetAPIKey(t *testing.T) {
 	require.Empty(t, cfg.GetAPIKey())
 }
 
-// Test getting the RNDC credentials when the controls statement is present.
-func TestGetRNDCCredentials(t *testing.T) {
+// Test getting the rndc credentials when the controls statement is present.
+func TestGetRndcCredentials(t *testing.T) {
 	config := `
 		key "rndc-key" {
 			algorithm hmac-sha256;
@@ -876,9 +893,9 @@ func TestGetRNDCCredentials(t *testing.T) {
 	require.Equal(t, "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=", *secret)
 }
 
-// Test getting the RNDC credentials when the key is not specified in the configuration
+// Test getting the rndc credentials when the key is not specified in the configuration
 // file.
-func TestGetRNDCCredentialsNoKey(t *testing.T) {
+func TestGetRndcCredentialsNoKey(t *testing.T) {
 	config := `
 		controls {
 			inet 192.0.2.1 port 953 allow { 192.0.2.0/24; } keys { "rndc-key"; };
@@ -896,9 +913,9 @@ func TestGetRNDCCredentialsNoKey(t *testing.T) {
 	require.Nil(t, key)
 }
 
-// Test that RNDC control channel is assumed to be disabled when the
+// Test that rndc control channel is assumed to be disabled when the
 // controls statement does not contain an inet clause.
-func TestGetRNDCCredentialsNoInetClause(t *testing.T) {
+func TestGetRndcCredentialsNoInetClause(t *testing.T) {
 	config := `
 		controls {
 			unix "/var/run/rndc.sock" perm 0666 owner 0 group 0 keys { "rndc-key"; };
@@ -916,9 +933,9 @@ func TestGetRNDCCredentialsNoInetClause(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that RNDC control channel is assumed to be disabled when the
+// Test that rndc control channel is assumed to be disabled when the
 // controls statement is empty.
-func TestGetRNDCCredentialsEmptyControls(t *testing.T) {
+func TestGetRndcCredentialsEmptyControls(t *testing.T) {
 	config := `
 		controls { };
 	`
@@ -933,9 +950,9 @@ func TestGetRNDCCredentialsEmptyControls(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that default credentials are assumed for the RNDC control channel
+// Test that default credentials are assumed for the rndc control channel
 // when the controls statement is not present.
-func TestGetRNDCCredentialsNoControls(t *testing.T) {
+func TestGetRndcCredentialsNoControls(t *testing.T) {
 	config := `
 		options {
 			directory "/var/cache/bind";
@@ -969,7 +986,7 @@ func TestGetRNDCCredentialsNoControls(t *testing.T) {
 
 // Test various cases of getting the rndc credentials when the keys
 // are specified in the config file or rndc.key file.
-func TestGetRNDCCredentialsNoControlsRNDCConfig(t *testing.T) {
+func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		config                string

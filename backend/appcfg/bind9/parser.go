@@ -189,6 +189,7 @@ type KeyClause struct {
 	Secret string `parser:"| 'secret' ( @Ident | @String )"`
 }
 
+// Keys is a list of key names in the inet and unix clauses.
 type Keys struct {
 	KeyNames []string `parser:"(( @Ident | @String )';')*"`
 }
