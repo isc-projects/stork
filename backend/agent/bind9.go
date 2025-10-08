@@ -366,7 +366,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	// Resolve include statements.
 	bind9Config, err = bind9Config.Expand(filepath.Dir(prefixedBind9ConfPath))
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to expand BIND 9 config file %s", prefixedBind9ConfPath)
+		return nil, errors.Wrapf(err, "failed to resolve include statements in BIND 9 config file %s", prefixedBind9ConfPath)
 	}
 
 	if bind9Config.HasNoParse() {
