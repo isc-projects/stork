@@ -254,7 +254,6 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 			names, err := resolver.LookupAddr(ctx, ipAddr.String())
-
 			if err != nil {
 				continue
 			}

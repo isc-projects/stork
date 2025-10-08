@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/runtime/flagext"
-	"github.com/go-openapi/swag"
+	"github.com/go-openapi/swag/netutils"
 	"github.com/go-pg/pg/v10"
 	flags "github.com/jessevdk/go-flags"
 	pkgerrors "github.com/pkg/errors"
@@ -571,7 +571,7 @@ func (r *RestAPI) Listen() error {
 			return pkgerrors.Wrap(err, "problem occurred while starting to listen using RESTful API")
 		}
 
-		h, p, err := swag.SplitHostPort(listener.Addr().String())
+		h, p, err := netutils.SplitHostPort(listener.Addr().String())
 		if err != nil {
 			return pkgerrors.Wrap(err, "problem with address")
 		}
@@ -586,7 +586,7 @@ func (r *RestAPI) Listen() error {
 			return pkgerrors.Wrap(err, "problem occurred while starting to listen using RESTful API")
 		}
 
-		sh, sp, err := swag.SplitHostPort(tlsListener.Addr().String())
+		sh, sp, err := netutils.SplitHostPort(tlsListener.Addr().String())
 		if err != nil {
 			return pkgerrors.Wrap(err, "problem with address")
 		}
