@@ -17,7 +17,7 @@ func TestStatisticsChannelsGetInetClause(t *testing.T) {
 			},
 		},
 	}
-	inetClause := statisticsChannels.GetInetClause()
+	inetClause := statisticsChannels.GetFirstInetClause()
 	require.NotNil(t, inetClause)
 	require.Equal(t, statisticsChannels.Clauses[0], inetClause)
 	require.Equal(t, "127.0.0.1", inetClause.Address)
@@ -28,5 +28,5 @@ func TestStatisticsChannelsGetInetClause(t *testing.T) {
 // when the statistics-channels statement is empty.
 func TestStatisticsChannelsGetInetClauseNone(t *testing.T) {
 	statisticsChannels := &StatisticsChannels{}
-	require.Nil(t, statisticsChannels.GetInetClause())
+	require.Nil(t, statisticsChannels.GetFirstInetClause())
 }
