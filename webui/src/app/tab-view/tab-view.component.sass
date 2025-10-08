@@ -10,3 +10,9 @@
     @layer high
       padding-left: 0
       padding-right: 0
+
+  .p-tablist-active-bar
+    // Active tab underline has z-index 1 by default, which makes it appear over top menubar items.
+    // So force set the z-index to zero, so that it is below mebubar items.
+    @layer high
+      z-index: 0
