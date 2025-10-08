@@ -13,7 +13,7 @@ func TestGetAddressAndPort(t *testing.T) {
 		Address: "127.0.0.1",
 		Port:    storkutil.Ptr("53"),
 	}
-	address, port := inetClause.GetAddressAndPort(defaultControlsPort)
+	address, port := inetClause.GetConnectableAddressAndPort(defaultControlsPort)
 	require.Equal(t, "127.0.0.1", address)
 	require.EqualValues(t, 53, port)
 }
@@ -23,7 +23,7 @@ func TestGetAddressAndPortDefaultPort(t *testing.T) {
 	inetClause := &InetClause{
 		Address: "192.0.2.1",
 	}
-	address, port := inetClause.GetAddressAndPort(int64(333))
+	address, port := inetClause.GetConnectableAddressAndPort(int64(333))
 	require.Equal(t, "192.0.2.1", address)
 	require.EqualValues(t, 333, port)
 }
@@ -35,7 +35,7 @@ func TestGetAddressAndPortDefaultPortAsterisk(t *testing.T) {
 		Address: "192.0.2.1",
 		Port:    storkutil.Ptr("*"),
 	}
-	address, port := inetClause.GetAddressAndPort(int64(444))
+	address, port := inetClause.GetConnectableAddressAndPort(int64(444))
 	require.Equal(t, "192.0.2.1", address)
 	require.EqualValues(t, 444, port)
 }
@@ -46,40 +46,37 @@ func TestGetAddressAndPortNonNumericPort(t *testing.T) {
 		Address: "192.0.2.1",
 		Port:    storkutil.Ptr("53a"),
 	}
-	address, port := inetClause.GetAddressAndPort(int64(444))
+	address, port := inetClause.GetConnectableAddressAndPort(int64(444))
 	require.Equal(t, "192.0.2.1", address)
 	require.EqualValues(t, 444, port)
 }
 
-// Test that localhost is returned for an asterisk, IPv4 zero
-// and IPv6 zero addresses.
-func TestGetAddressAndPortWildcard(t *testing.T) {
-	tests := []struct {
-		name    string
-		address string
-	}{
-		{
-			name:    "asterisk",
-			address: "*",
-		},
-		{
-			name:    "IPv4 zero",
-			address: "0.0.0.0",
-		},
-		{
-			name:    "IPv6 zero",
-			address: "::",
-		},
+// Test that the 127.0.0.1 is returned when asterisk is specified.
+func TestGetAddressAndPortAsterisk(t *testing.T) {
+	inetClause := &InetClause{
+		Address: "*",
 	}
+	address, port := inetClause.GetConnectableAddressAndPort(int64(444))
+	require.Equal(t, "127.0.0.1", address)
+	require.EqualValues(t, 444, port)
+}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			inetClause := &InetClause{
-				Address: test.address,
-			}
-			address, port := inetClause.GetAddressAndPort(int64(444))
-			require.Equal(t, "localhost", address)
-			require.EqualValues(t, 444, port)
-		})
+// Test that the 127.0.0.1 is returned when IPv4 zero address is specified.
+func TestGetAddressAndPortIPv4Zero(t *testing.T) {
+	inetClause := &InetClause{
+		Address: "0.0.0.0",
 	}
+	address, port := inetClause.GetConnectableAddressAndPort(int64(444))
+	require.Equal(t, "127.0.0.1", address)
+	require.EqualValues(t, 444, port)
+}
+
+// Test that the ::1 is returned when IPv6 zero address is specified.
+func TestGetAddressAndPortIPv6Zero(t *testing.T) {
+	inetClause := &InetClause{
+		Address: "::",
+	}
+	address, port := inetClause.GetConnectableAddressAndPort(int64(444))
+	require.Equal(t, "::1", address)
+	require.EqualValues(t, 444, port)
 }

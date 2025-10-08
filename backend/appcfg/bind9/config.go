@@ -420,14 +420,8 @@ func (c *Config) GetRndcCredentials(rndcConfig *Config) (address *string, port *
 
 	if inetClause != nil {
 		// Non-default values specified.
-		a, p := inetClause.GetAddressAndPort(defaultControlsPort)
-		if a == "*" {
-			// When listening on the wildcard address, we return the default
-			// local address as this is recommended by the BIND 9 documentation.
-			address = storkutil.Ptr("127.0.0.1")
-		} else {
-			address = &a
-		}
+		a, p := inetClause.GetConnectableAddressAndPort(defaultControlsPort)
+		address = &a
 		port = &p
 		if inetClause.Keys != nil {
 			// The keys clause may contain a list of key names. Let's try to match
@@ -456,8 +450,8 @@ func (c *Config) GetRndcCredentials(rndcConfig *Config) (address *string, port *
 // In this case, the returned enabled flag is set to false.
 func (c *Config) GetStatisticsChannelCredentials() (address *string, port *int64, enabled bool) {
 	if statisticsChannels := c.GetStatisticsChannels(); statisticsChannels != nil {
-		if inetClause := statisticsChannels.GetInetClause(); inetClause != nil {
-			a, p := inetClause.GetAddressAndPort(defaultStatisticsChannelsPort)
+		if inetClause := statisticsChannels.GetFirstInetClause(); inetClause != nil {
+			a, p := inetClause.GetConnectableAddressAndPort(defaultStatisticsChannelsPort)
 			address = &a
 			port = &p
 			enabled = true

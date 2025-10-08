@@ -12,7 +12,10 @@ const (
 // Returns an address and port which the agent can connect to based on the
 // inet clause. If port is an asterisk, or not specified, the default port
 // specified as an argument is used. If the address is an asterisk or is zero,
-// the address is set to "localhost".
+// the address is set to "127.0.0.1". If the address is an IPv6 zero address,
+// the address is set to "::1".
+// See https://bind9.readthedocs.io/en/latest/reference.html#namedconf-statement-inet
+// for more details about the address and port handling in BIND 9.
 func (i *InetClause) GetConnectableAddressAndPort(defaultPort int64) (address string, port int64) {
 	address = i.Address
 	port = defaultPort
@@ -21,8 +24,11 @@ func (i *InetClause) GetConnectableAddressAndPort(defaultPort int64) (address st
 			port = int64(parsedPort)
 		}
 	}
-	if address == "*" || address == "0.0.0.0" || address == "::" {
-		address = "localhost"
+	switch address {
+	case "*", "0.0.0.0":
+		address = "127.0.0.1"
+	case "::":
+		address = "::1"
 	}
 	return
 }
