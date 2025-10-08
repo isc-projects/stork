@@ -542,7 +542,7 @@ any_system = true
 
 ### Define package versions
 # Golang-related
-go_ver = '1.24.6'
+go_ver = '1.24.8'
 goswagger_ver = 'v0.31.0'
 protoc_ver = '31.1'
 protoc_gen_go_ver = 'v1.36.7'
