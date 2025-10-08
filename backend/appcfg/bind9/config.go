@@ -382,8 +382,8 @@ func (c *Config) IsRPZ(viewName string, zoneName string) bool {
 	return responsePolicy != nil && responsePolicy.IsRPZ(zoneName)
 }
 
-// Returns the rndc credentials. Credentials are used by the agent to send
-// commands to the BIND9 server using rndc. If controls statement is not found
+// Returns the rndc connection parameters. They are used by the agent to send
+// commands to the BIND 9 server using rndc. If controls statement is not found
 // in the configuration file, this function will return default address
 // 127.0.0.1 and port 953. If controls statement is empty the returned enabled
 // flag is set to false indicating that the control channel is disabled.
@@ -391,7 +391,7 @@ func (c *Config) IsRPZ(viewName string, zoneName string) bool {
 // If the keys are unspecified in the controls clause, the function will attempt
 // to use the first key found in the configuration file. If the key is not found,
 // it returns nil key, and the agent will send commands without authentication.
-func (c *Config) GetRndcCredentials(rndcConfig *Config) (address *string, port *int64, key *Key, enabled bool, err error) {
+func (c *Config) GetRndcConnParams(rndcConfig *Config) (address *string, port *int64, key *Key, enabled bool, err error) {
 	var (
 		controls   *Controls
 		inetClause *InetClause
@@ -448,7 +448,7 @@ func (c *Config) GetRndcCredentials(rndcConfig *Config) (address *string, port *
 // Returns the address and port of the statistics channel. If the statistics-channels
 // statement is not found, it is assumed that the statistics channel is disabled.
 // In this case, the returned enabled flag is set to false.
-func (c *Config) GetStatisticsChannelCredentials() (address *string, port *int64, enabled bool) {
+func (c *Config) GetStatisticsChannelConnParams() (address *string, port *int64, enabled bool) {
 	if statisticsChannels := c.GetStatisticsChannels(); statisticsChannels != nil {
 		if inetClause := statisticsChannels.GetFirstInetClause(); inetClause != nil {
 			a, p := inetClause.GetConnectableAddressAndPort(defaultStatisticsChannelsPort)

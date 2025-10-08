@@ -386,7 +386,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	}
 
 	// look for control address in config
-	ctrlAddress, ctrlPort, ctrlKey, enabled, err := bind9Config.GetRndcCredentials(rndcConfig)
+	ctrlAddress, ctrlPort, ctrlKey, enabled, err := bind9Config.GetRndcConnParams(rndcConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get BIND 9 rndc credentials")
 	}
@@ -414,7 +414,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 
 	// look for statistics channel address in config
 	var inventory *zoneInventory
-	address, port, enabled := bind9Config.GetStatisticsChannelCredentials()
+	address, port, enabled := bind9Config.GetStatisticsChannelConnParams()
 	if enabled {
 		accessPoints = append(accessPoints, AccessPoint{
 			Type:    AccessPointStatistics,

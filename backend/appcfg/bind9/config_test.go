@@ -876,7 +876,7 @@ func TestGetRndcCredentials(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
 	require.True(t, enabled)
 	require.NoError(t, err)
 	require.NotNil(t, address)
@@ -905,7 +905,7 @@ func TestGetRndcCredentialsNoKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
 	require.True(t, enabled)
 	require.NoError(t, err)
 	require.Equal(t, "192.0.2.1", *address)
@@ -925,7 +925,7 @@ func TestGetRndcCredentialsNoInetClause(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
 	require.False(t, enabled)
 	require.Nil(t, address)
 	require.Nil(t, port)
@@ -942,7 +942,7 @@ func TestGetRndcCredentialsEmptyControls(t *testing.T) {
 	cfg, err := NewParser().Parse("", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
-	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
 	require.False(t, enabled)
 	require.Nil(t, address)
 	require.Nil(t, port)
@@ -976,7 +976,7 @@ func TestGetRndcCredentialsNoControls(t *testing.T) {
 	cfg, err := NewParser().Parse("", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
-	address, port, key, enabled, err := cfg.GetRndcCredentials(nil)
+	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
 	require.NoError(t, err)
 	require.True(t, enabled)
 	require.Equal(t, "127.0.0.1", *address)
@@ -993,12 +993,16 @@ func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 		expectedRndcKey       string
 		expectedRndcKeySecret string
 	}{
+		// The params should include the default controls configuration and use the
+		// rndc-key key defined in the external file (typically rndc.key).
 		{
 			name:                  "no controls",
 			config:                ``,
 			expectedRndcKey:       "rndc-key",
 			expectedRndcKeySecret: "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=",
 		},
+		// The params should include the configured controls and the rndc-key key
+		// defined in the external file (typically rndc.key).
 		{
 			name: "controls with rndc key",
 			config: `
@@ -1009,6 +1013,9 @@ func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 			expectedRndcKey:       "rndc-key",
 			expectedRndcKeySecret: "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=",
 		},
+		// The params should include the cofigured controls and the rndc-key-in-config
+		// key defined in the config file, as this key is directly referenced in the
+		// inet clause.
 		{
 			name: "controls with rndc key in config file",
 			config: `
@@ -1023,12 +1030,15 @@ func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 			expectedRndcKey:       "rndc-key-in-config",
 			expectedRndcKeySecret: "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=",
 		},
+		// The params should include the rndc-key key defined in the external file
+		// (typically rndc.key) even though the key under the same name is defined
+		// in the config file.
 		{
 			name: "controls with rndc-key in rndc.key and config file",
 			config: `
 				key "rndc-key" {
 					algorithm hmac-sha256;
-					secret "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=";
+					secret "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=";
 				};
 				controls {
 					inet 127.0.0.1 port 953 allow { 127.0.0.1; } keys { "rndc-key"; };
@@ -1055,7 +1065,7 @@ func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 
-			address, port, key, enabled, err := cfg.GetRndcCredentials(rndcCfg)
+			address, port, key, enabled, err := cfg.GetRndcConnParams(rndcCfg)
 			require.True(t, enabled)
 			require.NoError(t, err)
 			require.Equal(t, "127.0.0.1", *address)
@@ -1083,7 +1093,7 @@ func TestGetStatisticsChannelCredentials(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, enabled := cfg.GetStatisticsChannelCredentials()
+	address, port, enabled := cfg.GetStatisticsChannelConnParams()
 	require.True(t, enabled)
 	require.NoError(t, err)
 	require.NotNil(t, address)
@@ -1101,7 +1111,7 @@ func TestGetStatisticsChannelCredentialsNoInetClause(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, enabled := cfg.GetStatisticsChannelCredentials()
+	address, port, enabled := cfg.GetStatisticsChannelConnParams()
 	require.False(t, enabled)
 	require.Nil(t, address)
 	require.Nil(t, port)
@@ -1115,7 +1125,7 @@ func TestGetStatisticsChannelCredentialsNoStatisticsChannels(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, port, enabled := cfg.GetStatisticsChannelCredentials()
+	address, port, enabled := cfg.GetStatisticsChannelConnParams()
 	require.False(t, enabled)
 	require.Nil(t, address)
 	require.Nil(t, port)
