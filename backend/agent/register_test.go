@@ -758,6 +758,7 @@ func TestRepeatRegister(t *testing.T) {
 
 	lastAgentToken := ""
 	locationHeaderValue := "/api/machines/10"
+	serverCertFingerprintHeaderValue := "01:02:03:04:05:06:07:08:09:0a:0b:0c:0d:0e:0f:10:11:12:13:14:15:16:17:18:19:1a:1b:1c:1d:1e:1f:20"
 
 	// internal http server for testing
 	require.NoError(t, err)
@@ -785,6 +786,7 @@ func TestRepeatRegister(t *testing.T) {
 
 			if agentToken == lastAgentToken {
 				w.Header().Add("Location", locationHeaderValue)
+				w.Header().Add("X-Server-Cert-Fingerprint", serverCertFingerprintHeaderValue)
 				w.WriteHeader(409)
 				return
 			}
@@ -801,12 +803,11 @@ func TestRepeatRegister(t *testing.T) {
 			require.NoError(t, innerErr)
 
 			w.WriteHeader(http.StatusOK)
-			fingerprint := [32]byte{42}
 			resp := map[string]interface{}{
 				"id":                    10,
 				"serverCACert":          string(rootCertPEM),
 				"agentCert":             string(agentCertPEM),
-				"serverCertFingerprint": storkutil.BytesToHex(fingerprint[:]),
+				"serverCertFingerprint": serverCertFingerprintHeaderValue,
 			}
 			json.NewEncoder(w).Encode(resp)
 		}
@@ -868,9 +869,8 @@ func TestRepeatRegister(t *testing.T) {
 	require.Equal(t, rootCA1, rootCA2)
 	require.Equal(t, serverCertFingerprint1, serverCertFingerprint2)
 
-	// Regenerate certs
-	regenKey = true
-	serverToken = "serverToken"
+	// Re-register again but simulate that the server cert has been changed.
+	serverCertFingerprintHeaderValue = "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff"
 	err = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newHTTPClientWithDefaults())
 	require.NoError(t, err)
 
@@ -885,12 +885,36 @@ func TestRepeatRegister(t *testing.T) {
 	serverCertFingerprint3, err := os.ReadFile(ServerCertFingerprintFile)
 	require.NoError(t, err)
 
-	require.NotEqual(t, privKeyPEM1, privKeyPEM3)
-	require.NotEqual(t, agentToken1, agentToken3)
-	require.NotEqual(t, certPEM1, certPEM3)
-	require.NotEqual(t, rootCA1, rootCA3)
+	require.Equal(t, privKeyPEM1, privKeyPEM3)
+	require.Equal(t, agentToken1, agentToken3)
+	require.Equal(t, certPEM1, certPEM3)
+	require.Equal(t, rootCA1, rootCA3)
+	// The server cert has been changed.
+	require.NotEqual(t, serverCertFingerprint1, serverCertFingerprint3)
+
+	// Regenerate certs
+	regenKey = true
+	serverToken = "serverToken"
+	err = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newHTTPClientWithDefaults())
+	require.NoError(t, err)
+
+	privKeyPEM4, err := os.ReadFile(KeyPEMFile)
+	require.NoError(t, err)
+	agentToken4, err := os.ReadFile(AgentTokenFile)
+	require.NoError(t, err)
+	certPEM4, err := os.ReadFile(CertPEMFile)
+	require.NoError(t, err)
+	rootCA4, err := os.ReadFile(RootCAFile)
+	require.NoError(t, err)
+	serverCertFingerprint4, err := os.ReadFile(ServerCertFingerprintFile)
+	require.NoError(t, err)
+
+	require.NotEqual(t, privKeyPEM1, privKeyPEM4)
+	require.NotEqual(t, agentToken1, agentToken4)
+	require.NotEqual(t, certPEM1, certPEM4)
+	require.NotEqual(t, rootCA1, rootCA4)
 	// The server cert has not been changed.
-	require.Equal(t, serverCertFingerprint1, serverCertFingerprint3)
+	require.Equal(t, serverCertFingerprint3, serverCertFingerprint4)
 
 	// Re-registration, but invalid header is returned
 	regenKey = false
