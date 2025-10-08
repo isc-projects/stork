@@ -405,7 +405,7 @@ describe('TabViewTestComponent', () => {
         expect(title.nativeElement.innerText).toEqual('1.0.0.0/32')
 
         // Act - update entity title.
-        component.onUpdateTabTitle(1, '1.2.0.0/32')
+        component.onUpdateTitle(1, '1.2.0.0/32')
         fixture.detectChanges()
 
         // Check if active tab title was updated.
@@ -457,7 +457,7 @@ describe('TabViewTestComponent', () => {
         expect(title.nativeElement.innerText).toEqual('Title 1.0.0.0/32')
 
         // Act - update entity title.
-        component.onUpdateTabTitle(1, '1.2.0.0/32')
+        component.onUpdateTitle(1, '1.2.0.0/32')
         fixture.detectChanges()
 
         // Check if active tab title was updated.

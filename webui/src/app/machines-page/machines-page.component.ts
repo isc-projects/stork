@@ -533,7 +533,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.refreshMachineState(machine)
 
                 // refresh opened tab title
-                this.tabView()?.onUpdateTabTitle(machine.id, machine.address)
+                this.tabView()?.onUpdateTitle(machine.id, machine.address)
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)

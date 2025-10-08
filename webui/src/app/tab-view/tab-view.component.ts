@@ -170,11 +170,13 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     firstTabQueryParams = signal<Params>(undefined)
 
     /**
-     * Collection of entities for which the tabs are created and displayed.
-     * If #table PrimeNG table was found as content child, this collection refers to the table entities; otherwise
-     * it refers to the entities input.
+     * Returns a collection of entities for which the tabs are created and displayed.
+     * If PrimeNG table was given as entitiesTable component input, the table data collection is returned; otherwise
+     * entities input array is returned (or undefined is returned in case there is no table and entities input was not set).
      */
-    entitiesCollection = computed<TEntity[]>(() => this.entitiesTable()?.value || this.entities())
+    entitiesCollection(): TEntity[] | undefined {
+        return this.entitiesTable()?.value || this.entities()
+    }
 
     /**
      * Input array of entities.
@@ -265,7 +267,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      * Input function used to provide custom title for the entities.
      * The function takes the entity as an argument.
      */
-    @Input() entityTitleProvider: (entity: TEntity) => string = () => undefined
+    @Input() entityTitleProvider: (entity: TEntity) => string
 
     /**
      * Input function used to call REST API endpoint responsible for deleting the transaction of the 'create new entity' form.
@@ -431,15 +433,29 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
-     * Callback updating the tab title.
+     * Callback updating the entity title. It updates also the entity tab title if it is found in open tabs.
      * It may be called explicitly or when the updateTabTitleFn function from the entityTabTemplate context is called.
      * @param id tab ID which title should be updated
      * @param title updated title
      */
-    onUpdateTabTitle = (id: number, title: string) => {
+    onUpdateTitle = (id: number, title: string) => {
         const existingTab = this.openTabs.find((tab) => tab.value === id)
         if (existingTab) {
             existingTab.title = title
+        }
+
+        if (this.entityTitleProvider) {
+            // Do not update the title in the table if entityTitleProvider is used.
+            return
+        }
+
+        // If the entity is currently displayed in the table, update its title as well.
+        const existingEntityInCollectionIdx = this.entitiesCollection()?.findIndex(
+            (entity) => this.getID(entity) === id
+        )
+        if (existingEntityInCollectionIdx > -1) {
+            const entity = this.entitiesCollection()[existingEntityInCollectionIdx]
+            entity[this.entityTitleKey()] = title
         }
     }
 
@@ -859,7 +875,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
      * @private
      */
     private getTitle(entity: TEntity): string {
-        return this.entityTitleProvider(entity) || entity[this.entityTitleKey()]
+        return this.entityTitleProvider ? this.entityTitleProvider(entity) : entity[this.entityTitleKey()]
     }
 
     /**
