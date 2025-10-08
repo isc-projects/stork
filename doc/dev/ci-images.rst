@@ -146,6 +146,12 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 10**
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #2035 ticket. Upgrades Golang to 1.24.8.
+
 **Tag: 9**
 
     - ``debian.Dockerfile``:
