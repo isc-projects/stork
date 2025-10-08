@@ -6,22 +6,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test getting the inet clause from the controls statement.
-func TestGetInetClause(t *testing.T) {
+// Test getting the first inet clause from the controls statement.
+func TestGetFirstInetClause(t *testing.T) {
 	controls := &Controls{
 		Clauses: []*ControlClause{
 			{UnixClause: &UnixClause{}},
 			{InetClause: &InetClause{}},
+			{InetClause: &InetClause{}},
 		},
 	}
-	inetClause := controls.GetInetClause()
+	inetClause := controls.GetFirstInetClause()
 	require.NotNil(t, inetClause)
 	require.Equal(t, controls.Clauses[1].InetClause, inetClause)
 }
 
-// Test that nil is returned when getting the inet clause from the controls statement
+// Test that nil is returned when getting the first inet clause from the controls statement
 // when the inet clause does not exist.
-func TestGetInetClauseNone(t *testing.T) {
+func TestGetFirstInetClauseNone(t *testing.T) {
 	controls := &Controls{}
-	require.Nil(t, controls.GetInetClause())
+	require.Nil(t, controls.GetFirstInetClause())
 }

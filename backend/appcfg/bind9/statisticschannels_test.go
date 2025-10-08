@@ -8,12 +8,20 @@ import (
 )
 
 // Test getting the first inet clause from the statistics-channels statement.
-func TestStatisticsChannelsGetInetClause(t *testing.T) {
+func TestStatisticsChannelsGetFirstInetClause(t *testing.T) {
 	statisticsChannels := &StatisticsChannels{
 		Clauses: []*InetClause{
 			{
 				Address: "127.0.0.1",
 				Port:    storkutil.Ptr("953"),
+			},
+			{
+				Address: "192.0.2.1",
+				Port:    storkutil.Ptr("8053"),
+			},
+			{
+				Address: "::1",
+				Port:    storkutil.Ptr("8054"),
 			},
 		},
 	}
@@ -26,7 +34,7 @@ func TestStatisticsChannelsGetInetClause(t *testing.T) {
 
 // Test that nil is returned when getting the inet clause from the statistics-channels statement
 // when the statistics-channels statement is empty.
-func TestStatisticsChannelsGetInetClauseNone(t *testing.T) {
+func TestStatisticsChannelsGetFirstInetClauseNone(t *testing.T) {
 	statisticsChannels := &StatisticsChannels{}
 	require.Nil(t, statisticsChannels.GetFirstInetClause())
 }

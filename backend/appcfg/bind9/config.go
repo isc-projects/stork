@@ -401,7 +401,7 @@ func (c *Config) GetRndcCredentials(rndcConfig *Config) (address *string, port *
 		// it is empty, indicating that the control channel is disabled.
 		// In that case, we return nil values for the credentials and the
 		// enabled flag is set to false.
-		if inetClause = controls.GetInetClause(); inetClause == nil {
+		if inetClause = controls.GetFirstInetClause(); inetClause == nil {
 			return
 		}
 	}
