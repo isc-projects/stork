@@ -28,6 +28,7 @@
     [entitiesTable]="table()?.table"
     entityTypeName="Subnet"
     firstTabTitle="Subnets"
+    [forceAsyncEntityFetch]="true"
 >
     <ng-template #firstTab>
         <app-subnets-table
