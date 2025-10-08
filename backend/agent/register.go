@@ -193,7 +193,18 @@ func registerAgentInServer(client *httpClient, baseSrvURL *url.URL, reqPayload *
 		if err != nil {
 			return 0, nil, nil, [32]byte{}, errors.New("bad machine ID in response from server for registration request")
 		}
-		return int64(machineID), nil, nil, [32]byte{}, nil
+		// The server cert may be updated since the last registration.
+		serverCertFingerprintRaw := resp.Header.Get("X-Server-Cert-Fingerprint")
+		if serverCertFingerprintRaw != "" {
+			serverCertFingerprintBytes := storkutil.HexToBytes(serverCertFingerprintRaw)
+			if len(serverCertFingerprintBytes) != 32 {
+				return 0, nil, nil, [32]byte{}, errors.New("invalid length of serverCertFingerprint in response from server for registration request")
+			}
+			serverCertFingerprint = [32]byte(serverCertFingerprintBytes)
+		}
+
+		log.WithField("machineID", machineID).Info("Machine already registered")
+		return int64(machineID), nil, nil, serverCertFingerprint, nil
 	}
 
 	var result map[string]interface{}
@@ -430,6 +441,17 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 		err = checkAndStoreCerts(certStore, serverCACert, agentCert, serverCertFingerprint)
 		if err != nil {
 			return errors.WithMessage(err, "problem with certs")
+		}
+	} else if serverCertFingerprint != [32]byte{} {
+		currentServerCertFingerprint, err := certStore.ReadServerCertFingerprint()
+		if err == nil && currentServerCertFingerprint != [32]byte{} && serverCertFingerprint != currentServerCertFingerprint {
+			log.Warn("Server certificate fingerprint has changed")
+		}
+
+		// Update only server cert fingerprint if it changed.
+		err = certStore.WriteServerCertFingerprint(serverCertFingerprint)
+		if err != nil {
+			return errors.WithMessage(err, "cannot write server cert fingerprint")
 		}
 	}
 

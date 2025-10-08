@@ -541,6 +541,25 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
+	serverCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerCert)
+	if err != nil {
+		msg := "Problem loading server cert"
+		log.WithError(err).Error(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	serverCertFingerprint, err := pki.CalculateFingerprintFromPEM(serverCertPEM)
+	if err != nil {
+		msg := "Problem calculating fingerprint of server cert"
+		log.WithError(err).Error(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	machineAuthorized := false
 
 	// Check if a machine is already registered with a provided agent token
@@ -577,7 +596,9 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 		if rootCertFingerprint == caCertFingerprint {
 			link := fmt.Sprintf("/machines/%d", dbMachine.ID)
-			rsp := services.NewCreateMachineConflict().WithLocation(link)
+			rsp := services.NewCreateMachineConflict().
+				WithLocation(link).
+				WithXServerCertFingerprint(storkutil.BytesToHex(serverCertFingerprint[:]))
 			return rsp
 		}
 
@@ -636,25 +657,6 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	if innerErr != nil {
 		msg := "Problem signing agent CSR"
 		log.WithError(innerErr).Error(msg)
-		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
-
-	serverCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerCert)
-	if err != nil {
-		msg := "Problem loading server cert"
-		log.WithError(err).Error(msg)
-		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
-	serverCertFingerprint, err := pki.CalculateFingerprintFromPEM(serverCertPEM)
-	if err != nil {
-		msg := "Problem calculating fingerprint of server cert"
-		log.WithError(err).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

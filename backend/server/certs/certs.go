@@ -188,7 +188,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 
 		serverCert, err := pki.ParseCert(serverCertPEM)
 		if err != nil && errors.Cause(err).Error() == "x509: SAN dNSName is malformed" {
-			log.WithError(err).Error(
+			log.WithError(err).Warn(
 				"The server certificate was generated before Stork 2.3.0 and " +
 					"contains malformed DNS names in the Subject Alternative " +
 					"Name (SAN) field. The server certificate must be regenerated.",
