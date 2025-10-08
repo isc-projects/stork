@@ -48,6 +48,8 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.Access
 
 // Setup function for the unit tests.
 func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedAgentsImpl) {
+	caCertPEM, serverCertPEM, serverKeyPEM, _ := generateSelfSignedCerts()
+
 	mockAgentClient := NewMockAgentClient(ctrl)
 	mockAgentsConnector := NewMockAgentConnector(ctrl)
 	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(nil)
@@ -56,7 +58,7 @@ func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedA
 
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
-	agents := newConnectedAgentsImpl(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents := newConnectedAgentsImpl(&settings, fec, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {
 		return mockAgentsConnector
 	})
@@ -807,6 +809,9 @@ func TestReceiveZonesNonExistingAccessPoint(t *testing.T) {
 
 // Test that an error is returned when establishing connection fails.
 func TestReceiveZonesConnectionError(t *testing.T) {
+	caCertPEM, serverCertPEM, serverKeyPEM, err := generateSelfSignedCerts()
+	require.NoError(t, err)
+
 	// Create an app.
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
@@ -829,7 +834,7 @@ func TestReceiveZonesConnectionError(t *testing.T) {
 	mockAgentConnector.EXPECT().close().AnyTimes()
 	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
 
-	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {
 		return mockAgentConnector
 	})
@@ -1130,6 +1135,9 @@ func TestReceiveZoneRRsNonExistingAccessPoint(t *testing.T) {
 
 // Test that an error is returned when establishing connection fails.
 func TestReceiveZoneRRsConnectionError(t *testing.T) {
+	caCertPEM, serverCertPEM, serverKeyPEM, err := generateSelfSignedCerts()
+	require.NoError(t, err)
+
 	// Create an app.
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
@@ -1152,7 +1160,7 @@ func TestReceiveZoneRRsConnectionError(t *testing.T) {
 	mockAgentConnector.EXPECT().close().AnyTimes()
 	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
 
-	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {
 		return mockAgentConnector
 	})
