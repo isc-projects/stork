@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -39,7 +40,7 @@ func (s *mockMetricsSource) Set(metrics dbmodel.CalculatedMetrics) {
 // from Prometheus metrics.
 // Source: https://stackoverflow.com/a/65388822.
 func parseAuthorizedMachinesFromPrometheus(input io.Reader) (int64, error) {
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.LegacyValidation)
 	mf, err := parser.TextToMetricFamilies(input)
 	if err != nil {
 		return 0, err
