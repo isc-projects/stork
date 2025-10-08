@@ -245,8 +245,19 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 			defer cancel()
 			names, err := resolver.LookupAddr(ctx, ipAddr.String())
 
-			if err == nil {
-				srvNames = append(srvNames, names...)
+			if err != nil {
+				continue
+			}
+
+			for _, name := range names {
+				// The "domainNameValid" function in the "tools/golang/go/src/crypto/x509/parser.go"
+				// file defines rules for valid DNS names.  We need to reject names that don't
+				// conform to these rules, otherwise the "x509: SAN dNSName is malformed" error
+				// occurs when the cert is parsed.
+				if len(name) == 0 || name[0] == '.' || name[len(name)-1] == '.' || len(name) > 253 {
+					continue
+				}
+				srvNames = append(srvNames, name)
 			}
 		}
 		if len(srvIPs) == 0 || len(srvNames) == 0 {
