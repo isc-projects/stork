@@ -104,7 +104,7 @@ export class HostTabComponent {
     /**
      * Leases fetched for currently selected tab (host).
      */
-    currentLeases: Map<string, LeaseInfo>
+    currentLeases: Map<string, LeaseInfo> = new Map<string, LeaseInfo>()
 
     /**
      * A map of booleans indicating for which hosts leases search
