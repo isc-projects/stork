@@ -163,6 +163,10 @@
     // Overwrite PrimeNG default colorful spinner with white-colored spinner.
     animation-name: p-progressspinner-dash, progress-spinner-color-white
 
+  .p-multiselect-display-chip .p-multiselect-label
+    // There is a bug in calculating this gap in PrimeNG, so provide it here.
+    gap: 0.25rem
+
 // No css @layer - global styles, that have the highest priority.
 // These rules overwrite low, primeng and high layers if necessary.
 
