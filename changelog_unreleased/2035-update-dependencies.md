@@ -2,7 +2,8 @@
 
     Updated Go to version 1.24.8.
     Changed how the Stork server generates GRPC certificates for
-    compatibility with the new revision of the cryptographic library.
+    compatibility with the new revision of the cryptographic library
+    fixing CVE-2025-58187.
     Stork now filters out the DNS names that are not valid domains when
     preparing the Subject Alternate Name (SAN) certificate field. All
     previously generated certificates are incompatible if they contain
