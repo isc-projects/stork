@@ -237,7 +237,8 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 					"security standards required by Stork and have to be " +
 					"regenerated and imported again. Please refer to the Stork " +
 					"documentation and ISC Knowledge Base on how to generate " +
-					"and import the new certificates."
+					"and import the new certificates. See: " +
+					"https://kb.isc.org/docs/importing-external-certificates-to-stork"
 				log.WithError(err).Error(msg)
 				return nil, nil, errors.WithMessage(err, msg)
 			}
