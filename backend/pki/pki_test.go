@@ -84,9 +84,17 @@ func TestGenKeyCert(t *testing.T) {
 	parentCert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
 
+	// no IP addresses nor DNS names
+	_, _, err = GenKeyCert(name, nil, nil, 1, parentCert, parentKey, keyUsage)
+	require.EqualError(t, err, "both DNS names and IP addresses cannot be empty")
+
+	// non-empty DNS names and empty IP addresses
+	_, _, err = GenKeyCert(name, dnsNames, nil, 1, parentCert, parentKey, keyUsage)
+	require.NoError(t, err)
+
 	// empty DNS names
 	_, _, err = GenKeyCert(name, nil, ipAddresses, 1, parentCert, parentKey, keyUsage)
-	require.EqualError(t, err, "DNS names cannot be empty")
+	require.NoError(t, err)
 
 	// empty parent key
 	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, nil, keyUsage)

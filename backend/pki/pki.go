@@ -127,8 +127,8 @@ func GenCAKeyCert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certific
 // It requires to provide the certificate usage: server or client authentication.
 func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumber int64, parentCert *x509.Certificate, parentKey *ecdsa.PrivateKey, usage x509.ExtKeyUsage) ([]byte, []byte, error) {
 	// check args
-	if len(dnsNames) == 0 {
-		return nil, nil, errors.New("DNS names cannot be empty")
+	if len(dnsNames) == 0 && len(ipAddresses) == 0 {
+		return nil, nil, errors.New("both DNS names and IP addresses cannot be empty")
 	}
 	if parentCert == nil {
 		return nil, nil, errors.New("parent cert cannot be empty")
@@ -152,13 +152,20 @@ func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumb
 	}
 
 	// prepare cert template
+	var commonName string
+	if len(dnsNames) > 0 {
+		commonName = dnsNames[0]
+	} else {
+		commonName = ipAddresses[0].String()
+	}
+
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(serialNumber),
 		Subject: pkix.Name{
 			Country:            []string{CertCountry},
 			Organization:       []string{CertOrganization},
 			OrganizationalUnit: []string{name},
-			CommonName:         dnsNames[0],
+			CommonName:         commonName,
 		},
 		NotBefore:      time.Now(),
 		NotAfter:       time.Now().AddDate(CertValidityYears, 0, 0), // 30 years of cert validity

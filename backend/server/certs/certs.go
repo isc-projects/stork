@@ -248,48 +248,18 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 	}
 
 	if serverKeyPEM == nil || serverCertPEM == nil {
-		// get list of all host IP addresses that will be put to server cert
-		addrs, err := net.InterfaceAddrs()
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "cannot get interface addresses")
-		}
-		var srvIPs []net.IP
-		var srvNames []string
-		var resolver net.Resolver
-		for _, addr := range addrs {
-			ipAddr, _, err := net.ParseCIDR(addr.String())
-			if err != nil {
-				continue
-			}
-			srvIPs = append(srvIPs, ipAddr)
-
-			// Lookup sometimes blocks on IPv6 loopback address on Debian 10.
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-			defer cancel()
-			names, err := resolver.LookupAddr(ctx, ipAddr.String())
-			if err != nil {
-				continue
-			}
-
-			for _, name := range names {
-				if !domainNameValid(name, false) {
-					continue
-				}
-				srvNames = append(srvNames, name)
-			}
-		}
-		if len(srvIPs) == 0 || len(srvNames) == 0 {
-			return nil, nil, errors.Errorf("cannot find IP addresses on this host")
-		}
-
 		certSerialNumber, err := dbmodel.GetNewCertSerialNumber(db)
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, "cannot get new cert S/N")
 		}
-		serverCertPEM, serverKeyPEM, err = pki.GenKeyCert("server", srvNames, srvIPs, certSerialNumber, rootCert, rootKey, x509.ExtKeyUsageClientAuth)
+
+		addressResolver := newInterfaceAddressResolver()
+
+		serverCertPEM, serverKeyPEM, err = generateServerKeyAndCert(addressResolver, rootCert, rootKey, certSerialNumber)
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, "cannot generate key and cert for server")
 		}
+
 		err = dbmodel.SetSecret(db, dbmodel.SecretServerKey, serverKeyPEM)
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, "cannot store server key in database")
@@ -302,6 +272,79 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 	}
 
 	return serverKeyPEM, serverCertPEM, nil
+}
+
+// Interface that encapsulates the net library calls used to obtain the network
+// interface addresses and resolve them to names.  This is used to allow mocking
+// in unit tests.
+type interfaceAddressResolver interface {
+	// Encapsulates the net.InterfaceAddrs() call.
+	InterfaceAddrs() ([]net.Addr, error)
+	// Encapsulates the net.Resolver.LookupAddr() call.
+	ResolveAddress(ctx context.Context, address string) ([]string, error)
+}
+
+// The implementation using the real calls to the net library.
+type systemInterfaceAddressResolver struct {
+	resolver net.Resolver
+}
+
+// Calls the net.InterfaceAddrs() function.
+func (r *systemInterfaceAddressResolver) InterfaceAddrs() ([]net.Addr, error) {
+	return net.InterfaceAddrs()
+}
+
+// Calls the net.Resolver.LookupAddr() function.
+func (r *systemInterfaceAddressResolver) ResolveAddress(ctx context.Context, address string) ([]string, error) {
+	return r.resolver.LookupAddr(ctx, address)
+}
+
+// Returns an implementation using the net library.
+func newInterfaceAddressResolver() interfaceAddressResolver {
+	return &systemInterfaceAddressResolver{}
+}
+
+// Generates the server key and cert and returns
+// them in PEM format.
+func generateServerKeyAndCert(addressResolver interfaceAddressResolver, rootCert *x509.Certificate, rootKey *ecdsa.PrivateKey, serialNumber int64) (serverCertPEM, serverKeyPEM []byte, err error) {
+	// get list of all host IP addresses that will be put to server cert
+	addrs, err := addressResolver.InterfaceAddrs()
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "cannot get interface addresses")
+	}
+	var srvIPs []net.IP
+	var srvNames []string
+	for _, addr := range addrs {
+		ipAddr, _, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			continue
+		}
+		srvIPs = append(srvIPs, ipAddr)
+
+		// Lookup sometimes blocks on IPv6 loopback address on Debian 10.
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		names, err := addressResolver.ResolveAddress(ctx, ipAddr.String())
+		if err != nil {
+			continue
+		}
+
+		for _, name := range names {
+			if !domainNameValid(name, false) {
+				continue
+			}
+			srvNames = append(srvNames, name)
+		}
+	}
+	if len(srvIPs) == 0 && len(srvNames) == 0 {
+		return nil, nil, errors.Errorf("cannot find IP addresses or domains on this host")
+	}
+
+	serverCertPEM, serverKeyPEM, err = pki.GenKeyCert("server", srvNames, srvIPs, serialNumber, rootCert, rootKey, x509.ExtKeyUsageClientAuth)
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "cannot generate key and cert for server")
+	}
+	return serverCertPEM, serverKeyPEM, nil
 }
 
 // This function is copied and pasted from the "domainNameValid" function in the
