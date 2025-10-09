@@ -272,11 +272,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 			}
 
 			for _, name := range names {
-				// The "domainNameValid" function in the "tools/golang/go/src/crypto/x509/parser.go"
-				// file defines rules for valid DNS names.  We need to reject names that don't
-				// conform to these rules, otherwise the "x509: SAN dNSName is malformed" error
-				// occurs when the cert is parsed.
-				if len(name) == 0 || name[0] == '.' || name[len(name)-1] == '.' || len(name) > 253 {
+				if !domainNameValid(name, false) {
 					continue
 				}
 				srvNames = append(srvNames, name)
@@ -306,6 +302,50 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 	}
 
 	return serverKeyPEM, serverCertPEM, nil
+}
+
+// This function is copied and pasted from the "domainNameValid" function in the
+// "tools/golang/go/src/crypto/x509/parser.go" file. It defines rules for valid
+// DNS names.  We need to reject names that don't conform to these rules,
+// otherwise the "x509: SAN dNSName is malformed" error occurs when the cert is
+// parsed.
+//
+// <-- Copied code starts here -->
+// domainNameValid does minimal domain name validity checking. In particular it
+// enforces the following properties:
+//   - names cannot have the trailing period
+//   - names can only have a leading period if constraint is true
+//   - names must be <= 253 characters
+//   - names cannot have empty labels
+//   - names cannot labels that are longer than 63 characters
+//
+// Note that this does not enforce the LDH requirements for domain names.
+func domainNameValid(s string, constraint bool) bool {
+	if len(s) == 0 && constraint {
+		return true
+	}
+	if len(s) == 0 || (!constraint && s[0] == '.') || s[len(s)-1] == '.' || len(s) > 253 {
+		return false
+	}
+	lastDot := -1
+	if constraint && s[0] == '.' {
+		s = s[1:]
+	}
+
+	for i := 0; i <= len(s); i++ {
+		if i == len(s) || s[i] == '.' {
+			labelLen := i
+			if lastDot >= 0 {
+				labelLen -= lastDot + 1
+			}
+			if labelLen == 0 || labelLen > 63 {
+				return false
+			}
+			lastDot = i
+		}
+	}
+
+	return true
 }
 
 // Check if there are root CA and server keys and certs, and server
