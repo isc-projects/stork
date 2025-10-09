@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -757,7 +758,7 @@ func TestRepeatRegister(t *testing.T) {
 	retry := false
 
 	lastAgentToken := ""
-	locationHeaderValue := "/api/machines/10"
+	machineID := "10"
 	serverCertFingerprintHeaderValue := "01:02:03:04:05:06:07:08:09:0a:0b:0c:0d:0e:0f:10:11:12:13:14:15:16:17:18:19:1a:1b:1c:1d:1e:1f:20"
 
 	// internal http server for testing
@@ -785,9 +786,19 @@ func TestRepeatRegister(t *testing.T) {
 			require.NotEmpty(t, req["caCertFingerprint"])
 
 			if agentToken == lastAgentToken {
+				locationHeaderValue := fmt.Sprintf("/api/machines/%s", machineID)
 				w.Header().Add("Location", locationHeaderValue)
-				w.Header().Add("X-Server-Cert-Fingerprint", serverCertFingerprintHeaderValue)
 				w.WriteHeader(409)
+				resp := map[string]interface{}{
+					"serverCertFingerprint": serverCertFingerprintHeaderValue,
+				}
+				if machineIDInt, err := strconv.Atoi(machineID); err == nil {
+					resp["id"] = machineIDInt
+				} else {
+					resp["id"] = machineID
+				}
+
+				json.NewEncoder(w).Encode(resp)
 				return
 			}
 
@@ -918,9 +929,9 @@ func TestRepeatRegister(t *testing.T) {
 
 	// Re-registration, but invalid header is returned
 	regenKey = false
-	invalidHeaderValues := []string{"", "/machines/", "/machines", "/machines/abc", "/machines/1a", "/machines/2a2"}
-	for _, value := range invalidHeaderValues {
-		locationHeaderValue = value
+	invalidMachineIDs := []string{"", "abc", "1a", "2a2"}
+	for _, value := range invalidMachineIDs {
+		machineID = value
 		err = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newHTTPClientWithDefaults())
 		require.Error(t, err)
 	}

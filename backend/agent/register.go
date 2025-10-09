@@ -184,27 +184,55 @@ func registerAgentInServer(client *httpClient, baseSrvURL *url.URL, reqPayload *
 
 	// Special case - the agent is already registered
 	if resp.StatusCode == http.StatusConflict {
-		location := resp.Header.Get("Location")
-		lastSeparatorIdx := strings.LastIndex(location, "/")
-		if lastSeparatorIdx < 0 || lastSeparatorIdx+1 >= len(location) {
-			return 0, nil, nil, [32]byte{}, errors.New("missing machine ID in response from server for registration request")
-		}
-		machineID, err := strconv.Atoi(location[lastSeparatorIdx+1:])
-		if err != nil {
-			return 0, nil, nil, [32]byte{}, errors.New("bad machine ID in response from server for registration request")
-		}
-		// The server cert may be updated since the last registration.
-		serverCertFingerprintRaw := resp.Header.Get("X-Server-Cert-Fingerprint")
-		if serverCertFingerprintRaw != "" {
+		var machineID int64
+		var serverCertFingerprint [32]byte
+
+		// The JSON body has been added in Stork 2.3.1.
+		if len(data) != 0 {
+			var result map[string]interface{}
+			err = json.Unmarshal(data, &result)
+			if err != nil {
+				return 0, nil, nil, [32]byte{}, errors.Wrap(err, "problem parsing server's response of the already registered machine")
+			}
+			// Check received machine ID.
+			if result["id"] == nil {
+				return 0, nil, nil, [32]byte{}, errors.New("missing ID in server's response of the already registered machine")
+			}
+			machineIDFloat64, ok := result["id"].(float64)
+			if !ok {
+				return 0, nil, nil, [32]byte{}, errors.New("bad ID in server's response of the already registered machine")
+			}
+			machineID = int64(machineIDFloat64)
+
+			// Check received Stork server cert fingerprint.
+			if result["serverCertFingerprint"] == nil {
+				return 0, nil, nil, [32]byte{}, errors.New("missing serverCertFingerprint in server's response of the already registered machine")
+			}
+			serverCertFingerprintRaw, ok := result["serverCertFingerprint"].(string)
+			if !ok {
+				return 0, nil, nil, [32]byte{}, errors.New("bad serverCertFingerprint in server's response of the already registered machine")
+			}
 			serverCertFingerprintBytes := storkutil.HexToBytes(serverCertFingerprintRaw)
 			if len(serverCertFingerprintBytes) != 32 {
-				return 0, nil, nil, [32]byte{}, errors.New("invalid length of serverCertFingerprint in response from server for registration request")
+				return 0, nil, nil, [32]byte{}, errors.New("invalid length of serverCertFingerprint in server's response of the already registered machine")
 			}
 			serverCertFingerprint = [32]byte(serverCertFingerprintBytes)
+		} else {
+			// Extract machine ID from the Location header.
+			location := resp.Header.Get("Location")
+			lastSeparatorIdx := strings.LastIndex(location, "/")
+			if lastSeparatorIdx < 0 || lastSeparatorIdx+1 >= len(location) {
+				return 0, nil, nil, [32]byte{}, errors.New("missing machine ID in response from server for registration request")
+			}
+			machineIDInt, err := strconv.Atoi(location[lastSeparatorIdx+1:])
+			if err != nil {
+				return 0, nil, nil, [32]byte{}, errors.New("bad machine ID in response from server for registration request")
+			}
+			machineID = int64(machineIDInt)
 		}
 
 		log.WithField("machineID", machineID).Info("Machine already registered")
-		return int64(machineID), nil, nil, serverCertFingerprint, nil
+		return machineID, nil, nil, serverCertFingerprint, nil
 	}
 
 	var result map[string]interface{}

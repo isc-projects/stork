@@ -106,6 +106,18 @@
           representation without delimiters. Agent won't accept the connection
           secured by a different certificate.
 
+  ExistingMachineResp:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The machine ID.
+      serverCertFingerprint:
+        type: string
+        description: The SHA256 sum of the server GRPC certificate. It's a hex
+          representation without delimiters. Agent won't accept the connection
+          secured by a different certificate.
+
   Machine:
     type: object
     required:

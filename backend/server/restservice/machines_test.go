@@ -622,7 +622,8 @@ func TestCreateMachine(t *testing.T) {
 	require.NotEmpty(t, conflictRsp.Location)
 	expectedLocation := fmt.Sprintf("/machines/%d", okRsp.Payload.ID)
 	require.Equal(t, expectedLocation, conflictRsp.Location)
-	require.Equal(t, expectedServerCertFingerprintHex, conflictRsp.XServerCertFingerprint)
+	require.Equal(t, expectedServerCertFingerprintHex, conflictRsp.Payload.ServerCertFingerprint)
+	require.Equal(t, okRsp.Payload.ID, conflictRsp.Payload.ID)
 
 	machines, err = dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)

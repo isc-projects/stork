@@ -58,9 +58,8 @@
           headers:
             Location:
               type: string
-            X-Server-Cert-Fingerprint:
-              type: string
-              description: The fingerprint of the server GRPC certificate.
+          schema:
+            $ref: '#/definitions/ExistingMachineResp'
         default:
           description: generic error response
           schema:

@@ -598,7 +598,10 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 			link := fmt.Sprintf("/machines/%d", dbMachine.ID)
 			rsp := services.NewCreateMachineConflict().
 				WithLocation(link).
-				WithXServerCertFingerprint(storkutil.BytesToHex(serverCertFingerprint[:]))
+				WithPayload(&models.ExistingMachineResp{
+					ID:                    dbMachine.ID,
+					ServerCertFingerprint: storkutil.BytesToHex(serverCertFingerprint[:]),
+				})
 			return rsp
 		}
 
