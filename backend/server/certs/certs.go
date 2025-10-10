@@ -178,7 +178,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 		return nil, nil, errors.WithMessage(err, "cannot get server cert from database")
 	}
 
-	// Check if the server certificate should is valid or should be regenerated.
+	// Check if the server certificate is valid or should be regenerated.
 	// The certificate must be regenerated if:
 	//   - there is no certificate or no key
 	//   - DNS names in the SAN field are malformed (this can happen if the cert was
