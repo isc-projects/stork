@@ -6,13 +6,20 @@
         // Give full width but prevent from becoming too wide.
         width: 100%
         max-width: var(--max-form-width)
+        min-width: 0
 
         // Flex items for PD and PSID forms. Prefix is wider and shrinkable.
         // Prefix len doesn't shrink and takes less space.
         .prefix
             flex: 1 1 16rem
+            min-width: 0
         .prefix-len
             flex: 1 0 4rem
+            min-width: 0
+
+        // Any input inside should not take more width than 100% of parent width.
+        input, .p-inputwrapper
+            max-width: 100%
 
     .option-field
         border-style: dashed
