@@ -214,7 +214,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 					"due to a bug, it contains malformed DNS names in the " +
 					"Subject Alternative Name (SAN) field. The server " +
 					"certificate must be regenerated. All agents will need " +
-					"to be reconnected.",
+					"to be re-registered.",
 			)
 			serverKeyPEM = nil
 			serverCertPEM = nil
