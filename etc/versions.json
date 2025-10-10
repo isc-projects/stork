@@ -1,5 +1,5 @@
 {
-  "date": "2025-08-27",
+  "date": "2025-09-24",
   "kea": {
     "currentStable": [
       {
@@ -14,29 +14,21 @@
       }
     ],
     "latestDev": {
-      "version": "3.1.1",
-      "releaseDate": "2025-08-27"
+      "version": "3.1.2",
+      "releaseDate": "2025-09-24"
     },
     "latestSecure": [
       {
+        "version": "3.1.2",
+        "releaseDate": "2025-09-24"
+      },
+      {
+        "version": "2.6.4",
+        "releaseDate": "2025-07-16"
+      },
+      {
         "version": "3.0.1",
         "releaseDate": "2025-08-27"
-      },
-      {
-        "version": "3.1.1",
-        "releaseDate": "2025-08-27"
-      },
-      {
-        "version": "2.7.9",
-        "releaseDate": "2025-05-28"
-      },
-      {
-        "version": "2.4.2",
-        "releaseDate": "2025-05-28"
-      },
-      {
-        "version": "2.6.3",
-        "releaseDate": "2025-05-28"
       }
     ]
   },
@@ -49,8 +41,8 @@
       }
     ],
     "latestDev": {
-      "version": "2.3.0",
-      "releaseDate": "2025-08-13"
+      "version": "2.3.1",
+      "releaseDate": "2025-10-15"
     },
     "latestSecure": [
       {
@@ -62,8 +54,8 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.20.12",
-        "releaseDate": "2025-08-20",
+        "version": "9.20.13",
+        "releaseDate": "2025-09-09",
         "eolDate": "2028-07-01",
         "ESV": "true"
       },
@@ -75,13 +67,13 @@
       }
     ],
     "latestDev": {
-      "version": "9.21.11",
-      "releaseDate": "2025-08-20"
+      "version": "9.21.12",
+      "releaseDate": "2025-09-09"
     },
     "latestSecure": [
       {
         "version": "9.20.11",
-        "releaseDate": "2025-07-16"
+        "releaseDate": "2025-07-15"
       },
       {
         "version": "9.18.38",

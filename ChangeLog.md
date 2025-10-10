@@ -1,3 +1,123 @@
+Stork 2.3.1 released on 2025-10-15.
+
+* 562 [func] piotrek
+
+    Responsive UI was improved. Content overflow was minimized for
+    smaller viewports.
+    (Gitlab #1528)
+
+* 561 [sec] ! slawek
+
+    Updated Go to version 1.24.8.
+    Changed how the Stork server generates GRPC certificates for
+    compatibility with the new revision of the cryptographic library
+    fixing CVE-2025-58187.
+    Stork now filters out the DNS names that are not valid domains when
+    preparing the Subject Alternate Name (SAN) certificate field. All
+    previously generated certificates are incompatible if they contain
+    invalid DNS names that must be fixed by re-registering the Stork
+    agents.
+    (Gitlab #2035)
+
+* 560 [func] marcin
+
+    BIND 9 configuration parser is used by the Stork agent during
+    detection of BIND 9 instances. It is not user-visible change but
+    it is explicitly noted here in case it introduces some issues with
+    uncommon BIND 9 configurations.
+    (Gitlab #1926)
+
+* 559 [bug] slawek
+
+    Fixed a bug in the statistic counting that produced enormous big or
+    negative values or crashed due to division by zero.
+    (Gitlab #1953)
+
+* 558 [build] piotrek
+
+    Updated frontend dependencies including Angular 19 and PrimeNG 19.
+    Frontend code was refactored to support new Angular and PrimeNG
+    versions.
+    (Gitlab #1760)
+
+* 557 [bug] marcin
+
+    Fixed parsing "dyndb" BIND 9 configuration statement. Previously,
+    BIND 9 configuration parsing failed on this statement causing
+    issues with detecting BIND 9 servers.
+    (Gitlab #1938)
+
+* 556 [build] slawek
+
+    Split Python requirements in separate files for each Python version.
+    The Python requirement files are now generated dynamically if they
+    do not already exist. This improves building, especially of the UI,
+    on systems with old Python versions.
+    (Gitlab #1505)
+
+* 555 [func] marcin
+
+    Improved performance of BIND 9 configuration parsing by the agent.
+    Added support for annotating parts of the BIND 9 configuration to
+    skip parsing them. These annotations are useful in large deployments
+    when parsing the BIND 9 configuration file can take significant
+    amount of time. Use //@stork:no-parse:scope and
+    //@stork:no-parse:end to skip parsing selected part of the
+    configuration file. Use //@stork:no-parse:global to skip parsing
+    the rest of the configuration file following the annotation.
+    (Gitlab #1912)
+
+* 554 [ui] william
+
+    Add drop-down menu to filter by app type (Kea, BIND9, PowerDNS) in
+    the Services > Apps page.
+    (Gitlab #1956)
+
+* 553 [bug] marcin
+
+    Fix collecting and exporting some of the BIND 9 statistics
+    pertaining to zone transfers. Exporting new statistics to
+    Prometheus: XfrReqDone, AXFRReqv4, AXFRReqv6, IXFRReqv4,
+    IXFRReqv6.
+    (Gitlab #1967)
+
+* 552 [doc] marcin
+
+    Restructured Stork ARM. Created new sections to cover DHCP and
+    DNS-specific topics. Described the process of detecting Kea,
+    BIND 9 and PowerDNS, and the configuration requirements for the
+    DNS servers, so they can be monitored by Stork.
+    (Gitlab #1844)
+
+* 551 [sec] slawek
+
+    Added a verification of the size of incoming requests to fix the DoS
+    attack vector. Added a patch securing against an integer overflow
+    bug in go-pg library (CVE-2024-44905).  This patch prevents
+    potential vulnerabilities that could stem from this bug in the
+    future.
+    (Gitlab #1939, #1940)
+
+* 550 [ui] marcin
+
+    PowerDNS server name is displayed next to the version number
+    on the machines page and the dashboard.
+    (Gitlab #1973)
+
+* 549 [build] marcin
+
+    Improved detection of PowerDNS config file location. The agent
+    tries to find the config file in typical locations. Added the
+    command line argument (`--powerdns-path`) and environment variable
+    (`STORK_AGENT_POWERDNS_CONFIG`) to specify custom PowerDNS config
+    file location.
+    (Gitlab #1930)
+
+* 548 [build] yavorpeev
+
+    Playwright initial configuration for UI testing plus test example
+    (Gitlab #1224)
+
 Stork 2.3.0 released on 2025-08-13.
 
 * 547 [build] slawek
