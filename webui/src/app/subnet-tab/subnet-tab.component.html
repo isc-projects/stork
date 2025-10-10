@@ -185,11 +185,8 @@
             </ng-template>
             <div *ngIf="!localSubnet.userContext; else userContextExistBlock">No user context configured.</div>
             <ng-template #userContextExistBlock>
-                <!-- Wrapper to shrink the width of the viewer to its content. -->
-                <div class="w-max">
-                    <!-- JSON viewer -->
-                    <app-json-tree-root [value]="localSubnet.userContext"></app-json-tree-root>
-                </div>
+                <!-- JSON viewer -->
+                <app-json-tree-root [value]="localSubnet.userContext"></app-json-tree-root>
             </ng-template>
         </p-fieldset>
     </div>

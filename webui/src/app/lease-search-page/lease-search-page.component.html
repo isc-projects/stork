@@ -217,11 +217,8 @@
                     </div>
                     <div *ngIf="lease.userContext" class="flex-auto">
                         <p-fieldset legend="User Context" styleClass="max-width-100vw">
-                            <!-- Wrapper to shrink the width of the viewer to its content. -->
-                            <div class="w-max">
-                                <!-- JSON viewer -->
-                                <app-json-tree-root [value]="lease.userContext"></app-json-tree-root>
-                            </div>
+                            <!-- JSON viewer -->
+                            <app-json-tree-root [value]="lease.userContext"></app-json-tree-root>
                         </p-fieldset>
                     </div>
                     <div *ngIf="lease.hostname" class="flex-auto">

@@ -11,6 +11,10 @@ import { AuthService } from '../auth.service'
     standalone: false,
     templateUrl: './json-tree-root.component.html',
     styleUrls: [],
+    host: {
+        // Disable full width expand and enable horizontal scrollbars when content is wider than parent container.
+        style: 'display: inline-flex; max-width: 100%; overflow-x: auto',
+    },
 })
 export class JsonTreeRootComponent implements OnInit {
     private _value: any = null

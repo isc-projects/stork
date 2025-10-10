@@ -4,7 +4,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-panel>
+<p-panel styleClass="max-w-100rem">
     <ng-template #header>
         <div class="flex flex-wrap gap-2 w-full justify-content-end">
             <!-- Title -->
@@ -45,11 +45,6 @@
     </ng-template>
 
     <!-- JSON viewer -->
-    <app-json-tree-root
-        *ngIf="!failedFetch"
-        class="json-content"
-        [value]="configuration"
-        [autoExpand]="autoExpand"
-    ></app-json-tree-root>
+    <app-json-tree-root *ngIf="!failedFetch" [value]="configuration" [autoExpand]="autoExpand"></app-json-tree-root>
     <p-message *ngIf="failedFetch" severity="warn" text="Fetching daemon configuration failed"></p-message>
 </p-panel>
