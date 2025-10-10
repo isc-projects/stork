@@ -133,11 +133,13 @@
       // Prevent width overflow.
       max-width: calc(100vw - 2rem)
 
-  // Apply smaller padding to PrimeNG Fieldset component for smaller viewports to save horizontal space.
   @media screen and (max-width: 575px)
     :root
-      // Overwrite PrimeNG CSS variable.
+      // Apply smaller padding to PrimeNG Fieldset component for smaller viewports to save horizontal space.
       --p-fieldset-padding: 0 0.5rem 0.5rem 0.5rem
+      // Apply smaller padding to PrimeNG Dialog to save more vertical space for dialog content.
+      --p-dialog-header-padding: 0.75rem
+      --p-dialog-content-padding: 0 0.75rem 0.75rem 0.75rem
 
   @media screen and (max-width: 575px)
     .p-panel .p-panel-content, app-tab-view > .p-tabs > .p-tabpanels
