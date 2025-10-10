@@ -47,8 +47,11 @@
       min-width: 5rem
 
     .p-dataview.p-dataview-list
-      .p-dataview-content > div:last-child
-        padding-bottom: 1rem
+      .p-dataview-content
+        > div:last-child
+          padding-bottom: 1rem
+        // Prevent overflow on smaller viewports.
+        overflow-x: auto
 
   ::ng-deep .p-popover.checker-panel
     @media screen and (max-width: 1199px)

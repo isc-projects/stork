@@ -36,7 +36,7 @@
                     class="mb-2 sm:my-0"
                     size="small"
                     icon="fa fa-cog"
-                    (click)="selectCheckersPanel.show($event)"
+                    (click)="selectCheckersPanel.toggle($event)"
                 ></p-button>
                 <p-button
                     id="review-button"
@@ -106,6 +106,7 @@
         <app-config-checker-preference-updater
             [daemonID]="daemonId"
             [minimal]="true"
+            (cancelled)="selectCheckersPanel.hide()"
         ></app-config-checker-preference-updater>
     </div>
 </p-popover>

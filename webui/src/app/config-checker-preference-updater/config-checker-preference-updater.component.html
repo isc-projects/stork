@@ -4,4 +4,5 @@
     [allowInheritState]="daemonID !== null"
     [minimal]="minimal"
     [loading]="loading"
+    (pickerCancelled)="cancelled.emit()"
 ></app-config-checker-preference-picker>

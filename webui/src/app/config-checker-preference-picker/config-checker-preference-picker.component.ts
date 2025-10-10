@@ -53,6 +53,11 @@ export class ConfigCheckerPreferencePickerComponent {
     }
 
     /**
+     * Output emitting when the picker's Cancel button is clicked.
+     */
+    @Output() pickerCancelled = new EventEmitter<void>()
+
+    /**
      * If it's true, the data aren't ready yet.
      */
     get loading(): boolean {

@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core'
 import { MessageService } from 'primeng/api'
 import { of, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -46,6 +46,12 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
      * Indicate that the data aren't ready yet.
      */
     loading: boolean = true
+
+    /**
+     * Output propagating cancelled events from child ConfigCheckerPreferencePickerComponent,
+     * that are emitted when the picker's Cancel button is clicked.
+     */
+    @Output() cancelled = new EventEmitter<void>()
 
     /**
      * Constructs the component.

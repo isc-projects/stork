@@ -109,6 +109,15 @@
                 [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
                 appAccessType="update"
             ></p-button>
+            @if (minimal) {
+                <p-button
+                    severity="secondary"
+                    label="Cancel"
+                    styleClass="ml"
+                    class="ml-auto"
+                    (onClick)="pickerCancelled.emit()"
+                />
+            }
         </div>
     </ng-template>
 </p-table>
