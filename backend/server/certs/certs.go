@@ -290,9 +290,9 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 // in unit tests.
 type interfaceAddressResolver interface {
 	// Encapsulates the net.InterfaceAddrs() call.
-	InterfaceAddrs() ([]net.Addr, error)
+	interfaceAddrs() ([]net.Addr, error)
 	// Encapsulates the net.Resolver.LookupAddr() call.
-	ResolveAddress(ctx context.Context, address string) ([]string, error)
+	resolveAddress(ctx context.Context, address string) ([]string, error)
 }
 
 // The implementation using the real calls to the net library.
@@ -301,12 +301,12 @@ type systemInterfaceAddressResolver struct {
 }
 
 // Calls the net.InterfaceAddrs() function.
-func (r *systemInterfaceAddressResolver) InterfaceAddrs() ([]net.Addr, error) {
+func (r *systemInterfaceAddressResolver) interfaceAddrs() ([]net.Addr, error) {
 	return net.InterfaceAddrs()
 }
 
 // Calls the net.Resolver.LookupAddr() function.
-func (r *systemInterfaceAddressResolver) ResolveAddress(ctx context.Context, address string) ([]string, error) {
+func (r *systemInterfaceAddressResolver) resolveAddress(ctx context.Context, address string) ([]string, error) {
 	return r.resolver.LookupAddr(ctx, address)
 }
 
@@ -319,7 +319,7 @@ func newInterfaceAddressResolver() interfaceAddressResolver {
 // them in PEM format.
 func generateServerKeyAndCert(addressResolver interfaceAddressResolver, rootCert *x509.Certificate, rootKey *ecdsa.PrivateKey, serialNumber int64) (serverCertPEM, serverKeyPEM []byte, err error) {
 	// get list of all host IP addresses that will be put to server cert
-	addrs, err := addressResolver.InterfaceAddrs()
+	addrs, err := addressResolver.interfaceAddrs()
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "cannot get interface addresses")
 	}
@@ -335,7 +335,7 @@ func generateServerKeyAndCert(addressResolver interfaceAddressResolver, rootCert
 		// Lookup sometimes blocks on IPv6 loopback address on Debian 10.
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		names, err := addressResolver.ResolveAddress(ctx, ipAddr.String())
+		names, err := addressResolver.resolveAddress(ctx, ipAddr.String())
 		if err != nil {
 			continue
 		}

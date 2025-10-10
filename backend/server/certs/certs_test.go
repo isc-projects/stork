@@ -616,7 +616,7 @@ func TestGenerateServerKeyAndCertNoAccessToInterfaces(t *testing.T) {
 	defer ctrl.Finish()
 
 	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().InterfaceAddrs().Return(nil, errors.New("no access to network interfaces"))
+	resolver.EXPECT().interfaceAddrs().Return(nil, errors.New("no access to network interfaces"))
 
 	// Act
 	cert, key, err := generateServerKeyAndCert(resolver, nil, nil, 0)
@@ -634,7 +634,7 @@ func TestGenerateServerKeyAndCertNoInterfaces(t *testing.T) {
 	defer ctrl.Finish()
 
 	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().InterfaceAddrs().Return([]net.Addr{}, nil)
+	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{}, nil)
 
 	// Act
 	cert, key, err := generateServerKeyAndCert(resolver, nil, nil, 0)
@@ -652,10 +652,10 @@ func TestGenerateServerKeyAndCertResolveAddressHasTimeout(t *testing.T) {
 	defer ctrl.Finish()
 
 	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().InterfaceAddrs().Return([]net.Addr{
+	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
 		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
 	}, nil)
-	resolver.EXPECT().ResolveAddress(gomock.Cond(func(ctx context.Context) bool {
+	resolver.EXPECT().resolveAddress(gomock.Cond(func(ctx context.Context) bool {
 		deadline, ok := ctx.Deadline()
 		return ok && !deadline.IsZero()
 	}), gomock.Eq("192.0.2.1")).Return([]string{"example.com"}, nil)
@@ -675,10 +675,10 @@ func TestGenerateServerKeyAndCertResolveAllInvalidDomains(t *testing.T) {
 	defer ctrl.Finish()
 
 	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().InterfaceAddrs().Return([]net.Addr{
+	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
 		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
 	}, nil)
-	resolver.EXPECT().ResolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
+	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
 		Return([]string{"example.com."}, nil)
 
 	// Act
@@ -711,10 +711,10 @@ func TestGenerateServerKeyAndCertResolveInvalidRootCA(t *testing.T) {
 	defer ctrl.Finish()
 
 	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().InterfaceAddrs().Return([]net.Addr{
+	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
 		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
 	}, nil)
-	resolver.EXPECT().ResolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
+	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
 		Return([]string{"example.com"}, nil)
 
 	// Act
@@ -735,13 +735,13 @@ func TestGenerateServerKeyAndCert(t *testing.T) {
 	defer ctrl.Finish()
 
 	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().InterfaceAddrs().Return([]net.Addr{
+	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
 		&net.IPNet{IP: net.ParseIP("127.0.0.1"), Mask: net.CIDRMask(32, 32)},
 		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
 	}, nil)
-	resolver.EXPECT().ResolveAddress(gomock.Any(), gomock.Eq("127.0.0.1")).
+	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("127.0.0.1")).
 		Return([]string{"home.com."}, nil)
-	resolver.EXPECT().ResolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
+	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
 		Return([]string{"example.com"}, nil)
 
 	// Act
