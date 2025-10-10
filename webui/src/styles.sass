@@ -48,6 +48,11 @@
     .stork-fieldset-legend-text, .p-fieldset-legend-label
       font-size: 1rem
 
+    // Prevent horizontal overflow by enabling scrollbars.
+    // Do not apply this style when there is PrimeNG form input wrapper inside,
+    // because it messes up PrimeNG overlays.
+    .p-fieldset-content:not(:has(.p-inputwrapper))
+      overflow-x: auto
 
   // Overwrite default margin-left: auto for the right hand side paginator.
   .p-paginator > :last-child:not(.p-paginator-last):not(.p-inputwrapper)
