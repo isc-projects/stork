@@ -110,12 +110,7 @@
                 appAccessType="update"
             ></p-button>
             @if (minimal) {
-                <p-button
-                    severity="secondary"
-                    label="Cancel"
-                    class="ml-auto"
-                    (onClick)="pickerCancelled.emit()"
-                />
+                <p-button severity="secondary" label="Cancel" class="ml-auto" (onClick)="pickerCancelled.emit()" />
             }
         </div>
     </ng-template>
