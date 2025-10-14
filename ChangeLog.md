@@ -8,10 +8,7 @@ Stork 2.3.1 released on 2025-10-15.
 
 * 561 [sec] slawek
 
-    Updated Go to version 1.24.9.
-    Changed how the Stork server generates GRPC certificates for
-    compatibility with the new revision of the cryptographic library
-    fixing CVE-2025-58187.
+    Updated Go to version 1.24.9 which fixes CVE-2025-58187.
     (Gitlab #2035)
 
 * 560 [func] marcin
