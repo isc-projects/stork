@@ -1,28 +1,21 @@
 package certs
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
-	"net"
 	"os"
-	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"isc.org/stork/pki"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
 )
-
-//go:generate mockgen -package=certs -destination=interfaceaddressresolvermock_test.go --mock_names=interfaceAddressResolver=MockInterfaceAddressResolver isc.org/stork/server/certs interfaceAddressResolver
 
 // Check if GenerateServerToken works.
 func TestGenerateServerToken(t *testing.T) {
@@ -562,209 +555,4 @@ func TestVerifyRootCACustomRequirements(t *testing.T) {
 			"missing mandatory extended key usage: Server Authentication",
 		)
 	})
-}
-
-// Copied-and-pasted unit tests for copied-and-pasted domainNameValid function.
-// Source: function "TestDomainNameValid" in the
-// tools/golang/go/src/crypto/x509/parser_test.go file.
-func TestDomainNameValid(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
-		dnsName    string
-		constraint bool
-		valid      bool
-	}{
-		{"empty name, name", "", false, false},
-		{"empty name, constraint", "", true, true},
-		{"empty label, name", "a..a", false, false},
-		{"empty label, constraint", "a..a", true, false},
-		{"period, name", ".", false, false},
-		{"period, constraint", ".", true, false}, // TODO(roland): not entirely clear if this is a valid constraint (require at least one label?)
-		{"valid, name", "a.b.c", false, true},
-		{"valid, constraint", "a.b.c", true, true},
-		{"leading period, name", ".a.b.c", false, false},
-		{"leading period, constraint", ".a.b.c", true, true},
-		{"trailing period, name", "a.", false, false},
-		{"trailing period, constraint", "a.", true, false},
-		{"bare label, name", "a", false, true},
-		{"bare label, constraint", "a", true, true},
-		{"254 char label, name", strings.Repeat("a.a", 84) + "aaa", false, false},
-		{"254 char label, constraint", strings.Repeat("a.a", 84) + "aaa", true, false},
-		{"253 char label, name", strings.Repeat("a.a", 84) + "aa", false, false},
-		{"253 char label, constraint", strings.Repeat("a.a", 84) + "aa", true, false},
-		{"64 char single label, name", strings.Repeat("a", 64), false, false},
-		{"64 char single label, constraint", strings.Repeat("a", 64), true, false},
-		{"63 char single label, name", strings.Repeat("a", 63), false, true},
-		{"63 char single label, constraint", strings.Repeat("a", 63), true, true},
-		{"64 char label, name", "a." + strings.Repeat("a", 64), false, false},
-		{"64 char label, constraint", "a." + strings.Repeat("a", 64), true, false},
-		{"63 char label, name", "a." + strings.Repeat("a", 63), false, true},
-		{"63 char label, constraint", "a." + strings.Repeat("a", 63), true, true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.valid != domainNameValid(tc.dnsName, tc.constraint) {
-				t.Errorf("domainNameValid(%q, %t) = %v; want %v", tc.dnsName, tc.constraint, !tc.valid, tc.valid)
-			}
-		})
-	}
-}
-
-// Test that the error is returned if there is no access to network interfaces.
-func TestGenerateServerKeyAndCertNoAccessToInterfaces(t *testing.T) {
-	// Arrange
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().interfaceAddrs().Return(nil, errors.New("no access to network interfaces"))
-
-	// Act
-	cert, key, err := generateServerKeyAndCert(resolver, nil, nil, 0)
-
-	// Assert
-	require.ErrorContains(t, err, "no access to network interfaces")
-	require.Nil(t, cert)
-	require.Nil(t, key)
-}
-
-// Test that the error is returned if there are no network interfaces.
-func TestGenerateServerKeyAndCertNoInterfaces(t *testing.T) {
-	// Arrange
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{}, nil)
-
-	// Act
-	cert, key, err := generateServerKeyAndCert(resolver, nil, nil, 0)
-
-	// Assert
-	require.ErrorContains(t, err, "cannot find IP addresses or domains on this host")
-	require.Nil(t, cert)
-	require.Nil(t, key)
-}
-
-// Test that the context passed to the resolver has deadline.
-func TestGenerateServerKeyAndCertResolveAddressHasTimeout(t *testing.T) {
-	// Arrange & Assert
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
-		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
-	}, nil)
-	resolver.EXPECT().resolveAddress(gomock.Cond(func(ctx context.Context) bool {
-		deadline, ok := ctx.Deadline()
-		return ok && !deadline.IsZero()
-	}), gomock.Eq("192.0.2.1")).Return([]string{"example.com"}, nil)
-
-	// Act
-	_, _, _ = generateServerKeyAndCert(resolver, nil, nil, 0)
-}
-
-// Test that the cert is generated successfully even if none of the interface
-// addresses can be resolved into valid domain names.
-func TestGenerateServerKeyAndCertResolveAllInvalidDomains(t *testing.T) {
-	// Arrange
-	rootCAKey, _, rootCACert, _, err := pki.GenCAKeyCert(42)
-	require.NoError(t, err)
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
-		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
-	}, nil)
-	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
-		Return([]string{"example.com."}, nil)
-
-	// Act
-	serverCertPEM, serverKeyPEM, err := generateServerKeyAndCert(resolver, rootCACert, rootCAKey, 24)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, serverCertPEM)
-	require.NotNil(t, serverKeyPEM)
-
-	cert, err := pki.ParseCert(serverCertPEM)
-	require.NoError(t, err)
-
-	require.Equal(t, "192.0.2.1", cert.Subject.CommonName)
-	require.Len(t, cert.DNSNames, 0)
-
-	require.Contains(t, cert.IPAddresses, net.ParseIP("192.0.2.1").To4())
-	require.Len(t, cert.IPAddresses, 1)
-
-	require.EqualValues(t, 24, cert.SerialNumber.Int64())
-	require.False(t, cert.IsCA)
-	require.Zero(t, cert.KeyUsage)
-	require.Equal(t, []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}, cert.ExtKeyUsage)
-}
-
-// Test that the error is returned if the root CA certificate is invalid.
-func TestGenerateServerKeyAndCertResolveInvalidRootCA(t *testing.T) {
-	// Arrange
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
-		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
-	}, nil)
-	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
-		Return([]string{"example.com"}, nil)
-
-	// Act
-	_, _, err := generateServerKeyAndCert(resolver, nil, nil, 0)
-
-	// Assert
-	require.ErrorContains(t, err, "cannot generate key and cert for server: parent cert cannot be empty")
-}
-
-// Test that the server cert and key are generated properly if the root CA is
-// valid and the interfaces can be resolved into at least one valid domain name.
-func TestGenerateServerKeyAndCert(t *testing.T) {
-	// Arrange
-	rootCAKey, _, rootCACert, _, err := pki.GenCAKeyCert(42)
-	require.NoError(t, err)
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	resolver := NewMockInterfaceAddressResolver(ctrl)
-	resolver.EXPECT().interfaceAddrs().Return([]net.Addr{
-		&net.IPNet{IP: net.ParseIP("127.0.0.1"), Mask: net.CIDRMask(32, 32)},
-		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(32, 32)},
-	}, nil)
-	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("127.0.0.1")).
-		Return([]string{"home.com."}, nil)
-	resolver.EXPECT().resolveAddress(gomock.Any(), gomock.Eq("192.0.2.1")).
-		Return([]string{"example.com"}, nil)
-
-	// Act
-	serverCertPEM, serverKeyPEM, err := generateServerKeyAndCert(resolver, rootCACert, rootCAKey, 24)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, serverCertPEM)
-	require.NotNil(t, serverKeyPEM)
-
-	cert, err := pki.ParseCert(serverCertPEM)
-	require.NoError(t, err)
-
-	require.Equal(t, "example.com", cert.Subject.CommonName)
-	require.Contains(t, cert.DNSNames, "example.com")
-	require.Len(t, cert.DNSNames, 1)
-
-	require.Contains(t, cert.IPAddresses, net.ParseIP("127.0.0.1").To4())
-	require.Contains(t, cert.IPAddresses, net.ParseIP("192.0.2.1").To4())
-	require.Len(t, cert.IPAddresses, 2)
-
-	require.EqualValues(t, 24, cert.SerialNumber.Int64())
-	require.False(t, cert.IsCA)
-	require.Zero(t, cert.KeyUsage)
-	require.Equal(t, []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}, cert.ExtKeyUsage)
 }

@@ -6,17 +6,12 @@ Stork 2.3.1 released on 2025-10-15.
     smaller viewports.
     (Gitlab #1528)
 
-* 561 [sec] ! slawek
+* 561 [sec] slawek
 
-    Updated Go to version 1.24.8.
+    Updated Go to version 1.24.9.
     Changed how the Stork server generates GRPC certificates for
     compatibility with the new revision of the cryptographic library
     fixing CVE-2025-58187.
-    Stork now filters out the DNS names that are not valid domains when
-    preparing the Subject Alternate Name (SAN) certificate field. All
-    previously generated certificates are incompatible if they contain
-    invalid DNS names that must be fixed by re-registering the Stork
-    agents.
     (Gitlab #2035)
 
 * 560 [func] marcin

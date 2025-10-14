@@ -78,7 +78,7 @@ To update the Docker CI images, follow these steps:
    tag ``2`` and the image B has the tag ``1`` (because there were no changes
    in the last update). When updating the A and B images, assign
    the tag ``3`` to both of them.
-   
+
 3. Run the specific Rake task with the ``DRY_RUN`` set to ``true``:
 
     See below for the full list of available commands.
@@ -145,6 +145,12 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
+
+**Tag: 11**
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #2035 ticket. Upgrades Golang to 1.24.9.
 
 **Tag: 10**
 
