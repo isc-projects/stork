@@ -546,7 +546,7 @@ export class VersionService {
         if (app === 'stork' && this._storkServerVersion && this._storkServerVersion !== version) {
             const addMsg = `Stork server ${this._storkServerVersion} and Stork agent ${version} versions do not match! Please install matching versions!`
             return {
-                severity: Severity.warn,
+                severity: Math.min(Severity.warn, currentResponse.severity),
                 messages: [...currentResponse.messages, addMsg],
                 update: currentResponse.update ?? '',
             }
