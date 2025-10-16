@@ -243,6 +243,7 @@ describe('VersionService', () => {
 
     it('should return software version feedback for update available', () => {
         // Arrange
+        service.setStorkServerVersion('1.15.0') // set mismatching server vs agent version on purpose
         // Act
         const securityUpdateFound = service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
         const stableUpdateFound = service.getSoftwareVersionFeedback('9.18.10', 'bind9', fakeResponse)
