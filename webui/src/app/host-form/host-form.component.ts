@@ -578,6 +578,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 if (pdSplit.length == 2) {
                     let pdLen = parseInt(pdSplit[1], 10)
                     if (!isNaN(pdLen) && pdLen <= 128) {
+                        this.ipGroups.at(i).get('ipType').setValue('ia_pd')
                         this.ipGroups.at(i).get('inputPDLength').setValue(pdLen)
                         this.ipGroups.at(i).get('inputPD').setValue(pdSplit[0])
                     }
