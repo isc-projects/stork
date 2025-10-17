@@ -197,6 +197,14 @@ definitions:
       - static-stub
       - stub
 
+  Bind9ConfigFilter:
+    type: string
+    enum: &BIND9CONFIGFILTER
+      - config
+      - view
+      - zone
+      - no-parse
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -254,4 +262,15 @@ parameters:
     items:
       type: string
       enum: *DNSZONETYPE
+    collectionFormat: multi
+
+  bind9ConfigFilter:
+    name: filter
+    in: query
+    description: >-
+      Filter to apply while retrieving BIND 9 configuration.
+    type: array
+    items:
+      type: string
+      enum: *BIND9CONFIGFILTER
     collectionFormat: multi

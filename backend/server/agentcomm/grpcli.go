@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	agentapi "isc.org/stork/api"
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
@@ -1165,4 +1166,54 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app Contr
 			}
 		}
 	}
+}
+
+// Gets the BIND 9 configuration from the specified agent.
+// The filter specifies which configuration elements should be
+// included in the output. If the filter is nil, all configuration
+// elements are returned. The returned instance typically contains
+// two files: the main configuration file and the rndc.key file
+// contents.
+func (agents *connectedAgentsImpl) GetBind9RawConfig(ctx context.Context, app ControlledApp, filter *bind9config.Filter) (*Bind9RawConfig, error) {
+	addrPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
+
+	address, port, _, _, err := app.GetControlAccessPoint()
+	if err != nil {
+		return nil, err
+	}
+	req := &agentapi.GetBind9ConfigReq{
+		ControlAddress: address,
+		ControlPort:    port,
+		Filters:        filter.GetFilterAsProto(),
+	}
+	agent, err := agents.getConnectedAgent(addrPort)
+	if err != nil {
+		return nil, err
+	}
+	// This is the same pattern we're using in the manager.go. The connection is
+	// cached so it is possible that it gets terminated or broken at some point.
+	// By trying the actual operation and retrying on failure we should be able
+	// to recover. There may be other ways to achieve recovery (e.g., getting
+	// the connection state before attempting the call). However, it is hard to
+	// say how reliable they are. This approach worked well for several years so
+	// it should be fine to continue using it.
+	var response *agentapi.GetBind9ConfigRsp
+	if response, err = agent.connector.createClient().GetBind9Config(ctx, req); err != nil {
+		if err = agent.connector.connect(); err == nil {
+			response, err = agent.connector.createClient().GetBind9Config(ctx, req)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	if response == nil {
+		return nil, errors.Errorf("wrong response to getting BIND 9 configuration from the Stork agent %s", addrPort)
+	}
+
+	// Everything is ok. Return the configuration files.
+	files := make([]*Bind9ConfigFile, len(response.Files))
+	for i, file := range response.Files {
+		files[i] = NewBind9ConfigFileFromProto(file)
+	}
+	return &Bind9RawConfig{Files: files}, nil
 }

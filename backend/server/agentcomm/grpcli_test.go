@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	agentapi "isc.org/stork/api"
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
@@ -1515,4 +1517,186 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
 	require.Nil(t, serverInfo)
+}
+
+// Test successfully getting BIND 9 raw configuration with and without
+// filtering.
+func TestGetBind9RawConfig(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
+		if len(req.Filters) == 0 {
+			return &agentapi.GetBind9ConfigRsp{
+				Files: []*agentapi.Bind9ConfigFile{
+					{
+						FileType: agentapi.Bind9ConfigFile_CONFIG,
+						Contents: "no-filtering;",
+					},
+				},
+			}, nil
+		}
+		var builder strings.Builder
+		for _, filter := range req.Filters {
+			builder.WriteString(fmt.Sprintf("%s;", filter.String()))
+		}
+		return &agentapi.GetBind9ConfigRsp{
+			Files: []*agentapi.Bind9ConfigFile{
+				{
+					FileType: agentapi.Bind9ConfigFile_CONFIG,
+					Contents: builder.String(),
+				},
+			},
+		}, nil
+	})
+
+	t.Run("no filtering", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 1)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+		require.Equal(t, "no-filtering;", config.Files[0].Contents)
+	})
+
+	t.Run("filter by by view and no-parse", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFilter(bind9config.FilterTypeView, bind9config.FilterTypeNoParse))
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 1)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+		require.Contains(t, config.Files[0].Contents, "VIEW")
+		require.Contains(t, config.Files[0].Contents, "NO_PARSE")
+		require.NotContains(t, config.Files[0].Contents, "ZONE")
+	})
+
+	t.Run("filter by zone", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFilter(bind9config.FilterTypeZone))
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 1)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+		require.NotContains(t, config.Files[0].Contents, "VIEW")
+		require.NotContains(t, config.Files[0].Contents, "NO_PARSE")
+		require.Contains(t, config.Files[0].Contents, "ZONE")
+	})
+}
+
+// Test successfully getting BIND 9 raw configuration comprising
+// multiple files.
+func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
+		return &agentapi.GetBind9ConfigRsp{
+			Files: []*agentapi.Bind9ConfigFile{
+				{
+					FileType:   agentapi.Bind9ConfigFile_CONFIG,
+					SourcePath: "named.conf",
+					Contents:   "no-filtering;",
+				},
+				{
+					FileType:   agentapi.Bind9ConfigFile_RNDC_KEY,
+					SourcePath: "rndc.key",
+					Contents:   "rndc-key;",
+				},
+			},
+		}, nil
+	})
+
+	config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	require.Len(t, config.Files, 2)
+	require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+	require.Equal(t, "named.conf", config.Files[0].SourcePath)
+	require.Equal(t, "no-filtering;", config.Files[0].Contents)
+	require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
+	require.Equal(t, "rndc.key", config.Files[1].SourcePath)
+	require.Equal(t, "rndc-key;", config.Files[1].Contents)
+}
+
+// Test that an error is returned when trying to get the BIND 9 raw config
+// when the gRPC call fails.
+func TestGetBind9RawConfigErrorResponse(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, &testError{})
+
+	config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "test error")
+	require.Empty(t, config)
+}
+
+// Test that an error is returned when trying to get the BIND 9 raw config
+// when the response is nil.
+func TestGetBind9RawConfigNilResponse(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+
+	config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "wrong response to getting BIND 9 configuration from the Stork agent 127.0.0.1:8080")
+	require.Empty(t, config)
 }

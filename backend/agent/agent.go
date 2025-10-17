@@ -29,6 +29,7 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
@@ -803,6 +804,42 @@ func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grp
 		}
 	}
 	return nil
+}
+
+// Returns the BIND 9 configuration for the specified server with filtering.
+// It typically returns two files: the main configuration file and the rndc.key file
+// contents. At least one of them must be present. Otherwise, the error is returned.
+func (sa *StorkAgent) GetBind9Config(ctx context.Context, in *agentapi.GetBind9ConfigReq) (*agentapi.GetBind9ConfigRsp, error) {
+	app := sa.AppMonitor.GetApp(AccessPointControl, in.ControlAddress, in.ControlPort)
+	if app == nil {
+		return nil, status.Newf(codes.FailedPrecondition, "BIND 9 server %s:%d not found", in.ControlAddress, in.ControlPort).Err()
+	}
+	bind9App, ok := app.(*Bind9App)
+	if !ok {
+		return nil, status.Newf(codes.InvalidArgument, "attempted to get BIND 9 configuration from app type %s instead of BIND 9", app.GetBaseApp().Type).Err()
+	}
+	if bind9App.bind9Config == nil && bind9App.rndcKeyConfig == nil {
+		// At least one of the configuration files must be present.
+		// The BIND 9 configuration is in fact always present. If it is missing
+		// there is something heavily wrong.
+		return nil, status.Errorf(codes.NotFound, "BIND 9 configuration not found for server %s:%d", in.ControlAddress, in.ControlPort)
+	}
+	rsp := &agentapi.GetBind9ConfigRsp{}
+	if bind9App.bind9Config != nil {
+		rsp.Files = append(rsp.Files, &agentapi.Bind9ConfigFile{
+			FileType:   agentapi.Bind9ConfigFile_CONFIG,
+			SourcePath: bind9App.bind9Config.GetSourcePath(),
+			Contents:   bind9App.bind9Config.GetFormattedString(0, bind9config.NewFilterFromProto(in.Filters)),
+		})
+	}
+	if bind9App.rndcKeyConfig != nil {
+		rsp.Files = append(rsp.Files, &agentapi.Bind9ConfigFile{
+			FileType:   agentapi.Bind9ConfigFile_RNDC_KEY,
+			SourcePath: bind9App.rndcKeyConfig.GetSourcePath(),
+			Contents:   bind9App.rndcKeyConfig.GetFormattedString(0, bind9config.NewFilterFromProto(in.Filters)),
+		})
+	}
+	return rsp, nil
 }
 
 // Starts the gRPC and HTTP listeners.

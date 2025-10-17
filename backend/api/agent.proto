@@ -35,6 +35,9 @@ service Agent {
   // Retrieves the zone from the agent by returning cached resource records or running zone
   // transfer if the zone has not been cached yet.
   rpc ReceiveZoneRRs(ReceiveZoneRRsReq) returns (stream ReceiveZoneRRsRsp) {}
+
+  // Retrieves the BIND 9 configuration from the agent.
+  rpc GetBind9Config(GetBind9ConfigReq) returns (GetBind9ConfigRsp) {}
 }
 
 
@@ -298,4 +301,40 @@ message ReceiveZoneRRsReq {
 // A response received over the stream when requesting the zone contents.
 message ReceiveZoneRRsRsp {
   repeated string rrs = 1;
+}
+
+// Filter for the BIND 9 configuration.
+message GetBind9ConfigFilter {
+  enum FilterType {
+    CONFIG = 0;
+    VIEW = 1;
+    ZONE = 2;
+    NO_PARSE = 3;
+  }
+  FilterType filterType = 1;
+}
+
+// Request to retrieve the BIND 9 configuration from the agent.
+message GetBind9ConfigReq {
+  string controlAddress = 1;
+  int64 controlPort = 2;
+  repeated GetBind9ConfigFilter filters = 3;
+}
+
+// A single BIND 9 configuration file. BIND 9 configuration may use
+// multiple files (e.g., named.conf, rndc.key).
+message Bind9ConfigFile {
+  enum FileType {
+    CONFIG = 0;
+    RNDC_KEY = 1;
+  }
+  FileType fileType = 1;
+  string sourcePath = 2;
+  string contents = 3;
+}
+
+// Response containing the BIND 9 configuration.
+message GetBind9ConfigRsp {
+  // List of BIND 9 configuration files.
+  repeated Bind9ConfigFile files = 1;
 }

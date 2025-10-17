@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
+	bind9config "isc.org/stork/appcfg/bind9"
 	dnsconfig "isc.org/stork/appcfg/dnsconfig"
 	bind9stats "isc.org/stork/appdata/bind9stats"
 	agentcomm "isc.org/stork/server/agentcomm"
@@ -1499,4 +1500,204 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	}
 	require.Error(t, capturedErr)
 	require.ErrorContains(t, capturedErr, "failed to flush the batch of RRs")
+}
+
+// Test getting BIND 9 configuration from the agent using different filters.
+func TestGetBind9RawConfig(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Depending on the filter the mock returns different configurations.
+	// We can use the output to determine that the filter is applied correctly.
+	mock.EXPECT().GetBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, app *dbmodel.App, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
+		if filter == nil {
+			return &agentcomm.Bind9RawConfig{
+				Files: []*agentcomm.Bind9ConfigFile{
+					{
+						FileType: agentcomm.Bind9ConfigFileTypeConfig,
+						Contents: "no-filtering;",
+					},
+				},
+			}, nil
+		}
+		var builder strings.Builder
+		filterTypes := filter.GetFilterTypes()
+		for _, filterType := range filterTypes {
+			builder.WriteString(string(filterType))
+			builder.WriteString(";")
+		}
+		return &agentcomm.Bind9RawConfig{
+			Files: []*agentcomm.Bind9ConfigFile{
+				{
+					FileType: agentcomm.Bind9ConfigFileTypeConfig,
+					Contents: builder.String(),
+				},
+			},
+		}, nil
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	// Filter config only.
+	config, err := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, bind9config.NewFilter(bind9config.FilterTypeConfig))
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	require.Len(t, config.Files, 1)
+	require.Equal(t, `config;`, config.Files[0].Contents)
+
+	// Filter view only.
+	config, err = manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, bind9config.NewFilter(bind9config.FilterTypeView))
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	require.Len(t, config.Files, 1)
+	require.Equal(t, `view;`, config.Files[0].Contents)
+
+	// Filter both config and view.
+	config, err = manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView))
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	require.Len(t, config.Files, 1)
+	require.Equal(t, `config;view;`, config.Files[0].Contents)
+
+	// No filter.
+	config, err = manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil)
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	require.Len(t, config.Files, 1)
+	require.Equal(t, `no-filtering;`, config.Files[0].Contents)
+}
+
+// Test that multiple files are returned when getting BIND 9 configuration
+// from the agent.
+func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Depending on the filter the mock returns different configurations.
+	// We can use the output to determine that the filter is applied correctly.
+	mock.EXPECT().GetBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, app *dbmodel.App, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
+		return &agentcomm.Bind9RawConfig{
+			Files: []*agentcomm.Bind9ConfigFile{
+				{
+					FileType:   agentcomm.Bind9ConfigFileTypeConfig,
+					SourcePath: "named.conf",
+					Contents:   "config;",
+				},
+				{
+					FileType:   agentcomm.Bind9ConfigFileTypeRndcKey,
+					SourcePath: "rndc.key",
+					Contents:   "rndc-key;",
+				},
+			},
+		}, nil
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	config, err := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, bind9config.NewFilter(bind9config.FilterTypeConfig))
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	require.Len(t, config.Files, 2)
+	require.Equal(t, `config;`, config.Files[0].Contents)
+	require.Equal(t, "named.conf", config.Files[0].SourcePath)
+	require.Equal(t, agentcomm.Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+	require.Equal(t, "rndc-key;", config.Files[1].Contents)
+	require.Equal(t, "rndc.key", config.Files[1].SourcePath)
+	require.Equal(t, agentcomm.Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
+}
+
+// Test that an error is returned when getting BIND 9 configuration from a
+// non-existing daemon.
+func TestGetBind9RawConfigNoDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	_, err = manager.GetBind9RawConfig(context.Background(), int64(1), nil)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "unable to get BIND 9 configuration from non-existent daemon with the ID 1")
+}
+
+// Test that an error is returned when getting BIND 9 daemon from the
+// database fails.
+func TestGetBind9RawConfigError(t *testing.T) {
+	// Setup the database and tear it down immediately to cause an error.
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	_, err = manager.GetBind9RawConfig(context.Background(), int64(1), nil)
+	require.Error(t, err)
 }

@@ -23,6 +23,11 @@ type Config struct {
 	Statements []*Statement `parser:"( @@ ';'* )*"`
 }
 
+// Returns the source path of the configuration file.
+func (c *Config) GetSourcePath() string {
+	return c.sourcePath
+}
+
 // Returns serialized BIND 9 configuration with filtering and indentation.
 // The initial indentation level is specified with the argument. The filter
 // specifies which configuration elements should be included in the output.

@@ -49,6 +49,8 @@ type Bind9App struct {
 	BaseApp
 	RndcClient    *RndcClient // to communicate with BIND 9 via rndc
 	zoneInventory *zoneInventory
+	bind9Config   *bind9config.Config
+	rndcKeyConfig *bind9config.Config
 }
 
 // Get base information about BIND 9 app.
@@ -454,6 +456,8 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		},
 		RndcClient:    rndcClient,
 		zoneInventory: inventory,
+		bind9Config:   bind9Config,
+		rndcKeyConfig: rndcConfig,
 	}
 
 	return bind9App, nil

@@ -621,6 +621,30 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /daemons/{id}/bind9-raw-config:
+    get:
+      summary: Get raw BIND 9 daemon configuration
+      description: Get raw BIND 9 daemon configuration.
+      operationId: getBind9RawConfig
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID
+        - $ref: '#/parameters/bind9ConfigFilter'
+      responses:
+        200:
+          description: Raw BIND 9 daemon configuration.
+          schema:
+            $ref: "#/definitions/Bind9RawConfig"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /daemons/{id}/config-reports:
     get:
       summary: Get configuration review reports

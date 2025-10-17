@@ -13,6 +13,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appcfg/dnsconfig"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
@@ -86,7 +87,14 @@ type Manager interface {
 	// parameters indicate the number of apps from which the zones are fetched and the
 	// number of apps from which the zones have been fetched already.
 	GetFetchZonesProgress() (bool, int, int)
+	// Returns the RRs for the specified zone, daemon and view name.
+	// Using the options, the caller can request to force zone transfer even when RRs
+	// are cached in the database.
 	GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse]
+	// Returns the BIND 9 configuration for the specified daemon with filtering.
+	// If the filter is nil, all configuration elements are returned. Otherwise,
+	// only the configuration elements explicitly enabled in the filter are returned.
+	GetBind9RawConfig(ctx context.Context, daemonID int64, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error)
 	Shutdown()
 }
 
@@ -682,6 +690,31 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 			return
 		}
 	}
+}
+
+// Returns the BIND 9 configuration for the specified daemon with filtering.
+// If the filter is nil, all configuration elements are returned. Otherwise,
+// only the configuration elements explicitly enabled in the filter are returned.
+// The specified daemon ID must point to a BIND 9 daemon. If it points to a different
+// daemon type, the function returns an error without attempting to contact the agent.
+// The returned configuration may contain multiple files. Typically, it contains the
+// main configuration file and the rndc.key file.
+func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int64, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
+	// The daemon must be present in the database. We're going to use the
+	// connection parameters associated with the daemon to contact the agent.
+	daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
+	if err != nil {
+		return nil, err
+	}
+	if daemon == nil {
+		return nil, errors.Errorf("unable to get BIND 9 configuration from non-existent daemon with the ID %d", daemonID)
+	}
+	app := daemon.App
+	config, err := manager.agents.GetBind9RawConfig(ctx, app, filter)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
 }
 
 // Convenience function storing a value in a map with mutex protection.

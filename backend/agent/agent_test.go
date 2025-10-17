@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appdata/bind9stats"
 	pdnsdata "isc.org/stork/appdata/pdns"
 	"isc.org/stork/hooks"
@@ -2266,4 +2268,234 @@ func TestGetPowerDNSServerInfoStatisticsErrorResponse(t *testing.T) {
 	require.Equal(t, "Internal server error", st.Message())
 	details := st.Details()
 	require.Empty(t, details)
+}
+
+// Test getting BIND 9 configuration from a server with filtering.
+func TestGetBind9Config(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		bind9Config:   parseDefaultBind9Config(t),
+		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	t.Run("no filters", func(t *testing.T) {
+		// Do not specify the filters. The whole configuration is returned.
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 2)
+		require.Equal(t, agentapi.Bind9ConfigFile_CONFIG, rsp.Files[0].FileType)
+		require.Contains(t, rsp.Files[0].SourcePath, "named.conf")
+		require.NotEmpty(t, rsp.Files[0].Contents)
+		require.Equal(t, agentapi.Bind9ConfigFile_RNDC_KEY, rsp.Files[1].FileType)
+		require.Contains(t, rsp.Files[1].SourcePath, "rndc.key")
+		require.NotEmpty(t, rsp.Files[1].Contents)
+
+		// Make sure that the returned configuration is valid.
+		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
+		require.NoError(t, err)
+		require.NotNil(t, bind9Config)
+
+		// Make sure that other configuration than views and zones is not returned.
+		controls := bind9Config.GetControls()
+		require.NotNil(t, controls)
+
+		// Make sure that views are returned.
+		view := bind9Config.GetView("trusted")
+		require.NotNil(t, view)
+
+		// Make sure that zones are returned.
+		zone := view.GetZone("example.com")
+		require.NotNil(t, zone)
+
+		// Make sure that the rndc.key file is valid.
+		rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[1].Contents))
+		require.NoError(t, err)
+		require.NotNil(t, rndcKeyConfig)
+
+		rndcKey := rndcKeyConfig.GetKey("rndc-key")
+		require.NotNil(t, rndcKey)
+		algorithm, secret, err := rndcKey.GetAlgorithmSecret()
+		require.NoError(t, err)
+		require.NotNil(t, algorithm)
+		require.NotNil(t, secret)
+		require.Equal(t, "hmac-sha256", *algorithm)
+		require.Equal(t, "UlJY3N2FdJ5cWUT6jQt/OPEnT9ap4b45Pzo1724yYw=", *secret)
+	})
+
+	t.Run("config only", func(t *testing.T) {
+		// Fetch configuration information without views and zones.
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+			Filters: []*agentapi.GetBind9ConfigFilter{
+				{
+					FilterType: agentapi.GetBind9ConfigFilter_CONFIG,
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 2)
+		require.Equal(t, agentapi.Bind9ConfigFile_CONFIG, rsp.Files[0].FileType)
+		require.NotEmpty(t, rsp.Files[0].Contents)
+
+		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
+		require.NoError(t, err)
+		require.NotNil(t, bind9Config)
+
+		// Make sure that other configuration than views and zones is not returned.
+		controls := bind9Config.GetControls()
+		require.NotNil(t, controls)
+
+		// Make sure that views are not returned.
+		view := bind9Config.GetView("trusted")
+		require.Nil(t, view)
+
+		// Make sure that the rndc.key file is valid.
+		rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[1].Contents))
+		require.NoError(t, err)
+		require.NotNil(t, rndcKeyConfig)
+
+		rndcKey := rndcKeyConfig.GetKey("rndc-key")
+		require.NotNil(t, rndcKey)
+	})
+
+	t.Run("config and views", func(t *testing.T) {
+		// Explicitly ask for views besides the general configuration.
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+			Filters: []*agentapi.GetBind9ConfigFilter{
+				{
+					FilterType: agentapi.GetBind9ConfigFilter_CONFIG,
+				},
+				{
+					FilterType: agentapi.GetBind9ConfigFilter_VIEW,
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 2)
+		require.Equal(t, agentapi.Bind9ConfigFile_CONFIG, rsp.Files[0].FileType)
+		require.Contains(t, rsp.Files[0].SourcePath, "named.conf")
+		require.NotEmpty(t, rsp.Files[0].Contents)
+		require.Equal(t, agentapi.Bind9ConfigFile_RNDC_KEY, rsp.Files[1].FileType)
+		require.Contains(t, rsp.Files[1].SourcePath, "rndc.key")
+		require.NotEmpty(t, rsp.Files[1].Contents)
+
+		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
+		require.NoError(t, err)
+		require.NotNil(t, bind9Config)
+
+		// Make sure that other configuration than views and zones is not returned.
+		controls := bind9Config.GetControls()
+		require.NotNil(t, controls)
+
+		// Views should be returned.
+		view := bind9Config.GetView("trusted")
+		require.NotNil(t, view)
+
+		// Zones should be excluded.
+		zone := view.GetZone("example.com")
+		require.Nil(t, zone)
+
+		// Make sure that the rndc.key file is valid.
+		rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[1].Contents))
+		require.NoError(t, err)
+		require.NotNil(t, rndcKeyConfig)
+
+		rndcKey := rndcKeyConfig.GetKey("rndc-key")
+		require.NotNil(t, rndcKey)
+	})
+}
+
+// Test getting BIND 9 configuration from a non-existing server.
+func TestGetBind9ConfigNoApp(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	st := status.Convert(err)
+	require.Equal(t, codes.FailedPrecondition, st.Code())
+	require.Equal(t, "BIND 9 server 127.0.0.1:1234 not found", st.Message())
+}
+
+// Test getting BIND 9 configuration from a non-BIND9 DNS server.
+func TestGetBind9ConfigNotBind9App(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a non-BIND9 app.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &PDNSApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	st := status.Convert(err)
+	require.Equal(t, codes.InvalidArgument, st.Code())
+	require.Equal(t, "attempted to get BIND 9 configuration from app type pdns instead of BIND 9", st.Message())
+}
+
+// Test getting BIND 9 configuration from a server for which the
+// configuration was not found.
+func TestGetBind9ConfigNoConfig(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with no configuration.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	st := status.Convert(err)
+	require.Equal(t, codes.NotFound, st.Code())
+	require.Equal(t, "BIND 9 configuration not found for server 127.0.0.1:1234", st.Message())
 }

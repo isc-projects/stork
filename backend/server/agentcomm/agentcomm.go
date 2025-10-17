@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/security/advancedtls"
 
 	agentapi "isc.org/stork/api"
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
@@ -46,6 +47,7 @@ type ConnectedAgents interface {
 	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
 	ReceiveZones(ctx context.Context, app ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error]
 	ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error]
+	GetBind9RawConfig(ctx context.Context, app ControlledApp, filter *bind9config.Filter) (*Bind9RawConfig, error)
 }
 
 // Interface representing a connector to a selected agent over gRPC.

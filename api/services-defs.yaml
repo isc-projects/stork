@@ -324,6 +324,27 @@
       options:
         $ref: '#/definitions/DHCPOptions'
 
+  Bind9RawConfigFile:
+    type: object
+    properties:
+      sourcePath:
+        type: string
+      fileType:
+        type: string
+        enum:
+          - config
+          - rndc-key
+      contents:
+        type: string
+
+  Bind9RawConfig:
+    type: object
+    properties:
+      files:
+        type: array
+        items:
+          $ref: '#/definitions/Bind9RawConfigFile'
+
   AppKea:
     type: object
     properties:

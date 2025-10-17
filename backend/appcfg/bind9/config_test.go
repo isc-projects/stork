@@ -7,6 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test getting the source path of the configuration file.
+func TestConfigGetSourcePath(t *testing.T) {
+	cfg := &Config{
+		sourcePath: "testdata/named.conf",
+	}
+	require.Equal(t, "testdata/named.conf", cfg.GetSourcePath())
+}
+
 // Test checking if the configuration contains no-parse directives.
 func TestConfigHasNoParse(t *testing.T) {
 	cfg := &Config{
