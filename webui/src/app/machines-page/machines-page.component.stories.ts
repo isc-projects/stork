@@ -854,3 +854,22 @@ export const AuthorizedShown: Story = {
         await expect(clearFiltersBtn).toBeEnabled()
     },
 }
+
+export const AllMachinesShown: Story = {
+    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    play: async (context) => {
+        // Arrange
+        const canvas = within(context.canvasElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: `Clear` })
+        await UnauthorizedShown.play(context)
+
+        // Act
+        await userEvent.click(clearFiltersBtn)
+
+        // Assert
+        await expect(await canvas.findAllByRole('row')).toHaveLength(10) // One row in the thead, and nine rows in the tbody.
+        await expect(await canvas.findAllByRole('cell')).toHaveLength(15 * 9) // One row in the tbody has specific number of cells (15).
+        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', false)
+        await expect(clearFiltersBtn).toBeDisabled()
+    },
+}
