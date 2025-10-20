@@ -821,13 +821,17 @@ export const UnauthorizedShown: Story = {
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
+        const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
+        const clearFiltersBtn = await canvas.findByRole('button', { name: `Clear` })
 
         // Act
-        await userEvent.click(await canvas.findByText('Unauthorized'))
+        await userEvent.click(await within(selectButtonGroup).findByText('Unauthorized'))
 
         // Assert
         await expect(canvas.getAllByRole('row')).toHaveLength(2) // One row in the thead, and only one row in the tbody.
         await expect(canvas.getAllByRole('cell')).toHaveLength(5) // One row in the tbody has specific number of cells.
+        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', false)
+        await expect(clearFiltersBtn).toBeEnabled()
     },
 }
 
@@ -838,6 +842,7 @@ export const AuthorizedShown: Story = {
         const canvas = within(canvasElement)
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
         const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
+        const clearFiltersBtn = await canvas.findByRole('button', { name: `Clear` })
 
         // Act
         await userEvent.click(authorizedButton)
@@ -845,5 +850,7 @@ export const AuthorizedShown: Story = {
         // Assert
         await expect(canvas.getAllByRole('row')).toHaveLength(9) // One row in the thead, and eight rows in the tbody.
         await expect(canvas.getAllByRole('cell')).toHaveLength(13 * 8) // One row in the tbody has specific number of cells (13).
+        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', true)
+        await expect(clearFiltersBtn).toBeEnabled()
     },
 }
