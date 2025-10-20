@@ -38,6 +38,7 @@ import { of } from 'rxjs'
 import { AppsVersions } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { userEvent, within, expect } from '@storybook/test'
 
 const meta: Meta<MachinesPageComponent> = {
     title: 'App/MachinesPage',
@@ -812,5 +813,37 @@ export const ListMixedAuthorizedAndNonAuthorized: Story = {
                 response: () => ({ token: 'regeneratedRandomMachineToken' }),
             },
         ],
+    },
+}
+
+export const UnauthorizedShown: Story = {
+    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+
+        // Act
+        await userEvent.click(await canvas.findByText('Unauthorized'))
+
+        // Assert
+        await expect(canvas.getAllByRole('row')).toHaveLength(2) // One row in the thead, and only one row in the tbody.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(5) // One row in the tbody has specific number of cells.
+    },
+}
+
+export const AuthorizedShown: Story = {
+    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
+        const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
+
+        // Act
+        await userEvent.click(authorizedButton)
+
+        // Assert
+        await expect(canvas.getAllByRole('row')).toHaveLength(9) // One row in the thead, and eight rows in the tbody.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(13 * 8) // One row in the tbody has specific number of cells (13).
     },
 }
