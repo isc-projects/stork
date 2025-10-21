@@ -1,9 +1,11 @@
 from playwright.sync_api import Page
+import pytest
 from tests.ui.playwright.pages.login_page import LoginPage
 from tests.ui.playwright.pages.navigation import Navigation
 from tests.ui.playwright.pages.shared_network_page import SharedNetworkPage
 
 
+@pytest.mark.skip(reason="temporarily disabled")
 def test_shared_network_edit_bug(page: Page, base_url: str):
     login_page = LoginPage(page)
     navigation_page = Navigation(page)

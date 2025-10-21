@@ -172,9 +172,9 @@ def logged_in_page(page: Page, setup):
     return page
 
 
-@pytest.fixture(autouse=True, scope="function")
-def clean_before_each_test(setup):
-    """Ensure a clean environment before every test."""
+@pytest.fixture()
+def clean_env(setup):
+    """Reset DB + restart server only when explicitly requested by a test."""
     _reset_db_and_server(BASE_URL)
 
 
