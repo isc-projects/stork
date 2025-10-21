@@ -127,111 +127,23 @@ const mockedUnauthorizedMachines = [
         apps: [],
         id: 4,
     },
-]
-const mockedAuthorizedMachines = [
     {
         address: 'agent-pdns',
         agentPort: 8891,
         agentToken: 'random-agent-pdns-token',
-        agentVersion: '2.3.0',
-        apps: [
-            {
-                accessPoints: [{ address: '127.0.0.1', port: 8085, type: 'control' }],
-                details: {
-                    daemons: null,
-                    pdnsDaemon: {
-                        active: true,
-                        autoprimariesUrl: '/api/v1/servers/localhost/autoprimaries{/autoprimary}',
-                        configUrl: '/api/v1/servers/localhost/config{/config_setting}',
-                        id: 1,
-                        monitored: true,
-                        name: 'pdns',
-                        uptime: 19716,
-                        url: '/api/v1/servers/localhost',
-                        version: '4.7.3',
-                        zonesUrl: '/api/v1/servers/localhost/zones{/zone}',
-                    },
-                },
-                id: 1,
-                machine: { id: 1 },
-                name: 'pdns@agent-pdns',
-                type: 'pdns',
-                version: '4.7.3',
-            },
-        ],
-        authorized: true,
-        cpus: 12,
-        cpusLoad: '0.89 0.84 0.86',
-        hostID: 'agent-pdns-host-id',
-        hostname: 'agent-pdns',
+        apps: [],
         id: 1,
-        kernelArch: 'aarch64',
-        kernelVersion: '6.10.14-linuxkit',
-        lastVisitedAt: '2025-10-14T20:38:29.173Z',
-        memory: 7,
-        os: 'linux',
-        platform: 'debian',
-        platformFamily: 'debian',
-        platformVersion: '12.11',
-        usedMemory: 29,
-        virtualizationRole: 'guest',
-        virtualizationSystem: 'docker',
     },
     {
         address: 'agent-bind9',
         agentPort: 8883,
         agentToken: 'random-agent-bind9',
         agentVersion: '2.3.0',
-        apps: [
-            {
-                accessPoints: [
-                    { address: '127.0.0.1', port: 953, type: 'control' },
-                    { address: '127.0.0.1', port: 8053, type: 'statistics' },
-                ],
-                details: {
-                    daemons: [],
-                    daemon: {
-                        active: true,
-                        autoZoneCount: 200,
-                        id: 2,
-                        monitored: true,
-                        name: 'named',
-                        reloadedAt: '2025-10-14T15:09:54.000Z',
-                        uptime: 19715,
-                        version: 'BIND 9.20.13 (Stable Release) <id:1f79fb9>',
-                        views: [
-                            { name: 'guest', queryHits: 0, queryMisses: 0 },
-                            { name: 'trusted', queryHits: 0, queryMisses: 0 },
-                        ],
-                        zoneCount: 3,
-                    },
-                },
-                id: 2,
-                machine: { id: 2 },
-                name: 'bind9@agent-bind9',
-                type: 'bind9',
-                version: 'BIND 9.20.13 (Stable Release) <id:1f79fb9>',
-            },
-        ],
-        authorized: true,
-        cpus: 12,
-        cpusLoad: '0.89 0.84 0.86',
-        error: 'Cannot get state of machine',
-        hostID: 'agent-bind9-host-id',
-        hostname: 'agent-bind9',
+        apps: [],
         id: 2,
-        kernelArch: 'x86_64',
-        kernelVersion: '6.10.14-linuxkit',
-        lastVisitedAt: '2025-10-14T20:38:28.982Z',
-        memory: 7,
-        os: 'linux',
-        platform: 'alpine',
-        platformFamily: 'alpine',
-        platformVersion: '3.22.1',
-        usedMemory: 28,
-        virtualizationRole: 'guest',
-        virtualizationSystem: 'docker',
     },
+]
+const mockedAuthorizedMachines = [
     {
         address: 'agent-bind9-2',
         agentPort: 8882,
@@ -683,15 +595,15 @@ const mockedAuthorizedMachines = [
 ]
 const mockedAllRespData = {
     items: [...mockedAuthorizedMachines, ...mockedUnauthorizedMachines],
-    total: 9,
+    total: mockedAuthorizedMachines.length + mockedUnauthorizedMachines.length,
 }
 const mockedAuthorizedRespData = {
     items: mockedAuthorizedMachines,
-    total: 8,
+    total: mockedAuthorizedMachines.length,
 }
 const mockedUnauthorizedRespData = {
     items: mockedUnauthorizedMachines,
-    total: 1,
+    total: mockedUnauthorizedMachines.length,
 }
 
 export const EmptyList: Story = {
@@ -792,7 +704,7 @@ export const ListMixedAuthorizedAndNonAuthorized: Story = {
                 url: 'http://localhost/api/machines/unauthorized/count',
                 method: 'GET',
                 status: 200,
-                response: () => 1,
+                response: () => mockedUnauthorizedMachines.length,
             },
             {
                 url: 'http://localhost/api/settings',
@@ -816,22 +728,64 @@ export const ListMixedAuthorizedAndNonAuthorized: Story = {
     },
 }
 
-export const UnauthorizedShown: Story = {
+export const AllMachinesShown: Story = {
     parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+
+        // Act
+        await userEvent.click(clearFiltersBtn)
+
+        // Assert
+        // Check table content
+        const allMachinesCount = mockedAuthorizedMachines.length + mockedUnauthorizedMachines.length
+        await expect(await canvas.findAllByRole('row')).toHaveLength(allMachinesCount + 1) // All rows in tbody + one row in the thead.
+        await expect(await canvas.findAllByRole('cell')).toHaveLength(15 * allMachinesCount) // One row in the tbody has specific number of cells (15).
+        await expect(canvas.getByText(mockedUnauthorizedMachines[0].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedUnauthorizedMachines[1].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedAuthorizedMachines[0].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedAuthorizedMachines[1].address)).toBeInTheDocument()
+
+        // Check filtering panel content
+        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', false) // Checkbox in the filtering panel.
+        await expect(clearFiltersBtn).toBeDisabled()
+
+        // Check bulk authorize button state
+        const bulkAuthorizeBtn = await canvas.findByRole('button', { name: 'Authorize selected' })
+        await expect(bulkAuthorizeBtn).toBeInTheDocument()
+        await expect(bulkAuthorizeBtn).toBeDisabled()
+    },
+}
+
+export const UnauthorizedShown: Story = {
+    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    play: async ({ canvas }) => {
+        // Arrange
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
-        const clearFiltersBtn = await canvas.findByRole('button', { name: `Clear` })
 
         // Act
         await userEvent.click(await within(selectButtonGroup).findByText('Unauthorized'))
 
         // Assert
-        await expect(canvas.getAllByRole('row')).toHaveLength(2) // One row in the thead, and only one row in the tbody.
-        await expect(canvas.getAllByRole('cell')).toHaveLength(5) // One row in the tbody has specific number of cells.
+        // Check table content
+        await expect(canvas.getAllByRole('row')).toHaveLength(mockedUnauthorizedMachines.length + 1) // All rows in tbody + one row in the thead.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(5 * mockedUnauthorizedMachines.length) // One row in the tbody has specific number of cells.
+        await expect(canvas.getByText(mockedUnauthorizedMachines[0].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedUnauthorizedMachines[1].address)).toBeInTheDocument()
+        await expect(canvas.queryByText(mockedAuthorizedMachines[0].address)).toBeNull()
+        await expect(canvas.queryByText(mockedAuthorizedMachines[1].address)).toBeNull()
+
+        // Check filtering panel content
         await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', false)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         await expect(clearFiltersBtn).toBeEnabled()
+
+        // Check bulk authorize button state
+        const bulkAuthorizeBtn = await canvas.findByRole('button', { name: 'Authorize selected' })
+        await expect(bulkAuthorizeBtn).toBeInTheDocument()
+        await expect(bulkAuthorizeBtn).toBeDisabled()
     },
 }
 
@@ -842,34 +796,25 @@ export const AuthorizedShown: Story = {
         const canvas = within(canvasElement)
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
         const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
-        const clearFiltersBtn = await canvas.findByRole('button', { name: `Clear` })
 
         // Act
         await userEvent.click(authorizedButton)
 
         // Assert
-        await expect(canvas.getAllByRole('row')).toHaveLength(9) // One row in the thead, and eight rows in the tbody.
-        await expect(canvas.getAllByRole('cell')).toHaveLength(13 * 8) // One row in the tbody has specific number of cells (13).
-        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', true)
+        // Check table content
+        await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length + 1) // All rows in tbody + one row in the thead.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(13 * mockedAuthorizedMachines.length) // One row in the tbody has specific number of cells (13).
+        await expect(canvas.queryByText(mockedUnauthorizedMachines[0].address)).toBeNull()
+        await expect(canvas.queryByText(mockedUnauthorizedMachines[1].address)).toBeNull()
+        await expect(canvas.getByText(mockedAuthorizedMachines[0].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedAuthorizedMachines[1].address)).toBeInTheDocument()
+
+        // Check filtering panel content
+        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', true) // Checkbox in the filtering panel.
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         await expect(clearFiltersBtn).toBeEnabled()
-    },
-}
 
-export const AllMachinesShown: Story = {
-    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
-    play: async (context) => {
-        // Arrange
-        const canvas = within(context.canvasElement)
-        const clearFiltersBtn = await canvas.findByRole('button', { name: `Clear` })
-        await UnauthorizedShown.play(context)
-
-        // Act
-        await userEvent.click(clearFiltersBtn)
-
-        // Assert
-        await expect(await canvas.findAllByRole('row')).toHaveLength(10) // One row in the thead, and nine rows in the tbody.
-        await expect(await canvas.findAllByRole('cell')).toHaveLength(15 * 9) // One row in the tbody has specific number of cells (15).
-        await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', false)
-        await expect(clearFiltersBtn).toBeDisabled()
+        // Check there is no bulk authorize button
+        await expect(canvas.queryByRole('button', { name: 'Authorize selected' })).toBeNull()
     },
 }
