@@ -742,7 +742,7 @@ export const AllMachinesShown: Story = {
         // Check table content
         const allMachinesCount = mockedAuthorizedMachines.length + mockedUnauthorizedMachines.length
         await expect(await canvas.findAllByRole('row')).toHaveLength(allMachinesCount + 1) // All rows in tbody + one row in the thead.
-        await expect(await canvas.findAllByRole('cell')).toHaveLength(15 * allMachinesCount) // One row in the tbody has specific number of cells (15).
+        await expect(await canvas.findAllByRole('cell', { hidden: true })).toHaveLength(15 * allMachinesCount) // One row in the tbody has specific number of cells (15).
         await expect(canvas.getByText(mockedUnauthorizedMachines[0].address)).toBeInTheDocument()
         await expect(canvas.getByText(mockedUnauthorizedMachines[1].address)).toBeInTheDocument()
         await expect(canvas.getByText(mockedAuthorizedMachines[0].address)).toBeInTheDocument()
@@ -756,6 +756,19 @@ export const AllMachinesShown: Story = {
         const bulkAuthorizeBtn = await canvas.findByRole('button', { name: 'Authorize selected' })
         await expect(bulkAuthorizeBtn).toBeInTheDocument()
         await expect(bulkAuthorizeBtn).toBeDisabled()
+        const checkboxes = await within(canvas.getByRole('table')).findAllByRole('checkbox')
+        await expect(checkboxes).toHaveLength(allMachinesCount + 1)
+        const disabledCheckboxes = checkboxes.filter((ch) => ch.hasAttribute('disabled'))
+        await expect(disabledCheckboxes.length).toBe(mockedAuthorizedMachines.length)
+        await expect(canvas.queryAllByRole('checkbox', { checked: true })).toHaveLength(0)
+        await userEvent.click(checkboxes[0])
+        await expect(canvas.queryAllByRole('checkbox', { checked: true })).toHaveLength(
+            mockedUnauthorizedMachines.length + 1
+        )
+        await expect(bulkAuthorizeBtn).toBeEnabled()
+        await userEvent.click(checkboxes[0])
+        await expect(bulkAuthorizeBtn).toBeDisabled()
+        await expect(canvas.queryAllByRole('checkbox', { checked: true })).toHaveLength(0)
     },
 }
 
@@ -786,6 +799,9 @@ export const UnauthorizedShown: Story = {
         const bulkAuthorizeBtn = await canvas.findByRole('button', { name: 'Authorize selected' })
         await expect(bulkAuthorizeBtn).toBeInTheDocument()
         await expect(bulkAuthorizeBtn).toBeDisabled()
+        const checkboxes = await canvas.findAllByRole('checkbox')
+        await userEvent.click(checkboxes[checkboxes.length - 1])
+        await expect(bulkAuthorizeBtn).toBeEnabled()
     },
 }
 
@@ -803,7 +819,7 @@ export const AuthorizedShown: Story = {
         // Assert
         // Check table content
         await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length + 1) // All rows in tbody + one row in the thead.
-        await expect(canvas.getAllByRole('cell')).toHaveLength(13 * mockedAuthorizedMachines.length) // One row in the tbody has specific number of cells (13).
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(13 * mockedAuthorizedMachines.length) // One row in the tbody has specific number of cells (13).
         await expect(canvas.queryByText(mockedUnauthorizedMachines[0].address)).toBeNull()
         await expect(canvas.queryByText(mockedUnauthorizedMachines[1].address)).toBeNull()
         await expect(canvas.getByText(mockedAuthorizedMachines[0].address)).toBeInTheDocument()
