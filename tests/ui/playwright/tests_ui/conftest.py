@@ -62,8 +62,8 @@ def _hard_cleanup() -> None:
     """Clean previous runs (containers, volumes, orphan networks)."""
     try:
         _dc_cmd("down", "--remove-orphans", "--volumes")
-    except Exception:
-        pass
+    except subprocess.CalledProcessError as err:
+        print(f"[cleanup] Encountered error during docker cleanup: {err}")
     subprocess.run(["docker", "network", "prune", "-f"], check=False)
 
 
@@ -81,8 +81,8 @@ def _wait_http_ok(url: str, timeout: float = 90.0) -> None:
             )
             if cp.stdout.strip() == "200":
                 return
-        except Exception:
-            pass
+        except subprocess.CalledProcessError as err:
+            print(f"[wait_http_ok] curl error while probing {url}: {err}")
         time.sleep(1)
     raise RuntimeError(f"Timeout waiting for {url}")
 
@@ -119,8 +119,10 @@ def _reset_db_and_server(base_url: str) -> None:
 
     try:
         _dc_cmd("run", "--no-deps", "register", "register", "--non-interactive")
-    except Exception:
-        pass
+    except subprocess.CalledProcessError as err:
+        print(
+            f"[reset] 'register' helper failed; continuing for UI tests. Error: {err}"
+        )
 
 
 # --- pytest fixtures ---------------------------------------------------------
