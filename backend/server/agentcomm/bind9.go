@@ -55,7 +55,7 @@ type Bind9ConfigFile struct {
 // Instantiates a new Bind9ConfigFile from a protobuf message.
 func NewBind9ConfigFileFromProto(file *agentapi.Bind9ConfigFile) *Bind9ConfigFile {
 	fileType := Bind9ConfigFileTypeConfig
-	if file.FileType == agentapi.Bind9ConfigFile_RNDC_KEY {
+	if file.FileType == agentapi.Bind9ConfigFileType_RNDC_KEY {
 		fileType = Bind9ConfigFileTypeRndcKey
 	}
 	return &Bind9ConfigFile{

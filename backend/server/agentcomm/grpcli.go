@@ -1174,7 +1174,7 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app Contr
 // elements are returned. The returned instance typically contains
 // two files: the main configuration file and the rndc.key file
 // contents.
-func (agents *connectedAgentsImpl) GetBind9RawConfig(ctx context.Context, app ControlledApp, filter *bind9config.Filter) (*Bind9RawConfig, error) {
+func (agents *connectedAgentsImpl) GetBind9RawConfig(ctx context.Context, app ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*Bind9RawConfig, error) {
 	addrPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
 
 	address, port, _, _, err := app.GetControlAccessPoint()
@@ -1184,7 +1184,8 @@ func (agents *connectedAgentsImpl) GetBind9RawConfig(ctx context.Context, app Co
 	req := &agentapi.GetBind9ConfigReq{
 		ControlAddress: address,
 		ControlPort:    port,
-		Filters:        filter.GetFilterAsProto(),
+		Filter:         filter.GetFilterAsProto(),
+		FileSelector:   fileSelector.GetFileTypesAsProto(),
 	}
 	agent, err := agents.getConnectedAgent(addrPort)
 	if err != nil {

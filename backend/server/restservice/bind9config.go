@@ -15,14 +15,23 @@ import (
 // Returns the raw configuration for a BIND 9 daemon with optional
 // filtering of the configuration elements returned.
 func (r *RestAPI) GetBind9RawConfig(ctx context.Context, params services.GetBind9RawConfigParams) middleware.Responder {
-	var filter *bind9config.Filter
+	var (
+		filter       *bind9config.Filter
+		fileSelector *bind9config.FileTypeSelector
+	)
 	if len(params.Filter) > 0 {
 		filter = bind9config.NewFilter()
 		for _, filterType := range params.Filter {
 			filter.Enable(bind9config.FilterType(filterType))
 		}
 	}
-	configFiles, err := r.DNSManager.GetBind9RawConfig(ctx, params.ID, filter)
+	if len(params.FileSelector) > 0 {
+		fileSelector = bind9config.NewFileTypeSelector()
+		for _, fileType := range params.FileSelector {
+			fileSelector.Enable(bind9config.FileType(fileType))
+		}
+	}
+	configFiles, err := r.DNSManager.GetBind9RawConfig(ctx, params.ID, fileSelector, filter)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("Cannot get BIND 9 configuration for daemon with ID %d", params.ID)

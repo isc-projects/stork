@@ -34,25 +34,25 @@ const (
 // The filter structure allows for selecting specific configuration elements
 // to be serialized and returned.
 type Filter struct {
-	filterTypes []FilterType
+	*selectorImpl[FilterType]
 }
 
 // Creates a new filter with the specified filter types.
 func NewFilter(filterTypes ...FilterType) *Filter {
 	return &Filter{
-		filterTypes: filterTypes,
+		newSelectorImpl[FilterType](filterTypes...),
 	}
 }
 
 // Creates a new filter from the list of filters in protobuf format.
-func NewFilterFromProto(filters []*agentapi.GetBind9ConfigFilter) *Filter {
-	if len(filters) == 0 {
+func NewFilterFromProto(filter *agentapi.GetBind9ConfigFilter) *Filter {
+	if filter == nil || len(filter.FilterTypes) == 0 {
 		// No filters specified. It means that filtering is disabled.
 		return nil
 	}
-	filterTypes := make([]FilterType, 0, len(filters))
-	for _, filter := range filters {
-		switch filter.FilterType {
+	filterTypes := make([]FilterType, 0, len(filter.FilterTypes))
+	for _, filter := range filter.FilterTypes {
+		switch filter {
 		case agentapi.GetBind9ConfigFilter_CONFIG:
 			filterTypes = append(filterTypes, FilterTypeConfig)
 		case agentapi.GetBind9ConfigFilter_VIEW:
@@ -69,35 +69,122 @@ func NewFilterFromProto(filters []*agentapi.GetBind9ConfigFilter) *Filter {
 
 // Enables the specified filter type.
 func (f *Filter) Enable(filterType FilterType) {
-	f.filterTypes = append(f.filterTypes, filterType)
+	f.enable(filterType)
 }
 
 // Checks if the specified filter type is enabled.
 func (f *Filter) IsEnabled(filterType FilterType) bool {
-	return f == nil || slices.Contains(f.filterTypes, filterType)
+	return f == nil || f.isEnabled(filterType)
 }
 
 // Returns the list of enabled filter types.
 func (f *Filter) GetFilterTypes() []FilterType {
-	return f.filterTypes
+	return f.getItems()
 }
 
 // Convenience function returning a list of filters in protobuf format.
-func (f *Filter) GetFilterAsProto() []*agentapi.GetBind9ConfigFilter {
-	filters := []*agentapi.GetBind9ConfigFilter{}
+func (f *Filter) GetFilterAsProto() *agentapi.GetBind9ConfigFilter {
+	var filter *agentapi.GetBind9ConfigFilter
 	if f != nil {
-		for _, filterType := range f.filterTypes {
+		filter = &agentapi.GetBind9ConfigFilter{
+			FilterTypes: make([]agentapi.GetBind9ConfigFilter_FilterType, 0, len(f.getItems())),
+		}
+		for _, filterType := range f.getItems() {
 			switch filterType {
 			case FilterTypeConfig:
-				filters = append(filters, &agentapi.GetBind9ConfigFilter{FilterType: agentapi.GetBind9ConfigFilter_CONFIG})
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_CONFIG)
 			case FilterTypeView:
-				filters = append(filters, &agentapi.GetBind9ConfigFilter{FilterType: agentapi.GetBind9ConfigFilter_VIEW})
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_VIEW)
 			case FilterTypeZone:
-				filters = append(filters, &agentapi.GetBind9ConfigFilter{FilterType: agentapi.GetBind9ConfigFilter_ZONE})
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_ZONE)
 			case FilterTypeNoParse:
-				filters = append(filters, &agentapi.GetBind9ConfigFilter{FilterType: agentapi.GetBind9ConfigFilter_NO_PARSE})
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_NO_PARSE)
 			}
 		}
 	}
-	return filters
+	return filter
+}
+
+// File types supported by the BIND 9 configuration.
+type FileType string
+
+const (
+	FileTypeConfig  FileType = "config"
+	FileTypeRndcKey FileType = "rndc-key"
+)
+
+// Selector for the BIND 9 configuration file types.
+type FileTypeSelector struct {
+	*selectorImpl[FileType]
+}
+
+// Instantiates a new file type selector with the specified file types.
+func NewFileTypeSelector(fileTypes ...FileType) *FileTypeSelector {
+	return &FileTypeSelector{
+		newSelectorImpl(fileTypes...),
+	}
+}
+
+// Enables the specified file type.
+func (s *FileTypeSelector) Enable(fileType FileType) {
+	s.enable(fileType)
+}
+
+// Checks if the specified file type is enabled.
+func (s *FileTypeSelector) IsEnabled(fileType FileType) bool {
+	return s == nil || s.isEnabled(fileType)
+}
+
+// Returns the list of enabled file types.
+func (s *FileTypeSelector) GetFileTypes() []FileType {
+	return s.getItems()
+}
+
+// Convenience function returning a list of file types in protobuf format.
+func (s *FileTypeSelector) GetFileTypesAsProto() *agentapi.GetBind9ConfigFileSelector {
+	var fileSelector *agentapi.GetBind9ConfigFileSelector
+	if s != nil {
+		fileSelector = &agentapi.GetBind9ConfigFileSelector{
+			FileTypes: make([]agentapi.Bind9ConfigFileType, 0, len(s.getItems())),
+		}
+		for _, fileType := range s.getItems() {
+			switch fileType {
+			case FileTypeConfig:
+				fileSelector.FileTypes = append(fileSelector.FileTypes, agentapi.Bind9ConfigFileType_CONFIG)
+			case FileTypeRndcKey:
+				fileSelector.FileTypes = append(fileSelector.FileTypes, agentapi.Bind9ConfigFileType_RNDC_KEY)
+			}
+		}
+	}
+	return fileSelector
+}
+
+// Internal implementation of the selector used by the concrete
+// configuration filters and file type selectors.
+type selectorImpl[T comparable] struct {
+	items []T
+}
+
+// Instantiates a new selector with the specified items.
+func newSelectorImpl[T comparable](items ...T) *selectorImpl[T] {
+	return &selectorImpl[T]{
+		items: items,
+	}
+}
+
+// Enables the specified item.
+func (s *selectorImpl[T]) enable(item T) {
+	if !slices.Contains(s.items, item) {
+		s.items = append(s.items, item)
+	}
+}
+
+// Checks if the specified item is enabled.
+func (s *selectorImpl[T]) isEnabled(item T) bool {
+	return len(s.items) == 0 || slices.Contains(s.items, item)
+}
+
+// Returns the list of enabled items.
+func (s *selectorImpl[T]) getItems() []T {
+	return s.items
 }

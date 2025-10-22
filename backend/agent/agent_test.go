@@ -2297,10 +2297,10 @@ func TestGetBind9Config(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, rsp)
 		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFile_CONFIG, rsp.Files[0].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
 		require.Contains(t, rsp.Files[0].SourcePath, "named.conf")
 		require.NotEmpty(t, rsp.Files[0].Contents)
-		require.Equal(t, agentapi.Bind9ConfigFile_RNDC_KEY, rsp.Files[1].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
 		require.Contains(t, rsp.Files[1].SourcePath, "rndc.key")
 		require.NotEmpty(t, rsp.Files[1].Contents)
 
@@ -2341,16 +2341,22 @@ func TestGetBind9Config(t *testing.T) {
 		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
 			ControlAddress: "127.0.0.1",
 			ControlPort:    1234,
-			Filters: []*agentapi.GetBind9ConfigFilter{
-				{
-					FilterType: agentapi.GetBind9ConfigFilter_CONFIG,
+			Filter: &agentapi.GetBind9ConfigFilter{
+				FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
+					agentapi.GetBind9ConfigFilter_CONFIG,
+				},
+			},
+			FileSelector: &agentapi.GetBind9ConfigFileSelector{
+				FileTypes: []agentapi.Bind9ConfigFileType{
+					agentapi.Bind9ConfigFileType_CONFIG,
+					agentapi.Bind9ConfigFileType_RNDC_KEY,
 				},
 			},
 		})
 		require.NoError(t, err)
 		require.NotNil(t, rsp)
 		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFile_CONFIG, rsp.Files[0].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
 		require.NotEmpty(t, rsp.Files[0].Contents)
 
 		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
@@ -2379,22 +2385,26 @@ func TestGetBind9Config(t *testing.T) {
 		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
 			ControlAddress: "127.0.0.1",
 			ControlPort:    1234,
-			Filters: []*agentapi.GetBind9ConfigFilter{
-				{
-					FilterType: agentapi.GetBind9ConfigFilter_CONFIG,
+			Filter: &agentapi.GetBind9ConfigFilter{
+				FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
+					agentapi.GetBind9ConfigFilter_CONFIG,
+					agentapi.GetBind9ConfigFilter_VIEW,
 				},
-				{
-					FilterType: agentapi.GetBind9ConfigFilter_VIEW,
+			},
+			FileSelector: &agentapi.GetBind9ConfigFileSelector{
+				FileTypes: []agentapi.Bind9ConfigFileType{
+					agentapi.Bind9ConfigFileType_CONFIG,
+					agentapi.Bind9ConfigFileType_RNDC_KEY,
 				},
 			},
 		})
 		require.NoError(t, err)
 		require.NotNil(t, rsp)
 		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFile_CONFIG, rsp.Files[0].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
 		require.Contains(t, rsp.Files[0].SourcePath, "named.conf")
 		require.NotEmpty(t, rsp.Files[0].Contents)
-		require.Equal(t, agentapi.Bind9ConfigFile_RNDC_KEY, rsp.Files[1].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
 		require.Contains(t, rsp.Files[1].SourcePath, "rndc.key")
 		require.NotEmpty(t, rsp.Files[1].Contents)
 
@@ -2421,6 +2431,87 @@ func TestGetBind9Config(t *testing.T) {
 
 		rndcKey := rndcKeyConfig.GetKey("rndc-key")
 		require.NotNil(t, rndcKey)
+	})
+}
+
+// Test getting BIND 9 configuration with file selection.
+func TestGetBind9ConfigFileSelection(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		bind9Config:   parseDefaultBind9Config(t),
+		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	t.Run("no file selection", func(t *testing.T) {
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 2)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
+	})
+
+	t.Run("select config file", func(t *testing.T) {
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+			FileSelector: &agentapi.GetBind9ConfigFileSelector{
+				FileTypes: []agentapi.Bind9ConfigFileType{
+					agentapi.Bind9ConfigFileType_CONFIG,
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 1)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
+	})
+
+	t.Run("select rndc key file", func(t *testing.T) {
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+			FileSelector: &agentapi.GetBind9ConfigFileSelector{
+				FileTypes: []agentapi.Bind9ConfigFileType{
+					agentapi.Bind9ConfigFileType_RNDC_KEY,
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 1)
+		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[0].FileType)
+	})
+
+	t.Run("select both config and rndc key files", func(t *testing.T) {
+		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+			ControlAddress: "127.0.0.1",
+			ControlPort:    1234,
+			FileSelector: &agentapi.GetBind9ConfigFileSelector{
+				FileTypes: []agentapi.Bind9ConfigFileType{
+					agentapi.Bind9ConfigFileType_CONFIG,
+					agentapi.Bind9ConfigFileType_RNDC_KEY,
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rsp)
+		require.Len(t, rsp.Files, 2)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
+		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
 	})
 }
 

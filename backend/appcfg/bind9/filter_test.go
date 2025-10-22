@@ -9,10 +9,12 @@ import (
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoConfig(t *testing.T) {
-	filters := []*agentapi.GetBind9ConfigFilter{
-		{FilterType: agentapi.GetBind9ConfigFilter_CONFIG},
+	protoFilter := &agentapi.GetBind9ConfigFilter{
+		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
+			agentapi.GetBind9ConfigFilter_CONFIG,
+		},
 	}
-	filter := NewFilterFromProto(filters)
+	filter := NewFilterFromProto(protoFilter)
 	require.NotNil(t, filter)
 	require.True(t, filter.IsEnabled(FilterTypeConfig))
 	require.False(t, filter.IsEnabled(FilterTypeView))
@@ -22,10 +24,12 @@ func TestNewFilterFromProtoConfig(t *testing.T) {
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoView(t *testing.T) {
-	filters := []*agentapi.GetBind9ConfigFilter{
-		{FilterType: agentapi.GetBind9ConfigFilter_VIEW},
+	protoFilter := &agentapi.GetBind9ConfigFilter{
+		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
+			agentapi.GetBind9ConfigFilter_VIEW,
+		},
 	}
-	filter := NewFilterFromProto(filters)
+	filter := NewFilterFromProto(protoFilter)
 	require.NotNil(t, filter)
 	require.False(t, filter.IsEnabled(FilterTypeConfig))
 	require.True(t, filter.IsEnabled(FilterTypeView))
@@ -35,10 +39,12 @@ func TestNewFilterFromProtoView(t *testing.T) {
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoZone(t *testing.T) {
-	filters := []*agentapi.GetBind9ConfigFilter{
-		{FilterType: agentapi.GetBind9ConfigFilter_ZONE},
+	protoFilter := &agentapi.GetBind9ConfigFilter{
+		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
+			agentapi.GetBind9ConfigFilter_ZONE,
+		},
 	}
-	filter := NewFilterFromProto(filters)
+	filter := NewFilterFromProto(protoFilter)
 	require.NotNil(t, filter)
 	require.False(t, filter.IsEnabled(FilterTypeConfig))
 	require.False(t, filter.IsEnabled(FilterTypeView))
@@ -48,10 +54,12 @@ func TestNewFilterFromProtoZone(t *testing.T) {
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoNoParse(t *testing.T) {
-	filters := []*agentapi.GetBind9ConfigFilter{
-		{FilterType: agentapi.GetBind9ConfigFilter_NO_PARSE},
+	protoFilter := &agentapi.GetBind9ConfigFilter{
+		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
+			agentapi.GetBind9ConfigFilter_NO_PARSE,
+		},
 	}
-	filter := NewFilterFromProto(filters)
+	filter := NewFilterFromProto(protoFilter)
 	require.NotNil(t, filter)
 	require.False(t, filter.IsEnabled(FilterTypeConfig))
 	require.False(t, filter.IsEnabled(FilterTypeView))
@@ -59,12 +67,12 @@ func TestNewFilterFromProtoNoParse(t *testing.T) {
 	require.True(t, filter.IsEnabled(FilterTypeNoParse))
 }
 
-// Test that the filter is disabled when no filter types are specified.
+// Test that the filter is enabled when no filter types are specified.
 func TestFilterIsEnabledNone(t *testing.T) {
 	filter := NewFilter()
 	filterTypes := []FilterType{FilterTypeConfig, FilterTypeView, FilterTypeZone, FilterTypeNoParse}
 	for _, filterType := range filterTypes {
-		require.False(t, filter.IsEnabled(filterType))
+		require.True(t, filter.IsEnabled(filterType))
 	}
 }
 
@@ -110,18 +118,96 @@ func TestFilterGetFilterTypes(t *testing.T) {
 // In this case the filter contains both config and view filters.
 func TestFilterGetFilterAsProtoConfigAndView(t *testing.T) {
 	filter := NewFilter(FilterTypeConfig, FilterTypeView)
-	filters := filter.GetFilterAsProto()
-	require.Equal(t, 2, len(filters))
-	require.Equal(t, agentapi.GetBind9ConfigFilter_CONFIG, filters[0].FilterType)
-	require.Equal(t, agentapi.GetBind9ConfigFilter_VIEW, filters[1].FilterType)
+	protoFilter := filter.GetFilterAsProto()
+	require.NotNil(t, protoFilter)
+	require.Equal(t, 2, len(protoFilter.FilterTypes))
+	require.Equal(t, agentapi.GetBind9ConfigFilter_CONFIG, protoFilter.FilterTypes[0])
+	require.Equal(t, agentapi.GetBind9ConfigFilter_VIEW, protoFilter.FilterTypes[1])
 }
 
 // Test that the filter can be converted to a list of filters in protobuf format.
 // In this case the filter contains both view and zone filters.
 func TestFilterGetFilterAsProtoViewAndZone(t *testing.T) {
 	filter := NewFilter(FilterTypeView, FilterTypeZone)
-	filters := filter.GetFilterAsProto()
-	require.Equal(t, 2, len(filters))
-	require.Equal(t, agentapi.GetBind9ConfigFilter_VIEW, filters[0].FilterType)
-	require.Equal(t, agentapi.GetBind9ConfigFilter_ZONE, filters[1].FilterType)
+	protoFilter := filter.GetFilterAsProto()
+	require.NotNil(t, protoFilter)
+	require.Equal(t, 2, len(protoFilter.FilterTypes))
+	require.Equal(t, agentapi.GetBind9ConfigFilter_VIEW, protoFilter.FilterTypes[0])
+	require.Equal(t, agentapi.GetBind9ConfigFilter_ZONE, protoFilter.FilterTypes[1])
+}
+
+// Test creating a new file selector from the file types specified in the .proto file.
+func TestNewFileTypeSelectorWithConfig(t *testing.T) {
+	selector := NewFileTypeSelector(FileTypeConfig)
+	require.NotNil(t, selector)
+	require.True(t, selector.IsEnabled(FileTypeConfig))
+	require.False(t, selector.IsEnabled(FileTypeRndcKey))
+}
+
+// Test creating a new filter from the filter types specified in the .proto file.
+func TestNewFileTypeSelectorWithRndcKey(t *testing.T) {
+	selector := NewFileTypeSelector(FileTypeRndcKey)
+	require.NotNil(t, selector)
+	require.True(t, selector.IsEnabled(FileTypeRndcKey))
+	require.False(t, selector.IsEnabled(FileTypeConfig))
+}
+
+// Test that the file selector is enabled when no file types are specified.
+func TestFileTypeSelectorIsEnabledNone(t *testing.T) {
+	selector := NewFileTypeSelector()
+	require.True(t, selector.IsEnabled(FileTypeConfig))
+	require.True(t, selector.IsEnabled(FileTypeRndcKey))
+}
+
+// Test that the filter is enabled when the file type selector is nil.
+func TestFileTypeSelectorNil(t *testing.T) {
+	var selector *FileTypeSelector
+	require.True(t, selector.IsEnabled(FileTypeConfig))
+	require.True(t, selector.IsEnabled(FileTypeRndcKey))
+}
+
+// Test that the file selector can be selectively enabled for specific file types.
+func TestFileTypeSelectorIsEnabled(t *testing.T) {
+	selector := NewFileTypeSelector(FileTypeConfig, FileTypeRndcKey)
+	require.True(t, selector.IsEnabled(FileTypeConfig))
+	require.True(t, selector.IsEnabled(FileTypeRndcKey))
+}
+
+// Test that the file selector can be selectively enabled for specific file types.
+func TestFileTypeSelectorEnable(t *testing.T) {
+	selector := NewFileTypeSelector()
+	selector.Enable(FileTypeConfig)
+	selector.Enable(FileTypeRndcKey)
+	require.True(t, selector.IsEnabled(FileTypeConfig))
+	require.True(t, selector.IsEnabled(FileTypeRndcKey))
+}
+
+// Test getting the list of enabled filter types.
+func TestFileTypeSelectorGetFileTypes(t *testing.T) {
+	selector := NewFileTypeSelector(FileTypeConfig, FileTypeRndcKey)
+	fileTypes := selector.GetFileTypes()
+	require.Equal(t, 2, len(fileTypes))
+	require.Equal(t, FileTypeConfig, fileTypes[0])
+	require.Equal(t, FileTypeRndcKey, fileTypes[1])
+}
+
+// Test that the file selector can be converted to a list of file types in protobuf format.
+// In this case the file selector contains both config and rndc key file types.
+func TestFileTypeSelectorGetFileTypesAsProtoConfigAndRndcKey(t *testing.T) {
+	selector := NewFileTypeSelector(FileTypeConfig, FileTypeRndcKey)
+	protoSelector := selector.GetFileTypesAsProto()
+	require.NotNil(t, protoSelector)
+	require.Equal(t, 2, len(protoSelector.FileTypes))
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, protoSelector.FileTypes[0])
+	require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, protoSelector.FileTypes[1])
+}
+
+// Test that the file selector can be converted to a list of file types in protobuf format.
+// In this case the filter contains both view and zone filters.
+func TestFileTypeSelectorGetFileTypesAsProtoRndcKey(t *testing.T) {
+	selector := NewFileTypeSelector(FileTypeRndcKey)
+	protoSelector := selector.GetFileTypesAsProto()
+	require.NotNil(t, protoSelector)
+	require.Equal(t, 1, len(protoSelector.FileTypes))
+	require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, protoSelector.FileTypes[0])
 }

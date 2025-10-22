@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -825,18 +826,26 @@ func (sa *StorkAgent) GetBind9Config(ctx context.Context, in *agentapi.GetBind9C
 		return nil, status.Errorf(codes.NotFound, "BIND 9 configuration not found for server %s:%d", in.ControlAddress, in.ControlPort)
 	}
 	rsp := &agentapi.GetBind9ConfigRsp{}
-	if bind9App.bind9Config != nil {
+	if bind9App.bind9Config != nil && (in.FileSelector == nil || len(in.FileSelector.FileTypes) == 0 || slices.Contains(in.FileSelector.FileTypes, agentapi.Bind9ConfigFileType_CONFIG)) {
+		var contents string
+		for text := range bind9App.bind9Config.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(in.Filter)) {
+			contents += fmt.Sprintf("%s\n", text)
+		}
 		rsp.Files = append(rsp.Files, &agentapi.Bind9ConfigFile{
-			FileType:   agentapi.Bind9ConfigFile_CONFIG,
+			FileType:   agentapi.Bind9ConfigFileType_CONFIG,
 			SourcePath: bind9App.bind9Config.GetSourcePath(),
-			Contents:   bind9App.bind9Config.GetFormattedString(0, bind9config.NewFilterFromProto(in.Filters)),
+			Contents:   contents,
 		})
 	}
-	if bind9App.rndcKeyConfig != nil {
+	if bind9App.rndcKeyConfig != nil && (in.FileSelector == nil || len(in.FileSelector.FileTypes) == 0 || slices.Contains(in.FileSelector.FileTypes, agentapi.Bind9ConfigFileType_RNDC_KEY)) {
+		var contents string
+		for text := range bind9App.rndcKeyConfig.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(in.Filter)) {
+			contents += fmt.Sprintf("%s\n", text)
+		}
 		rsp.Files = append(rsp.Files, &agentapi.Bind9ConfigFile{
-			FileType:   agentapi.Bind9ConfigFile_RNDC_KEY,
+			FileType:   agentapi.Bind9ConfigFileType_RNDC_KEY,
 			SourcePath: bind9App.rndcKeyConfig.GetSourcePath(),
-			Contents:   bind9App.rndcKeyConfig.GetFormattedString(0, bind9config.NewFilterFromProto(in.Filters)),
+			Contents:   contents,
 		})
 	}
 	return rsp, nil

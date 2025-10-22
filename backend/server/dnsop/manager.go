@@ -91,10 +91,13 @@ type Manager interface {
 	// Using the options, the caller can request to force zone transfer even when RRs
 	// are cached in the database.
 	GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse]
-	// Returns the BIND 9 configuration for the specified daemon with filtering.
-	// If the filter is nil, all configuration elements are returned. Otherwise,
-	// only the configuration elements explicitly enabled in the filter are returned.
-	GetBind9RawConfig(ctx context.Context, daemonID int64, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error)
+	// Returns the BIND 9 configuration for the specified daemon with filtering
+	// and file type selection. If the filter is nil, all configuration elements are
+	// returned. Otherwise,only the configuration elements explicitly enabled in the
+	// filter are returned. Similarly, if the file selector is nil, all configuration
+	// files are returned. Otherwise, only the configuration files explicitly enabled
+	// in the file selector are returned.
+	GetBind9RawConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error)
 	Shutdown()
 }
 
@@ -699,7 +702,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 // daemon type, the function returns an error without attempting to contact the agent.
 // The returned configuration may contain multiple files. Typically, it contains the
 // main configuration file and the rndc.key file.
-func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int64, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
+func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
 	// The daemon must be present in the database. We're going to use the
 	// connection parameters associated with the daemon to contact the agent.
 	daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
@@ -710,7 +713,7 @@ func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int6
 		return nil, errors.Errorf("unable to get BIND 9 configuration from non-existent daemon with the ID %d", daemonID)
 	}
 	app := daemon.App
-	config, err := manager.agents.GetBind9RawConfig(ctx, app, filter)
+	config, err := manager.agents.GetBind9RawConfig(ctx, app, fileSelector, filter)
 	if err != nil {
 		return nil, err
 	}

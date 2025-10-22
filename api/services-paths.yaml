@@ -635,6 +635,7 @@
           required: true
           description: Daemon ID
         - $ref: '#/parameters/bind9ConfigFilter'
+        - $ref: '#/parameters/bind9ConfigFileSelector'
       responses:
         200:
           description: Raw BIND 9 daemon configuration.

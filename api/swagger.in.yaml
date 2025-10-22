@@ -205,6 +205,12 @@ definitions:
       - zone
       - no-parse
 
+  Bind9ConfigFileType:
+    type: string
+    enum: &BIND9CONFIGFILETYPE
+      - config
+      - rndc-key
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -273,4 +279,15 @@ parameters:
     items:
       type: string
       enum: *BIND9CONFIGFILTER
+    collectionFormat: multi
+
+  bind9ConfigFileSelector:
+    name: fileSelector
+    in: query
+    description: >-
+      Selector for the BIND 9 configuration file types to retrieve.
+    type: array
+    items:
+      type: string
+      enum: *BIND9CONFIGFILETYPE
     collectionFormat: multi

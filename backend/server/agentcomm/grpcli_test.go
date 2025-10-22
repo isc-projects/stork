@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1521,7 +1522,7 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 
 // Test successfully getting BIND 9 raw configuration with and without
 // filtering.
-func TestGetBind9RawConfig(t *testing.T) {
+func TestGetBind9RawConfigFiltering(t *testing.T) {
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
 			Address:   "127.0.0.1",
@@ -1540,24 +1541,24 @@ func TestGetBind9RawConfig(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
-		if len(req.Filters) == 0 {
+		if req.Filter == nil || len(req.Filter.FilterTypes) == 0 {
 			return &agentapi.GetBind9ConfigRsp{
 				Files: []*agentapi.Bind9ConfigFile{
 					{
-						FileType: agentapi.Bind9ConfigFile_CONFIG,
+						FileType: agentapi.Bind9ConfigFileType_CONFIG,
 						Contents: "no-filtering;",
 					},
 				},
 			}, nil
 		}
 		var builder strings.Builder
-		for _, filter := range req.Filters {
+		for _, filter := range req.Filter.FilterTypes {
 			builder.WriteString(fmt.Sprintf("%s;", filter.String()))
 		}
 		return &agentapi.GetBind9ConfigRsp{
 			Files: []*agentapi.Bind9ConfigFile{
 				{
-					FileType: agentapi.Bind9ConfigFile_CONFIG,
+					FileType: agentapi.Bind9ConfigFileType_CONFIG,
 					Contents: builder.String(),
 				},
 			},
@@ -1565,7 +1566,7 @@ func TestGetBind9RawConfig(t *testing.T) {
 	})
 
 	t.Run("no filtering", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
 		require.NoError(t, err)
 		require.NotNil(t, config)
 		require.Len(t, config.Files, 1)
@@ -1573,8 +1574,8 @@ func TestGetBind9RawConfig(t *testing.T) {
 		require.Equal(t, "no-filtering;", config.Files[0].Contents)
 	})
 
-	t.Run("filter by by view and no-parse", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFilter(bind9config.FilterTypeView, bind9config.FilterTypeNoParse))
+	t.Run("filter by view and no-parse", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, bind9config.NewFilter(bind9config.FilterTypeView, bind9config.FilterTypeNoParse))
 		require.NoError(t, err)
 		require.NotNil(t, config)
 		require.Len(t, config.Files, 1)
@@ -1585,7 +1586,7 @@ func TestGetBind9RawConfig(t *testing.T) {
 	})
 
 	t.Run("filter by zone", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFilter(bind9config.FilterTypeZone))
+		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, bind9config.NewFilter(bind9config.FilterTypeZone))
 		require.NoError(t, err)
 		require.NotNil(t, config)
 		require.Len(t, config.Files, 1)
@@ -1593,6 +1594,97 @@ func TestGetBind9RawConfig(t *testing.T) {
 		require.NotContains(t, config.Files[0].Contents, "VIEW")
 		require.NotContains(t, config.Files[0].Contents, "NO_PARSE")
 		require.Contains(t, config.Files[0].Contents, "ZONE")
+	})
+
+	t.Run("select only config file", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), nil)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 1)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+	})
+}
+
+// Test successfully getting BIND 9 raw configuration with and without
+// file selection.
+func TestGetBind9RawConfigFileSelection(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
+		var files []*agentapi.Bind9ConfigFile
+		for i, fileType := range []agentapi.Bind9ConfigFileType{agentapi.Bind9ConfigFileType_CONFIG, agentapi.Bind9ConfigFileType_RNDC_KEY} {
+			if req.FileSelector == nil || len(req.FileSelector.FileTypes) == 0 || slices.Contains(req.FileSelector.FileTypes, fileType) {
+				files = append(files, &agentapi.Bind9ConfigFile{
+					FileType:   fileType,
+					SourcePath: fmt.Sprintf("%d.conf", i),
+					Contents:   fmt.Sprintf("%d;", i),
+				})
+			}
+		}
+		return &agentapi.GetBind9ConfigRsp{
+			Files: files,
+		}, nil
+	})
+
+	t.Run("no file selection", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 2)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+		require.Contains(t, config.Files[0].SourcePath, "0.conf")
+		require.Equal(t, "0;", config.Files[0].Contents)
+		require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
+		require.Contains(t, config.Files[1].SourcePath, "1.conf")
+		require.Equal(t, "1;", config.Files[1].Contents)
+	})
+
+	t.Run("select only config file", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), nil)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 1)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+		require.Equal(t, "0.conf", config.Files[0].SourcePath)
+		require.Equal(t, "0;", config.Files[0].Contents)
+	})
+
+	t.Run("select only rndc key file", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeRndcKey), nil)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 1)
+		require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[0].FileType)
+		require.Equal(t, "1.conf", config.Files[0].SourcePath)
+		require.Equal(t, "1;", config.Files[0].Contents)
+	})
+
+	t.Run("select both config and rndc key files", func(t *testing.T) {
+		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey), nil)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+		require.Len(t, config.Files, 2)
+		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
+		require.Equal(t, "0.conf", config.Files[0].SourcePath)
+		require.Equal(t, "0;", config.Files[0].Contents)
+		require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
+		require.Equal(t, "1.conf", config.Files[1].SourcePath)
+		require.Equal(t, "1;", config.Files[1].Contents)
 	})
 }
 
@@ -1620,12 +1712,12 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 		return &agentapi.GetBind9ConfigRsp{
 			Files: []*agentapi.Bind9ConfigFile{
 				{
-					FileType:   agentapi.Bind9ConfigFile_CONFIG,
+					FileType:   agentapi.Bind9ConfigFileType_CONFIG,
 					SourcePath: "named.conf",
 					Contents:   "no-filtering;",
 				},
 				{
-					FileType:   agentapi.Bind9ConfigFile_RNDC_KEY,
+					FileType:   agentapi.Bind9ConfigFileType_RNDC_KEY,
 					SourcePath: "rndc.key",
 					Contents:   "rndc-key;",
 				},
@@ -1633,7 +1725,7 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 		}, nil
 	})
 
-	config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+	config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
 	require.NoError(t, err)
 	require.NotNil(t, config)
 	require.Len(t, config.Files, 2)
@@ -1667,7 +1759,7 @@ func TestGetBind9RawConfigErrorResponse(t *testing.T) {
 
 	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, &testError{})
 
-	config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+	config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
 	require.Empty(t, config)
@@ -1695,7 +1787,7 @@ func TestGetBind9RawConfigNilResponse(t *testing.T) {
 
 	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
-	config, err := agents.GetBind9RawConfig(context.Background(), app, nil)
+	config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "wrong response to getting BIND 9 configuration from the Stork agent 127.0.0.1:8080")
 	require.Empty(t, config)

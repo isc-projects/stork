@@ -303,6 +303,12 @@ message ReceiveZoneRRsRsp {
   repeated string rrs = 1;
 }
 
+// The type of a BIND 9 configuration file.
+enum Bind9ConfigFileType {
+  CONFIG = 0;
+  RNDC_KEY = 1;
+}
+
 // Filter for the BIND 9 configuration.
 message GetBind9ConfigFilter {
   enum FilterType {
@@ -311,24 +317,26 @@ message GetBind9ConfigFilter {
     ZONE = 2;
     NO_PARSE = 3;
   }
-  FilterType filterType = 1;
+  repeated FilterType filterTypes = 1;
+}
+
+// Selector for the BIND 9 configuration file types.
+message GetBind9ConfigFileSelector {
+  repeated Bind9ConfigFileType fileTypes = 1;
 }
 
 // Request to retrieve the BIND 9 configuration from the agent.
 message GetBind9ConfigReq {
   string controlAddress = 1;
   int64 controlPort = 2;
-  repeated GetBind9ConfigFilter filters = 3;
+  GetBind9ConfigFilter filter = 3;
+  GetBind9ConfigFileSelector fileSelector = 4;
 }
 
 // A single BIND 9 configuration file. BIND 9 configuration may use
 // multiple files (e.g., named.conf, rndc.key).
 message Bind9ConfigFile {
-  enum FileType {
-    CONFIG = 0;
-    RNDC_KEY = 1;
-  }
-  FileType fileType = 1;
+  Bind9ConfigFileType fileType = 1;
   string sourcePath = 2;
   string contents = 3;
 }
