@@ -1,0 +1,49 @@
+<p-dialog
+    [modal]="true"
+    [visible]="visible"
+    [maximizable]="true"
+    [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
+    styleClass="h-screen"
+    [draggable]="false"
+    [resizable]="false"
+    (visibleChange)="handleVisibleChange($event)"
+>
+    <ng-template #header>
+        <div class="text-base text-gray-500">
+            @if (config) {
+                <div class="flex flex-column">
+                    <h3>{{ config.files?.[0]?.sourcePath }}</h3>
+                    <div class="flex flex-row align-items-center gap-4">
+                        <p-button
+                            label="Refresh"
+                            pTooltip="Refresh the configuration from the DNS server."
+                            size="small"
+                            icon="pi pi-refresh"
+                            (click)="handleConfigRefresh()"
+                        />
+                        @if (fileType === 'config') {
+                            <div
+                                class="flex flex-row align-items-center"
+                                pTooltip="Toggle between reduced configuration including only BIND 9 configuration options, and the full configuration also including the views and zones."
+                            >
+                                <p-checkbox
+                                    inputId="toggle-full-config"
+                                    [binary]="true"
+                                    [(ngModel)]="showFullConfig"
+                                    (onChange)="handleFullConfigToggle($event)"
+                                />
+                                <label for="toggle-full-config" class="ml-2">Show Full Config</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </ng-template>
+    <app-bind9-config-view-feeder
+        [daemonId]="daemonId"
+        [fileType]="fileType"
+        [active]="visible"
+        (configChange)="handleConfigChange($event)"
+    ></app-bind9-config-view-feeder>
+</p-dialog>

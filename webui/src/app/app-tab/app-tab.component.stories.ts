@@ -33,6 +33,8 @@ import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
+import { Bind9ConfigPreviewComponent } from '../bind9-config-preview/bind9-config-preview.component'
 
 // Mock directive that always grants access
 @Directive({
@@ -144,6 +146,44 @@ const versionServiceStub = {
     getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
 }
 
+const mockShortConfigResponse = {
+    files: [
+        {
+            sourcePath: '/etc/bind/test.conf',
+            fileType: 'config',
+            contents: ['options {', '\tlisten-on {', '\t\t127.0.0.1;', '\t};', '};'],
+        },
+    ],
+}
+
+const mockLongConfigResponse = {
+    files: [
+        {
+            sourcePath: '/etc/bind/test.conf',
+            fileType: 'config',
+            contents: [
+                'options {',
+                '\tlisten-on {',
+                '\t\t127.0.0.1;',
+                '\t};',
+                '};',
+                'view "internal" {',
+                '\tzone "internal" {',
+                '\t\ttype primary;',
+                '\t\tfile "internal.zone";',
+                '\t};',
+                '};',
+                'view "external" {',
+                '\tzone "external" {',
+                '\t\ttype primary;',
+                '\t\tfile "external.zone";',
+                '\t};',
+                '};',
+            ],
+        },
+    ],
+}
+
 export default {
     title: 'App/AppTab',
     component: AppTabComponent,
@@ -174,6 +214,8 @@ export default {
                 ProgressSpinnerModule,
                 TabViewComponent,
                 ConfirmDialogModule,
+                Bind9DaemonControlsComponent,
+                Bind9ConfigPreviewComponent,
             ],
             declarations: [
                 AppOverviewComponent,
@@ -212,6 +254,20 @@ export default {
                 method: 'PUT',
                 status: 200,
                 response: {},
+            },
+            {
+                url: 'http://localhost/api/daemons/:daemonId/bind9-config?filter=config&fileSelector=config',
+                method: 'GET',
+                status: 200,
+                response: mockShortConfigResponse,
+                delay: 1000,
+            },
+            {
+                url: 'http://localhost/api/daemons/:daemonId/bind9-config?fileSelector=config',
+                method: 'GET',
+                status: 200,
+                response: mockLongConfigResponse,
+                delay: 3000,
             },
         ],
     },

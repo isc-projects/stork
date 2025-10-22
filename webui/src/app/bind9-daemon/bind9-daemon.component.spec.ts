@@ -14,6 +14,7 @@ import { provideRouter, RouterModule } from '@angular/router'
 import { TooltipModule } from 'primeng/tooltip'
 
 class Daemon {
+    id = 1
     name = 'named'
     version = '9.18.30'
 }

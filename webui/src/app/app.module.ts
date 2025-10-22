@@ -168,6 +168,9 @@ import { PdnsDaemonComponent } from './pdns-daemon/pdns-daemon.component'
 import { TabViewComponent } from './tab-view/tab-view.component'
 import { TriStateCheckboxComponent } from './tri-state-checkbox/tri-state-checkbox.component'
 import { UserFormComponent } from './user-form/user-form.component'
+import { TextFileViewerComponent } from './text-file-viewer/text-file-viewer.component'
+import { Bind9ConfigPreviewComponent } from './bind9-config-preview/bind9-config-preview.component'
+import { Bind9DaemonControlsComponent } from './bind9-daemon-controls/bind9-daemon-controls.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -464,6 +467,9 @@ const AuraBluePreset = definePreset(Aura, {
         InputIcon,
         TriStateCheckboxComponent,
         UserFormComponent,
+        TextFileViewerComponent,
+        Bind9ConfigPreviewComponent,
+        Bind9DaemonControlsComponent,
     ],
     providers: [
         {

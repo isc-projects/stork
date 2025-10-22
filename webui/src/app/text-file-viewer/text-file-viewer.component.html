@@ -1,0 +1,10 @@
+@if (contents?.length) {
+    <div class="text-base text-file-viewer">
+        <pre *ngFor="let line of contents; let i = index" class="line">
+            <span class="line-number">{{ i + 1 }}</span>
+            <span>{{ line }}</span>
+        </pre>
+    </div>
+} @else {
+    <div class="text-base text-file-viewer">The file is empty or it does not exist.</div>
+}

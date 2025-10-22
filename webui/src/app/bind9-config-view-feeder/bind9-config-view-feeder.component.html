@@ -1,0 +1,5 @@
+@if (loading) {
+    <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" />
+} @else {
+    <app-text-file-viewer [contents]="config?.files?.[0]?.contents"></app-text-file-viewer>
+}

@@ -1,0 +1,29 @@
+<!-- Dialogs displaying the BIND 9 configuration and RNDC key configuration. -->
+<ng-template #preview let-type="type">
+    <app-bind9-config-preview [(visible)]="dialogVisible[type]" [daemonId]="daemonId" [fileType]="type">
+    </app-bind9-config-preview>
+</ng-template>
+
+<!-- Display the dialog for the main configuration. -->
+<ng-container *ngTemplateOutlet="preview; context: { type: 'config' }"></ng-container>
+<!-- Display the dialog for the RNDC key configuration. -->
+<ng-container *ngTemplateOutlet="preview; context: { type: 'rndc-key' }"></ng-container>
+
+<div class="flex flex-wrap px-2 border-1 border-round surface-border">
+    <!-- Shows the main BIND 9 configuration dialog.-->
+    <p-button
+        label="BIND 9 Config"
+        icon="fa fa-file-alt"
+        severity="secondary"
+        class="mr-2 my-2"
+        (click)="setDialogVisible('config')"
+    ></p-button>
+    <!-- Shows the RNDC key configuration dialog. -->
+    <p-button
+        label="RNDC Key Config"
+        icon="fa fa-key"
+        severity="secondary"
+        class="mr-2 my-2"
+        (click)="setDialogVisible('rndc-key')"
+    ></p-button>
+</div>

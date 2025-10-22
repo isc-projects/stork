@@ -35,6 +35,8 @@ import { DurationPipe } from '../pipes/duration.pipe'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 import { TabViewComponent } from '../tab-view/tab-view.component'
+import { Bind9ConfigPreviewComponent } from '../bind9-config-preview/bind9-config-preview.component'
+import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
 
 class Daemon {
     name = 'named'
@@ -91,6 +93,8 @@ describe('AppTabComponent', () => {
                 VersionStatusComponent,
             ],
             imports: [
+                Bind9ConfigPreviewComponent,
+                Bind9DaemonControlsComponent,
                 FormsModule,
                 RouterModule,
                 TooltipModule,
@@ -207,5 +211,10 @@ describe('AppTabComponent', () => {
     it('should include events', () => {
         const eventsPanel = fixture.debugElement.query(By.directive(EventsPanelComponent))
         expect(eventsPanel).toBeTruthy()
+    })
+
+    it('should include bind9 daemon controls', () => {
+        const bind9DaemonControls = fixture.debugElement.query(By.directive(Bind9DaemonControlsComponent))
+        expect(bind9DaemonControls).toBeTruthy()
     })
 })

@@ -57,6 +57,9 @@
             [closableTabs]="false"
         >
             <ng-template #entityTab let-daemon>
+                @if (appTab.app.type === 'bind9') {
+                    <app-bind9-daemon-controls [daemonId]="daemon.id"></app-bind9-daemon-controls>
+                }
                 <div class="grid p-0">
                     <div *ngIf="daemon.statusErred" class="col-12 sm:col-10 md:col-6">
                         <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
