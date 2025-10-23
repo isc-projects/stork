@@ -360,6 +360,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	if in.GetStatsAddress() != "" {
 		request := sa.bind9StatsClient.createRequest(in.GetStatsAddress(), in.GetStatsPort())
 		var requestType string
+	SWITCH_BLOCK:
 		switch in.GetRequestType() {
 		case agentapi.ForwardToNamedStatsReq_DEFAULT:
 			requestType = "default"
@@ -396,11 +397,11 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 				// If there was an error, record it and break.
 				if e != nil {
 					err = e
-					break
+					break SWITCH_BLOCK
 				}
 				// If there was an HTTP error, record the response and break.
 				if resp.IsError() {
-					break
+					break SWITCH_BLOCK
 				}
 			}
 			// Both responses were OK. Need to convert it back to the binary form

@@ -546,6 +546,46 @@ func TestForwardToNamedStatsForDifferentRequestTypes(t *testing.T) {
 	}
 }
 
+// Test that a response error is properly handled when forwarding a request
+// to get combined server and traffic statistics.
+func TestForwardToNamedStatsServerAndTrafficError(t *testing.T) {
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
+
+	defer gock.Off()
+
+	// First request is successful.
+	gock.New("http://localhost:45634/").
+		MatchHeader("Accept", "application/json").
+		Get("json/v1/server").
+		Reply(200).
+		JSON(map[string]int{"result": 0})
+
+	// Second request is not successful.
+	gock.New("http://localhost:45634/").
+		MatchHeader("Accept", "application/json").
+		Get("json/v1/traffic").
+		Reply(404).
+		JSON(map[string]string{"error": "Not Found"})
+
+	req := &agentapi.ForwardToNamedStatsReq{
+		Url:               "http://localhost:45634/",
+		RequestType:       agentapi.ForwardToNamedStatsReq_SERVER_AND_TRAFFIC,
+		StatsAddress:      "localhost",
+		StatsPort:         45634,
+		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
+	}
+
+	// The response should contain the error even though the first request was successful.
+	rsp, err := sa.ForwardToNamedStats(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.NotNil(t, rsp.NamedStatsResponse)
+	require.NotNil(t, rsp.NamedStatsResponse.Status)
+	require.Equal(t, agentapi.Status_ERROR, rsp.NamedStatsResponse.Status.Code)
+	require.Empty(t, rsp.NamedStatsResponse.Response)
+}
+
 // Test a successful rndc command.
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
