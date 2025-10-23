@@ -40,6 +40,36 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { userEvent, within, expect } from '@storybook/test'
 
+export class MockedAuthService extends AuthService {
+    superAdmin(): boolean {
+        return true
+    }
+}
+
+class MockedAuthServiceAdmin extends AuthService {
+    superAdmin(): boolean {
+        return false
+    }
+
+    isAdmin(): boolean {
+        return true
+    }
+}
+
+class MockedAuthServiceReadOnly extends AuthService {
+    superAdmin(): boolean {
+        return false
+    }
+
+    isAdmin(): boolean {
+        return false
+    }
+
+    isInReadOnlyGroup(): boolean {
+        return true
+    }
+}
+
 const meta: Meta<MachinesPageComponent> = {
     title: 'App/MachinesPage',
     component: MachinesPageComponent,
@@ -65,7 +95,7 @@ const meta: Meta<MachinesPageComponent> = {
                         component: MachinesPageComponent,
                     },
                 ]),
-                { provide: AuthService, useValue: { hasPrivilege: () => true } },
+                { provide: AuthService, useClass: MockedAuthService },
                 {
                     provide: VersionService,
                     useValue: {
@@ -115,6 +145,9 @@ const meta: Meta<MachinesPageComponent> = {
         }),
         toastDecorator,
     ],
+    args: {
+        registrationDisabled: true,
+    },
 }
 
 export default meta
@@ -661,7 +694,7 @@ export const EmptyList: Story = {
     },
 }
 
-export const ListMixedAuthorizedAndNonAuthorized: Story = {
+export const ListWhenSuperAdminRole: Story = {
     parameters: {
         mockData: [
             {
@@ -729,7 +762,7 @@ export const ListMixedAuthorizedAndNonAuthorized: Story = {
 }
 
 export const AllMachinesShown: Story = {
-    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    parameters: ListWhenSuperAdminRole.parameters,
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
@@ -756,24 +789,39 @@ export const AllMachinesShown: Story = {
         const bulkAuthorizeBtn = await canvas.findByRole('button', { name: 'Authorize selected' })
         await expect(bulkAuthorizeBtn).toBeInTheDocument()
         await expect(bulkAuthorizeBtn).toBeDisabled()
+
+        // Check table checkboxes behavior
         const checkboxes = await within(canvas.getByRole('table')).findAllByRole('checkbox')
         await expect(checkboxes).toHaveLength(allMachinesCount + 1)
         const disabledCheckboxes = checkboxes.filter((ch) => ch.hasAttribute('disabled'))
         await expect(disabledCheckboxes.length).toBe(mockedAuthorizedMachines.length)
         await expect(canvas.queryAllByRole('checkbox', { checked: true })).toHaveLength(0)
+        // Click on Select All checkbox
         await userEvent.click(checkboxes[0])
         await expect(canvas.queryAllByRole('checkbox', { checked: true })).toHaveLength(
             mockedUnauthorizedMachines.length + 1
         )
         await expect(bulkAuthorizeBtn).toBeEnabled()
+        // Click on Select All checkbox - selection should be cleared
         await userEvent.click(checkboxes[0])
         await expect(bulkAuthorizeBtn).toBeDisabled()
         await expect(canvas.queryAllByRole('checkbox', { checked: true })).toHaveLength(0)
+        // Click on the checkboxes in the table rows one by one
+        const enabledCheckboxes = checkboxes.filter((ch, idx) => idx !== 0 && !ch.hasAttribute('disabled'))
+        for (let i = 0; i < enabledCheckboxes.length; i++) {
+            await userEvent.click(enabledCheckboxes[i])
+            await expect(bulkAuthorizeBtn).toBeEnabled()
+            if (i < enabledCheckboxes.length - 1) {
+                await expect(checkboxes[0]).not.toBeChecked()
+            }
+        }
+
+        await expect(checkboxes[0]).toBeChecked()
     },
 }
 
 export const UnauthorizedShown: Story = {
-    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    parameters: ListWhenSuperAdminRole.parameters,
     play: async ({ canvas }) => {
         // Arrange
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
@@ -802,11 +850,27 @@ export const UnauthorizedShown: Story = {
         const checkboxes = await canvas.findAllByRole('checkbox')
         await userEvent.click(checkboxes[checkboxes.length - 1])
         await expect(bulkAuthorizeBtn).toBeEnabled()
+
+        // Check menu items
+        const menuButtons = await canvas.findAllByLabelText('Show machine menu')
+        await expect(menuButtons.length).toBe(mockedUnauthorizedMachines.length)
+        await userEvent.click(menuButtons[0])
+        await canvas.findByRole('menu')
+        await expect(await canvas.findAllByRole('menuitem')).toHaveLength(2)
+        // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
+        await expect(await canvas.findByRole('menuitem', { name: 'Authorize' })).not.toHaveAttribute(
+            'aria-disabled',
+            'true'
+        )
+        await expect(await canvas.findByRole('menuitem', { name: 'Remove' })).not.toHaveAttribute(
+            'aria-disabled',
+            'true'
+        )
     },
 }
 
 export const AuthorizedShown: Story = {
-    parameters: ListMixedAuthorizedAndNonAuthorized.parameters,
+    parameters: ListWhenSuperAdminRole.parameters,
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
@@ -832,5 +896,42 @@ export const AuthorizedShown: Story = {
 
         // Check there is no bulk authorize button
         await expect(canvas.queryByRole('button', { name: 'Authorize selected' })).toBeNull()
+
+        // Check menu items
+        const menuButtons = await canvas.findAllByLabelText('Show machine menu')
+        await expect(menuButtons.length).toBe(mockedAuthorizedMachines.length)
+        await userEvent.click(menuButtons[0])
+        await canvas.findByRole('menu')
+        await expect(await canvas.findAllByRole('menuitem')).toHaveLength(3)
+        // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
+        await expect(
+            await canvas.findByRole('menuitem', { name: 'Refresh machine state information' })
+        ).not.toHaveAttribute('aria-disabled', 'true')
+        await expect(await canvas.findByRole('menuitem', { name: 'Dump troubleshooting data' })).not.toHaveAttribute(
+            'aria-disabled',
+            'true'
+        )
+        await expect(await canvas.findByRole('menuitem', { name: 'Remove' })).not.toHaveAttribute(
+            'aria-disabled',
+            'true'
+        )
     },
+}
+
+export const ListWhenAdminRole: Story = {
+    parameters: ListWhenSuperAdminRole.parameters,
+    decorators: [
+        applicationConfig({
+            providers: [{ provide: AuthService, useClass: MockedAuthServiceAdmin }],
+        }),
+    ],
+}
+
+export const WhenListReadOnlyRole: Story = {
+    parameters: ListWhenSuperAdminRole.parameters,
+    decorators: [
+        applicationConfig({
+            providers: [{ provide: AuthService, useClass: MockedAuthServiceReadOnly }],
+        }),
+    ],
 }
