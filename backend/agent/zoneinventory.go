@@ -8,6 +8,7 @@ import (
 	"iter"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -357,19 +358,23 @@ func (storage *zoneInventoryStorageDisk) removeMeta() error {
 }
 
 // Saves the inventory metadata.
-func (storage *zoneInventoryStorageDisk) saveMeta(meta *ZoneInventoryMeta) error {
+func (storage *zoneInventoryStorageDisk) saveMeta(meta *ZoneInventoryMeta) (err error) {
 	metaFileName := path.Join(storage.location, zoneInventoryMetaFileName)
-	metaFile, err := os.OpenFile(metaFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o640)
+	metaFile, err := os.OpenFile(metaFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o640)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save inventory metadata file %s", metaFileName)
+		err = errors.Wrapf(err, "failed to save inventory metadata file %s", metaFileName)
+		return
 	}
-	defer metaFile.Close()
+	defer func() {
+		if closeErr := metaFile.Close(); closeErr != nil && err == nil {
+			err = errors.Wrapf(closeErr, "failed to close the inventory metadata file %s", metaFileName)
+		}
+	}()
 	encoder := json.NewEncoder(metaFile)
-	err = encoder.Encode(meta)
-	if err != nil {
-		return errors.Wrapf(err, "failed to encode inventory metadata into file %s", metaFileName)
+	if err = encoder.Encode(meta); err != nil {
+		err = errors.Wrapf(err, "failed to encode inventory metadata into file %s", metaFileName)
 	}
-	return nil
+	return
 }
 
 // Reads the inventory metadata.
@@ -1266,19 +1271,23 @@ func (vio *viewIO) recreateView(view *bind9stats.View) (err error) {
 }
 
 // Creates a zone information file in the view directory.
-func (vio *viewIO) createZone(zone *bind9stats.Zone) error {
-	zoneDataFilePath := path.Join(vio.viewLocation, getViewIOZoneFileName(zone.Name()))
-	zoneDataFile, err := os.OpenFile(zoneDataFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o640)
+func (vio *viewIO) createZone(zone *bind9stats.Zone) (err error) {
+	zoneDataFilePath := filepath.Join(vio.viewLocation, getViewIOZoneFileName(zone.Name()))
+	zoneDataFile, err := os.OpenFile(zoneDataFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o640)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save data for zone %s due to an error while opening the file %s", zone.Name(), zoneDataFilePath)
+		err = errors.Wrapf(err, "failed to save data for zone %s due to an error while opening the file %s", zone.Name(), zoneDataFilePath)
+		return
 	}
-	defer zoneDataFile.Close()
+	defer func() {
+		if closeErr := zoneDataFile.Close(); closeErr != nil && err == nil {
+			err = errors.Wrapf(closeErr, "failed to close the zone data file %s", zoneDataFilePath)
+		}
+	}()
 	encoder := json.NewEncoder(zoneDataFile)
-	err = encoder.Encode(zone)
-	if err != nil {
-		return errors.Wrapf(err, "failed to encode the zone data into file %s", zoneDataFilePath)
+	if err = encoder.Encode(zone); err != nil {
+		err = errors.Wrapf(err, "failed to encode the zone data into file %s", zoneDataFilePath)
 	}
-	return nil
+	return
 }
 
 // Reads the view and the corresponding zones from a file.

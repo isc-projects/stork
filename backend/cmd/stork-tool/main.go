@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strconv"
 
@@ -231,54 +232,69 @@ func runHookInspect(settings *cli.Context) error {
 }
 
 // Deploy specified static file view into assets/static-page-content.
-func runStaticViewDeploy(settings *cli.Context, outFilename string) error {
+func runStaticViewDeploy(settings *cli.Context, outFilename string) (err error) {
 	// Basic checks on the input file.
 	inFilename := settings.String("file")
-	if _, err := os.Stat(inFilename); err != nil {
+	if _, err = os.Stat(inFilename); err != nil {
 		switch {
 		case errors.Is(err, fs.ErrNotExist):
 			// This is a frequent error returned when user specified wrong
 			// input filename. Let's handle this error to produce our own
 			// error message.
-			return errors.Errorf("input file '%s' does not exist", inFilename)
+			err = errors.Errorf("input file '%s' does not exist", inFilename)
+			return
 		default:
 			// Other errors are more rare and it is overkill to handle of them.
 			// Let's rely on the stat() function error message with the stack
 			// trace appended.
-			return errors.WithStack(err)
+			err = errors.WithStack(err)
+			return
 		}
 	}
 	// Get the directory where our file is to be copied.
-	outDirectory, err := getOrLocateStaticPageContentDir(settings)
+	var outDirectory string
+	outDirectory, err = getOrLocateStaticPageContentDir(settings)
 	if err != nil {
-		return err
+		return
 	}
 	// Create the destination path by concatenating the output directory
 	// and the file name specified as the function arguments.
-	outFilename = path.Join(outDirectory, outFilename)
+	outFilename = filepath.Join(outDirectory, outFilename)
 
 	// Open the input file name for reading.
-	inFile, err := os.Open(inFilename)
+	var inFile *os.File
+	inFile, err = os.Open(inFilename)
 	if err != nil {
-		return errors.Wrapf(err, "failed to open input file '%s'", inFilename)
+		err = errors.Wrapf(err, "failed to open input file '%s'", inFilename)
+		return
 	}
-	defer inFile.Close()
+	defer func() {
+		if closeErr := inFile.Close(); closeErr != nil && err == nil {
+			err = errors.Wrapf(closeErr, "failed to close input file '%s'", inFilename)
+		}
+	}()
 	reader := bufio.NewReader(inFile)
 
 	// Open the output file for writing.
-	outFile, err := os.OpenFile(outFilename, os.O_CREATE|os.O_WRONLY, 0o644)
+	var outFile *os.File
+	outFile, err = os.OpenFile(outFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
-		return errors.Wrapf(err, "failed to open output file '%s'", outFilename)
+		err = errors.Wrapf(err, "failed to open output file '%s'", outFilename)
+		return
 	}
-	defer outFile.Close()
+	defer func() {
+		if closeErr := outFile.Close(); closeErr != nil && err == nil {
+			err = errors.Wrapf(closeErr, "failed to close output file '%s'", outFilename)
+		}
+	}()
 	writer := bufio.NewWriter(outFile)
 
 	// Copy the file.
 	_, err = io.Copy(writer, reader)
 	if err != nil {
-		return errors.Wrapf(err, "failed to copy file '%s' to '%s'", inFilename, outFilename)
+		err = errors.Wrapf(err, "failed to copy file '%s' to '%s'", inFilename, outFilename)
 	}
-	return nil
+	return
 }
 
 // Undeploy specified static file view from assets/static-page-content.
