@@ -29,6 +29,9 @@ func NewRR(rrText string) (*RR, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse RR: %s", rrText)
 	}
+	if rr == nil {
+		return nil, errors.New("failed to parse empty RR")
+	}
 	fields := strings.Fields(rr.String())
 	// Extract the <data> field.
 	var data string

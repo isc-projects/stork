@@ -17,6 +17,20 @@ func TestNewRR(t *testing.T) {
 	require.Equal(t, "192.0.2.1", rr.Rdata)
 }
 
+// Test that the NewRR does not panic when an empty RR is parsed,
+// and the suitable error is returned.
+func TestNewRREmpty(t *testing.T) {
+	var (
+		err error
+		rr  *RR
+	)
+	require.NotPanics(t, func() {
+		rr, err = NewRR("")
+	})
+	require.ErrorContains(t, err, "failed to parse empty RR")
+	require.Nil(t, rr)
+}
+
 // Test that an RR with multiple Rdata fields is parsed correctly.
 func TestNewRRMultipleRdataFields(t *testing.T) {
 	rr, err := NewRR("example.com. 120 SOA ns1.example.com. hostmaster.example.com. 2025071700 1800 900 604800 86400")
