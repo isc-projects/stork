@@ -102,6 +102,13 @@ end
 
 
 namespace :unittest do
+    desc 'Run interaction tests for UI written in Storybook Stories. It requires running Storybook.'
+    task :storybook => [NPM] + WEBUI_CODEBASE do
+        Dir.chdir("webui") do
+            sh NPM, "run", "test-storybook"
+        end
+    end
+
     desc 'Run unit tests for UI.
         TEST - globs of test files to include, relative to root or webui directory - default: unspecified
             There are 2 special cases:

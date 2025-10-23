@@ -9,7 +9,8 @@
         "lint": "ng lint",
         "docs:json": "compodoc -p ./tsconfig.json -e json -d .",
         "storybook": "npm run docs:json && storybook dev -p 6006",
-        "build-storybook": "npm run docs:json && storybook build"
+        "build-storybook": "npm run docs:json && storybook build",
+        "test-storybook": "test-storybook --url http://localhost:6006"
     },
     "private": true,
     "dependencies": {
@@ -53,12 +54,12 @@
         "@angular/language-service": "^19.2.17",
         "@babel/core": "^7.28.5",
         "@compodoc/compodoc": "^1.1.32",
-        "@storybook/addon-actions": "^8.6.8",
         "@storybook/addon-essentials": "^8.6.14",
         "@storybook/addon-interactions": "^8.6.14",
         "@storybook/addon-links": "^8.6.14",
         "@storybook/angular": "^8.6.14",
         "@storybook/test": "^8.6.8",
+        "@storybook/test-runner": "^0.23.0",
         "@types/jasmine": "^5.1.13",
         "@types/jasminewd2": "^2.0.13",
         "@types/node": "^22.19.1",
