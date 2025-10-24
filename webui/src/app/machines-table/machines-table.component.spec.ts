@@ -1,10 +1,9 @@
-import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { MachinesTableComponent } from './machines-table.component'
 import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { TableHeaderCheckbox } from 'primeng/table'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'
@@ -548,50 +547,17 @@ describe('MachinesTableComponent', () => {
         expect(component.dataLoading).toBeFalse()
     })
 
-    xit('should clear selected machines', fakeAsync(() => {
-        // TODO: this test should be moved away from Karma tests.
+    it('should clear selected machines', () => {
         // Arrange
-        component.loadData({ first: 0, rows: 10, filters: {} })
-        expect(component.dataLoading).withContext('data is loading').toBeTrue()
-        tick()
-        fixture.detectChanges()
-        expect(component.dataLoading).withContext('data loading done').toBeFalse()
-
-        const checkboxes = fixture.debugElement.queryAll(By.css('table .p-checkbox:not(.p-disabled)'))
-        expect(checkboxes).toBeTruthy()
-        expect(checkboxes.length)
-            .withContext('there should be 1 "select all" checkbox and 3 checkboxes for each unauthorized machine')
-            .toEqual(4)
-        const selectAllCheckbox = checkboxes[0]
-        expect(selectAllCheckbox).toBeTruthy()
-
-        selectAllCheckbox.nativeElement.click()
-        fixture.detectChanges()
-        fixture.detectChanges() // PrimeNG TableHeaderCheckbox has complicated chain of change detection, so call detectChanges additionally.
-        flush() // Wait for PrimeNG to react on Select all change
-
-        expect(component.selectedMachines.length).toEqual(3)
-        expect(component.selectedMachines).toEqual(getUnauthorizedMachinesResp.items)
-        for (const ch of checkboxes) {
-            const component = ch.componentInstance as TableHeaderCheckbox
-            expect(component).not.toBeNull()
-            expect(component.checked).withContext('checkbox should be selected').toBeTrue()
-        }
+        component.selectedMachines = getUnauthorizedMachinesResp.items
+        expect(component.selectedMachines.length).toEqual(getUnauthorizedMachinesResp.items.length)
 
         // Act
         component.clearSelection()
-        tick()
-        fixture.detectChanges()
-        tick()
 
         // Assert
         expect(component.selectedMachines.length).toEqual(0)
-        for (const ch of checkboxes) {
-            const component = ch.componentInstance as TableHeaderCheckbox
-            expect(component).not.toBeNull()
-            expect(component.checked).withContext('checkbox should not be selected').toBeFalse()
-        }
-    }))
+    })
 
     it('should emit on machine menu display', async () => {
         // Arrange
@@ -653,84 +619,5 @@ describe('MachinesTableComponent', () => {
 
         // Assert
         expect(eventEmitterSpy).toHaveBeenCalledOnceWith(getUnauthorizedMachinesResp.items)
-    })
-
-    xit('should select or deselect only unauthorized machines', async () => {
-        // TODO: this test should be moved away from Karma tests.
-        // Arrange
-        component.loadData({ first: 0, rows: 10, filters: {} })
-        expect(component.dataLoading).withContext('data is loading').toBeTrue()
-        await fixture.whenStable()
-        fixture.detectChanges()
-        expect(component.dataLoading).withContext('data loading done').toBeFalse()
-
-        const checkboxes = fixture.debugElement.queryAll(By.css('table .p-checkbox:not(.p-disabled)'))
-        expect(checkboxes).toBeTruthy()
-        expect(checkboxes.length)
-            .withContext('there should be 1 "select all" checkbox and 3 checkboxes for each unauthorized machine')
-            .toEqual(4)
-        const selectAllCheckbox = checkboxes[0]
-        expect(selectAllCheckbox).toBeTruthy()
-
-        const disabledCheckboxes = fixture.debugElement.queryAll(By.css('table .p-checkbox.p-disabled'))
-        expect(disabledCheckboxes).toBeTruthy()
-        expect(disabledCheckboxes.length)
-            .withContext('there should be 2 disabled checkboxes for authorized machines')
-            .toEqual(2)
-
-        // Act & Assert
-        selectAllCheckbox.nativeElement.click() // select All unauthorized
-        await fixture.whenStable()
-        fixture.detectChanges()
-        await fixture.whenStable() // Wait for PrimeNG to react on Select all change
-        fixture.detectChanges()
-
-        expect(component.selectedMachines.length).toEqual(3)
-        expect(component.selectedMachines).toEqual(getUnauthorizedMachinesResp.items)
-        for (const ch of checkboxes) {
-            const box = ch.query(By.css('.p-checkbox-box'))
-            expect(box).toBeTruthy()
-            expect(box.nativeElement).withContext('checkbox should be selected').toHaveClass('p-highlight')
-        }
-
-        selectAllCheckbox.nativeElement.click() // deselect All unauthorized
-        await fixture.whenStable()
-        fixture.detectChanges()
-        await fixture.whenStable() // Wait for PrimeNG to react on Select all change
-        fixture.detectChanges()
-
-        expect(component.selectedMachines.length).toEqual(0)
-        for (const ch of checkboxes) {
-            const box = ch.query(By.css('.p-checkbox-box'))
-            expect(box).toBeTruthy()
-            expect(box.nativeElement).withContext('checkbox should not be selected').not.toHaveClass('p-highlight')
-        }
-
-        const selectAllBox = selectAllCheckbox.query(By.css('.p-checkbox-box'))
-        expect(selectAllBox).toBeTruthy()
-        expect(selectAllBox.nativeElement).withContext('checkbox should not be selected').not.toHaveClass('p-highlight')
-
-        // Click checkboxes one by one.
-        checkboxes[1].nativeElement.click()
-        await fixture.whenStable()
-        fixture.detectChanges()
-        checkboxes[2].nativeElement.click()
-        await fixture.whenStable()
-        fixture.detectChanges()
-        checkboxes[3].nativeElement.click()
-        await fixture.whenStable()
-        fixture.detectChanges()
-
-        expect(component.selectedMachines.length).toEqual(3)
-        expect(component.selectedMachines).toEqual(getUnauthorizedMachinesResp.items)
-        expect(selectAllBox.nativeElement).withContext('checkbox should be selected').toHaveClass('p-highlight')
-
-        // Deselect one machine.
-        checkboxes[3].nativeElement.click()
-        await fixture.whenStable()
-        fixture.detectChanges()
-
-        expect(component.selectedMachines.length).toEqual(2)
-        expect(selectAllBox.nativeElement).withContext('checkbox should not be selected').not.toHaveClass('p-highlight')
     })
 })
