@@ -501,6 +501,9 @@ func (c *Config) Merge(source RawConfigAccessor) error {
 	// Get source and destination raw configurations. The merge is performed
 	// at the raw configuration levels.
 	destConfig, _ := c.GetRawConfig()
+	if destConfig == nil {
+		return errors.New("unable to merge configuration into nil configuration")
+	}
 	sourceConfig, err := source.GetRawConfig()
 	if err != nil {
 		return errors.Wrap(err, "problem getting raw configuration during Kea configurations merge")
@@ -547,6 +550,12 @@ func merge(c1, c2 any) any {
 				}
 			} else {
 				if v2 != nil {
+					// This is unlikely but since merge uses generic types
+					// it could be called in different contexts. Therefore,
+					// it we should handle the nil map case.
+					if c1 == nil {
+						c1 = make(RawConfig)
+					}
 					c1[k] = v2
 				}
 			}

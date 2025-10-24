@@ -1952,6 +1952,35 @@ func TestMergeSettableConfig(t *testing.T) {
 	require.Nil(t, config1.GetValidLifetimeParameters().ValidLifetime)
 }
 
+// Test that an attempt to merge into a configuration including nil raw configuration
+// pointer does not panic.
+func TestMergeIntoNilConfig(t *testing.T) {
+	config, err := NewConfig(`{
+		"Dhcp4": {
+			"allocator": "iterative"
+		}
+	}`)
+	require.NoError(t, err)
+	require.NotNil(t, config)
+	// Reset the raw configuration to nil. This is not something that
+	// can happen in practice but only as a result of a programming error.
+	config.Raw = nil
+	source := NewSettableDHCPv4Config()
+	source.SetAllocator(storkutil.Ptr("flq"))
+	err = config.Merge(source)
+	require.ErrorContains(t, err, "unable to merge configuration into nil configuration")
+}
+
+// Test that merging into a nil config branch does not panic.
+func TestMergeIntoNilConfigBranch(t *testing.T) {
+	dest := make(RawConfig)
+	dest["foo"] = make(RawConfig)
+	source := (RawConfig)(nil)
+	require.NotPanics(t, func() {
+		_ = merge(source, dest)
+	})
+}
+
 // Tests instantiating settable Kea Control Agent configuration.
 func TestNewSettableCtrlAgentConfig(t *testing.T) {
 	settableConfig := NewSettableCtrlAgentConfig()
