@@ -103,8 +103,9 @@ end
 
 namespace :unittest do
     desc 'Run interaction tests for UI written in Storybook Stories. It requires running Storybook.'
-    task :storybook => [NPM] + WEBUI_CODEBASE do
+    task :storybook => [NPM, NPX] + WEBUI_CODEBASE do
         Dir.chdir("webui") do
+            sh NPX, "playwright", "install", "--with-deps"
             sh NPM, "run", "test-storybook"
         end
     end
