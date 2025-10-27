@@ -371,6 +371,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Add("X-Frame-Options", "DENY")
 		w.Header().Add("X-Content-Type-Options", "nosniff")
 		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubdomains")
+		w.Header().Add("Content-Security-Policy", "frame-ancestors 'none';")
 
 		next.ServeHTTP(w, r)
 	})
