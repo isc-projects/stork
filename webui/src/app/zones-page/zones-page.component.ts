@@ -611,7 +611,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     map((resp) => {
                         resp.items?.forEach((zone) => {
                             let elz: ExtendedLocalZone[] = []
-                            zone.localZones.forEach((localZone) => {
+                            zone.localZones?.forEach((localZone) => {
                                 elz.push({ ...localZone, disableShowZone: this._shouldDisableShowZone(localZone) })
                             })
                             zone.localZones = elz
