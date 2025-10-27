@@ -7,9 +7,10 @@ import (
 )
 
 var (
-	_ formatterOutput = (*formatterToken)(nil)
-	_ formatterOutput = (*formatterScope)(nil)
-	_ formatterOutput = (*formatterClause)(nil)
+	_ formatterOutput  = (*formatterToken)(nil)
+	_ formatterOutput  = (*formatterScope)(nil)
+	_ formatterOutput  = (*formatterClause)(nil)
+	_ formatterBuilder = (*formatterBuilderFunc)(nil)
 )
 
 // formattedElement is an interface implemented by all BIND 9
@@ -31,7 +32,7 @@ type formatterOutput interface {
 	// indicates whether or not the output is inside a clause. This is
 	// used when one clause holds another clause. In this case, the
 	// inner clause does not include the semicolon.
-	write(indentLevel int, inner bool, builder *formatterBuilder)
+	write(indentLevel int, inner bool, builder formatterBuilder)
 }
 
 // The formatter is responsible for serializing BIND 9 configuration into
@@ -59,9 +60,10 @@ func (f *formatter) addClause(clause formatterOutput) {
 	}
 }
 
-// Returns the serialized BIND 9 configuration as a string.
-func (f *formatter) getFormattedText() string {
-	builder := newFormatterBuilder()
+// Returns the serialized BIND 9 configuration via callbacks. The callback is
+// called with each line of the serialized configuration.
+func (f *formatter) getFormattedTextFunc(callback func(string)) {
+	builder := newFormatterBuilder(callback)
 	for _, clause := range f.clauses {
 		builder.writeIndent(f.indent)
 		clause.write(f.indent, false, builder)
@@ -70,7 +72,6 @@ func (f *formatter) getFormattedText() string {
 			builder.writeNewLine()
 		}
 	}
-	return builder.getString()
 }
 
 // formatterToken represents a single token in the BIND 9 configuration.
@@ -88,7 +89,7 @@ func newFormatterToken(token string) *formatterToken {
 }
 
 // Writes the token into the builder.
-func (t *formatterToken) write(indent int, inner bool, builder *formatterBuilder) {
+func (t *formatterToken) write(indent int, inner bool, builder formatterBuilder) {
 	builder.write(t.token)
 }
 
@@ -119,7 +120,7 @@ func (t *formatterScope) add(element formatterOutput) {
 // with the curly braces. If the element belonging to the scope is a clause,
 // it is indented and followed by a new line. Otherwise, it is preceded by
 // a space (as a separator from preceding token).
-func (t *formatterScope) write(indentLevel int, inner bool, builder *formatterBuilder) {
+func (t *formatterScope) write(indentLevel int, inner bool, builder formatterBuilder) {
 	builder.write("{")
 	var isLastClause bool
 	if len(t.elements) > 0 {
@@ -219,7 +220,7 @@ func (c *formatterClause) addScope() *formatterScope {
 }
 
 // Writes the clause into the builder.
-func (c *formatterClause) write(indent int, inner bool, builder *formatterBuilder) {
+func (c *formatterClause) write(indent int, inner bool, builder formatterBuilder) {
 	for i, element := range c.elements {
 		if el := element; el != nil {
 			if i > 0 {
@@ -237,43 +238,50 @@ func (c *formatterClause) write(indent int, inner bool, builder *formatterBuilde
 	}
 }
 
-// formatterBuilder is a wrapper around the strings.Builder. It exposes
-// convenience functions for writing indentation and new lines.
-type formatterBuilder struct {
-	builder       strings.Builder
-	indentPattern string
+// formatterBuilder is an interface implemented by the formatterBuilderFunc.
+// It exposes functions for writing out the serialized BIND 9 configuration.
+// The formatterBuilderFunc stores the serialized parts of the configuration
+// until the new line is encountered. In this case, it calls the callback
+// function with the serialized configuration. Other implementations are
+// used in testing.
+type formatterBuilder interface {
+	write(s string)
+	writeIndent(level int)
+	writeNewLine()
 }
 
-// Instantiates a new formatter builder with the specified indent pattern.
-func newFormatterBuilderWithIndentPattern(indentPattern string) *formatterBuilder {
-	return &formatterBuilder{
+// formatterBuilderFunc is a concrete implementation of the formatterBuilder
+// interface. It stores the serialized parts of the configuration until the
+// new line is encountered. In this case, it calls the callback function with
+// the serialized configuration.
+type formatterBuilderFunc struct {
+	builder       strings.Builder
+	indentPattern string
+	callback      func(string)
+}
+
+// Instantiates a new formatter builder with the specified callback.
+func newFormatterBuilder(callback func(string)) *formatterBuilderFunc {
+	return &formatterBuilderFunc{
 		builder:       strings.Builder{},
-		indentPattern: indentPattern,
+		indentPattern: "\t",
+		callback:      callback,
 	}
 }
 
-// Instantiates a new formatter builder with the default indent pattern (single tab).
-func newFormatterBuilder() *formatterBuilder {
-	return newFormatterBuilderWithIndentPattern("\t")
-}
-
-// Returns the string representation of the built text.
-func (b *formatterBuilder) getString() string {
-	return b.builder.String()
-}
-
 // Writes the indentation to the builder. The level specifies the indentation level.
-func (b *formatterBuilder) writeIndent(level int) {
+func (b *formatterBuilderFunc) writeIndent(level int) {
 	b.builder.WriteString(strings.Repeat(b.indentPattern, level))
 }
 
 // Writes a new line to the builder.
-func (b *formatterBuilder) writeNewLine() {
-	b.builder.WriteString("\n")
+func (b *formatterBuilderFunc) writeNewLine() {
+	b.callback(b.builder.String())
+	b.builder.Reset()
 }
 
 // Writes the specified string to the builder.
-func (b *formatterBuilder) write(s string) {
+func (b *formatterBuilderFunc) write(s string) {
 	b.builder.WriteString(s)
 }
 

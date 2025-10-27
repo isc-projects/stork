@@ -49,11 +49,11 @@ type NoParseScope struct {
 
 // Returns the serialized BIND 9 configuration for the @stork:no-parse:scope/@stork:no-parse:end directives.
 func (n *NoParseScope) getFormattedOutput(filter *Filter) formatterOutput {
-	builder := newFormatterBuilder()
-	builder.write("//@stork:no-parse:scope\n")
-	builder.write(n.Contents.GetString())
-	builder.write("\n//@stork:no-parse:end\n")
-	return newFormatterToken(builder.getString())
+	builder := strings.Builder{}
+	builder.WriteString("//@stork:no-parse:scope\n")
+	builder.WriteString(n.Contents.GetString())
+	builder.WriteString("\n//@stork:no-parse:end\n")
+	return newFormatterToken(builder.String())
 }
 
 // Represents the @stork:no-parse:global directive.

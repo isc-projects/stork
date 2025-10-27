@@ -13,7 +13,7 @@ import (
 func cfgEq(t *testing.T, expected string, formattedOutput formatterOutput) {
 	expected = strings.ReplaceAll(expected, " ;", ";")
 	expectedTokens := strings.Fields(expected)
-	builder := newFormatterBuilder()
+	builder := newFormatterStringBuilder()
 	formattedOutput.write(0, false, builder)
 	actual := builder.getString()
 	actualTokens := strings.Fields(actual)

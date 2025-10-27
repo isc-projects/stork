@@ -1,6 +1,7 @@
 package bind9config
 
 import (
+	"iter"
 	"net"
 	"path/filepath"
 	"strconv"
@@ -25,15 +26,22 @@ type Config struct {
 // Returns serialized BIND 9 configuration with filtering and indentation.
 // The initial indentation level is specified with the argument. The filter
 // specifies which configuration elements should be included in the output.
-// If the filter is nil, all configuration elements are returned.
-func (c *Config) GetFormattedString(indentLevel int, filter *Filter) string {
+// If the filter is nil, all configuration elements are returned. The returned
+// iterator yields the serialized configuration line by line.
+func (c *Config) GetFormattedTextIterator(indentLevel int, filter *Filter) iter.Seq[string] {
 	formatter := newFormatter(indentLevel)
 	for _, statement := range c.Statements {
 		if o := statement.getFormattedOutput(filter); o != nil {
 			formatter.addClause(o)
 		}
 	}
-	return formatter.getFormattedText()
+	return func(yield func(string) bool) {
+		formatter.getFormattedTextFunc(func(text string) {
+			if !yield(text) {
+				return
+			}
+		})
+	}
 }
 
 // Checks if the configuration contains no-parse directives.

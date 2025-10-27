@@ -227,10 +227,14 @@ func TestConfigGetFormattedString(t *testing.T) {
 
 	t.Run("no filtering", func(t *testing.T) {
 		// Serialize the configuration without filtering.
-		text := cfg.GetFormattedString(1, nil)
+		var builder strings.Builder
+		for text := range cfg.GetFormattedTextIterator(1, nil) {
+			builder.WriteString(text)
+			builder.WriteString("\n")
+		}
 		// By parsing the output we ensure that the output configuration syntax
 		// is valid.
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(text))
+		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		// Verify that the parsed configuration is the same as the original configuration.
@@ -239,10 +243,14 @@ func TestConfigGetFormattedString(t *testing.T) {
 
 	t.Run("filtering", func(t *testing.T) {
 		// Serialize the configuration with filtering.
-		text := cfg.GetFormattedString(0, NewFilter(FilterTypeConfig, FilterTypeView, FilterTypeZone, FilterTypeNoParse))
+		var builder strings.Builder
+		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeConfig, FilterTypeView, FilterTypeZone, FilterTypeNoParse)) {
+			builder.WriteString(text)
+			builder.WriteString("\n")
+		}
 		// By parsing the output we ensure that the output configuration syntax
 		// is valid.
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(text))
+		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		// Verify that the parsed configuration is the same as the original
@@ -259,8 +267,12 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	t.Run("view", func(t *testing.T) {
-		text := cfg.GetFormattedString(0, NewFilter(FilterTypeView))
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(text))
+		var builder strings.Builder
+		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeView)) {
+			builder.WriteString(text)
+			builder.WriteString("\n")
+		}
+		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		require.Len(t, cfg2.Statements, 2)
@@ -270,8 +282,12 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 	})
 
 	t.Run("zone", func(t *testing.T) {
-		text := cfg.GetFormattedString(0, NewFilter(FilterTypeZone))
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(text))
+		var builder strings.Builder
+		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeZone)) {
+			builder.WriteString(text)
+			builder.WriteString("\n")
+		}
+		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		require.Len(t, cfg2.Statements, 1)
@@ -281,8 +297,12 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 	})
 
 	t.Run("config options", func(t *testing.T) {
-		text := cfg.GetFormattedString(0, NewFilter(FilterTypeConfig))
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(text))
+		var builder strings.Builder
+		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeConfig)) {
+			builder.WriteString(text)
+			builder.WriteString("\n")
+		}
+		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		require.Len(t, cfg2.Statements, 8)
@@ -966,6 +986,7 @@ func TestParseDynDB(t *testing.T) {
 	require.Empty(t, cfg.Statements[0].Option.Suboptions)
 }
 
+// Test parsing the deny-answer-aliases option.
 func TestParseDenyAnswerAliases(t *testing.T) {
 	cfgText := `
 		options {
@@ -982,8 +1003,6 @@ func TestParseDenyAnswerAliases(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Options)
 	require.Len(t, cfg.Statements[0].Options.Clauses, 1)
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
-
-	fmt.Println(cfg.GetFormattedString(1, NewFilter(FilterTypeConfig, FilterTypeView, FilterTypeZone, FilterTypeNoParse)))
 }
 
 // A benchmark that measures the performance of the @stork:no-parse directive.
