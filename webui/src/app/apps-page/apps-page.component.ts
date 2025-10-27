@@ -15,23 +15,6 @@ import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 
 /**
- * Replaces the newlines in the versions with the HTML-compatible line breaks.
- * @param app Application
- */
-function htmlizeExtVersion(app: App) {
-    if (app.details.extendedVersion) {
-        app.details.extendedVersion = app.details.extendedVersion.replace(/\n/g, '<br>')
-    }
-    if (app.details.daemons) {
-        for (const d of app.details.daemons) {
-            if (d.extendedVersion) {
-                d.extendedVersion = d.extendedVersion.replace(/\n/g, '<br>')
-            }
-        }
-    }
-}
-
-/**
  * Sets boolean flag indicating if there are communication errors with
  * daemons belonging to the app.
  *
@@ -80,7 +63,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         return lastValueFrom(
             this.servicesApi.getApp(appID).pipe(
                 map((data) => {
-                    htmlizeExtVersion(data)
                     setDaemonStatusErred(data)
                     return data
                 }),
@@ -181,7 +163,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 this.apps = data.items ?? []
                 this.totalApps = data.total ?? 0
                 for (const s of this.apps) {
-                    htmlizeExtVersion(s)
                     setDaemonStatusErred(s)
                 }
             })

@@ -204,7 +204,9 @@
                                                 ></app-version-status>
                                             </div>
                                             <div class="col-12 sm:col-3 pb-0 font-medium">Version Ext</div>
-                                            <div class="col-12 sm:col-9" [innerHTML]="daemon.extendedVersion"></div>
+                                            <div class="col-12 sm:col-9 white-space-preline">
+                                                {{ daemon.extendedVersion }}
+                                            </div>
                                             <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
                                             <div class="col-12 sm:col-9">{{ showDuration(daemon.uptime) }}</div>
                                             <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
