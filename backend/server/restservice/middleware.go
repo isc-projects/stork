@@ -366,6 +366,16 @@ func bodySizeLimiterMiddleware(next http.Handler, maxBodySize int64) http.Handle
 	})
 }
 
+func secureHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("X-Frame-Options", "DENY")
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubdomains")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
 func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL string, eventCenter eventcenter.EventCenter, maxBodySize int64) http.Handler {
@@ -376,6 +386,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL
 	handler = metricsMiddleware(handler, r.MetricsCollector)
 	handler = trimBaseURLMiddleware(handler, baseURL)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
+	handler = secureHeadersMiddleware(handler)
 	handler = loggingMiddleware(handler)
 	return handler
 }
