@@ -31,22 +31,28 @@ func (r *RestAPI) GetBind9RawConfig(ctx context.Context, params services.GetBind
 			fileSelector.Enable(bind9config.FileType(fileType))
 		}
 	}
-	configFiles, err := r.DNSManager.GetBind9RawConfig(ctx, params.ID, fileSelector, filter)
-	if err != nil {
-		log.Error(err)
-		msg := fmt.Sprintf("Cannot get BIND 9 configuration for daemon with ID %d", params.ID)
-		rsp := services.NewGetBind9RawConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
 	var bind9RawConfigFiles []*models.Bind9RawConfigFile
-	for _, configFile := range configFiles.Files {
-		bind9RawConfigFiles = append(bind9RawConfigFiles, &models.Bind9RawConfigFile{
-			SourcePath: configFile.SourcePath,
-			FileType:   string(configFile.FileType),
-			Contents:   configFile.Contents,
-		})
+	for rsp := range r.DNSManager.GetBind9RawConfig(ctx, params.ID, fileSelector, filter) {
+		if rsp.Err != nil {
+			log.Error(rsp.Err)
+			msg := fmt.Sprintf("Cannot get BIND 9 configuration for daemon with ID %d", params.ID)
+			rsp := services.NewGetBind9RawConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		if rsp.File != nil {
+			bind9RawConfigFiles = append(bind9RawConfigFiles, &models.Bind9RawConfigFile{
+				SourcePath: rsp.File.SourcePath,
+				FileType:   string(rsp.File.FileType),
+			})
+		} else if rsp.Contents != nil {
+			if len(bind9RawConfigFiles) > 0 {
+				contents := bind9RawConfigFiles[len(bind9RawConfigFiles)-1].Contents
+				contents = append(contents, *rsp.Contents)
+				bind9RawConfigFiles[len(bind9RawConfigFiles)-1].Contents = contents
+			}
+		}
 	}
 	rsp := services.NewGetBind9RawConfigOK().WithPayload(&models.Bind9RawConfig{
 		Files: bind9RawConfigFiles,

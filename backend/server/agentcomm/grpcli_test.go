@@ -4,9 +4,8 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"fmt"
 	"io"
-	"slices"
+	"iter"
 	"strings"
 	"testing"
 	"time"
@@ -1520,7 +1519,213 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 	require.Nil(t, serverInfo)
 }
 
-// Test successfully getting BIND 9 raw configuration with and without
+// Test successfully receiving BIND 9 configuration over the stream for
+// a single file type.
+func TestReceiveBind9RawConfigOneFile(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Mock the gRPC client receiving a single configuration file followed by EOF.
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	// The first chunk is the configuration file preamble.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_File{
+				File: &agentapi.ReceiveBind9ConfigFile{
+					FileType: agentapi.Bind9ConfigFileType_CONFIG,
+				},
+			},
+		}, nil
+	})
+	// The second chunk is the configuration file contents.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+				Line: "options { ... };",
+			},
+		}, nil
+	})
+	// The last chunk is EOF.
+	mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF)
+	// Return the mocked client when ReceiveBind9Config() called.
+	mockAgentClient.EXPECT().ReceiveBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.ReceiveBind9ConfigReq, opts ...any) (grpc.ServerStreamingClient[agentapi.ReceiveBind9ConfigRsp], error) {
+		// Make sure that the request is properly populated.
+		require.NotNil(t, req)
+		require.Nil(t, req.Filter)
+		require.Nil(t, req.FileSelector)
+		return mockStreamingClient, nil
+	})
+
+	// Collect the chunks from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, nil, nil))
+	defer cancel()
+
+	// Configuration file preamble.
+	rsp, err, ok := next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_File{}, rsp.Response)
+	file := rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_File).File
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, file.FileType)
+
+	// Configuration file contents.
+	rsp, err, ok = next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_Line{}, rsp.Response)
+	line := rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_Line).Line
+	require.Equal(t, "options { ... };", line)
+
+	// The stream should be exhausted.
+	rsp, err, ok = next()
+	require.False(t, ok)
+	require.NoError(t, err)
+	require.Nil(t, rsp)
+}
+
+// Test successfully receiving BIND 9 configuration over the stream for
+// two file types.
+func TestGetBind9RawConfigTwoFiles(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Mock the gRPC client receiving two configuration files followed by EOF.
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	// The first chunk is the configuration file preamble.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_File{
+				File: &agentapi.ReceiveBind9ConfigFile{
+					FileType: agentapi.Bind9ConfigFileType_CONFIG,
+				},
+			},
+		}, nil
+	})
+	// The second chunk is the configuration file contents.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+				Line: "options { ... };",
+			},
+		}, nil
+	})
+	// The third chunk is the rndc key file preamble.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_File{
+				File: &agentapi.ReceiveBind9ConfigFile{
+					FileType: agentapi.Bind9ConfigFileType_RNDC_KEY,
+				},
+			},
+		}, nil
+	})
+	// The fourth chunk is the rndc key file contents.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+				Line: "rndc-key;",
+			},
+		}, nil
+	})
+	// The last chunk is EOF.
+	mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF)
+
+	// Return the mocked client when ReceiveBind9Config() called.
+	mockAgentClient.EXPECT().ReceiveBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.ReceiveBind9ConfigReq, opts ...any) (grpc.ServerStreamingClient[agentapi.ReceiveBind9ConfigRsp], error) {
+		// Make sure that the request is properly populated.
+		require.NotNil(t, req)
+		require.Nil(t, req.Filter)
+		require.NotNil(t, req.FileSelector)
+		require.Len(t, req.FileSelector.FileTypes, 2)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, req.FileSelector.FileTypes[0])
+		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, req.FileSelector.FileTypes[1])
+		return mockStreamingClient, nil
+	})
+
+	// Collect the chunks from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey), nil))
+	defer cancel()
+
+	// Configuration file preamble.
+	rsp, err, ok := next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_File{}, rsp.Response)
+	file := rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_File).File
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, file.FileType)
+
+	// Configuration file contents.
+	rsp, err, ok = next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_Line{}, rsp.Response)
+	line := rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_Line).Line
+	require.Equal(t, "options { ... };", line)
+
+	// RNDC key file preamble.
+	rsp, err, ok = next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_File{}, rsp.Response)
+	file = rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_File).File
+	require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, file.FileType)
+
+	// RNDC key file contents.
+	rsp, err, ok = next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_Line{}, rsp.Response)
+	line = rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_Line).Line
+	require.Equal(t, "rndc-key;", line)
+
+	// The stream should be exhausted.
+	rsp, err, ok = next()
+	require.False(t, ok)
+	require.NoError(t, err)
+	require.Nil(t, rsp)
+}
+
+// Test successfully receiving BIND 9 configuration over the stream with
 // filtering.
 func TestGetBind9RawConfigFiltering(t *testing.T) {
 	app := &dbmodel.App{
@@ -1536,210 +1741,60 @@ func TestGetBind9RawConfigFiltering(t *testing.T) {
 		}},
 	}
 
+	// Mock the gRPC client receiving a single configuration file with filtering.
 	ctrl := gomock.NewController(t)
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveBind9ConfigRsp](ctrl)
 
-	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
-		if req.Filter == nil || len(req.Filter.FilterTypes) == 0 {
-			return &agentapi.GetBind9ConfigRsp{
-				Files: []*agentapi.Bind9ConfigFile{
-					{
-						FileType: agentapi.Bind9ConfigFileType_CONFIG,
-						Contents: "no-filtering;",
-					},
-				},
-			}, nil
-		}
-		var builder strings.Builder
-		for _, filter := range req.Filter.FilterTypes {
-			builder.WriteString(fmt.Sprintf("%s;", filter.String()))
-		}
-		return &agentapi.GetBind9ConfigRsp{
-			Files: []*agentapi.Bind9ConfigFile{
-				{
+	// The first chunk is the configuration file preamble.
+	mockStreamingClient.EXPECT().Recv().DoAndReturn(func() (*agentapi.ReceiveBind9ConfigRsp, error) {
+		return &agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_File{
+				File: &agentapi.ReceiveBind9ConfigFile{
 					FileType: agentapi.Bind9ConfigFileType_CONFIG,
-					Contents: builder.String(),
 				},
 			},
 		}, nil
 	})
+	// The last chunk is EOF. The file is empty.
+	mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF)
 
-	t.Run("no filtering", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 1)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-		require.Equal(t, "no-filtering;", config.Files[0].Contents)
+	mockAgentClient.EXPECT().ReceiveBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.ReceiveBind9ConfigReq, opts ...any) (grpc.ServerStreamingClient[agentapi.ReceiveBind9ConfigRsp], error) {
+		require.NotNil(t, req)
+		require.NotNil(t, req.FileSelector)
+		require.Len(t, req.FileSelector.FileTypes, 1)
+		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, req.FileSelector.FileTypes[0])
+		require.NotNil(t, req.Filter)
+		require.Len(t, req.Filter.FilterTypes, 1)
+		require.Equal(t, agentapi.ReceiveBind9ConfigFilter_CONFIG, req.Filter.FilterTypes[0])
+		return mockStreamingClient, nil
 	})
 
-	t.Run("filter by view and no-parse", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, bind9config.NewFilter(bind9config.FilterTypeView, bind9config.FilterTypeNoParse))
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 1)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-		require.Contains(t, config.Files[0].Contents, "VIEW")
-		require.Contains(t, config.Files[0].Contents, "NO_PARSE")
-		require.NotContains(t, config.Files[0].Contents, "ZONE")
-	})
+	// Collect the chunks from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), bind9config.NewFilter(bind9config.FilterTypeConfig)))
+	defer cancel()
 
-	t.Run("filter by zone", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, bind9config.NewFilter(bind9config.FilterTypeZone))
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 1)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-		require.NotContains(t, config.Files[0].Contents, "VIEW")
-		require.NotContains(t, config.Files[0].Contents, "NO_PARSE")
-		require.Contains(t, config.Files[0].Contents, "ZONE")
-	})
-
-	t.Run("select only config file", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), nil)
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 1)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-	})
-}
-
-// Test successfully getting BIND 9 raw configuration with and without
-// file selection.
-func TestGetBind9RawConfigFileSelection(t *testing.T) {
-	app := &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			Address:   "127.0.0.1",
-			AgentPort: 8080,
-		},
-		AccessPoints: []*dbmodel.AccessPoint{{
-			Type:    dbmodel.AccessPointControl,
-			Address: "localhost",
-			Port:    8000,
-			Key:     "",
-		}},
-	}
-
-	ctrl := gomock.NewController(t)
-	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
-	defer ctrl.Finish()
-
-	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
-		var files []*agentapi.Bind9ConfigFile
-		for i, fileType := range []agentapi.Bind9ConfigFileType{agentapi.Bind9ConfigFileType_CONFIG, agentapi.Bind9ConfigFileType_RNDC_KEY} {
-			if req.FileSelector == nil || len(req.FileSelector.FileTypes) == 0 || slices.Contains(req.FileSelector.FileTypes, fileType) {
-				files = append(files, &agentapi.Bind9ConfigFile{
-					FileType:   fileType,
-					SourcePath: fmt.Sprintf("%d.conf", i),
-					Contents:   fmt.Sprintf("%d;", i),
-				})
-			}
-		}
-		return &agentapi.GetBind9ConfigRsp{
-			Files: files,
-		}, nil
-	})
-
-	t.Run("no file selection", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 2)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-		require.Contains(t, config.Files[0].SourcePath, "0.conf")
-		require.Equal(t, "0;", config.Files[0].Contents)
-		require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
-		require.Contains(t, config.Files[1].SourcePath, "1.conf")
-		require.Equal(t, "1;", config.Files[1].Contents)
-	})
-
-	t.Run("select only config file", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), nil)
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 1)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-		require.Equal(t, "0.conf", config.Files[0].SourcePath)
-		require.Equal(t, "0;", config.Files[0].Contents)
-	})
-
-	t.Run("select only rndc key file", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeRndcKey), nil)
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 1)
-		require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[0].FileType)
-		require.Equal(t, "1.conf", config.Files[0].SourcePath)
-		require.Equal(t, "1;", config.Files[0].Contents)
-	})
-
-	t.Run("select both config and rndc key files", func(t *testing.T) {
-		config, err := agents.GetBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey), nil)
-		require.NoError(t, err)
-		require.NotNil(t, config)
-		require.Len(t, config.Files, 2)
-		require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-		require.Equal(t, "0.conf", config.Files[0].SourcePath)
-		require.Equal(t, "0;", config.Files[0].Contents)
-		require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
-		require.Equal(t, "1.conf", config.Files[1].SourcePath)
-		require.Equal(t, "1;", config.Files[1].Contents)
-	})
-}
-
-// Test successfully getting BIND 9 raw configuration comprising
-// multiple files.
-func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
-	app := &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			Address:   "127.0.0.1",
-			AgentPort: 8080,
-		},
-		AccessPoints: []*dbmodel.AccessPoint{{
-			Type:    dbmodel.AccessPointControl,
-			Address: "localhost",
-			Port:    8000,
-			Key:     "",
-		}},
-	}
-
-	ctrl := gomock.NewController(t)
-	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
-	defer ctrl.Finish()
-
-	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, req *agentapi.GetBind9ConfigReq, opts ...any) (*agentapi.GetBind9ConfigRsp, error) {
-		return &agentapi.GetBind9ConfigRsp{
-			Files: []*agentapi.Bind9ConfigFile{
-				{
-					FileType:   agentapi.Bind9ConfigFileType_CONFIG,
-					SourcePath: "named.conf",
-					Contents:   "no-filtering;",
-				},
-				{
-					FileType:   agentapi.Bind9ConfigFileType_RNDC_KEY,
-					SourcePath: "rndc.key",
-					Contents:   "rndc-key;",
-				},
-			},
-		}, nil
-	})
-
-	config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
+	// Configuration file preamble.
+	rsp, err, ok := next()
+	require.True(t, ok)
 	require.NoError(t, err)
-	require.NotNil(t, config)
-	require.Len(t, config.Files, 2)
-	require.Equal(t, Bind9ConfigFileTypeConfig, config.Files[0].FileType)
-	require.Equal(t, "named.conf", config.Files[0].SourcePath)
-	require.Equal(t, "no-filtering;", config.Files[0].Contents)
-	require.Equal(t, Bind9ConfigFileTypeRndcKey, config.Files[1].FileType)
-	require.Equal(t, "rndc.key", config.Files[1].SourcePath)
-	require.Equal(t, "rndc-key;", config.Files[1].Contents)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Response)
+	require.IsType(t, &agentapi.ReceiveBind9ConfigRsp_File{}, rsp.Response)
+	file := rsp.Response.(*agentapi.ReceiveBind9ConfigRsp_File).File
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, file.FileType)
+
+	// The stream should be exhausted.
+	rsp, err, ok = next()
+	require.False(t, ok)
+	require.NoError(t, err)
+	require.Nil(t, rsp)
 }
 
-// Test that an error is returned when trying to get the BIND 9 raw config
+// Test that an error is returned when trying to receive the BIND 9 raw config
 // when the gRPC call fails.
-func TestGetBind9RawConfigErrorResponse(t *testing.T) {
+func TestReceiveBind9RawConfigErrorResponse(t *testing.T) {
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
 			Address:   "127.0.0.1",
@@ -1753,42 +1808,23 @@ func TestGetBind9RawConfigErrorResponse(t *testing.T) {
 		}},
 	}
 
+	// Mock the gRPC client returning an error.
 	ctrl := gomock.NewController(t)
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveBind9ConfigRsp](ctrl)
+	mockStreamingClient.EXPECT().Recv().Return(nil, &testError{})
 
-	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, &testError{})
+	// Return the mocked client when ReceiveBind9Config() called.
+	mockAgentClient.EXPECT().ReceiveBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
 
-	config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
-	require.Error(t, err)
+	// Collect the chunks from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, nil, nil))
+	defer cancel()
+
+	// The error should be propagated.
+	rsp, err, ok := next()
+	require.True(t, ok)
 	require.ErrorContains(t, err, "test error")
-	require.Empty(t, config)
-}
-
-// Test that an error is returned when trying to get the BIND 9 raw config
-// when the response is nil.
-func TestGetBind9RawConfigNilResponse(t *testing.T) {
-	app := &dbmodel.App{
-		Machine: &dbmodel.Machine{
-			Address:   "127.0.0.1",
-			AgentPort: 8080,
-		},
-		AccessPoints: []*dbmodel.AccessPoint{{
-			Type:    dbmodel.AccessPointControl,
-			Address: "localhost",
-			Port:    8000,
-			Key:     "",
-		}},
-	}
-
-	ctrl := gomock.NewController(t)
-	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
-	defer ctrl.Finish()
-
-	mockAgentClient.EXPECT().GetBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-
-	config, err := agents.GetBind9RawConfig(context.Background(), app, nil, nil)
-	require.Error(t, err)
-	require.ErrorContains(t, err, "wrong response to getting BIND 9 configuration from the Stork agent 127.0.0.1:8080")
-	require.Empty(t, config)
+	require.Nil(t, rsp)
 }

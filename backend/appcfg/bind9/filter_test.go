@@ -9,9 +9,9 @@ import (
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoConfig(t *testing.T) {
-	protoFilter := &agentapi.GetBind9ConfigFilter{
-		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
-			agentapi.GetBind9ConfigFilter_CONFIG,
+	protoFilter := &agentapi.ReceiveBind9ConfigFilter{
+		FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{
+			agentapi.ReceiveBind9ConfigFilter_CONFIG,
 		},
 	}
 	filter := NewFilterFromProto(protoFilter)
@@ -24,9 +24,9 @@ func TestNewFilterFromProtoConfig(t *testing.T) {
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoView(t *testing.T) {
-	protoFilter := &agentapi.GetBind9ConfigFilter{
-		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
-			agentapi.GetBind9ConfigFilter_VIEW,
+	protoFilter := &agentapi.ReceiveBind9ConfigFilter{
+		FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{
+			agentapi.ReceiveBind9ConfigFilter_VIEW,
 		},
 	}
 	filter := NewFilterFromProto(protoFilter)
@@ -39,9 +39,9 @@ func TestNewFilterFromProtoView(t *testing.T) {
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoZone(t *testing.T) {
-	protoFilter := &agentapi.GetBind9ConfigFilter{
-		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
-			agentapi.GetBind9ConfigFilter_ZONE,
+	protoFilter := &agentapi.ReceiveBind9ConfigFilter{
+		FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{
+			agentapi.ReceiveBind9ConfigFilter_ZONE,
 		},
 	}
 	filter := NewFilterFromProto(protoFilter)
@@ -54,9 +54,9 @@ func TestNewFilterFromProtoZone(t *testing.T) {
 
 // Test creating a new filter from the filter types specified in the .proto file.
 func TestNewFilterFromProtoNoParse(t *testing.T) {
-	protoFilter := &agentapi.GetBind9ConfigFilter{
-		FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
-			agentapi.GetBind9ConfigFilter_NO_PARSE,
+	protoFilter := &agentapi.ReceiveBind9ConfigFilter{
+		FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{
+			agentapi.ReceiveBind9ConfigFilter_NO_PARSE,
 		},
 	}
 	filter := NewFilterFromProto(protoFilter)
@@ -121,8 +121,8 @@ func TestFilterGetFilterAsProtoConfigAndView(t *testing.T) {
 	protoFilter := filter.GetFilterAsProto()
 	require.NotNil(t, protoFilter)
 	require.Equal(t, 2, len(protoFilter.FilterTypes))
-	require.Equal(t, agentapi.GetBind9ConfigFilter_CONFIG, protoFilter.FilterTypes[0])
-	require.Equal(t, agentapi.GetBind9ConfigFilter_VIEW, protoFilter.FilterTypes[1])
+	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_CONFIG, protoFilter.FilterTypes[0])
+	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_VIEW, protoFilter.FilterTypes[1])
 }
 
 // Test that the filter can be converted to a list of filters in protobuf format.
@@ -132,8 +132,8 @@ func TestFilterGetFilterAsProtoViewAndZone(t *testing.T) {
 	protoFilter := filter.GetFilterAsProto()
 	require.NotNil(t, protoFilter)
 	require.Equal(t, 2, len(protoFilter.FilterTypes))
-	require.Equal(t, agentapi.GetBind9ConfigFilter_VIEW, protoFilter.FilterTypes[0])
-	require.Equal(t, agentapi.GetBind9ConfigFilter_ZONE, protoFilter.FilterTypes[1])
+	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_VIEW, protoFilter.FilterTypes[0])
+	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_ZONE, protoFilter.FilterTypes[1])
 }
 
 // Test creating a new file selector from the file types specified in the .proto file.

@@ -1168,53 +1168,68 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app Contr
 	}
 }
 
-// Gets the BIND 9 configuration from the specified agent.
-// The filter specifies which configuration elements should be
-// included in the output. If the filter is nil, all configuration
-// elements are returned. The returned instance typically contains
-// two files: the main configuration file and the rndc.key file
-// contents.
-func (agents *connectedAgentsImpl) GetBind9RawConfig(ctx context.Context, app ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*Bind9RawConfig, error) {
-	addrPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
+// Makes a request to the agent to receive the BIND 9 configuration over the
+// stream. The filter specifies which configuration elements should be included
+// in the output. If the filter is nil, all configuration elements are returned.
+// The returned instance typically contains two files: the main configuration
+// file and the rndc.key file.
+func (agents *connectedAgentsImpl) ReceiveBind9RawConfig(ctx context.Context, app ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+	return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+		// Get control access point for the specified app. It will be sent
+		// in the request to the agent, so the agent can identify correct
+		// zone inventory.
+		ctrlAddress, ctrlPort, _, _, err := app.GetControlAccessPoint()
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
 
-	address, port, _, _, err := app.GetControlAccessPoint()
-	if err != nil {
-		return nil, err
-	}
-	req := &agentapi.GetBind9ConfigReq{
-		ControlAddress: address,
-		ControlPort:    port,
-		Filter:         filter.GetFilterAsProto(),
-		FileSelector:   fileSelector.GetFileTypesAsProto(),
-	}
-	agent, err := agents.getConnectedAgent(addrPort)
-	if err != nil {
-		return nil, err
-	}
-	// This is the same pattern we're using in the manager.go. The connection is
-	// cached so it is possible that it gets terminated or broken at some point.
-	// By trying the actual operation and retrying on failure we should be able
-	// to recover. There may be other ways to achieve recovery (e.g., getting
-	// the connection state before attempting the call). However, it is hard to
-	// say how reliable they are. This approach worked well for several years so
-	// it should be fine to continue using it.
-	var response *agentapi.GetBind9ConfigRsp
-	if response, err = agent.connector.createClient().GetBind9Config(ctx, req); err != nil {
-		if err = agent.connector.connect(); err == nil {
-			response, err = agent.connector.createClient().GetBind9Config(ctx, req)
+		request := &agentapi.ReceiveBind9ConfigReq{
+			ControlAddress: ctrlAddress,
+			ControlPort:    ctrlPort,
+			Filter:         filter.GetFilterAsProto(),
+			FileSelector:   fileSelector.GetFileTypesAsProto(),
+		}
+
+		// Get the agent's state. It holds the connection with the agent.
+		agentAddressPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
+		agent, err := agents.getConnectedAgent(agentAddressPort)
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
+		// This is the same pattern we're using in the manager.go. The connection is
+		// cached so it is possible that it gets terminated or broken at some point.
+		// By trying the actual operation and retrying on failure we should be able
+		// to recover. There may be other ways to achieve recovery (e.g., getting
+		// the connection state before attempting the call). However, it is hard to
+		// say how reliable they are. This approach worked well for several years so
+		// it should be fine to continue using it.
+		var stream grpc.ServerStreamingClient[agentapi.ReceiveBind9ConfigRsp]
+		if stream, err = agent.connector.createClient().ReceiveBind9Config(ctx, request); err != nil {
+			if err = agent.connector.connect(); err == nil {
+				stream, err = agent.connector.createClient().ReceiveBind9Config(ctx, request)
+			}
+		}
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+		for {
+			// Received the BIND 9 configuration from the agent.
+			response, err := stream.Recv()
 			if err != nil {
-				return nil, err
+				if !errors.Is(err, io.EOF) {
+					// Report the error excluding the EOF which is just the end of the stream.
+					_ = yield(nil, err)
+				}
+				return
+			}
+			if !yield(response, nil) {
+				// Stop if the caller no longer iterates over the configuration lines.
+				return
 			}
 		}
 	}
-	if response == nil {
-		return nil, errors.Errorf("wrong response to getting BIND 9 configuration from the Stork agent %s", addrPort)
-	}
-
-	// Everything is ok. Return the configuration files.
-	files := make([]*Bind9ConfigFile, len(response.Files))
-	for i, file := range response.Files {
-		files[i] = NewBind9ConfigFileFromProto(file)
-	}
-	return &Bind9RawConfig{Files: files}, nil
 }

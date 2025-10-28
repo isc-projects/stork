@@ -13,6 +13,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appcfg/dnsconfig"
 	agentcomm "isc.org/stork/server/agentcomm"
@@ -97,7 +98,7 @@ type Manager interface {
 	// filter are returned. Similarly, if the file selector is nil, all configuration
 	// files are returned. Otherwise, only the configuration files explicitly enabled
 	// in the file selector are returned.
-	GetBind9RawConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error)
+	GetBind9RawConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*Bind9RawConfigResponse]
 	Shutdown()
 }
 
@@ -229,6 +230,46 @@ func NewCacheRRResponse(rrs []*dnsconfig.RR, transferAt time.Time) *RRResponse {
 		Cached:         true,
 		ZoneTransferAt: transferAt,
 		RRs:            rrs,
+	}
+}
+
+// A structure representing a chunk of the BIND 9 configuration  received
+// over the stream.
+type Bind9RawConfigResponse struct {
+	// The BIND 9 configuration file preamble.
+	File *agentapi.ReceiveBind9ConfigFile
+	// The BIND 9 configuration file contents chunk.
+	Contents *string
+	// The error returned when receiving the BIND 9 configuration.
+	Err error
+}
+
+// Creates a new Bind9RawConfigResponse representing a BIND 9 configuration
+// file preamble.
+func NewBind9RawConfigResponseFile(file *agentapi.ReceiveBind9ConfigFile) *Bind9RawConfigResponse {
+	return &Bind9RawConfigResponse{
+		File:     file,
+		Contents: nil,
+		Err:      nil,
+	}
+}
+
+// Creates a new Bind9RawConfigResponse representing a BIND 9 configuration
+// contents chunk.
+func NewBind9RawConfigResponseContents(contents *string) *Bind9RawConfigResponse {
+	return &Bind9RawConfigResponse{
+		File:     nil,
+		Contents: contents,
+		Err:      nil,
+	}
+}
+
+// Creates a new Bind9RawConfigResponse representing an error.
+func NewBind9RawConfigResponseError(err error) *Bind9RawConfigResponse {
+	return &Bind9RawConfigResponse{
+		File:     nil,
+		Contents: nil,
+		Err:      err,
 	}
 }
 
@@ -702,22 +743,43 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 // daemon type, the function returns an error without attempting to contact the agent.
 // The returned configuration may contain multiple files. Typically, it contains the
 // main configuration file and the rndc.key file.
-func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
-	// The daemon must be present in the database. We're going to use the
-	// connection parameters associated with the daemon to contact the agent.
-	daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
-	if err != nil {
-		return nil, err
+func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*Bind9RawConfigResponse] {
+	return func(yield func(*Bind9RawConfigResponse) bool) {
+		// The daemon must be present in the database. We're going to use the
+		// connection parameters associated with the daemon to contact the agent.
+		daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
+		if err != nil {
+			_ = yield(NewBind9RawConfigResponseError(err))
+			return
+		}
+		if daemon == nil {
+			_ = yield(NewBind9RawConfigResponseError(errors.Errorf("unable to get BIND 9 configuration from non-existent daemon with the ID %d", daemonID)))
+			return
+		}
+		app := daemon.App
+		for rsp, err := range manager.agents.ReceiveBind9RawConfig(ctx, app, fileSelector, filter) {
+			if err != nil {
+				_ = yield(NewBind9RawConfigResponseError(err))
+				return
+			}
+			if rsp == nil {
+				_ = yield(NewBind9RawConfigResponseError(errors.Errorf("unexpected nil response while getting BIND 9 configuration from the agent")))
+				return
+			}
+			var ok bool
+			switch r := rsp.Response.(type) {
+			case *agentapi.ReceiveBind9ConfigRsp_File:
+				ok = yield(NewBind9RawConfigResponseFile(r.File))
+			case *agentapi.ReceiveBind9ConfigRsp_Line:
+				ok = yield(NewBind9RawConfigResponseContents(&r.Line))
+			default:
+				ok = yield(NewBind9RawConfigResponseError(errors.Errorf("unexpected response type: %T", rsp.Response)))
+			}
+			if !ok {
+				return
+			}
+		}
 	}
-	if daemon == nil {
-		return nil, errors.Errorf("unable to get BIND 9 configuration from non-existent daemon with the ID %d", daemonID)
-	}
-	app := daemon.App
-	config, err := manager.agents.GetBind9RawConfig(ctx, app, fileSelector, filter)
-	if err != nil {
-		return nil, err
-	}
-	return config, nil
 }
 
 // Convenience function storing a value in a map with mutex protection.

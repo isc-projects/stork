@@ -807,48 +807,64 @@ func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grp
 	return nil
 }
 
-// Returns the BIND 9 configuration for the specified server with filtering.
-// It typically returns two files: the main configuration file and the rndc.key file
-// contents. At least one of them must be present. Otherwise, the error is returned.
-func (sa *StorkAgent) GetBind9Config(ctx context.Context, in *agentapi.GetBind9ConfigReq) (*agentapi.GetBind9ConfigRsp, error) {
-	app := sa.AppMonitor.GetApp(AccessPointControl, in.ControlAddress, in.ControlPort)
+// Convenience function receiving BIND 9 configuration from a specified server
+// for a specified file type.
+func receiveBind9Config(fileType agentapi.Bind9ConfigFileType, bind9Config *bind9config.Config, req *agentapi.ReceiveBind9ConfigReq, server grpc.ServerStreamingServer[agentapi.ReceiveBind9ConfigRsp]) (bool, error) {
+	if bind9Config == nil || (req.FileSelector != nil && len(req.FileSelector.FileTypes) > 0 && !slices.Contains(req.FileSelector.FileTypes, fileType)) {
+		return false, nil
+	}
+	file := &agentapi.ReceiveBind9ConfigFile{
+		FileType:   fileType,
+		SourcePath: bind9Config.GetSourcePath(),
+	}
+	err := server.Send(&agentapi.ReceiveBind9ConfigRsp{
+		Response: &agentapi.ReceiveBind9ConfigRsp_File{
+			File: file,
+		},
+	})
+	if err != nil {
+		return true, status.Error(codes.Aborted, err.Error())
+	}
+	for text := range bind9Config.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(req.Filter)) {
+		err := server.Send(&agentapi.ReceiveBind9ConfigRsp{
+			Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+				Line: text,
+			},
+		})
+		if err != nil {
+			return true, status.Error(codes.Aborted, err.Error())
+		}
+	}
+	return true, nil
+}
+
+// Generate a streaming response returning BIND 9 configuration for the specified
+// server with filtering. The response may contain multiple files. Each new file
+// is marked with a preamble containing the file type and source path. The subsequent
+// lines contain the contents of the file.
+func (sa *StorkAgent) ReceiveBind9Config(req *agentapi.ReceiveBind9ConfigReq, server grpc.ServerStreamingServer[agentapi.ReceiveBind9ConfigRsp]) (err error) {
+	app := sa.AppMonitor.GetApp(AccessPointControl, req.ControlAddress, req.ControlPort)
 	if app == nil {
-		return nil, status.Newf(codes.FailedPrecondition, "BIND 9 server %s:%d not found", in.ControlAddress, in.ControlPort).Err()
+		return status.Newf(codes.FailedPrecondition, "BIND 9 server %s:%d not found", req.ControlAddress, req.ControlPort).Err()
 	}
 	bind9App, ok := app.(*Bind9App)
 	if !ok {
-		return nil, status.Newf(codes.InvalidArgument, "attempted to get BIND 9 configuration from app type %s instead of BIND 9", app.GetBaseApp().Type).Err()
+		return status.Newf(codes.InvalidArgument, "attempted to get BIND 9 configuration from app type %s instead of BIND 9", app.GetBaseApp().Type).Err()
 	}
-	if bind9App.bind9Config == nil && bind9App.rndcKeyConfig == nil {
-		// At least one of the configuration files must be present.
-		// The BIND 9 configuration is in fact always present. If it is missing
-		// there is something heavily wrong.
-		return nil, status.Errorf(codes.NotFound, "BIND 9 configuration not found for server %s:%d", in.ControlAddress, in.ControlPort)
+	var (
+		configReceived  bool
+		rndcKeyReceived bool
+	)
+	if configReceived, err = receiveBind9Config(agentapi.Bind9ConfigFileType_CONFIG, bind9App.bind9Config, req, server); err != nil {
+		return
 	}
-	rsp := &agentapi.GetBind9ConfigRsp{}
-	if bind9App.bind9Config != nil && (in.FileSelector == nil || len(in.FileSelector.FileTypes) == 0 || slices.Contains(in.FileSelector.FileTypes, agentapi.Bind9ConfigFileType_CONFIG)) {
-		var contents string
-		for text := range bind9App.bind9Config.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(in.Filter)) {
-			contents += fmt.Sprintf("%s\n", text)
-		}
-		rsp.Files = append(rsp.Files, &agentapi.Bind9ConfigFile{
-			FileType:   agentapi.Bind9ConfigFileType_CONFIG,
-			SourcePath: bind9App.bind9Config.GetSourcePath(),
-			Contents:   contents,
-		})
+	if rndcKeyReceived, err = receiveBind9Config(agentapi.Bind9ConfigFileType_RNDC_KEY, bind9App.rndcKeyConfig, req, server); err != nil {
+		return
 	}
-	if bind9App.rndcKeyConfig != nil && (in.FileSelector == nil || len(in.FileSelector.FileTypes) == 0 || slices.Contains(in.FileSelector.FileTypes, agentapi.Bind9ConfigFileType_RNDC_KEY)) {
-		var contents string
-		for text := range bind9App.rndcKeyConfig.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(in.Filter)) {
-			contents += fmt.Sprintf("%s\n", text)
-		}
-		rsp.Files = append(rsp.Files, &agentapi.Bind9ConfigFile{
-			FileType:   agentapi.Bind9ConfigFileType_RNDC_KEY,
-			SourcePath: bind9App.rndcKeyConfig.GetSourcePath(),
-			Contents:   contents,
-		})
+	if !configReceived && !rndcKeyReceived {
+		err = status.Errorf(codes.NotFound, "BIND 9 configuration not found for server %s:%d", req.ControlAddress, req.ControlPort)
 	}
-	return rsp, nil
+	return
 }
 
 // Starts the gRPC and HTTP listeners.

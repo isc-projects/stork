@@ -37,7 +37,7 @@ service Agent {
   rpc ReceiveZoneRRs(ReceiveZoneRRsReq) returns (stream ReceiveZoneRRsRsp) {}
 
   // Retrieves the BIND 9 configuration from the agent.
-  rpc GetBind9Config(GetBind9ConfigReq) returns (GetBind9ConfigRsp) {}
+  rpc ReceiveBind9Config(ReceiveBind9ConfigReq) returns (stream ReceiveBind9ConfigRsp) {}
 }
 
 
@@ -310,7 +310,7 @@ enum Bind9ConfigFileType {
 }
 
 // Filter for the BIND 9 configuration.
-message GetBind9ConfigFilter {
+message ReceiveBind9ConfigFilter {
   enum FilterType {
     CONFIG = 0;
     VIEW = 1;
@@ -321,28 +321,30 @@ message GetBind9ConfigFilter {
 }
 
 // Selector for the BIND 9 configuration file types.
-message GetBind9ConfigFileSelector {
+message ReceiveBind9ConfigFileSelector {
   repeated Bind9ConfigFileType fileTypes = 1;
 }
 
 // Request to retrieve the BIND 9 configuration from the agent.
-message GetBind9ConfigReq {
+message ReceiveBind9ConfigReq {
   string controlAddress = 1;
   int64 controlPort = 2;
-  GetBind9ConfigFilter filter = 3;
-  GetBind9ConfigFileSelector fileSelector = 4;
+  ReceiveBind9ConfigFilter filter = 3;
+  ReceiveBind9ConfigFileSelector fileSelector = 4;
 }
 
 // A single BIND 9 configuration file. BIND 9 configuration may use
 // multiple files (e.g., named.conf, rndc.key).
-message Bind9ConfigFile {
+message ReceiveBind9ConfigFile {
   Bind9ConfigFileType fileType = 1;
   string sourcePath = 2;
   string contents = 3;
 }
 
 // Response containing the BIND 9 configuration.
-message GetBind9ConfigRsp {
-  // List of BIND 9 configuration files.
-  repeated Bind9ConfigFile files = 1;
+message ReceiveBind9ConfigRsp {
+  oneof response {
+    ReceiveBind9ConfigFile file = 1;
+    string line = 2;
+  }
 }

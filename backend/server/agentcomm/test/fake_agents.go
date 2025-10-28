@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 
+	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/appcfg/dnsconfig"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -205,6 +206,6 @@ func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, app agentcomm.Controll
 	return nil
 }
 
-func (fa *FakeAgents) GetBind9RawConfig(ctx context.Context, app agentcomm.ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (*agentcomm.Bind9RawConfig, error) {
-	return nil, nil
+func (fa *FakeAgents) ReceiveBind9RawConfig(ctx context.Context, app agentcomm.ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+	return nil
 }

@@ -45,7 +45,7 @@ func NewFilter(filterTypes ...FilterType) *Filter {
 }
 
 // Creates a new filter from the list of filters in protobuf format.
-func NewFilterFromProto(filter *agentapi.GetBind9ConfigFilter) *Filter {
+func NewFilterFromProto(filter *agentapi.ReceiveBind9ConfigFilter) *Filter {
 	if filter == nil || len(filter.FilterTypes) == 0 {
 		// No filters specified. It means that filtering is disabled.
 		return nil
@@ -53,13 +53,13 @@ func NewFilterFromProto(filter *agentapi.GetBind9ConfigFilter) *Filter {
 	filterTypes := make([]FilterType, 0, len(filter.FilterTypes))
 	for _, filter := range filter.FilterTypes {
 		switch filter {
-		case agentapi.GetBind9ConfigFilter_CONFIG:
+		case agentapi.ReceiveBind9ConfigFilter_CONFIG:
 			filterTypes = append(filterTypes, FilterTypeConfig)
-		case agentapi.GetBind9ConfigFilter_VIEW:
+		case agentapi.ReceiveBind9ConfigFilter_VIEW:
 			filterTypes = append(filterTypes, FilterTypeView)
-		case agentapi.GetBind9ConfigFilter_ZONE:
+		case agentapi.ReceiveBind9ConfigFilter_ZONE:
 			filterTypes = append(filterTypes, FilterTypeZone)
-		case agentapi.GetBind9ConfigFilter_NO_PARSE:
+		case agentapi.ReceiveBind9ConfigFilter_NO_PARSE:
 			filterTypes = append(filterTypes, FilterTypeNoParse)
 		}
 	}
@@ -83,22 +83,22 @@ func (f *Filter) GetFilterTypes() []FilterType {
 }
 
 // Convenience function returning a list of filters in protobuf format.
-func (f *Filter) GetFilterAsProto() *agentapi.GetBind9ConfigFilter {
-	var filter *agentapi.GetBind9ConfigFilter
+func (f *Filter) GetFilterAsProto() *agentapi.ReceiveBind9ConfigFilter {
+	var filter *agentapi.ReceiveBind9ConfigFilter
 	if f != nil {
-		filter = &agentapi.GetBind9ConfigFilter{
-			FilterTypes: make([]agentapi.GetBind9ConfigFilter_FilterType, 0, len(f.getItems())),
+		filter = &agentapi.ReceiveBind9ConfigFilter{
+			FilterTypes: make([]agentapi.ReceiveBind9ConfigFilter_FilterType, 0, len(f.getItems())),
 		}
 		for _, filterType := range f.getItems() {
 			switch filterType {
 			case FilterTypeConfig:
-				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_CONFIG)
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_CONFIG)
 			case FilterTypeView:
-				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_VIEW)
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_VIEW)
 			case FilterTypeZone:
-				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_ZONE)
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_ZONE)
 			case FilterTypeNoParse:
-				filter.FilterTypes = append(filter.FilterTypes, agentapi.GetBind9ConfigFilter_NO_PARSE)
+				filter.FilterTypes = append(filter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_NO_PARSE)
 			}
 		}
 	}
@@ -141,10 +141,10 @@ func (s *FileTypeSelector) GetFileTypes() []FileType {
 }
 
 // Convenience function returning a list of file types in protobuf format.
-func (s *FileTypeSelector) GetFileTypesAsProto() *agentapi.GetBind9ConfigFileSelector {
-	var fileSelector *agentapi.GetBind9ConfigFileSelector
+func (s *FileTypeSelector) GetFileTypesAsProto() *agentapi.ReceiveBind9ConfigFileSelector {
+	var fileSelector *agentapi.ReceiveBind9ConfigFileSelector
 	if s != nil {
-		fileSelector = &agentapi.GetBind9ConfigFileSelector{
+		fileSelector = &agentapi.ReceiveBind9ConfigFileSelector{
 			FileTypes: make([]agentapi.Bind9ConfigFileType, 0, len(s.getItems())),
 		}
 		for _, fileType := range s.getItems() {

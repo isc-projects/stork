@@ -2270,175 +2270,20 @@ func TestGetPowerDNSServerInfoStatisticsErrorResponse(t *testing.T) {
 	require.Empty(t, details)
 }
 
-// Test getting BIND 9 configuration from a server with filtering.
-func TestGetBind9Config(t *testing.T) {
-	sa, _, teardown := setupAgentTest()
-	defer teardown()
-
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
-		},
-		bind9Config:   parseDefaultBind9Config(t),
-		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
-
-	t.Run("no filters", func(t *testing.T) {
-		// Do not specify the filters. The whole configuration is returned.
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
-		require.Contains(t, rsp.Files[0].SourcePath, "named.conf")
-		require.NotEmpty(t, rsp.Files[0].Contents)
-		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
-		require.Contains(t, rsp.Files[1].SourcePath, "rndc.key")
-		require.NotEmpty(t, rsp.Files[1].Contents)
-
-		// Make sure that the returned configuration is valid.
-		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
-		require.NoError(t, err)
-		require.NotNil(t, bind9Config)
-
-		// Make sure that other configuration than views and zones is not returned.
-		controls := bind9Config.GetControls()
-		require.NotNil(t, controls)
-
-		// Make sure that views are returned.
-		view := bind9Config.GetView("trusted")
-		require.NotNil(t, view)
-
-		// Make sure that zones are returned.
-		zone := view.GetZone("example.com")
-		require.NotNil(t, zone)
-
-		// Make sure that the rndc.key file is valid.
-		rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[1].Contents))
-		require.NoError(t, err)
-		require.NotNil(t, rndcKeyConfig)
-
-		rndcKey := rndcKeyConfig.GetKey("rndc-key")
-		require.NotNil(t, rndcKey)
-		algorithm, secret, err := rndcKey.GetAlgorithmSecret()
-		require.NoError(t, err)
-		require.NotNil(t, algorithm)
-		require.NotNil(t, secret)
-		require.Equal(t, "hmac-sha256", *algorithm)
-		require.Equal(t, "UlJY3N2FdJ5cWUT6jQt/OPEnT9ap4b45Pzo1724yYw=", *secret)
-	})
-
-	t.Run("config only", func(t *testing.T) {
-		// Fetch configuration information without views and zones.
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-			Filter: &agentapi.GetBind9ConfigFilter{
-				FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
-					agentapi.GetBind9ConfigFilter_CONFIG,
-				},
-			},
-			FileSelector: &agentapi.GetBind9ConfigFileSelector{
-				FileTypes: []agentapi.Bind9ConfigFileType{
-					agentapi.Bind9ConfigFileType_CONFIG,
-					agentapi.Bind9ConfigFileType_RNDC_KEY,
-				},
-			},
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
-		require.NotEmpty(t, rsp.Files[0].Contents)
-
-		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
-		require.NoError(t, err)
-		require.NotNil(t, bind9Config)
-
-		// Make sure that other configuration than views and zones is not returned.
-		controls := bind9Config.GetControls()
-		require.NotNil(t, controls)
-
-		// Make sure that views are not returned.
-		view := bind9Config.GetView("trusted")
-		require.Nil(t, view)
-
-		// Make sure that the rndc.key file is valid.
-		rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[1].Contents))
-		require.NoError(t, err)
-		require.NotNil(t, rndcKeyConfig)
-
-		rndcKey := rndcKeyConfig.GetKey("rndc-key")
-		require.NotNil(t, rndcKey)
-	})
-
-	t.Run("config and views", func(t *testing.T) {
-		// Explicitly ask for views besides the general configuration.
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-			Filter: &agentapi.GetBind9ConfigFilter{
-				FilterTypes: []agentapi.GetBind9ConfigFilter_FilterType{
-					agentapi.GetBind9ConfigFilter_CONFIG,
-					agentapi.GetBind9ConfigFilter_VIEW,
-				},
-			},
-			FileSelector: &agentapi.GetBind9ConfigFileSelector{
-				FileTypes: []agentapi.Bind9ConfigFileType{
-					agentapi.Bind9ConfigFileType_CONFIG,
-					agentapi.Bind9ConfigFileType_RNDC_KEY,
-				},
-			},
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
-		require.Contains(t, rsp.Files[0].SourcePath, "named.conf")
-		require.NotEmpty(t, rsp.Files[0].Contents)
-		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
-		require.Contains(t, rsp.Files[1].SourcePath, "rndc.key")
-		require.NotEmpty(t, rsp.Files[1].Contents)
-
-		bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[0].Contents))
-		require.NoError(t, err)
-		require.NotNil(t, bind9Config)
-
-		// Make sure that other configuration than views and zones is not returned.
-		controls := bind9Config.GetControls()
-		require.NotNil(t, controls)
-
-		// Views should be returned.
-		view := bind9Config.GetView("trusted")
-		require.NotNil(t, view)
-
-		// Zones should be excluded.
-		zone := view.GetZone("example.com")
-		require.Nil(t, zone)
-
-		// Make sure that the rndc.key file is valid.
-		rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(rsp.Files[1].Contents))
-		require.NoError(t, err)
-		require.NotNil(t, rndcKeyConfig)
-
-		rndcKey := rndcKeyConfig.GetKey("rndc-key")
-		require.NotNil(t, rndcKey)
-	})
+// In this structure we will collect the information about the received files
+// as we get them over the stream.
+type receivedBind9File struct {
+	fileType   agentapi.Bind9ConfigFileType
+	sourcePath string
+	contents   []string
 }
 
-// Test getting BIND 9 configuration with file selection.
-func TestGetBind9ConfigFileSelection(t *testing.T) {
+// Test getting BIND 9 configuration from a server without filters.
+func TestReceiveBind9ConfigNoFiltersNorFileTypes(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
+	// Create a BIND 9 app.
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
@@ -2452,80 +2297,274 @@ func TestGetBind9ConfigFileSelection(t *testing.T) {
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
 
-	t.Run("no file selection", func(t *testing.T) {
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
-		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
-	})
+	// Mock the server streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.ReceiveBind9ConfigRsp](ctrl)
 
-	t.Run("select config file", func(t *testing.T) {
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-			FileSelector: &agentapi.GetBind9ConfigFileSelector{
-				FileTypes: []agentapi.Bind9ConfigFileType{
-					agentapi.Bind9ConfigFileType_CONFIG,
-				},
-			},
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 1)
-		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
-	})
+	var receivedFiles []*receivedBind9File
 
-	t.Run("select rndc key file", func(t *testing.T) {
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-			FileSelector: &agentapi.GetBind9ConfigFileSelector{
-				FileTypes: []agentapi.Bind9ConfigFileType{
-					agentapi.Bind9ConfigFileType_RNDC_KEY,
-				},
-			},
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 1)
-		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[0].FileType)
+	// Mock the function sending the actual data over the stream. In this mock
+	// we collect the information about the received files and their contents.
+	mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveBind9ConfigRsp) error {
+		switch r := rsp.Response.(type) {
+		case *agentapi.ReceiveBind9ConfigRsp_File:
+			// Received file preamble.
+			receivedFile := &receivedBind9File{
+				fileType:   r.File.FileType,
+				sourcePath: r.File.SourcePath,
+			}
+			receivedFiles = append(receivedFiles, receivedFile)
+		case *agentapi.ReceiveBind9ConfigRsp_Line:
+			// Received file contents chunk. Append it to the last received file.
+			require.NotEmpty(t, receivedFiles)
+			receivedFiles[len(receivedFiles)-1].contents = append(receivedFiles[len(receivedFiles)-1].contents, r.Line)
+		}
+		return nil
 	})
+	// Specify multiple filters and file types.
+	err := sa.ReceiveBind9Config(&agentapi.ReceiveBind9ConfigReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		Filter: &agentapi.ReceiveBind9ConfigFilter{
+			FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{},
+		},
+	}, mock)
+	require.NoError(t, err)
+	require.Len(t, receivedFiles, 2)
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, receivedFiles[0].fileType)
+	require.Contains(t, receivedFiles[0].sourcePath, "named.conf")
+	require.NotEmpty(t, receivedFiles[0].contents)
+	require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, receivedFiles[1].fileType)
+	require.Contains(t, receivedFiles[1].sourcePath, "rndc.key")
+	require.NotEmpty(t, receivedFiles[1].contents)
 
-	t.Run("select both config and rndc key files", func(t *testing.T) {
-		rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
-			ControlAddress: "127.0.0.1",
-			ControlPort:    1234,
-			FileSelector: &agentapi.GetBind9ConfigFileSelector{
-				FileTypes: []agentapi.Bind9ConfigFileType{
-					agentapi.Bind9ConfigFileType_CONFIG,
-					agentapi.Bind9ConfigFileType_RNDC_KEY,
-				},
-			},
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Len(t, rsp.Files, 2)
-		require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.Files[0].FileType)
-		require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, rsp.Files[1].FileType)
+	// Make sure that the returned configuration is valid.
+	bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
+	require.NoError(t, err)
+	require.NotNil(t, bind9Config)
+
+	// Make sure that other configuration than views and zones is returned.
+	controls := bind9Config.GetControls()
+	require.NotNil(t, controls)
+
+	// Make sure that views are returned.
+	view := bind9Config.GetView("trusted")
+	require.NotNil(t, view)
+
+	// Make sure that zones are returned.
+	zone := view.GetZone("example.com")
+	require.NotNil(t, zone)
+
+	// Make sure that the rndc.key file is valid.
+	rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[1].contents, "\n")))
+	require.NoError(t, err)
+	require.NotNil(t, rndcKeyConfig)
+
+	rndcKey := rndcKeyConfig.GetKey("rndc-key")
+	require.NotNil(t, rndcKey)
+	algorithm, secret, err := rndcKey.GetAlgorithmSecret()
+	require.NoError(t, err)
+	require.Equal(t, "hmac-sha256", algorithm)
+	require.Equal(t, "UlJY3N2FdJ5cWUT6jQt/OPEnT9ap4b45Pzo1724yYw=", secret)
+}
+
+// Test getting BIND 9 configuration from a server with specifying
+// multiple filters and file types.
+func TestReceiveBind9ConfigMultipleFiltersAndFileTypes(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Create a BIND 9 app.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		bind9Config:   parseDefaultBind9Config(t),
+		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
 	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the server streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	var receivedFiles []*receivedBind9File
+
+	// Mock the function sending the actual data over the stream. In this mock
+	// we collect the information about the received files and their contents.
+	mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveBind9ConfigRsp) error {
+		switch r := rsp.Response.(type) {
+		case *agentapi.ReceiveBind9ConfigRsp_File:
+			// Received file preamble.
+			receivedFile := &receivedBind9File{
+				fileType:   r.File.FileType,
+				sourcePath: r.File.SourcePath,
+			}
+			receivedFiles = append(receivedFiles, receivedFile)
+		case *agentapi.ReceiveBind9ConfigRsp_Line:
+			// Received file contents chunk. Append it to the last received file.
+			require.NotEmpty(t, receivedFiles)
+			receivedFiles[len(receivedFiles)-1].contents = append(receivedFiles[len(receivedFiles)-1].contents, r.Line)
+		}
+		return nil
+	})
+	// Specify multiple filters and file types.
+	err := sa.ReceiveBind9Config(&agentapi.ReceiveBind9ConfigReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		Filter: &agentapi.ReceiveBind9ConfigFilter{
+			FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{
+				agentapi.ReceiveBind9ConfigFilter_CONFIG,
+				agentapi.ReceiveBind9ConfigFilter_ZONE,
+				agentapi.ReceiveBind9ConfigFilter_VIEW,
+			},
+		},
+		FileSelector: &agentapi.ReceiveBind9ConfigFileSelector{
+			FileTypes: []agentapi.Bind9ConfigFileType{
+				agentapi.Bind9ConfigFileType_CONFIG,
+				agentapi.Bind9ConfigFileType_RNDC_KEY,
+			},
+		},
+	}, mock)
+	require.NoError(t, err)
+	require.Len(t, receivedFiles, 2)
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, receivedFiles[0].fileType)
+	require.Contains(t, receivedFiles[0].sourcePath, "named.conf")
+	require.NotEmpty(t, receivedFiles[0].contents)
+	require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, receivedFiles[1].fileType)
+	require.Contains(t, receivedFiles[1].sourcePath, "rndc.key")
+	require.NotEmpty(t, receivedFiles[1].contents)
+
+	// Make sure that the returned configuration is valid.
+	bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
+	require.NoError(t, err)
+	require.NotNil(t, bind9Config)
+
+	// Make sure that other configuration than views and zones is returned.
+	controls := bind9Config.GetControls()
+	require.NotNil(t, controls)
+
+	// Make sure that views are returned.
+	view := bind9Config.GetView("trusted")
+	require.NotNil(t, view)
+
+	// Make sure that zones are returned.
+	zone := view.GetZone("example.com")
+	require.NotNil(t, zone)
+
+	// Make sure that the rndc.key file is valid.
+	rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[1].contents, "\n")))
+	require.NoError(t, err)
+	require.NotNil(t, rndcKeyConfig)
+
+	rndcKey := rndcKeyConfig.GetKey("rndc-key")
+	require.NotNil(t, rndcKey)
+	algorithm, secret, err := rndcKey.GetAlgorithmSecret()
+	require.NoError(t, err)
+	require.Equal(t, "hmac-sha256", algorithm)
+	require.Equal(t, "UlJY3N2FdJ5cWUT6jQt/OPEnT9ap4b45Pzo1724yYw=", secret)
+}
+
+// Test getting BIND 9 configuration from a server with specifying
+// a single filter and file type.
+func TestReceiveBind9ConfigSingleFilterAndFileType(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Create a BIND 9 app.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		bind9Config:   parseDefaultBind9Config(t),
+		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the server streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	var receivedFiles []*receivedBind9File
+
+	// Mock the function sending the actual data over the stream. In this mock
+	// we collect the information about the received files and their contents.
+	mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveBind9ConfigRsp) error {
+		switch r := rsp.Response.(type) {
+		case *agentapi.ReceiveBind9ConfigRsp_File:
+			// Received file preamble.
+			receivedFile := &receivedBind9File{
+				fileType:   r.File.FileType,
+				sourcePath: r.File.SourcePath,
+			}
+			receivedFiles = append(receivedFiles, receivedFile)
+		case *agentapi.ReceiveBind9ConfigRsp_Line:
+			// Received file contents chunk. Append it to the last received file.
+			require.NotEmpty(t, receivedFiles)
+			receivedFiles[len(receivedFiles)-1].contents = append(receivedFiles[len(receivedFiles)-1].contents, r.Line)
+		}
+		return nil
+	})
+	// Specify a single filter and file type.
+	err := sa.ReceiveBind9Config(&agentapi.ReceiveBind9ConfigReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		Filter: &agentapi.ReceiveBind9ConfigFilter{
+			FilterTypes: []agentapi.ReceiveBind9ConfigFilter_FilterType{
+				agentapi.ReceiveBind9ConfigFilter_CONFIG,
+			},
+		},
+		FileSelector: &agentapi.ReceiveBind9ConfigFileSelector{
+			FileTypes: []agentapi.Bind9ConfigFileType{
+				agentapi.Bind9ConfigFileType_CONFIG,
+			},
+		},
+	}, mock)
+	require.NoError(t, err)
+	require.Len(t, receivedFiles, 1)
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, receivedFiles[0].fileType)
+	require.Contains(t, receivedFiles[0].sourcePath, "named.conf")
+	require.NotEmpty(t, receivedFiles[0].contents)
+
+	// Make sure that the returned configuration is valid.
+	bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
+	require.NoError(t, err)
+	require.NotNil(t, bind9Config)
+
+	// Make sure that other configuration than views and zones is returned.
+	controls := bind9Config.GetControls()
+	require.NotNil(t, controls)
+
+	// Make sure that views are not returned.
+	view := bind9Config.GetView("trusted")
+	require.Nil(t, view)
 }
 
 // Test getting BIND 9 configuration from a non-existing server.
-func TestGetBind9ConfigNoApp(t *testing.T) {
+func TestReceiveBind9ConfigNoApp(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	err := sa.ReceiveBind9Config(&agentapi.ReceiveBind9ConfigReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
-	})
+	}, mock)
 	require.Error(t, err)
-	require.Nil(t, rsp)
 
 	st := status.Convert(err)
 	require.Equal(t, codes.FailedPrecondition, st.Code())
@@ -2533,7 +2572,7 @@ func TestGetBind9ConfigNoApp(t *testing.T) {
 }
 
 // Test getting BIND 9 configuration from a non-BIND9 DNS server.
-func TestGetBind9ConfigNotBind9App(t *testing.T) {
+func TestReceiveBind9ConfigNotBind9App(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
@@ -2549,12 +2588,15 @@ func TestGetBind9ConfigNotBind9App(t *testing.T) {
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
 
-	rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	err := sa.ReceiveBind9Config(&agentapi.ReceiveBind9ConfigReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
-	})
+	}, mock)
 	require.Error(t, err)
-	require.Nil(t, rsp)
 
 	st := status.Convert(err)
 	require.Equal(t, codes.InvalidArgument, st.Code())
@@ -2563,7 +2605,7 @@ func TestGetBind9ConfigNotBind9App(t *testing.T) {
 
 // Test getting BIND 9 configuration from a server for which the
 // configuration was not found.
-func TestGetBind9ConfigNoConfig(t *testing.T) {
+func TestReceiveBind9ConfigNoConfig(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
@@ -2579,12 +2621,15 @@ func TestGetBind9ConfigNoConfig(t *testing.T) {
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
 
-	rsp, err := sa.GetBind9Config(context.Background(), &agentapi.GetBind9ConfigReq{
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.ReceiveBind9ConfigRsp](ctrl)
+
+	err := sa.ReceiveBind9Config(&agentapi.ReceiveBind9ConfigReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
-	})
+	}, mock)
 	require.Error(t, err)
-	require.Nil(t, rsp)
 
 	st := status.Convert(err)
 	require.Equal(t, codes.NotFound, st.Code())

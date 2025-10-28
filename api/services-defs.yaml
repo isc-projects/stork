@@ -335,7 +335,9 @@
           - config
           - rndc-key
       contents:
-        type: string
+        type: array
+        items:
+          type: string
 
   Bind9RawConfig:
     type: object
