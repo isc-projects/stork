@@ -366,7 +366,8 @@ func bodySizeLimiterMiddleware(next http.Handler, maxBodySize int64) http.Handle
 	})
 }
 
-func secureHeadersMiddleware(next http.Handler) http.Handler {
+// Middleware that adds HTTP security headers to HTTP responses from the server.
+func securityHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("X-Frame-Options", "DENY")
 		w.Header().Add("X-Content-Type-Options", "nosniff")
@@ -387,7 +388,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL
 	handler = metricsMiddleware(handler, r.MetricsCollector)
 	handler = trimBaseURLMiddleware(handler, baseURL)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
-	handler = secureHeadersMiddleware(handler)
+	handler = securityHeadersMiddleware(handler)
 	handler = loggingMiddleware(handler)
 	return handler
 }

@@ -733,7 +733,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	// Act
-	handler := secureHeadersMiddleware(nextHandler)
+	handler := securityHeadersMiddleware(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/api/version", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
