@@ -726,3 +726,28 @@ func TestMaxBodySizeMiddleware(t *testing.T) {
 		require.EqualValues(t, "foo", content)
 	})
 }
+
+// Check if HTTP security headers are added to the response by middleware.
+func TestSecurityHeadersMiddleware(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+
+	// Act
+	handler := secureHeadersMiddleware(nextHandler)
+	req := httptest.NewRequest("GET", "http://localhost/api/version", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+
+	// Assert
+	require.Contains(t, resp.Header, "X-Frame-Options")
+	require.Contains(t, resp.Header, "X-Content-Type-Options")
+	require.Contains(t, resp.Header, "Strict-Transport-Security")
+	require.Contains(t, resp.Header, "Content-Security-Policy")
+	require.Contains(t, resp.Header.Get("X-Frame-Options"), "DENY")
+	require.Contains(t, resp.Header.Get("X-Content-Type-Options"), "nosniff")
+	require.Contains(t, resp.Header.Get("Strict-Transport-Security"), "max-age=")
+	require.Contains(t, resp.Header.Get("Strict-Transport-Security"), "includeSubdomains")
+	require.Contains(t, resp.Header.Get("Content-Security-Policy"), "frame-ancestors 'none'")
+}
