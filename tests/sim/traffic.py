@@ -12,11 +12,18 @@ log = logging.getLogger(__name__)
 
 # Pattern that matches the client classes in the subnets defined in the demo
 # Kea configurations.
-# Example of valid client class: client-class-01-01.
+# Examples of valid client classes:
+# - client-class-01-01
+# - client-class-03-47-RELAY
+# - client-class-00-04-eth2
+# - client-class-04-10-enp0s4-RELAY
 # The first number is the subnet index to use: 00, 01 (IPv4 and IPv6),
 # 02, 03 (IPv4 only).
 # The numbers are used as first bytes of the MAC address.
-_client_class_pattern = re.compile(r"class-(\d{2})-(\d{2})")
+# Adding an interface specifier tells perfdhcp which interface to send traffic
+# from. By default, eth1.
+# Adding -RELAY tells perfdhcp to act like a DHCP relay when sending traffic.
+_client_class_pattern = re.compile(r"class-(\d{2})-(\d{2})(-[a-z0-9]+)?(-RELAY)?")
 
 
 def get_subnet_client_classes(subnet):
@@ -52,13 +59,26 @@ def start_perfdhcp(subnet):
 
     if m is None:
         # Client class not found, so we cannot generate traffic.
+        # Also, whatever version of Pylint we're using is not smart enough to
+        # realize that the quotes have to be different here, otherwise the
+        # f-string is closed prematurely.
+        # pylint: disable-next=inconsistent-quotes
         raise ValueError(f"Missing client class for subnet: {subnet['subnet']}")
 
-    client_class_bytes = m.groups()
+    client_class_params = m.groups()
+    (byte0, byte1, iface, relay) = client_class_params
+    print("iface:", iface)
+    if not iface:
+        iface = "eth1"
+    else:
+        # Trim off dash in front of interface name.
+        iface = iface[1:]
+    print("iface (after):", iface)
+    is_relay = bool(relay == "-RELAY")
 
     if "." in subnet["subnet"]:
         # IPv4
-        kea_addr = f"172.1{client_class_bytes[0]}.0.100"
+        kea_addr = f"172.1{byte0}.0.100"
         cmd = [
             "/usr/sbin/perfdhcp",
             "-4",
@@ -66,8 +86,12 @@ def start_perfdhcp(subnet):
             str(rate),
             "-R",
             str(clients),
+        ]
+        if is_relay:
+            cmd += ["-A", "1"]
+        cmd += [
             "-b",
-            f"mac={client_class_bytes[0]}:{client_class_bytes[1]}:00:00:00:00",
+            f"mac={byte0}:{byte1}:00:00:00:00",
             kea_addr,
         ]
     else:
@@ -80,11 +104,15 @@ def start_perfdhcp(subnet):
             "-R",
             str(clients),
             "-l",
-            "eth1",
+            iface,
+        ]
+        if is_relay:
+            cmd += ["-A", "1"]
+        cmd += [
             "-b",
             "duid=000000000000",
             "-b",
-            f"mac={client_class_bytes[0]}:{client_class_bytes[1]}:00:00:00:00",
+            f"mac={byte0}:{byte1}:00:00:00:00",
         ]
     return subprocess.Popen(cmd)
 

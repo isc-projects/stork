@@ -213,6 +213,9 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.101
+      subnet-03:
+        ipv4_address: 172.103.0.100
+        priority: 200
     expose:
       - "8886"
       - "9547" # kea_exporter for prometheus
@@ -252,6 +255,9 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.110
+      subnet-03:
+        ipv4_address: 172.103.0.102
+        priority: 200
     expose:
       - "8885"
     ports:
@@ -290,6 +296,9 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.121
+      subnet-03:
+        ipv4_address: 172.103.0.103
+        priority: 200
     expose:
       - "8890"
       - "9547" # kea_exporter for prometheus
