@@ -3,7 +3,8 @@ import functools
 import logging
 import time
 import traceback
-from typing import Any, Callable, Dict, Hashable
+from collections.abc import Hashable
+from typing import Any, Callable, Dict
 import urllib3
 
 

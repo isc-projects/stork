@@ -67,8 +67,14 @@ def get_test_progress():
     :return: textual representation of the total test progress
     :rtype: str
     """
+    # Whatever version of Pylint we're using is not smart enough to
+    # realize that the quotes have to be different here, otherwise the
+    # f-string is closed prematurely.
+    # pylint: disable-next=inconsistent-quotes
     result = f"#{test_progress['current_test_index']}"
     if test_progress["test_count"] != 0:
+        # ditto re: pylint and quotes
+        # pylint: disable-next=inconsistent-quotes
         result += f"/{test_progress['test_count']}"
     return result
 
