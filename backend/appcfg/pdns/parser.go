@@ -12,6 +12,13 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+const (
+	// Initial size of the buffer for a single line in the parser.
+	minParserBufferSize = 512
+	// Maximum size of the buffer for a single line in the parser.
+	maxParserBufferSize = 16 * 1024
+)
+
 // Parser is a parser for PowerDNS configuration files using the
 // key=values format.
 type Parser struct{}
@@ -29,6 +36,7 @@ func (p *Parser) Parse(reader io.Reader) (*Config, error) {
 
 	// The default scanner splits the input into lines.
 	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(make([]byte, 0, minParserBufferSize), maxParserBufferSize)
 	for scanner.Scan() {
 		text := strings.TrimSpace(scanner.Text())
 		if text == "" || strings.HasPrefix(text, "#") {
@@ -82,7 +90,13 @@ func (p *Parser) Parse(reader io.Reader) (*Config, error) {
 			parsedMap[key] = parsedValues
 		}
 	}
-	return newConfig(parsedMap), errors.Wrap(scanner.Err(), "failed to parse PowerDNS configuration file")
+	if err := scanner.Err(); err != nil {
+		if errors.Is(err, bufio.ErrTooLong) {
+			return nil, errors.Wrapf(err, "encountered PowerDNS configuration line exceeding the maximum buffer size: %d", maxParserBufferSize)
+		}
+		return nil, errors.Wrap(err, "failed to parse PowerDNS configuration file")
+	}
+	return newConfig(parsedMap), nil
 }
 
 // Parses the PowerDNS configuration from a file.

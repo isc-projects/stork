@@ -141,3 +141,13 @@ func TestParseExcludeEmptyKey(t *testing.T) {
 	require.NotNil(t, apiKey)
 	require.Equal(t, "stork", *apiKey)
 }
+
+// Test that parser returns an error when a line exceeds the maximum buffer size.
+func TestParseTooLong(t *testing.T) {
+	parser := NewParser()
+	require.NotNil(t, parser)
+	cfg, err := parser.Parse(strings.NewReader(strings.Repeat("a", maxParserBufferSize+1)))
+	require.Error(t, err)
+	require.ErrorContains(t, err, "encountered PowerDNS configuration line exceeding the maximum buffer size")
+	require.Nil(t, cfg)
+}
