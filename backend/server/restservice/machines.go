@@ -1486,6 +1486,16 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		limit = *params.Limit
 	}
 
+	var sortField string = ""
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+
+	var sortDir = dbmodel.SortDirAny
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
+
 	log.WithFields(log.Fields{
 		"start": start,
 		"limit": limit,
@@ -1497,7 +1507,7 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 	for _, appType := range params.Apps {
 		appTypes = append(appTypes, dbmodel.VirtualAppType(appType))
 	}
-	apps, err := r.getApps(start, limit, params.Text, "", dbmodel.SortDirAny, appTypes...)
+	apps, err := r.getApps(start, limit, params.Text, sortField, sortDir, appTypes...)
 	if err != nil {
 		msg := "Cannot get apps from db"
 		log.WithError(err).Error(msg)
