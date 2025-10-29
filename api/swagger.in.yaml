@@ -291,3 +291,23 @@ parameters:
       type: string
       enum: *BIND9CONFIGFILETYPE
     collectionFormat: multi
+
+  sortField:
+    name: sortField
+    in: query
+    description: >-
+      Field name by which returned results
+      shall be sorted.
+    type: string
+
+  sortDir:
+    name: sortDir
+    in: query
+    description: >-
+      Sorting direction represented by
+      int number. Set to 1 to sort in Ascending order.
+      Set to 2 to sort in Descending order.
+    type: integer
+    enum:
+      - 1
+      - 2
