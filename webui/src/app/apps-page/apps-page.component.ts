@@ -143,6 +143,24 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Function converting PrimeNG table sorting related metadata to REST API
+     * sorting fields format.
+     * @param event table lazy load event
+     * @return an array of sorting fields in REST API format
+     */
+    handleSortingFields(event: TableLazyLoadEvent): [string, SortDir] {
+        if (!event || !event.sortField) {
+            return [null, null]
+        }
+
+        if (!event.sortOrder) {
+            return [<string>event.sortField, null]
+        }
+
+        return [<string>event.sortField, event.sortOrder === -1 ? SortDir.Desc : SortDir.Asc]
+    }
+
+    /**
      * Function called by the table data loader. Accepts the pagination event.
      */
     loadApps(event: TableLazyLoadEvent) {
@@ -156,7 +174,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 event.first,
                 event.rows,
                 (event.filters['text'] as FilterMetadata)?.value || null,
-                (event.filters['apps'] as FilterMetadata)?.value ?? null
+                (event.filters['apps'] as FilterMetadata)?.value ?? null,
+                ...this.handleSortingFields(event)
             )
         )
             .then((data) => {

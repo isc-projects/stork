@@ -162,8 +162,8 @@
             </ng-template>
             <ng-template #header>
                 <tr>
-                    <th style="width: 14em">Name</th>
-                    <th>Version</th>
+                    <th style="width: 14em" pSortableColumn="name">Name <p-sortIcon field="name" /></th>
+                    <th pSortableColumn="meta">Version <p-sortIcon field="meta" /></th>
                     <th>Status</th>
                     <th>Machine Address</th>
                     <th>Machine Hostname</th>
