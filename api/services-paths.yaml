@@ -355,6 +355,8 @@
           type: array
           items:
             type: string
+        - $ref: '#/parameters/sortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of apps
