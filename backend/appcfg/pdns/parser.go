@@ -17,6 +17,8 @@ const (
 	minParserBufferSize = 512
 	// Maximum size of the buffer for a single line in the parser.
 	maxParserBufferSize = 16 * 1024
+	// Maximum number of fields per line in the PowerDNS configuration.
+	maxParserFieldsPerLine = 500
 )
 
 // Parser is a parser for PowerDNS configuration files using the
@@ -61,7 +63,12 @@ func (p *Parser) Parse(reader io.Reader) (*Config, error) {
 		fields := strings.FieldsFunc(values, func(r rune) bool {
 			return unicode.IsSpace(r) || r == ','
 		})
-		parsedValues := make([]ParsedValue, 0, len(fields))
+		// Protect against lines with too many tokens.
+		// It would consume excessive amount of memory.
+		if len(fields) > maxParserFieldsPerLine {
+			return nil, errors.Errorf("encountered PowerDNS configuration line exceeding the maximum number of fields: %d", maxParserFieldsPerLine)
+		}
+		parsedValues := make([]ParsedValue, 0, 20)
 		for _, field := range fields {
 			// Remove leading and trailing whitespace from the field.
 			// If it is empty, skip the field.
