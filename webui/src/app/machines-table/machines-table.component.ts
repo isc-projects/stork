@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { Machine, ServicesService } from '../backend'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { Machine, MachineSortField, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableSelectAllChangeEvent } from 'primeng/table'
 import { Router } from '@angular/router'
 import { MessageService, TableState } from 'primeng/api'
@@ -165,7 +165,8 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
                 event.rows,
                 (event.filters['text'] as FilterMetadata)?.value || null,
                 null,
-                authorized
+                authorized,
+                ...convertSortingFields<MachineSortField>(event)
             )
         )
             .then((data) => {
@@ -351,4 +352,10 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly MachineSortField = MachineSortField
 }

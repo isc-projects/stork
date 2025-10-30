@@ -152,9 +152,11 @@
                     appAccessType="update"
                 ></p-tableHeaderCheckbox>
             </th>
-            <th class="w-8rem">Hostname</th>
-            <th class="w-10rem">
-                Location
+            <th class="w-8rem" [pSortableColumn]="MachineSortField.StateHostname">
+                Hostname <p-sortIcon [field]="MachineSortField.StateHostname" />
+            </th>
+            <th class="w-10rem" [pSortableColumn]="MachineSortField.Address">
+                Location <p-sortIcon [field]="MachineSortField.Address" />
                 <app-help-tip subject="Location" id="location-help-button">
                     <p>
                         This specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
@@ -196,8 +198,8 @@
                 <th class="w-5rem">Total Memory [GB]</th>
                 <th class="w-7rem">Memory Usage [%]</th>
                 <th class="hiding-column w-6rem">Uptime</th>
-                <th class="hiding-column w-6rem">
-                    Last Refreshed
+                <th class="hiding-column w-6rem" [pSortableColumn]="MachineSortField.LastVisitedAt">
+                    Last Refreshed <p-sortIcon [field]="MachineSortField.LastVisitedAt" />
                     <app-help-tip subject="Last Refreshed" id="last-refreshed-help-button"
                         ><p>
                             This shows when the machine status was last retrieved. Click the blue button in the Action
