@@ -23,6 +23,7 @@ func TestHostWithPortURL(t *testing.T) {
 	require.Equal(t, "https://localhost:1000/", HostWithPortURL("localhost", 1000, "https"))
 	require.Equal(t, "https://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, "https"))
 	require.Equal(t, "unix://socket/path/", HostWithPortURL("socket/path", 0, "unix"))
+	require.Equal(t, "https://[::]:1000/", HostWithPortURL("::", 1000, "https"))
 }
 
 // Test parsing URL into host and port.

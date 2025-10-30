@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -31,6 +32,10 @@ func UTCNow() time.Time {
 func HostWithPortURL(address string, port int64, protocol string) string {
 	if port == 0 {
 		return fmt.Sprintf("%s://%s/", protocol, address)
+	}
+	ip := net.ParseIP(address)
+	if ip != nil && ip.To4() == nil {
+		address = fmt.Sprintf("[%s]", address)
 	}
 	return fmt.Sprintf("%s://%s:%d/", protocol, address, port)
 }
