@@ -218,6 +218,13 @@ definitions:
       - meta->>'Version'
       - machine.address
 
+  MachineSortField:
+    type: string
+    enum: &MACHINESORTFIELD
+      - address
+      - state->>'Hostname'
+      - last_visited_at
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -305,6 +312,13 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *APPSORTFIELD
+
+  machineSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *MACHINESORTFIELD
 
   sortDir:
     name: sortDir

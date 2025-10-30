@@ -22,6 +22,8 @@
           in: query
           description: Indicate if authorized or unauthorized machines should be returned.
           type: boolean
+        - $ref: '#/parameters/machineSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of machines
