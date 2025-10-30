@@ -1,0 +1,4 @@
+address,duid,valid_lifetime,expire,subnet_id,pref_lifetime,lease_type,iaid,prefix_len,fqdn_fwd,fqdn_rev,hostname,hwaddr,state,user_context,hwtype,hwaddr_source,pool_id
+51a4:14ec:1::,01:00:00:00:00:00,3600,1761672649,123,2250,0,1,128,0,0,,,2,,,,0
+51a4:14ec:1::1,01:00:00:00:00:01,3600,1761672651,123,2250,0,1,128,0,0,,,2,,,,0
+51a4:14ec:1::2,01:00:00:00:00:02,3600,1761672652,123,2250,0,1,128,0,0,,,2,,,,0

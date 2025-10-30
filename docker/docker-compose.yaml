@@ -258,6 +258,9 @@ services:
       subnet-03:
         ipv4_address: 172.103.0.102
         priority: 200
+      subnet6-02:
+        ipv6_address: 3002:db8:1::200
+        priority: 400
     expose:
       - "8885"
     ports:
@@ -276,10 +279,12 @@ services:
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha2/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/agent-kea-ha2/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
+      - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
@@ -299,6 +304,9 @@ services:
       subnet-03:
         ipv4_address: 172.103.0.103
         priority: 200
+      subnet6-02:
+        ipv6_address: 3002:db8:1::300
+        priority: 400
     expose:
       - "8890"
       - "9547" # kea_exporter for prometheus
@@ -318,10 +326,12 @@ services:
     volumes:
       - ./docker/config/agent-kea-ha3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-ha3/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/agent-kea-ha3/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
+      - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
@@ -523,6 +533,9 @@ services:
       subnet-03:
         ipv4_address: 172.103.0.200
         priority: 200
+      subnet6-02:
+        ipv6_address: 3002:db8:1::010
+        priority: 600
       subnet6-00:
         ipv6_address: 3000:db8:1::200
         priority: 500
@@ -639,6 +652,11 @@ networks:
     ipam:
       config:
         - subnet: 3001:db8:1::/64
+  subnet6-02:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 3002:db8:1::/64
 
 # Volumes shared cross services
 volumes:
