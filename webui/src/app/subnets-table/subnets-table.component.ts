@@ -1,6 +1,6 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { DHCPService, Subnet } from '../backend'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { DHCPService, Subnet, SubnetSortField } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Router } from '@angular/router'
 import { MessageService, TableState } from 'primeng/api'
@@ -92,7 +92,8 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
                     (event.filters['appId'] as FilterMetadata)?.value ?? null,
                     (event.filters['subnetId'] as FilterMetadata)?.value ?? null,
                     (event.filters['dhcpVersion'] as FilterMetadata)?.value ?? null,
-                    (event.filters['text'] as FilterMetadata)?.value || null
+                    (event.filters['text'] as FilterMetadata)?.value || null,
+                    ...convertSortingFields<SubnetSortField>(event)
                 )
                 // Custom parsing for statistics
                 .pipe(
@@ -329,4 +330,10 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly SubnetSortField = SubnetSortField
 }
