@@ -54,6 +54,20 @@ func (error *ManagerRRsAlreadyRequestedError) Error() string {
 	return fmt.Sprintf("zone transfer for view %s, zone %s has been already requested by another user", error.viewName, error.zoneName)
 }
 
+// An error returned upon concurrent attempts to transfer the same zone
+// for the same view and daemon.
+type ManagerBind9RawConfigAlreadyRequestedError struct{}
+
+// Instantiates a new ManagerRRsAlreadyRequestedError.
+func NewManagerBind9RawConfigAlreadyRequestedError() *ManagerBind9RawConfigAlreadyRequestedError {
+	return &ManagerBind9RawConfigAlreadyRequestedError{}
+}
+
+// Returns the error as text.
+func (error *ManagerBind9RawConfigAlreadyRequestedError) Error() string {
+	return "BIND 9 configuration for the specified daemon has been already requested by another user"
+}
+
 // This interface must be implemented by the instance owning the Manager.
 // The server.StorkServer instance implements this interface because it
 // owns the instance of the Manager. The Manager uses it to get access to
@@ -167,8 +181,6 @@ func (state *fetchingState) increaseCompletedAppsCount() {
 
 // A state of requests sent to the agents to fetch RRs.
 type rrsRequestingState struct {
-	pool        *storkutil.PausablePool
-	cancel      context.CancelFunc
 	requestChan chan *rrsRequest
 	requests    map[uint64]bool
 	mutex       sync.Mutex
@@ -233,7 +245,38 @@ func NewCacheRRResponse(rrs []*dnsconfig.RR, transferAt time.Time) *RRResponse {
 	}
 }
 
-// A structure representing a chunk of the BIND 9 configuration  received
+// A state of requests sent to the agents to receive BIND 9 configuration.
+type bind9RawConfigRequestingState struct {
+	requestChan chan *bind9RawConfigRequest
+	requests    map[int64]bool
+	mutex       sync.Mutex
+}
+
+// A structure holding a request to receive BIND 9 configuration from the agent.
+type bind9RawConfigRequest struct {
+	ctx          context.Context
+	app          *dbmodel.App
+	fileSelector *bind9config.FileTypeSelector
+	filter       *bind9config.Filter
+	respChan     chan *Bind9RawConfigResponse
+	closeOnce    sync.Once
+	daemonID     int64
+}
+
+// Instantiates a new BIND 9 configuration request.
+func newBind9RawConfigRequest(ctx context.Context, daemonID int64, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) *bind9RawConfigRequest {
+	return &bind9RawConfigRequest{
+		ctx:          ctx,
+		app:          app,
+		fileSelector: fileSelector,
+		filter:       filter,
+		respChan:     make(chan *Bind9RawConfigResponse),
+		closeOnce:    sync.Once{},
+		daemonID:     daemonID,
+	}
+}
+
+// A structure representing a chunk of the BIND 9 configuration received
 // over the stream.
 type Bind9RawConfigResponse struct {
 	// The BIND 9 configuration file preamble.
@@ -284,6 +327,12 @@ type managerImpl struct {
 	fetchingState *fetchingState
 	// A state of RRs requests.
 	rrsReqsState *rrsRequestingState
+	// A state of BIND 9 configuration requests.
+	bind9RawConfigReqsState *bind9RawConfigRequestingState
+	// A pool of workers for RRs requests and BIND 9 configuration requests.
+	pool *storkutil.PausablePool
+	// A cancel function for the pool.
+	cancel context.CancelFunc
 }
 
 // A structure returned over the channel when Manager completes asynchronous task.
@@ -303,10 +352,14 @@ func NewManager(owner ManagerAccessors) (Manager, error) {
 		rrsReqsState: &rrsRequestingState{
 			requestChan: make(chan *rrsRequest),
 			requests:    make(map[uint64]bool),
-			cancel:      cancel,
 		},
+		bind9RawConfigReqsState: &bind9RawConfigRequestingState{
+			requestChan: make(chan *bind9RawConfigRequest),
+			requests:    make(map[int64]bool),
+		},
+		cancel: cancel,
 	}
-	impl.startRRsRequestWorkers(ctx)
+	impl.startAsyncRequestWorkers(ctx)
 	return impl, nil
 }
 
@@ -566,11 +619,73 @@ func (manager *managerImpl) requestZoneRRs(ctx context.Context, key uint64, app 
 	return request.respChan, nil
 }
 
-// Starts a pool of workers that fetch RRs for the requested zones from the
-// agents' zone inventories.
-func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) {
+// Requests BIND 9 configuration from the agent and returns it over the
+// response channel.
+func (manager *managerImpl) runBind9RawConfigRequest(request *bind9RawConfigRequest) {
+	defer func() {
+		close(request.respChan)
+		manager.bind9RawConfigReqsState.mutex.Lock()
+		defer manager.bind9RawConfigReqsState.mutex.Unlock()
+		delete(manager.bind9RawConfigReqsState.requests, request.daemonID)
+	}()
+	for rsp, err := range manager.agents.ReceiveBind9RawConfig(context.Background(), request.app, request.fileSelector, request.filter) {
+		var response *Bind9RawConfigResponse
+		switch {
+		case err != nil:
+			response = NewBind9RawConfigResponseError(err)
+		case rsp == nil:
+			response = NewBind9RawConfigResponseError(errors.Errorf("unexpected nil response while getting BIND 9 configuration from the agent"))
+		default:
+			// Non-error response.
+			switch r := rsp.Response.(type) {
+			case *agentapi.ReceiveBind9ConfigRsp_File:
+				// A BIND 9 configuration file preamble.
+				response = NewBind9RawConfigResponseFile(r.File)
+			case *agentapi.ReceiveBind9ConfigRsp_Line:
+				// The BIND 9 configuration file contents.
+				response = NewBind9RawConfigResponseContents(&r.Line)
+			default:
+				// Unexpected response type.
+				response = NewBind9RawConfigResponseError(errors.Errorf("unexpected response type: %T", rsp.Response))
+			}
+		}
+		select {
+		case <-request.ctx.Done():
+			// The client stopped reading the BIND 9 configuration.
+			return
+		case request.respChan <- response:
+			// Get more requests.
+		}
+	}
+}
+
+// Requests BIND 9 configuration from the agent and returns it over the response channel.
+// This function prevents concurrent requests for the same daemon. If there is another
+// request for the same daemon is in progress, the function returns an error.
+func (manager *managerImpl) requestBind9RawConfig(ctx context.Context, daemonID int64, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (chan *Bind9RawConfigResponse, error) {
+	// Try to mark the request as ongoing. If the request is already present
+	// for the same daemon, return an error.
+	manager.bind9RawConfigReqsState.mutex.Lock()
+	if _, ok := manager.bind9RawConfigReqsState.requests[daemonID]; ok {
+		manager.bind9RawConfigReqsState.mutex.Unlock()
+		return nil, NewManagerBind9RawConfigAlreadyRequestedError()
+	}
+	manager.bind9RawConfigReqsState.requests[daemonID] = true
+	manager.bind9RawConfigReqsState.mutex.Unlock()
+
+	// Create a new request and send it to the channel.
+	request := newBind9RawConfigRequest(ctx, daemonID, app, fileSelector, filter)
+	manager.bind9RawConfigReqsState.requestChan <- request
+	// Return the response channel, so the caller can receive the BIND 9 configuration.
+	return request.respChan, nil
+}
+
+// Starts a pool of workers that fetch RRs for the requested zones and
+// BIND 9 configurations from the agents. Usint the worker pool limits
+// the number of concurrent requests to the agents.
+func (manager *managerImpl) startAsyncRequestWorkers(ctx context.Context) {
 	pool := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)
-	manager.rrsReqsState.pool = pool
+	manager.pool = pool
 	go func(ctx context.Context) {
 		defer func() {
 			// When the worker pool is stopped, we need to close the request channel.
@@ -591,15 +706,26 @@ func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) {
 					log.WithError(err).Error("Failed to submit RRs request to the worker pool")
 					request.respChan <- NewErrorRRResponse(err)
 				}
+			case request, ok := <-manager.bind9RawConfigReqsState.requestChan:
+				if !ok {
+					return
+				}
+				err := pool.Submit(func() {
+					manager.runBind9RawConfigRequest(request)
+				})
+				if err != nil {
+					log.WithError(err).Error("Failed to submit BIND 9 configuration request to the worker pool")
+					request.respChan <- NewBind9RawConfigResponseError(err)
+				}
 			}
 		}
 	}(ctx)
 }
 
-// Stops the worker pool for fetching RRs.
+// Stops the worker pool for receiving RRs and BIND 9 configuration.
 func (manager *managerImpl) stopRRsRequestWorkers() {
-	manager.rrsReqsState.pool.Stop()
-	manager.rrsReqsState.cancel()
+	manager.pool.Stop()
+	manager.cancel()
 }
 
 // Shuts down the DNS manager by stopping background tasks.
@@ -757,25 +883,18 @@ func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int6
 			return
 		}
 		app := daemon.App
-		for rsp, err := range manager.agents.ReceiveBind9RawConfig(ctx, app, fileSelector, filter) {
-			if err != nil {
-				_ = yield(NewBind9RawConfigResponseError(err))
-				return
-			}
-			if rsp == nil {
-				_ = yield(NewBind9RawConfigResponseError(errors.Errorf("unexpected nil response while getting BIND 9 configuration from the agent")))
-				return
-			}
-			var ok bool
-			switch r := rsp.Response.(type) {
-			case *agentapi.ReceiveBind9ConfigRsp_File:
-				ok = yield(NewBind9RawConfigResponseFile(r.File))
-			case *agentapi.ReceiveBind9ConfigRsp_Line:
-				ok = yield(NewBind9RawConfigResponseContents(&r.Line))
-			default:
-				ok = yield(NewBind9RawConfigResponseError(errors.Errorf("unexpected response type: %T", rsp.Response)))
-			}
-			if !ok {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		ch, err := manager.requestBind9RawConfig(ctx, daemonID, app, fileSelector, filter)
+		if err != nil {
+			// The zone inventory is most likely busy.
+			_ = yield(NewBind9RawConfigResponseError(err))
+			return
+		}
+		for r := range ch {
+			if !yield(r) || r.Err != nil {
+				// Stop reading the BIND 9 configuration if the caller is done reading
+				// or there was an error reading from the channel.
 				return
 			}
 		}

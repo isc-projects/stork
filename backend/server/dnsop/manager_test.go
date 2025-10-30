@@ -91,6 +91,13 @@ func TestManagerRRsAlreadyRequestedError(t *testing.T) {
 	require.Equal(t, "zone transfer for view foo, zone bar has been already requested by another user", err.Error())
 }
 
+// Test an error indicating that the manager is already requesting BIND 9 configuration
+// for the same daemon.
+func TestManagerBind9RawConfigAlreadyRequestedError(t *testing.T) {
+	err := NewManagerBind9RawConfigAlreadyRequestedError()
+	require.Equal(t, "BIND 9 configuration for the specified daemon has been already requested by another user", err.Error())
+}
+
 // Test instantiating new DNS manager.
 func TestNewManager(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1797,4 +1804,213 @@ func TestGetBind9RawConfigNilResponse(t *testing.T) {
 	rsp, ok := next()
 	require.True(t, ok)
 	require.ErrorContains(t, rsp.Err, "unexpected nil response while getting BIND 9 configuration from the agent")
+}
+
+// Test that an error is returned if another request for getting
+// BIND 9 configuration from the same daemon is in progress.
+func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	// Create the app.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// We need to run first request and ensure it stops, so we can
+	// run another request before it completes. The first synchronization
+	// group will be used to wait for the mock to start. The other one will
+	// pause it while we perform the second request.
+	wg1 := sync.WaitGroup{}
+	wg2 := sync.WaitGroup{}
+	wg1.Add(1)
+	wg2.Add(1)
+	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
+		return a.(*dbmodel.App).ID == app.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+			// Signalling here that the second request can start.
+			wg1.Done()
+			// Wait for the test to unpause the mock.
+			wg2.Wait()
+			// Return an empty result. It doesn't really matter what is returned.
+			yield(&agentapi.ReceiveBind9ConfigRsp{
+				Response: &agentapi.ReceiveBind9ConfigRsp_File{
+					File: &agentapi.ReceiveBind9ConfigFile{
+						FileType: agentapi.Bind9ConfigFileType_CONFIG,
+					},
+				},
+			}, nil)
+		}
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	defer manager.Shutdown()
+
+	// This wait group is used to ensure that the background goroutine is
+	// finished before we complete the test.
+	var wg3 sync.WaitGroup
+	wg3.Add(1)
+	go func() {
+		defer wg3.Done()
+		responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+		for response := range responses {
+			require.NoError(t, response.Err)
+		}
+	}()
+
+	// Wait for the first request to start.
+	wg1.Wait()
+
+	// Run the second request while the first one is in progress.
+	// Since we use the same daemon ID, the manager should refuse it.
+	var errors []error
+	responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+	for response := range responses {
+		errors = append(errors, response.Err)
+	}
+	require.Len(t, errors, 1)
+	require.Contains(t, errors[0].Error(), "has been already requested")
+
+	// Unblock the mock.
+	wg2.Done()
+
+	// Wait for the first request to complete.
+	wg3.Wait()
+}
+
+// Test that an error is not returned when there is an ongoing
+// request but another request contains different daemon ID.
+func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	// Create the app.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// We need to run first request and ensure it stops, so we can
+	// run another request before it completes. The first synchronization
+	// group will be used to wait for the mock to start. The other one will
+	// pause it while we perform the second request.
+	wg1 := sync.WaitGroup{}
+	wg2 := sync.WaitGroup{}
+	wg1.Add(1)
+	wg2.Add(1)
+	var mocks []any
+	mocks = append(mocks, mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
+		return a.(*dbmodel.App).ID == app.ID
+	}), gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+			// Signalling here that the second request can start.
+			wg1.Done()
+			// Wait for the test to unpause the mock.
+			wg2.Wait()
+			// Return an empty result. It doesn't really matter what is returned.
+			yield(&agentapi.ReceiveBind9ConfigRsp{
+				Response: &agentapi.ReceiveBind9ConfigRsp_File{
+					File: &agentapi.ReceiveBind9ConfigFile{
+						FileType: agentapi.Bind9ConfigFileType_CONFIG,
+					},
+				},
+			}, nil)
+		}
+	}))
+	mocks = append(mocks, mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
+		return a.(*dbmodel.App).ID == app.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+			yield(&agentapi.ReceiveBind9ConfigRsp{
+				Response: &agentapi.ReceiveBind9ConfigRsp_File{
+					File: &agentapi.ReceiveBind9ConfigFile{
+						FileType: agentapi.Bind9ConfigFileType_CONFIG,
+					},
+				},
+			}, nil)
+		}
+	}))
+	gomock.InOrder(mocks...)
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	// This wait group is used to ensure that the background goroutine is
+	// finished before we complete the test.
+	var wg3 sync.WaitGroup
+	wg3.Add(1)
+	go func() {
+		defer wg3.Done()
+		responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+		for response := range responses {
+			// Since these responses will be read in the cleanup phase, it is expected
+			// that some of them will indicate failures while communicating with the
+			// database. Therefore, we don't validate them. We merely read them and
+			// ensure they are not nil.
+			require.NotNil(t, response)
+		}
+	}()
+
+	// Wait for the first request to start.
+	wg1.Wait()
+
+	// Ensure we cleanup after the tests.
+	t.Cleanup(func() {
+		wg2.Done()
+		wg3.Wait()
+	})
+
+	var errors []error
+	responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[1].ID, nil, nil)
+	for response := range responses {
+		errors = append(errors, response.Err)
+	}
+	require.Len(t, errors, 1)
+	require.NoError(t, errors[0])
 }
