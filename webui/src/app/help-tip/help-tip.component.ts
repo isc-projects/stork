@@ -61,6 +61,7 @@ export class HelpTipComponent {
 
     /** Show/hide the help tip content. */
     togglePopover(ev) {
+        ev.stopPropagation()
         this.popover.toggle(ev, this.target)
     }
 }

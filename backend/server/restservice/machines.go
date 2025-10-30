@@ -1497,10 +1497,12 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 	}
 
 	log.WithFields(log.Fields{
-		"start": start,
-		"limit": limit,
-		"text":  params.Text,
-		"apps":  params.Apps,
+		"start":     start,
+		"limit":     limit,
+		"text":      params.Text,
+		"apps":      params.Apps,
+		"sortField": sortField,
+		"sortDir":   sortDir,
 	}).Info("query apps")
 
 	var appTypes []dbmodel.VirtualAppType

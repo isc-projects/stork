@@ -215,7 +215,7 @@ definitions:
     type: string
     enum: &APPSORTFIELD
       - name
-      - meta
+      - meta->>'Version'
       - machine.address
 
   $include: users-defs.yaml
