@@ -230,6 +230,11 @@ definitions:
       - state->>'AgentVersion'
       - last_visited_at
 
+  SubnetSortField:
+    type: string
+    enum: &SUBNETSORTFIELD
+      - prefix
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -324,6 +329,13 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *MACHINESORTFIELD
+
+  subnetSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *SUBNETSORTFIELD
 
   sortDir:
     name: sortDir

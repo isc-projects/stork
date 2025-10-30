@@ -318,6 +318,8 @@
           in: query
           description: Limit returned list of subnets to the ones containing indicated text.
           type: string
+        - $ref: '#/parameters/subnetSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of subnets
