@@ -372,14 +372,26 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		app = *params.App
 	}
 
+	var sortField string = ""
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+
+	var sortDir = dbmodel.SortDirAny
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
+
 	log.WithFields(log.Fields{
-		"start": start,
-		"limit": limit,
-		"text":  text,
-		"app":   app,
+		"start":     start,
+		"limit":     limit,
+		"text":      text,
+		"app":       app,
+		"sortField": sortField,
+		"sortDir":   sortDir,
 	}).Info("query machines")
 
-	machines, err := r.getMachines(start, limit, params.Text, params.Authorized, "", dbmodel.SortDirAny)
+	machines, err := r.getMachines(start, limit, params.Text, params.Authorized, sortField, sortDir)
 	if err != nil {
 		msg := "Cannot get machines from db"
 		log.WithError(err).Error(msg)
