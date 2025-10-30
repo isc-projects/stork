@@ -489,6 +489,16 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		limit = *params.Limit
 	}
 
+	var sortField string = ""
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+
+	var sortDir = dbmodel.SortDirAny
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
+
 	// get subnets from db
 	filters := &dbmodel.SubnetsByPageFilters{
 		Family:        params.DhcpVersion,
@@ -546,7 +556,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		}
 	}
 
-	subnets, err := r.getSubnets(start, limit, filters, "", dbmodel.SortDirAsc)
+	subnets, err := r.getSubnets(start, limit, filters, sortField, sortDir)
 	if err != nil {
 		msg := "Cannot get subnets from db"
 		log.WithError(err).Error(msg)
