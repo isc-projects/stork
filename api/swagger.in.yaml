@@ -223,6 +223,11 @@ definitions:
     enum: &MACHINESORTFIELD
       - address
       - state->>'Hostname'
+      - state->>'Cpus'
+      - state->>'CpusLoad'
+      - state->>'Memory'
+      - state->>'UsedMemory'
+      - state->>'AgentVersion'
       - last_visited_at
 
   $include: users-defs.yaml
