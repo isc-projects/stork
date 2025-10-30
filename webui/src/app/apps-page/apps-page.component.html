@@ -162,10 +162,14 @@
             </ng-template>
             <ng-template #header>
                 <tr>
-                    <th style="width: 14em" pSortableColumn="name">Name <p-sortIcon field="name" /></th>
-                    <th pSortableColumn="meta">Version <p-sortIcon field="meta" /></th>
+                    <th style="width: 14em" [pSortableColumn]="AppSortField.Name">
+                        Name <p-sortIcon [field]="AppSortField.Name" />
+                    </th>
+                    <th [pSortableColumn]="AppSortField.Meta">Version <p-sortIcon [field]="AppSortField.Meta" /></th>
                     <th>Status</th>
-                    <th>Machine Address</th>
+                    <th [pSortableColumn]="AppSortField.MachineAddress">
+                        Machine Address <p-sortIcon [field]="AppSortField.MachineAddress" />
+                    </th>
                     <th>Machine Hostname</th>
                     <th style="width: 4rem">Action</th>
                 </tr>

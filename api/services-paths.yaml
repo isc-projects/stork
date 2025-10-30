@@ -355,7 +355,7 @@
           type: array
           items:
             type: string
-        - $ref: '#/parameters/sortField'
+        - $ref: '#/parameters/appSortField'
         - $ref: '#/parameters/sortDir'
       responses:
         200:

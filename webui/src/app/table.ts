@@ -1,4 +1,4 @@
-import { Table } from 'primeng/table'
+import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 /**
@@ -64,4 +64,31 @@ export function parseBoolean(val: string): boolean | null {
 export function tableFiltersToQueryParams(table: Table) {
     const entries = Object.entries(table.filters).map((entry) => [entry[0], (<FilterMetadata>entry[1]).value])
     return Object.fromEntries(entries)
+}
+
+/**
+ * Enumeration of sorting direction options with values used in Stork server backend.
+ */
+export enum SortDir {
+    Asc = 1,
+    Desc = 2,
+}
+
+/**
+ * Function converting PrimeNG table sorting related metadata to REST API
+ * sorting fields format.
+ * @template TSortField type of possible sorting field values
+ * @param event table lazy load event
+ * @returns an array of sorting related fields in REST API format
+ */
+export function convertSortingFields<TSortField>(event: TableLazyLoadEvent): [TSortField, SortDir] {
+    if (!event || !event.sortField) {
+        return [null, null]
+    }
+
+    if (!event.sortOrder) {
+        return [<TSortField>event.sortField, null]
+    }
+
+    return [<TSortField>event.sortField, event.sortOrder === -1 ? SortDir.Desc : SortDir.Asc]
 }

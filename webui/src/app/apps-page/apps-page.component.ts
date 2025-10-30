@@ -4,13 +4,13 @@ import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { MessageService, MenuItem, ConfirmationService, TableState } from 'primeng/api'
 
 import { daemonStatusErred } from '../utils'
-import { ServicesService } from '../backend'
+import { AppSortField, ServicesService } from '../backend'
 import { App } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { distinctUntilChanged, finalize, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 
@@ -143,24 +143,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Function converting PrimeNG table sorting related metadata to REST API
-     * sorting fields format.
-     * @param event table lazy load event
-     * @return an array of sorting fields in REST API format
-     */
-    handleSortingFields(event: TableLazyLoadEvent): [string, SortDir] {
-        if (!event || !event.sortField) {
-            return [null, null]
-        }
-
-        if (!event.sortOrder) {
-            return [<string>event.sortField, null]
-        }
-
-        return [<string>event.sortField, event.sortOrder === -1 ? SortDir.Desc : SortDir.Asc]
-    }
-
-    /**
      * Function called by the table data loader. Accepts the pagination event.
      */
     loadApps(event: TableLazyLoadEvent) {
@@ -175,7 +157,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 event.rows,
                 (event.filters['text'] as FilterMetadata)?.value || null,
                 (event.filters['apps'] as FilterMetadata)?.value ?? null,
-                ...this.handleSortingFields(event)
+                ...convertSortingFields<AppSortField>(event)
             )
         )
             .then((data) => {
@@ -317,4 +299,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly AppSortField = AppSortField
 }

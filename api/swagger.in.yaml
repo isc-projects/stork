@@ -211,6 +211,13 @@ definitions:
       - config
       - rndc-key
 
+  AppSortField:
+    type: string
+    enum: &APPSORTFIELD
+      - name
+      - meta
+      - machine.address
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -292,13 +299,12 @@ parameters:
       enum: *BIND9CONFIGFILETYPE
     collectionFormat: multi
 
-  sortField:
+  appSortField:
     name: sortField
     in: query
-    description: >-
-      Field name by which returned results
-      shall be sorted.
+    description: Field name by which returned results shall be sorted.
     type: string
+    enum: *APPSORTFIELD
 
   sortDir:
     name: sortDir
