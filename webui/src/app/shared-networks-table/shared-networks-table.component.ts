@@ -1,5 +1,5 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import {
     getTotalAddresses,
     getAssignedAddresses,
@@ -9,7 +9,7 @@ import {
 } from '../subnets'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Router } from '@angular/router'
-import { DHCPService, SharedNetwork } from '../backend'
+import { DHCPService, NetworkSortField, SharedNetwork } from '../backend'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
@@ -78,7 +78,8 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
                     event.rows,
                     (event.filters['appId'] as FilterMetadata)?.value ?? null,
                     (event.filters['dhcpVersion'] as FilterMetadata)?.value ?? null,
-                    (event.filters['text'] as FilterMetadata)?.value || null
+                    (event.filters['text'] as FilterMetadata)?.value || null,
+                    ...convertSortingFields<NetworkSortField>(event)
                 )
                 .pipe(
                     map((sharedNetworks) => {
@@ -270,4 +271,10 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly NetworkSortField = NetworkSortField
 }
