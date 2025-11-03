@@ -239,6 +239,12 @@ definitions:
     type: string
     enum: &NETWORKSORTFIELD
       - name
+      - addr_utilization
+      - pd_utilization
+      - shared_network.stats->>'total-addresses',shared_network.stats->>'total-nas'
+      - shared_network.stats->>'assigned-addresses',shared_network.stats->>'assigned-nas'
+      - stats->>'total-pds'
+      - stats->>'assigned-pds'
 
   $include: users-defs.yaml
   $include: services-defs.yaml
