@@ -235,6 +235,11 @@ definitions:
     enum: &SUBNETSORTFIELD
       - prefix
 
+  NetworkSortField:
+    type: string
+    enum: &NETWORKSORTFIELD
+      - name
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -336,6 +341,13 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *SUBNETSORTFIELD
+
+  networkSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *NETWORKSORTFIELD
 
   sortDir:
     name: sortDir
