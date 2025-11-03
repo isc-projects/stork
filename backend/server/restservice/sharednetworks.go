@@ -335,6 +335,16 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 		limit = *params.Limit
 	}
 
+	var sortField string = ""
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+
+	var sortDir = dbmodel.SortDirAny
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
+
 	var appID int64
 	if params.AppID != nil {
 		appID = *params.AppID
@@ -346,7 +356,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	}
 
 	// get shared networks from db
-	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAsc)
+	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, sortField, sortDir)
 	if err != nil {
 		msg := "Cannot get shared network from db"
 		log.WithError(err).Error(msg)
