@@ -73,12 +73,12 @@ def _get_subnets_from_rest_api():
         return {"items": [], "total": 0}
 
 
-def _get_bind9_applications_from_rest_api():
-    """Fetches the list of BIND 9 applications from Stork server."""
+def _get_dns_applications_from_rest_api():
+    """Fetches the list of DNS applications from Stork server."""
     try:
         session = _login_session()
 
-        url = f"{STORK_SERVER_URL}/api/apps?app=bind9"
+        url = f"{STORK_SERVER_URL}/api/apps?apps=bind9,pdns"
         response = session.get(url)
         data = response.json()
 
@@ -86,10 +86,10 @@ def _get_bind9_applications_from_rest_api():
             return {"items": [], "total": 0}
         return data
     except requests.exceptions.RequestException as err:
-        log.error("Error getting BIND9 apps: %s", err)
+        log.error("Error getting DNS apps: %s", err)
         return {"items": [], "total": 0}
     except BaseException as err:
-        log.error("Generic error getting BIND9 apps: %s", err)
+        log.error("Generic error getting DNS apps: %s", err)
         return {"items": [], "total": 0}
 
 
@@ -129,16 +129,16 @@ def _refresh_subnets():
     app.subnets = subnets
 
 
-def _refresh_bind9_applications():
-    """Fetches list of BIND 9 applications from Stork server and extends them with
-    fields related to generating traffic. Stores the BIND 9 applications in the app
+def _refresh_dns_applications():
+    """Fetches list of DNS applications from Stork server and extends them with
+    fields related to generating traffic. Stores the DNS applications in the app
     object."""
-    app.bind9_applications = {"items": [], "total": 0}
-    bind9_applications = _get_bind9_applications_from_rest_api()
+    app.dns_applications = {"items": [], "total": 0}
+    dns_applications = _get_dns_applications_from_rest_api()
 
-    # Add the simulator-specific fields to the BIND 9 applications.
-    for application in bind9_applications["items"]:
-        if application["type"] == "bind9":
+    # Add the simulator-specific fields to the DNS applications.
+    for application in dns_applications["items"]:
+        if application["type"] == "bind9" or application["type"] == "pdns":
             application["clients"] = 1
             application["rate"] = 1
             application["qname"] = "example.com"
@@ -146,7 +146,7 @@ def _refresh_bind9_applications():
             application["transport"] = "udp"
             application["proc"] = None
             application["state"] = "stop"
-    app.bind9_applications = bind9_applications
+    app.dns_applications = dns_applications
 
 
 def _refresh_services():
@@ -207,7 +207,7 @@ def init():
 def main():
     """Runs the simulator."""
     _refresh_subnets()
-    _refresh_bind9_applications()
+    _refresh_dns_applications()
     _refresh_services()
 
 
@@ -309,10 +309,10 @@ def put_subnet_params(index):
 
 
 @app.route("/applications")
-def get_bind9_applications():
-    """BIND 9 application list HTTP handler."""
-    _refresh_bind9_applications()
-    return serialize_applications(app.bind9_applications)
+def get_dns_applications():
+    """DNS application list HTTP handler."""
+    _refresh_dns_applications()
+    return serialize_applications(app.dns_applications)
 
 
 @app.route("/query/<int:index>", methods=["PUT"])
@@ -320,17 +320,17 @@ def put_dig_params(index):
     """Sends DNS query to a server with the given index."""
     data = json.loads(request.data)
     if (
-        app.bind9_applications is None
-        or not isinstance(app.bind9_applications["items"], list)
-        or index >= len(app.bind9_applications["items"])
+        app.dns_applications is None
+        or not isinstance(app.dns_applications["items"], list)
+        or index >= len(app.dns_applications["items"])
     ):
         log.error(
-            "bind9 app index out of boundaries - requested idx %s but the apps are %s",
+            "dns app index out of boundaries - requested idx %s but the apps are %s",
             index,
-            app.bind9_applications,
+            app.dns_applications,
         )
-        return "bind9 app index out of boundaries!", 500
-    application = app.bind9_applications["items"][index]
+        return "dns app index out of boundaries!", 500
+    application = app.dns_applications["items"][index]
 
     if "qname" in data:
         application["qname"] = data["qname"]
@@ -350,7 +350,7 @@ def put_dig_params(index):
     traffic.run_dig(application)
     log.info("Sent DNS query to %s", application["machine"]["address"])
 
-    return serialize_applications(app.bind9_applications)
+    return serialize_applications(app.dns_applications)
 
 
 @app.route("/perf/<int:index>", methods=["PUT"])
@@ -358,17 +358,17 @@ def put_flamethrower_params(index):
     """Starts generating DNS traffic to a server with the given index."""
     data = json.loads(request.data)
     if (
-        app.bind9_applications is None
-        or not isinstance(app.bind9_applications["items"], list)
-        or index >= len(app.bind9_applications["items"])
+        app.dns_applications is None
+        or not isinstance(app.dns_applications["items"], list)
+        or index >= len(app.dns_applications["items"])
     ):
         log.error(
-            "bind9 app index out of boundaries - requested idx %s but the apps are %s",
+            "dns app index out of boundaries - requested idx %s but the apps are %s",
             index,
-            app.bind9_applications,
+            app.dns_applications,
         )
-        return "bind9 app index out of boundaries!", 500
-    application = app.bind9_applications["items"][index]
+        return "dns app index out of boundaries!", 500
+    application = app.dns_applications["items"][index]
 
     if "qname" in data:
         application["qname"] = data["qname"]
@@ -404,7 +404,7 @@ def put_flamethrower_params(index):
 
         application["state"] = data["state"]
 
-    return serialize_applications(app.bind9_applications)
+    return serialize_applications(app.dns_applications)
 
 
 @app.route("/services")
