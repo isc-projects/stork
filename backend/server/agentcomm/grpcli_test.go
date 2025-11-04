@@ -1559,6 +1559,11 @@ func TestReceiveBind9RawConfigOneFile(t *testing.T) {
 			},
 		}, nil
 	})
+
+	// Create a unique context (with a value), so we can later verify that
+	// this particular context is used for the request.
+	requestCtx := context.WithValue(context.Background(), "requestCtx", "requestCtx")
+
 	// The last chunk is EOF.
 	mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF)
 	// Return the mocked client when ReceiveBind9Config() called.
@@ -1567,11 +1572,13 @@ func TestReceiveBind9RawConfigOneFile(t *testing.T) {
 		require.NotNil(t, req)
 		require.Nil(t, req.Filter)
 		require.Nil(t, req.FileSelector)
+		// Make sure that the correct context was passed to the request.
+		require.Equal(t, requestCtx, ctx)
 		return mockStreamingClient, nil
 	})
 
 	// Collect the chunks from the stream.
-	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, nil, nil))
+	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(requestCtx, app, nil, nil))
 	defer cancel()
 
 	// Configuration file preamble.

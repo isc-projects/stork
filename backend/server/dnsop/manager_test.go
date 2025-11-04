@@ -2014,3 +2014,82 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 	require.Len(t, errors, 1)
 	require.NoError(t, errors[0])
 }
+
+// Test cancelling a request while getting BIND 9 configuration.
+func TestGetBind9RawConfigCancelRequest(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+			responses := []*agentapi.ReceiveBind9ConfigRsp{
+				{
+					Response: &agentapi.ReceiveBind9ConfigRsp_File{
+						File: &agentapi.ReceiveBind9ConfigFile{
+							FileType: agentapi.Bind9ConfigFileType_CONFIG,
+						},
+					},
+				},
+				{
+					Response: &agentapi.ReceiveBind9ConfigRsp_File{
+						File: &agentapi.ReceiveBind9ConfigFile{
+							FileType: agentapi.Bind9ConfigFileType_RNDC_KEY,
+						},
+					},
+				},
+			}
+			for _, response := range responses {
+				if !yield(response, nil) {
+					return
+				}
+			}
+		}
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	next, cancel := iter.Pull(manager.GetBind9RawConfig(ctx, app.Daemons[0].ID, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView)))
+	defer cancel()
+
+	// We should receive the first chunk before the context is cancelled.
+	rsp, ok := next()
+	require.True(t, ok)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.File)
+	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, rsp.File.FileType)
+
+	// Cancel the context.
+	ctxCancel()
+
+	// The second chunk should not be received.
+	_, ok = next()
+	require.False(t, ok)
+}

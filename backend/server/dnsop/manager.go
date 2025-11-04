@@ -628,7 +628,7 @@ func (manager *managerImpl) runBind9RawConfigRequest(request *bind9RawConfigRequ
 		defer manager.bind9RawConfigReqsState.mutex.Unlock()
 		delete(manager.bind9RawConfigReqsState.requests, request.daemonID)
 	}()
-	for rsp, err := range manager.agents.ReceiveBind9RawConfig(context.Background(), request.app, request.fileSelector, request.filter) {
+	for rsp, err := range manager.agents.ReceiveBind9RawConfig(request.ctx, request.app, request.fileSelector, request.filter) {
 		var response *Bind9RawConfigResponse
 		switch {
 		case err != nil:
@@ -883,7 +883,7 @@ func (manager *managerImpl) GetBind9RawConfig(ctx context.Context, daemonID int6
 			return
 		}
 		app := daemon.App
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		ch, err := manager.requestBind9RawConfig(ctx, daemonID, app, fileSelector, filter)
 		if err != nil {
