@@ -703,7 +703,14 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	}
 
 	subnets := []Subnet{}
-	q := dbi.Model(&subnets).Distinct()
+	q := dbi.Model(&subnets)
+
+	// prepare distinct on expression to include sort field, otherwise distinct on will fail
+	distinctOnFields := "subnet.id"
+	if sortField != "" && sortField != "id" && sortField != "subnet.id" {
+		distinctOnFields = sortField + ", " + distinctOnFields
+	}
+	q = q.DistinctOn(distinctOnFields)
 
 	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil ||
 		// TODO: Code implemented in below line is a temporary solution for virtual applications.

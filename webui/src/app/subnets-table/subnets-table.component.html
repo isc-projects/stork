@@ -206,20 +206,45 @@
             <th colspan="3">Addresses</th>
             <th colspan="3" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
             <th rowspan="2">Pools</th>
-            <th rowspan="2">Shared Network</th>
+            <th rowspan="2" [pSortableColumn]="SubnetSortField.SharedNetworkName">
+                Shared Network <p-sortIcon [field]="SubnetSortField.SharedNetworkName" />
+            </th>
             <th colspan="2">Application</th>
             <th rowspan="2" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
                 <i class="pi pi-chart-line text-2xl"></i>
             </th>
         </tr>
         <tr>
-            <th>Total</th>
-            <th class="px-2">Assigned</th>
-            <th>Used %</th>
+            <th [pSortableColumn]="SubnetSortField.CoalesceSubnetStatsTotalNasNumericSubnetStatsTotalAddressesNumeric">
+                Total
+                <p-sortIcon
+                    [field]="SubnetSortField.CoalesceSubnetStatsTotalNasNumericSubnetStatsTotalAddressesNumeric"
+                />
+            </th>
+            <th
+                class="px-2"
+                [pSortableColumn]="
+                    SubnetSortField.CoalesceSubnetStatsAssignedNasNumericSubnetStatsAssignedAddressesNumeric
+                "
+            >
+                Assigned
+                <p-sortIcon
+                    [field]="SubnetSortField.CoalesceSubnetStatsAssignedNasNumericSubnetStatsAssignedAddressesNumeric"
+                />
+            </th>
+            <th [pSortableColumn]="SubnetSortField.AddrUtilization">
+                Used % <p-sortIcon [field]="SubnetSortField.AddrUtilization" />
+            </th>
             <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                <th>Total</th>
-                <th class="px-2">Assigned</th>
-                <th>Used %</th>
+                <th [pSortableColumn]="SubnetSortField.StatsTotalPds">
+                    Total <p-sortIcon [field]="SubnetSortField.StatsTotalPds" />
+                </th>
+                <th class="px-2" [pSortableColumn]="SubnetSortField.StatsAssignedPds">
+                    Assigned <p-sortIcon [field]="SubnetSortField.StatsAssignedPds" />
+                </th>
+                <th [pSortableColumn]="SubnetSortField.PdUtilization">
+                    Used % <p-sortIcon [field]="SubnetSortField.PdUtilization" />
+                </th>
             </ng-container>
             <th>Name</th>
             <th>Kea Subnet ID</th>

@@ -234,6 +234,13 @@ definitions:
     type: string
     enum: &SUBNETSORTFIELD
       - prefix
+      - shared_network.name
+      - addr_utilization
+      - pd_utilization
+      - COALESCE((subnet.stats->>'total-nas')::numeric,(subnet.stats->>'total-addresses')::numeric)
+      - COALESCE((subnet.stats->>'assigned-nas')::numeric,(subnet.stats->>'assigned-addresses')::numeric)
+      - stats->>'total-pds'
+      - stats->>'assigned-pds'
 
   NetworkSortField:
     type: string
