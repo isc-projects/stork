@@ -248,8 +248,8 @@ definitions:
       - name
       - addr_utilization
       - pd_utilization
-      - shared_network.stats->>'total-addresses',shared_network.stats->>'total-nas'
-      - shared_network.stats->>'assigned-addresses',shared_network.stats->>'assigned-nas'
+      - COALESCE((shared_network.stats->>'total-nas')::numeric,(shared_network.stats->>'total-addresses')::numeric)
+      - COALESCE((shared_network.stats->>'assigned-nas')::numeric,(shared_network.stats->>'assigned-addresses')::numeric)
       - stats->>'total-pds'
       - stats->>'assigned-pds'
 

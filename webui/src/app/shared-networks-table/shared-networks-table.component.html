@@ -171,7 +171,8 @@
     <ng-template #header>
         <tr>
             <th rowspan="2" style="width: 7rem" [pSortableColumn]="NetworkSortField.Name">
-                Name <p-sortIcon [field]="NetworkSortField.Name" />
+                Name
+                <p-sortIcon [field]="NetworkSortField.Name" />
             </th>
             <th colspan="3" style="width: 16rem">Addresses</th>
             <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
@@ -179,31 +180,47 @@
             <th rowspan="2" style="width: 14rem">App Name</th>
         </tr>
         <tr>
-            <th [pSortableColumn]="NetworkSortField.SharedNetworkStatsTotalAddressessharedNetworkStatsTotalNas">
+            <th
+                [pSortableColumn]="
+                    NetworkSortField.CoalesceSharedNetworkStatsTotalNasNumericSharedNetworkStatsTotalAddressesNumeric
+                "
+            >
                 Total
-                <p-sortIcon [field]="NetworkSortField.SharedNetworkStatsTotalAddressessharedNetworkStatsTotalNas" />
+                <p-sortIcon
+                    [field]="
+                        NetworkSortField.CoalesceSharedNetworkStatsTotalNasNumericSharedNetworkStatsTotalAddressesNumeric
+                    "
+                />
             </th>
             <th
                 style="padding: 0.571rem 0.5rem"
-                [pSortableColumn]="NetworkSortField.SharedNetworkStatsAssignedAddressessharedNetworkStatsAssignedNas"
+                [pSortableColumn]="
+                    NetworkSortField.CoalesceSharedNetworkStatsAssignedNasNumericSharedNetworkStatsAssignedAddressesNumeric
+                "
             >
                 Assigned
                 <p-sortIcon
-                    [field]="NetworkSortField.SharedNetworkStatsAssignedAddressessharedNetworkStatsAssignedNas"
+                    [field]="
+                        NetworkSortField.CoalesceSharedNetworkStatsAssignedNasNumericSharedNetworkStatsAssignedAddressesNumeric
+                    "
                 />
             </th>
             <th [pSortableColumn]="NetworkSortField.AddrUtilization">
-                Used % <p-sortIcon [field]="NetworkSortField.AddrUtilization" />
+                Used %
+                <p-sortIcon [field]="NetworkSortField.AddrUtilization" />
             </th>
             <ng-container *ngIf="isAnyIPv6SubnetVisible">
                 <th [pSortableColumn]="NetworkSortField.StatsTotalPds">
-                    Total <p-sortIcon [field]="NetworkSortField.StatsTotalPds" />
+                    Total
+                    <p-sortIcon [field]="NetworkSortField.StatsTotalPds" />
                 </th>
                 <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.StatsAssignedPds">
-                    Assigned <p-sortIcon [field]="NetworkSortField.StatsAssignedPds" />
+                    Assigned
+                    <p-sortIcon [field]="NetworkSortField.StatsAssignedPds" />
                 </th>
                 <th [pSortableColumn]="NetworkSortField.PdUtilization">
-                    Used % <p-sortIcon [field]="NetworkSortField.PdUtilization" />
+                    Used %
+                    <p-sortIcon [field]="NetworkSortField.PdUtilization" />
                 </th>
             </ng-container>
         </tr>
