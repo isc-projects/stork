@@ -648,7 +648,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * instance of the zone on a server
      */
     private _shouldDisableShowZone(localZone: LocalZone): boolean {
-        const allowedTypes: string[] = [DNSZoneType.Primary, DNSZoneType.Secondary, 'master', 'slave']
+        const allowedTypes: string[] = [
+            DNSZoneType.Primary,
+            DNSZoneType.Secondary,
+            'master',
+            'slave',
+            DNSZoneType.Mirror,
+        ]
         return !allowedTypes.includes(localZone.zoneType)
     }
 
