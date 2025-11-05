@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -19,29 +20,79 @@ const (
 	SortDirDesc
 )
 
+// Defines custom sort field values.
+type CustomSortFieldEnum string
+
+// Valid values of the enum.
+const (
+	TotalAddresses    CustomSortFieldEnum = "custom_total_addresses"
+	AssignedAddresses CustomSortFieldEnum = "custom_assigned_addresses"
+	TotalPDs          CustomSortFieldEnum = "custom_total_pds"
+	AssignedPDs       CustomSortFieldEnum = "custom_assigned_pds"
+	PDUtilization     CustomSortFieldEnum = "custom_pd_utilization"
+)
+
 // Prepare an order expression based on table name, sortField and sortDir.
 // If sortField does not start with a table name and . then it is prepended.
 // If sortDir is DESC then NULLS LAST is added, if it is ASC then NULLS FIRST
 // is added. Without that records with NULLs in sortField would not be included
 // in the result.
-func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) string {
-	orderExpr := ""
+// It returns also DISTINCT ON expression that is often used in queries together with ORDER BY.
+// DISTINCT ON must contain the same fields that are used for sorting.
+func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (orderExpr string, distinctOnExpr string) {
+	orderExpr = ""
+	var dirExpr string
+	switch sortDir {
+	case SortDirDesc:
+		dirExpr = "DESC NULLS LAST"
+	default:
+		dirExpr = "ASC NULLS FIRST"
+	}
 	escapedTableName := "\"" + tableName + "\""
+	distinctOnExpr = escapedTableName + ".id"
 	if sortField != "" {
 		if !strings.Contains(sortField, ".") {
-			orderExpr += escapedTableName + "."
+			if !strings.HasPrefix(sortField, "custom_") {
+				orderExpr += escapedTableName + "."
+				if strings.ToLower(sortField) != "id" {
+					distinctOnExpr += ", " + escapedTableName + "." + sortField
+				}
+			} else {
+				// This sort field requires custom handling.
+				statsExpr := ""
+				switch CustomSortFieldEnum(sortField) {
+				case TotalPDs:
+					statsExpr = fmt.Sprintf("(%s.stats->>'total-pds')::numeric", escapedTableName)
+				case AssignedPDs:
+					statsExpr = fmt.Sprintf("(%s.stats->>'assigned-pds')::numeric", escapedTableName)
+				case PDUtilization:
+					statsExpr = fmt.Sprintf("%s.pd_utilization", escapedTableName)
+				}
+				switch CustomSortFieldEnum(sortField) {
+				case TotalAddresses:
+					sortField = fmt.Sprintf("COALESCE(%[1]s.stats->>'total-nas', %[1]s.stats->>'total-addresses')::numeric", escapedTableName)
+					distinctOnExpr += ", " + sortField
+				case AssignedAddresses:
+					sortField = fmt.Sprintf("COALESCE(%[1]s.stats->>'assigned-nas', %[1]s.stats->>'assigned-addresses')::numeric", escapedTableName)
+					distinctOnExpr += ", " + sortField
+				case TotalPDs, AssignedPDs, PDUtilization:
+					familyExpr := fmt.Sprintf("%s.inet_family", escapedTableName)
+					if tableName == "subnet" {
+						familyExpr = fmt.Sprintf("family(%s.prefix)", escapedTableName)
+					}
+					sortField = fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
+					distinctOnExpr += fmt.Sprintf(", %s, %s", familyExpr, statsExpr)
+				}
+			}
+		} else if strings.ToLower(sortField) != tableName+".id" && strings.ToLower(sortField) != escapedTableName+".id" {
+			distinctOnExpr += ", " + sortField
 		}
 		orderExpr += sortField + " "
 	} else {
 		orderExpr = escapedTableName + ".id "
 	}
-	switch sortDir {
-	case SortDirDesc:
-		orderExpr += "DESC NULLS LAST"
-	default:
-		orderExpr += "ASC NULLS FIRST"
-	}
-	return orderExpr
+	orderExpr += dirExpr
+	return
 }
 
 // Convenience function which inserts new entry into a database or updates an

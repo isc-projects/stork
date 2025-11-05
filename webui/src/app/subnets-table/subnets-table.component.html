@@ -215,35 +215,26 @@
             </th>
         </tr>
         <tr>
-            <th [pSortableColumn]="SubnetSortField.CoalesceSubnetStatsTotalNasNumericSubnetStatsTotalAddressesNumeric">
+            <th [pSortableColumn]="SubnetSortField.CustomTotalAddresses">
                 Total
-                <p-sortIcon
-                    [field]="SubnetSortField.CoalesceSubnetStatsTotalNasNumericSubnetStatsTotalAddressesNumeric"
-                />
+                <p-sortIcon [field]="SubnetSortField.CustomTotalAddresses" />
             </th>
-            <th
-                class="px-2"
-                [pSortableColumn]="
-                    SubnetSortField.CoalesceSubnetStatsAssignedNasNumericSubnetStatsAssignedAddressesNumeric
-                "
-            >
+            <th class="px-2" [pSortableColumn]="SubnetSortField.CustomAssignedAddresses">
                 Assigned
-                <p-sortIcon
-                    [field]="SubnetSortField.CoalesceSubnetStatsAssignedNasNumericSubnetStatsAssignedAddressesNumeric"
-                />
+                <p-sortIcon [field]="SubnetSortField.CustomAssignedAddresses" />
             </th>
             <th [pSortableColumn]="SubnetSortField.AddrUtilization">
                 Used % <p-sortIcon [field]="SubnetSortField.AddrUtilization" />
             </th>
             <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                <th [pSortableColumn]="SubnetSortField.StatsTotalPds">
-                    Total <p-sortIcon [field]="SubnetSortField.StatsTotalPds" />
+                <th [pSortableColumn]="SubnetSortField.CustomTotalPds">
+                    Total <p-sortIcon [field]="SubnetSortField.CustomTotalPds" />
                 </th>
-                <th class="px-2" [pSortableColumn]="SubnetSortField.StatsAssignedPds">
-                    Assigned <p-sortIcon [field]="SubnetSortField.StatsAssignedPds" />
+                <th class="px-2" [pSortableColumn]="SubnetSortField.CustomAssignedPds">
+                    Assigned <p-sortIcon [field]="SubnetSortField.CustomAssignedPds" />
                 </th>
-                <th [pSortableColumn]="SubnetSortField.PdUtilization">
-                    Used % <p-sortIcon [field]="SubnetSortField.PdUtilization" />
+                <th [pSortableColumn]="SubnetSortField.CustomPdUtilization">
+                    Used % <p-sortIcon [field]="SubnetSortField.CustomPdUtilization" />
                 </th>
             </ng-container>
             <th>Name</th>

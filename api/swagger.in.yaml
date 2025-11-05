@@ -215,19 +215,19 @@ definitions:
     type: string
     enum: &APPSORTFIELD
       - name
-      - meta->>'Version'
+      - meta->'Version'
       - machine.address
 
   MachineSortField:
     type: string
     enum: &MACHINESORTFIELD
       - address
-      - state->>'Hostname'
-      - state->>'Cpus'
-      - state->>'CpusLoad'
-      - state->>'Memory'
-      - state->>'UsedMemory'
-      - state->>'AgentVersion'
+      - state->'Hostname'
+      - state->'Cpus'
+      - state->'CpusLoad'
+      - state->'Memory'
+      - state->'UsedMemory'
+      - state->'AgentVersion'
       - last_visited_at
 
   SubnetSortField:
@@ -236,22 +236,22 @@ definitions:
       - prefix
       - shared_network.name
       - addr_utilization
-      - pd_utilization
-      - COALESCE((subnet.stats->>'total-nas')::numeric,(subnet.stats->>'total-addresses')::numeric)
-      - COALESCE((subnet.stats->>'assigned-nas')::numeric,(subnet.stats->>'assigned-addresses')::numeric)
-      - stats->>'total-pds'
-      - stats->>'assigned-pds'
+      - custom_total_addresses
+      - custom_assigned_addresses
+      - custom_total_pds
+      - custom_assigned_pds
+      - custom_pd_utilization
 
   NetworkSortField:
     type: string
     enum: &NETWORKSORTFIELD
       - name
       - addr_utilization
-      - pd_utilization
-      - COALESCE((shared_network.stats->>'total-nas')::numeric,(shared_network.stats->>'total-addresses')::numeric)
-      - COALESCE((shared_network.stats->>'assigned-nas')::numeric,(shared_network.stats->>'assigned-addresses')::numeric)
-      - stats->>'total-pds'
-      - stats->>'assigned-pds'
+      - custom_total_addresses
+      - custom_assigned_addresses
+      - custom_total_pds
+      - custom_assigned_pds
+      - custom_pd_utilization
 
   $include: users-defs.yaml
   $include: services-defs.yaml

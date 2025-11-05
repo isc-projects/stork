@@ -428,12 +428,9 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	hosts := []Host{}
 	q := dbi.Model(&hosts)
 
-	// Prepare distinct on expression to include sort field, otherwise distinct
-	// on will fail.
-	distinctOnFields := "host.id"
-	if sortField != "" && sortField != "id" && sortField != "host.id" {
-		distinctOnFields = sortField + ", " + distinctOnFields
-	}
+	// Prepare sorting expression and distinct on expression to include sort field,
+	// otherwise distinct on will fail.
+	orderExpr, distinctOnFields := prepareOrderExpr("host", sortField, sortDir)
 	q = q.DistinctOn(distinctOnFields)
 
 	// Join to the local host table.
@@ -620,9 +617,8 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.Relation("Subnet.LocalSubnets")
 	}
 
-	// Prepare sorting expression, offset and limit.
-	ordExpr := prepareOrderExpr("host", sortField, sortDir)
-	q = q.OrderExpr(ordExpr)
+	q = q.OrderExpr(orderExpr)
+	// Prepare offset and limit.
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))
 

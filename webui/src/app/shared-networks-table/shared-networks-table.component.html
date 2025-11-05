@@ -180,47 +180,30 @@
             <th rowspan="2" style="width: 14rem">App Name</th>
         </tr>
         <tr>
-            <th
-                [pSortableColumn]="
-                    NetworkSortField.CoalesceSharedNetworkStatsTotalNasNumericSharedNetworkStatsTotalAddressesNumeric
-                "
-            >
+            <th [pSortableColumn]="NetworkSortField.CustomTotalAddresses">
                 Total
-                <p-sortIcon
-                    [field]="
-                        NetworkSortField.CoalesceSharedNetworkStatsTotalNasNumericSharedNetworkStatsTotalAddressesNumeric
-                    "
-                />
+                <p-sortIcon [field]="NetworkSortField.CustomTotalAddresses" />
             </th>
-            <th
-                style="padding: 0.571rem 0.5rem"
-                [pSortableColumn]="
-                    NetworkSortField.CoalesceSharedNetworkStatsAssignedNasNumericSharedNetworkStatsAssignedAddressesNumeric
-                "
-            >
+            <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.CustomAssignedAddresses">
                 Assigned
-                <p-sortIcon
-                    [field]="
-                        NetworkSortField.CoalesceSharedNetworkStatsAssignedNasNumericSharedNetworkStatsAssignedAddressesNumeric
-                    "
-                />
+                <p-sortIcon [field]="NetworkSortField.CustomAssignedAddresses" />
             </th>
             <th [pSortableColumn]="NetworkSortField.AddrUtilization">
                 Used %
                 <p-sortIcon [field]="NetworkSortField.AddrUtilization" />
             </th>
             <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                <th [pSortableColumn]="NetworkSortField.StatsTotalPds">
+                <th [pSortableColumn]="NetworkSortField.CustomTotalPds">
                     Total
-                    <p-sortIcon [field]="NetworkSortField.StatsTotalPds" />
+                    <p-sortIcon [field]="NetworkSortField.CustomTotalPds" />
                 </th>
-                <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.StatsAssignedPds">
+                <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.CustomAssignedPds">
                     Assigned
-                    <p-sortIcon [field]="NetworkSortField.StatsAssignedPds" />
+                    <p-sortIcon [field]="NetworkSortField.CustomAssignedPds" />
                 </th>
-                <th [pSortableColumn]="NetworkSortField.PdUtilization">
+                <th [pSortableColumn]="NetworkSortField.CustomPdUtilization">
                     Used %
-                    <p-sortIcon [field]="NetworkSortField.PdUtilization" />
+                    <p-sortIcon [field]="NetworkSortField.CustomPdUtilization" />
                 </th>
             </ng-container>
         </tr>

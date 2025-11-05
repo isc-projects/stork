@@ -48,7 +48,7 @@ func GetGroupsByPage(db *dbops.PgDB, offset, limit int64, filterText *string, so
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr := prepareOrderExpr("system_group", sortField, sortDir)
+	ordExpr, _ := prepareOrderExpr("system_group", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

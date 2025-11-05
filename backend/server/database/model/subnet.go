@@ -705,11 +705,8 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets)
 
-	// prepare distinct on expression to include sort field, otherwise distinct on will fail
-	distinctOnFields := "subnet.id"
-	if sortField != "" && sortField != "id" && sortField != "subnet.id" {
-		distinctOnFields = sortField + ", " + distinctOnFields
-	}
+	// prepare order by and distinct on expression to include sort field, otherwise distinct on will fail
+	orderExpr, distinctOnFields := prepareOrderExpr("subnet", sortField, sortDir)
 	q = q.DistinctOn(distinctOnFields)
 
 	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil ||
@@ -768,9 +765,8 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		})
 	}
 
-	// prepare sorting expression, offset and limit
-	ordExpr := prepareOrderExpr("subnet", sortField, sortDir)
-	q = q.OrderExpr(ordExpr)
+	// append sorting expression, offset and limit
+	q = q.OrderExpr(orderExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))
 
