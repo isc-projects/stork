@@ -5,8 +5,13 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -37,65 +42,225 @@ const (
 	FSCSMoved
 )
 
-// A tool which can be used to detect whether (and how) a file has changed since
-// the last time it was checked.
-type ChangeDetector struct {
-	Filename string
-	File     os.File
-	Info     os.FileInfo
-	Size     int64
+type ChangeDetector interface {
+	RegisterListener(func(FSChangeState))
+	UnregisterListener(func(FSChangeState))
+	UnregisterAllListeners()
+	Start()
+	Stop()
 }
 
-// Construct a new ChangeDetector for the given file.
-func NewChangeDetector(file os.File) (*ChangeDetector, error) {
+// A tool which can be used to detect whether (and how) a file has changed since
+// the last time it was checked.
+type PollingChangeDetector struct {
+	listeners []func(FSChangeState)
+	filename  string
+	file      os.File
+	info      os.FileInfo
+	size      int64
+	interval  time.Duration
+	ticker    *time.Ticker
+	stop      chan bool
+}
+
+// Construct a new polling ChangeDetector for the given file.
+func NewPollingChangeDetector(file os.File, interval time.Duration) (ChangeDetector, error) {
 	info, err := file.Stat()
 	if err != nil {
 		return nil, err
 	}
-	cd := &ChangeDetector{
+	cd := &PollingChangeDetector{
+		[]func(FSChangeState){},
 		file.Name(),
 		file,
 		info,
 		info.Size(),
+		interval,
+		nil,
+		make(chan bool),
 	}
 	return cd, nil
 }
 
+func (cd *PollingChangeDetector) RegisterListener(fn func(FSChangeState)) {
+	cd.listeners = append(cd.listeners, fn)
+}
+
+func (cd *PollingChangeDetector) UnregisterListener(fn func(FSChangeState)) {
+}
+
+func (cd *PollingChangeDetector) UnregisterAllListeners() {
+	cd.listeners = []func(FSChangeState){}
+}
+
+func (cd *PollingChangeDetector) Start() {
+	if cd.ticker != nil {
+		return
+	}
+	cd.ticker = time.NewTicker(cd.interval)
+	go func() {
+		for {
+			select {
+			case <-cd.stop:
+				return
+			case <-cd.ticker.C:
+				changeType, err := cd.didChange()
+				if err != nil {
+					// TODO: logging
+					continue
+				}
+				for _, listener := range cd.listeners {
+					listener(changeType)
+				}
+			}
+		}
+	}()
+}
+
+func (cd *PollingChangeDetector) Stop() {
+	if cd.ticker == nil {
+		return
+	}
+	cd.stop <- true
+	cd.ticker.Stop()
+	cd.ticker = nil
+}
+
 // Determine whether the tracked file has changed since the last time this function was called.
 // If error is non-nil, the meaning of the first return value is undefined.
-func (cd *ChangeDetector) DidChange() (FSChangeState, error) {
-	newInfo, err := os.Stat(cd.Filename)
+func (cd *PollingChangeDetector) didChange() (FSChangeState, error) {
+	newInfo, err := os.Stat(cd.filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return FSCSDeleted, nil
 		}
 		return FSCSUnchanged, err
 	}
-	if !os.SameFile(cd.Info, newInfo) {
+	if !os.SameFile(cd.info, newInfo) {
 		return FSCSMoved, nil
 	}
 
-	prevSize := cd.Size
+	prevSize := cd.size
 	if prevSize > 0 && prevSize > newInfo.Size() {
-		cd.Size = newInfo.Size()
+		cd.size = newInfo.Size()
 		return FSCSTruncated, nil
 	}
 
 	if prevSize > 0 && prevSize < newInfo.Size() {
-		cd.Size = newInfo.Size()
+		cd.size = newInfo.Size()
 		return FSCSModified, nil
 	}
 
-	cd.Size = newInfo.Size()
+	cd.size = newInfo.Size()
 
 	mtime := newInfo.ModTime()
-	if mtime.Compare(cd.Info.ModTime()) != 0 {
-		cd.Info = newInfo
+	if mtime.Compare(cd.info.ModTime()) != 0 {
+		cd.info = newInfo
 		return FSCSModified, nil
 	}
-	cd.Info = newInfo
+	cd.info = newInfo
 
 	return FSCSUnchanged, nil
+}
+
+type FsNotifyChangeDetector struct {
+	file      string
+	stop      chan bool
+	running   bool
+	watcher   *fsnotify.Watcher
+	listeners []func(FSChangeState)
+}
+
+func NewFsNotifyChangeDetector(path string) (ChangeDetector, error) {
+	channel := make(chan bool)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+	err = watcher.Add(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
+	return &FsNotifyChangeDetector{
+		path,
+		channel,
+		false,
+		watcher,
+		[]func(FSChangeState){},
+	}, nil
+}
+
+func (cd *FsNotifyChangeDetector) RegisterListener(fn func(FSChangeState)) {
+	cd.listeners = append(cd.listeners, fn)
+}
+
+func (cd *FsNotifyChangeDetector) UnregisterListener(fn func(FSChangeState)) {
+	// for idx, listener := range cd.listeners {
+	// if listener == fn {
+	// 	cd.listeners = slices.Delete(cd.listeners, idx, idx+1)
+	// }
+	// }
+}
+
+func (cd *FsNotifyChangeDetector) UnregisterAllListeners() {
+	cd.listeners = []func(FSChangeState){}
+}
+
+func (cd *FsNotifyChangeDetector) send(state FSChangeState) {
+	for _, listener := range cd.listeners {
+		listener(state)
+	}
+}
+
+func (cd *FsNotifyChangeDetector) Start() {
+	if cd.running {
+		return
+	}
+	cd.running = true
+	go func() {
+		// Send one modified event at the start to ensure any listeners read whatever's
+		// already in the file.
+		cd.send(FSCSModified)
+		for {
+			select {
+			case <-cd.stop:
+				return
+			case _, ok := <-cd.watcher.Errors:
+				if !ok {
+					// TODO: log
+					return
+				}
+			case event, ok := <-cd.watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Name != cd.file {
+					continue
+				}
+				// These are ordered intentionally; one event can have several of these flags set:
+				// * Chmod and create are not checked because those don't convey useful information for this system.
+				// * Delete and remove are checked first because those indicate kea-lfc is running.
+				// * Write is checked after delete/remove because different and higher-priority steps must occur first in order to ensure the right data is being read.
+				if event.Has(fsnotify.Remove) {
+					cd.send(FSCSDeleted)
+				}
+				if event.Has(fsnotify.Rename) {
+					cd.send(FSCSMoved)
+				}
+				if event.Has(fsnotify.Write) {
+					cd.send(FSCSModified)
+				}
+			}
+		}
+	}()
+}
+
+func (cd *FsNotifyChangeDetector) Stop() {
+	if !cd.running {
+		return
+	}
+	cd.stop <- true
+	cd.running = false
 }
 
 type Lease4 struct {
@@ -168,162 +333,131 @@ func NewLease6(record []string, expire uint64, cltt uint64, lifetime uint32) (Le
 	return lease, nil
 }
 
-type LeaseParser[T any] struct {
-	path               string
-	results            chan T
-	memfile            *os.File
-	reader             *csv.Reader
-	cd                 *ChangeDetector
-	newLease           func(record []string, expires, cltt uint64, lifetime uint32) (T, error)
-	expireIdx          int
-	lifetimeIdx        int
-	sawAllExistingData bool
+type RowSource struct {
+	path    string
+	results chan []string
+	memfile *os.File
+	reader  *csv.Reader
+	cd      ChangeDetector
+	running bool
 }
 
-func NewLease4Parser(path string) (*LeaseParser[Lease4], error) {
-	results := make(chan Lease4, 1)
+func NewRowSource(path string) (*RowSource, error) {
+	results := make(chan []string, 1)
 	memfile, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	cd, err := NewChangeDetector(*memfile)
+	cd, err := NewFsNotifyChangeDetector(path)
 	if err != nil {
 		return nil, err
 	}
 	reader := csv.NewReader(memfile)
-	p := LeaseParser[Lease4]{
+	rs := RowSource{
 		path,
 		results,
 		memfile,
 		reader,
 		cd,
-		NewLease4,
-		v4Expire,
-		v4ValidLifetime,
 		false,
 	}
-	return &p, nil
+	cd.RegisterListener(rs.eventHandler)
+	log.WithField("file", path).Info("watching log file")
+	return &rs, nil
 }
 
-func NewLease6Parser(path string) (*LeaseParser[Lease6], error) {
-	results := make(chan Lease6, 1)
-	memfile, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	cd, err := NewChangeDetector(*memfile)
-	if err != nil {
-		return nil, err
-	}
-	reader := csv.NewReader(memfile)
-	p := LeaseParser[Lease6]{
-		path,
-		results,
-		memfile,
-		reader,
-		cd,
-		NewLease6,
-		v6Expire,
-		v6ValidLifetime,
-		false,
-	}
-	return &p, nil
-}
-
-func (p *LeaseParser[T]) parseExpireLifetime(record []string) (uint64, uint64, error) {
-	expire, err := strconv.ParseUint(record[p.expireIdx], 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-	lifetime64, err := strconv.ParseUint(record[p.lifetimeIdx], 10, 32)
-	return expire, lifetime64, err
-}
-
-func (p *LeaseParser[T]) parseLoop(minCLTT uint64) {
-	defer p.memfile.Close()
-	// Discard column headers.  If this read fails, keep trying for a while.
-	for range 1024 {
-		_, err := p.reader.Read()
-		if err == nil {
-			break
+func (rs *RowSource) eventHandler(state FSChangeState) {
+	log.WithField("state", state).Trace("filesystem change event handler called")
+	switch state {
+	case FSCSMoved:
+		fallthrough
+	case FSCSDeleted:
+		log.Trace("trying to reopen log file")
+		rs.memfile.Close()
+		memfile, err := os.Open(rs.path)
+		if err != nil {
+			log.WithError(err).Debug("Failed to reopen log file")
+			return
 		}
-		time.Sleep(250 * time.Millisecond)
+		rs.memfile = memfile
+		rs.reader = csv.NewReader(memfile)
+		// Try to read the file again, just in case.
+		rs.readToEOF()
+	case FSCSUnchanged:
+		return
+	case FSCSTruncated:
+		fallthrough
+	case FSCSModified:
+		rs.readToEOF()
 	}
+}
+
+func (rs *RowSource) readToEOF() {
 	for {
-		// Only check this if we've seen the whole file, otherwise it may be
-		// "unchanged" and wait to read data that is already available.
-		if p.sawAllExistingData {
-			changeType, err := p.cd.DidChange()
-			if err != nil {
-				// TODO: this is probably the wrong way to handle it.
-				continue
-			}
-			switch changeType {
-			case FSCSMoved:
-				fallthrough
-			case FSCSDeleted:
-				p.memfile.Close()
-				memfile, err := os.Open(p.path)
-				if err != nil {
-					time.Sleep(250 * time.Millisecond)
-					// TODO: probably the wrong way to handle this.
-					continue
-				}
-				p.memfile = memfile
-				p.reader = csv.NewReader(memfile)
-				p.cd, err = NewChangeDetector(*memfile)
-				if err != nil {
-					time.Sleep(250 * time.Millisecond)
-					// TODO: probably the wrong way to handle this.
-					continue
-				}
-				p.sawAllExistingData = false
-				// No continue here, read the file.
-			case FSCSUnchanged:
-				time.Sleep(250 * time.Millisecond)
-				continue
-			case FSCSTruncated:
-				// No continue or fallthrough here; should do rest of the loop.
-			case FSCSModified:
-				// Do nothing intentionally, all other cases must restart the loop.
-			}
-		}
-		record, err := p.reader.Read()
+		log.Trace("readToEOF loop start")
+		record, err := rs.reader.Read()
 		if errors.Is(err, io.EOF) {
-			p.sawAllExistingData = true
-			continue
+			return
 		}
 		if err != nil {
-			// TODO: is the "it was deleted" error one of these?
-			close(p.results)
+			log.WithError(err).Info("failed to read file, stopping loop")
+			// TODO: is this the right way to handle all other IO errors?
 			return
 		}
 		// If we've successfully read something, but not yet found EOF again, there
 		// might be more data.
-		p.sawAllExistingData = false
-		if record[0] == "address" {
-			continue
-		}
-		expire, lifetime64, err := p.parseExpireLifetime(record)
-		if err != nil {
-			continue
-		}
-		lifetime := uint32(lifetime64)
-		// Infinite-lifetime leases are stored as 0xFFFFFFFF.  This will need to be
-		// refactored come 2038.
-		cltt := expire - lifetime64
-		if cltt < minCLTT {
-			continue
-		}
-		lease, err := p.newLease(record, expire, cltt, lifetime)
-		if err != nil {
-			continue
-		}
-		p.results <- lease
+		log.WithField("record", record).Debug("read row from log file")
+		rs.results <- record
 	}
 }
 
-func (p *LeaseParser[T]) StartParser(minCLTT uint64) chan T {
-	go p.parseLoop(minCLTT)
-	return p.results
+func (rs *RowSource) Start() chan []string {
+	if rs.running {
+		return rs.results
+	}
+	rs.cd.Start()
+	rs.running = true
+	return rs.results
+}
+
+func (rs *RowSource) Stop() {
+	if !rs.running {
+		return
+	}
+	rs.cd.Stop()
+	rs.running = false
+}
+
+func parseExpireLifetime(record []string, expireIdx, lifetimeIdx int) (uint64, uint64, error) {
+	expire, err := strconv.ParseUint(record[expireIdx], 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	lifetime64, err := strconv.ParseUint(record[lifetimeIdx], 10, 32)
+	return expire, lifetime64, err
+}
+
+func ParseRowAsLease4(record []string, minCLTT uint64) *Lease4 {
+	if record[0] == "address" {
+		return nil
+	}
+	if strings.Contains(record[0], ":") {
+		return nil
+	}
+	expire, lifetime64, err := parseExpireLifetime(record, v4Expire, v4ValidLifetime)
+	if err != nil {
+		return nil
+	}
+	lifetime := uint32(lifetime64)
+	// Infinite-lifetime leases are stored as 0xFFFFFFFF.  This will need to be
+	// refactored come 2038.
+	cltt := expire - lifetime64
+	if cltt < minCLTT {
+		return nil
+	}
+	lease, err := NewLease4(record, expire, cltt, lifetime)
+	if err != nil {
+		return nil
+	}
+	return &lease
 }

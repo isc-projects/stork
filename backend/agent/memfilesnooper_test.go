@@ -5,13 +5,15 @@ import (
 	"context"
 	"io"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-// Write the lines from input to the file in output one at a time, with a delay of 300 milliseconds between each write.
+// Write the lines from input to the file in output one at a time, returning control to the Go scheduler after each write..
 func slowlyWriteToLeasefile(input string, output io.WriteCloser) error {
 	defer output.Close()
 	infile, err := os.Open(input)
@@ -24,7 +26,7 @@ func slowlyWriteToLeasefile(input string, output io.WriteCloser) error {
 	for scanner.Scan() {
 		output.Write(scanner.Bytes())
 		output.Write(ln)
-		time.Sleep(300 * time.Millisecond)
+		runtime.Gosched()
 	}
 	return nil
 }
@@ -50,21 +52,21 @@ func slowlyWriteToLeasefileWithSwap(input1 string, input2 string, output1 *os.Fi
 	return err
 }
 
-// Read up to `limit` Lease4 structs from `c`.  If the deadline in `ctx` expires before reading `limit` items, stop reading and return early.
-func readChanToLimitWithTimeout[T any](c chan T, limit int, ctx context.Context) ([]T, bool) {
+// Read up to `limit` rows from `c`.  If the deadline in `ctx` expires before reading `limit` items, stop reading and return early.
+func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context) ([][]string, bool) {
 	if limit < 0 {
 		panic("you want me to read a negative number of items from the channel?")
 	}
-	results := make([]T, 0, limit)
+	results := make([][]string, 0, limit)
 	didTimeOut := false
 	for !didTimeOut && len(results) < limit {
 		select {
-		case lease, ok := <-c:
+		case row, ok := <-c:
 			if !ok {
 				didTimeOut = true
 				break
 			}
-			results = append(results, lease)
+			results = append(results, row)
 		case <-ctx.Done():
 			didTimeOut = true
 		}
@@ -72,6 +74,255 @@ func readChanToLimitWithTimeout[T any](c chan T, limit int, ctx context.Context)
 	return results, didTimeOut
 }
 
+func TestRowSourceExistingFile(t *testing.T) {
+	// Arrange
+	infile := "testdata/small-leases4.csv"
+	want0 := []string{
+		"address",
+		"hwaddr",
+		"client_id",
+		"valid_lifetime",
+		"expire",
+		"subnet_id",
+		"fqdn_fwd",
+		"fqdn_rev",
+		"hostname",
+		"state",
+		"user_context",
+		"pool_id",
+	}
+	want1 := []string{
+		"192.110.111.2",
+		"03:00:00:00:00:00",
+		"01:03:00:00:00:00:00",
+		"3600",
+		"1761257849",
+		"123",
+		"0",
+		"0",
+		"",
+		"0",
+		"",
+		"0",
+	}
+	rowsource, err := NewRowSource(infile)
+	require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	require.NoError(t, err)
+	defer cancel()
+
+	// Act
+	channel := rowsource.Start()
+	defer rowsource.Stop()
+	got, timedOut := readChanToLimitWithTimeout(channel, 4, ctx)
+	// Assert
+
+	require.False(t, timedOut, "Timed out before getting 4 rows; got %d", len(got))
+	require.Equal(t, want0, got[0])
+	require.Equal(t, want1, got[1])
+}
+
+func TestRowSourceContinuesReadingOverTime(t *testing.T) {
+	// Arrange
+	leasefile, err := os.CreateTemp("", "leases4-")
+	if err != nil {
+		t.Errorf("unable to create temp leases file: %v", err)
+	}
+	defer os.Remove(leasefile.Name())
+
+	infile := "testdata/small-leases4.csv"
+	want0 := []string{
+		"address",
+		"hwaddr",
+		"client_id",
+		"valid_lifetime",
+		"expire",
+		"subnet_id",
+		"fqdn_fwd",
+		"fqdn_rev",
+		"hostname",
+		"state",
+		"user_context",
+		"pool_id",
+	}
+	want1 := []string{
+		"192.110.111.2",
+		"03:00:00:00:00:00",
+		"01:03:00:00:00:00:00",
+		"3600",
+		"1761257849",
+		"123",
+		"0",
+		"0",
+		"",
+		"0",
+		"",
+		"0",
+	}
+	rowsource, err := NewRowSource(leasefile.Name())
+	require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	require.NoError(t, err)
+	defer cancel()
+
+	// Act
+	go slowlyWriteToLeasefile(infile, leasefile)
+	channel := rowsource.Start()
+	defer rowsource.Stop()
+	got, timedOut := readChanToLimitWithTimeout(channel, 4, ctx)
+	// Assert
+
+	require.False(t, timedOut, "Timed out before getting 4 rows; got %d", len(got))
+	require.Equal(t, want0, got[0])
+	require.Equal(t, want1, got[1])
+}
+
+func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
+	// Arrange
+	preCleanup, err := os.CreateTemp("", "leases4-")
+	if err != nil {
+		t.Errorf("unable to create temp leases file: %v", err)
+	}
+	preCleanupName := preCleanup.Name()
+	postCleanup, err := os.CreateTemp("", "leases4-")
+	if err != nil {
+		t.Errorf("unable to create temp leases file: %v", err)
+	}
+
+	infile1 := "testdata/small-leases4.csv"
+	infile2 := "testdata/small2-leases4.csv"
+	expected1Addr := "192.110.111.2"
+	expected2Addr := "192.110.111.5"
+	wantRows := 8
+	rowsource, err := NewRowSource(preCleanupName)
+	require.NoError(t, err)
+
+	// Act
+	go slowlyWriteToLeasefileWithSwap(infile1, infile2, preCleanup, postCleanup)
+	log.SetLevel(log.TraceLevel)
+	results := rowsource.Start()
+
+	// Assert
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	parsedRows, didTimeOut := readChanToLimitWithTimeout(
+		results,
+		wantRows,
+		ctx,
+	)
+	require.False(t, didTimeOut, "Did not read %d leases from the file before timing out; got %d", wantRows, len(parsedRows))
+	require.Len(t, parsedRows, wantRows)
+	require.EqualValues(t, expected1Addr, parsedRows[1][0])
+	require.EqualValues(t, expected2Addr, parsedRows[5][0])
+}
+
+func TestParseRowAsLease4(t *testing.T) {
+	// Arrange
+	testCases := []struct {
+		row     []string
+		minCLTT uint64
+		want    *Lease4
+	}{
+		// Headers, which it should skip.
+		{
+			[]string{
+				"address",
+				"hwaddr",
+				"client_id",
+				"valid_lifetime",
+				"expire",
+				"subnet_id",
+				"fqdn_fwd",
+				"fqdn_rev",
+				"hostname",
+				"state",
+				"user_context",
+				"pool_id",
+			},
+			0,
+			nil,
+		},
+		// Valid IPv4 data, which it should parse.
+		{
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"1761257849",
+				"123",
+				"0",
+				"0",
+				"",
+				"0",
+				"",
+				"0",
+			},
+			0,
+			&Lease4{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				1761257849,
+				1761254249,
+				3600,
+				123,
+				0,
+			},
+		},
+		// Valid IPv6 data, which it should refuse to parse.
+		{
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			nil,
+		},
+		// Valid IPv4 data but with CLTT too old, which it should refuse to parse.
+		{
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"1761257849",
+				"123",
+				"0",
+				"0",
+				"",
+				"0",
+				"",
+				"0",
+			},
+			1761254250,
+			nil,
+		},
+	}
+	for _, tc := range testCases {
+		// Act
+		got := ParseRowAsLease4(tc.row, tc.minCLTT)
+		// Assert
+		require.Equal(t, tc.want, got)
+	}
+}
+
+/*
 // Test whether the Lease4 parser continues to read more data when Kea is writing into it over time.
 func TestParseLease4(t *testing.T) {
 	// Arrange
@@ -338,3 +589,4 @@ func TestParseLease6FileSwap(t *testing.T) {
 	require.EqualValues(t, expected1, parsedRows[0])
 	require.EqualValues(t, expected2, parsedRows[3])
 }
+*/

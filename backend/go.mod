@@ -8,12 +8,14 @@ require (
 	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-openapi/errors v0.22.3
 	github.com/go-openapi/loads v0.23.1
 	github.com/go-openapi/runtime v0.29.0
 	github.com/go-openapi/spec v0.22.0
 	github.com/go-openapi/strfmt v0.24.0
 	github.com/go-openapi/swag v0.25.1
+	github.com/go-openapi/swag/netutils v0.25.1
 	github.com/go-openapi/validate v0.25.0
 	github.com/go-pg/migrations/v8 v8.1.0
 	github.com/go-pg/pg/v10 v10.15.0
@@ -61,7 +63,6 @@ require (
 	github.com/go-openapi/swag/jsonutils v0.25.1 // indirect
 	github.com/go-openapi/swag/loading v0.25.1 // indirect
 	github.com/go-openapi/swag/mangling v0.25.1 // indirect
-	github.com/go-openapi/swag/netutils v0.25.1 // indirect
 	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
