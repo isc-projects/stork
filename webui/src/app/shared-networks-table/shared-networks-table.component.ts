@@ -160,14 +160,14 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
      * Get the total number of delegated prefixes in the network.
      */
     getTotalDelegatedPrefixes(network: SharedNetwork) {
-        return network.stats?.['total-pds']
+        return network.universe === 6 ? network.stats?.['total-pds'] : undefined
     }
 
     /**
      * Get the number of delegated prefixes in the network.
      */
     getAssignedDelegatedPrefixes(network: SharedNetwork) {
-        return network.stats?.['assigned-pds']
+        return network.universe === 6 ? network.stats?.['assigned-pds'] : undefined
     }
 
     /**

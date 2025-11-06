@@ -217,15 +217,19 @@
                     <app-human-count [value]="getAssignedDelegatedPrefixes(net)"></app-human-count>
                 </td>
                 <td>
-                    {{ net.pdUtilization ?? 0 | number: '1.0-1' }} %
-                    <i
-                        *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
-                        class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                    ></i>
-                    <i
-                        *ngIf="net.pdUtilization > 90"
-                        class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                    ></i>
+                    @if (net.universe === 6) {
+                        {{ net.pdUtilization ?? 0 | number: '1.0-1' }} %
+                        <i
+                            *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
+                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
+                        ></i>
+                        <i
+                            *ngIf="net.pdUtilization > 90"
+                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
+                        ></i>
+                    } @else {
+                        -
+                    }
                 </td>
             </ng-container>
             <td>
