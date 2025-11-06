@@ -499,4 +499,68 @@ describe('SharedNetworksTableComponent', () => {
         // Assert
         expect(component.filterTable).toHaveBeenCalledOnceWith(1, component.table.filters['appId'] as FilterMetadata)
     }))
+
+    it('should get total delegated prefixes for v6 network', () => {
+        // Arrange
+        const network: SharedNetwork = {
+            universe: 6,
+            stats: {
+                'total-pds': 10
+            }
+        }
+
+        // Act
+        const result = component.getTotalDelegatedPrefixes(network)
+
+        // Assert
+        expect(result).toEqual(10)
+    })
+
+    it('should get assigned delegated prefixes for v6 network', () => {
+        // Arrange
+        const network: SharedNetwork = {
+            universe: 6,
+            stats: {
+                'assigned-pds': 10
+            }
+        }
+
+        // Act
+        const result = component.getAssignedDelegatedPrefixes(network)
+
+        // Assert
+        expect(result).toEqual(10)
+    })
+
+    it('should not get total delegated prefixes for v4 network', () => {
+        // Arrange
+        const network: SharedNetwork = {
+            universe: 4,
+            stats: {
+                'total-addresses': 10
+            }
+        }
+
+        // Act
+        const result = component.getTotalDelegatedPrefixes(network)
+
+        // Assert
+        expect(result).toBeUndefined()
+    })
+
+    it('should not get assigned delegated prefixes for v4 network', () => {
+        // Arrange
+        const network: SharedNetwork = {
+            universe: 4,
+            stats: {
+                'assigned-addresses': 10
+            }
+        }
+
+        // Act
+        const result = component.getAssignedDelegatedPrefixes(network)
+
+        // Assert
+        expect(result).toBeUndefined()
+    })
 })
