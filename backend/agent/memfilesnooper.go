@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
@@ -44,135 +44,22 @@ const (
 
 type ChangeDetector interface {
 	RegisterListener(func(FSChangeState))
-	UnregisterListener(func(FSChangeState))
 	UnregisterAllListeners()
 	Start()
 	Stop()
 }
 
-// A tool which can be used to detect whether (and how) a file has changed since
-// the last time it was checked.
-type PollingChangeDetector struct {
-	listeners []func(FSChangeState)
-	filename  string
-	file      os.File
-	info      os.FileInfo
-	size      int64
-	interval  time.Duration
-	ticker    *time.Ticker
-	stop      chan bool
-}
-
-// Construct a new polling ChangeDetector for the given file.
-func NewPollingChangeDetector(file os.File, interval time.Duration) (ChangeDetector, error) {
-	info, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-	cd := &PollingChangeDetector{
-		[]func(FSChangeState){},
-		file.Name(),
-		file,
-		info,
-		info.Size(),
-		interval,
-		nil,
-		make(chan bool),
-	}
-	return cd, nil
-}
-
-func (cd *PollingChangeDetector) RegisterListener(fn func(FSChangeState)) {
-	cd.listeners = append(cd.listeners, fn)
-}
-
-func (cd *PollingChangeDetector) UnregisterListener(fn func(FSChangeState)) {
-}
-
-func (cd *PollingChangeDetector) UnregisterAllListeners() {
-	cd.listeners = []func(FSChangeState){}
-}
-
-func (cd *PollingChangeDetector) Start() {
-	if cd.ticker != nil {
-		return
-	}
-	cd.ticker = time.NewTicker(cd.interval)
-	go func() {
-		for {
-			select {
-			case <-cd.stop:
-				return
-			case <-cd.ticker.C:
-				changeType, err := cd.didChange()
-				if err != nil {
-					// TODO: logging
-					continue
-				}
-				for _, listener := range cd.listeners {
-					listener(changeType)
-				}
-			}
-		}
-	}()
-}
-
-func (cd *PollingChangeDetector) Stop() {
-	if cd.ticker == nil {
-		return
-	}
-	cd.stop <- true
-	cd.ticker.Stop()
-	cd.ticker = nil
-}
-
-// Determine whether the tracked file has changed since the last time this function was called.
-// If error is non-nil, the meaning of the first return value is undefined.
-func (cd *PollingChangeDetector) didChange() (FSChangeState, error) {
-	newInfo, err := os.Stat(cd.filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return FSCSDeleted, nil
-		}
-		return FSCSUnchanged, err
-	}
-	if !os.SameFile(cd.info, newInfo) {
-		return FSCSMoved, nil
-	}
-
-	prevSize := cd.size
-	if prevSize > 0 && prevSize > newInfo.Size() {
-		cd.size = newInfo.Size()
-		return FSCSTruncated, nil
-	}
-
-	if prevSize > 0 && prevSize < newInfo.Size() {
-		cd.size = newInfo.Size()
-		return FSCSModified, nil
-	}
-
-	cd.size = newInfo.Size()
-
-	mtime := newInfo.ModTime()
-	if mtime.Compare(cd.info.ModTime()) != 0 {
-		cd.info = newInfo
-		return FSCSModified, nil
-	}
-	cd.info = newInfo
-
-	return FSCSUnchanged, nil
-}
-
 type FsNotifyChangeDetector struct {
 	file      string
-	stop      chan bool
 	running   bool
 	watcher   *fsnotify.Watcher
 	listeners []func(FSChangeState)
+	stop      chan bool
+	mutex     sync.Mutex
 }
 
 func NewFsNotifyChangeDetector(path string) (ChangeDetector, error) {
-	channel := make(chan bool)
+	channel := make(chan bool, 1)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -183,32 +70,33 @@ func NewFsNotifyChangeDetector(path string) (ChangeDetector, error) {
 	}
 	return &FsNotifyChangeDetector{
 		path,
-		channel,
 		false,
 		watcher,
 		[]func(FSChangeState){},
+		channel,
+		sync.Mutex{},
 	}, nil
 }
 
 func (cd *FsNotifyChangeDetector) RegisterListener(fn func(FSChangeState)) {
+	cd.mutex.Lock()
+	defer cd.mutex.Unlock()
 	cd.listeners = append(cd.listeners, fn)
 }
 
-func (cd *FsNotifyChangeDetector) UnregisterListener(fn func(FSChangeState)) {
-	// for idx, listener := range cd.listeners {
-	// if listener == fn {
-	// 	cd.listeners = slices.Delete(cd.listeners, idx, idx+1)
-	// }
-	// }
-}
-
 func (cd *FsNotifyChangeDetector) UnregisterAllListeners() {
+	cd.mutex.Lock()
+	defer cd.mutex.Unlock()
 	cd.listeners = []func(FSChangeState){}
 }
 
 func (cd *FsNotifyChangeDetector) send(state FSChangeState) {
+	cd.mutex.Lock()
+	defer cd.mutex.Unlock()
 	for _, listener := range cd.listeners {
-		listener(state)
+		if listener != nil {
+			listener(state)
+		}
 	}
 }
 
@@ -224,14 +112,17 @@ func (cd *FsNotifyChangeDetector) Start() {
 		for {
 			select {
 			case <-cd.stop:
+				log.Info("received stop message")
 				return
-			case _, ok := <-cd.watcher.Errors:
+			case err, ok := <-cd.watcher.Errors:
 				if !ok {
 					// TODO: log
+					log.WithError(err).Info("received error from watcher")
 					return
 				}
 			case event, ok := <-cd.watcher.Events:
 				if !ok {
+					log.Info("failed to read from watcher events channel")
 					return
 				}
 				if event.Name != cd.file {
@@ -239,7 +130,7 @@ func (cd *FsNotifyChangeDetector) Start() {
 				}
 				// These are ordered intentionally; one event can have several of these flags set:
 				// * Chmod and create are not checked because those don't convey useful information for this system.
-				// * Delete and remove are checked first because those indicate kea-lfc is running.
+				// * Delete and rename are checked first because those indicate kea-lfc is running.
 				// * Write is checked after delete/remove because different and higher-priority steps must occur first in order to ensure the right data is being read.
 				if event.Has(fsnotify.Remove) {
 					cd.send(FSCSDeleted)
@@ -456,6 +347,29 @@ func ParseRowAsLease4(record []string, minCLTT uint64) *Lease4 {
 		return nil
 	}
 	lease, err := NewLease4(record, expire, cltt, lifetime)
+	if err != nil {
+		return nil
+	}
+	return &lease
+}
+
+func ParseRowAsLease6(record []string, minCLTT uint64) *Lease6 {
+	if record[0] == "address" {
+		return nil
+	}
+	if strings.Contains(record[0], ".") {
+		return nil
+	}
+	expire, lifetime64, err := parseExpireLifetime(record, v6Expire, v6ValidLifetime)
+	if err != nil {
+		return nil
+	}
+	lifetime := uint32(lifetime64)
+	cltt := expire - lifetime64
+	if cltt < minCLTT {
+		return nil
+	}
+	lease, err := NewLease6(record, expire, cltt, lifetime)
 	if err != nil {
 		return nil
 	}

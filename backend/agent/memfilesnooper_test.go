@@ -6,12 +6,78 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
+
+func TestChangeDetectorRegistration(t *testing.T) {
+	// Arrange
+	callCounter1 := 0
+	c1Mut := sync.Mutex{}
+	callCounter2 := 0
+	c2Mut := sync.Mutex{}
+	count1 := func(s FSChangeState) {
+		log.WithField("state", s).Info("Called count1")
+		c1Mut.Lock()
+		defer c1Mut.Unlock()
+		callCounter1 += 1
+	}
+	count2 := func(s FSChangeState) {
+		log.WithField("state", s).Info("Called count2")
+		c2Mut.Lock()
+		defer c2Mut.Unlock()
+		callCounter2 += 1
+	}
+	read1 := func() int {
+		c1Mut.Lock()
+		defer c1Mut.Unlock()
+		return callCounter1
+	}
+	read2 := func() int {
+		c2Mut.Lock()
+		defer c2Mut.Unlock()
+		return callCounter2
+	}
+	tmpfile, err := os.CreateTemp("", "changeme-")
+	require.Nil(t, err)
+	defer tmpfile.Close()
+	cd, err := NewFsNotifyChangeDetector(tmpfile.Name())
+	require.Nil(t, err)
+
+	// Act
+	cd.RegisterListener(count1)
+	cd.Start()
+	defer cd.Stop()
+	_, err = tmpfile.WriteString("Spotted Hyena: *Crocuta crocuta*\n")
+	require.Nil(t, err)
+	tmpfile.Sync() // Ensure write is flushed to disk and fsnotify sees it.
+	c1SnapshotAfterRegisterWrite := read1()
+	c2SnapshotAfterRegisterWrite := read2()
+
+	cd.RegisterListener(count2)
+	_, err = tmpfile.WriteString("Painted Wolf: *Lycaon pictus*\n")
+	require.Nil(t, err)
+	tmpfile.Sync()
+	c1SnapshotAfterRegisterWriteRegisterWrite := read1()
+	c2SnapshotAfterRegisterWriteRegisterWrite := read2()
+
+	cd.UnregisterAllListeners()
+	_, err = tmpfile.WriteString("Striped Hyena: *Hyaena hyaena*\n")
+	require.Nil(t, err)
+	tmpfile.Sync()
+
+	// Assert
+	require.Greater(t, c1SnapshotAfterRegisterWrite, 0, "Listener 1 wasn't called after the first write.")
+	require.Equal(t, c2SnapshotAfterRegisterWrite, 0, "Listener 2 was called before it was registered??")
+	require.Greater(t, c1SnapshotAfterRegisterWriteRegisterWrite, c1SnapshotAfterRegisterWrite, "Listener 1 wasn't called again after the second write.")
+	require.Greater(t, c2SnapshotAfterRegisterWriteRegisterWrite, 0, "Listener 2 wasn't called after the second write.")
+	require.Equal(t, c1SnapshotAfterRegisterWriteRegisterWrite, callCounter1, "Listener 1 was called again after being unregistered.")
+	require.Equal(t, c2SnapshotAfterRegisterWriteRegisterWrite, callCounter2, "Listener 2 was called again after being unregistered.")
+}
 
 // Write the lines from input to the file in output one at a time, returning control to the Go scheduler after each write..
 func slowlyWriteToLeasefile(input string, output io.WriteCloser) error {
@@ -317,6 +383,119 @@ func TestParseRowAsLease4(t *testing.T) {
 	for _, tc := range testCases {
 		// Act
 		got := ParseRowAsLease4(tc.row, tc.minCLTT)
+		// Assert
+		require.Equal(t, tc.want, got)
+	}
+}
+
+func TestParseRowAsLease6(t *testing.T) {
+	// Arrange
+	testCases := []struct {
+		row     []string
+		minCLTT uint64
+		want    *Lease6
+	}{
+		// Headers, which it should skip.
+		{
+			[]string{
+				"address",
+				"hwaddr",
+				"client_id",
+				"valid_lifetime",
+				"expire",
+				"subnet_id",
+				"fqdn_fwd",
+				"fqdn_rev",
+				"hostname",
+				"state",
+				"user_context",
+				"pool_id",
+			},
+			0,
+			nil,
+		},
+		// Valid IPv4 data, which it should refuse to parse.
+		{
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"1761257849",
+				"123",
+				"0",
+				"0",
+				"",
+				"0",
+				"",
+				"0",
+			},
+			0,
+			nil,
+		},
+		// Valid IPv6 data, which it should parse.
+		{
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			&Lease6{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				1761672649,
+				1761669049,
+				3600,
+				123,
+				2,
+				128,
+			},
+		},
+		// Valid IPv4 data but with CLTT too old, which it should refuse to parse.
+		{
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			1761669050,
+			nil,
+		},
+	}
+	for _, tc := range testCases {
+		// Act
+		got := ParseRowAsLease6(tc.row, tc.minCLTT)
 		// Assert
 		require.Equal(t, tc.want, got)
 	}
