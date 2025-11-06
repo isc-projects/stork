@@ -21,7 +21,7 @@ import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.co
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { DHCPService } from '../backend'
+import { DHCPService, Host } from '../backend'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { TableModule } from 'primeng/table'
@@ -1648,6 +1648,242 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                        },
+                    ],
+                },
+            ],
+        }
+        expect(dhcpApi.updateHostSubmit).toHaveBeenCalledWith(component.hostId, component.form.transactionID, host)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should open a form for editing dhcpv6 host', fakeAsync(() => {
+        component.hostId = 123
+
+        let beginResponse = cannedResponseBegin
+        beginResponse.host = {
+            id: 123,
+            subnetId: 1,
+            subnetPrefix: '3000:1::/64',
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '01:02:03:04:05:06',
+                },
+            ],
+            addressReservations: [
+                {
+                    address: '3000:1::4',
+                },
+            ],
+            prefixReservations: [
+                {
+                    address: '3000:2::/64',
+                },
+            ],
+            hostname: 'foo.example.org',
+            localHosts: [
+                {
+                    daemonId: 3,
+                    dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot1',
+                    clientClasses: ['foo'],
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 5,
+                            encapsulate: '',
+                            fields: [
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['3001::2'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['64'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['80'],
+                                },
+                            ],
+                            options: [],
+                            universe: 4,
+                        },
+                    ],
+                    optionsHash: '123',
+                },
+                {
+                    daemonId: 4,
+                    dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot2',
+                    clientClasses: ['bar'],
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 5,
+                            encapsulate: '',
+                            fields: [
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['3002::2'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['64'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['80'],
+                                },
+                            ],
+                            options: [],
+                            universe: 4,
+                        },
+                    ],
+                    optionsHash: '234',
+                },
+            ],
+        } as Host
+        spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(beginResponse))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(dhcpApi.updateHostBegin).toHaveBeenCalled()
+        expect(component.formGroup.valid).toBeTrue()
+        expect(component.formGroup.get('splitFormMode').value).toBeTrue()
+        expect(component.formGroup.get('globalReservation').value).toBeFalse()
+        expect(component.formGroup.get('selectedDaemons').value.length).toBe(2)
+        expect(component.formGroup.get('selectedSubnet').value).toBe(1)
+        expect(component.ipGroups.length).toBe(2)
+        expect(component.ipGroups.get('0.inputNA').value).toBe('3000:1::4')
+        expect(component.ipGroups.get('1.inputPD').value).toBe('3000:2::')
+        expect(component.ipGroups.get('1.inputPDLength').value).toBe(64)
+        expect(component.formGroup.get('hostname').value).toBe('foo.example.org')
+        expect(component.optionsArray.length).toBe(2)
+        expect(component.getOptionSetArray(0).length).toBe(1)
+        expect(component.getOptionSetArray(0).get('0.alwaysSend').value).toBeTrue()
+        expect(component.getOptionSetArray(0).get('0.optionCode').value).toBe(5)
+        let optionFields = component.getOptionSetArray(0).get('0.optionFields') as UntypedFormArray
+        expect(optionFields.length).toBe(3)
+        expect(optionFields.get('0.control').value).toBe('3001::2')
+        expect(optionFields.get('1.control').value).toBe('64')
+        expect(optionFields.get('2.control').value).toBe('80')
+        expect(component.getOptionSetArray(1).length).toBe(1)
+        expect(component.getOptionSetArray(1).get('0.alwaysSend').value).toBeTrue()
+        expect(component.getOptionSetArray(1).get('0.optionCode').value).toBe(5)
+        optionFields = component.getOptionSetArray(1).get('0.optionFields') as UntypedFormArray
+        expect(optionFields.length).toBe(3)
+        expect(optionFields.get('0.control').value).toBe('3002::2')
+        expect(optionFields.get('1.control').value).toBe('64')
+        expect(optionFields.get('2.control').value).toBe('80')
+        expect(component.clientClassesArray.length).toBe(2)
+        expect(component.getClientClassSetControl(0).value).toEqual(['foo'])
+        expect(component.getClientClassSetControl(1).value).toEqual(['bar'])
+        expect(component.bootFieldsArray.length).toBe(2)
+        expect(component.getBootFieldsGroup(0).get('nextServer').value).toEqual('192.2.2.1')
+        expect(component.getBootFieldsGroup(1).get('nextServer').value).toEqual('192.2.2.1')
+        expect(component.getBootFieldsGroup(0).get('serverHostname').value).toEqual('myserver.example.org')
+        expect(component.getBootFieldsGroup(1).get('serverHostname').value).toEqual('myserver.example.org')
+        expect(component.getBootFieldsGroup(0).get('bootFileName').value).toEqual('/tmp/boot1')
+        expect(component.getBootFieldsGroup(1).get('bootFileName').value).toEqual('/tmp/boot2')
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'updateHostSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        let host: Host = {
+            id: 123,
+            subnetId: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '01:02:03:04:05:06',
+                },
+            ],
+            addressReservations: [
+                {
+                    address: '3000:1::4/128',
+                },
+            ],
+            prefixReservations: [
+                {
+                    address: '3000:2::/64',
+                },
+            ],
+            hostname: 'foo.example.org',
+            localHosts: [
+                {
+                    daemonId: 3,
+                    dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot1',
+                    clientClasses: ['foo'],
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 5,
+                            encapsulate: '',
+                            fields: [
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['3001::2'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['64'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['80'],
+                                },
+                            ],
+                            options: [],
+                            universe: 6,
+                        },
+                    ],
+                },
+                {
+                    daemonId: 4,
+                    dataSource: 'api',
+                    nextServer: '192.2.2.1',
+                    serverHostname: 'myserver.example.org',
+                    bootFileName: '/tmp/boot2',
+                    clientClasses: ['bar'],
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 5,
+                            encapsulate: '',
+                            fields: [
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['3002::2'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['64'],
+                                },
+                                {
+                                    fieldType: 'uint32',
+                                    values: ['80'],
+                                },
+                            ],
+                            options: [],
+                            universe: 6,
                         },
                     ],
                 },
