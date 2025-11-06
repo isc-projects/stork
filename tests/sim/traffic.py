@@ -66,14 +66,12 @@ def start_perfdhcp(subnet):
         raise ValueError(f"Missing client class for subnet: {subnet['subnet']}")
 
     client_class_params = m.groups()
-    (byte0, byte1, iface, relay) = client_class_params
-    print("iface:", iface)
+    byte0, byte1, iface, relay = client_class_params
     if not iface:
         iface = "eth1"
     else:
         # Trim off dash in front of interface name.
         iface = iface[1:]
-    print("iface (after):", iface)
     is_relay = bool(relay == "-RELAY")
 
     if "." in subnet["subnet"]:
