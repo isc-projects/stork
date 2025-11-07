@@ -274,7 +274,8 @@ func (b *formatterBuilderFunc) writeIndent(level int) {
 	b.builder.WriteString(strings.Repeat(b.indentPattern, level))
 }
 
-// Writes a new line to the builder.
+// Writes a new line to the builder. It flushes the buffer into the callback,
+// so the callback can save the flushed data as a single line.
 func (b *formatterBuilderFunc) writeNewLine() {
 	b.callback(b.builder.String())
 	b.builder.Reset()

@@ -1,7 +1,6 @@
 package bind9config
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -86,7 +85,6 @@ func TestFormatterClause(t *testing.T) {
 		builder.WriteString("\n")
 	})
 	formattedText := builder.String()
-	fmt.Println(formattedText)
 	require.NotEmpty(t, formattedText)
 
 	require.Contains(t, `
