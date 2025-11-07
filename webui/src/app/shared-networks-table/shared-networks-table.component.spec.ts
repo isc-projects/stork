@@ -505,8 +505,8 @@ describe('SharedNetworksTableComponent', () => {
         const network: SharedNetwork = {
             universe: 6,
             stats: {
-                'total-pds': 10
-            }
+                'total-pds': 10,
+            },
         }
 
         // Act
@@ -521,8 +521,8 @@ describe('SharedNetworksTableComponent', () => {
         const network: SharedNetwork = {
             universe: 6,
             stats: {
-                'assigned-pds': 10
-            }
+                'assigned-pds': 10,
+            },
         }
 
         // Act
@@ -537,8 +537,8 @@ describe('SharedNetworksTableComponent', () => {
         const network: SharedNetwork = {
             universe: 4,
             stats: {
-                'total-addresses': 10
-            }
+                'total-addresses': 10,
+            },
         }
 
         // Act
@@ -553,8 +553,8 @@ describe('SharedNetworksTableComponent', () => {
         const network: SharedNetwork = {
             universe: 4,
             stats: {
-                'assigned-addresses': 10
-            }
+                'assigned-addresses': 10,
+            },
         }
 
         // Act
