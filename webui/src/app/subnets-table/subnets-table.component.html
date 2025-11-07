@@ -30,6 +30,7 @@
     stateStorage="local"
     (rowsChange)="storeTableRowsPerPage($event)"
     class="full-w-table"
+    [tableStyle]="{ 'min-width': '20rem' }"
 >
     <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -200,14 +201,16 @@
     <ng-template #header>
         <tr>
             <th rowspan="2" [pSortableColumn]="SubnetSortField.Prefix">
-                Subnet <p-sortIcon [field]="SubnetSortField.Prefix" />
+                <div class="flex gap-1">Subnet<p-sortIcon [field]="SubnetSortField.Prefix" /></div>
             </th>
-            <th rowspan="2" *ngIf="isAnySubnetWithNameVisible">Name</th>
+            <th rowspan="2" class="w-7rem">Name</th>
             <th colspan="3">Addresses</th>
-            <th colspan="3" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
+            <th colspan="3" *ngIf="ipV6SubnetsFilterIncluded()">Prefixes</th>
             <th rowspan="2">Pools</th>
             <th rowspan="2" [pSortableColumn]="SubnetSortField.SharedNetworkName">
-                Shared Network <p-sortIcon [field]="SubnetSortField.SharedNetworkName" />
+                <div class="flex gap-1 white-space-nowrap">
+                    Shared Network <p-sortIcon [field]="SubnetSortField.SharedNetworkName" />
+                </div>
             </th>
             <th colspan="2">Application</th>
             <th rowspan="2" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
@@ -215,30 +218,38 @@
             </th>
         </tr>
         <tr>
-            <th [pSortableColumn]="SubnetSortField.CustomTotalAddresses">
-                Total
-                <p-sortIcon [field]="SubnetSortField.CustomTotalAddresses" />
+            <th [pSortableColumn]="SubnetSortField.CustomTotalAddresses" class="w-7rem">
+                <div class="flex gap-1">
+                    Total
+                    <p-sortIcon [field]="SubnetSortField.CustomTotalAddresses" />
+                </div>
             </th>
-            <th class="px-2" [pSortableColumn]="SubnetSortField.CustomAssignedAddresses">
-                Assigned
-                <p-sortIcon [field]="SubnetSortField.CustomAssignedAddresses" />
+            <th [pSortableColumn]="SubnetSortField.CustomAssignedAddresses" class="w-7rem">
+                <div class="flex gap-1">
+                    Assigned
+                    <p-sortIcon [field]="SubnetSortField.CustomAssignedAddresses" />
+                </div>
             </th>
-            <th [pSortableColumn]="SubnetSortField.AddrUtilization">
-                Used % <p-sortIcon [field]="SubnetSortField.AddrUtilization" />
+            <th [pSortableColumn]="SubnetSortField.AddrUtilization" class="w-7rem">
+                <div class="flex gap-1 white-space-nowrap">
+                    Used % <p-sortIcon [field]="SubnetSortField.AddrUtilization" />
+                </div>
             </th>
-            <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                <th [pSortableColumn]="SubnetSortField.CustomTotalPds">
-                    Total <p-sortIcon [field]="SubnetSortField.CustomTotalPds" />
+            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
+                <th [pSortableColumn]="SubnetSortField.CustomTotalPds" class="w-7rem">
+                    <div class="flex gap-1">Total <p-sortIcon [field]="SubnetSortField.CustomTotalPds" /></div>
                 </th>
-                <th class="px-2" [pSortableColumn]="SubnetSortField.CustomAssignedPds">
-                    Assigned <p-sortIcon [field]="SubnetSortField.CustomAssignedPds" />
+                <th [pSortableColumn]="SubnetSortField.CustomAssignedPds" class="w-7rem">
+                    <div class="flex gap-1">Assigned <p-sortIcon [field]="SubnetSortField.CustomAssignedPds" /></div>
                 </th>
-                <th [pSortableColumn]="SubnetSortField.CustomPdUtilization">
-                    Used % <p-sortIcon [field]="SubnetSortField.CustomPdUtilization" />
+                <th [pSortableColumn]="SubnetSortField.CustomPdUtilization" class="w-7rem">
+                    <div class="flex gap-1 white-space-nowrap">
+                        Used % <p-sortIcon [field]="SubnetSortField.CustomPdUtilization" />
+                    </div>
                 </th>
             </ng-container>
             <th>Name</th>
-            <th>Kea Subnet ID</th>
+            <th class="white-space-nowrap">Kea Subnet ID</th>
         </tr>
     </ng-template>
     <ng-template #body let-sn>
@@ -246,7 +257,7 @@
             <td>
                 <app-subnet-bar [subnet]="sn"></app-subnet-bar>
             </td>
-            <td *ngIf="isAnySubnetWithNameVisible">
+            <td>
                 <div class="grid" *ngIf="hasAssignedMultipleSubnetNames(sn); else elseSingleSubnetName">
                     <div class="col-fixed flex flex-column">
                         <span *ngFor="let lsn of sn.localSubnets">
@@ -275,7 +286,7 @@
                     class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
                 ></i>
             </td>
-            <ng-container *ngIf="isAnyIPv6SubnetVisible">
+            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
                 <td>
                     <app-human-count [value]="getTotalDelegatedPrefixes(sn)"></app-human-count>
                 </td>

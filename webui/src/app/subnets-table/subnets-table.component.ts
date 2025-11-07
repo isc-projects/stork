@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet, SubnetSortField } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
@@ -59,6 +59,11 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
     totalRecords: number = 0
 
     /**
+     * Returns true if the table filtering does not exclude IPv6 subnets.
+     */
+    ipV6SubnetsFilterIncluded = signal<boolean>(true)
+
+    /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
      * at once onDestroy.
      * @private
@@ -83,6 +88,8 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
         this.dataLoading = true
         // The goal is to send to backend something as simple as:
         // this.someApi.getSubnets(JSON.stringify(event))
+
+        this.ipV6SubnetsFilterIncluded.set((<FilterMetadata>event.filters['dhcpVersion'])?.value !== '4')
 
         lastValueFrom(
             this.dhcpApi
