@@ -296,8 +296,23 @@ func (b *formatterBuilderFunc) write(s string) {
 // tag, the field is always returned. If the filter is nil, the field is
 // returned regardless of the tag.
 func getFormatterClauseFromStruct(s any, filter *Filter) formatterOutput {
-	structType := reflect.TypeOf(s).Elem()
-	structValue := reflect.ValueOf(s).Elem()
+	structType := reflect.TypeOf(s)
+	if structType == nil || structType.Kind() != reflect.Pointer {
+		// If specified nil value or the specified value is not a pointer, return nil.
+		return nil
+	}
+	structType = structType.Elem()
+	if structType.Kind() != reflect.Struct {
+		// The pointer to a struct type is expected.
+		return nil
+	}
+	structValue := reflect.ValueOf(s)
+	if structValue.IsNil() {
+		// It is the pointer to a struct but it is nil.
+		return nil
+	}
+	// Everything is fine.
+	structValue = structValue.Elem()
 	for i := 0; i < structValue.NumField(); i++ {
 		field := structValue.Field(i)
 		t := field.Type()

@@ -102,3 +102,102 @@ func TestFormatterClause(t *testing.T) {
 
 `, formattedText)
 }
+
+var _ formattedElement = (*testElement)(nil)
+
+// A structure implementing the formattedElement interface.
+type testElement struct {
+	name string
+}
+
+// Returns the formatted output of the test element.
+func (t *testElement) getFormattedOutput(filter *Filter) formatterOutput {
+	return newFormatterToken(t.name)
+}
+
+// A structure not implementing the formattedElement interface.
+type testElementNotImplemented struct{}
+
+// A structure holding a set of fields with different filter tags.
+// The first field does not implement the formattedElement interface.
+type testStruct struct {
+	O *testElementNotImplemented
+	A *testElement `filter:"As,All"`
+	B *testElement `filter:"Bs,All"`
+	C *testElement
+}
+
+// Test that getFormatterClauseFromStruct returns the correct formatted clause
+// according to the filter.
+func TestGetFormattedClauseFromStructByFilter(t *testing.T) {
+	// Create a struct with first field pointing to an instance not
+	// implementing the formattedElement interface.
+	testStruct := &testStruct{
+		O: &testElementNotImplemented{},
+		A: &testElement{"A"},
+		B: &testElement{"B"},
+		C: &testElement{"C"},
+	}
+
+	t.Run("no filter", func(t *testing.T) {
+		// The filter is nil, so all fields implementing the formattedElement interface
+		// should be taken into account. The first field implementing the formattedElement
+		// interface should be returned.
+		output := getFormatterClauseFromStruct(testStruct, nil)
+		require.NotNil(t, output)
+		requireConfigEq(t, "A", output)
+	})
+
+	t.Run("filter Bs", func(t *testing.T) {
+		// The filter is "Bs", so only the field implementing the formattedElement
+		// interface with the filter tag "Bs" should be taken into account.
+		output := getFormatterClauseFromStruct(testStruct, NewFilter("Bs"))
+		require.NotNil(t, output)
+		requireConfigEq(t, "B", output)
+	})
+
+	t.Run("filter Cs", func(t *testing.T) {
+		// The filter is "Cs", so only the field implementing the formattedElement
+		// interface with the filter tag "Cs" should be taken into account.
+		output := getFormatterClauseFromStruct(testStruct, NewFilter("Cs"))
+		require.NotNil(t, output)
+		requireConfigEq(t, "C", output)
+	})
+
+	t.Run("filter All", func(t *testing.T) {
+		// The filter is "All", so all fields implementing the formattedElement
+		// interface should be taken into account. The first field implementing the
+		// formattedElement interface and having the All tag should be returned.
+		output := getFormatterClauseFromStruct(testStruct, NewFilter("All"))
+		require.NotNil(t, output)
+		requireConfigEq(t, "A", output)
+	})
+}
+
+// Test that getFormatterClauseFromStruct returns nil if its all fields are nil.
+func TestGetFormattedClauseFromStructAllNil(t *testing.T) {
+	testStruct := &testStruct{}
+
+	output := getFormatterClauseFromStruct(testStruct, nil)
+	require.Nil(t, output)
+}
+
+// Test that getFormatterClauseFromStruct returns nil if the specified struct is nil.
+func TestGetFormattedClauseFromStructNilStruct(t *testing.T) {
+	var testStruct *testStruct
+
+	output := getFormatterClauseFromStruct(testStruct, nil)
+	require.Nil(t, output)
+}
+
+// Test that getFormatterClauseFromStruct returns nil if the specified value is nil.
+func TestGetFormattedClauseFromStructNilValue(t *testing.T) {
+	output := getFormatterClauseFromStruct(nil, nil)
+	require.Nil(t, output)
+}
+
+// Test that getFormatterClauseFromStruct returns nil if the specified value is not a struct.
+func TestGetFormattedClauseFromStructNotStruct(t *testing.T) {
+	output := getFormatterClauseFromStruct(1, nil)
+	require.Nil(t, output)
+}
