@@ -42,5 +42,9 @@ func TestStatisticsChannelsGetFirstInetClauseNone(t *testing.T) {
 // Test that serializing a statistics-channels statement with nil values does not panic.
 func TestStatisticsChannelsFormatNilValues(t *testing.T) {
 	statisticsChannels := &StatisticsChannels{}
-	require.NotPanics(t, func() { statisticsChannels.getFormattedOutput(nil) })
+	var formatterOutput formatterOutput
+	require.NotPanics(t, func() { formatterOutput = statisticsChannels.getFormattedOutput(nil) })
+	require.NotNil(t, formatterOutput)
+	cfgEq(t, `statistics-channels {
+	};`, formatterOutput)
 }

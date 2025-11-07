@@ -59,5 +59,7 @@ func TestStatementHasNoParseOptions(t *testing.T) {
 // Test that serializing a statement with nil values does not panic.
 func TestStatementFormatNilValues(t *testing.T) {
 	statement := &Statement{}
-	require.NotPanics(t, func() { statement.getFormattedOutput(nil) })
+	var formatterOutput formatterOutput
+	require.NotPanics(t, func() { formatterOutput = statement.getFormattedOutput(nil) })
+	require.Nil(t, formatterOutput)
 }
