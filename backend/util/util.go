@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/fs"
-	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -33,8 +32,9 @@ func HostWithPortURL(address string, port int64, protocol string) string {
 	if port == 0 {
 		return fmt.Sprintf("%s://%s/", protocol, address)
 	}
-	ip := net.ParseIP(address)
-	if ip != nil && ip.To4() == nil {
+
+	// If it is an IPv6 address, enclose it in square brackets.
+	if strings.Contains(address, ":") {
 		address = fmt.Sprintf("[%s]", address)
 	}
 	return fmt.Sprintf("%s://%s:%d/", protocol, address, port)
