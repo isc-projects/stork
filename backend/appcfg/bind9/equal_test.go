@@ -10,7 +10,7 @@ import (
 
 // Compares the formatted output with the expected textual representation.
 // The whitespace is ignored in this comparison.
-func cfgEq(t *testing.T, expected string, formattedOutput formatterOutput) {
+func requireConfigEq(t *testing.T, expected string, formattedOutput formatterOutput) {
 	expected = strings.ReplaceAll(expected, " ;", ";")
 	expectedTokens := strings.Fields(expected)
 	builder := newFormatterStringBuilder()
@@ -32,5 +32,5 @@ func cfgEq(t *testing.T, expected string, formattedOutput formatterOutput) {
 // Compares the formatted scope output with the expected textual representation
 // of a scope. The whitespace is ignored in this comparison.
 func cfgScopeEq(t *testing.T, expected string, formattedOutput formatterOutput) {
-	cfgEq(t, fmt.Sprintf(`{ %s }`, expected), formattedOutput)
+	requireConfigEq(t, fmt.Sprintf(`{ %s }`, expected), formattedOutput)
 }

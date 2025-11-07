@@ -21,7 +21,7 @@ func TestKeyFormat(t *testing.T) {
 	}
 	output := key.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `key "test-key" { algorithm "hmac-sha256"; secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU="; };`, output)
+	requireConfigEq(t, `key "test-key" { algorithm "hmac-sha256"; secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU="; };`, output)
 }
 
 // Test that serializing a key statement with nil values does not panic.

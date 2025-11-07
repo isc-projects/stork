@@ -75,7 +75,7 @@ func TestZoneGetFormattedOutput(t *testing.T) {
 	}
 	output := zone.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `zone "example.com" IN {
+	requireConfigEq(t, `zone "example.com" IN {
 		type forward;
 	};`, output)
 }

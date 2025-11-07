@@ -100,7 +100,7 @@ func TestInetClauseFormat(t *testing.T) {
 	}
 	output := inetClause.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `inet "127.0.0.1" port 53 allow { key "guest"; } keys { "trusted"; } read-only true;`, output)
+	requireConfigEq(t, `inet "127.0.0.1" port 53 allow { key "guest"; } keys { "trusted"; } read-only true;`, output)
 }
 
 // Test that the inet clause is formatted correctly when no optional flags are specified.
@@ -110,7 +110,7 @@ func TestInetClauseFormatNoOptionalFlags(t *testing.T) {
 	}
 	output := inetClause.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `inet "127.0.0.1";`, output)
+	requireConfigEq(t, `inet "127.0.0.1";`, output)
 }
 
 // Test that serializing an inet clause with nil values does not panic.

@@ -20,7 +20,7 @@ func TestACLFormat(t *testing.T) {
 	}
 	output := acl.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `acl "trusted-networks" { "127.0.0.1"; };`, output)
+	requireConfigEq(t, `acl "trusted-networks" { "127.0.0.1"; };`, output)
 }
 
 // Test that serializing an acl statement with nil values does not panic.

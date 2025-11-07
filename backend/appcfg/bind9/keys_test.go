@@ -13,7 +13,7 @@ func TestKeysFormat(t *testing.T) {
 	}
 	output := keys.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `keys { "trusted"; "guest"; };`, output)
+	requireConfigEq(t, `keys { "trusted"; "guest"; };`, output)
 }
 
 // Test that serializing a keys clause with nil values does not panic.

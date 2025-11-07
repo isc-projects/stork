@@ -22,7 +22,7 @@ func TestMatchClientsFormat(t *testing.T) {
 	}
 	output := matchClients.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `match-clients { "127.0.0.1"; key "foo"; };`, output)
+	requireConfigEq(t, `match-clients { "127.0.0.1"; key "foo"; };`, output)
 }
 
 // Test that serializing a match-clients clause with nil values does not panic.

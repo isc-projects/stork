@@ -45,6 +45,6 @@ func TestStatisticsChannelsFormatNilValues(t *testing.T) {
 	var formatterOutput formatterOutput
 	require.NotPanics(t, func() { formatterOutput = statisticsChannels.getFormattedOutput(nil) })
 	require.NotNil(t, formatterOutput)
-	cfgEq(t, `statistics-channels {
+	requireConfigEq(t, `statistics-channels {
 	};`, formatterOutput)
 }

@@ -41,7 +41,7 @@ func TestOptionFormat(t *testing.T) {
 	}
 	output := option.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `test-option "string" ident {
+	requireConfigEq(t, `test-option "string" ident {
 		token1;
 		token2;
 	} test-suboption "string" ident {

@@ -38,7 +38,7 @@ func TestResponsePolicyFormat(t *testing.T) {
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
 	output.write(0, false, builder)
-	cfgEq(t, `response-policy {
+	requireConfigEq(t, `response-policy {
 		zone "rpz.example.com" max-policy-ttl 100 min-update-interval 102;
 		zone "rpz.local";
 	} add-soa true break-dnssec false;`, output)

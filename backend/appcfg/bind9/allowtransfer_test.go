@@ -68,7 +68,7 @@ func TestAllowTransferFormat(t *testing.T) {
 	}
 	output := allowTransfer.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `allow-transfer port 53 transport tcp { "127.0.0.1"; key "test-key"; };`, output)
+	requireConfigEq(t, `allow-transfer port 53 transport tcp { "127.0.0.1"; key "test-key"; };`, output)
 }
 
 // Test that the allow-transfer clause without the port and transport options
@@ -85,7 +85,7 @@ func TestAllowTransferFormatNoPortTransport(t *testing.T) {
 	}
 	output := allowTransfer.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `allow-transfer { "127.0.0.1"; };`, output)
+	requireConfigEq(t, `allow-transfer { "127.0.0.1"; };`, output)
 }
 
 // Test that serializing an allow-transfer clause with nil values does not panic.

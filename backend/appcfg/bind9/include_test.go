@@ -13,7 +13,7 @@ func TestIncludeFormat(t *testing.T) {
 	}
 	output := include.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `include "test.conf";`, output)
+	requireConfigEq(t, `include "test.conf";`, output)
 }
 
 // Test that serializing an include statement with nil values does not panic.

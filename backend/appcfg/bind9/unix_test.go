@@ -21,7 +21,7 @@ func TestUnixClauseFormat(t *testing.T) {
 	}
 	output := unix.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `unix "/var/run/rndc.sock" perm 0600 owner 25 group 26 keys { "rndc-key"; } read-only true;`, output)
+	requireConfigEq(t, `unix "/var/run/rndc.sock" perm 0600 owner 25 group 26 keys { "rndc-key"; } read-only true;`, output)
 }
 
 // Test that serializing a unix clause with nil values does not panic.

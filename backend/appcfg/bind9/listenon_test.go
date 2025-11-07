@@ -179,7 +179,7 @@ func TestListenOnFormat(t *testing.T) {
 	}
 	output := listenOn.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `listen-on port 853 proxy plain tls domain.name http myserver { "127.0.0.1"; };`, output)
+	requireConfigEq(t, `listen-on port 853 proxy plain tls domain.name http myserver { "127.0.0.1"; };`, output)
 }
 
 // Test that the listen-on clause is formatted correctly when no optional flags are specified.
@@ -192,7 +192,7 @@ func TestListenOnFormatNoOptionalFlags(t *testing.T) {
 	}
 	output := listenOn.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `listen-on { "127.0.0.1"; };`, output)
+	requireConfigEq(t, `listen-on { "127.0.0.1"; };`, output)
 }
 
 // Test that the listen-on-v6 clause is formatted correctly.
@@ -206,7 +206,7 @@ func TestListenOnFormatIPv6(t *testing.T) {
 	}
 	output := listenOn.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `listen-on-v6 port 853 { "::1"; };`, output)
+	requireConfigEq(t, `listen-on-v6 port 853 { "::1"; };`, output)
 }
 
 // Test that serializing a listen-on clause with nil values does not panic.

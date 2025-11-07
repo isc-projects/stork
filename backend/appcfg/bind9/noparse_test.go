@@ -14,7 +14,7 @@ func TestNoParseFormat(t *testing.T) {
 	}
 	output := noParse.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `//@stork:no-parse:scope
+	requireConfigEq(t, `//@stork:no-parse:scope
 	type forward;
 	allow-transfer port 853 { any; };
 	//@stork:no-parse:end`, output)
@@ -28,7 +28,7 @@ func TestNoParseGlobalFormat(t *testing.T) {
 	}
 	output := noParse.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `//@stork:no-parse:global
+	requireConfigEq(t, `//@stork:no-parse:global
 	type forward; allow-transfer port 853 { any; };`, output)
 }
 

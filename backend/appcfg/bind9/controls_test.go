@@ -48,7 +48,7 @@ func TestControlsFormat(t *testing.T) {
 	}
 	output := controls.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `
+	requireConfigEq(t, `
 		controls {
 			unix "/var/run/named.sock" perm 0640 owner 1000 group 1000;
 			inet "127.0.0.1";

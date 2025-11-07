@@ -217,7 +217,7 @@ func TestViewGetFormattedOutput(t *testing.T) {
 	}
 	output := view.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	cfgEq(t, `view "trusted" IN {
+	requireConfigEq(t, `view "trusted" IN {
 		zone "example.com" {
 			type forward;
 		};
