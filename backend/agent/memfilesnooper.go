@@ -32,6 +32,16 @@ const (
 	v6State         = 13
 )
 
+// How does this module work?
+// Users of this module are expected to create a RowSource, then feed its output one-at-a-time into ParseRowAsLease4 or ParseRowAsLease6.
+// This creates a pipeline of goroutines connected with channels which looks like this:
+//
+// +----------+   +----------------+   +-----------+   +----------+
+// | FsNotify +-->| ChangeDetector +-->| RowSource +-->| (caller) |
+// +----------+   +----------------+   +-----------+   +----------+
+//
+// ChangeDetector exists to abstract away the mechanism which does the filesystem monitoring from the rest of this module's code.
+
 type FSChangeState int
 
 const (
