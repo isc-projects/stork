@@ -46,3 +46,5 @@ We have received the following contributions:
    - 2024-03: Separated DN used in various contexts in the LDAP hook.
  - Benjamin Solenthaler
    - 2025-11: Fix for editing host reservation with an IPv6 prefix.
+ - Lucas Petrino
+   - 2025-11: Fix for monitor Kea listening on IPv6 address.
