@@ -66,6 +66,8 @@
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
         - $ref: '#/parameters/filterTextParam'
+        - $ref: '#/parameters/userSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of users returned.
