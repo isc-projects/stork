@@ -200,10 +200,11 @@ func TestMigrate(t *testing.T) {
 
 	createDaemon := func() *dbmodel.Daemon {
 		daemon := &dbmodel.Daemon{
-			ID:     nextDaemonID,
-			Name:   dbmodel.DaemonNameDHCPv4,
-			App:    &dbmodel.App{ID: nextDaemonID},
-			Active: true,
+			ID:      nextDaemonID,
+			Name:    dbmodel.DaemonNameDHCPv4,
+			App:     &dbmodel.App{ID: nextDaemonID},
+			Version: "2.3.8",
+			Active:  true,
 		}
 		nextDaemonID++
 		return daemon
@@ -955,6 +956,26 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 1)
 		require.EqualValues(t, daemon.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "daemon lock error")
+		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
+	})
+
+	t.Run("unsupported daemon version", func(t *testing.T) {
+		// Arrange
+		daemon := createDaemon()
+		daemon.Version = "1.0.0" // Unsupported version
+		migrator.items = []dbmodel.Host{createHost(daemon)}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Len(t, errs, 1)
+		require.EqualValues(t, daemon.ID, errs[0].ID)
+		require.ErrorContains(t,
+			errs[0].Error,
+			"version 1.0.0 is not supported; at least version 2.3.8 is required",
+		)
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 	})

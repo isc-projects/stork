@@ -171,6 +171,24 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 func (m *hostMigrator) migrateDaemonHosts(daemon *dbmodel.Daemon) {
 	daemonID := daemon.ID
 
+	// Check the daemon version. Migration uses the "operation-target" parameter
+	// that was added in Kea 2.3.8.
+	daemonVersion, err := storkutil.ParseSemanticVersion(daemon.Version)
+	if err != nil {
+		err := errors.WithMessage(err, "failed to parse the daemon version")
+		m.setDaemonError(daemon, err)
+		return
+	}
+
+	if daemonVersion.LessThan(storkutil.NewSemanticVersion(2, 3, 8)) {
+		err := errors.Errorf(
+			"Kea version %s is not supported; at least version 2.3.8 is required",
+			daemon.Version,
+		)
+		m.setDaemonError(daemon, err)
+		return
+	}
+
 	// Lock the daemon for modification. Do it only if the daemon has not
 	// been locked yet.
 	if _, ok := m.lockedDemonIDs[daemonID]; !ok {
