@@ -30,6 +30,8 @@
           in: query
           description: User ID.
           type: integer
+        - $ref: '#/parameters/eventSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of events.
