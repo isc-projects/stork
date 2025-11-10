@@ -660,7 +660,7 @@ func (manager *managerImpl) runBind9RawConfigRequest(request *bind9RawConfigRequ
 }
 
 // Requests BIND 9 configuration from the agent and returns it over the response channel.
-// This function prevents concurrent requests for the same daemon. If there is another
+// This function prevents concurrent requests for the same daemon. If another
 // request for the same daemon is in progress, the function returns an error.
 func (manager *managerImpl) requestBind9RawConfig(ctx context.Context, daemonID int64, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (chan *Bind9RawConfigResponse, error) {
 	// Try to mark the request as ongoing. If the request is already present
@@ -681,7 +681,7 @@ func (manager *managerImpl) requestBind9RawConfig(ctx context.Context, daemonID 
 }
 
 // Starts a pool of workers that fetch RRs for the requested zones and
-// BIND 9 configurations from the agents. Usint the worker pool limits
+// BIND 9 configurations from the agents. Using the worker pool limits
 // the number of concurrent requests to the agents.
 func (manager *managerImpl) startAsyncRequestWorkers(ctx context.Context) {
 	pool := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)

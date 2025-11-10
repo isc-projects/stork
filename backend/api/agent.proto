@@ -338,10 +338,10 @@ message ReceiveBind9ConfigReq {
 message ReceiveBind9ConfigFile {
   Bind9ConfigFileType fileType = 1;
   string sourcePath = 2;
-  string contents = 3;
 }
 
-// Response containing the BIND 9 configuration.
+// Response containing the BIND 9 configuration file preamble or
+// a line of the configuration file contents.
 message ReceiveBind9ConfigRsp {
   oneof response {
     ReceiveBind9ConfigFile file = 1;
