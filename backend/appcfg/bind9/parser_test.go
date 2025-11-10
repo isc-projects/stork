@@ -416,10 +416,6 @@ func TestNoParseOptions(t *testing.T) {
 	require.Len(t, cfg.Statements, 1)
 	require.NotNil(t, cfg.Statements[0].Options)
 	require.Len(t, cfg.Statements[0].Options.Clauses, 3)
-	cfg.GetFormattedTextIterator(0, nil)
-	for text := range cfg.GetFormattedTextIterator(0, nil) {
-		fmt.Println(text)
-	}
 }
 
 // Test that an error is returned when the @stork:no-parse:scope is not
