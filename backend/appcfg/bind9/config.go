@@ -169,7 +169,7 @@ func (c *Config) getKeyFromAddressMatchList(level int, addressMatchList *Address
 }
 
 // Gets credentials for the zone transfer for the given zone in the default view.
-func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address string, keyName string, algorithm string, secret string, err error) {
 	// The allow-transfer enables zone transfers and can be specified at the
 	// zone or global level.
 	var allowTransfer *AllowTransfer
@@ -193,22 +193,22 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address *str
 	// If allow-transfer is disabled (at zone level or globally) we cannot do
 	// AXFR. Return an error as it requires administrative action.
 	if allowTransfer == nil || allowTransfer.IsDisabled() {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer is disabled", zoneName)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer is disabled", zoneName)
 	}
 
 	// The allow-transfer may specify the key that is allowed to run the zone transfer.
 	// If that key is specified the client will use it.
 	var key *Key
 	if key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AddressMatchList); err != nil {
-		return nil, nil, nil, nil, errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
+		return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
 	}
 
 	if key != nil {
 		// Key is optional when the zone is in the default view. If it is specified, let's get
 		// the key details.
-		keyName = &key.Name
+		keyName = key.Name
 		if algorithm, secret, err = key.GetAlgorithmSecret(); err != nil {
-			return nil, nil, nil, nil, errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
+			return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
 		}
 	}
 
@@ -237,26 +237,26 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address *str
 	// loopback address.
 	listenOn := listenOnSet.GetMatchingListenOn(port)
 	if listenOn == nil {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
 
 	// Return the address and port to connect to.
 	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AddressMatchList)
 	if preferredIPAddress == "" {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
 	addr := net.JoinHostPort(preferredIPAddress, strconv.Itoa(int(listenOn.GetPort())))
-	return &addr, keyName, algorithm, secret, nil
+	return addr, keyName, algorithm, secret, nil
 }
 
 // Gets credentials for the zone transfer for the given view and zone.
-func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (address string, keyName string, algorithm string, secret string, err error) {
 	// View is required as it may contain the match-clients clause. This clause should
 	// contain a reference to the key the client should use to discriminate between the
 	// zones from different views.
 	view := c.GetView(viewName)
 	if view == nil {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for view %s, zone %s: view does not exist", viewName, zoneName)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for view %s, zone %s: view does not exist", viewName, zoneName)
 	}
 	matchClients := view.GetMatchClients()
 
@@ -289,7 +289,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	// If allow-transfer is disabled (at zone, view level or globally) we cannot do
 	// AXFR. Return an error as it requires administrative action.
 	if allowTransfer == nil || allowTransfer.IsDisabled() {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for view %s, zone %s: allow-transfer is disabled", viewName, zoneName)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for view %s, zone %s: allow-transfer is disabled", viewName, zoneName)
 	}
 
 	// The allow-transfer may specify the key that is allowed to run the zone transfer.
@@ -300,7 +300,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	if matchClients != nil {
 		key, err = c.getKeyFromAddressMatchList(0, matchClients.AddressMatchList)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return "", "", "", "", err
 		}
 	}
 
@@ -309,21 +309,21 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 		// If this key is specified the client will use it.
 		key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AddressMatchList)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return "", "", "", "", err
 		}
 	}
 
 	// The key is required when dealing with views. Otherwise, it is not possible to
 	// discriminate between the zones from different views.
 	if key == nil {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for view %s, zone %s: no key found", viewName, zoneName)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for view %s, zone %s: no key found", viewName, zoneName)
 	}
 
 	// Get the key details.
-	keyName = &key.Name
+	keyName = key.Name
 	algorithm, secret, err = key.GetAlgorithmSecret()
 	if err != nil {
-		return nil, nil, nil, nil, errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
+		return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
 	}
 
 	// The allow-transfer clause may optionally specify the port number. The client should send
@@ -351,16 +351,16 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	// loopback address.
 	listenOn := listenOnSet.GetMatchingListenOn(port)
 	if listenOn == nil {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
 
 	// Return the address and port to connect to.
 	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AddressMatchList)
 	if preferredIPAddress == "" {
-		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
 	addr := net.JoinHostPort(preferredIPAddress, strconv.Itoa(int(listenOn.GetPort())))
-	return &addr, keyName, algorithm, secret, nil
+	return addr, keyName, algorithm, secret, nil
 }
 
 // Gets the target address and the required credentials for the zone transfer.
@@ -389,7 +389,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 // may not be handled. It typically involves the cross check between the ACLs and the
 // listen-on clauses. Especially when they refer to ACLs. As a result, some AXFR attempts
 // may fail in BIND 9 when misconfigurations aren't caught by Stork.
-func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address string, keyName string, algorithm string, secret string, err error) {
 	if viewName != DefaultViewName {
 		return c.getAXFRCredentialsForView(viewName, zoneName)
 	}

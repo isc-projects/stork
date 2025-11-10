@@ -67,11 +67,11 @@ func (c *Config) GetValues(key string) []ParsedValue {
 // until views are supported in PowerDNS and Stork.
 // By default, the DNS port 53 is used for AXFR. If the local-port parameter
 // is specified, it is used instead.
-func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address string, keyName string, algorithm string, secret string, err error) {
 	disableAXFR := c.GetBool("disable-axfr")
 	if disableAXFR != nil && *disableAXFR {
 		// AXFR is globally disabled.
-		return nil, nil, nil, nil, errors.Errorf("disable-axfr is set to disable zone transfers")
+		return "", "", "", "", errors.Errorf("disable-axfr is set to disable zone transfers")
 	}
 	// Determine local port.
 	localPort := c.GetInt64("local-port")
@@ -81,7 +81,7 @@ func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *
 	allowedIPs := c.GetValues("allow-axfr-ips")
 	if len(allowedIPs) == 0 {
 		// By default, PowerDNS allows AXFR from the localhost.
-		return storkutil.Ptr(fmt.Sprintf("127.0.0.1:%d", *localPort)), nil, nil, nil, nil
+		return fmt.Sprintf("127.0.0.1:%d", *localPort), "", "", "", nil
 	}
 	for _, value := range allowedIPs {
 		allowed := value.GetString()
@@ -97,13 +97,13 @@ func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *
 		switch {
 		// Check for things like 127.0.0.0/8 or 127.0.0.1.
 		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("127.0.0.1")), parsedAllowed.IP.Equal(net.ParseIP("127.0.0.1")):
-			return storkutil.Ptr(fmt.Sprintf("127.0.0.1:%d", *localPort)), nil, nil, nil, nil
+			return fmt.Sprintf("127.0.0.1:%d", *localPort), "", "", "", nil
 		// Check for things like ::/120 or ::1.
 		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("::1")), parsedAllowed.IP.Equal(net.ParseIP("::1")):
-			return storkutil.Ptr(fmt.Sprintf("[::1]:%d", *localPort)), nil, nil, nil, nil
+			return fmt.Sprintf("[::1]:%d", *localPort), "", "", "", nil
 		}
 	}
-	return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-axfr-ips allows neither 127.0.0.1 nor ::1", zoneName)
+	return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-axfr-ips allows neither 127.0.0.1 nor ::1", zoneName)
 }
 
 // Returns the API key for the statistics channel. This key is included in

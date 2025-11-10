@@ -43,7 +43,7 @@ const zoneInventoryMetaFileName = "zone-inventory.json"
 // It returns the configuration elements required by the zone inventory. For example,
 // it returns the elements required to perform zone transfers.
 type dnsConfigAccessor interface {
-	GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error)
+	GetAXFRCredentials(viewName string, zoneName string) (address string, keyName string, algorithm string, secret string, err error)
 	GetAPIKey() string
 	IsRPZ(viewName string, zoneName string) bool
 }
@@ -598,9 +598,9 @@ func (state zoneInventoryState) isErred() bool {
 // from the DNS server.
 type zoneInventoryAXFRRequest struct {
 	zoneName  string
-	keyName   *string
-	algorithm *string
-	secret    *string
+	keyName   string
+	algorithm string
+	secret    string
 	address   string
 	respChan  chan *zoneInventoryAXFRResponse
 	closeOnce sync.Once
@@ -608,7 +608,7 @@ type zoneInventoryAXFRRequest struct {
 
 // Instantiates a new AXFR request. It ensures that the zone name, key name
 // and algorithm are fully qualified, as required by the dns package.
-func newZoneInventoryAXFRRequest(zoneName string, keyName *string, algorithm *string, secret *string, address string) *zoneInventoryAXFRRequest {
+func newZoneInventoryAXFRRequest(zoneName string, keyName string, algorithm string, secret string, address string) *zoneInventoryAXFRRequest {
 	return &zoneInventoryAXFRRequest{
 		zoneName:  zoneName,
 		keyName:   keyName,
@@ -1002,7 +1002,7 @@ func (inventory *zoneInventory) requestAXFR(zoneName, viewName string) (chan *zo
 	}
 	// Create and queue the request. The request is picked by one of the
 	// workers and executed.
-	request := newZoneInventoryAXFRRequest(zoneName, keyName, algorithm, secret, *address)
+	request := newZoneInventoryAXFRRequest(zoneName, keyName, algorithm, secret, address)
 	inventory.axfrReqChan <- request
 	return request.respChan, nil
 }
@@ -1040,16 +1040,16 @@ func (inventory *zoneInventory) runAXFR(request *zoneInventoryAXFRRequest) {
 
 	// Set TSIG if provided. In some cases the TSIG is not used. Typically when
 	// there is only a default view.
-	if request.keyName != nil && request.secret != nil {
+	if request.keyName != "" && request.secret != "" {
 		transfer.TsigSecret = map[string]string{
-			storkutil.FullyQualifyName(*request.keyName): *request.secret,
+			storkutil.FullyQualifyName(request.keyName): request.secret,
 		}
 	}
 	message.SetAxfr(storkutil.FullyQualifyName(request.zoneName))
 
 	// Again, set TSIG if provided.
-	if request.keyName != nil && request.algorithm != nil {
-		message.SetTsig(storkutil.FullyQualifyName(*request.keyName), storkutil.FullyQualifyName(*request.algorithm), 300, time.Now().Unix())
+	if request.keyName != "" && request.algorithm != "" {
+		message.SetTsig(storkutil.FullyQualifyName(request.keyName), storkutil.FullyQualifyName(request.algorithm), 300, time.Now().Unix())
 	}
 
 	// Perform the zone transfer.

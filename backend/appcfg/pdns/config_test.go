@@ -176,11 +176,10 @@ func TestConfigGetAXFRCredentialsAllowIPv4Range(t *testing.T) {
 	require.NotNil(t, config)
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.NoError(t, err)
-	require.NotNil(t, address)
-	require.Equal(t, "127.0.0.1:53", *address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Equal(t, "127.0.0.1:53", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test that IPv4 localhost address is returned when the allow-axfr-ips
@@ -196,11 +195,10 @@ func TestConfigGetAXFRCredentialsAllowIPv4Address(t *testing.T) {
 	require.NotNil(t, config)
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.NoError(t, err)
-	require.NotNil(t, address)
-	require.Equal(t, "127.0.0.1:53", *address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Equal(t, "127.0.0.1:53", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test that IPv4 localhost address is returned when the allow-axfr-ips
@@ -221,11 +219,10 @@ func TestConfigGetAXFRCredentialsAllowIPv4AddressLocalPort(t *testing.T) {
 	require.NotNil(t, config)
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.NoError(t, err)
-	require.NotNil(t, address)
-	require.Equal(t, "127.0.0.1:5353", *address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Equal(t, "127.0.0.1:5353", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test that IPv4 localhost address is returned when the allow-axfr-ips
@@ -241,11 +238,10 @@ func TestConfigGetAXFRCredentialsNoAllowIPv4AddressLocalPort(t *testing.T) {
 	require.NotNil(t, config)
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.NoError(t, err)
-	require.NotNil(t, address)
-	require.Equal(t, "127.0.0.1:5353", *address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Equal(t, "127.0.0.1:5353", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test that IPv6 localhost address is returned when the allow-axfr-ips
@@ -262,10 +258,10 @@ func TestConfigGetAXFRCredentialsAllowIPv6Range(t *testing.T) {
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.NoError(t, err)
 	require.NotNil(t, address)
-	require.Equal(t, "[::1]:53", *address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Equal(t, "[::1]:53", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test that IPv6 localhost address is returned when the allow-axfr-ips
@@ -288,10 +284,10 @@ func TestConfigGetAXFRCredentialsAllowIPv6Address(t *testing.T) {
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.NoError(t, err)
 	require.NotNil(t, address)
-	require.Equal(t, "[::1]:53", *address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Equal(t, "[::1]:53", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test that an error is returned when the disable-axfr parameter is set to
@@ -308,10 +304,10 @@ func TestConfigGetAXFRCredentialsDisableAXFR(t *testing.T) {
 	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "disable-axfr is set to disable zone transfers")
-	require.Nil(t, address)
-	require.Nil(t, keyName)
-	require.Nil(t, algorithm)
-	require.Nil(t, secret)
+	require.Empty(t, address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
 }
 
 // Test returning the API key.

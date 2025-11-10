@@ -25,16 +25,16 @@ type Key struct {
 }
 
 // Returns the algorithm and secret from the given key.
-func (key *Key) GetAlgorithmSecret() (algorithm *string, secret *string, err error) {
+func (key *Key) GetAlgorithmSecret() (algorithm string, secret string, err error) {
 	for _, clause := range key.Clauses {
 		if clause.Algorithm != "" {
-			algorithm = &clause.Algorithm
+			algorithm = clause.Algorithm
 		}
 		if clause.Secret != "" {
-			secret = &clause.Secret
+			secret = clause.Secret
 		}
 	}
-	if algorithm == nil || secret == nil {
+	if algorithm == "" || secret == "" {
 		err = errors.Errorf("no algorithm or secret found in key %s", key.Name)
 	}
 	return

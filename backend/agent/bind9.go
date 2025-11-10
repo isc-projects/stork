@@ -400,7 +400,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		if err != nil {
 			return nil, err
 		}
-		rndcKey = fmt.Sprintf("%s:%s:%s", ctrlKey.Name, *algorithm, *secret)
+		rndcKey = fmt.Sprintf("%s:%s:%s", ctrlKey.Name, algorithm, secret)
 	}
 
 	accessPoints := []AccessPoint{
