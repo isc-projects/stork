@@ -148,6 +148,34 @@
       padding-right: 0.5rem
       padding-left: 0.5rem
 
+  // For more narrow screens decrease paddings inside of the PrimeNG p-table.
+  // This makes the table more condensed and more readable on smaller screens.
+  .p-datatable
+    @mixin smaller-table-padding
+      // Override PrimeNG variables.
+      --p-datatable-header-padding: 0.375rem 0.5rem
+      --p-datatable-footer-padding: 0.375rem 0.5rem
+      --p-datatable-header-cell-padding: 0.375rem 0.5rem
+      --p-datatable-footer-cell-padding: 0.375rem 0.5rem
+      --p-datatable-body-cell-padding: 0.375rem 0.5rem
+    // Different responsive classes with different breakpoints.
+    // SM-XL breakpoints are inline with Primeflex breakpoints.
+    @media screen and (max-width: 575px)
+      &.sm\:datatable-responsive
+        @include smaller-table-padding
+    @media screen and (max-width: 767px)
+      &.md\:datatable-responsive
+        @include smaller-table-padding
+    @media screen and (max-width: 991px)
+      &.lg\:datatable-responsive
+        @include smaller-table-padding
+    @media screen and (max-width: 1199px)
+      &.xl\:datatable-responsive
+        @include smaller-table-padding
+    @media screen and (max-width: 1519px)
+      &.xxl\:datatable-responsive
+        @include smaller-table-padding
+
   // Define gray-colored spinner.
   @keyframes progress-spinner-color-gray
     0%

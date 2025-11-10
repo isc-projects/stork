@@ -136,7 +136,7 @@
         [totalRecords]="zonesFetchStatesTotal"
         [loading]="zonesFetchStatesLoading"
         [alwaysShowPaginator]="false"
-        styleClass="datatable-responsive"
+        styleClass="md:datatable-responsive"
         [stripedRows]="true"
     >
         <ng-template #header>
@@ -262,7 +262,7 @@ to the number of configured zones.
             [showCurrentPageReport]="true"
             stateStorage="local"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            styleClass="datatable-responsive"
+            styleClass="md:datatable-responsive"
             [stripedRows]="true"
             dataKey="id"
             [expandedRowKeys]="zonesExpandedRows"
@@ -612,7 +612,7 @@ to the number of configured zones.
                                 [alwaysShowPaginator]="false"
                                 [columns]="localZoneColumns"
                                 [stripedRows]="true"
-                                styleClass="datatable-responsive"
+                                styleClass="md:datatable-responsive"
                             >
                                 <ng-template #header let-columns>
                                     <tr>
@@ -695,7 +695,7 @@ to the number of configured zones.
                         [alwaysShowPaginator]="false"
                         [columns]="localZoneColumns"
                         [stripedRows]="true"
-                        styleClass="datatable-responsive"
+                        styleClass="md:datatable-responsive"
                     >
                         <ng-template #header let-columns>
                             <tr>
