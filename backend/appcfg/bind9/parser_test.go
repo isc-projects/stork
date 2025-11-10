@@ -339,8 +339,7 @@ func TestNoParseSelectedZone(t *testing.T) {
 	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(), `
 		zone "example.org" {
 			type forward;
-		};
-	`)
+		};`)
 	require.NotNil(t, cfg.Statements[2].Zone)
 	require.Equal(t, "example.net", cfg.Statements[2].Zone.Name)
 }
@@ -417,6 +416,10 @@ func TestNoParseOptions(t *testing.T) {
 	require.Len(t, cfg.Statements, 1)
 	require.NotNil(t, cfg.Statements[0].Options)
 	require.Len(t, cfg.Statements[0].Options.Clauses, 3)
+	cfg.GetFormattedTextIterator(0, nil)
+	for text := range cfg.GetFormattedTextIterator(0, nil) {
+		fmt.Println(text)
+	}
 }
 
 // Test that an error is returned when the @stork:no-parse:scope is not
@@ -460,8 +463,7 @@ func TestNoParseGlobal(t *testing.T) {
 	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(), `
 		zone "example.org" {
 			type forward;
-		};
-	`)
+		};`)
 }
 
 // Test that an error is returned when the @stork:no-parse:global directive

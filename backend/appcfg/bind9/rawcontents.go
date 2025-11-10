@@ -1,6 +1,9 @@
 package bind9config
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // Unparsed contents between the @stork:no-parse:scope and @stork:no-parse:end
 // directives, or after the @stork:no-parse:global directive.
@@ -13,8 +16,12 @@ func (c *RawContents) Capture(values []string) error {
 	if len(values) == 0 {
 		return nil
 	}
-	values[len(values)-1] = strings.TrimSuffix(values[len(values)-1], "//@stork:no-parse:")
-	*c = RawContents(strings.Join(values, " "))
+	joinedValues := strings.Join(values, " ")
+	trimmedValues := strings.TrimRightFunc(
+		strings.TrimSuffix(joinedValues, "//@stork:no-parse:"),
+		unicode.IsSpace,
+	)
+	*c = RawContents(trimmedValues)
 	return nil
 }
 
