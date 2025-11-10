@@ -148,13 +148,31 @@
             </ng-template>
             <ng-template #header>
                 <tr>
-                    <th>Login</th>
-                    <th>Email</th>
-                    <th>First name</th>
-                    <th>Last name</th>
+                    <th [pSortableColumn]="UserSortField.Login">
+                        <div class="flex gap-1">Login <p-sortIcon [field]="UserSortField.Login" /></div>
+                    </th>
+                    <th [pSortableColumn]="UserSortField.Email">
+                        <div class="flex gap-1">Email <p-sortIcon [field]="UserSortField.Email" /></div>
+                    </th>
+                    <th [pSortableColumn]="UserSortField.Name">
+                        <div class="flex gap-1 white-space-nowrap">
+                            First name <p-sortIcon [field]="UserSortField.Name" />
+                        </div>
+                    </th>
+                    <th [pSortableColumn]="UserSortField.Lastname">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Last name <p-sortIcon [field]="UserSortField.Lastname" />
+                        </div>
+                    </th>
                     <th>Group</th>
-                    <th>Authentication</th>
-                    <th>External ID</th>
+                    <th [pSortableColumn]="UserSortField.AuthMethod">
+                        <div class="flex gap-1">Authentication <p-sortIcon [field]="UserSortField.AuthMethod" /></div>
+                    </th>
+                    <th [pSortableColumn]="UserSortField.ExternalId">
+                        <div class="flex gap-1 white-space-nowrap">
+                            External ID <p-sortIcon [field]="UserSortField.ExternalId" />
+                        </div>
+                    </th>
                 </tr>
             </ng-template>
             <ng-template #body let-u>

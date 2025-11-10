@@ -4,12 +4,12 @@ import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
-import { UsersService } from '../backend'
+import { UserSortField, UsersService } from '../backend'
 import { debounceTime, firstValueFrom, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Group, User } from '../backend'
 import { TabViewComponent } from '../tab-view/tab-view.component'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Table } from 'primeng/table'
 import { Router } from '@angular/router'
@@ -147,7 +147,14 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned and the filter text.
      */
     loadUsers(event) {
-        lastValueFrom(this.usersApi.getUsers(event.first, event.rows, event.filters['text'].value || null))
+        lastValueFrom(
+            this.usersApi.getUsers(
+                event.first,
+                event.rows,
+                event.filters['text'].value || null,
+                ...convertSortingFields<UserSortField>(event)
+            )
+        )
             .then((data) => {
                 this.users = data.items ?? []
                 this.totalUsers = data.total ?? 0
@@ -314,4 +321,10 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly UserSortField = UserSortField
 }
