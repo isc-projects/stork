@@ -253,6 +253,24 @@ definitions:
       - custom_assigned_pds
       - custom_pd_utilization
 
+  UserSortField:
+    type: string
+    enum: &USERSORTFIELD
+      - login
+      - email
+      - lastname
+      - name
+      - auth_method
+      - external_id
+
+  EventSortField:
+    type: string
+    enum: &EVENTSORTFIELD
+      - created_at
+      - text
+      - level
+      - details
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -361,6 +379,20 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *NETWORKSORTFIELD
+
+  userSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *USERSORTFIELD
+
+  eventSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *EVENTSORTFIELD
 
   sortDir:
     name: sortDir
