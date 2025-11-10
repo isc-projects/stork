@@ -44,4 +44,5 @@ We have received the following contributions:
    - 2024-02: Enhanced the package installation scripts
  - Robin Berger
    - 2024-03: Separated DN used in various contexts in the LDAP hook.
-
+ - Benjamin Solenthaler
+   - 2025-11: Fix for editing host reservation with an IPv6 prefix.
