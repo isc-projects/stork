@@ -111,10 +111,20 @@
 >
     <ng-template *ngIf="isTable" #header>
         <tr>
-            <th class="events-table__level">Level</th>
-            <th class="events-table__date">Created At</th>
-            <th class="events-table__text">Event Text</th>
-            <th class="events-table__details">Details</th>
+            <th class="events-table__level" [pSortableColumn]="EventSortField.Level">
+                <div class="flex gap-1">Level <p-sortIcon [field]="EventSortField.Level" /></div>
+            </th>
+            <th class="events-table__date" [pSortableColumn]="EventSortField.CreatedAt">
+                <div class="flex gap-1 white-space-nowrap">
+                    Created At <p-sortIcon [field]="EventSortField.CreatedAt" />
+                </div>
+            </th>
+            <th class="events-table__text" [pSortableColumn]="EventSortField.Text">
+                <div class="flex gap-1 white-space-nowrap">Event Text <p-sortIcon [field]="EventSortField.Text" /></div>
+            </th>
+            <th class="events-table__details" [pSortableColumn]="EventSortField.Details">
+                <div class="flex gap-1">Details <p-sortIcon [field]="EventSortField.Details" /></div>
+            </th>
         </tr>
     </ng-template>
     <ng-template #body let-ev let-expanded="expanded">

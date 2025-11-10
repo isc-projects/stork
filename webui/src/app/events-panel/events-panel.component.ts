@@ -6,8 +6,9 @@ import { EventsService, UsersService, ServicesService } from '../backend/api/api
 import { AuthService } from '../auth.service'
 import { Subscription, filter, lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
-import { Events, Machine } from '../backend'
+import { Events, EventSortField, Machine } from '../backend'
 import { ServerSentEventsService } from '../server-sent-events.service'
+import { convertSortingFields } from '../table'
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -272,7 +273,8 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.filter.machine,
                 this.filter.appType,
                 this.filter.daemonType,
-                this.filter.user
+                this.filter.user,
+                ...convertSortingFields<EventSortField>(event)
             )
         )
             .then((data) => {
@@ -417,4 +419,10 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     get isTable(): boolean {
         return this.ui === 'table'
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly EventSortField = EventSortField
 }
