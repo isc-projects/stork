@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
@@ -36,133 +35,9 @@ const (
 // Users of this module are expected to create a RowSource, then feed its output one-at-a-time into ParseRowAsLease4 or ParseRowAsLease6.
 // This creates a pipeline of goroutines connected with channels which looks like this:
 //
-// +----------+   +----------------+   +-----------+   +----------+
-// | FsNotify +-->| ChangeDetector +-->| RowSource +-->| (caller) |
-// +----------+   +----------------+   +-----------+   +----------+
-//
-// ChangeDetector exists to abstract away the mechanism which does the filesystem monitoring from the rest of this module's code.
-
-type FSChangeState int
-
-const (
-	FSCSUnchanged FSChangeState = iota
-	FSCSModified
-	FSCSTruncated
-	FSCSDeleted
-	FSCSMoved
-)
-
-type ChangeDetector interface {
-	RegisterListener(func(FSChangeState))
-	UnregisterAllListeners()
-	Start()
-	Stop()
-}
-
-type FsNotifyChangeDetector struct {
-	file      string
-	running   bool
-	watcher   *fsnotify.Watcher
-	listeners []func(FSChangeState)
-	stop      chan bool
-	mutex     sync.Mutex
-}
-
-func NewFsNotifyChangeDetector(path string) (ChangeDetector, error) {
-	channel := make(chan bool, 1)
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, err
-	}
-	err = watcher.Add(filepath.Dir(path))
-	if err != nil {
-		return nil, err
-	}
-	return &FsNotifyChangeDetector{
-		path,
-		false,
-		watcher,
-		[]func(FSChangeState){},
-		channel,
-		sync.Mutex{},
-	}, nil
-}
-
-func (cd *FsNotifyChangeDetector) RegisterListener(fn func(FSChangeState)) {
-	cd.mutex.Lock()
-	defer cd.mutex.Unlock()
-	cd.listeners = append(cd.listeners, fn)
-}
-
-func (cd *FsNotifyChangeDetector) UnregisterAllListeners() {
-	cd.mutex.Lock()
-	defer cd.mutex.Unlock()
-	cd.listeners = []func(FSChangeState){}
-}
-
-func (cd *FsNotifyChangeDetector) send(state FSChangeState) {
-	cd.mutex.Lock()
-	defer cd.mutex.Unlock()
-	for _, listener := range cd.listeners {
-		if listener != nil {
-			listener(state)
-		}
-	}
-}
-
-func (cd *FsNotifyChangeDetector) Start() {
-	if cd.running {
-		return
-	}
-	cd.running = true
-	go func() {
-		// Send one modified event at the start to ensure any listeners read whatever's
-		// already in the file.
-		cd.send(FSCSModified)
-		for {
-			select {
-			case <-cd.stop:
-				log.Info("received stop message")
-				return
-			case err, ok := <-cd.watcher.Errors:
-				if !ok {
-					// TODO: log
-					log.WithError(err).Info("received error from watcher")
-					return
-				}
-			case event, ok := <-cd.watcher.Events:
-				if !ok {
-					log.Info("failed to read from watcher events channel")
-					return
-				}
-				if event.Name != cd.file {
-					continue
-				}
-				// These are ordered intentionally; one event can have several of these flags set:
-				// * Chmod and create are not checked because those don't convey useful information for this system.
-				// * Delete and rename are checked first because those indicate kea-lfc is running.
-				// * Write is checked after delete/remove because different and higher-priority steps must occur first in order to ensure the right data is being read.
-				if event.Has(fsnotify.Remove) {
-					cd.send(FSCSDeleted)
-				}
-				if event.Has(fsnotify.Rename) {
-					cd.send(FSCSMoved)
-				}
-				if event.Has(fsnotify.Write) {
-					cd.send(FSCSModified)
-				}
-			}
-		}
-	}()
-}
-
-func (cd *FsNotifyChangeDetector) Stop() {
-	if !cd.running {
-		return
-	}
-	cd.stop <- true
-	cd.running = false
-}
+// +----------+   +-----------+   +----------+
+// | FsNotify +-->| RowSource +-->| (caller) |
+// +----------+   +-----------+   +----------+
 
 type Lease4 struct {
 	IPAddr        string
@@ -239,17 +114,23 @@ type RowSource struct {
 	results chan []string
 	memfile *os.File
 	reader  *csv.Reader
-	cd      ChangeDetector
+	watcher *fsnotify.Watcher
 	running bool
+	stop    chan bool
 }
 
 func NewRowSource(path string) (*RowSource, error) {
 	results := make(chan []string, 1)
+	stop := make(chan bool)
 	memfile, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	cd, err := NewFsNotifyChangeDetector(path)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+	err = watcher.Add(filepath.Dir(path))
 	if err != nil {
 		return nil, err
 	}
@@ -259,38 +140,12 @@ func NewRowSource(path string) (*RowSource, error) {
 		results,
 		memfile,
 		reader,
-		cd,
+		watcher,
 		false,
+		stop,
 	}
-	cd.RegisterListener(rs.eventHandler)
 	log.WithField("file", path).Info("watching log file")
 	return &rs, nil
-}
-
-func (rs *RowSource) eventHandler(state FSChangeState) {
-	log.WithField("state", state).Trace("filesystem change event handler called")
-	switch state {
-	case FSCSMoved:
-		fallthrough
-	case FSCSDeleted:
-		log.Trace("trying to reopen log file")
-		rs.memfile.Close()
-		memfile, err := os.Open(rs.path)
-		if err != nil {
-			log.WithError(err).Debug("Failed to reopen log file")
-			return
-		}
-		rs.memfile = memfile
-		rs.reader = csv.NewReader(memfile)
-		// Try to read the file again, just in case.
-		rs.readToEOF()
-	case FSCSUnchanged:
-		return
-	case FSCSTruncated:
-		fallthrough
-	case FSCSModified:
-		rs.readToEOF()
-	}
 }
 
 func (rs *RowSource) readToEOF() {
@@ -312,11 +167,69 @@ func (rs *RowSource) readToEOF() {
 	}
 }
 
+func (rs *RowSource) reopen() error {
+	log.Trace("trying to reopen log file")
+	rs.memfile.Close()
+	memfile, err := os.Open(rs.path)
+	if err != nil {
+		return err
+	}
+	// According to the documentation, this isn't necessary.  However, at least on macOS, kqueue doesn't seem to add watches for files newly created in an already-watched directory.
+	err = rs.watcher.Add(rs.path)
+	if err != nil {
+		return err
+	}
+	rs.memfile = memfile
+	rs.reader = csv.NewReader(memfile)
+	// Try to read the file again, just in case.
+	rs.readToEOF()
+	return nil
+}
+
 func (rs *RowSource) Start() chan []string {
 	if rs.running {
 		return rs.results
 	}
-	rs.cd.Start()
+	go func() {
+		// Ensure that we read everything that's already in the file when this starts.
+		rs.readToEOF()
+		for {
+			select {
+			case <-rs.stop:
+				return
+			case err, ok := <-rs.watcher.Errors:
+				if !ok {
+					// TODO: log
+					log.Info("watcher error channel closed")
+					return
+				}
+				log.WithError(err).Info("received error from watcher")
+			case event, ok := <-rs.watcher.Events:
+				log.WithField("event", event).Info("FsNotify event received")
+				if !ok {
+					log.Info("failed to read from watcher events channel")
+					return
+				}
+				if event.Name != rs.path {
+					log.WithField("file", event.Name).Info("ignoring event for other file")
+					continue
+				}
+				// These are ordered intentionally; one event can have several of these flags set:
+				// * Chmod is not checked because it doesn't convey useful information for this system.
+				// * Delete and rename are checked first because those indicate kea-lfc is running.
+				// * Write and create are checked after delete/remove because different and higher-priority steps must occur first in order to ensure the right data is being read.
+				if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
+					err := rs.reopen()
+					if err != nil {
+						log.WithError(err).Debug("Failed to reopen log file")
+						return
+					}
+				} else if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
+					rs.readToEOF()
+				}
+			}
+		}
+	}()
 	rs.running = true
 	return rs.results
 }
@@ -325,7 +238,7 @@ func (rs *RowSource) Stop() {
 	if !rs.running {
 		return
 	}
-	rs.cd.Stop()
+	rs.stop <- true
 	rs.running = false
 }
 

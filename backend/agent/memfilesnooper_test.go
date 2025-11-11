@@ -3,10 +3,7 @@ package agent
 import (
 	"bufio"
 	"context"
-	"io"
 	"os"
-	"runtime"
-	"sync"
 	"testing"
 	"time"
 
@@ -14,73 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestChangeDetectorRegistration(t *testing.T) {
-	// Arrange
-	callCounter1 := 0
-	c1Mut := sync.Mutex{}
-	callCounter2 := 0
-	c2Mut := sync.Mutex{}
-	count1 := func(s FSChangeState) {
-		log.WithField("state", s).Info("Called count1")
-		c1Mut.Lock()
-		defer c1Mut.Unlock()
-		callCounter1 += 1
-	}
-	count2 := func(s FSChangeState) {
-		log.WithField("state", s).Info("Called count2")
-		c2Mut.Lock()
-		defer c2Mut.Unlock()
-		callCounter2 += 1
-	}
-	read1 := func() int {
-		c1Mut.Lock()
-		defer c1Mut.Unlock()
-		return callCounter1
-	}
-	read2 := func() int {
-		c2Mut.Lock()
-		defer c2Mut.Unlock()
-		return callCounter2
-	}
-	tmpfile, err := os.CreateTemp("", "changeme-")
-	require.Nil(t, err)
-	defer tmpfile.Close()
-	cd, err := NewFsNotifyChangeDetector(tmpfile.Name())
-	require.Nil(t, err)
-
-	// Act
-	cd.RegisterListener(count1)
-	cd.Start()
-	defer cd.Stop()
-	_, err = tmpfile.WriteString("Spotted Hyena: *Crocuta crocuta*\n")
-	require.Nil(t, err)
-	tmpfile.Sync() // Ensure write is flushed to disk and fsnotify sees it.
-	c1SnapshotAfterRegisterWrite := read1()
-	c2SnapshotAfterRegisterWrite := read2()
-
-	cd.RegisterListener(count2)
-	_, err = tmpfile.WriteString("Painted Wolf: *Lycaon pictus*\n")
-	require.Nil(t, err)
-	tmpfile.Sync()
-	c1SnapshotAfterRegisterWriteRegisterWrite := read1()
-	c2SnapshotAfterRegisterWriteRegisterWrite := read2()
-
-	cd.UnregisterAllListeners()
-	_, err = tmpfile.WriteString("Striped Hyena: *Hyaena hyaena*\n")
-	require.Nil(t, err)
-	tmpfile.Sync()
-
-	// Assert
-	require.Greater(t, c1SnapshotAfterRegisterWrite, 0, "Listener 1 wasn't called after the first write.")
-	require.Equal(t, c2SnapshotAfterRegisterWrite, 0, "Listener 2 was called before it was registered??")
-	require.Greater(t, c1SnapshotAfterRegisterWriteRegisterWrite, c1SnapshotAfterRegisterWrite, "Listener 1 wasn't called again after the second write.")
-	require.Greater(t, c2SnapshotAfterRegisterWriteRegisterWrite, 0, "Listener 2 wasn't called after the second write.")
-	require.Equal(t, c1SnapshotAfterRegisterWriteRegisterWrite, callCounter1, "Listener 1 was called again after being unregistered.")
-	require.Equal(t, c2SnapshotAfterRegisterWriteRegisterWrite, callCounter2, "Listener 2 was called again after being unregistered.")
-}
-
 // Write the lines from input to the file in output one at a time, returning control to the Go scheduler after each write..
-func slowlyWriteToLeasefile(input string, output io.WriteCloser) error {
+func slowlyWriteToLeasefile(input string, output *os.File) error {
 	defer output.Close()
 	infile, err := os.Open(input)
 	if err != nil {
@@ -90,9 +22,12 @@ func slowlyWriteToLeasefile(input string, output io.WriteCloser) error {
 	ln := []byte{'\n'}
 	scanner := bufio.NewScanner(infile)
 	for scanner.Scan() {
-		output.Write(scanner.Bytes())
+		bytes := scanner.Bytes()
+		line := string(bytes)
+		output.Write(bytes)
 		output.Write(ln)
-		runtime.Gosched()
+		output.Sync()
+		log.WithField("line", line).Info("wrote line")
 	}
 	return nil
 }
@@ -244,6 +179,7 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 }
 
 func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
+	log.Info("beginning TestRowSourceFollowsAcrossFileSwap")
 	// Arrange
 	preCleanup, err := os.CreateTemp("", "leases4-")
 	if err != nil {
@@ -269,7 +205,7 @@ func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
 	results := rowsource.Start()
 
 	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 	defer cancel()
 	parsedRows, didTimeOut := readChanToLimitWithTimeout(
 		results,
