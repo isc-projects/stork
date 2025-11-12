@@ -50,7 +50,7 @@ type Lease4 struct {
 }
 
 // Create a new Lease4 from a CSV row, and the already-parsed values.
-func NewLease4(record []string, expire uint64, cltt uint64, lifetime uint32) (Lease4, error) {
+func newLease4(record []string, expire uint64, cltt uint64, lifetime uint32) (Lease4, error) {
 	subnet, err := strconv.Atoi(record[v4Subnet])
 	if err != nil {
 		return Lease4{}, err
@@ -83,7 +83,7 @@ type Lease6 struct {
 }
 
 // Create a new Lease6 from a CSV row, and the already-parsed values.
-func NewLease6(record []string, expire uint64, cltt uint64, lifetime uint32) (Lease6, error) {
+func newLease6(record []string, expire uint64, cltt uint64, lifetime uint32) (Lease6, error) {
 	subnet, err := strconv.Atoi(record[v6Subnet])
 	if err != nil {
 		return Lease6{}, err
@@ -269,7 +269,7 @@ func ParseRowAsLease4(record []string, minCLTT uint64) *Lease4 {
 	if cltt < minCLTT {
 		return nil
 	}
-	lease, err := NewLease4(record, expire, cltt, lifetime)
+	lease, err := newLease4(record, expire, cltt, lifetime)
 	if err != nil {
 		return nil
 	}
@@ -292,7 +292,7 @@ func ParseRowAsLease6(record []string, minCLTT uint64) *Lease6 {
 	if cltt < minCLTT {
 		return nil
 	}
-	lease, err := NewLease6(record, expire, cltt, lifetime)
+	lease, err := newLease6(record, expire, cltt, lifetime)
 	if err != nil {
 		return nil
 	}
