@@ -320,8 +320,12 @@
             <th style="width: 28%">DHCP Identifiers</th>
             <th style="width: 18%">IP Addresses</th>
             <th style="width: 14%">IPv6 Prefixes</th>
-            <th style="width: 14%">Hostname</th>
-            <th style="width: 12%">Global/Subnet</th>
+            <th style="width: 14%" [pSortableColumn]="HostSortField.LocalHostHostname">
+                <div class="flex gap-1">Hostname<p-sortIcon [field]="HostSortField.LocalHostHostname" /></div>
+            </th>
+            <th style="width: 12%" [pSortableColumn]="HostSortField.SubnetPrefix">
+                <div class="flex gap-1">Global/Subnet<p-sortIcon [field]="HostSortField.SubnetPrefix" /></div>
+            </th>
             <th style="width: 14%">App Name</th>
         </tr>
     </ng-template>

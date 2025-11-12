@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { tableHasFilter, tableFiltersToQueryParams } from '../table'
-import { DHCPService, Host, LocalHost } from '../backend'
+import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
+import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Router } from '@angular/router'
 import { ConfirmationService, MessageService, TableState } from 'primeng/api'
@@ -80,7 +80,8 @@ export class HostsTableComponent implements OnInit, OnDestroy {
                 (event.filters['keaSubnetId'] as FilterMetadata)?.value ?? null,
                 (event.filters['text'] as FilterMetadata)?.value || null,
                 (event.filters['isGlobal'] as FilterMetadata)?.value ?? null,
-                (event.filters['conflict'] as FilterMetadata)?.value ?? null
+                (event.filters['conflict'] as FilterMetadata)?.value ?? null,
+                ...convertSortingFields<HostSortField>(event)
             )
         )
             .then((data) => {
@@ -349,4 +350,10 @@ export class HostsTableComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly HostSortField = HostSortField
 }
