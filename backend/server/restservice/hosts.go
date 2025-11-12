@@ -187,6 +187,16 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		limit = *params.Limit
 	}
 
+	var sortField string = ""
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+
+	var sortDir = dbmodel.SortDirAny
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
+
 	var machineIDPtr *int64
 	if params.AppID != nil {
 		machineID, err := dbmodel.GetMachineIDByVirtualAppID(r.DB, *params.AppID)
@@ -212,7 +222,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		Global:           params.Global,
 		DHCPDataConflict: params.Conflict,
 	}
-	hosts, err := r.getHosts(start, limit, filters, "", dbmodel.SortDirAny)
+	hosts, err := r.getHosts(start, limit, filters, sortField, sortDir)
 	if err != nil {
 		msg := "Problem fetching hosts from the database"
 		log.WithError(err).Error(msg)
