@@ -32,6 +32,7 @@
     stateStorage="local"
     (rowsChange)="storeTableRowsPerPage($event)"
     class="full-w-table"
+    styleClass="xxl:datatable-responsive"
 >
     <ng-template #caption>
         <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
@@ -156,19 +157,23 @@
                 class="w-8rem"
                 [pSortableColumn]="authorizedMachinesDisplayed() ? MachineSortField.StateHostname : undefined"
             >
-                Hostname
-                @if (authorizedMachinesDisplayed()) {
-                    <p-sortIcon [field]="MachineSortField.StateHostname" />
-                }
+                <div class="flex gap-1">
+                    Hostname
+                    @if (authorizedMachinesDisplayed()) {
+                        <p-sortIcon [field]="MachineSortField.StateHostname" />
+                    }
+                </div>
             </th>
             <th class="w-10rem" [pSortableColumn]="MachineSortField.Address">
-                Location <p-sortIcon [field]="MachineSortField.Address" />
-                <app-help-tip subject="Location" id="location-help-button">
-                    <p>
-                        This specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
-                        localhost:8888).
-                    </p></app-help-tip
-                >
+                <div class="flex gap-1 align-items-center">
+                    Location <p-sortIcon [field]="MachineSortField.Address" />
+                    <app-help-tip subject="Location" id="location-help-button">
+                        <p>
+                            This specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
+                            localhost:8888).
+                        </p></app-help-tip
+                    >
+                </div>
             </th>
             <th *ngIf="unauthorizedMachinesDisplayed()" class="min-w-8rem">
                 Agent Token
@@ -182,44 +187,54 @@
             </th>
             <ng-container *ngIf="authorizedMachinesDisplayed()">
                 <th class="w-4rem" [pSortableColumn]="MachineSortField.StateAgentVersion">
-                    Agent Version <p-sortIcon [field]="MachineSortField.StateAgentVersion" />
+                    <div class="flex gap-1 white-space-nowrap">
+                        Agent Version <p-sortIcon [field]="MachineSortField.StateAgentVersion" />
+                    </div>
                 </th>
                 <th class="w-4rem">App(s) Version</th>
                 <th class="w-7rem">Daemons</th>
                 <th class="w-4rem" [pSortableColumn]="MachineSortField.StateCpus">
-                    CPUs <p-sortIcon [field]="MachineSortField.StateCpus" />
+                    <div class="flex gap-1">CPUs <p-sortIcon [field]="MachineSortField.StateCpus" /></div>
                 </th>
                 <th class="w-8rem" [pSortableColumn]="MachineSortField.StateCpusLoad">
-                    CPU Load <p-sortIcon [field]="MachineSortField.StateCpusLoad" />
-                    <app-help-tip subject="CPU Load" id="cpu-load-help-button">
-                        <p>
-                            These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15 minutes.
-                            This is the usual syntax used by the <b>top</b> command.
-                        </p>
+                    <div class="flex gap-1 white-space-nowrap align-items-center">
+                        CPU Load <p-sortIcon [field]="MachineSortField.StateCpusLoad" />
+                        <app-help-tip subject="CPU Load" id="cpu-load-help-button">
+                            <p>
+                                These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15
+                                minutes. This is the usual syntax used by the <b>top</b> command.
+                            </p>
 
-                        <p>
-                            High load averages imply that a system is overloaded. A value of 1.00 means one CPU core is
-                            fully utilized. For example, if your system has load of 1.22 and you have only one CPU core,
-                            the system is overloaded. However, if the load is 1.22 with four cores, your system is
-                            working at slightly over 30% of its capacity.
-                        </p>
-                    </app-help-tip>
+                            <p>
+                                High load averages imply that a system is overloaded. A value of 1.00 means one CPU core
+                                is fully utilized. For example, if your system has load of 1.22 and you have only one
+                                CPU core, the system is overloaded. However, if the load is 1.22 with four cores, your
+                                system is working at slightly over 30% of its capacity.
+                            </p>
+                        </app-help-tip>
+                    </div>
                 </th>
                 <th class="w-5rem" [pSortableColumn]="MachineSortField.StateMemory">
-                    Total Memory [GB] <p-sortIcon [field]="MachineSortField.StateMemory" />
+                    <div class="flex gap-1 white-space-nowrap">
+                        Total Memory [GB] <p-sortIcon [field]="MachineSortField.StateMemory" />
+                    </div>
                 </th>
                 <th class="w-7rem" [pSortableColumn]="MachineSortField.StateUsedMemory">
-                    Memory Usage [%] <p-sortIcon [field]="MachineSortField.StateUsedMemory" />
+                    <div class="flex gap-1 white-space-nowrap">
+                        Memory Usage [%] <p-sortIcon [field]="MachineSortField.StateUsedMemory" />
+                    </div>
                 </th>
                 <th class="hiding-column w-6rem">Uptime</th>
                 <th class="hiding-column w-6rem" [pSortableColumn]="MachineSortField.LastVisitedAt">
-                    Last Refreshed <p-sortIcon [field]="MachineSortField.LastVisitedAt" />
-                    <app-help-tip subject="Last Refreshed" id="last-refreshed-help-button"
-                        ><p>
-                            This shows when the machine status was last retrieved. Click the blue button in the Action
-                            column and select <b>Refresh</b> to update.
-                        </p></app-help-tip
-                    >
+                    <div class="flex gap-1 white-space-nowrap align-items-center">
+                        Last Refreshed <p-sortIcon [field]="MachineSortField.LastVisitedAt" />
+                        <app-help-tip subject="Last Refreshed" id="last-refreshed-help-button"
+                            ><p>
+                                This shows when the machine status was last retrieved. Click the blue button in the
+                                Action column and select <b>Refresh</b> to update.
+                            </p></app-help-tip
+                        >
+                    </div>
                 </th>
                 <th class="w-13rem">Error</th>
             </ng-container>
