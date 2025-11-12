@@ -3,7 +3,7 @@
 #################
 
 ARG KEA_REPO=public/isc/kea-dev
-ARG KEA_VERSION=3.1.0-isc20250728104543
+ARG KEA_VERSION=3.1.3-isc20251028083553
 # Indicates if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
