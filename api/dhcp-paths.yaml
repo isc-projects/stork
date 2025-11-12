@@ -78,6 +78,8 @@
             whose parameters are not equivalent in both places - they are in
             conflict.
           type: boolean
+        - $ref: '#/parameters/hostSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of hosts

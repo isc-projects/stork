@@ -271,6 +271,12 @@ definitions:
       - level
       - details
 
+  HostSortField:
+    type: string
+    enum: &HOSTSORTFIELD
+      - subnet.prefix
+      - local_host.hostname
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -393,6 +399,13 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *EVENTSORTFIELD
+
+  hostSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *HOSTSORTFIELD
 
   sortDir:
     name: sortDir
