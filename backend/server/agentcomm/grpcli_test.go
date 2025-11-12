@@ -1562,7 +1562,8 @@ func TestReceiveBind9RawConfigOneFile(t *testing.T) {
 
 	// Create a unique context (with a value), so we can later verify that
 	// this particular context is used for the request.
-	requestCtx := context.WithValue(context.Background(), "requestCtx", "requestCtx")
+	type requestCtxKey string
+	requestCtx := context.WithValue(context.Background(), requestCtxKey("key"), "requestCtx")
 
 	// The last chunk is EOF.
 	mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF)
