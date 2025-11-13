@@ -1,15 +1,13 @@
 package maintenance
 
 import (
-	"fmt"
-
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 )
 
 // Creates a database extension if it does not exist yet.
 func CreateExtension(dbi pg.DBI, extensionName string) error {
-	if _, err := dbi.Exec(fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extensionName)); err != nil {
+	if _, err := dbi.Exec("CREATE EXTENSION IF NOT EXISTS ?", pg.Ident(extensionName)); err != nil {
 		return errors.Wrapf(err, `problem creating database extension "%s"`, extensionName)
 	}
 	return nil

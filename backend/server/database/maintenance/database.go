@@ -1,15 +1,13 @@
 package maintenance
 
 import (
-	"fmt"
-
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 )
 
 // Create database with a given name.
 func CreateDatabase(db *pg.DB, dbName string) (created bool, err error) {
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
+	_, err = db.Exec("CREATE DATABASE ?;", pg.Ident(dbName))
 	if err != nil {
 		var pgErr pg.Error
 		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
@@ -23,7 +21,7 @@ func CreateDatabase(db *pg.DB, dbName string) (created bool, err error) {
 
 // Create database from template with a given name.
 func CreateDatabaseFromTemplate(db *pg.DB, dbName, templateName string) (created bool, err error) {
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s;", dbName, templateName))
+	_, err = db.Exec("CREATE DATABASE ? TEMPLATE ?;", pg.Ident(dbName), pg.Ident(templateName))
 	if err != nil {
 		var pgErr pg.Error
 		if errors.As(err, &pgErr) && pgErr.Field('C') == "42P04" { // duplicate_database
@@ -42,7 +40,7 @@ func CreateDatabaseFromTemplate(db *pg.DB, dbName, templateName string) (created
 
 // Drop database with a given name. It doesn't fail if the database doesn't exist.
 func DropDatabaseIfExists(db *pg.DB, dbName string) error {
-	if _, err := db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)); err != nil {
+	if _, err := db.Exec("DROP DATABASE IF EXISTS ?;", pg.Ident(dbName)); err != nil {
 		return errors.Wrapf(err, `problem dropping the database "%s"`, dbName)
 	}
 	return nil

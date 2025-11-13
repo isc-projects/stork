@@ -29,6 +29,38 @@ func TestCreateDatabase(t *testing.T) {
 	db.Close()
 }
 
+// Test that there is no possibility of SQL injection when creating a database.
+func TestCreateDatabaseSQLInjection(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
+	defer teardown()
+	databaseName := fmt.Sprintf("injection_test; DROP DATABASE %s; --", settings.DBName)
+
+	// Act
+	created, err := maintenance.CreateDatabase(db, databaseName)
+
+	// Assert
+	// The injection attempt was currently mitigated by a two-stage interaction:
+	// first, the database driver transmits the entire injected payload as a
+	// single command; second, the PostgreSQL server wraps the command in a
+	// transaction, which fails because CREATE DATABASE cannot be executed
+	// within a transaction block. Relying on this incidental protection was
+	// insecure, as any future modification, such as adding a DDL command
+	// without this restriction, or changing driver behavior, could make the
+	// code exploitable.
+	//
+	// The error contained a message: "cannot run inside a transaction block".
+	// Now, there is no error, and the database is created successfully.
+	require.NoError(t, err)
+	require.True(t, created)
+
+	// Verify that the original database still exists.
+	settings.DBName = databaseName
+	db, err = dbops.NewPgDBConn(settings)
+	require.NoError(t, err)
+	db.Close()
+}
+
 // Test that if the database already exists, no error is returned.
 func TestCreateDatabaseAlreadyExist(t *testing.T) {
 	// Arrange
