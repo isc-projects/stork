@@ -3,6 +3,7 @@ package agent
 import (
 	"bufio"
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -19,15 +20,15 @@ func slowlyWriteToLeasefile(input string, output *os.File) error {
 		return err
 	}
 	defer infile.Close()
-	ln := []byte{'\n'}
+	lf := []byte{'\n'}
 	scanner := bufio.NewScanner(infile)
 	for scanner.Scan() {
 		bytes := scanner.Bytes()
 		line := string(bytes)
 		output.Write(bytes)
-		output.Write(ln)
+		output.Write(lf)
 		output.Sync()
-		log.WithField("line", line).Info("wrote line")
+		log.WithField("line", line).Trace("Wrote line")
 	}
 	return nil
 }
@@ -53,32 +54,43 @@ func slowlyWriteToLeasefileWithSwap(input1 string, input2 string, output1 *os.Fi
 	return err
 }
 
-// Read up to `limit` rows from `c`.  If the deadline in `ctx` expires before reading `limit` items, stop reading and return early.
-func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context) ([][]string, bool) {
+var (
+	ErrInvalidLimit = errors.New("invalid limit parameter; it is not possible to read a negative number of items from the channel")
+	ErrTimedOut     = errors.New("timed out while waiting for enough rows")
+)
+
+// Read up to `limit` rows from `c`, stopping after the provided timeout.  If
+// the timeout expires before reading `limit` items, return immediately and signal
+// an error.
+func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context, timeout time.Duration) ([][]string, error) {
+	timeoutCtx, cancelFn := context.WithTimeout(ctx, timeout)
+	defer cancelFn()
 	if limit < 0 {
-		panic("you want me to read a negative number of items from the channel?")
+		return nil, ErrInvalidLimit
 	}
 	results := make([][]string, 0, limit)
-	didTimeOut := false
-	for !didTimeOut && len(results) < limit {
+	var didTimeOut error = nil
+	for didTimeOut == nil && len(results) < limit {
 		select {
 		case row, ok := <-c:
 			if !ok {
-				didTimeOut = true
+				didTimeOut = ErrTimedOut
 				break
 			}
 			results = append(results, row)
-		case <-ctx.Done():
-			didTimeOut = true
+		case <-timeoutCtx.Done():
+			didTimeOut = ErrTimedOut
 		}
 	}
 	return results, didTimeOut
 }
 
+// Confirm that RowSource reads the expected amount of data from a file in the
+// simple case where the data is already there and no following is necessary.
 func TestRowSourceExistingFile(t *testing.T) {
 	// Arrange
 	infile := "testdata/small-leases4.csv"
-	want0 := []string{
+	expected0 := []string{
 		"address",
 		"hwaddr",
 		"client_id",
@@ -92,7 +104,7 @@ func TestRowSourceExistingFile(t *testing.T) {
 		"user_context",
 		"pool_id",
 	}
-	want1 := []string{
+	expected1 := []string{
 		"192.110.111.2",
 		"03:00:00:00:00:00",
 		"01:03:00:00:00:00:00",
@@ -108,21 +120,20 @@ func TestRowSourceExistingFile(t *testing.T) {
 	}
 	rowsource, err := NewRowSource(infile)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-	require.NoError(t, err)
-	defer cancel()
 
 	// Act
 	channel := rowsource.Start()
 	defer rowsource.Stop()
-	got, timedOut := readChanToLimitWithTimeout(channel, 4, ctx)
+	actual, err := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
 	// Assert
 
-	require.False(t, timedOut, "Timed out before getting 4 rows; got %d", len(got))
-	require.Equal(t, want0, got[0])
-	require.Equal(t, want1, got[1])
+	require.NoError(t, err, "Got error while reading channel")
+	require.Equal(t, expected0, actual[0])
+	require.Equal(t, expected1, actual[1])
 }
 
+// Confirm that RowSource continues reading rows from a file that is actively
+// being written to.
 func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 	// Arrange
 	leasefile, err := os.CreateTemp("", "leases4-")
@@ -132,7 +143,7 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 	defer os.Remove(leasefile.Name())
 
 	infile := "testdata/small-leases4.csv"
-	want0 := []string{
+	expected0 := []string{
 		"address",
 		"hwaddr",
 		"client_id",
@@ -146,7 +157,7 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 		"user_context",
 		"pool_id",
 	}
-	want1 := []string{
+	expected1 := []string{
 		"192.110.111.2",
 		"03:00:00:00:00:00",
 		"01:03:00:00:00:00:00",
@@ -162,24 +173,20 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 	}
 	rowsource, err := NewRowSource(leasefile.Name())
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-	require.NoError(t, err)
-	defer cancel()
 
 	// Act
 	go slowlyWriteToLeasefile(infile, leasefile)
 	channel := rowsource.Start()
 	defer rowsource.Stop()
-	got, timedOut := readChanToLimitWithTimeout(channel, 4, ctx)
+	actual, err := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
 	// Assert
 
-	require.False(t, timedOut, "Timed out before getting 4 rows; got %d", len(got))
-	require.Equal(t, want0, got[0])
-	require.Equal(t, want1, got[1])
+	require.NoError(t, err, "Got an error when trying to read rows")
+	require.Equal(t, expected0, actual[0])
+	require.Equal(t, expected1, actual[1])
 }
 
 func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
-	log.Info("beginning TestRowSourceFollowsAcrossFileSwap")
 	// Arrange
 	preCleanup, err := os.CreateTemp("", "leases4-")
 	if err != nil {
@@ -195,35 +202,35 @@ func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
 	infile2 := "testdata/small2-leases4.csv"
 	expected1Addr := "192.110.111.2"
 	expected2Addr := "192.110.111.5"
-	wantRows := 8
+	expectedRows := 8
 	rowsource, err := NewRowSource(preCleanupName)
 	require.NoError(t, err)
 
 	// Act
 	go slowlyWriteToLeasefileWithSwap(infile1, infile2, preCleanup, postCleanup)
-	log.SetLevel(log.TraceLevel)
 	results := rowsource.Start()
 
 	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
+	parsedRows, err := readChanToLimitWithTimeout(
 		results,
-		wantRows,
-		ctx,
+		expectedRows,
+		t.Context(),
+		250*time.Millisecond,
 	)
-	require.False(t, didTimeOut, "Did not read %d leases from the file before timing out; got %d", wantRows, len(parsedRows))
-	require.Len(t, parsedRows, wantRows)
+	require.NoError(t, err, "Got error while reading channel")
+	require.Len(t, parsedRows, expectedRows)
 	require.EqualValues(t, expected1Addr, parsedRows[1][0])
 	require.EqualValues(t, expected2Addr, parsedRows[5][0])
 }
 
+// Confirm that ParseRowAsLease4 handles the various kinds of rows as expected.
 func TestParseRowAsLease4(t *testing.T) {
 	// Arrange
 	testCases := []struct {
-		row     []string
-		minCLTT uint64
-		want    *Lease4
+		row         []string
+		minCLTT     uint64
+		expected    *Lease4
+		expectedErr error
 	}{
 		// Headers, which it should skip.
 		{
@@ -243,6 +250,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			0,
 			nil,
+			ErrHeaders,
 		},
 		// Valid IPv4 data, which it should parse.
 		{
@@ -270,6 +278,7 @@ func TestParseRowAsLease4(t *testing.T) {
 				123,
 				0,
 			},
+			nil,
 		},
 		// Valid IPv6 data, which it should refuse to parse.
 		{
@@ -295,6 +304,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			0,
 			nil,
+			ErrUnexpectedV6,
 		},
 		// Valid IPv4 data but with CLTT too old, which it should refuse to parse.
 		{
@@ -314,22 +324,27 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			1761254250,
 			nil,
+			ErrCLTTTooOld,
 		},
 	}
 	for _, tc := range testCases {
 		// Act
-		got := ParseRowAsLease4(tc.row, tc.minCLTT)
+		actual, err := ParseRowAsLease4(tc.row, tc.minCLTT)
 		// Assert
-		require.Equal(t, tc.want, got)
+		if tc.expectedErr != nil {
+			require.ErrorIs(t, err, tc.expectedErr)
+		}
+		require.Equal(t, tc.expected, actual)
 	}
 }
 
 func TestParseRowAsLease6(t *testing.T) {
 	// Arrange
 	testCases := []struct {
-		row     []string
-		minCLTT uint64
-		want    *Lease6
+		row         []string
+		minCLTT     uint64
+		expected    *Lease6
+		expectedErr error
 	}{
 		// Headers, which it should skip.
 		{
@@ -349,6 +364,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			0,
 			nil,
+			ErrHeaders,
 		},
 		// Valid IPv4 data, which it should refuse to parse.
 		{
@@ -368,6 +384,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			0,
 			nil,
+			ErrUnexpectedV4,
 		},
 		// Valid IPv6 data, which it should parse.
 		{
@@ -402,8 +419,9 @@ func TestParseRowAsLease6(t *testing.T) {
 				2,
 				128,
 			},
+			nil,
 		},
-		// Valid IPv4 data but with CLTT too old, which it should refuse to parse.
+		// Valid IPv6 data but with CLTT too old, which it should refuse to parse.
 		{
 			[]string{
 				"51a4:14ec:1::",
@@ -427,281 +445,16 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			1761669050,
 			nil,
+			ErrCLTTTooOld,
 		},
 	}
 	for _, tc := range testCases {
 		// Act
-		got := ParseRowAsLease6(tc.row, tc.minCLTT)
+		actual, err := ParseRowAsLease6(tc.row, tc.minCLTT)
 		// Assert
-		require.Equal(t, tc.want, got)
+		if tc.expectedErr != nil {
+			require.ErrorIs(t, err, tc.expectedErr)
+		}
+		require.Equal(t, tc.expected, actual)
 	}
 }
-
-/*
-// Test whether the Lease4 parser continues to read more data when Kea is writing into it over time.
-func TestParseLease4(t *testing.T) {
-	// Arrange
-	leasefile, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	defer os.Remove(leasefile.Name())
-
-	infile := "testdata/small-leases4.csv"
-	go slowlyWriteToLeasefile(infile, leasefile)
-	parser, err := NewLease4Parser(leasefile.Name())
-	require.NoError(t, err)
-	expected1 := Lease4{
-		"192.110.111.2",
-		"03:00:00:00:00:00",
-		1761257849,
-		1761254249,
-		3600,
-		123,
-		0,
-	}
-
-	// Act
-	results := parser.StartParser(0)
-
-	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
-		results,
-		3,
-		ctx,
-	)
-	require.True(t, !didTimeOut, "Did not read 3 leases from the file before timing out")
-	require.Len(t, parsedRows, 3)
-	require.EqualValues(t, expected1, parsedRows[0])
-}
-
-// Test whether the Lease4 parser skips rows with CLTT lower than the filter parameter.
-func TestParseLease4CLTT(t *testing.T) {
-	// Arrange
-	leasefile, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	defer os.Remove(leasefile.Name())
-
-	infile := "testdata/small-leases4.csv"
-	go slowlyWriteToLeasefile(infile, leasefile)
-	parser, err := NewLease4Parser(leasefile.Name())
-	require.NoError(t, err)
-	expected := Lease4{
-		"192.110.111.3",
-		"03:00:00:00:00:01",
-		1761257851,
-		1761254251,
-		3600,
-		123,
-		0,
-	}
-
-	// Act
-	filtered := parser.StartParser(1761254251)
-
-	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
-		filtered,
-		2,
-		ctx,
-	)
-	require.True(t, !didTimeOut, "Did not read 2 leases from the file before timing out")
-	require.Len(t, parsedRows, 2)
-	require.EqualValues(t, expected, parsedRows[0])
-}
-
-func TestParseLease4FileSwap(t *testing.T) {
-	// Arrange
-	preCleanup, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	preCleanupName := preCleanup.Name()
-	postCleanup, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-
-	infile1 := "testdata/small-leases4.csv"
-	infile2 := "testdata/small2-leases4.csv"
-	go slowlyWriteToLeasefileWithSwap(infile1, infile2, preCleanup, postCleanup)
-	parser, err := NewLease4Parser(preCleanupName)
-	require.NoError(t, err)
-	expected1 := Lease4{
-		"192.110.111.2",
-		"03:00:00:00:00:00",
-		1761257849,
-		1761254249,
-		3600,
-		123,
-		0,
-	}
-	expected2 := Lease4{
-		"192.110.111.5",
-		"03:00:00:00:00:03",
-		1761257853,
-		1761254253,
-		3600,
-		123,
-		0,
-	}
-
-	// Act
-	results := parser.StartParser(0)
-
-	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
-		results,
-		6,
-		ctx,
-	)
-	require.True(t, !didTimeOut, "Did not read 6 leases from the file before timing out")
-	require.Len(t, parsedRows, 6)
-	require.EqualValues(t, expected1, parsedRows[0])
-	require.EqualValues(t, expected2, parsedRows[3])
-}
-
-// Test that the parser continues to read values as Kea writes them to the IPv6 leasefile.
-func TestParseLease6(t *testing.T) {
-	// Arrange
-	leasefile, err := os.CreateTemp("", "leases6-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	defer os.Remove(leasefile.Name())
-
-	infile := "testdata/small-leases6.csv"
-	go slowlyWriteToLeasefile(infile, leasefile)
-	parser, err := NewLease6Parser(leasefile.Name())
-	require.NoError(t, err)
-	expected1 := Lease6{
-		"51a4:14ec:1::",
-		"01:00:00:00:00:00",
-		1761672649,
-		1761669049,
-		3600,
-		123,
-		2,
-		128,
-	}
-
-	// Act
-	results := parser.StartParser(0)
-
-	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
-		results,
-		3,
-		ctx,
-	)
-	require.True(t, !didTimeOut, "Did not read 3 leases from the file before timing out")
-	require.Len(t, parsedRows, 3)
-	require.EqualValues(t, expected1, parsedRows[0])
-}
-
-// Test whether the Lease6 parser skips rows with CLTT lower than the filter parameter.
-func TestParseLease6CLTT(t *testing.T) {
-	// Arrange
-	leasefile, err := os.CreateTemp("", "leases6-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	defer os.Remove(leasefile.Name())
-
-	infile := "testdata/small-leases6.csv"
-	go slowlyWriteToLeasefile(infile, leasefile)
-	parser, err := NewLease6Parser(leasefile.Name())
-	require.NoError(t, err)
-	expected2 := Lease6{
-		"51a4:14ec:1::1",
-		"01:00:00:00:00:01",
-		1761672651,
-		1761669051,
-		3600,
-		123,
-		2,
-		128,
-	}
-
-	// Act
-	filtered := parser.StartParser(1761669051)
-
-	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
-		filtered,
-		2,
-		ctx,
-	)
-	require.True(t, !didTimeOut, "Did not read 2 leases from the file before timing out")
-	require.Len(t, parsedRows, 2)
-	require.EqualValues(t, expected2, parsedRows[0])
-}
-
-// Test that the Lease 6 parser follows file renames (see TestParseLease4FileSwap).
-func TestParseLease6FileSwap(t *testing.T) {
-	// Arrange
-	preCleanup, err := os.CreateTemp("", "leases6-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	preCleanupName := preCleanup.Name()
-	postCleanup, err := os.CreateTemp("", "leases6-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-
-	infile1 := "testdata/small-leases6.csv"
-	infile2 := "testdata/small2-leases6.csv"
-	go slowlyWriteToLeasefileWithSwap(infile1, infile2, preCleanup, postCleanup)
-	parser, err := NewLease6Parser(preCleanupName)
-	require.NoError(t, err)
-	expected1 := Lease6{
-		"51a4:14ec:1::",
-		"01:00:00:00:00:00",
-		1761672649,
-		1761669049,
-		3600,
-		123,
-		2,
-		128,
-	}
-	expected2 := Lease6{
-		"51a4:14ec:1::3",
-		"01:00:00:00:00:03",
-		1761672653,
-		1761669053,
-		3600,
-		123,
-		2,
-		128,
-	}
-
-	// Act
-	results := parser.StartParser(0)
-
-	// Assert
-	ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
-	defer cancel()
-	parsedRows, didTimeOut := readChanToLimitWithTimeout(
-		results,
-		6,
-		ctx,
-	)
-	require.True(t, !didTimeOut, "Did not read 6 leases from the file before timing out")
-	require.Len(t, parsedRows, 6)
-	require.EqualValues(t, expected1, parsedRows[0])
-	require.EqualValues(t, expected2, parsedRows[3])
-}
-*/
