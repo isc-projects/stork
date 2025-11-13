@@ -451,6 +451,11 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.Where("local_host.daemon_id = ?", *filters.DaemonID)
 	}
 
+	if sortField == "distinct_hostname.hostname" {
+		sortSubquery := dbi.Model((*LocalHost)(nil)).Column("host_id").ColumnExpr("MIN(hostname) AS hostname").Group("host_id")
+		q = q.Join("INNER JOIN (?) AS distinct_hostname", sortSubquery).JoinOn("host.id = distinct_hostname.host_id")
+	}
+
 	// Filter by conflict or duplicate.
 	if filters.DHCPDataConflict != nil || filters.DHCPDataDuplicate != nil {
 		// This subquery appends a "conflict" column with a boolean value

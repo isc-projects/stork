@@ -275,7 +275,7 @@ definitions:
     type: string
     enum: &HOSTSORTFIELD
       - subnet.prefix
-      - local_host.hostname
+      - distinct_hostname.hostname
 
   $include: users-defs.yaml
   $include: services-defs.yaml
