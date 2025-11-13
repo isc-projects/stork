@@ -1,6 +1,7 @@
 package bind9config
 
 import (
+	"maps"
 	"slices"
 
 	agentapi "isc.org/stork/api"
@@ -162,29 +163,31 @@ func (s *FileTypeSelector) GetFileTypesAsProto() *agentapi.ReceiveBind9ConfigFil
 // Internal implementation of the selector used by the concrete
 // configuration filters and file type selectors.
 type selectorImpl[T comparable] struct {
-	items []T
+	items map[T]bool
 }
 
 // Instantiates a new selector with the specified items.
 func newSelectorImpl[T comparable](items ...T) *selectorImpl[T] {
-	return &selectorImpl[T]{
-		items: items,
+	s := &selectorImpl[T]{
+		items: make(map[T]bool),
 	}
+	for _, item := range items {
+		s.items[item] = true
+	}
+	return s
 }
 
 // Enables the specified item.
 func (s *selectorImpl[T]) enable(item T) {
-	if !slices.Contains(s.items, item) {
-		s.items = append(s.items, item)
-	}
+	s.items[item] = true
 }
 
 // Checks if the specified item is enabled.
 func (s *selectorImpl[T]) isEnabled(item T) bool {
-	return len(s.items) == 0 || slices.Contains(s.items, item)
+	return len(s.items) == 0 || s.items[item]
 }
 
 // Returns the list of enabled items.
 func (s *selectorImpl[T]) getItems() []T {
-	return s.items
+	return slices.Collect(maps.Keys(s.items))
 }

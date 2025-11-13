@@ -110,8 +110,8 @@ func TestFilterGetFilterTypes(t *testing.T) {
 	filter := NewFilter(FilterTypeConfig, FilterTypeView)
 	filterTypes := filter.GetFilterTypes()
 	require.Equal(t, 2, len(filterTypes))
-	require.Equal(t, FilterTypeConfig, filterTypes[0])
-	require.Equal(t, FilterTypeView, filterTypes[1])
+	require.Contains(t, filterTypes, FilterTypeConfig)
+	require.Contains(t, filterTypes, FilterTypeView)
 }
 
 // Test that the filter can be converted to a list of filters in protobuf format.
@@ -121,8 +121,8 @@ func TestFilterGetFilterAsProtoConfigAndView(t *testing.T) {
 	protoFilter := filter.GetFilterAsProto()
 	require.NotNil(t, protoFilter)
 	require.Equal(t, 2, len(protoFilter.FilterTypes))
-	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_CONFIG, protoFilter.FilterTypes[0])
-	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_VIEW, protoFilter.FilterTypes[1])
+	require.Contains(t, protoFilter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_CONFIG)
+	require.Contains(t, protoFilter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_VIEW)
 }
 
 // Test that the filter can be converted to a list of filters in protobuf format.
@@ -132,8 +132,8 @@ func TestFilterGetFilterAsProtoViewAndZone(t *testing.T) {
 	protoFilter := filter.GetFilterAsProto()
 	require.NotNil(t, protoFilter)
 	require.Equal(t, 2, len(protoFilter.FilterTypes))
-	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_VIEW, protoFilter.FilterTypes[0])
-	require.Equal(t, agentapi.ReceiveBind9ConfigFilter_ZONE, protoFilter.FilterTypes[1])
+	require.Contains(t, protoFilter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_VIEW)
+	require.Contains(t, protoFilter.FilterTypes, agentapi.ReceiveBind9ConfigFilter_ZONE)
 }
 
 // Test creating a new file selector from the file types specified in the .proto file.
@@ -187,8 +187,8 @@ func TestFileTypeSelectorGetFileTypes(t *testing.T) {
 	selector := NewFileTypeSelector(FileTypeConfig, FileTypeRndcKey)
 	fileTypes := selector.GetFileTypes()
 	require.Equal(t, 2, len(fileTypes))
-	require.Equal(t, FileTypeConfig, fileTypes[0])
-	require.Equal(t, FileTypeRndcKey, fileTypes[1])
+	require.Contains(t, fileTypes, FileTypeConfig)
+	require.Contains(t, fileTypes, FileTypeRndcKey)
 }
 
 // Test that the file selector can be converted to a list of file types in protobuf format.
@@ -198,8 +198,8 @@ func TestFileTypeSelectorGetFileTypesAsProtoConfigAndRndcKey(t *testing.T) {
 	protoSelector := selector.GetFileTypesAsProto()
 	require.NotNil(t, protoSelector)
 	require.Equal(t, 2, len(protoSelector.FileTypes))
-	require.Equal(t, agentapi.Bind9ConfigFileType_CONFIG, protoSelector.FileTypes[0])
-	require.Equal(t, agentapi.Bind9ConfigFileType_RNDC_KEY, protoSelector.FileTypes[1])
+	require.Contains(t, protoSelector.FileTypes, agentapi.Bind9ConfigFileType_CONFIG)
+	require.Contains(t, protoSelector.FileTypes, agentapi.Bind9ConfigFileType_RNDC_KEY)
 }
 
 // Test that the file selector can be converted to a list of file types in protobuf format.
