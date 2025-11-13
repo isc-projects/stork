@@ -34,8 +34,8 @@ func (r *RestAPI) GetBind9RawConfig(ctx context.Context, params services.GetBind
 	var bind9RawConfigFiles []*models.Bind9RawConfigFile
 	for rsp := range r.DNSManager.GetBind9RawConfig(ctx, params.ID, fileSelector, filter) {
 		if rsp.Err != nil {
-			log.Error(rsp.Err)
 			msg := fmt.Sprintf("Cannot get BIND 9 configuration for daemon with ID %d", params.ID)
+			log.WithError(rsp.Err).Error(msg)
 			rsp := services.NewGetBind9RawConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
