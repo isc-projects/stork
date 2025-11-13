@@ -979,6 +979,27 @@ func TestMigrate(t *testing.T) {
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 	})
+
+	t.Run("corrupt daemon version", func(t *testing.T) {
+		// Arrange
+		daemon := createDaemon()
+		daemon.Version = "<script>alert(1);</script>"
+		migrator.items = []dbmodel.Host{createHost(daemon)}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Len(t, errs, 1)
+		require.EqualValues(t, daemon.ID, errs[0].ID)
+		require.ErrorContains(t,
+			errs[0].Error,
+			"failed to parse the daemon version",
+		)
+		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
+	})
+
 }
 
 // Test that the hosts are loaded and counted correctly.
