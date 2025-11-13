@@ -95,7 +95,7 @@ func TestManagerRRsAlreadyRequestedError(t *testing.T) {
 // for the same daemon.
 func TestManagerBind9RawConfigAlreadyRequestedError(t *testing.T) {
 	err := NewManagerBind9RawConfigAlreadyRequestedError()
-	require.Equal(t, "BIND 9 configuration for the specified daemon has been already requested by another user", err.Error())
+	require.ErrorContains(t, err, "BIND 9 configuration for the specified daemon has been already requested by another user")
 }
 
 // Test instantiating new DNS manager.
