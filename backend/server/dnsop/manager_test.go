@@ -1537,41 +1537,43 @@ func TestGetBind9RawConfig(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		require.NotNil(t, fileSelector)
-		require.NotNil(t, filter)
-		require.True(t, filter.IsEnabled(bind9config.FilterTypeConfig))
-		require.True(t, filter.IsEnabled(bind9config.FilterTypeView))
-		require.False(t, filter.IsEnabled(bind9config.FilterTypeZone))
-		require.True(t, fileSelector.IsEnabled(bind9config.FileTypeConfig))
-		require.False(t, fileSelector.IsEnabled(bind9config.FileTypeRndcKey))
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			responses := []*agentapi.ReceiveBind9ConfigRsp{
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_File{
-						File: &agentapi.ReceiveBind9ConfigFile{
-							FileType: agentapi.Bind9ConfigFileType_CONFIG,
+	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			require.NotNil(t, fileSelector)
+			require.NotNil(t, filter)
+			require.True(t, filter.IsEnabled(bind9config.FilterTypeConfig))
+			require.True(t, filter.IsEnabled(bind9config.FilterTypeView))
+			require.False(t, filter.IsEnabled(bind9config.FilterTypeZone))
+			require.True(t, fileSelector.IsEnabled(bind9config.FileTypeConfig))
+			require.False(t, fileSelector.IsEnabled(bind9config.FileTypeRndcKey))
+			return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+				responses := []*agentapi.ReceiveBind9ConfigRsp{
+					{
+						Response: &agentapi.ReceiveBind9ConfigRsp_File{
+							File: &agentapi.ReceiveBind9ConfigFile{
+								FileType: agentapi.Bind9ConfigFileType_CONFIG,
+							},
 						},
 					},
-				},
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_Line{
-						Line: "config;",
+					{
+						Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+							Line: "config;",
+						},
 					},
-				},
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_Line{
-						Line: "view;",
+					{
+						Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+							Line: "view;",
+						},
 					},
-				},
-			}
-			for _, response := range responses {
-				if !yield(response, nil) {
-					return
+				}
+				for _, response := range responses {
+					if !yield(response, nil) {
+						return
+					}
 				}
 			}
-		}
-	})
+		})
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
 		DB:     db,
@@ -1581,7 +1583,14 @@ func TestGetBind9RawConfig(t *testing.T) {
 	require.NotNil(t, manager)
 
 	// Filter config only.
-	next, cancel := iter.Pull(manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView)))
+	next, cancel := iter.Pull(
+		manager.GetBind9RawConfig(
+			context.Background(),
+			app.Daemons[0].ID,
+			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
+			bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView),
+		),
+	)
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -1635,43 +1644,47 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 
 	// Depending on the filter the mock returns different configurations.
 	// We can use the output to determine that the filter is applied correctly.
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			responses := []*agentapi.ReceiveBind9ConfigRsp{
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_File{
-						File: &agentapi.ReceiveBind9ConfigFile{
-							FileType:   agentapi.Bind9ConfigFileType_CONFIG,
-							SourcePath: "config.conf",
+	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(
+			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+					responses := []*agentapi.ReceiveBind9ConfigRsp{
+						{
+							Response: &agentapi.ReceiveBind9ConfigRsp_File{
+								File: &agentapi.ReceiveBind9ConfigFile{
+									FileType:   agentapi.Bind9ConfigFileType_CONFIG,
+									SourcePath: "config.conf",
+								},
+							},
 						},
-					},
-				},
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_Line{
-						Line: "config;",
-					},
-				},
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_File{
-						File: &agentapi.ReceiveBind9ConfigFile{
-							FileType:   agentapi.Bind9ConfigFileType_RNDC_KEY,
-							SourcePath: "rndc.key",
+						{
+							Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+								Line: "config;",
+							},
 						},
-					},
-				},
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_Line{
-						Line: "rndc-key;",
-					},
-				},
-			}
-			for _, response := range responses {
-				if !yield(response, nil) {
-					return
+						{
+							Response: &agentapi.ReceiveBind9ConfigRsp_File{
+								File: &agentapi.ReceiveBind9ConfigFile{
+									FileType:   agentapi.Bind9ConfigFileType_RNDC_KEY,
+									SourcePath: "rndc.key",
+								},
+							},
+						},
+						{
+							Response: &agentapi.ReceiveBind9ConfigRsp_Line{
+								Line: "rndc-key;",
+							},
+						},
+					}
+					for _, response := range responses {
+						if !yield(response, nil) {
+							return
+						}
+					}
 				}
-			}
-		}
-	})
+			},
+		)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
 		DB:     db,
@@ -1680,7 +1693,13 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey), nil))
+	next, cancel := iter.Pull(
+		manager.GetBind9RawConfig(
+			context.Background(),
+			app.Daemons[0].ID,
+			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey),
+			nil),
+	)
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -1786,11 +1805,14 @@ func TestGetBind9RawConfigNilResponse(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			yield(nil, nil)
-		}
-	})
+	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(
+			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+					yield(nil, nil)
+				}
+			})
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
 		DB:     db,
@@ -1845,22 +1867,26 @@ func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
 	wg2.Add(1)
 	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
 		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			// Signalling here that the second request can start.
-			wg1.Done()
-			// Wait for the test to unpause the mock.
-			wg2.Wait()
-			// Return an empty result. It doesn't really matter what is returned.
-			yield(&agentapi.ReceiveBind9ConfigRsp{
-				Response: &agentapi.ReceiveBind9ConfigRsp_File{
-					File: &agentapi.ReceiveBind9ConfigFile{
-						FileType: agentapi.Bind9ConfigFileType_CONFIG,
-					},
-				},
-			}, nil)
-		}
-	})
+	}), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(
+			func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+					// Signalling here that the second request can start.
+					wg1.Done()
+					// Wait for the test to unpause the mock.
+					wg2.Wait()
+					// Return an empty result. It doesn't really matter what is returned.
+					yield(&agentapi.ReceiveBind9ConfigRsp{
+						Response: &agentapi.ReceiveBind9ConfigRsp_File{
+							File: &agentapi.ReceiveBind9ConfigFile{
+								FileType: agentapi.Bind9ConfigFileType_CONFIG,
+							},
+						},
+					}, nil)
+				}
+			},
+		)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
 		DB:     db,
@@ -1943,35 +1969,44 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 	var mocks []any
 	mocks = append(mocks, mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
 		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			// Signalling here that the second request can start.
-			wg1.Done()
-			// Wait for the test to unpause the mock.
-			wg2.Wait()
-			// Return an empty result. It doesn't really matter what is returned.
-			yield(&agentapi.ReceiveBind9ConfigRsp{
-				Response: &agentapi.ReceiveBind9ConfigRsp_File{
-					File: &agentapi.ReceiveBind9ConfigFile{
-						FileType: agentapi.Bind9ConfigFileType_CONFIG,
-					},
-				},
-			}, nil)
-		}
-	}))
+	}), gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+					// Signalling here that the second request can start.
+					wg1.Done()
+					// Wait for the test to unpause the mock.
+					wg2.Wait()
+					// Return an empty result. It doesn't really matter what is returned.
+					yield(&agentapi.ReceiveBind9ConfigRsp{
+						Response: &agentapi.ReceiveBind9ConfigRsp_File{
+							File: &agentapi.ReceiveBind9ConfigFile{
+								FileType: agentapi.Bind9ConfigFileType_CONFIG,
+							},
+						},
+					}, nil)
+				}
+			},
+		),
+	)
 	mocks = append(mocks, mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
 		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			yield(&agentapi.ReceiveBind9ConfigRsp{
-				Response: &agentapi.ReceiveBind9ConfigRsp_File{
-					File: &agentapi.ReceiveBind9ConfigFile{
-						FileType: agentapi.Bind9ConfigFileType_CONFIG,
-					},
-				},
-			}, nil)
-		}
-	}))
+	}), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(
+			func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+					yield(&agentapi.ReceiveBind9ConfigRsp{
+						Response: &agentapi.ReceiveBind9ConfigRsp_File{
+							File: &agentapi.ReceiveBind9ConfigFile{
+								FileType: agentapi.Bind9ConfigFileType_CONFIG,
+							},
+						},
+					}, nil)
+				}
+			},
+		),
+	)
 	gomock.InOrder(mocks...)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
@@ -2042,31 +2077,35 @@ func TestGetBind9RawConfigCancelRequest(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
-		return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
-			responses := []*agentapi.ReceiveBind9ConfigRsp{
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_File{
-						File: &agentapi.ReceiveBind9ConfigFile{
-							FileType: agentapi.Bind9ConfigFileType_CONFIG,
+	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(
+			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
+					responses := []*agentapi.ReceiveBind9ConfigRsp{
+						{
+							Response: &agentapi.ReceiveBind9ConfigRsp_File{
+								File: &agentapi.ReceiveBind9ConfigFile{
+									FileType: agentapi.Bind9ConfigFileType_CONFIG,
+								},
+							},
 						},
-					},
-				},
-				{
-					Response: &agentapi.ReceiveBind9ConfigRsp_File{
-						File: &agentapi.ReceiveBind9ConfigFile{
-							FileType: agentapi.Bind9ConfigFileType_RNDC_KEY,
+						{
+							Response: &agentapi.ReceiveBind9ConfigRsp_File{
+								File: &agentapi.ReceiveBind9ConfigFile{
+									FileType: agentapi.Bind9ConfigFileType_RNDC_KEY,
+								},
+							},
 						},
-					},
-				},
-			}
-			for _, response := range responses {
-				if !yield(response, nil) {
-					return
+					}
+					for _, response := range responses {
+						if !yield(response, nil) {
+							return
+						}
+					}
 				}
-			}
-		}
-	})
+			},
+		)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
 		DB:     db,
@@ -2076,7 +2115,14 @@ func TestGetBind9RawConfigCancelRequest(t *testing.T) {
 	require.NotNil(t, manager)
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	next, cancel := iter.Pull(manager.GetBind9RawConfig(ctx, app.Daemons[0].ID, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView)))
+	next, cancel := iter.Pull(
+		manager.GetBind9RawConfig(
+			ctx,
+			app.Daemons[0].ID,
+			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
+			bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView),
+		),
+	)
 	defer cancel()
 
 	// We should receive the first chunk before the context is cancelled.
