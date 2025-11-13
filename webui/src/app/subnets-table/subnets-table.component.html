@@ -252,7 +252,11 @@
                 </th>
             </ng-container>
             <th>Name</th>
-            <th class="white-space-nowrap">Kea Subnet ID</th>
+            <th class="white-space-nowrap" [pSortableColumn]="SubnetSortField.DistinctSubnetIdKeaSubnetId">
+                <div class="flex gap-1">
+                    Kea Subnet ID<p-sortIcon [field]="SubnetSortField.DistinctSubnetIdKeaSubnetId" />
+                </div>
+            </th>
         </tr>
     </ng-template>
     <ng-template #body let-sn>

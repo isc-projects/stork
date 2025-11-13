@@ -728,6 +728,11 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).Column("subnet_id").ColumnExpr("array_agg(user_context->'subnet-name' ORDER BY user_context->'subnet-name') AS name").Group("subnet_id")
 		q = q.Join("INNER JOIN (?) AS distinct_name", sortSubquery).JoinOn("subnet.id = distinct_name.subnet_id")
 	}
+	// Sort by Kea subnet id.
+	if sortField == "distinct_subnet_id.kea_subnet_id" {
+		sortSubquery := dbi.Model((*LocalSubnet)(nil)).Column("subnet_id").ColumnExpr("MIN(local_subnet_id) AS kea_subnet_id").Group("subnet_id")
+		q = q.Join("INNER JOIN (?) AS distinct_subnet_id", sortSubquery).JoinOn("subnet.id = distinct_subnet_id.subnet_id")
+	}
 	// Include pools, shared network the subnets belong to, local subnet info
 	// and the associated daemons in the results.
 	q = q.Relation(string(SubnetRelationSharedNetwork)).
