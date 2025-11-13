@@ -241,6 +241,7 @@ definitions:
       - custom_total_pds
       - custom_assigned_pds
       - custom_pd_utilization
+      - distinct_name.name
 
   NetworkSortField:
     type: string
