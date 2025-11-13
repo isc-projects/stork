@@ -54,7 +54,7 @@ func TestCreateDatabaseSQLInjection(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, created)
 
-	// Verify that the original database still exists.
+	// Verify that the database is created.
 	settings.DBName = databaseName
 	db, err = dbops.NewPgDBConn(settings)
 	require.NoError(t, err)
