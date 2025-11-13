@@ -451,9 +451,16 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		q = q.Where("local_host.daemon_id = ?", *filters.DaemonID)
 	}
 
+	// Sort by hostname.
 	if sortField == "distinct_hostname.hostname" {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).Column("host_id").ColumnExpr("MIN(hostname) AS hostname").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_hostname", sortSubquery).JoinOn("host.id = distinct_hostname.host_id")
+	}
+
+	// Sort by host identifier value.
+	if sortField == "distinct_identifier.value" {
+		sortSubquery := dbi.Model((*HostIdentifier)(nil)).Column("host_id").ColumnExpr("array_agg(value ORDER BY value) AS value").Group("host_id")
+		q = q.Join("INNER JOIN (?) AS distinct_identifier", sortSubquery).JoinOn("host.id = distinct_identifier.host_id")
 	}
 
 	// Filter by conflict or duplicate.

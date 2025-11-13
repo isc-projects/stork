@@ -317,7 +317,11 @@
     </ng-template>
     <ng-template #header>
         <tr>
-            <th style="width: 28%">DHCP Identifiers</th>
+            <th style="width: 28%" [pSortableColumn]="HostSortField.DistinctIdentifierValue">
+                <div class="flex gap-1 white-space-nowrap">
+                    DHCP Identifiers<p-sortIcon [field]="HostSortField.DistinctIdentifierValue" />
+                </div>
+            </th>
             <th style="width: 18%">IP Addresses</th>
             <th style="width: 14%">IPv6 Prefixes</th>
             <th style="width: 14%" [pSortableColumn]="HostSortField.DistinctHostnameHostname">
