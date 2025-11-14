@@ -241,8 +241,8 @@ definitions:
       - custom_total_pds
       - custom_assigned_pds
       - custom_pd_utilization
-      - distinct_name.name
-      - distinct_subnet_id.kea_subnet_id
+      - distinct_ls.name
+      - distinct_ls.kea_subnet_id
 
   NetworkSortField:
     type: string
@@ -277,7 +277,7 @@ definitions:
     type: string
     enum: &HOSTSORTFIELD
       - subnet.prefix
-      - distinct_hostname.hostname
+      - distinct_lh.hostname
       - distinct_identifier.value
 
   $include: users-defs.yaml

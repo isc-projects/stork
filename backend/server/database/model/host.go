@@ -379,6 +379,22 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 	return hosts, int64(total), err
 }
 
+// Sort field which may be used in GetHostsByPage.
+// If any of these fields is used, it means that the sorting must be done
+// based on a field of the related table. The "host" table needs to be
+// JOINed first with other relation table. The relation is often of
+// "has-many" type (e.g. one host may have many local_hosts),
+// so after such JOIN the results will no longer have distinct host IDs.
+// In order to have distinct IDs, a subquery is used in the JOIN operation, which
+// aggregates only one target relation record per host ID.
+type HostSortField string
+
+// Valid sort fields.
+const (
+	LocalHostHostname   HostSortField = "distinct_lh.hostname"
+	HostIdentifierValue HostSortField = "distinct_identifier.value"
+)
+
 // Container for values filtering hosts fetched by page.
 //
 // The MachineID, if different than 0, is used to fetch hosts whose local hosts belong to
@@ -452,13 +468,13 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// Sort by hostname.
-	if sortField == "distinct_hostname.hostname" {
+	if HostSortField(sortField) == LocalHostHostname {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).Column("host_id").ColumnExpr("MIN(hostname) AS hostname").Group("host_id")
-		q = q.Join("INNER JOIN (?) AS distinct_hostname", sortSubquery).JoinOn("host.id = distinct_hostname.host_id")
+		q = q.Join("INNER JOIN (?) AS distinct_lh", sortSubquery).JoinOn("host.id = distinct_lh.host_id")
 	}
 
 	// Sort by host identifier value.
-	if sortField == "distinct_identifier.value" {
+	if HostSortField(sortField) == HostIdentifierValue {
 		sortSubquery := dbi.Model((*HostIdentifier)(nil)).Column("host_id").ColumnExpr("array_agg(value ORDER BY value) AS value").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_identifier", sortSubquery).JoinOn("host.id = distinct_identifier.host_id")
 	}
