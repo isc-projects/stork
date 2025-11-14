@@ -268,18 +268,19 @@ func (rs *RowSource) Start() chan []string {
 				// * Delete and rename are checked first because those indicate kea-lfc is running.
 				// * Create is checked after delete/rename and before write so that the file descriptor can be opened prior to reading from the file.
 				// * Write and create are checked after delete/remove because different and higher-priority steps must occur first in order to ensure the right data is being read.
-				if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
+				switch {
+				case event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename):
 					err := rs.reopen()
 					if err != nil {
 						log.WithError(err).Debug("Failed to reopen log file after REMOVE or RENAME; waiting for it to reappear")
 					}
-				} else if event.Has(fsnotify.Create) {
+				case event.Has(fsnotify.Create):
 					err := rs.reopen()
 					if err != nil {
 						log.WithError(err).Error("Failed to reopen log file after CREATE event")
 						return
 					}
-				} else if event.Has(fsnotify.Write) {
+				case event.Has(fsnotify.Write):
 					rs.readToEOF()
 				}
 			}
