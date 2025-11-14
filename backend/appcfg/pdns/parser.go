@@ -68,7 +68,7 @@ func (p *Parser) Parse(reader io.Reader) (*Config, error) {
 		if len(fields) > maxParserFieldsPerLine {
 			return nil, errors.Errorf("encountered PowerDNS configuration line exceeding the maximum number of fields: %d", maxParserFieldsPerLine)
 		}
-		parsedValues := make([]ParsedValue, 0, 20)
+		parsedValues := make([]ParsedValue, 0, len(fields))
 		for _, field := range fields {
 			// Remove leading and trailing whitespace from the field.
 			// If it is empty, skip the field.
