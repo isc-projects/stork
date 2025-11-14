@@ -725,8 +725,12 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	}
 	// Sort by subnet name.
 	if sortField == "distinct_name.name" {
-		sortSubquery := dbi.Model((*LocalSubnet)(nil)).Column("subnet_id").ColumnExpr("array_agg(user_context->'subnet-name' ORDER BY user_context->'subnet-name') AS name").Group("subnet_id")
-		q = q.Join("INNER JOIN (?) AS distinct_name", sortSubquery).JoinOn("subnet.id = distinct_name.subnet_id")
+		sortSubquery := dbi.Model((*LocalSubnet)(nil)).
+						Column("subnet_id").
+						ColumnExpr("array_agg(user_context->'subnet-name' ORDER BY user_context->'subnet-name') AS name").
+						Where("user_context->'subnet-name' IS NOT NULL").
+						Group("subnet_id")
+		q = q.Join("LEFT JOIN (?) AS distinct_name", sortSubquery).JoinOn("subnet.id = distinct_name.subnet_id")
 	}
 	// Sort by Kea subnet id.
 	if sortField == "distinct_subnet_id.kea_subnet_id" {
