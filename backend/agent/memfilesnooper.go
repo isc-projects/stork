@@ -208,9 +208,10 @@ func (rs *RowSource) readToEOF() {
 	}
 }
 
-// Reopen the watched file (after it was renamed or closed).
+// Reopen the watched file (after it was renamed or deleted).
 func (rs *RowSource) reopen() error {
 	log.Trace("Trying to reopen log file")
+	// If it's already closed, the error doesn't matter.
 	rs.memfile.Close()
 	memfile, err := os.Open(rs.path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -228,8 +229,7 @@ func (rs *RowSource) reopen() error {
 	}
 	rs.memfile = memfile
 	rs.reader = csv.NewReader(memfile)
-	// Try to read the file again, just in case.
-	rs.readToEOF()
+	// Don't read the file again here, otherwise it might read the first row twice.
 	return nil
 }
 
@@ -266,14 +266,20 @@ func (rs *RowSource) Start() chan []string {
 				// These are ordered intentionally; one event can have several of these flags set:
 				// * Chmod is not checked because it doesn't convey useful information for this system.
 				// * Delete and rename are checked first because those indicate kea-lfc is running.
+				// * Create is checked after delete/rename and before write so that the file descriptor can be opened prior to reading from the file.
 				// * Write and create are checked after delete/remove because different and higher-priority steps must occur first in order to ensure the right data is being read.
 				if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
 					err := rs.reopen()
 					if err != nil {
-						log.WithError(err).Error("Failed to reopen log file")
+						log.WithError(err).Debug("Failed to reopen log file after REMOVE or RENAME; waiting for it to reappear")
+					}
+				} else if event.Has(fsnotify.Create) {
+					err := rs.reopen()
+					if err != nil {
+						log.WithError(err).Error("Failed to reopen log file after CREATE event")
 						return
 					}
-				} else if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
+				} else if event.Has(fsnotify.Write) {
 					rs.readToEOF()
 				}
 			}

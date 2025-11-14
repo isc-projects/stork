@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -36,7 +38,7 @@ func slowlyWriteToLeasefile(input string, output *os.File) error {
 // Write the lines from input1 to the file in output1 one at a time, with a
 // delay of 300 milliseconds between each write. Then rename output1 to output2,
 // reopen output1, and write the lines from input2 to output1 (as before).
-func slowlyWriteToLeasefileWithSwap(input1 string, input2 string, output1 *os.File, output2 *os.File) error {
+func slowlyWriteToLeasefileWithSwapAndDelay(input1 string, input2 string, output1 *os.File, output2 *os.File, delay time.Duration) error {
 	output1Name := output1.Name()
 	output2Name := output2.Name()
 	err := slowlyWriteToLeasefile(input1, output1)
@@ -46,6 +48,9 @@ func slowlyWriteToLeasefileWithSwap(input1 string, input2 string, output1 *os.Fi
 	output2.Close()
 	os.Remove(output2Name)
 	os.Rename(output1Name, output2Name)
+	if delay != 0 {
+		time.Sleep(delay)
+	}
 	output1Again, err := os.OpenFile(output1Name, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return err
@@ -136,11 +141,14 @@ func TestRowSourceExistingFile(t *testing.T) {
 // being written to.
 func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 	// Arrange
-	leasefile, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-	defer os.Remove(leasefile.Name())
+	tmpdir := t.TempDir()
+	err := os.MkdirAll(tmpdir, 0o750)
+	require.NoError(t, err, "unable to create temporary directory for test execution")
+
+	leasefileName := filepath.Join(tmpdir, "kea-leases4.csv")
+	leasefile, err := os.Create(leasefileName)
+	require.NoError(t, err, "unable to create temporary leases file")
+	defer os.Remove(leasefileName)
 
 	infile := "testdata/small-leases4.csv"
 	expected0 := []string{
@@ -171,7 +179,7 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 		"",
 		"0",
 	}
-	rowsource, err := NewRowSource(leasefile.Name())
+	rowsource, err := NewRowSource(leasefileName)
 	require.NoError(t, err)
 
 	// Act
@@ -186,54 +194,79 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 	require.Equal(t, expected1, actual[1])
 }
 
+// Confirm that RowSource continues producing rows after the file is swapped
+// (a la kea-lfc). Additionally, confirm that RowSource will wait for the Create
+// event (and not just error out) if it takes some time for kea-lfc to create
+// the new leasefile.
 func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
-	// Arrange
-	preCleanup, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
+	delaySettings := []time.Duration{0, 50 * time.Millisecond}
+
+	for _, delay := range delaySettings {
+		t.Run(fmt.Sprintf("Delay=%d", delay), func(t *testing.T) {
+			// Arrange
+			log.SetLevel(log.TraceLevel)
+			log.Trace("Start of test run")
+			tmpdir := t.TempDir()
+			err := os.MkdirAll(tmpdir, 0o750)
+			require.NoError(t, err, "unable to create temporary directory for test execution")
+
+			preCleanupName := filepath.Join(tmpdir, "kea-leases4.csv")
+			preCleanup, err := os.Create(preCleanupName)
+			require.NoError(t, err, "unable to create temporary leases file (pre-cleanup)")
+
+			postCleanupName := filepath.Join(tmpdir, "kea-leases4.csv.1")
+			postCleanup, err := os.Create(postCleanupName)
+			require.NoError(t, err, "unable to create temporary leases file (post-cleanup)")
+
+			infile1 := "testdata/small-leases4.csv"
+			infile2 := "testdata/small2-leases4.csv"
+			expected1Addr := "192.110.111.2"
+			expected2Addr := "192.110.111.5"
+			expectedRows := 8
+			rowsource, err := NewRowSource(preCleanupName)
+			require.NoError(t, err)
+
+			// Act
+			go slowlyWriteToLeasefileWithSwapAndDelay(
+				infile1,
+				infile2,
+				preCleanup,
+				postCleanup,
+				delay,
+			)
+			results := rowsource.Start()
+			defer rowsource.Stop()
+
+			// Assert
+			parsedRows, err := readChanToLimitWithTimeout(
+				results,
+				expectedRows,
+				t.Context(),
+				250*time.Millisecond+delay,
+			)
+			require.NoError(t, err, "Got error while reading channel")
+			require.Len(t, parsedRows, expectedRows)
+			fileBytes, err := os.ReadFile(preCleanupName)
+			require.NoError(t, err)
+			fileContents := string(fileBytes)
+			require.EqualValues(t, expected1Addr, parsedRows[1][0], "complete parse results: %v; file contents: '%s'", parsedRows, fileContents)
+			require.EqualValues(t, expected2Addr, parsedRows[5][0], "complete parse results: %v; file contents: '%s'", parsedRows, fileContents)
+		})
 	}
-	preCleanupName := preCleanup.Name()
-	postCleanup, err := os.CreateTemp("", "leases4-")
-	if err != nil {
-		t.Errorf("unable to create temp leases file: %v", err)
-	}
-
-	infile1 := "testdata/small-leases4.csv"
-	infile2 := "testdata/small2-leases4.csv"
-	expected1Addr := "192.110.111.2"
-	expected2Addr := "192.110.111.5"
-	expectedRows := 8
-	rowsource, err := NewRowSource(preCleanupName)
-	require.NoError(t, err)
-
-	// Act
-	go slowlyWriteToLeasefileWithSwap(infile1, infile2, preCleanup, postCleanup)
-	results := rowsource.Start()
-
-	// Assert
-	parsedRows, err := readChanToLimitWithTimeout(
-		results,
-		expectedRows,
-		t.Context(),
-		250*time.Millisecond,
-	)
-	require.NoError(t, err, "Got error while reading channel")
-	require.Len(t, parsedRows, expectedRows)
-	require.EqualValues(t, expected1Addr, parsedRows[1][0])
-	require.EqualValues(t, expected2Addr, parsedRows[5][0])
 }
 
 // Confirm that ParseRowAsLease4 handles the various kinds of rows as expected.
 func TestParseRowAsLease4(t *testing.T) {
 	// Arrange
 	testCases := []struct {
+		desc        string
 		row         []string
 		minCLTT     uint64
 		expected    *Lease4
 		expectedErr error
 	}{
-		// Headers, which it should skip.
 		{
+			"Headers, which it should skip.",
 			[]string{
 				"address",
 				"hwaddr",
@@ -252,8 +285,8 @@ func TestParseRowAsLease4(t *testing.T) {
 			nil,
 			ErrHeaders,
 		},
-		// Valid IPv4 data, which it should parse.
 		{
+			"Valid IPv4 data, which it should parse.",
 			[]string{
 				"192.110.111.2",
 				"03:00:00:00:00:00",
@@ -280,8 +313,8 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			nil,
 		},
-		// Valid IPv6 data, which it should refuse to parse.
 		{
+			"Valid IPv6 data, which it should refuse to parse.",
 			[]string{
 				"51a4:14ec:1::",
 				"01:00:00:00:00:00",
@@ -306,8 +339,8 @@ func TestParseRowAsLease4(t *testing.T) {
 			nil,
 			ErrUnexpectedV6,
 		},
-		// Valid IPv4 data but with CLTT too old, which it should refuse to parse.
 		{
+			"Valid IPv4 data but with CLTT too old, which it should refuse to parse.",
 			[]string{
 				"192.110.111.2",
 				"03:00:00:00:00:00",
@@ -328,26 +361,29 @@ func TestParseRowAsLease4(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		// Act
-		actual, err := ParseRowAsLease4(tc.row, tc.minCLTT)
-		// Assert
-		if tc.expectedErr != nil {
-			require.ErrorIs(t, err, tc.expectedErr)
-		}
-		require.Equal(t, tc.expected, actual)
+		t.Run(tc.desc, func(t *testing.T) {
+			// Act
+			actual, err := ParseRowAsLease4(tc.row, tc.minCLTT)
+			// Assert
+			if tc.expectedErr != nil {
+				require.ErrorIs(t, err, tc.expectedErr)
+			}
+			require.Equal(t, tc.expected, actual)
+		})
 	}
 }
 
 func TestParseRowAsLease6(t *testing.T) {
 	// Arrange
 	testCases := []struct {
+		desc        string
 		row         []string
 		minCLTT     uint64
 		expected    *Lease6
 		expectedErr error
 	}{
-		// Headers, which it should skip.
 		{
+			"Headers, which it should skip",
 			[]string{
 				"address",
 				"hwaddr",
@@ -366,8 +402,8 @@ func TestParseRowAsLease6(t *testing.T) {
 			nil,
 			ErrHeaders,
 		},
-		// Valid IPv4 data, which it should refuse to parse.
 		{
+			"Valid IPv4 data, which it should refuse to parse",
 			[]string{
 				"192.110.111.2",
 				"03:00:00:00:00:00",
@@ -386,8 +422,8 @@ func TestParseRowAsLease6(t *testing.T) {
 			nil,
 			ErrUnexpectedV4,
 		},
-		// Valid IPv6 data, which it should parse.
 		{
+			"Valid IPv6 data, which it should parse",
 			[]string{
 				"51a4:14ec:1::",
 				"01:00:00:00:00:00",
@@ -421,8 +457,8 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			nil,
 		},
-		// Valid IPv6 data but with CLTT too old, which it should refuse to parse.
 		{
+			"Valid IPv6 data but with CLTT too old, which it should refuse to parse",
 			[]string{
 				"51a4:14ec:1::",
 				"01:00:00:00:00:00",
@@ -449,12 +485,14 @@ func TestParseRowAsLease6(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		// Act
-		actual, err := ParseRowAsLease6(tc.row, tc.minCLTT)
-		// Assert
-		if tc.expectedErr != nil {
-			require.ErrorIs(t, err, tc.expectedErr)
-		}
-		require.Equal(t, tc.expected, actual)
+		t.Run(tc.desc, func(t *testing.T) {
+			// Act
+			actual, err := ParseRowAsLease6(tc.row, tc.minCLTT)
+			// Assert
+			if tc.expectedErr != nil {
+				require.ErrorIs(t, err, tc.expectedErr)
+			}
+			require.Equal(t, tc.expected, actual)
+		})
 	}
 }
