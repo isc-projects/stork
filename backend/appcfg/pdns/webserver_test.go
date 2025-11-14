@@ -11,7 +11,7 @@ import (
 func TestGetWebserverConfig(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api = yes
 		webserver = yes
 		webserver-address = 192.0.2.1
@@ -31,7 +31,7 @@ func TestGetWebserverConfig(t *testing.T) {
 func TestGetWebserverAPIDisabled(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api = no
 		webserver = yes
 		webserver-address = 192.0.2.1
@@ -48,7 +48,7 @@ func TestGetWebserverAPIDisabled(t *testing.T) {
 func TestGetWebserverWebserverDisabled(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api = yes
 		webserver = no
 		webserver-address = 192.0.2.1
@@ -66,7 +66,7 @@ func TestGetWebserverWebserverDisabled(t *testing.T) {
 func TestGetWebserverConfigZeroIPv4Address(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api = yes
 		webserver = yes
 		webserver-address = 0.0.0.0
@@ -86,7 +86,7 @@ func TestGetWebserverConfigZeroIPv4Address(t *testing.T) {
 func TestGetWebserverConfigZeroIPv6Address(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api = yes
 		webserver = yes
 		webserver-address = ::
@@ -106,7 +106,7 @@ func TestGetWebserverConfigZeroIPv6Address(t *testing.T) {
 func TestGetWebserverConfigZeroInvalidAddressPort(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api = yes
 		webserver = yes
 		webserver-address = invalid
@@ -126,7 +126,7 @@ func TestGetWebserverConfigZeroInvalidAddressPort(t *testing.T) {
 func TestGetWebserverConfigDefaults(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		api
 		webserver
 	`))

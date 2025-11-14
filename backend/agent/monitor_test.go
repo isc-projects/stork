@@ -262,7 +262,7 @@ func TestDetectApps(t *testing.T) {
 
 	pdnsConfigParser := NewMockPDNSConfigParser(ctrl)
 	pdnsConfigParser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
+		return pdnsconfig.NewParser().Parse(configPath, strings.NewReader(defaultPDNSConfig))
 	})
 
 	am := &appMonitor{

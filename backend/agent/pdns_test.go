@@ -371,7 +371,7 @@ func TestConfigurePowerDNSApp(t *testing.T) {
 
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
+		return pdnsconfig.NewParser().Parse(path, strings.NewReader(defaultPDNSConfig))
 	})
 
 	app, err := configurePowerDNSApp("/etc/pdns.conf", parser)
@@ -411,7 +411,7 @@ func TestConfigurePowerDNSAppDefaultWebserver(t *testing.T) {
 
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(`
+		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
 			api=yes
 			webserver=yes
 			api-key=stork
@@ -441,7 +441,7 @@ func TestConfigurePowerDNSAppNoAPIKey(t *testing.T) {
 
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(`
+		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
 			api
 			webserver=yes
 		`))
@@ -461,7 +461,7 @@ func TestConfigurePowerDNSAppNoWebserver(t *testing.T) {
 
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(`
+		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
 			api
 			webserver=no
 		`))
@@ -481,7 +481,7 @@ func TestConfigurePowerDNSAppNoAPI(t *testing.T) {
 
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
-		return pdnsconfig.NewParser().Parse(strings.NewReader(`
+		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
 			webserver=yes
 		`))
 	})

@@ -61,7 +61,7 @@ func TestParse(t *testing.T) {
 func TestParseInteger(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		max-cache-entries = 10000
 	`))
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestParseInteger(t *testing.T) {
 func TestParseTrimSpaces(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`api-key = stork`))
+	cfg, err := parser.Parse("", strings.NewReader(`api-key = stork`))
 	require.NoError(t, err)
 
 	apiKey := cfg.GetString("api-key")
@@ -87,7 +87,7 @@ func TestParseTrimSpaces(t *testing.T) {
 func TestParseCommasAndWhitespaces(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		only-notify = 127.0.0.1, ::1 172.24.0.1
 	`))
 	require.NoError(t, err)
@@ -110,7 +110,7 @@ func TestParseCommasAndWhitespaces(t *testing.T) {
 func TestParseExcludeEmpty(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		only-notify = 127.0.0.1, ,172.24.0.1
 	`))
 	require.NoError(t, err)
@@ -130,7 +130,7 @@ func TestParseExcludeEmpty(t *testing.T) {
 func TestParseExcludeEmptyKey(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(`
+	cfg, err := parser.Parse("", strings.NewReader(`
 		 = 127.0.0.1
 		api-key = stork
 	`))
@@ -147,18 +147,28 @@ func TestParseExcludeEmptyKey(t *testing.T) {
 func TestParseTooLong(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(strings.Repeat("a", maxParserBufferSize+1)))
+	cfg, err := parser.Parse("testdata/pdns.conf", strings.NewReader(strings.Repeat("a", maxParserBufferSize+1)))
 	require.Error(t, err)
 	require.ErrorContains(t, err, "encountered PowerDNS configuration line exceeding the maximum buffer size")
 	require.Nil(t, cfg)
 }
 
-// Test that parser returns an error when a line has more fields than the maximum number of fields.
+// Test that parser returns an error when a line has more fields than the maximum number of fields,
+// and that the error message includes the line number.
 func TestParseLineWithTooManyFields(t *testing.T) {
+	config := fmt.Sprintf(`
+		max-cache-entries = 10000
+		api = yes
+		api-key = stork
+
+		only-notify = %s
+
+		local-address = 0.0.0.0
+	`, strings.Repeat("127.0.0.1 ", maxParserFieldsPerLine+1))
 	parser := NewParser()
 	require.NotNil(t, parser)
-	cfg, err := parser.Parse(strings.NewReader(fmt.Sprintf("only-notify = %s", strings.Repeat("127.0.0.1 ", maxParserFieldsPerLine+1))))
+	cfg, err := parser.Parse("testdata/pdns.conf", strings.NewReader(config))
 	require.Error(t, err)
-	require.ErrorContains(t, err, "encountered PowerDNS configuration line exceeding the maximum number of fields")
+	require.ErrorContains(t, err, "testdata/pdns.conf:6: encountered PowerDNS configuration line exceeding the maximum number of fields: 500")
 	require.Nil(t, cfg)
 }

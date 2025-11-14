@@ -30,16 +30,19 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
-// Parses the PowerDNS configuration from a reader.
-func (p *Parser) Parse(reader io.Reader) (*Config, error) {
+// Parses the PowerDNS configuration from a reader. The filename is used only
+// in the error message.
+func (p *Parser) Parse(filename string, reader io.Reader) (*Config, error) {
 	// Define a map for storing key/values pairs. Note that there may be
 	// multiple values separated by commas or spaces.
 	parsedMap := make(map[string][]ParsedValue)
 
 	// The default scanner splits the input into lines.
 	scanner := bufio.NewScanner(reader)
+	lineIdx := 0
 	scanner.Buffer(make([]byte, 0, minParserBufferSize), maxParserBufferSize)
 	for scanner.Scan() {
+		lineIdx++
 		text := strings.TrimSpace(scanner.Text())
 		if text == "" || strings.HasPrefix(text, "#") {
 			// Skip empty lines and comments.
@@ -66,7 +69,7 @@ func (p *Parser) Parse(reader io.Reader) (*Config, error) {
 		// Protect against lines with too many tokens.
 		// It would consume excessive amount of memory.
 		if len(fields) > maxParserFieldsPerLine {
-			return nil, errors.Errorf("encountered PowerDNS configuration line exceeding the maximum number of fields: %d", maxParserFieldsPerLine)
+			return nil, errors.Errorf("%s:%d: encountered PowerDNS configuration line exceeding the maximum number of fields: %d", filename, lineIdx, maxParserFieldsPerLine)
 		}
 		parsedValues := make([]ParsedValue, 0, len(fields))
 		for _, field := range fields {
@@ -113,5 +116,5 @@ func (p *Parser) ParseFile(filename string) (*Config, error) {
 		return nil, err
 	}
 	defer file.Close()
-	return p.Parse(file)
+	return p.Parse(filename, file)
 }
