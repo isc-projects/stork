@@ -279,6 +279,8 @@ definitions:
       - subnet.prefix
       - distinct_lh.hostname
       - distinct_identifier.value
+      - distinct_reservation.address
+      - distinct_reservation.ipv6_prefix
 
   $include: users-defs.yaml
   $include: services-defs.yaml

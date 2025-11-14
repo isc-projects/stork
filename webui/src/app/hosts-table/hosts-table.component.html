@@ -322,8 +322,16 @@
                     DHCP Identifiers<p-sortIcon [field]="HostSortField.DistinctIdentifierValue" />
                 </div>
             </th>
-            <th style="width: 18%">IP Addresses</th>
-            <th style="width: 14%">IPv6 Prefixes</th>
+            <th style="width: 18%" [pSortableColumn]="HostSortField.DistinctReservationAddress">
+                <div class="flex gap-1 white-space-nowrap">
+                    IP Addresses<p-sortIcon [field]="HostSortField.DistinctReservationAddress" />
+                </div>
+            </th>
+            <th style="width: 14%" [pSortableColumn]="HostSortField.DistinctReservationIpv6Prefix">
+                <div class="flex gap-1 white-space-nowrap">
+                    IPv6 Prefixes<p-sortIcon [field]="HostSortField.DistinctReservationIpv6Prefix" />
+                </div>
+            </th>
             <th style="width: 14%" [pSortableColumn]="HostSortField.DistinctLhHostname">
                 <div class="flex gap-1">Hostname<p-sortIcon [field]="HostSortField.DistinctLhHostname" /></div>
             </th>

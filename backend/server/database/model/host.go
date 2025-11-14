@@ -391,8 +391,10 @@ type HostSortField string
 
 // Valid sort fields.
 const (
-	LocalHostHostname   HostSortField = "distinct_lh.hostname"
-	HostIdentifierValue HostSortField = "distinct_identifier.value"
+	LocalHostHostname     HostSortField = "distinct_lh.hostname"
+	HostIdentifierValue   HostSortField = "distinct_identifier.value"
+	ReservationAddress    HostSortField = "distinct_reservation.address"
+	ReservationIPv6Prefix HostSortField = "distinct_reservation.ipv6_prefix"
 )
 
 // Container for values filtering hosts fetched by page.
@@ -477,6 +479,29 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	if HostSortField(sortField) == HostIdentifierValue {
 		sortSubquery := dbi.Model((*HostIdentifier)(nil)).Column("host_id").ColumnExpr("array_agg(value ORDER BY value) AS value").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_identifier", sortSubquery).JoinOn("host.id = distinct_identifier.host_id")
+	}
+
+	// Sort by host reservation address.
+	if HostSortField(sortField) == ReservationAddress {
+		sortSubquery := dbi.Model((*LocalHost)(nil)).
+			Column("host_id").
+			ColumnExpr("array_agg(r.address ORDER BY r.address) AS address").
+			Join("LEFT JOIN ip_reservation AS r").JoinOn("r.local_host_id = local_host.id").
+			Where("family(r.address) = 4").
+			WhereOr("family(r.address) = 6 AND masklen(r.address) = 128").
+			Group("host_id")
+		q = q.Join("LEFT JOIN (?) AS distinct_reservation", sortSubquery).JoinOn("host.id = distinct_reservation.host_id")
+	}
+
+	// Sort by host reservation v6 prefix.
+	if HostSortField(sortField) == ReservationIPv6Prefix {
+		sortSubquery := dbi.Model((*LocalHost)(nil)).
+			Column("host_id").
+			ColumnExpr("array_agg(r.address ORDER BY r.address) AS ipv6_prefix").
+			Join("LEFT JOIN ip_reservation AS r").JoinOn("r.local_host_id = local_host.id").
+			Where("family(r.address) = 6 AND masklen(r.address) < 128").
+			Group("host_id")
+		q = q.Join("LEFT JOIN (?) AS distinct_reservation", sortSubquery).JoinOn("host.id = distinct_reservation.host_id")
 	}
 
 	// Filter by conflict or duplicate.
