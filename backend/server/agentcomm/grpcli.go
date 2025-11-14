@@ -1173,7 +1173,7 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app Contr
 // in the output. If the filter is nil, all configuration elements are returned.
 // The returned instance typically contains two files: the main configuration
 // file and the rndc.key file.
-func (agents *connectedAgentsImpl) ReceiveBind9RawConfig(ctx context.Context, app ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Context, app ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 	return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 		// Get control access point for the specified app. It will be sent
 		// in the request to the agent, so the agent can identify correct

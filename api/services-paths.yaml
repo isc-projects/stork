@@ -621,11 +621,11 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /daemons/{id}/bind9-raw-config:
+  /daemons/{id}/bind9-config:
     get:
-      summary: Get raw BIND 9 daemon configuration
-      description: Get raw BIND 9 daemon configuration.
-      operationId: getBind9RawConfig
+      summary: Get formatted BIND 9 daemon configuration
+      description: Get formatted BIND 9 daemon configuration.
+      operationId: getBind9FormattedConfig
       tags:
         - Services
       parameters:
@@ -638,9 +638,9 @@
         - $ref: '#/parameters/bind9ConfigFileSelector'
       responses:
         200:
-          description: Raw BIND 9 daemon configuration.
+          description: Formatted BIND 9 daemon configuration.
           schema:
-            $ref: "#/definitions/Bind9RawConfig"
+            $ref: "#/definitions/Bind9FormattedConfig"
         default:
           description: generic error response
           schema:

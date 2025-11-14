@@ -1521,7 +1521,7 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 
 // Test successfully receiving BIND 9 configuration over the stream for
 // a single file type.
-func TestReceiveBind9RawConfigOneFile(t *testing.T) {
+func TestReceiveBind9FormattedConfigOneFile(t *testing.T) {
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
 			Address:   "127.0.0.1",
@@ -1579,7 +1579,7 @@ func TestReceiveBind9RawConfigOneFile(t *testing.T) {
 	})
 
 	// Collect the chunks from the stream.
-	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(requestCtx, app, nil, nil))
+	next, cancel := iter.Pull2(agents.ReceiveBind9FormattedConfig(requestCtx, app, nil, nil))
 	defer cancel()
 
 	// Configuration file preamble.
@@ -1611,7 +1611,7 @@ func TestReceiveBind9RawConfigOneFile(t *testing.T) {
 
 // Test successfully receiving BIND 9 configuration over the stream for
 // two file types.
-func TestGetBind9RawConfigTwoFiles(t *testing.T) {
+func TestGetBind9FormattedConfigTwoFiles(t *testing.T) {
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
 			Address:   "127.0.0.1",
@@ -1683,7 +1683,7 @@ func TestGetBind9RawConfigTwoFiles(t *testing.T) {
 	})
 
 	// Collect the chunks from the stream.
-	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey), nil))
+	next, cancel := iter.Pull2(agents.ReceiveBind9FormattedConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey), nil))
 	defer cancel()
 
 	// Configuration file preamble.
@@ -1735,7 +1735,7 @@ func TestGetBind9RawConfigTwoFiles(t *testing.T) {
 
 // Test successfully receiving BIND 9 configuration over the stream with
 // filtering.
-func TestGetBind9RawConfigFiltering(t *testing.T) {
+func TestGetBind9FormattedConfigFiltering(t *testing.T) {
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
 			Address:   "127.0.0.1",
@@ -1780,7 +1780,7 @@ func TestGetBind9RawConfigFiltering(t *testing.T) {
 	})
 
 	// Collect the chunks from the stream.
-	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), bind9config.NewFilter(bind9config.FilterTypeConfig)))
+	next, cancel := iter.Pull2(agents.ReceiveBind9FormattedConfig(context.Background(), app, bind9config.NewFileTypeSelector(bind9config.FileTypeConfig), bind9config.NewFilter(bind9config.FilterTypeConfig)))
 	defer cancel()
 
 	// Configuration file preamble.
@@ -1800,9 +1800,9 @@ func TestGetBind9RawConfigFiltering(t *testing.T) {
 	require.Nil(t, rsp)
 }
 
-// Test that an error is returned when trying to receive the BIND 9 raw config
+// Test that an error is returned when trying to receive the BIND 9 formatted config
 // when the gRPC call fails.
-func TestReceiveBind9RawConfigErrorResponse(t *testing.T) {
+func TestReceiveBind9FormattedConfigErrorResponse(t *testing.T) {
 	app := &dbmodel.App{
 		Machine: &dbmodel.Machine{
 			Address:   "127.0.0.1",
@@ -1827,7 +1827,7 @@ func TestReceiveBind9RawConfigErrorResponse(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
 
 	// Collect the chunks from the stream.
-	next, cancel := iter.Pull2(agents.ReceiveBind9RawConfig(context.Background(), app, nil, nil))
+	next, cancel := iter.Pull2(agents.ReceiveBind9FormattedConfig(context.Background(), app, nil, nil))
 	defer cancel()
 
 	// The error should be propagated.

@@ -206,6 +206,6 @@ func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, app agentcomm.Controll
 	return nil
 }
 
-func (fa *FakeAgents) ReceiveBind9RawConfig(ctx context.Context, app agentcomm.ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+func (fa *FakeAgents) ReceiveBind9FormattedConfig(ctx context.Context, app agentcomm.ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 	return nil
 }

@@ -12,9 +12,9 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/services"
 )
 
-// Returns the raw configuration for a BIND 9 daemon with optional
+// Returns the formatted configuration for a BIND 9 daemon with optional
 // filtering of the configuration elements returned.
-func (r *RestAPI) GetBind9RawConfig(ctx context.Context, params services.GetBind9RawConfigParams) middleware.Responder {
+func (r *RestAPI) GetBind9FormattedConfig(ctx context.Context, params services.GetBind9FormattedConfigParams) middleware.Responder {
 	var (
 		filter       *bind9config.Filter
 		fileSelector *bind9config.FileTypeSelector
@@ -31,31 +31,31 @@ func (r *RestAPI) GetBind9RawConfig(ctx context.Context, params services.GetBind
 			fileSelector.Enable(bind9config.FileType(fileType))
 		}
 	}
-	var bind9RawConfigFiles []*models.Bind9RawConfigFile
-	for rsp := range r.DNSManager.GetBind9RawConfig(ctx, params.ID, fileSelector, filter) {
+	var bind9FormattedConfigFiles []*models.Bind9FormattedConfigFile
+	for rsp := range r.DNSManager.GetBind9FormattedConfig(ctx, params.ID, fileSelector, filter) {
 		if rsp.Err != nil {
 			msg := fmt.Sprintf("Cannot get BIND 9 configuration for daemon with ID %d", params.ID)
 			log.WithError(rsp.Err).Error(msg)
-			rsp := services.NewGetBind9RawConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			rsp := services.NewGetBind9FormattedConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		}
 		if rsp.File != nil {
-			bind9RawConfigFiles = append(bind9RawConfigFiles, &models.Bind9RawConfigFile{
+			bind9FormattedConfigFiles = append(bind9FormattedConfigFiles, &models.Bind9FormattedConfigFile{
 				SourcePath: rsp.File.SourcePath,
 				FileType:   string(rsp.File.FileType),
 			})
 		} else if rsp.Contents != nil {
-			if len(bind9RawConfigFiles) > 0 {
-				contents := bind9RawConfigFiles[len(bind9RawConfigFiles)-1].Contents
+			if len(bind9FormattedConfigFiles) > 0 {
+				contents := bind9FormattedConfigFiles[len(bind9FormattedConfigFiles)-1].Contents
 				contents = append(contents, *rsp.Contents)
-				bind9RawConfigFiles[len(bind9RawConfigFiles)-1].Contents = contents
+				bind9FormattedConfigFiles[len(bind9FormattedConfigFiles)-1].Contents = contents
 			}
 		}
 	}
-	rsp := services.NewGetBind9RawConfigOK().WithPayload(&models.Bind9RawConfig{
-		Files: bind9RawConfigFiles,
+	rsp := services.NewGetBind9FormattedConfigOK().WithPayload(&models.Bind9FormattedConfig{
+		Files: bind9FormattedConfigFiles,
 	})
 	return rsp
 }

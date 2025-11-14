@@ -16,13 +16,14 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-func TestGetBind9RawConfig(t *testing.T) {
+// Test successfully getting BIND 9 configuration.
+func TestGetBind9FormattedConfig(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetBind9RawConfig(gomock.Any(), int64(123), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*dnsop.Bind9RawConfigResponse] {
+	mockManager.EXPECT().GetBind9FormattedConfig(gomock.Any(), int64(123), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*dnsop.Bind9FormattedConfigResponse] {
 		require.NotNil(t, filter)
 		require.True(t, filter.IsEnabled(bind9config.FilterTypeConfig))
 		require.True(t, filter.IsEnabled(bind9config.FilterTypeView))
@@ -30,8 +31,8 @@ func TestGetBind9RawConfig(t *testing.T) {
 		require.NotNil(t, fileSelector)
 		require.True(t, fileSelector.IsEnabled(bind9config.FileTypeConfig))
 		require.True(t, fileSelector.IsEnabled(bind9config.FileTypeRndcKey))
-		return func(yield func(*dnsop.Bind9RawConfigResponse) bool) {
-			responses := []*dnsop.Bind9RawConfigResponse{
+		return func(yield func(*dnsop.Bind9FormattedConfigResponse) bool) {
+			responses := []*dnsop.Bind9FormattedConfigResponse{
 				{
 					File: &agentapi.ReceiveBind9ConfigFile{
 						FileType:   agentapi.Bind9ConfigFileType_CONFIG,
@@ -65,31 +66,31 @@ func TestGetBind9RawConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, rapi)
 
-	params := services.GetBind9RawConfigParams{
+	params := services.GetBind9FormattedConfigParams{
 		ID:           123,
 		Filter:       []string{"config", "view"},
 		FileSelector: []string{"config", "rndc-key"},
 	}
-	rsp := rapi.GetBind9RawConfig(context.Background(), params)
-	require.IsType(t, &services.GetBind9RawConfigOK{}, rsp)
-	okRsp := rsp.(*services.GetBind9RawConfigOK)
+	rsp := rapi.GetBind9FormattedConfig(context.Background(), params)
+	require.IsType(t, &services.GetBind9FormattedConfigOK{}, rsp)
+	okRsp := rsp.(*services.GetBind9FormattedConfigOK)
 	require.Len(t, okRsp.Payload.Files, 2)
 	require.Equal(t, []string{"config;", "view;"}, okRsp.Payload.Files[0].Contents)
 	require.Equal(t, []string{"rndc-key;"}, okRsp.Payload.Files[1].Contents)
 }
 
 // Test that an error is returned when getting BIND 9 configuration fails.
-func TestGetBind9RawConfigError(t *testing.T) {
+func TestGetBind9FormattedConfigError(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetBind9RawConfig(gomock.Any(), int64(123), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*dnsop.Bind9RawConfigResponse] {
+	mockManager.EXPECT().GetBind9FormattedConfig(gomock.Any(), int64(123), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*dnsop.Bind9FormattedConfigResponse] {
 		require.Nil(t, filter)
 		require.Nil(t, fileSelector)
-		return func(yield func(*dnsop.Bind9RawConfigResponse) bool) {
-			yield(dnsop.NewBind9RawConfigResponseError(&testError{}))
+		return func(yield func(*dnsop.Bind9FormattedConfigResponse) bool) {
+			yield(dnsop.NewBind9FormattedConfigResponseError(&testError{}))
 		}
 	})
 
@@ -97,12 +98,12 @@ func TestGetBind9RawConfigError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, rapi)
 
-	params := services.GetBind9RawConfigParams{
+	params := services.GetBind9FormattedConfigParams{
 		ID: 123,
 	}
-	rsp := rapi.GetBind9RawConfig(context.Background(), params)
-	require.IsType(t, &services.GetBind9RawConfigDefault{}, rsp)
-	defaultRsp := rsp.(*services.GetBind9RawConfigDefault)
+	rsp := rapi.GetBind9FormattedConfig(context.Background(), params)
+	require.IsType(t, &services.GetBind9FormattedConfigDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetBind9FormattedConfigDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 	require.Equal(t, "Cannot get BIND 9 configuration for daemon with ID 123", *defaultRsp.Payload.Message)
 }

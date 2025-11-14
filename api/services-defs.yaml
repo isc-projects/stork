@@ -324,7 +324,7 @@
       options:
         $ref: '#/definitions/DHCPOptions'
 
-  Bind9RawConfigFile:
+  Bind9FormattedConfigFile:
     type: object
     properties:
       sourcePath:
@@ -339,13 +339,13 @@
         items:
           type: string
 
-  Bind9RawConfig:
+  Bind9FormattedConfig:
     type: object
     properties:
       files:
         type: array
         items:
-          $ref: '#/definitions/Bind9RawConfigFile'
+          $ref: '#/definitions/Bind9FormattedConfigFile'
 
   AppKea:
     type: object

@@ -93,8 +93,8 @@ func TestManagerRRsAlreadyRequestedError(t *testing.T) {
 
 // Test an error indicating that the manager is already requesting BIND 9 configuration
 // for the same daemon.
-func TestManagerBind9RawConfigAlreadyRequestedError(t *testing.T) {
-	err := NewManagerBind9RawConfigAlreadyRequestedError()
+func TestManagerBind9FormattedConfigAlreadyRequestedError(t *testing.T) {
+	err := NewManagerBind9FormattedConfigAlreadyRequestedError()
 	require.ErrorContains(t, err, "BIND 9 configuration for the specified daemon has been already requested by another user")
 }
 
@@ -1511,7 +1511,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 }
 
 // Test that one BIND 9 configuration file is returned from the agent.
-func TestGetBind9RawConfig(t *testing.T) {
+func TestGetBind9FormattedConfig(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1537,7 +1537,7 @@ func TestGetBind9RawConfig(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 			require.NotNil(t, fileSelector)
@@ -1584,7 +1584,7 @@ func TestGetBind9RawConfig(t *testing.T) {
 
 	// Filter config only.
 	next, cancel := iter.Pull(
-		manager.GetBind9RawConfig(
+		manager.GetBind9FormattedConfig(
 			context.Background(),
 			app.Daemons[0].ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
@@ -1616,7 +1616,7 @@ func TestGetBind9RawConfig(t *testing.T) {
 
 // Test that multiple files are returned when getting BIND 9 configuration
 // from the agent.
-func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
+func TestGetBind9FormattedConfigMultipleFiles(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1644,7 +1644,7 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 
 	// Depending on the filter the mock returns different configurations.
 	// We can use the output to determine that the filter is applied correctly.
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(
 			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
@@ -1694,7 +1694,7 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 	require.NotNil(t, manager)
 
 	next, cancel := iter.Pull(
-		manager.GetBind9RawConfig(
+		manager.GetBind9FormattedConfig(
 			context.Background(),
 			app.Daemons[0].ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey),
@@ -1731,7 +1731,7 @@ func TestGetBind9RawConfigMultipleFiles(t *testing.T) {
 
 // Test that an error is returned when getting BIND 9 configuration from a
 // non-existing daemon.
-func TestGetBind9RawConfigNoDaemon(t *testing.T) {
+func TestGetBind9FormattedConfigNoDaemon(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1745,7 +1745,7 @@ func TestGetBind9RawConfigNoDaemon(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9RawConfig(context.Background(), int64(1), nil, nil))
+	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(context.Background(), int64(1), nil, nil))
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -1754,7 +1754,7 @@ func TestGetBind9RawConfigNoDaemon(t *testing.T) {
 
 // Test that an error is returned when getting BIND 9 daemon from the
 // database fails.
-func TestGetBind9RawConfigError(t *testing.T) {
+func TestGetBind9FormattedConfigError(t *testing.T) {
 	// Setup the database and tear it down immediately to cause an error.
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	teardown()
@@ -1769,7 +1769,7 @@ func TestGetBind9RawConfigError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9RawConfig(context.Background(), int64(1), nil, nil))
+	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(context.Background(), int64(1), nil, nil))
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -1778,7 +1778,7 @@ func TestGetBind9RawConfigError(t *testing.T) {
 
 // Test that an error is returned when getting BIND 9 configuration from the
 // agent returns a nil response.
-func TestGetBind9RawConfigNilResponse(t *testing.T) {
+func TestGetBind9FormattedConfigNilResponse(t *testing.T) {
 	// Setup the database and tear it down immediately to cause an error.
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1805,7 +1805,7 @@ func TestGetBind9RawConfigNilResponse(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(
 			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
@@ -1821,7 +1821,7 @@ func TestGetBind9RawConfigNilResponse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9RawConfig(context.Background(), int64(1), nil, nil))
+	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(context.Background(), int64(1), nil, nil))
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -1830,7 +1830,7 @@ func TestGetBind9RawConfigNilResponse(t *testing.T) {
 
 // Test that an error is returned if another request for getting
 // BIND 9 configuration from the same daemon is in progress.
-func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
+func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1865,7 +1865,7 @@ func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
 	wg2 := sync.WaitGroup{}
 	wg1.Add(1)
 	wg2.Add(1)
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
+	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(a any) bool {
 		return a.(*dbmodel.App).ID == app.ID
 	}), gomock.Any(), gomock.Any()).
 		AnyTimes().
@@ -1902,7 +1902,7 @@ func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+		responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[0].ID, nil, nil)
 		for response := range responses {
 			require.NoError(t, response.Err)
 		}
@@ -1914,7 +1914,7 @@ func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
 	// Run the second request while the first one is in progress.
 	// Since we use the same daemon ID, the manager should refuse it.
 	var errors []error
-	responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+	responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[0].ID, nil, nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -1930,7 +1930,7 @@ func TestGetBind9RawConfigAnotherRequestInProgress(t *testing.T) {
 
 // Test that an error is not returned when there is an ongoing
 // request but another request contains different daemon ID.
-func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) {
+func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1967,7 +1967,7 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 	wg1.Add(1)
 	wg2.Add(1)
 	var mocks []any
-	mocks = append(mocks, mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
+	mocks = append(mocks, mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(a any) bool {
 		return a.(*dbmodel.App).ID == app.ID
 	}), gomock.Any(), gomock.Any()).
 		DoAndReturn(
@@ -1989,7 +1989,7 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 			},
 		),
 	)
-	mocks = append(mocks, mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Cond(func(a any) bool {
+	mocks = append(mocks, mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(a any) bool {
 		return a.(*dbmodel.App).ID == app.ID
 	}), gomock.Any(), gomock.Any()).
 		AnyTimes().
@@ -2022,7 +2022,7 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+		responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[0].ID, nil, nil)
 		for response := range responses {
 			// Since these responses will be read in the cleanup phase, it is expected
 			// that some of them will indicate failures while communicating with the
@@ -2042,7 +2042,7 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 	})
 
 	var errors []error
-	responses := manager.GetBind9RawConfig(context.Background(), app.Daemons[1].ID, nil, nil)
+	responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[1].ID, nil, nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -2051,7 +2051,7 @@ func TestGetBind9RawConfigAnotherRequestInProgressDifferentDaemon(t *testing.T) 
 }
 
 // Test cancelling a request while getting BIND 9 configuration.
-func TestGetBind9RawConfigCancelRequest(t *testing.T) {
+func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -2077,7 +2077,7 @@ func TestGetBind9RawConfigCancelRequest(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveBind9RawConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(
 			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
@@ -2116,7 +2116,7 @@ func TestGetBind9RawConfigCancelRequest(t *testing.T) {
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	next, cancel := iter.Pull(
-		manager.GetBind9RawConfig(
+		manager.GetBind9FormattedConfig(
 			ctx,
 			app.Daemons[0].ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
