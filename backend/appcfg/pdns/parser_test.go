@@ -154,7 +154,7 @@ func TestParseTooLong(t *testing.T) {
 }
 
 // Test that parser returns an error when a line has more fields than the maximum number of fields.
-func TestParseLineWithTwoManyFields(t *testing.T) {
+func TestParseLineWithTooManyFields(t *testing.T) {
 	parser := NewParser()
 	require.NotNil(t, parser)
 	cfg, err := parser.Parse(strings.NewReader(fmt.Sprintf("only-notify = %s", strings.Repeat("127.0.0.1 ", maxParserFieldsPerLine+1))))
