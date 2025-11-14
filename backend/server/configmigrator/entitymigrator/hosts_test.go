@@ -999,7 +999,6 @@ func TestMigrate(t *testing.T) {
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 	})
-
 }
 
 // Test that the hosts are loaded and counted correctly.
