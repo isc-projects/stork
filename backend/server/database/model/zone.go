@@ -221,6 +221,22 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 	return addZones(dbi.(*pg.Tx), zones...)
 }
 
+// Sort field which may be used in GetZones.
+// If any of these fields is used, it means that the sorting must be done
+// based on a field of the related table. The "zone" table needs to be
+// JOINed first with other relation table. The relation is often of
+// "has-many" type (e.g. one zone may have many local_zones),
+// so after such JOIN the results will no longer have distinct zone IDs.
+// In order to have distinct IDs, a subquery is used in the JOIN operation, which
+// aggregates only one target relation record per zone ID.
+type ZoneSortField string
+
+// Valid sort fields.
+const (
+	LocalZoneSerial ZoneSortField = "distinct_lz.serial"
+	LocalZoneType   ZoneSortField = "distinct_lz.type"
+)
+
 // Retrieves a list of zones from the database with optional relations and filtering.
 // The ORM-based implementation may result in multiple queries when deep relations
 // (with daemon) are used. The only alternative would be raw queries.
@@ -230,7 +246,7 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 // complicate the implementation. Note that this function is primarily used for
 // paging zones, so the number of records is typically low, and the performance gain
 // would be negligible.
-func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*Zone, int, error) { //nolint: gocyclo
+func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortDirEnum, relations ...ZoneRelation) ([]*Zone, int, error) { //nolint: gocyclo
 	var zones []*Zone
 	q := db.Model(&zones).Group("zone.id")
 	// Add relations.
@@ -238,7 +254,24 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		q = q.Relation(string(relation))
 	}
 	// Order expression.
-	q = q.OrderExpr("rname COLLATE \"C\" ASC")
+	orderExpr, _ := prepareOrderExpr("zone", sortField, sortDir)
+	q = q.OrderExpr(orderExpr)
+	if ZoneSortField(sortField) == LocalZoneSerial {
+		sortSubquery := db.Model((*LocalZone)(nil)).
+			Column("zone_id").
+			ColumnExpr("MIN(serial) AS serial").
+			Group("zone_id")
+		q = q.Join("LEFT JOIN (?) AS distinct_lz", sortSubquery).JoinOn("zone.id = distinct_lz.zone_id")
+		q = q.Group("distinct_lz.serial")
+	}
+	if ZoneSortField(sortField) == LocalZoneType {
+		sortSubquery := db.Model((*LocalZone)(nil)).
+			Column("zone_id").
+			ColumnExpr("MIN(type) AS type").
+			Group("zone_id")
+		q = q.Join("LEFT JOIN (?) AS distinct_lz", sortSubquery).JoinOn("zone.id = distinct_lz.zone_id")
+		q = q.Group("distinct_lz.type")
+	}
 
 	// Filtering is optional.
 	if filter == nil {

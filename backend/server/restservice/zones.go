@@ -77,6 +77,14 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 	if params.Limit != nil {
 		limit = int(*params.Limit)
 	}
+	sortField := string(dbmodel.RName)
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+	sortDir := dbmodel.SortDirAsc
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
 
 	var daemonName *daemonname.Name
 	if params.AppType != nil {
@@ -134,7 +142,7 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 		filter.EnableZoneType(dbmodel.ZoneType(zoneType))
 	}
 	// Get the zones from the database.
-	zones, total, err := dbmodel.GetZones(r.DB, filter, dbmodel.ZoneRelationLocalZonesDaemon, dbmodel.ZoneRelationLocalZonesAccessPoints, dbmodel.ZoneRelationLocalZonesMachine)
+	zones, total, err := dbmodel.GetZones(r.DB, filter, sortField, sortDir, dbmodel.ZoneRelationLocalZonesDaemon, dbmodel.ZoneRelationLocalZonesAccessPoints, dbmodel.ZoneRelationLocalZonesMachine)
 	if err != nil {
 		msg := "Failed to get zones from the database"
 		log.WithError(err).Error(msg)

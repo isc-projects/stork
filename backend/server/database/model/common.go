@@ -30,6 +30,7 @@ const (
 	TotalPDs          CustomSortFieldEnum = "custom_total_pds"
 	AssignedPDs       CustomSortFieldEnum = "custom_assigned_pds"
 	PDUtilization     CustomSortFieldEnum = "custom_pd_utilization"
+	RName             CustomSortFieldEnum = "custom_rname"
 )
 
 // Prepare an order expression based on table name, sortField and sortDir.
@@ -82,6 +83,9 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 					}
 					sortField = fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
 					distinctOnExpr += fmt.Sprintf(", %s, %s", familyExpr, statsExpr)
+				case RName:
+					sortField = fmt.Sprintf("%s.rname COLLATE \"C\"", escapedTableName)
+					distinctOnExpr += fmt.Sprintf("%s.rname", escapedTableName)
 				}
 			}
 		} else if strings.ToLower(sortField) != tableName+".id" && strings.ToLower(sortField) != escapedTableName+".id" {
