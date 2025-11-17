@@ -24,6 +24,10 @@ describe('ZoneViewerComponent', () => {
 
         fixture = TestBed.createComponent(ZoneViewerComponent)
         component = fixture.componentInstance
+        // Override the default flex scroller height with an explicit value.
+        // It disables the flex layout. Using the flex layout requires the parent
+        // to use flex display. It doesn't work well with the unit tests.
+        component.scrollHeight = '400px'
         fixture.detectChanges()
     })
 

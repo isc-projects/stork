@@ -1,4 +1,4 @@
-<div class="text-base">
+<div class="text-base" [ngClass]="{ 'flex flex-column flex-auto min-h-0': scrollHeight === 'flex' }">
     <div class="flex align-items-center justify-content-between">
         <div class="text-base text-gray-500">
             Cached from DNS server on
@@ -20,23 +20,36 @@
     </div>
     <p-divider />
     @if (loading) {
-        <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" />
+        <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" strokeWidth="6" />
     } @else {
-        <p-table [value]="data?.items ?? []" styleClass="datatable-responsive">
-            <ng-template #body let-rr>
-                <tr>
-                    <td class="font-bold">{{ rr.name }}</td>
-                    <td>{{ rr.ttl }}</td>
-                    <td>{{ rr.rrClass }}</td>
-                    <td [ngClass]="'rr-type-' + rr.rrType.toLowerCase()">{{ rr.rrType }}</td>
-                    <td>{{ rr.data }}</td>
-                </tr>
-            </ng-template>
-            <ng-template #emptymessage>
-                <tr>
-                    <td colspan="5">No data received</td>
-                </tr>
-            </ng-template>
-        </p-table>
+        <div [ngClass]="{ 'flex-auto': scrollHeight === 'flex' }">
+            <!-- The table uses a virtual scroller. Otherwise, loading the table with
+             a large number of rows can be very slow. How slow depends on the browser.
+             For a larger number of rows, loading could take 40 seconds on Safari.
+             It took considerable time on other browsers too. Using virtual scroller
+             mitigates this problem. -->
+            <p-table
+                [value]="data?.items ?? []"
+                [scrollable]="true"
+                [scrollHeight]="scrollHeight"
+                [virtualScroll]="true"
+                [virtualScrollItemSize]="46"
+            >
+                <ng-template #body let-rr>
+                    <tr style="height: 46px">
+                        <td class="font-bold">{{ rr.name }}</td>
+                        <td>{{ rr.ttl }}</td>
+                        <td>{{ rr.rrClass }}</td>
+                        <td [ngClass]="'rr-type-' + rr.rrType.toLowerCase()">{{ rr.rrType }}</td>
+                        <td>{{ rr.data }}</td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr>
+                        <td colspan="5">No data received</td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
     }
 </div>

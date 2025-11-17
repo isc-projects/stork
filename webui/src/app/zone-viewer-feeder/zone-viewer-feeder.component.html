@@ -2,5 +2,7 @@
     [data]="zoneData"
     [zoneTransferAt]="zoneTransferAt"
     [loading]="loading"
+    [ngClass]="{ 'flex flex-auto': scrollHeight === 'flex' }"
+    [scrollHeight]="scrollHeight"
     (refreshFromDNSClicked)="refreshFromDNS()"
 ></app-zone-viewer>

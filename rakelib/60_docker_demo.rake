@@ -151,7 +151,7 @@ namespace :demo do
         desc 'Build and run container with Stork Agent and BIND 9
         See "up" command for arguments.'
         task :bind9 => [DOCKER_COMPOSE] do
-            docker_up_services("agent-bind9")
+            docker_up_services("agent-bind9", "agent-bind9-2")
         end
 
         desc 'Build and run container with Stork Agent and PowerDNS

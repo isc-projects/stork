@@ -110,14 +110,14 @@ export default {
     parameters: {
         mockData: [
             {
-                url: 'http://localhost/daemons/:daemonId/:viewName/zones/:zoneId/rrs',
+                url: 'http://localhost/api/daemons/:daemonId/:viewName/zones/:zoneId/rrs',
                 method: 'GET',
                 status: 200,
                 delay: 1000,
                 response: mockGetZoneRRs,
             },
             {
-                url: 'http://localhost/rrs-cache/daemons/:daemonId/:viewName/zones/:zoneId',
+                url: 'http://localhost/api/rrs-cache/daemons/:daemonId/:viewName/zones/:zoneId',
                 method: 'PUT',
                 status: 200,
                 delay: 1000,
@@ -135,5 +135,6 @@ export const Zone: Story = {
         viewName: 'default',
         zoneId: 1,
         active: true,
+        scrollHeight: '400px',
     },
 }

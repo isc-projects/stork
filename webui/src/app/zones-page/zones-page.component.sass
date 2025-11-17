@@ -17,6 +17,12 @@
     .p-dialog
       width: 75vw
 
+    // Ensure the flex layout of the dialog content. It allows for extending
+    // the height of the virtual scroller to the full height of the dialog.
+    .p-dialog-content
+      display: flex
+      flex-direction: column
+
     // Compensate left padding for p-tag marking zone serial mismatch.
     .serial-mismatch
       margin-left: -0.4rem

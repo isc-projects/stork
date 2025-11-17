@@ -42,6 +42,15 @@ export class ZoneViewerFeederComponent {
     }
 
     /**
+     * The scroll height of the virtual scroller in the zone viewer.
+     *
+     * By default, the flex layout of the zone viewer is used. In this case, the
+     * scroller extends to the full height of the parent. To disable the flex
+     * layout and use specific height, set the value to a specific (e.g., '400px').
+     */
+    @Input() scrollHeight = 'flex'
+
+    /**
      * Emits the event indicating that fetching the zone resource records
      * has failed.
      *

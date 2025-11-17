@@ -111,6 +111,7 @@ export const Zone: Story = {
                 },
             ],
         },
+        scrollHeight: '400px',
     },
 }
 
@@ -118,5 +119,6 @@ export const NoZoneData: Story = {
     args: {
         zoneTransferAt: '2024-03-15T01:00:00Z',
         data: { items: [] },
+        scrollHeight: '400px',
     },
 }
