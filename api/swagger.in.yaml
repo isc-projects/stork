@@ -282,6 +282,13 @@ definitions:
       - distinct_reservation.address
       - distinct_reservation.ipv6_prefix
 
+  ZoneSortField:
+    type: string
+    enum: &ZONESORTFIELD
+      - custom_rname
+      - distinct_lz.serial
+      - distinct_lz.type
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -411,6 +418,13 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *HOSTSORTFIELD
+
+  zoneSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *ZONESORTFIELD
 
   sortDir:
     name: sortDir

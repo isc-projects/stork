@@ -86,6 +86,8 @@
             Filter returned list of zones by RPZ flag indicating if the zone is a response policy zone.
             If not specified, all zones are returned.
           type: boolean
+        - $ref: '#/parameters/zoneSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of zones.
