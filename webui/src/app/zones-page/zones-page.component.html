@@ -562,9 +562,19 @@ to the number of configured zones.
             <ng-template #header>
                 <tr>
                     <th class="w-3rem sm:w-5rem"></th>
-                    <th>Zone Name</th>
-                    <th>Serial</th>
-                    <th>Zone Type</th>
+                    <th [pSortableColumn]="ZoneSortField.CustomRname">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Zone Name<p-sortIcon [field]="ZoneSortField.CustomRname" />
+                        </div>
+                    </th>
+                    <th [pSortableColumn]="ZoneSortField.DistinctLzSerial">
+                        <div class="flex gap-1">Serial<p-sortIcon [field]="ZoneSortField.DistinctLzSerial" /></div>
+                    </th>
+                    <th [pSortableColumn]="ZoneSortField.DistinctLzType">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Zone Type<p-sortIcon [field]="ZoneSortField.DistinctLzType" />
+                        </div>
+                    </th>
                     <th>Number of Associated DNS Views</th>
                 </tr>
             </ng-template>

@@ -10,6 +10,7 @@ import {
     ZoneInventoryState,
     ZoneInventoryStates,
     ZonesFetchStatus,
+    ZoneSortField,
 } from '../backend'
 import {
     catchError,
@@ -28,7 +29,7 @@ import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage, unrootZone } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
 
@@ -607,7 +608,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     (event?.filters?.text as FilterMetadata)?.value || null,
                     (event?.filters?.appId as FilterMetadata)?.value || null,
                     (event?.filters?.zoneSerial as FilterMetadata)?.value || null,
-                    this._getRPZFilterValue((event?.filters?.rpz as FilterMetadata)?.value)
+                    this._getRPZFilterValue((event?.filters?.rpz as FilterMetadata)?.value),
+                    ...convertSortingFields<ZoneSortField>(event)
                 )
                 .pipe(
                     map((resp) => {
@@ -879,4 +881,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 return null
         }
     }
+
+    /**
+     * Reference to an enum so it could be used in the HTML template.
+     * @protected
+     */
+    protected readonly ZoneSortField = ZoneSortField
 }
