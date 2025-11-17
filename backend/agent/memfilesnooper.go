@@ -2,8 +2,6 @@ package agent
 
 import (
 	"encoding/csv"
-	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,17 +29,6 @@ const (
 	v6Subnet        = 4
 	v6Prefix        = 8
 	v6State         = 13
-)
-
-var (
-	ErrHeaders              = errors.New("cannot process column headers as a Lease structure")
-	ErrUnexpectedV6         = errors.New("found an IPv6 address where an IPv4 address was expected")
-	ErrUnexpectedV4         = errors.New("found an IPv4 address where an IPv6 address was expected")
-	ErrCLTTTooOld           = errors.New("the CLTT for this lease is older than the limit; refusing to parse")
-	ErrInvalidExpOrLifetime = errors.New("unable to parse the expires or valid_lifetime columns as numbers")
-	ErrInvalidSubnetID      = errors.New("the subnet ID is not valid")
-	ErrInvalidLeaseState    = errors.New("the lease state is not valid")
-	ErrInvalidPrefixLen     = errors.New("the prefix length not valid")
 )
 
 // How does this module work?
@@ -73,11 +61,11 @@ type Lease4 struct {
 func newLease4(record []string, expire uint64, cltt uint64, lifetime uint32) (*Lease4, error) {
 	subnet, err := strconv.Atoi(record[v4Subnet])
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidSubnetID, err)
+		return nil, errors.Wrap(err, "the subnet ID is not valid")
 	}
 	state, err := strconv.Atoi(record[v4State])
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidLeaseState, err)
+		return nil, errors.Wrap(err, "the lease state is not valid")
 	}
 	lease := Lease4{
 		record[v4IPAddr],
@@ -119,15 +107,15 @@ type Lease6 struct {
 func newLease6(record []string, expire uint64, cltt uint64, lifetime uint32) (Lease6, error) {
 	subnet, err := strconv.Atoi(record[v6Subnet])
 	if err != nil {
-		return Lease6{}, fmt.Errorf("%w: %w", ErrInvalidSubnetID, err)
+		return Lease6{}, errors.Wrap(err, "the subnet ID is not valid")
 	}
 	state, err := strconv.Atoi(record[v6State])
 	if err != nil {
-		return Lease6{}, fmt.Errorf("%w: %w", ErrInvalidLeaseState, err)
+		return Lease6{}, errors.Wrap(err, "the lease state is not valid")
 	}
 	prefixLen, err := strconv.Atoi(record[v6Prefix])
 	if err != nil {
-		return Lease6{}, fmt.Errorf("%w: %w", ErrInvalidPrefixLen, err)
+		return Lease6{}, errors.Wrap(err, "the prefix length is not valid")
 	}
 	lease := Lease6{
 		record[v6IPAddr],
@@ -311,24 +299,24 @@ func parseExpireLifetime(record []string, expireIdx, lifetimeIdx int) (uint64, u
 }
 
 // Parse the provided row as a [Lease4].  If the row's CLTT is less than (older
-// than) minCLTT, this parser will return nil and an appropriate error.
+// than) minCLTT, this parser will return nil and also a nil error.
 func ParseRowAsLease4(record []string, minCLTT uint64) (*Lease4, error) {
 	if record[0] == "address" {
-		return nil, ErrHeaders
+		return nil, errors.New("cannot parse column headers as a lease structure")
 	}
 	if strings.Contains(record[0], ":") {
-		return nil, fmt.Errorf("'%s' contains a colon: %w", record[0], ErrUnexpectedV6)
+		return nil, errors.Errorf("'%s' contains a colon: unexpected IPv6 address", record[0])
 	}
 	expire, lifetime64, err := parseExpireLifetime(record, v4Expire, v4ValidLifetime)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidExpOrLifetime, err)
+		return nil, errors.Wrap(err, "the expiry or valid_lifetime values were not valid")
 	}
 	lifetime := uint32(lifetime64)
 	// Infinite-lifetime leases are stored as 0xFFFFFFFF.  This will need to be
 	// refactored come 2038.
 	cltt := expire - lifetime64
 	if cltt < minCLTT {
-		return nil, fmt.Errorf("%w: %d < %d", ErrCLTTTooOld, cltt, minCLTT)
+		return nil, nil
 	}
 	lease, err := newLease4(record, expire, cltt, lifetime)
 	if err != nil {
@@ -338,22 +326,22 @@ func ParseRowAsLease4(record []string, minCLTT uint64) (*Lease4, error) {
 }
 
 // Parse the provided row as a [Lease6].  If the row's CLTT is less than (older
-// than) minCLTT, this parser will return nil and an appropriate error.
+// than) minCLTT, this parser will return nil and also a nil error.
 func ParseRowAsLease6(record []string, minCLTT uint64) (*Lease6, error) {
 	if record[0] == "address" {
-		return nil, ErrHeaders
+		return nil, errors.New("cannot parse column headers as a lease structure")
 	}
 	if strings.Contains(record[0], ".") {
-		return nil, fmt.Errorf("'%s' contains a dot: %w", record[0], ErrUnexpectedV4)
+		return nil, errors.Errorf("'%s' contains a dot: unexpected IPv4 address", record[0])
 	}
 	expire, lifetime64, err := parseExpireLifetime(record, v6Expire, v6ValidLifetime)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidExpOrLifetime, err)
+		return nil, errors.Wrap(err, "the expiry or valid_lifetime values were not valid")
 	}
 	lifetime := uint32(lifetime64)
 	cltt := expire - lifetime64
 	if cltt < minCLTT {
-		return nil, fmt.Errorf("%w: %d < %d", ErrCLTTTooOld, cltt, minCLTT)
+		return nil, nil
 	}
 	lease, err := newLease6(record, expire, cltt, lifetime)
 	if err != nil {

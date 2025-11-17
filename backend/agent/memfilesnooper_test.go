@@ -3,13 +3,13 @@ package agent
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -263,7 +263,7 @@ func TestParseRowAsLease4(t *testing.T) {
 		row         []string
 		minCLTT     uint64
 		expected    *Lease4
-		expectedErr error
+		expectedErr string // Zero value means no expected error.
 	}{
 		{
 			"Headers, which it should skip.",
@@ -283,7 +283,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			0,
 			nil,
-			ErrHeaders,
+			"headers",
 		},
 		{
 			"Valid IPv4 data, which it should parse.",
@@ -311,7 +311,7 @@ func TestParseRowAsLease4(t *testing.T) {
 				123,
 				0,
 			},
-			nil,
+			"",
 		},
 		{
 			"Valid IPv6 data, which it should refuse to parse.",
@@ -337,7 +337,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			0,
 			nil,
-			ErrUnexpectedV6,
+			"IPv6",
 		},
 		{
 			"Valid IPv4 data but with CLTT too old, which it should refuse to parse.",
@@ -357,7 +357,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			1761254250,
 			nil,
-			ErrCLTTTooOld,
+			"",
 		},
 	}
 	for _, tc := range testCases {
@@ -365,8 +365,8 @@ func TestParseRowAsLease4(t *testing.T) {
 			// Act
 			actual, err := ParseRowAsLease4(tc.row, tc.minCLTT)
 			// Assert
-			if tc.expectedErr != nil {
-				require.ErrorIs(t, err, tc.expectedErr)
+			if tc.expectedErr != "" {
+				require.ErrorContains(t, err, tc.expectedErr)
 			}
 			require.Equal(t, tc.expected, actual)
 		})
@@ -380,7 +380,7 @@ func TestParseRowAsLease6(t *testing.T) {
 		row         []string
 		minCLTT     uint64
 		expected    *Lease6
-		expectedErr error
+		expectedErr string // Zero value means no expected error.
 	}{
 		{
 			"Headers, which it should skip",
@@ -400,7 +400,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			0,
 			nil,
-			ErrHeaders,
+			"headers",
 		},
 		{
 			"Valid IPv4 data, which it should refuse to parse",
@@ -420,7 +420,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			0,
 			nil,
-			ErrUnexpectedV4,
+			"IPv4",
 		},
 		{
 			"Valid IPv6 data, which it should parse",
@@ -455,7 +455,7 @@ func TestParseRowAsLease6(t *testing.T) {
 				2,
 				128,
 			},
-			nil,
+			"",
 		},
 		{
 			"Valid IPv6 data but with CLTT too old, which it should refuse to parse",
@@ -481,7 +481,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			1761669050,
 			nil,
-			ErrCLTTTooOld,
+			"",
 		},
 	}
 	for _, tc := range testCases {
@@ -489,8 +489,8 @@ func TestParseRowAsLease6(t *testing.T) {
 			// Act
 			actual, err := ParseRowAsLease6(tc.row, tc.minCLTT)
 			// Assert
-			if tc.expectedErr != nil {
-				require.ErrorIs(t, err, tc.expectedErr)
+			if tc.expectedErr != "" {
+				require.ErrorContains(t, err, tc.expectedErr)
 			}
 			require.Equal(t, tc.expected, actual)
 		})
