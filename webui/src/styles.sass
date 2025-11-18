@@ -158,7 +158,9 @@
       --p-datatable-header-cell-padding: 0.375rem 0.5rem
       --p-datatable-footer-cell-padding: 0.375rem 0.5rem
       --p-datatable-body-cell-padding: 0.375rem 0.5rem
-      --p-button-icon-only-width: 1.125rem
+      th
+        // Reduce also padding for icons inside table headers.
+        --p-button-icon-only-width: 1.125rem
     // Different responsive classes with different breakpoints.
     // SM-XL breakpoints are inline with Primeflex breakpoints.
     @media screen and (max-width: 575px)
