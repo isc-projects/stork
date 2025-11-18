@@ -40,17 +40,19 @@ func TestCreateDatabaseSQLInjection(t *testing.T) {
 	created, err := maintenance.CreateDatabase(db, databaseName)
 
 	// Assert
-	// The injection attempt was currently mitigated by a two-stage interaction:
-	// first, the database driver transmits the entire injected payload as a
-	// single command; second, the PostgreSQL server wraps the command in a
-	// transaction, which fails because CREATE DATABASE cannot be executed
-	// within a transaction block. Relying on this incidental protection was
-	// insecure, as any future modification, such as adding a DDL command
-	// without this restriction, or changing driver behavior, could make the
-	// code exploitable.
-	//
+	// Previously, the SQL query for creating the database was constructed via
+	// string formatting, which allowed SQL injection. In this case, attempting
+	// to create a database with a name that includes an injected SQL, resulted
+	// in sending to Postgres server two commands: one original to create the
+	// database, and the second that was injected.
+	// Fortunately, the Postgres server rejected both commands because the
+	// CREATE DATABASE command cannot be executed inside a transaction block.
 	// The error contained a message: "cannot run inside a transaction block".
-	// Now, there is no error, and the database is created successfully.
+	//
+	// The code has been fixed to use parameterized queries, so SQL injection
+	// is no longer possible. Now, there is no error, and the database is
+	// created successfully. The injected part is treated as part of the
+	// database name.
 	require.NoError(t, err)
 	require.True(t, created)
 
