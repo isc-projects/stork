@@ -973,15 +973,11 @@ namespace :db do
 
         Open3.pipeline([
             # Select all test databases.
-            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenancename,
+            PSQL, *psql_select_opts, *psql_access_opts, dbmaintenancename, "-A",
             "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname_pattern}'"
         ], [
             # Remove empty rows.
             "awk", "NF"
-        ], [
-            # Trim trailing and leading whitespaces from database names.
-            "awk", '{$1=$1};1'
-
         ], [
             # Convert the newlines to null characters to handle spaces in
             # database names.
