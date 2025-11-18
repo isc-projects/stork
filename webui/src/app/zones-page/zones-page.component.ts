@@ -699,10 +699,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     tabTitleProvider: (entity: Zone) => string = (zone: Zone) => unrootZone(zone.name)
 
     /**
-     * Resets zones table state and reloads the table without any filters applied.
+     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
+     * It doesn't reset the table sorting, if any was applied.
      */
-    clearTableState() {
-        this.zonesTable?.clear()
+    clearTableFiltering() {
+        this.zonesTable?.clearFilterValues()
         this.zone.run(() => this.router.navigate([]))
     }
 

@@ -84,7 +84,7 @@
                     label="Clear"
                     [severity]="tableHasFilter(subnetsTable) ? 'info' : 'secondary'"
                     icon="pi pi-filter-slash"
-                    (click)="clearTableState()"
+                    (click)="clearTableFiltering()"
                     [disabled]="!tableHasFilter(subnetsTable)"
                 ></p-button>
                 <div class="flex-auto"></div>
@@ -367,7 +367,7 @@
                         label="Clear"
                         [outlined]="true"
                         icon="pi pi-filter-slash"
-                        (click)="clearTableState()"
+                        (click)="clearTableFiltering()"
                     ></p-button>
                 </span>
             </td>

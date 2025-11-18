@@ -275,10 +275,11 @@ export class HostsTableComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Clears the PrimeNG table state (filtering, pagination are reset).
+     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
+     * It doesn't reset the table sorting, if any was applied.
      */
-    clearTableState() {
-        this.table?.clear()
+    clearTableFiltering() {
+        this.table?.clearFilterValues()
         this.router.navigate([])
     }
 

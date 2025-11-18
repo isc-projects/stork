@@ -79,7 +79,7 @@
                     label="Clear"
                     [severity]="tableHasFilter(networksTable) ? 'info' : 'secondary'"
                     icon="pi pi-filter-slash"
-                    (click)="clearTableState()"
+                    (click)="clearTableFiltering()"
                     [disabled]="!tableHasFilter(networksTable)"
                 ></p-button>
                 <div class="flex-auto"></div>
@@ -273,7 +273,7 @@
                         label="Clear"
                         [outlined]="true"
                         icon="pi pi-filter-slash"
-                        (click)="clearTableState()"
+                        (click)="clearTableFiltering()"
                     ></p-button>
                 </span>
             </td>

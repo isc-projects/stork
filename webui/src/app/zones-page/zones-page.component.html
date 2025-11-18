@@ -335,7 +335,7 @@ to the number of configured zones.
                             label="Clear"
                             [severity]="tableHasFilter(zonesTable) ? 'info' : 'secondary'"
                             icon="pi pi-filter-slash"
-                            (click)="clearTableState()"
+                            (click)="clearTableFiltering()"
                             [disabled]="!tableHasFilter(zonesTable)"
                         />
                         <div class="flex-auto"></div>

@@ -294,7 +294,7 @@ describe('SharedNetworksTableComponent', () => {
 
         fixture.detectChanges()
 
-        component.clearTableState()
+        component.clearTableFiltering()
         fixture.detectChanges()
     })
 

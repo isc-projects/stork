@@ -102,10 +102,11 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Clears the PrimeNG table state (filtering, pagination are reset).
+     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
+     * It doesn't reset the table sorting, if any was applied.
      */
-    clearTableState() {
-        this.appsTable?.clear()
+    clearTableFiltering() {
+        this.appsTable?.clearFilterValues()
         this.router.navigate([])
     }
 

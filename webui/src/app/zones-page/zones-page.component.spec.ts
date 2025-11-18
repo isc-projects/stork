@@ -1114,7 +1114,7 @@ describe('ZonesPageComponent', () => {
             null
         )
 
-        component.clearTableState()
+        component.clearTableFiltering()
         fixture.detectChanges()
         expect(hasFilter(component?.zonesTable?.filters)).toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, null)
