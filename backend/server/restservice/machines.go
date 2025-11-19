@@ -372,12 +372,12 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		app = *params.App
 	}
 
-	var sortField string = ""
+	sortField := ""
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}
 
-	var sortDir = dbmodel.SortDirAny
+	sortDir := dbmodel.SortDirAny
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}
@@ -1498,12 +1498,12 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		limit = *params.Limit
 	}
 
-	var sortField string = ""
+	sortField := ""
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}
 
-	var sortDir = dbmodel.SortDirAny
+	sortDir := dbmodel.SortDirAny
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}

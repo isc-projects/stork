@@ -257,12 +257,12 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 		limit = *params.Limit
 	}
 
-	var sortField string = ""
+	sortField := ""
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}
 
-	var sortDir = dbmodel.SortDirAny
+	sortDir := dbmodel.SortDirAny
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}

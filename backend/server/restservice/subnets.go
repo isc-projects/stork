@@ -489,12 +489,12 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		limit = *params.Limit
 	}
 
-	var sortField string = ""
+	sortField := ""
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}
 
-	var sortDir = dbmodel.SortDirAny
+	sortDir := dbmodel.SortDirAny
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}

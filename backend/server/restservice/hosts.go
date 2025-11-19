@@ -187,12 +187,12 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		limit = *params.Limit
 	}
 
-	var sortField string = ""
+	sortField := ""
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}
 
-	var sortDir = dbmodel.SortDirAny
+	sortDir := dbmodel.SortDirAny
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}

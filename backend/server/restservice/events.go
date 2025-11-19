@@ -58,12 +58,12 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 		level = dbmodel.EventLevel(*params.Level)
 	}
 
-	var sortField string = "created_at"
+	sortField := "created_at"
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}
 
-	var sortDir = dbmodel.SortDirDesc
+	sortDir := dbmodel.SortDirDesc
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}
