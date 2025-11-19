@@ -2,7 +2,9 @@ package dbops
 
 import (
 	"fmt"
+	"net"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -84,7 +86,7 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 		pgopts.Addr = socketPath
 		pgopts.Network = "unix"
 	default:
-		pgopts.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
+		pgopts.Addr = net.JoinHostPort(s.Host, strconv.Itoa(s.Port))
 		pgopts.Network = "tcp"
 		tlsConfig, err := GetTLSConfig(s.SSLMode, s.Host, s.SSLCert, s.SSLKey, s.SSLRootCert)
 		if err != nil {
