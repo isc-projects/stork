@@ -205,7 +205,7 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	require.Nil(t, state.State.ZoneCount)
 
 	// Make sure that no zones have been added to the database.
-	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, total, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, zones)
@@ -278,7 +278,7 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	require.Nil(t, state.State.ZoneCount)
 
 	// Make sure that no zones have been added to the database.
-	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, total, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, zones)
@@ -351,7 +351,7 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	require.Nil(t, state.State.ZoneCount)
 
 	// Make sure that no zones have been added to the database.
-	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, total, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, zones)
@@ -514,7 +514,7 @@ func TestFetchZones(t *testing.T) {
 
 	// Get all the zones from the database to make sure that all zones
 	// have been inserted.
-	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, total, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Equal(t, 1000, total)
 	require.Len(t, zones, 1000)
@@ -623,7 +623,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
-	zones, _, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, _, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zones, 1000)
 
@@ -641,7 +641,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// The zones should remain untouched.
-	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, _, err = dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zones, 1000)
 
@@ -653,7 +653,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
-	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, _, err = dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zones, 1000)
 
@@ -669,7 +669,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	<-notifyChannel
 
 	// This time we should have only 100 zones and all other zones should be removed.
-	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, _, err = dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Len(t, zones, 100)
 }
@@ -756,7 +756,7 @@ func TestFetchRepeatedZones(t *testing.T) {
 
 	// Get all the zones from the database to make sure that all zones
 	// have been inserted.
-	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	zones, total, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.EqualValues(t, 20, total)
 	require.Len(t, zones, 20)
