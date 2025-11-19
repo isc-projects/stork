@@ -188,17 +188,26 @@ type StackTraceHook struct{}
 
 var _ log.Hook = (*StackTraceHook)(nil)
 
+// Applies to all log levels.
 func (h *StackTraceHook) Levels() []log.Level {
 	return log.AllLevels
 }
 
+// Looks for a default error field in the log entry and if found, adds
+// a field with the stack trace.
 func (h *StackTraceHook) Fire(entry *log.Entry) error {
 	if entry.Data == nil {
 		return nil
 	}
 
+	// Check if there is an error field and it is an error.
 	if err, ok := entry.Data[log.ErrorKey].(error); ok && err != nil {
 		const stackTraceKey = "stackTrace"
+		// There is no possibility to extract stack trace from the pkg/errors
+		// error because it doesn't expose any getters or any specialized type
+		// that could be used for type assertion. The only way to get the stack
+		// trace is to format the error with the %+v verb. It works because the
+		// pkg/errors implements the fmt.Formatter interface for its errors.
 		stackTrace := fmt.Sprintf("%+v", err)
 		entry.Data[stackTraceKey] = stackTrace
 	}
