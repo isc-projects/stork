@@ -116,3 +116,13 @@ func GenerateMoreZonesWithSerial(existingZones []*Zone, num int, serial int64) [
 func GenerateMoreZonesWithRPZ(existingZones []*Zone, num int, rpz bool) []*Zone {
 	return generateRandomZones(existingZones, num, "IN", "primary", 20240304, rpz)
 }
+
+// Randomize serial numbers in existing zones.
+//
+//nolint:gosec
+func RandomizeZoneSerials(existingZones []*Zone, maxSerial int64) []*Zone {
+	for _, zone := range existingZones {
+		zone.Serial = rand.Int64N(maxSerial)
+	}
+	return existingZones
+}

@@ -358,6 +358,61 @@ func TestGetZones(t *testing.T) {
 			}
 		}
 	})
+}
+
+// Test getting zones with sorting applied.
+func TestGetZonesWithSorting(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeBind9,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	addedDaemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, addedDaemons, 1)
+
+	// Store zones in the database and associate them with our app.
+	randomZones := testutil.GenerateRandomZones(25)
+	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
+	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 25, 123456)
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "master")
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "slave")
+	// Make zone serials random.
+	randomZones = testutil.RandomizeZoneSerials(randomZones, 20251119)
+
+	var zones []*Zone
+	for i, randomZone := range randomZones {
+		zones = append(zones, &Zone{
+			Name: randomZones[i].Name,
+			LocalZones: []*LocalZone{
+				{
+					DaemonID: addedDaemons[0].ID,
+					View:     "_default",
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					LoadedAt: time.Now().UTC(),
+				},
+			},
+		})
+	}
+	err = AddZones(db, zones...)
+	require.NoError(t, err)
 
 	t.Run("sort by rname desc", func(t *testing.T) {
 		filter := &GetZonesFilter{}
@@ -372,6 +427,68 @@ func TestGetZones(t *testing.T) {
 				require.Negative(t, storkutil.CompareNames(zones[i].Name, zones[i-1].Name))
 			}
 		}
+	})
+
+	t.Run("sort by serial asc", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		zones, total, err := GetZones(db, filter, string(LocalZoneSerial), SortDirAsc, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
+		for i := range zones {
+			if i > 0 {
+				// Compare the current zone with the previous zone. The current zone must
+				// always have serial greater or equal than previous.
+				require.GreaterOrEqual(t, zones[i].LocalZones[0].Serial, zones[i-1].LocalZones[0].Serial)
+			}
+		}
+	})
+
+	t.Run("sort by serial desc", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		zones, total, err := GetZones(db, filter, string(LocalZoneSerial), SortDirDesc, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
+		for i := range zones {
+			if i > 0 {
+				// Compare the current zone with the previous zone. The current zone must
+				// always have serial lower or equal than previous.
+				require.LessOrEqual(t, zones[i].LocalZones[0].Serial, zones[i-1].LocalZones[0].Serial)
+			}
+		}
+	})
+
+	t.Run("sort by zone type asc", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		zones, total, err := GetZones(db, filter, string(LocalZoneType), SortDirAsc, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
+		// Zones should be sorted by local zone type.
+		require.Equal(t, "master", zones[0].LocalZones[0].Type)
+		require.Equal(t, "primary", zones[25].LocalZones[0].Type)
+		require.Equal(t, "primary", zones[50].LocalZones[0].Type)
+		require.Equal(t, "primary", zones[75].LocalZones[0].Type)
+		require.Equal(t, "secondary", zones[100].LocalZones[0].Type)
+		require.Equal(t, "slave", zones[125].LocalZones[0].Type)
+		require.Equal(t, "slave", zones[149].LocalZones[0].Type)
+	})
+
+	t.Run("sort by zone type desc", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		zones, total, err := GetZones(db, filter, string(LocalZoneType), SortDirDesc, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
+		// Zones should be sorted by local zone type in descending order.
+		require.Equal(t, "slave", zones[0].LocalZones[0].Type)
+		require.Equal(t, "secondary", zones[25].LocalZones[0].Type)
+		require.Equal(t, "primary", zones[50].LocalZones[0].Type)
+		require.Equal(t, "primary", zones[75].LocalZones[0].Type)
+		require.Equal(t, "primary", zones[100].LocalZones[0].Type)
+		require.Equal(t, "master", zones[125].LocalZones[0].Type)
+		require.Equal(t, "master", zones[149].LocalZones[0].Type)
 	})
 }
 
