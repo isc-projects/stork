@@ -288,11 +288,11 @@ describe('SubnetsPageComponent', () => {
 
         const getSubnetsSpy = spyOn(dhcpService, 'getSubnets')
         // Prepare response when no filtering is applied.
-        getSubnetsSpy.withArgs(0, 10, null, null, null, null).and.returnValue(of(fakeResponses[0]))
+        getSubnetsSpy.withArgs(0, 10, null, null, null, null, null, null).and.returnValue(of(fakeResponses[0]))
         // Prepare response when subnets are filtered by text.
-        getSubnetsSpy.withArgs(0, 10, null, null, null, '1.0.0.0/16').and.returnValue(of(fakeResponses[1]))
+        getSubnetsSpy.withArgs(0, 10, null, null, null, '1.0.0.0/16', null, null).and.returnValue(of(fakeResponses[1]))
         // Prepare response when subnets are filtered by subnet Id.
-        getSubnetsSpy.withArgs(0, 10, null, 5, null, null).and.returnValue(of(fakeResponses[1]))
+        getSubnetsSpy.withArgs(0, 10, null, 5, null, null, null, null).and.returnValue(of(fakeResponses[1]))
 
         const updateSubnetBeginResp: any = {
             id: 123,
@@ -395,7 +395,7 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        expect(dhcpService.getSubnets).toHaveBeenCalledWith(0, 10, null, 5, null, null)
+        expect(dhcpService.getSubnets).toHaveBeenCalledWith(0, 10, null, 5, null, null, null, null)
         // One subnet record is expected after filtering.
         expect(component.table().dataCollection).toBeTruthy()
         expect(component.table().dataCollection.length).toBe(1)

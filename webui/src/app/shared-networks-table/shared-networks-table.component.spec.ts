@@ -282,19 +282,19 @@ describe('SharedNetworksTableComponent', () => {
         ]
         getNetworksSpy = spyOn(dhcpService, 'getSharedNetworks')
         // Prepare response when no filtering is applied.
-        getNetworksSpy.withArgs(0, 10, null, null, null).and.returnValue(of(fakeResponses[0]))
+        getNetworksSpy.withArgs(0, 10, null, null, null, null, null).and.returnValue(of(fakeResponses[0]))
         // Prepare response when shared networks are filtered by text to get an item without stats.
-        getNetworksSpy.withArgs(0, 10, null, null, 'frog-no-stats').and.returnValue(of(fakeResponses[1]))
+        getNetworksSpy.withArgs(0, 10, null, null, 'frog-no-stats', null, null).and.returnValue(of(fakeResponses[1]))
         // Prepare response when shared networks are filtered by text to get an item with 4 subnets.
-        getNetworksSpy.withArgs(0, 10, null, null, 'cat').and.returnValue(of(fakeResponses[2]))
+        getNetworksSpy.withArgs(0, 10, null, null, 'cat', null, null).and.returnValue(of(fakeResponses[2]))
         // Prepare responses for table filtering tests.
-        getNetworksSpy.withArgs(0, 10, 5, null, 'cat').and.returnValue(of(fakeResponses[2]))
-        getNetworksSpy.withArgs(0, 10, 5, 6, 'cat').and.returnValue(of(fakeResponses[2]))
-        getNetworksSpy.withArgs(0, 10, 1, null, null).and.returnValue(of(fakeResponses[2]))
+        getNetworksSpy.withArgs(0, 10, 5, null, 'cat', null, null).and.returnValue(of(fakeResponses[2]))
+        getNetworksSpy.withArgs(0, 10, 5, 6, 'cat', null, null).and.returnValue(of(fakeResponses[2]))
+        getNetworksSpy.withArgs(0, 10, 1, null, null, null, null).and.returnValue(of(fakeResponses[2]))
 
         fixture.detectChanges()
 
-        component.clearTableFiltering()
+        component.table?.clear()
         fixture.detectChanges()
     })
 
@@ -310,7 +310,7 @@ describe('SharedNetworksTableComponent', () => {
         fixture.detectChanges()
 
         // Data loading should be done.
-        expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
+        expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
         expect(component.dataLoading).toBeFalse()
         // Records count should be updated.
         expect(component.totalRecords).toBe(10496)
@@ -322,7 +322,7 @@ describe('SharedNetworksTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
+        expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
         const stats: { [key: string]: BigInt } = component.dataCollection[0].stats as any
         expect(stats['assigned-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
@@ -341,7 +341,7 @@ describe('SharedNetworksTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
+        expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
         const stats: { [key: string]: BigInt } = component.dataCollection[0].subnets[0].stats as any
         expect(stats['assigned-addresses']).toBe(BigInt('42'))
         expect(stats['total-addresses']).toBe(
@@ -360,7 +360,7 @@ describe('SharedNetworksTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'frog-no-stats')
+        expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'frog-no-stats', null, null)
         expect(component.dataCollection[0].stats).toBeUndefined()
         // No throw
     })
@@ -389,7 +389,7 @@ describe('SharedNetworksTableComponent', () => {
         await fixture.whenStable()
         fixture.detectChanges()
 
-        expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'cat')
+        expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'cat', null, null)
         expect(component.dataCollection.length).toBe(1)
         expect(component.dataCollection[0].subnets.length).toBe(4)
 

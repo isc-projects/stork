@@ -70,7 +70,9 @@ describe('MachinesPageComponent', () => {
             limit?: number,
             text?: string,
             app?: string,
-            authorized?: boolean
+            authorized?: boolean,
+            sortField?: string,
+            sortDir?: number
         ) => Observable<{ items?: Array<Partial<Machine>>; total?: number }>
     >
     let getMachinesServerTokenSpy: jasmine.Spy<() => Observable<GetMachinesServerToken200Response>>
@@ -123,8 +125,8 @@ describe('MachinesPageComponent', () => {
         ])
 
         getMachinesSpy = servicesApi.getMachines.and.returnValue(of(getAllMachinesResp))
-        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getAuthorizedMachinesResp))
-        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, true, null, null).and.returnValue(of(getAuthorizedMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, false, null, null).and.returnValue(of(getUnauthorizedMachinesResp))
 
         getMachinesServerTokenSpy = servicesApi.getMachinesServerToken.and.returnValue(of(serverTokenResp))
         servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(3))
@@ -701,8 +703,8 @@ describe('MachinesPageComponent', () => {
             items: [],
             total: 0,
         }
-        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getMachinesResp))
-        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, true, null, null).and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, false, null, null).and.returnValue(of(getMachinesResp))
 
         // Simulate disabled machine registration.
         const getSettingsResp: any = {
@@ -743,8 +745,8 @@ describe('MachinesPageComponent', () => {
             items: [],
             total: 0,
         }
-        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getMachinesResp))
-        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, true, null, null).and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, false, null, null).and.returnValue(of(getMachinesResp))
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
