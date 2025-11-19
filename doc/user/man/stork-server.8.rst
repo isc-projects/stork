@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
 
 Description
 ~~~~~~~~~~~
@@ -154,6 +154,9 @@ variables are listed in square brackets, where applicable):
 
 ``--rest-tls-ca``
    Specifies the Certificate Authority file to be used with a mutual TLS authority. ``[$STORK_REST_TLS_CA_CERTIFICATE]``
+
+``--rest-tls-1-2-enabled``
+   Enables TLS 1.2 support for clients that do not support TLS 1.3. Disabled by default. ``[$STORK_REST_TLS_1_2_ENABLED]``
 
 ``--rest-static-files-dir``
    Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``
