@@ -17,7 +17,7 @@ func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsPa
 	dbSettingsMap, err := dbmodel.GetAllSettings(r.DB)
 	if err != nil {
 		msg := "Cannot get global settings"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := settings.NewGetSettingsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

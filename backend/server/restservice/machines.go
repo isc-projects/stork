@@ -295,7 +295,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get machine with ID %d from db", params.ID)
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -373,8 +373,8 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 
 	machines, err := r.getMachines(start, limit, params.Text, params.Authorized, "", dbmodel.SortDirAny)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get machines from db"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetMachinesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -391,8 +391,8 @@ func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetM
 	authorized := true
 	dbMachines, err := dbmodel.GetAllMachinesNoRelations(r.DB, &authorized)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get machines directory from the database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetMachinesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -419,8 +419,8 @@ func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.G
 	authorized := true
 	dbMachines, err := dbmodel.GetAllMachinesWithRelations(r.DB, &authorized, dbmodel.MachineRelationDaemonAccessPoints)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get machines apps versions from the database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetMachinesAppsVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -443,8 +443,8 @@ func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.G
 func (r *RestAPI) GetUnauthorizedMachinesCount(ctx context.Context, params services.GetUnauthorizedMachinesCountParams) middleware.Responder {
 	count, err := dbmodel.GetUnauthorizedMachinesCount(r.DB)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get a number of the unauthorized machines from the database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetUnauthorizedMachinesCountDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -468,8 +468,8 @@ func (r *RestAPI) checkServerToken(serverToken string, allowEmpty bool) (bool, i
 	}
 	dbServerToken, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerToken)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot retrieve server token from database"
+		log.WithError(err).Error(msg)
 		return false, http.StatusInternalServerError, msg
 	}
 	if dbServerToken == nil {
@@ -493,8 +493,8 @@ func (r *RestAPI) checkServerToken(serverToken string, allowEmpty bool) (bool, i
 func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachineParams) middleware.Responder {
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get machine with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -769,7 +769,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 	dbMachine, err := dbmodel.GetMachineByIDWithRelations(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get machine with ID %d from db", params.ID)
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -808,7 +808,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 	err = r.Agents.Ping(ctx2, dbMachine)
 	if err != nil {
 		msg := "Cannot ping machine"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -859,8 +859,8 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get machine with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -906,7 +906,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	dbMachine.Authorized = params.Machine.Authorized
 	_, err = r.DB.Model(dbMachine).WherePK().Update()
 	if err != nil {
-		log.Errorf("Cannot update machine: %s", err)
+		log.WithError(err).Error("Cannot update machine")
 		msg := fmt.Sprintf("Cannot update machine with ID %d in db", params.ID)
 		rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -947,8 +947,8 @@ func (r *RestAPI) GetMachinesServerToken(ctx context.Context, params services.Ge
 	// get server token from database
 	dbServerToken, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerToken)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot retrieve server token from database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetMachinesServerTokenDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -984,8 +984,8 @@ func (r *RestAPI) RegenerateMachinesServerToken(ctx context.Context, params serv
 	// generate new server token
 	dbServerToken, err := certs.GenerateServerToken(r.DB)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot regenerate server token"
+		log.WithError(err).Error(msg)
 		rsp := services.NewRegenerateMachinesServerTokenDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1015,8 +1015,8 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		rsp := services.NewDeleteMachineOK()
 		return rsp
 	} else if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot delete machine %d", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1025,8 +1025,8 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 
 	err = dbmodel.DeleteMachine(r.DB, dbMachine)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot delete machine %d", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1047,8 +1047,7 @@ func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachine
 	if err != nil {
 		status := http.StatusInternalServerError
 		statusMessage := fmt.Sprintf("Cannot dump machine %d", params.ID)
-
-		log.Error(err)
+		log.WithError(err).Error(statusMessage)
 		rsp := services.NewGetMachineDumpDefault(status).WithPayload(&models.APIError{
 			Message: &statusMessage,
 		})
@@ -1492,8 +1491,8 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 	}
 	apps, err := r.getApps(start, limit, params.Text, "", dbmodel.SortDirAny, appTypes...)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get apps from db"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAppsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1509,8 +1508,8 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 func (r *RestAPI) GetAppsDirectory(ctx context.Context, params services.GetAppsDirectoryParams) middleware.Responder {
 	dbDaemons, err := dbmodel.GetAllDaemons(r.DB)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get apps directory from the database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAppsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1582,7 +1581,7 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	dbDaemons, err := dbmodel.GetDaemonsByVirtualAppID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get app with ID %d from db", params.ID)
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAppDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1745,8 +1744,8 @@ func getKeaServicesStatus(db *dbops.PgDB, daemons []*dbmodel.Daemon) *models.Ser
 func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetAppServicesStatusParams) middleware.Responder {
 	dbDaemons, err := dbmodel.GetDaemonsByVirtualAppID(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get app with ID %d from the database", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAppServicesStatusDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1791,8 +1790,8 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 	// should be returned, i.e. the information stored in the app table.
 	dbDaemons, err := dbmodel.GetAllDaemons(r.DB)
 	if err != nil {
-		log.Error(err)
-		msg := "Cannot get all apps from db"
+		msg := "Cannot get all daemons from db"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAppsStatsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1843,8 +1842,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	filters.SetIPv6Family()
 	subnets6, err := r.getSubnets(0, 5, filters, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get IPv6 subnets from db"
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1854,8 +1853,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get list of mostly utilized shared networks
 	sharedNetworks4, err := r.getSharedNetworks(0, 5, 0, 4, nil, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get IPv4 shared networks from db"
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1864,8 +1863,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 
 	sharedNetworks6, err := r.getSharedNetworks(0, 5, 0, 6, nil, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get IPv6 shared networks from db"
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1875,8 +1874,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get dhcp statistics
 	stats, err := dbmodel.GetAllStats(r.DB)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get statistics from db"
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1899,8 +1898,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get kea apps and daemons statuses
 	dbDaemons, err := dbmodel.GetDaemonsByName(r.DB, daemonname.DHCPv4, daemonname.DHCPv6)
 	if err != nil {
-		log.Error(err)
-		msg := "Cannot get statistics from db"
+		msg := "Cannot get DHCP daemons from db"
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -1989,8 +1988,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemonParams) middleware.Responder {
 	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewUpdateDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -2082,8 +2081,8 @@ func (r *RestAPI) GetAccessPointKey(ctx context.Context, params services.GetAcce
 
 	accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointType(params.Type))
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot retrieve access point from database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAccessPointKeyDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

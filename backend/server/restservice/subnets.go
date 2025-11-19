@@ -549,7 +549,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	subnets, err := r.getSubnets(start, limit, filters, "", dbmodel.SortDirAsc)
 	if err != nil {
 		msg := "Cannot get subnets from db"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetSubnetsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -599,7 +599,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
 		msg := "Problem with fetching Kea daemons from the database"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		return nil, nil, nil, nil, nil, http.StatusInternalServerError, msg
 	}
 	sharedNetworks, err := dbmodel.GetAllSharedNetworks(r.DB, 0)
@@ -993,7 +993,7 @@ func (r *RestAPI) DeleteSubnet(ctx context.Context, params dhcp.DeleteSubnetPara
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
 		msg := "Problem with creating transaction context for deleting the subnet"
-		log.WithError(err).Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewDeleteSubnetDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

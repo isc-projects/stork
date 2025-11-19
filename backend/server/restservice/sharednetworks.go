@@ -349,7 +349,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, "", dbmodel.SortDirAsc)
 	if err != nil {
 		msg := "Cannot get shared network from db"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetSharedNetworksDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -722,7 +722,7 @@ func (r *RestAPI) DeleteSharedNetwork(ctx context.Context, params dhcp.DeleteSha
 	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
 	if err != nil {
 		msg := "Problem with creating transaction context for deleting the shared network"
-		log.WithError(err).Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewDeleteSharedNetworkDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

@@ -14,7 +14,7 @@ import (
 )
 
 func handleSearchError(err error, text string) middleware.Responder {
-	log.Error(err)
+	log.WithError(err).Error(text)
 	rsp := search.NewSearchRecordsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 		Message: &text,
 	})

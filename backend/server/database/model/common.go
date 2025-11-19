@@ -59,7 +59,7 @@ func upsertInTransaction(tx *pg.Tx, id int64, model interface{}) (err error) {
 		}
 	}
 
-	return err
+	return errors.WithStack(err)
 }
 
 // Type for storing utilization in a smallint column. The utilization range is
