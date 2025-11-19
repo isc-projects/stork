@@ -68,6 +68,8 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 					statsExpr = fmt.Sprintf("(%s.stats->>'assigned-pds')::numeric", escapedTableName)
 				case PDUtilization:
 					statsExpr = fmt.Sprintf("%s.pd_utilization", escapedTableName)
+				default:
+					// NO-OP
 				}
 				switch CustomSortFieldEnum(sortField) {
 				case TotalAddresses:

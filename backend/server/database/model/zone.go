@@ -237,25 +237,9 @@ const (
 	LocalZoneType   ZoneSortField = "distinct_lz.type"
 )
 
-// Retrieves a list of zones from the database with optional relations and filtering.
-// The ORM-based implementation may result in multiple queries when deep relations
-// (with daemon) are used. The only alternative would be raw queries.
-// However, raw queries don't improve performance of getting the zones for one
-// relation (LocalZones). They could possibly improve the performance when cascaded
-// relations (i.e., LocalZones.Daemon) are used. Unfortunately, it would significantly
-// complicate the implementation. Note that this function is primarily used for
-// paging zones, so the number of records is typically low, and the performance gain
-// would be negligible.
-func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortDirEnum, relations ...ZoneRelation) ([]*Zone, int, error) { //nolint: gocyclo
-	var zones []*Zone
-	q := db.Model(&zones).Group("zone.id")
-	// Add relations.
-	for _, relation := range relations {
-		q = q.Relation(string(relation))
-	}
-	// Order expression.
-	orderExpr, _ := prepareOrderExpr("zone", sortField, sortDir)
-	q = q.OrderExpr(orderExpr)
+// Helper function adding appropriate JOINs for sorting done in GetZones.
+// This code was extracted from GetZones due to gocyclo linter warning.
+func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
 	if ZoneSortField(sortField) == LocalZoneSerial {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
@@ -272,6 +256,31 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortD
 		q = q.Join("LEFT JOIN (?) AS distinct_lz", sortSubquery).JoinOn("zone.id = distinct_lz.zone_id")
 		q = q.Group("distinct_lz.type")
 	}
+	return q
+}
+
+// Retrieves a list of zones from the database with optional relations and filtering.
+// The ORM-based implementation may result in multiple queries when deep relations
+// (with daemon) are used. The only alternative would be raw queries.
+// However, raw queries don't improve performance of getting the zones for one
+// relation (LocalZones). They could possibly improve the performance when cascaded
+// relations (i.e., LocalZones.Daemon) are used. Unfortunately, it would significantly
+// complicate the implementation. Note that this function is primarily used for
+// paging zones, so the number of records is typically low, and the performance gain
+// would be negligible.
+// sortField allows indicating sort column in database and sortDir allows picking the
+// order of sorting.
+func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortDirEnum, relations ...ZoneRelation) ([]*Zone, int, error) { //nolint: gocyclo
+	var zones []*Zone
+	q := db.Model(&zones).Group("zone.id")
+	// Add relations.
+	for _, relation := range relations {
+		q = q.Relation(string(relation))
+	}
+	// Order expression.
+	orderExpr, _ := prepareOrderExpr("zone", sortField, sortDir)
+	q = q.OrderExpr(orderExpr)
+	q = addJoinForSorting(db, q, sortField)
 
 	// Filtering is optional.
 	if filter == nil {
