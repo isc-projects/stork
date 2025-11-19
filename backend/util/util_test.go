@@ -479,6 +479,33 @@ func TestLoggingLevel(t *testing.T) {
 	}
 }
 
+// Test that the stack trace is added to the log entry when an error is logged.
+// The stack trace should not be multiline.
+func TestLoggingErrorStackTrace(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	SetupLogging()
+
+	// Act
+	stdoutRaw, stderr, err := testutil.CaptureOutput(func() {
+		log.WithError(errors.New("test error")).Error("test log")
+	})
+
+	// Assert
+	stdout := string(stdoutRaw)
+	require.NoError(t, err)
+	require.Empty(t, stderr)
+	require.Contains(t, stdout, "error=\"test error\"")
+	require.Contains(t, stdout, "stackTrace=")
+	require.Contains(t, stdout, "isc.org/stork/util.TestLoggingErrorStackTrace.func1")
+	// The log message ends with a newline, but except that, there should be no
+	// newlines.
+	require.NotContains(t, stdout[:len(stdout)-1], "\n")
+	require.Contains(t, stdout, "\\n")
+}
+
 // Test that the errors are combined properly.
 func TestCombineErrors(t *testing.T) {
 	// Arrange
