@@ -20,7 +20,8 @@ import (
 func GetTLSConfig(sslMode, host, sslCert, sslKey, sslRootCert string) (*tls.Config, error) {
 	verifyCAOnly := false
 	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
+		// TLS 1.3 is supported till at least PostgreSQL 9.5.
+		MinVersion: tls.VersionTLS13,
 	}
 	switch sslMode {
 	case "require":

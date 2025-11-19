@@ -95,7 +95,8 @@ func (c *httpClient) getTransport() *http.Transport {
 	return c.client.Transport.(*http.Transport)
 }
 
-// Creates a client to contact with Kea Control Agent or named statistics-channel.
+// Creates a client to contact with Kea API, named statistics-channel, and
+// Stork server API (during agent registration).
 func NewHTTPClient(config HTTPClientConfig) *httpClient {
 	transport := &http.Transport{}
 	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
@@ -107,7 +108,7 @@ func NewHTTPClient(config HTTPClientConfig) *httpClient {
 	}
 
 	transport.TLSClientConfig = &tls.Config{
-		MinVersion: tls.VersionTLS12,
+		MinVersion: tls.VersionTLS13,
 		//nolint:gosec // It may be insecure, but it is required in some cases.
 		InsecureSkipVerify: config.SkipTLSVerification,
 		RootCAs:            config.TLSRootCA,

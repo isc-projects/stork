@@ -35,8 +35,8 @@ func getExpectedSwitches() []string {
 		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout",
 		"--rest-max-header-size", "--rest-max-body-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
-		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--initial-puller-interval",
-		"--env-file", "--use-env-file", "--db-password",
+		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--rest-tls-1-2-enabled",
+		"--initial-puller-interval", "--env-file", "--use-env-file", "--db-password",
 	}
 }
 
@@ -127,6 +127,7 @@ func TestNewStorkServer(t *testing.T) {
 		"--rest-tls-certificate", "tlscert",
 		"--rest-tls-key", "tlskey",
 		"--rest-tls-ca", "tlsca",
+		"--rest-tls-1-2-enabled", "true",
 		"--rest-static-files-dir", "staticdir",
 		"--initial-puller-interval", "54",
 		"--hook-directory", "hookdir",
@@ -160,6 +161,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "tlscert", ss.RestAPISettings.TLSCertificate)
 	require.EqualValues(t, "tlskey", ss.RestAPISettings.TLSCertificateKey)
 	require.EqualValues(t, "tlsca", ss.RestAPISettings.TLSCACertificate)
+	require.True(t, ss.RestAPISettings.TLS12Enabled)
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
 	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
 	require.EqualValues(t, "hookdir", ss.GeneralSettings.HookDirectory)

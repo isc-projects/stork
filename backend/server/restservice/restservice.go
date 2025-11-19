@@ -61,6 +61,7 @@ type RestAPISettings struct {
 	TLSCertificate    flags.Filename `long:"rest-tls-certificate" description:"The certificate to use for secure connections" env:"STORK_REST_TLS_CERTIFICATE"`
 	TLSCertificateKey flags.Filename `long:"rest-tls-key" description:"The private key to use for secure connections" env:"STORK_REST_TLS_PRIVATE_KEY"`
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
+	TLS12Enabled      bool           `long:"rest-tls-1-2-enabled" description:"Enable TLS 1.2 support for clients that do not support TLS 1.3" env:"STORK_REST_TLS_1_2_ENABLED"`
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
 	BaseURL        string `long:"rest-base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the rest-base-url" default:"/" env:"STORK_REST_BASE_URL"`
@@ -241,8 +242,6 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 }
 
 func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
-	var err error
-
 	// Inspired by https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go
 	httpServer.TLSConfig = &tls.Config{
 		// Only use curves which have assembly implementations
@@ -250,21 +249,26 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		CurvePreferences: []tls.CurveID{tls.CurveP256},
 		// Use modern tls mode https://wiki.mozilla.org/Security/Server_Side_TLS#Modern_compatibility
 		NextProtos: []string{"h2", "http/1.1"},
-		// https://www.owasp.org/index.php/Transport_Layer_Protection_Cheat_Sheet#Rule_-_Only_Support_Strong_Protocols
-		MinVersion: tls.VersionTLS12,
+		// https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html
+		MinVersion: tls.VersionTLS13,
+	}
+
+	if s.TLS12Enabled {
+		httpServer.TLSConfig.MinVersion = tls.VersionTLS12
 		// These cipher suites support Forward Secrecy: https://en.wikipedia.org/wiki/Forward_secrecy
-		CipherSuites: []uint16{
+		httpServer.TLSConfig.CipherSuites = []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
 			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-		},
+		}
 	}
 
 	// build standard config from server options
 	if s.TLSCertificate != "" && s.TLSCertificateKey != "" {
+		var err error
 		httpServer.TLSConfig.Certificates = make([]tls.Certificate, 1)
 		httpServer.TLSConfig.Certificates[0], err = tls.LoadX509KeyPair(string(s.TLSCertificate), string(s.TLSCertificateKey))
 		if err != nil {
