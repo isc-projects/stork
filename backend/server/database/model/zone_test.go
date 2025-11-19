@@ -299,7 +299,8 @@ func TestGetZones(t *testing.T) {
 		filter := &GetZonesFilter{
 			Limit: storkutil.Ptr(30),
 		}
-		zones1, total, err := GetZones(db, filter, "", SortDirAny, ZoneRelationLocalZones)
+		// Let's use default sorting used by restservice.GetZones, i.e. by rname in ascending order.
+		zones1, total, err := GetZones(db, filter, string(RName), SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones1, 30)
@@ -307,7 +308,8 @@ func TestGetZones(t *testing.T) {
 		// Use the 29th zone as a start (lower bound) for another fetch.
 		filter.LowerBound = storkutil.Ptr(zones1[28].Name)
 		filter.Limit = storkutil.Ptr(20)
-		zones2, total, err := GetZones(db, filter, "", SortDirAny, ZoneRelationLocalZones)
+		// Let's use default sorting used by restservice.GetZones, i.e. by rname in ascending order.
+		zones2, total, err := GetZones(db, filter, string(RName), SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 121, total)
 		require.Len(t, zones2, 20)
@@ -341,9 +343,10 @@ func TestGetZones(t *testing.T) {
 		require.Equal(t, zones1[19].Name, zones2[0].Name)
 	})
 
-	t.Run("sort", func(t *testing.T) {
+	t.Run("default sort", func(t *testing.T) {
 		filter := &GetZonesFilter{}
-		zones, total, err := GetZones(db, filter, "", SortDirAny, ZoneRelationLocalZones)
+		// Let's use default sorting used by restservice.GetZones, i.e. by rname in ascending order.
+		zones, total, err := GetZones(db, filter, string(RName), SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)
@@ -352,6 +355,21 @@ func TestGetZones(t *testing.T) {
 				// Compare the current zone with the previous zone. The current zone must
 				// always be ordered after the previous.
 				require.Negative(t, storkutil.CompareNames(zones[i-1].Name, zones[i].Name))
+			}
+		}
+	})
+
+	t.Run("sort by rname desc", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		zones, total, err := GetZones(db, filter, string(RName), SortDirDesc, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
+		for i := range zones {
+			if i > 0 {
+				// Compare the current zone with the previous zone. The current zone must
+				// always be ordered before the previous.
+				require.Negative(t, storkutil.CompareNames(zones[i].Name, zones[i-1].Name))
 			}
 		}
 	})
