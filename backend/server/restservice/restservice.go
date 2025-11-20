@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -519,7 +520,15 @@ func (r *RestAPI) Serve() (err error) {
 		httpServer.IdleTimeout = s.CleanupTimeout
 	}
 
-	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, s.BaseURL, r.EventCenter, int64(r.Settings.MaxBodySize))
+	serverAddress := url.URL{
+		Scheme: "http",
+		Host:   net.JoinHostPort(r.Host, strconv.Itoa(r.Port)),
+		Path:   r.Settings.BaseURL,
+	}
+	if r.TLS {
+		serverAddress.Scheme = "https"
+	}
+	httpServer.Handler = r.GlobalMiddleware(r.handler, serverAddress, s.StaticFilesDir, r.EventCenter, int64(r.Settings.MaxBodySize))
 
 	if r.TLS {
 		err = prepareTLS(httpServer, s)

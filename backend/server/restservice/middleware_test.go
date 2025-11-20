@@ -113,7 +113,12 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	handler := agentInstallerMiddleware(nextHandler, sb.BasePath)
+	url := url.URL{
+		Scheme: "http",
+		Host:   "localhost",
+	}
+
+	handler := agentInstallerMiddleware(nextHandler, url, sb.BasePath)
 
 	// let do some request but when there is no folder with static content
 	t.Run("missing package folder", func(t *testing.T) {
@@ -257,6 +262,11 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 			defer os.Remove(f.Name())
 		}
 
+		// change handler to use HTTPS server address
+		url := url
+		url.Scheme = "https"
+		handler := agentInstallerMiddleware(nextHandler, url, sb.BasePath)
+
 		// let do some request
 		req := httptest.NewRequest("GET", "https://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
@@ -285,6 +295,48 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		handler.ServeHTTP(w, req)
 		require.True(t, requestReceived)
 	})
+}
+
+// Check if the installation script is not generated from data provided by the
+// user in the HTTP request (to avoid code injection).
+func TestAgentInstallerMiddlewareServerAddressFromConfig(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	_, _ = sb.Write("assets/pkgs/isc-stork-agent.deb", "")
+
+	requestReceived := false
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestReceived = true
+	})
+
+	url := url.URL{
+		Scheme: "https",
+		Host:   "stork.example.com:8443",
+		Path:   "/subdir",
+	}
+
+	handler := agentInstallerMiddleware(nextHandler, url, sb.BasePath)
+
+	// Act
+	req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Assert
+	resp := w.Result()
+	defer resp.Body.Close()
+	require.EqualValues(t, 200, resp.StatusCode)
+	require.False(t, requestReceived)
+
+	contentRaw, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	content := string(contentRaw)
+
+	// The script should contain the server address from the configuration,
+	// not from the HTTP Host header.
+	require.Contains(t, content, "https://stork.example.com:8443/subdir")
+	require.NotContains(t, content, "http://localhost")
 }
 
 // Check if metricsMiddleware works and handles requests correctly.

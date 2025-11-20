@@ -167,7 +167,10 @@ func sseMiddleware(next http.Handler, eventCenter eventcenter.EventCenter) http.
 }
 
 // Install a middleware that is serving Agent installer.
-func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Handler {
+// Accepts a server address that should be a full URL to the Stork server
+// (including scheme, port, and optionally a URL segment if Stork is served
+// from a subdirectory) and a directory where static files are stored.
+func agentInstallerMiddleware(next http.Handler, serverAddress url.URL, staticFilesDir string) http.Handler {
 	// Agent installer as Bash script.
 	const agentInstallerScript = `#!/bin/sh
 set -e -x
@@ -254,16 +257,6 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 						"on the systems using packages other than these: %s",
 					strings.Join(availableExtensions, ", "),
 				)
-			}
-
-			scheme := "http"
-			if r.TLS != nil {
-				scheme = "https"
-			}
-
-			serverAddress := url.URL{
-				Scheme: scheme,
-				Host:   r.Host,
 			}
 
 			data := map[string]string{
@@ -380,13 +373,13 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
-func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir, baseURL string, eventCenter eventcenter.EventCenter, maxBodySize int64) http.Handler {
+func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, staticFilesDir string, eventCenter eventcenter.EventCenter, maxBodySize int64) http.Handler {
 	// last handler is executed first for incoming request
 	handler = fileServerMiddleware(handler, staticFilesDir)
-	handler = agentInstallerMiddleware(handler, staticFilesDir)
+	handler = agentInstallerMiddleware(handler, serverAddress, staticFilesDir)
 	handler = sseMiddleware(handler, eventCenter)
 	handler = metricsMiddleware(handler, r.MetricsCollector)
-	handler = trimBaseURLMiddleware(handler, baseURL)
+	handler = trimBaseURLMiddleware(handler, serverAddress.Path)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = securityHeadersMiddleware(handler)
 	handler = loggingMiddleware(handler)
