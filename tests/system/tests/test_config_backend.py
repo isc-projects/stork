@@ -3,7 +3,7 @@ from core.fixtures import kea_parametrize
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Server):
+def test_hosts_get_reservation_from_db(kea_service: Kea, server_service: Server):
     """Tests that the host reservations are fetched from the host database by
     the hosts_cmds hook."""
     server_service.log_in_as_admin()
@@ -23,7 +23,7 @@ def test_get_host_reservation_from_host_db(kea_service: Kea, server_service: Ser
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_add_host_reservation(kea_service: Kea, server_service: Server):
+def test_hosts_add_reservation(kea_service: Kea, server_service: Server):
     """Tests that the new host reservation is inserted properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
@@ -57,7 +57,7 @@ def test_add_host_reservation(kea_service: Kea, server_service: Server):
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_add_host_reservation_with_dash_delimiter(
+def test_hosts_add_reservation_with_dash_delimiter(
     kea_service: Kea, server_service: Server
 ):
     """Tests that the new host reservation is inserted properly even if the
@@ -94,7 +94,7 @@ def test_add_host_reservation_with_dash_delimiter(
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: Server):
+def test_hosts_cancel_reservation_transaction(kea_service: Kea, server_service: Server):
     """Tests that the host reservation transactions are canceled properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
@@ -119,7 +119,7 @@ def test_cancel_host_reservation_transaction(kea_service: Kea, server_service: S
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_update_host_reservation(kea_service: Kea, server_service: Server):
+def test_hosts_update_reservation(kea_service: Kea, server_service: Server):
     """Tests that the host reservation is updated properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
@@ -159,7 +159,7 @@ def test_update_host_reservation(kea_service: Kea, server_service: Server):
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_migrate_host_reservations(kea_service: Kea, server_service: Server):
+def test_hosts_migrate_reservations(kea_service: Kea, server_service: Server):
     """Tests that the host reservations are migrated properly."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()

@@ -3,7 +3,7 @@ from typing import Tuple
 from core.wrappers import Server, Kea
 
 
-def test_get_ha_config_review_reports(
+def test_ha_get_config_review_reports(
     server_service: Server, ha_service: Tuple[Kea, Kea, Kea]
 ):
     """Test that the HA peer works properly in the system tests."""

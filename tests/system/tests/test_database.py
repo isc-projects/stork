@@ -5,7 +5,7 @@ from core.wrappers import Postgres, Server
 from core.fixtures import server_parametrize
 
 
-def test_recovery_after_database_connection_failed(
+def test_database_recovery_after_connection_failed(
     server_service: Server, postgres_service: Postgres
 ):
     """Test that the server is operational after temporary database connection failure."""
@@ -18,7 +18,7 @@ def test_recovery_after_database_connection_failed(
     server_service.overview()
 
 
-def test_recovery_after_database_shutdown(
+def test_database_recovery_after_shutdown(
     server_service: Server, postgres_service: Postgres
 ):
     """Test that the server is operational after database shutdown and restart."""
@@ -33,7 +33,7 @@ def test_recovery_after_database_shutdown(
 
 
 @server_parametrize("server")
-def test_interrupt_during_database_shutdown(
+def test_database_interrupt_during_shutdown(
     server_service: Server, postgres_service: Postgres
 ):
     """Test that the server is operational after database shutdown is interrupted."""

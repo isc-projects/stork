@@ -3,7 +3,7 @@ from core.wrappers import Server, Kea
 
 
 @kea_parametrize("agent-kea-config-review")
-def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea):
+def test_review_get_dhcp_config_reports(server_service: Server, kea_service: Kea):
     """Test that the Stork server performs Kea configuration review and returns
     the reports."""
     server_service.log_in_as_admin()
@@ -53,7 +53,7 @@ def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea
 
 
 @ha_parametrize("agent-kea-ha1-only-top-mt", "agent-kea-ha2-only-top-mt", None)
-def test_get_ha_only_top_mt_config_review_reports(server_service: Server, ha_service):
+def test_review_get_ha_only_top_mt_config_reports(server_service: Server, ha_service):
     """Test that the Stork server suggests to enable the HA multi-threading
     if the Kea is running in the multi-threading mode."""
     server_service.log_in_as_admin()
@@ -83,7 +83,7 @@ def test_get_ha_only_top_mt_config_review_reports(server_service: Server, ha_ser
 
 
 @ha_parametrize("agent-kea-ha1-mt", "agent-kea-ha2-mt", None)
-def test_get_ha_mt_config_review_reports(server_service: Server, ha_service):
+def test_review_get_ha_mt_config_reports(server_service: Server, ha_service):
     """Test that the Stork server suggests to use the dedicated listeners
     if the Kea HA is running in the multi-threading mode but the peers
     communicate over the Kea Control Agent."""

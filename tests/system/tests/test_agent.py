@@ -31,7 +31,7 @@ def test_agent_over_ipv6(server_service: Server, kea_service: Kea):
 
 
 @kea_parametrize("agent-kea-tls-optional-client-cert-no-verify")
-def test_communication_with_kea_over_secure_protocol(
+def test_agent_communication_with_kea_over_secure_protocol(
     server_service: Server, kea_service: Kea
 ):
     """Check if Stork agent communicates with Kea over HTTPS correctly.
@@ -46,7 +46,7 @@ def test_communication_with_kea_over_secure_protocol(
 
 
 @kea_parametrize("agent-kea-tls-required-client-cert-no-verify")
-def test_communication_with_kea_over_secure_protocol_non_trusted_client(
+def test_agent_communication_with_kea_over_secure_protocol_non_trusted_client(
     server_service: Server, kea_service: Kea
 ):
     """The Stork Agent uses self-signed TLS certificates over HTTPS, but the Kea
@@ -63,7 +63,7 @@ def test_communication_with_kea_over_secure_protocol_non_trusted_client(
 
 
 @kea_parametrize("agent-kea-tls-optional-client-cert-verify")
-def test_communication_with_kea_over_secure_protocol_require_trusted_cert(
+def test_agent_communication_with_kea_over_secure_protocol_require_trusted_cert(
     server_service: Server, kea_service: Kea
 ):
     """Check if Stork agent requires a trusted Kea cert if specific flag is not set.
@@ -79,7 +79,7 @@ def test_communication_with_kea_over_secure_protocol_require_trusted_cert(
 
 
 @kea_parametrize("agent-kea-hsts-header-over-insecure-protocol", min_version="2.7.5")
-def test_communication_with_kea_over_http_with_hsts_header_in_response(
+def test_agent_communication_with_kea_over_http_with_hsts_header_in_response(
     server_service: Server, kea_service: Kea
 ):
     """Check if Stork agent communicates with Kea over HTTP correctly when
@@ -94,7 +94,7 @@ def test_communication_with_kea_over_http_with_hsts_header_in_response(
 
 
 @kea_parametrize("agent-kea-hsts-header-over-secure-protocol", min_version="2.7.5")
-def test_communication_with_kea_over_https_with_hsts_header_in_response(
+def test_agent_communication_with_kea_over_https_with_hsts_header_in_response(
     server_service: Server, kea_service: Kea
 ):
     """
@@ -114,7 +114,7 @@ def test_communication_with_kea_over_https_with_hsts_header_in_response(
 
 
 @kea_parametrize("agent-kea-basic-auth-no-credentials")
-def test_communication_with_kea_using_basic_auth_no_credentials(
+def test_agent_communication_with_kea_using_basic_auth_no_credentials(
     server_service: Server, kea_service: Kea
 ):
     """
@@ -127,14 +127,14 @@ def test_communication_with_kea_using_basic_auth_no_credentials(
     # Trig forward command to Kea
     machine, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(machine.apps) == 1
-    app = machine.apps[0]
-    key = server_service.read_access_point_key(app.id)
-    assert key == ""
+    assert len(machine.apps) == 2
+    for app in machine.apps:
+        key = server_service.read_access_point_key(app.id)
+        assert key == ""
 
 
 @kea_parametrize("agent-kea-basic-auth")
-def test_communication_with_kea_using_basic_auth(
+def test_agent_communication_with_kea_using_basic_auth(
     server_service: Server, kea_service: Kea
 ):
     """
@@ -149,14 +149,14 @@ def test_communication_with_kea_using_basic_auth(
     leases = server_service.list_leases("192.0.2.1")
     assert leases.total == 1
 
-    assert len(machine.apps) == 1
+    assert len(machine.apps) == 2
     app = machine.apps[0]
     key = server_service.read_access_point_key(app.id)
     assert key == "foo"
 
 
 @kea_parametrize(suppress_registration=True)
-def test_kea_integer_overflow_in_statistics(kea_service: Kea):
+def test_agent_kea_integer_overflow_in_statistics(kea_service: Kea):
     """
     Kea from version ~2.3 no longer returns the negative number if the
     statistic value overflows the int64 range. Instead, it throws an error like
@@ -170,7 +170,7 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
 
     The big numbers support was added in Kea 2.5.3.
     """
-    kea_service.wait_for_detect_kea_applications()
+    kea_service.wait_for_detect_kea_daemons()
     kea_version = kea_service.get_version()
     metrics = kea_service.read_prometheus_metrics()
 
@@ -196,7 +196,7 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
 @kea_parametrize(
     "agent-kea-premium-subnet-commands-dhcp4-offline", suppress_registration=True
 )
-def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(
+def test_agent_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(
     kea_service: Kea,
 ):
     """
@@ -205,7 +205,7 @@ def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(
     The Stork agent should be able to fetch statistics from the DHCPv6 daemon
     and share the metrics labeled with the subnet prefix.
     """
-    kea_service.wait_for_detect_kea_applications(offline_dhcp4_daemons=1)
+    kea_service.wait_for_detect_kea_daemons(expected_daemons=1)
     metrics = kea_service.read_prometheus_metrics()
 
     # The subnet metrics should include the prefix label.

@@ -23,7 +23,7 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
     state, *_ = server_service.wait_for_next_machine_states()
 
     assert state.apps is not None
-    assert len(state.apps) == 1
+    assert len(state.apps) == 2
     assert len(state.apps[0].access_points) == 1
     assert state.apps[0].access_points[0].address == "127.0.0.1"
 

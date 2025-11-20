@@ -128,13 +128,15 @@ services:
       retries: 40
     volumes:
       - $PWD/tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - $PWD/tests/system/config/kea/kea-ctrl-agent-tls.json:/etc/kea/kea-ctrl-agent-tls.json
-      - $PWD/tests/system/config/kea/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
+      - $PWD/tests/system/config/kea/kea-dhcp4-control-socket.json:/etc/kea/kea-dhcp4-control-socket.json
+      - $PWD/tests/system/config/kea/kea-dhcp6-control-socket.json:/etc/kea/kea-dhcp6-control-socket.json
+      - $PWD/tests/system/config/kea/kea-tls.json:/etc/kea/kea-tls.json
+      - $PWD/tests/system/config/kea/kea-auth.json:/etc/kea/kea-auth.json
       - $IPWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - $IPWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - $PWD/tests/system/config/kea-multi-threading/multi-threading-disabled.json:/etc/kea/multi-threading.json
       - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading-disabled.json:/etc/kea/ha-multi-threading.json
-      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-ctrl-agent-http-headers.json
+      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-http-headers.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-hostcmds.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-subnetcmds.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp4.json
@@ -164,10 +166,18 @@ services:
     environment:
       STORK_AGENT_HOST: 3009:db8:1:42::100
 
-  agent-kea-tls-optional-client-cert-no-verify:
+  agent-kea-no-ca:
     extends: agent-kea
     volumes:
-      - $PWD/tests/system/config/kea-tls/optional-client-cert.json:/etc/kea/kea-ctrl-agent-tls.json
+      # Disable Kea CA in this image.
+      - /etc/supervisor/conf.d/kea-agent.conf
+      - $PWD/tests/system/config/kea-tls/kea-dhcp4-control-socket.json:/etc/kea/kea-dhcp4-control-socket.json
+      - $PWD/tests/system/config/kea-tls/kea-dhcp6-control-socket.json:/etc/kea/kea-dhcp6-control-socket.json
+
+  agent-kea-tls-optional-client-cert-no-verify:
+    extends: agent-kea-no-ca
+    volumes:
+      - $PWD/tests/system/config/kea-tls/optional-client-cert.json:/etc/kea/kea-tls.json
       - $PWD/tests/system/config/certs/cert.pem:/root/certs/cert.pem
       - $PWD/tests/system/config/certs/key.pem:/root/certs/key.pem
       - $PWD/tests/system/config/certs/CA:/root/certs/CA
@@ -177,7 +187,7 @@ services:
   agent-kea-tls-required-client-cert-no-verify:
     extends: agent-kea-tls-optional-client-cert-no-verify
     volumes:
-      - $PWD/tests/system/config/kea-tls/required-client-cert.json:/etc/kea/kea-ctrl-agent-tls.json
+      - $PWD/tests/system/config/kea-tls/required-client-cert.json:/etc/kea/kea-tls.json
 
   agent-kea-tls-optional-client-cert-verify:
     extends: agent-kea-tls-optional-client-cert-no-verify
@@ -185,14 +195,20 @@ services:
       STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "false"
 
   agent-kea-hsts-header-over-insecure-protocol:
-    extends: agent-kea
+    extends: agent-kea-no-ca
     volumes:
-      - $PWD/tests/system/config/kea-hsts-header/kea-ctrl-agent-http-headers.json:/etc/kea/kea-ctrl-agent-http-headers.json
+      - $PWD/tests/system/config/kea-hsts-header/kea-http-headers.json:/etc/kea/kea-http-headers.json
+      - $PWD/tests/system/config/kea-hsts-header/kea-dhcp4-control-socket.json:/etc/kea/kea-dhcp4-control-socket.json
+      - $PWD/tests/system/config/kea-hsts-header/kea-dhcp6-control-socket.json:/etc/kea/kea-dhcp6-control-socket.json
+      # DHCP daemons require the auth configuration to be present if HTTP
+      # socket is configured.
+      - $PWD/tests/system/config/kea-basic-auth/kea-auth.json:/etc/kea/kea-auth.json
+      - $PWD/tests/system/config/kea-basic-auth/kea-password-file.txt:/etc/kea/kea-password-file.txt
 
   agent-kea-hsts-header-over-secure-protocol:
     extends: agent-kea-tls-optional-client-cert-no-verify
     volumes:
-      - $PWD/tests/system/config/kea-hsts-header/kea-ctrl-agent-http-headers.json:/etc/kea/kea-ctrl-agent-http-headers.json
+      - $PWD/tests/system/config/kea-hsts-header/kea-http-headers.json:/etc/kea/kea-http-headers.json
 
   agent-kea-config-review:
     extends: agent-kea
@@ -201,19 +217,15 @@ services:
       - $PWD/tests/system/config/kea-config-review/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
 
   agent-kea-basic-auth-no-credentials:
-    extends: agent-kea
-    environment:
-      STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "true"
+    extends: agent-kea-tls-optional-client-cert-no-verify
     volumes:
-      - $PWD/tests/system/config/kea-basic-auth/kea-ctrl-agent-auth-no-clients.json:/etc/kea/kea-ctrl-agent-auth.json
+      - $PWD/tests/system/config/kea-basic-auth/kea-auth-no-clients.json:/etc/kea/kea-auth.json
 
   agent-kea-basic-auth:
-    extends: agent-kea
-    environment:
-      STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "true"
+    extends: agent-kea-tls-optional-client-cert-no-verify
     volumes:
-      - $PWD/tests/system/config/kea-basic-auth/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
-      - $PWD/tests/system/config/kea-basic-auth/kea-ctrl-agent-password-file.txt:/etc/kea/kea-ctrl-agent-password-file.txt
+      - $PWD/tests/system/config/kea-basic-auth/kea-auth.json:/etc/kea/kea-auth.json
+      - $PWD/tests/system/config/kea-basic-auth/kea-password-file.txt:/etc/kea/kea-password-file.txt
 
   agent-kea-premium:
     extends: agent-kea

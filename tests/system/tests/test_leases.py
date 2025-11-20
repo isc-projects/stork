@@ -1,26 +1,17 @@
 """System tests for the /leases API endpoint."""
 
-# pylint: disable=import-error,no-name-in-module
-# pylint: disable=unused-argument
 import ipaddress
+
 from core.wrappers import Server, Kea
 
 
 def test_search_leases(kea_service: Kea, server_service: Server):
     """Test various lease search queries"""
-
-    # Helper functions kept local to avoid extra imports
-    def _is_ipv6(ip: str) -> bool:
-        return ipaddress.ip_address(ip).version == 6
-
-    def _is_ipv4(ip: str) -> bool:
-        return ipaddress.ip_address(ip).version == 4
-
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
+    assert len(state.apps) == 3
     version_raw = state.apps[0].version
     version = tuple(int(x) for x in version_raw.split("."))
 
@@ -72,7 +63,7 @@ def test_search_leases(kea_service: Kea, server_service: Server):
         assert lease.hw_address is None
         assert lease.client_id is None
         assert lease.ip_address is not None
-        if _is_ipv6(lease.ip_address):
+        if ipaddress.ip_address(lease.ip_address).version == 6:
             assert lease.duid == "00:00:00"
         else:
             assert lease.duid is None

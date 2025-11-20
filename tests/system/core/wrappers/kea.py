@@ -62,51 +62,23 @@ class Kea(Agent):
         _, stdout, _ = self._compose.exec(self._service_name, ["kea-ctrl-agent", "-v"])
         return tuple(int(i) for i in stdout.strip().split("."))
 
-    def wait_for_detect_kea_applications(
-        self, expected_apps=1, offline_dhcp4_daemons=0, offline_dhcp6_daemons=0
-    ):
+    def wait_for_detect_kea_daemons(self, expected_daemons: int = 2):
         """
-        Wait for the Stork Agent to detect the Kea applications.
+        Wait for the Stork Agent to detect the Kea daemons.
 
-        It accepts the number of expected applications and waits until the
-        Stork agent detects them. For each application, it compares the number
-        of configured daemons in the Kea CA (control sockets) with the number
-        of active daemons detected by Stork agent.
-        If some daemons are expected to be offline, the number of offline
-        daemons can be specified.
+        It accepts the number of expected daemons and waits until the
+        Stork agent detects them.
         """
 
-        @wait_for_success(wait_msg="Waiting for the Kea applications to be detected...")
+        @wait_for_success(wait_msg="Waiting for the Kea daemons to be detected...")
         def worker():
             metrics = self.wait_for_next_prometheus_metrics()
 
-            # Wait for applications.
-            monitored_apps = Kea._get_metric_int_value(
-                metrics, "storkagent_appmonitor_monitored_kea_apps_total", 0
-            )
-            if monitored_apps < expected_apps:
-                raise NoSuccessException()
-
             # Wait for daemons.
-            (
-                active_dhcp4_daemons,
-                configured_dhcp4_daemons,
-                active_dhcp6_daemons,
-                configured_dhcp6_daemons,
-            ) = [
-                Kea._get_metric_int_value(metrics, m, 0)
-                for m in (
-                    "storkagent_promkeaexporter_active_dhcp4_daemons_total",
-                    "storkagent_promkeaexporter_configured_dhcp4_daemons_total",
-                    "storkagent_promkeaexporter_active_dhcp6_daemons_total",
-                    "storkagent_promkeaexporter_configured_dhcp6_daemons_total",
-                )
-            ]
-
-            if active_dhcp4_daemons + offline_dhcp4_daemons != configured_dhcp4_daemons:
-                raise NoSuccessException()
-
-            if active_dhcp6_daemons + offline_dhcp6_daemons != configured_dhcp6_daemons:
+            monitored_daemons = Kea._get_metric_int_value(
+                metrics, "storkagent_monitor_monitored_kea_daemons_total", 0
+            )
+            if monitored_daemons < expected_daemons:
                 raise NoSuccessException()
 
         worker()
