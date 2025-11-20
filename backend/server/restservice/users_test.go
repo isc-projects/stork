@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -992,7 +993,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
@@ -1005,7 +1006,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	params = users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
@@ -1013,6 +1014,23 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+
+	// An attempt to update the password with a new password that doesn't
+	// meet the password policy should also result in HTTP error 400 (Bad Request).
+	params = users.UpdateUserPasswordParams{
+		ID: int64(user.ID),
+		Passwords: &models.PasswordChange{
+			Newpassword: storkutil.Ptr(models.Password("short©")),
+			Oldpassword: storkutil.Ptr(models.Password("updatedPass")),
+		},
+	}
+	rsp = rapi.UpdateUserPassword(ctx, params)
+	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
+	defaultRsp = rsp.(*users.UpdateUserPasswordDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Contains(t, *defaultRsp.Payload.Message, "New password does not meet the password policy")
+	require.Contains(t, *defaultRsp.Payload.Message, "at least 8 characters")
+	require.Contains(t, *defaultRsp.Payload.Message, "contains invalid characters")
 }
 
 // Tests that updating the user password via REST API causes the change
@@ -1044,7 +1062,7 @@ func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
@@ -1092,6 +1110,33 @@ func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
 
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
+// Test that the password validation function works as expected.
+func TestValidatePassword(t *testing.T) {
+	passwordEmptyProblems := validatePassword("")
+	require.Len(t, passwordEmptyProblems, 1)
+	require.Contains(t, passwordEmptyProblems[0], "at least 8 characters")
+
+	passwordTooShortProblems := validatePassword("short")
+	require.Len(t, passwordTooShortProblems, 1)
+	require.Contains(t, passwordTooShortProblems[0], "at least 8 characters")
+
+	passwordTooLong := validatePassword(strings.Repeat("a", 121))
+	require.Len(t, passwordTooLong, 1)
+	require.Contains(t, passwordTooLong[0], "at most 120 characters")
+
+	passwordWithInvalidChars := validatePassword("®√©∆÷…ĺ„•¶")
+	require.Len(t, passwordWithInvalidChars, 1)
+	require.Contains(t, passwordWithInvalidChars[0], "contains invalid characters")
+
+	passwordWithManyProblems := validatePassword("®")
+	require.Len(t, passwordWithManyProblems, 2)
+	require.Contains(t, passwordWithManyProblems[0], "at least 8 characters")
+	require.Contains(t, passwordWithManyProblems[1], "contains invalid characters")
+
+	validPassword := validatePassword("password") // sic!
+	require.Empty(t, validPassword)
 }
 
 // Tests that multiple groups can be fetched from the database.

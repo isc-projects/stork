@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -567,7 +568,38 @@ func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams)
 	return users.NewDeleteUserOK().WithPayload(u)
 }
 
+// Regular expression defining valid characters in the password. It is the same
+// pattern as used in the UI.
+var validPasswordPattern *regexp.Regexp = regexp.MustCompile(`^[a-zA-Z0-9~` + "`" + `!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$`)
+
+// Validates the password policy requirements for the new password.
+// It must match the requirements defined in the UI.
+// See webui/src/app/password-change-page/password-change-page.component.ts.
+// Returns a list of validation error messages. If the list is empty,
+// the password meets the policy requirements.
+func validatePassword(password string) []string {
+	var validationErrors []string
+
+	// Check the minimum length.
+	if len(password) < 8 {
+		validationErrors = append(validationErrors, "password must be at least 8 characters long")
+	}
+
+	// Check the maximum length.
+	if len(password) > 120 {
+		validationErrors = append(validationErrors, "password must be at most 120 characters long")
+	}
+
+	// Check for allowed characters.
+	if !validPasswordPattern.MatchString(password) {
+		validationErrors = append(validationErrors, "password contains invalid characters")
+	}
+
+	return validationErrors
+}
+
 // Updates password of the given user in the database.
+// It validates if the new password meets the password policy requirements.
 func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUserPasswordParams) middleware.Responder {
 	id := int(params.ID)
 	passwords := params.Passwords
@@ -575,6 +607,18 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		log.Warnf("Failed to update password for user ID %d: missing data", id)
 
 		msg := "Failed to update password for user: missing data"
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusBadRequest).WithPayload(&rspErr)
+		return rsp
+	}
+
+	// Validate the new password against the password policy.
+	validationProblems := validatePassword(string(*passwords.Newpassword))
+	if len(validationProblems) > 0 {
+		log.WithField("userID", id).Infof("New password does not meet the password policy")
+		msg := fmt.Sprintf("New password does not meet the password policy: %s", strings.Join(validationProblems, ", "))
 		rspErr := models.APIError{
 			Message: &msg,
 		}

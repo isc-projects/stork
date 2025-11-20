@@ -20,6 +20,9 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 
 /**
  * This component allows the logged user to change the password.
+ * The password policy defined in this file must match the one
+ * implemented on the server side.
+ * See backend/server/restservice/users.go: validatePassword function.
  */
 @Component({
     selector: 'app-settings-page',
