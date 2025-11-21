@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core'
 import { ZoneRRs } from '../backend/model/zoneRRs'
 import { DNSService } from '../backend/api/dNS.service'
 import { lastValueFrom } from 'rxjs'
@@ -33,12 +33,21 @@ export class ZoneViewerFeederComponent {
 
     /**
      * Sets the flag indicating that the component should fetch the
-     * zone resource records.
+     * zone resource records and show the zone viewer, if not
+     * already fetched.
      */
     @Input({ required: true }) set active(active: boolean) {
-        if (active && !this._loaded) {
+        this._active = active
+        if (this._active && !this._loaded) {
             this._loadRRs()
         }
+    }
+
+    /**
+     * Returns the flag indicating that zone viewer should be displayed.
+     */
+    get active(): boolean {
+        return this._active
     }
 
     /**
@@ -72,11 +81,17 @@ export class ZoneViewerFeederComponent {
     zoneTransferAt: string = null
 
     /**
+     * Holds the flag indicating that the component is active (i.e., dialog box
+     * holding this component is visible).
+     */
+    private _active: boolean = false
+
+    /**
      * Holds the flag indicating that the zone resource records have been loaded.
      *
      * It is used to prevent loading the zone resource records multiple times.
      */
-    _loaded: boolean = false
+    private _loaded: boolean = false
 
     /**
      * Holds the flag indicating that the zone resource records are being loaded.

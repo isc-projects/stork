@@ -1,8 +1,14 @@
-<app-zone-viewer
-    [data]="zoneData"
-    [zoneTransferAt]="zoneTransferAt"
-    [loading]="loading"
-    [ngClass]="{ 'flex flex-auto': scrollHeight === 'flex' }"
-    [scrollHeight]="scrollHeight"
-    (refreshFromDNSClicked)="refreshFromDNS()"
-></app-zone-viewer>
+@if (active) {
+    <!-- Display the zone viewer only if the dialog box is visible. It ensures
+     that the virtual scroller is properly initialized when the dialog box is is shown.
+     Otherwise, the virtual scroller size may get invalid while the dialog is closed.
+     -->
+    <app-zone-viewer
+        [data]="zoneData"
+        [zoneTransferAt]="zoneTransferAt"
+        [loading]="loading"
+        [ngClass]="{ 'flex flex-auto': scrollHeight === 'flex' }"
+        [scrollHeight]="scrollHeight"
+        (refreshFromDNSClicked)="refreshFromDNS()"
+    ></app-zone-viewer>
+}
