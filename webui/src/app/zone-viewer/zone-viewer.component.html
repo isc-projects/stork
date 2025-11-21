@@ -1,4 +1,4 @@
-<div class="text-base" [ngClass]="{ 'flex flex-column flex-auto min-h-0': scrollHeight === 'flex' }">
+<div class="text-base h-full flex flex-column">
     <div class="flex align-items-center justify-content-between">
         <div class="text-base text-gray-500">
             Cached from DNS server on
@@ -22,7 +22,7 @@
     @if (loading) {
         <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" strokeWidth="6" />
     } @else {
-        <div [ngClass]="{ 'flex-auto': scrollHeight === 'flex' }">
+        <div class="flex-auto">
             <!-- The table uses a virtual scroller. Otherwise, loading the table with
              a large number of rows can be very slow. How slow depends on the browser.
              For a larger number of rows, loading could take 40 seconds on Safari.

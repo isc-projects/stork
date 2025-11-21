@@ -135,6 +135,6 @@ export const Zone: Story = {
         viewName: 'default',
         zoneId: 1,
         active: true,
-        scrollHeight: '400px',
+        viewerScrollHeight: '400px',
     },
 }

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ZoneRRs } from '../backend/model/zoneRRs'
 import { DNSService } from '../backend/api/dNS.service'
 import { lastValueFrom } from 'rxjs'
@@ -57,7 +57,7 @@ export class ZoneViewerFeederComponent {
      * scroller extends to the full height of the parent. To disable the flex
      * layout and use specific height, set the value to a specific (e.g., '400px').
      */
-    @Input() scrollHeight = 'flex'
+    @Input() viewerScrollHeight = 'flex'
 
     /**
      * Emits the event indicating that fetching the zone resource records

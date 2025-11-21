@@ -7,8 +7,8 @@
         [data]="zoneData"
         [zoneTransferAt]="zoneTransferAt"
         [loading]="loading"
-        [ngClass]="{ 'flex flex-auto': scrollHeight === 'flex' }"
-        [scrollHeight]="scrollHeight"
+        class="block h-full"
+        [scrollHeight]="viewerScrollHeight"
         (refreshFromDNSClicked)="refreshFromDNS()"
     ></app-zone-viewer>
 }
