@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core'
 import { ZoneRRs } from '../backend/model/zoneRRs'
 import { DNSService } from '../backend/api/dNS.service'
 import { lastValueFrom } from 'rxjs'
@@ -37,18 +37,16 @@ export class ZoneViewerFeederComponent {
      * already fetched.
      */
     @Input({ required: true }) set active(active: boolean) {
-        this._active = active
-        if (this._active && !this._loaded) {
+        this.isActive.set(active)
+        if (active && !this._loaded) {
             this._loadRRs()
         }
     }
 
     /**
-     * Returns the flag indicating that zone viewer should be displayed.
+     * A signal indicating that zone viewer should be displayed.
      */
-    get active(): boolean {
-        return this._active
-    }
+    isActive = signal<boolean>(false)
 
     /**
      * The scroll height of the virtual scroller in the zone viewer.
