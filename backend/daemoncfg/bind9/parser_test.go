@@ -212,6 +212,52 @@ func TestParseFile(t *testing.T) {
 	testParsedConfig(t, cfg)
 }
 
+// Test that a complex generic option is parsed correctly. The option contains
+// multiple switches and the clause with generic contents. It also contains two
+// suboptions. The switches are both strings and identifiers.
+func TestParseGenericOption(t *testing.T) {
+	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		options {
+			test-option "192.168.1.1" 2001:db8:1::1 12 bar 1.1.1.1 {
+				generic-content 1 2;
+			} test-suboption1 192.0.2.1 {
+				generic-content 3 4;
+            } test-suboption2 smiley "123";
+		}
+	`))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	// There is one top-level option.
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Options)
+	require.Len(t, cfg.Statements[0].Options.Clauses, 1)
+
+	// Validate the option.
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
+	require.Equal(t, "test-option", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
+	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 5)
+	require.Equal(t, "192.168.1.1", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetStringValue())
+	require.Equal(t, "2001:db8:1::1", cfg.Statements[0].Options.Clauses[0].Option.Switches[1].GetStringValue())
+	require.Equal(t, "12", cfg.Statements[0].Options.Clauses[0].Option.Switches[2].GetStringValue())
+	require.Equal(t, "bar", cfg.Statements[0].Options.Clauses[0].Option.Switches[3].GetStringValue())
+	require.Equal(t, "1.1.1.1", cfg.Statements[0].Options.Clauses[0].Option.Switches[4].GetStringValue())
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
+
+	// The option contains two suboptions: test-suboption1 and test-suboption2.
+	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions, 2)
+
+	// Validate the first suboption.
+	require.Equal(t, "test-suboption1", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Identifier)
+	require.Equal(t, "192.0.2.1", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Switches[0].GetStringValue())
+	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents)
+
+	// Validate the second suboption.
+	require.Equal(t, "test-suboption2", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Identifier)
+	require.Equal(t, "smiley", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0].GetStringValue())
+	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[1].GetStringValue())
+}
+
 // Test that the config can be serialized when filter is not set or when
 // filter selects all types of statements.
 func TestConfigGetFormattedString(t *testing.T) {
@@ -788,6 +834,30 @@ func TestParseNotifySource(t *testing.T) {
 				notify-source *;
 				notify-source-v6 *;
 			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+}
+
+// Test that the parser correctly handles the notify-source option in the zone and view blocks.
+func TestParseNotifySourceZoneView(t *testing.T) {
+	t.Run("zone", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			zone "example.com" {
+				notify-source 1.2.3.4;
+				notify-source-v6 2001:db8::1;
+			};
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+	t.Run("view", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			view "foo" {
+				notify-source address 1.2.3.4 port 53;
+				notify-source-v6 address 2001:db8::1 port 53;
+			};
 		`))
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
