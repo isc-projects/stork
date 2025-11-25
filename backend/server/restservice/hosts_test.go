@@ -227,6 +227,260 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 }
 
+// Test that GetHosts sorting works as expected.
+func TestGetHostsSorting(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	// Add five hosts.
+	storktestdbmodel.AddTestHosts(t, db)
+
+	t.Run("sort by subnet prefix asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr("subnet.prefix"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		// There should be a total of 5 hosts, 3 of them including IP address
+		// reservations and 2 with a prefix reservation.
+		require.Len(t, items, 5)
+		for i := range items {
+			// There are 3 host reservations without associated subnet. They should go first when ascending order applied.
+			// 2 other host reservations should be sorted accordingly.
+			if i > 2 {
+				require.Greater(t, items[i].SubnetPrefix, items[i-1].SubnetPrefix)
+			} else {
+				require.EqualValues(t, "", items[i].SubnetPrefix)
+			}
+		}
+	})
+
+	t.Run("sort by subnet prefix desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr("subnet.prefix"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		for i := range items {
+			// There are 3 host reservations without associated subnet. They should go last when descending order applied.
+			// 2 other host reservations should be sorted accordingly.
+			if i > 1 {
+				require.EqualValues(t, "", items[i].SubnetPrefix)
+			}
+		}
+		require.Greater(t, items[0].SubnetPrefix, items[1].SubnetPrefix)
+	})
+
+	t.Run("sort by local host hostname asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.LocalHostHostname)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		for i := range items {
+			// There are 3 host reservations without associated hostname. They should go first when ascending order applied.
+			// 2 other host reservations should be sorted accordingly.
+			if i > 2 {
+				require.Greater(t, items[i].LocalHosts[0].Hostname, items[i-1].LocalHosts[0].Hostname)
+			} else {
+				require.EqualValues(t, "", items[i].LocalHosts[0].Hostname)
+			}
+		}
+	})
+
+	t.Run("sort by local host hostname desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.LocalHostHostname)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		for i := range items {
+			// There are 3 host reservations without associated hostname. They should go last when descending order applied.
+			// 2 other host reservations should be sorted accordingly.
+			if i > 1 {
+				require.EqualValues(t, "", items[i].LocalHosts[0].Hostname)
+			}
+		}
+		require.Greater(t, items[0].LocalHosts[0].Hostname, items[1].LocalHosts[0].Hostname)
+	})
+
+	t.Run("sort by identifier value asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.HostIdentifierValue)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		for i := range items {
+			if i > 0 {
+				require.GreaterOrEqual(t, items[i].HostIdentifiers[0].IDHexValue, items[i-1].HostIdentifiers[0].IDHexValue)
+			}
+		}
+	})
+
+	t.Run("sort by identifier value desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.HostIdentifierValue)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		for i := range items {
+			if i > 0 {
+				require.LessOrEqual(t, items[i].HostIdentifiers[0].IDHexValue, items[i-1].HostIdentifiers[0].IDHexValue)
+			}
+		}
+	})
+
+	t.Run("sort by reservation address asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.ReservationAddress)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		// There is one reservation with nil address (that has IPv6 prefix reservation) and it should be before others when
+		// ascending order. Rest of reservations should be sorted accordingly.
+		require.Nil(t, items[0].AddressReservations)
+		for i := range items {
+			if i > 1 {
+				require.GreaterOrEqual(t, items[i].AddressReservations[0].Address, items[i-1].AddressReservations[0].Address)
+			}
+		}
+	})
+
+	t.Run("sort by reservation address desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.ReservationAddress)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+
+		require.Len(t, items, 5)
+		// There is one reservation with nil address (that has IPv6 prefix reservation) and it should be after others when
+		// descending order. Rest of reservations should be sorted accordingly.
+		require.Nil(t, items[4].AddressReservations)
+		for i := range items {
+			if i > 0 && i < 4 {
+				require.LessOrEqual(t, items[i].AddressReservations[0].Address, items[i-1].AddressReservations[0].Address)
+			}
+		}
+	})
+
+	t.Run("sort by reservation IPv6 prefix asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.ReservationIPv6Prefix)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+		require.Len(t, items, 5)
+		for i := range items {
+			if i < 3 {
+				// There are three reservations with nil IPv6 prefix (that have IPv4 or IPv6 address reservation) and they should be before others when
+				// ascending order.
+				require.Nil(t, items[i].PrefixReservations)
+			} else {
+				require.NotNil(t, items[i].PrefixReservations)
+				require.Greater(t, len(items[i].PrefixReservations), 0)
+			}
+		}
+		require.Greater(t, items[4].PrefixReservations[0].Address, items[3].PrefixReservations[0].Address)
+	})
+
+	t.Run("sort by reservation IPv6 prefix desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := dhcp.GetHostsParams{
+			SortField: storkutil.Ptr(string(dbmodel.ReservationIPv6Prefix)),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetHosts(ctx, params)
+		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
+		okRsp := rsp.(*dhcp.GetHostsOK)
+
+		items := okRsp.Payload.Items
+		require.NotNil(t, items)
+		require.Len(t, items, 5)
+		for i := range items {
+			if i < 2 {
+				require.NotNil(t, items[i].PrefixReservations)
+				require.Greater(t, len(items[i].PrefixReservations), 0)
+			} else {
+				// There are three reservations with nil IPv6 prefix (that have IPv4 or IPv6 address reservation) and they should be after others when
+				// descending order.
+				require.Nil(t, items[i].PrefixReservations)
+			}
+		}
+		require.Greater(t, items[0].PrefixReservations[0].Address, items[1].PrefixReservations[0].Address)
+	})
+}
+
 // Test that host can be fetched by ID over the REST API.
 func TestGetHost(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

@@ -250,6 +250,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, allDaemons []*
 				{
 					DaemonID:   allDaemons[1].ID,
 					DataSource: dbmodel.HostDataSourceConfig,
+					Hostname:   "second.example.org",
 					IPReservations: []dbmodel.IPReservation{
 						{
 							Address: "2001:db8:1::2",
@@ -262,6 +263,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, allDaemons []*
 				{
 					DaemonID:   allDaemons[3].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					Hostname:   "second.example.org",
 					IPReservations: []dbmodel.IPReservation{
 						{
 							Address: "2001:db8:1::2",
