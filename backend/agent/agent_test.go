@@ -29,9 +29,11 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
-	"isc.org/stork/appdata/bind9stats"
-	pdnsdata "isc.org/stork/appdata/pdns"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/daemondata/bind9stats"
+	pdnsdata "isc.org/stork/daemondata/pdns"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -43,9 +45,8 @@ import (
 //go:embed testdata/valid-zone.json
 var validZoneData []byte
 
-type FakeAppMonitor struct {
-	Apps       []App
-	HTTPClient *httpClient
+type FakeMonitor struct {
+	Daemons []Daemon
 }
 
 // Initializes StorkAgent instance and context used by the tests.
@@ -64,34 +65,44 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	pdnsClient := newPDNSClient()
 	gock.InterceptClient(pdnsClient.innerClient.GetClient())
 
-	httpClientConfig := HTTPClientConfig{SkipTLSVerification: true}
-	httpClient := NewHTTPClient(httpClientConfig)
-	gock.InterceptClient(httpClient.client)
+	httpClientConfig := HTTPClientConfig{SkipTLSVerification: true, Interceptor: gock.InterceptClient}
 
 	cleanupCerts, _ := GenerateSelfSignedCerts()
 
-	fam := FakeAppMonitor{
-		Apps: []App{
-			&KeaApp{
-				BaseApp: BaseApp{
-					Type:         AppTypeKea,
-					AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
-					Pid:          42,
+	keaAccessPoint := AccessPoint{
+		Type:     AccessPointControl,
+		Address:  "localhost",
+		Port:     45634,
+		Protocol: protocoltype.HTTP,
+	}
+
+	fdm := FakeMonitor{
+		Daemons: []Daemon{
+			&keaDaemon{
+				daemon: daemon{
+					Name:         daemonname.DHCPv4,
+					AccessPoints: []AccessPoint{keaAccessPoint},
 				},
-				HTTPClient: httpClient,
+				connector: newKeaConnector(keaAccessPoint, httpClientConfig),
 			},
-			&Bind9App{
-				BaseApp: BaseApp{
-					Type:         AppTypeBind9,
-					AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "abcd", 45635, false),
-					Pid:          43,
+			&Bind9Daemon{
+				dnsDaemonImpl: dnsDaemonImpl{
+					daemon: daemon{
+						Name: daemonname.Bind9,
+						AccessPoints: []AccessPoint{{
+							Type:     AccessPointControl,
+							Address:  "localhost",
+							Port:     45635,
+							Protocol: protocoltype.RNDC,
+						}},
+					},
 				},
 			},
 		},
 	}
 
 	sa := &StorkAgent{
-		AppMonitor:          &fam,
+		Monitor:             &fdm,
 		bind9StatsClient:    bind9StatsClient,
 		pdnsClient:          pdnsClient,
 		KeaHTTPClientConfig: httpClientConfig,
@@ -106,41 +117,33 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 		panic(err)
 	}
 	ctx := context.Background()
-	return sa, ctx, cleanupCerts
+	return sa, ctx, func() {
+		cleanupCerts()
+		gock.Off()
+	}
 }
 
-// Stub function for AppMonitor. It returns a fixed list of apps.
-func (fam *FakeAppMonitor) GetApps() []App {
-	return fam.Apps
+// Stub function for Monitor. It returns a fixed list of daemons.
+func (fdm *FakeMonitor) GetDaemons() []Daemon {
+	return fdm.Daemons
 }
 
-// Stub function for AppMonitor. It behaves in the same way as original one.
-func (fam *FakeAppMonitor) GetApp(apType, address string, port int64) App {
-	for _, app := range fam.GetApps() {
-		for _, ap := range app.GetBaseApp().AccessPoints {
+// Stub function for Monitor. It behaves in the same way as original one.
+func (fdm *FakeMonitor) GetDaemonByAccessPoint(apType, address string, port int64) Daemon {
+	for _, daemon := range fdm.GetDaemons() {
+		for _, ap := range daemon.GetAccessPoints() {
 			if ap.Type == apType && ap.Address == address && ap.Port == port {
-				return app
+				return daemon
 			}
 		}
 	}
 	return nil
 }
 
-func (fam *FakeAppMonitor) Shutdown() {
+func (fdm *FakeMonitor) Shutdown() {
 }
 
-func (fam *FakeAppMonitor) Start(storkAgent *StorkAgent) {
-}
-
-// makeAccessPoint is an utility to make single element app access point slice.
-func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool) (ap []AccessPoint) {
-	return append(ap, AccessPoint{
-		Type:              tp,
-		Address:           address,
-		Port:              port,
-		Key:               key,
-		UseSecureProtocol: useSecureProtocol,
-	})
+func (fdm *FakeMonitor) Start(context.Context, agentManager) {
 }
 
 // A matcher for PowerDNS zones. It excludes the Loaded field which is
@@ -171,13 +174,13 @@ func (m *powerDNSZoneMatcher) String() string {
 
 // Check if NewStorkAgent can be invoked and sets SA members.
 func TestNewStorkAgent(t *testing.T) {
-	fam := &FakeAppMonitor{}
+	fdm := &FakeMonitor{}
 	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClientConfig := HTTPClientConfig{}
 	sa := NewStorkAgent(
-		"foo", 42, fam, bind9StatsClient, keaHTTPClientConfig, NewHookManager(), "", "",
+		"foo", 42, fdm, bind9StatsClient, NewHookManager(),
 	)
-	require.NotNil(t, sa.AppMonitor)
+	require.NotNil(t, sa.Monitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
 	require.Equal(t, keaHTTPClientConfig, sa.KeaHTTPClientConfig)
 }
@@ -197,87 +200,100 @@ func TestPing(t *testing.T) {
 func TestGetState(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
 	defer teardown()
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = nil
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = nil
 
-	// app monitor is empty, no apps should be returned by GetState
+	// daemon monitor is empty, no daemons should be returned by GetState
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
-	require.Empty(t, rsp.Apps)
+	require.Empty(t, rsp.Daemons)
 
-	// add some apps to app monitor so GetState should return something
-	var apps []App
-	apps = append(apps, &KeaApp{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, false),
+	// add some daemons to daemon monitor so GetState should return something
+	var daemons []Daemon
+	daemons = append(daemons, &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.DHCPv4,
+			AccessPoints: []AccessPoint{{
+				Type:     AccessPointControl,
+				Address:  "1.2.3.1",
+				Port:     1234,
+				Protocol: protocoltype.HTTP,
+			}},
 		},
-		HTTPClient: newHTTPClientWithDefaults(),
 	})
 
-	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345, true)
-	accessPoints = append(accessPoints, AccessPoint{
-		Type:              AccessPointStatistics,
-		Address:           "2.3.4.5",
-		Port:              2346,
-		Key:               "foo",
-		UseSecureProtocol: false,
-	})
-
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	accessPoints := []AccessPoint{
+		{
+			Type:     AccessPointControl,
+			Address:  "2.3.4.4",
+			Port:     2345,
+			Key:      "abcd",
+			Protocol: protocoltype.HTTPS,
 		},
-		RndcClient: nil,
+		{
+			Type:     AccessPointStatistics,
+			Address:  "2.3.4.5",
+			Port:     2346,
+			Key:      "foo",
+			Protocol: protocoltype.HTTP,
+		},
+	}
+
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.Bind9,
+				AccessPoints: accessPoints,
+			},
+		},
 	})
-	fam.Apps = apps
+	fdm.Daemons = daemons
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
 	require.Equal(t, stork.Version, rsp.AgentVersion)
-	require.False(t, rsp.AgentUsesHTTPCredentials)
-	require.Len(t, rsp.Apps, 2)
+	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck,deprecated
+	require.Len(t, rsp.Daemons, 2)
 
-	keaApp := rsp.Apps[0]
-	require.Len(t, keaApp.AccessPoints, 1)
-	point := keaApp.AccessPoints[0]
+	daemonKea := rsp.Daemons[0]
+	require.Len(t, daemonKea.AccessPoints, 1)
+	point := daemonKea.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.2.3.1", point.Address)
-	require.False(t, point.UseSecureProtocol)
+	require.False(t, point.UseSecureProtocol) //nolint:staticcheck,deprecated
 	require.EqualValues(t, 1234, point.Port)
 	require.Empty(t, point.Key)
 
-	bind9App := rsp.Apps[1]
-	require.Len(t, bind9App.AccessPoints, 2)
+	daemonBind9 := rsp.Daemons[1]
+	require.Len(t, daemonBind9.AccessPoints, 2)
 	// sorted by port
-	point = bind9App.AccessPoints[0]
+	point = daemonBind9.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "2.3.4.4", point.Address)
 	require.EqualValues(t, 2345, point.Port)
 	require.Equal(t, "abcd", point.Key)
-	require.True(t, point.UseSecureProtocol)
-	point = bind9App.AccessPoints[1]
+	require.True(t, point.UseSecureProtocol) //nolint:staticcheck,deprecated
+	point = daemonBind9.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "2.3.4.5", point.Address)
 	require.EqualValues(t, 2346, point.Port)
-	require.False(t, point.UseSecureProtocol)
+	require.False(t, point.UseSecureProtocol) //nolint:staticcheck,deprecated
 	require.EqualValues(t, "foo", point.Key)
 
 	// Recreate Stork agent.
 	sa, ctx, teardown = setupAgentTest()
 	defer teardown()
 
-	app := fam.GetApp(AccessPointControl, "1.2.3.1", 1234).(*KeaApp)
-	app.HTTPClient = NewHTTPClient(HTTPClientConfig{
+	daemon := fdm.GetDaemonByAccessPoint(AccessPointControl, "1.2.3.1", 1234).(*keaDaemon)
+	daemon.connector = newKeaConnector(daemon.AccessPoints[0], HTTPClientConfig{
 		BasicAuth: basicAuthCredentials{User: "foo", Password: "bar"},
 	})
 
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	// Deprecated parameter. Always false.
-	require.False(t, rsp.AgentUsesHTTPCredentials)
+	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck,deprecated
 }
 
 // Test forwarding command to Kea when HTTP 200 status code
@@ -309,7 +325,10 @@ func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
-	require.JSONEq(t, "[{\"result\":0}]", string(rsp.KeaResponses[0].Response))
+	keaResponse := rsp.KeaResponses[0]
+	status := keaResponse.GetStatus()
+	require.Zero(t, status.Code, status.Message)
+	require.JSONEq(t, "{\"result\":0, \"text\":\"\"}", string(keaResponse.Response))
 }
 
 // Test forwarding command to Kea when HTTP 400 (Bad Request) status
@@ -338,7 +357,7 @@ func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
 	require.Equal(t, agentapi.Status_ERROR, rsp.KeaResponses[0].Status.Code)
-	require.Equal(t, "failed to forward commands to Kea: received non-success status code 400 from Kea, with status text: 400 Bad Request; url: http://localhost:45634/", rsp.KeaResponses[0].Status.Message)
+	require.Contains(t, rsp.KeaResponses[0].Status.Message, "received non-success status code 400 from Kea, with status text: 400 Bad Request; url: http://localhost:45634/")
 }
 
 // Test forwarding command to Kea when no body is returned.
@@ -596,17 +615,23 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	rndcClient := NewRndcClient(executor)
 	rndcClient.BaseCommand = []string{"/rndc"}
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Protocol: protocoltype.RNDC,
+				}},
+			},
 		},
-		RndcClient: rndcClient,
+		rndcClient: rndcClient,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
@@ -655,17 +680,23 @@ func TestForwardRndcCommandError(t *testing.T) {
 	rndcClient := NewRndcClient(executor)
 	rndcClient.BaseCommand = []string{"/rndc"}
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Protocol: protocoltype.RNDC,
+				}},
+			},
 		},
-		RndcClient: rndcClient,
+		rndcClient: rndcClient,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
@@ -683,8 +714,8 @@ func TestForwardRndcCommandError(t *testing.T) {
 	require.NotEmpty(t, rsp.Status.Message)
 }
 
-// Test rndc command when there is no app.
-func TestForwardRndcCommandNoApp(t *testing.T) {
+// Test rndc command when there is no daemon.
+func TestForwardRndcCommandNoDaemon(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
 	defer teardown()
 
@@ -701,7 +732,7 @@ func TestForwardRndcCommandNoApp(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Equal(t, agentapi.Status_ERROR, rsp.Status.Code)
-	require.EqualValues(t, "cannot find BIND 9 app", rsp.Status.Message)
+	require.EqualValues(t, "cannot find BIND 9 daemon", rsp.Status.Message)
 }
 
 // Test rndc command successfully forwarded, but bad response.
@@ -712,17 +743,23 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	rndcClient := NewRndcClient(executor)
 	rndcClient.BaseCommand = []string{"/rndc"}
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Protocol: protocoltype.RNDC,
+				}},
+			},
 		},
-		RndcClient: rndcClient,
+		rndcClient: rndcClient,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
@@ -1079,7 +1116,8 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Populate the zones into inventory.
 	done, err := inventory.populate(false)
@@ -1092,18 +1130,25 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1149,7 +1194,8 @@ func TestReceiveZonesPDNS(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultPDNSConfig(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, pdnsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Populate the zones into inventory.
 	done, err := inventory.populate(false)
@@ -1162,18 +1208,24 @@ func TestReceiveZonesPDNS(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a PowerDNS app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a PowerDNS daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Protocol: protocoltype.HTTP,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1235,7 +1287,8 @@ func TestReceiveRPZZones(t *testing.T) {
 	rpzMock.EXPECT().GetAPIKey().AnyTimes().Return("")
 
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), rpzMock, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Populate the zones into inventory.
 	done, err := inventory.populate(false)
@@ -1245,18 +1298,25 @@ func TestReceiveRPZZones(t *testing.T) {
 		<-done
 	}
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
@@ -1308,7 +1368,8 @@ func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Populate the zones into inventory.
 	done, err := inventory.populate(false)
@@ -1321,18 +1382,25 @@ func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1368,7 +1436,8 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Populate the zones into inventory.
 	done, err := inventory.populate(false)
@@ -1381,18 +1450,25 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1431,18 +1507,25 @@ func TestReceiveZonesNilZoneInventory(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app without zone inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon without zone inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: nil,
 		},
-		zoneInventory: nil,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1456,25 +1539,30 @@ func TestReceiveZonesNilZoneInventory(t *testing.T) {
 		ViewName:       "_default",
 		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
 	}, mock)
-	require.Contains(t, err.Error(), "attempted to receive DNS zones from an app for which zone inventory was not instantiated")
+	require.Contains(t, err.Error(), "attempted to receive DNS zones from a daemon for which zone inventory was not instantiated")
 }
 
-// Test that an error is returned when the app is not a DNS server.
-func TestReceiveZonesUnsupportedApp(t *testing.T) {
+// Test that an error is returned when the daemon is not a DNS server.
+func TestReceiveZonesUnsupportedDaemon(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add an app that is not a DNS server.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &KeaApp{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: accessPoints,
+	// Add a daemon that is not a DNS server.
+	var daemons []Daemon
+	daemons = append(daemons, &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.DHCPv4,
+			AccessPoints: []AccessPoint{{
+				Type:     AccessPointControl,
+				Address:  "127.0.0.1",
+				Port:     1234,
+				Key:      "key",
+				Protocol: protocoltype.HTTP,
+			}},
 		},
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1487,7 +1575,7 @@ func TestReceiveZonesUnsupportedApp(t *testing.T) {
 		ControlPort:    1234,
 	}, mock)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "attempted to receive DNS zones from an unsupported app")
+	require.Contains(t, err.Error(), "attempted to receive DNS zones from an unsupported daemon")
 }
 
 // Test that specific error is returned when the zone inventory was not initialized
@@ -1515,23 +1603,31 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1583,7 +1679,8 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	done, err := inventory.populate(true)
 	require.NoError(t, err)
@@ -1601,18 +1698,25 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	ctrl := gomock.NewController(t)
@@ -1663,7 +1767,8 @@ func TestReceiveZoneRRs(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Get the example zone contents from the file.
 	var rrs []string
@@ -1709,18 +1814,25 @@ func TestReceiveZoneRRs(t *testing.T) {
 		<-done
 	}
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
@@ -1761,7 +1873,8 @@ func TestReceiveZoneRRsPowerDNS(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultPDNSConfig(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, pdnsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Get the example zone contents from the file.
 	var rrs []string
@@ -1803,18 +1916,24 @@ func TestReceiveZoneRRsPowerDNS(t *testing.T) {
 		<-done
 	}
 
-	// Add a PowerDNS app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a PowerDNS daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Protocol: protocoltype.HTTP,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
@@ -1850,17 +1969,23 @@ func TestReceiveZoneRRsNilZoneInventory(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with the nil zone inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the nil zone inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Protocol: protocoltype.RNDC,
+				}},
+			},
 		},
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
@@ -1872,7 +1997,7 @@ func TestReceiveZoneRRsNilZoneInventory(t *testing.T) {
 		ZoneName:       "example.com",
 		ViewName:       "trusted",
 	}, mock)
-	require.Contains(t, err.Error(), "attempted to receive DNS zone RRs from an app for which zone inventory was not instantiated")
+	require.Contains(t, err.Error(), "attempted to receive DNS zone RRs from a daemon for which zone inventory was not instantiated")
 }
 
 // Test that specific error is returned when the zone inventory was not initialized
@@ -1900,7 +2025,8 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	// Create zone inventory but do not populate it.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	// Get the example zone contents from the file.
 	var rrs []string
@@ -1918,18 +2044,25 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(0)
 	inventory.axfrExecutor = axfrExecutor
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
@@ -1979,7 +2112,8 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
+	inventory.start()
+	defer inventory.stop()
 
 	done, err := inventory.populate(false)
 	require.NoError(t, err)
@@ -1987,7 +2121,6 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
 	}
-
 	// Start receiving zones but don't complete it. It turns the inventory
 	// into "busy" state.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -2007,18 +2140,25 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(0)
 	inventory.axfrExecutor = axfrExecutor
 
-	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Mock the streaming server.
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
@@ -2077,17 +2217,24 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 			},
 		})
 
-	// Add a PowerDNS app.
-	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a PowerDNS daemon.
+	var daemons []Daemon
+	daemons = append(daemons, &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "localhost",
+					Port:     1234,
+					Key:      "stork",
+					Protocol: protocoltype.HTTP,
+				}},
+			},
 		},
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Get the server information.
 	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
@@ -2109,12 +2256,12 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 
 // Test that the correct error is returned when the specified PowerDNS
 // server was not found by the control address and port.
-func TestGetPowerDNSServerInfoNoApp(t *testing.T) {
+func TestGetPowerDNSServerInfoNoDaemon(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = []App{}
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = []Daemon{}
 
 	// Get the server information.
 	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
@@ -2132,7 +2279,7 @@ func TestGetPowerDNSServerInfoNoApp(t *testing.T) {
 	require.Len(t, details, 1)
 	info, ok := details[0].(*errdetails.ErrorInfo)
 	require.True(t, ok)
-	require.Equal(t, "APP_NOT_FOUND", info.Reason)
+	require.Equal(t, "DAEMON_NOT_FOUND", info.Reason)
 }
 
 // Test that the correct error is returned when the API key is not configured
@@ -2141,17 +2288,24 @@ func TestGetPowerDNSServerInfoNoAPIKey(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a PowerDNS app with no API key.
-	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a PowerDNS daemon with no API key.
+	var daemons []Daemon
+	daemons = append(daemons, &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "localhost",
+					Port:     1234,
+					Key:      "",
+					Protocol: protocoltype.HTTP,
+				}},
+			},
 		},
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Get the server information.
 	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
@@ -2185,17 +2339,24 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 		Reply(http.StatusInternalServerError).
 		BodyString("Internal server error")
 
-	// Add a PowerDNS app.
-	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a PowerDNS daemon.
+	var daemons []Daemon
+	daemons = append(daemons, &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "localhost",
+					Port:     1234,
+					Key:      "stork",
+					Protocol: protocoltype.HTTP,
+				}},
+			},
 		},
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Get the server information.
 	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
@@ -2242,17 +2403,24 @@ func TestGetPowerDNSServerInfoStatisticsErrorResponse(t *testing.T) {
 		Reply(http.StatusInternalServerError).
 		BodyString("Internal server error")
 
-	// Add a PowerDNS app.
-	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a PowerDNS daemon.
+	var daemons []Daemon
+	daemons = append(daemons, &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "localhost",
+					Port:     1234,
+					Key:      "stork",
+					Protocol: protocoltype.HTTP,
+				}},
+			},
 		},
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
 
 	// Get the server information.
 	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
@@ -2283,19 +2451,28 @@ func TestReceiveBind9ConfigNoFiltersNorFileTypes(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Create a BIND 9 app.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Create a BIND 9 daemon.
+	accessPoints := []AccessPoint{{
+		Type:     AccessPointControl,
+		Address:  "127.0.0.1",
+		Key:      "key",
+		Port:     1234,
+		Protocol: protocoltype.RNDC,
+	}}
+
+	daemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.Bind9,
+				AccessPoints: accessPoints,
+			},
 		},
 		bind9Config:   parseDefaultBind9Config(t),
 		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	}
+
+	fam, _ := sa.Monitor.(*FakeMonitor)
+	fam.Daemons = []Daemon{daemon}
 
 	// Mock the server streaming server.
 	ctrl := gomock.NewController(t)
@@ -2375,19 +2552,26 @@ func TestReceiveBind9ConfigMultipleFiltersAndFileTypes(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Create a BIND 9 app.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Create a BIND 9 daemon.
+	accessPoints := []AccessPoint{{
+		Type:     AccessPointControl,
+		Address:  "127.0.0.1",
+		Key:      "key",
+		Port:     1234,
+		Protocol: protocoltype.RNDC,
+	}}
+	daemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.Bind9,
+				AccessPoints: accessPoints,
+			},
 		},
 		bind9Config:   parseDefaultBind9Config(t),
 		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	}
+	fam, _ := sa.Monitor.(*FakeMonitor)
+	fam.Daemons = []Daemon{daemon}
 
 	// Mock the server streaming server.
 	ctrl := gomock.NewController(t)
@@ -2477,19 +2661,26 @@ func TestReceiveBind9ConfigSingleFilterAndFileType(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Create a BIND 9 app.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Create a BIND 9 daemon.
+	accessPoints := []AccessPoint{{
+		Type:     AccessPointControl,
+		Address:  "127.0.0.1",
+		Key:      "key",
+		Port:     1234,
+		Protocol: protocoltype.RNDC,
+	}}
+	daemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.Bind9,
+				AccessPoints: accessPoints,
+			},
 		},
 		bind9Config:   parseDefaultBind9Config(t),
 		rndcKeyConfig: parseDefaultBind9RNDCKeyConfig(t),
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	}
+	fam, _ := sa.Monitor.(*FakeMonitor)
+	fam.Daemons = []Daemon{daemon}
 
 	// Mock the server streaming server.
 	ctrl := gomock.NewController(t)
@@ -2572,21 +2763,28 @@ func TestReceiveBind9ConfigNoApp(t *testing.T) {
 }
 
 // Test getting BIND 9 configuration from a non-BIND9 DNS server.
-func TestReceiveBind9ConfigNotBind9App(t *testing.T) {
+func TestReceiveBind9ConfigNotBind9Daemon(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a non-BIND9 app.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &PDNSApp{
-		BaseApp: BaseApp{
-			Type:         AppTypePowerDNS,
-			AccessPoints: accessPoints,
+	// Add a non-BIND9 daemon.
+	accessPoints := []AccessPoint{{
+		Type:     AccessPointControl,
+		Address:  "127.0.0.1",
+		Key:      "key",
+		Port:     1234,
+		Protocol: protocoltype.RNDC,
+	}}
+	daemon := &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.PDNS,
+				AccessPoints: accessPoints,
+			},
 		},
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	}
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = []Daemon{daemon}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -2600,7 +2798,7 @@ func TestReceiveBind9ConfigNotBind9App(t *testing.T) {
 
 	st := status.Convert(err)
 	require.Equal(t, codes.InvalidArgument, st.Code())
-	require.Equal(t, "attempted to get BIND 9 configuration from app type pdns instead of BIND 9", st.Message())
+	require.Equal(t, "attempted to get BIND 9 configuration from daemon pdns instead of BIND 9", st.Message())
 }
 
 // Test getting BIND 9 configuration from a server for which the
@@ -2609,17 +2807,24 @@ func TestReceiveBind9ConfigNoConfig(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
-	// Add a BIND9 app with no configuration.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// Add a BIND9 daemon with no configuration.
+	accessPoints := []AccessPoint{{
+		Type:     AccessPointControl,
+		Address:  "127.0.0.1",
+		Key:      "key",
+		Port:     1234,
+		Protocol: protocoltype.RNDC,
+	}}
+	daemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.Bind9,
+				AccessPoints: accessPoints,
+			},
 		},
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
+	}
+	fam, _ := sa.Monitor.(*FakeMonitor)
+	fam.Daemons = []Daemon{daemon}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -2634,4 +2839,17 @@ func TestReceiveBind9ConfigNoConfig(t *testing.T) {
 	st := status.Convert(err)
 	require.Equal(t, codes.NotFound, st.Code())
 	require.Equal(t, "BIND 9 configuration not found for server 127.0.0.1:1234", st.Message())
+}
+
+// Test that that call to allow log method of the agent enables access to a log.
+func TestAllowLog(t *testing.T) {
+	// Arrange
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Act
+	sa.allowLog("test/log/path")
+
+	// Assert
+	require.True(t, sa.logTailer.allowed("test/log/path"))
 }

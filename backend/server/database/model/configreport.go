@@ -127,7 +127,6 @@ func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64, 
 		Relation("RefDaemons", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("daemon_to_config_report.order_index ASC"), nil
 		}).
-		Relation("RefDaemons.App").
 		Offset(int(offset))
 
 	if limit != 0 {
@@ -186,8 +185,8 @@ func (r *ConfigReport) AfterSelect(ctx context.Context) error {
 
 	for _, daemon := range r.RefDaemons {
 		content := strings.Replace(*r.Content, "{daemon}",
-			fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">",
-				daemon.ID, daemon.Name, daemon.AppID, daemon.App.Type),
+			fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" machineId=\"%d\">",
+				daemon.ID, daemon.Name, daemon.MachineID),
 			1)
 		r.Content = &content
 	}

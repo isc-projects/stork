@@ -11,10 +11,11 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	keaconfig "isc.org/stork/appcfg/kea"
-	"isc.org/stork/server/apps/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configreview"
+	"isc.org/stork/server/daemons/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -24,7 +25,7 @@ import (
 
 // Get daemon config. Only Kea daemon supported.
 func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemonConfigParams) middleware.Responder {
-	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	dbDaemon, err := dbmodel.GetKeaDaemonByID(r.DB, params.ID)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
@@ -85,14 +86,26 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		}
 	}
 
+	rawConfig, err := dbDaemon.KeaDaemon.Config.GetRawConfig()
+	if err != nil {
+		msg := "Failed to get raw config"
+		log.WithError(err).Error(msg)
+		rsp := services.NewGetDaemonConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	app := dbDaemon.GetVirtualApp()
+
 	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
 		DaemonID:   dbDaemon.GetID(),
-		AppID:      dbDaemon.App.GetID(),
-		AppName:    dbDaemon.App.GetName(),
-		AppType:    dbDaemon.GetAppType().String(),
-		DaemonName: dbDaemon.GetName(),
+		AppID:      app.ID,
+		AppName:    app.Name,
+		AppType:    string(app.Type),
+		DaemonName: string(dbDaemon.Name),
 		Editable:   dbDaemon.Monitored && dbDaemon.Active,
-		Config:     dbDaemon.KeaDaemon.Config,
+		Config:     rawConfig,
 		Options:    options,
 	})
 	return rsp
@@ -119,8 +132,8 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	// Get the basic information about the last review.
 	review, err := dbmodel.GetConfigReviewByDaemonID(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get configuration review for daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -147,8 +160,8 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	issuesOnly := params.IssuesOnly != nil && *params.IssuesOnly
 	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID, issuesOnly)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get configuration review reports for daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -165,8 +178,8 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 		totalReports = total
 	}
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot count configuration review reports for daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -201,10 +214,10 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 // Begins daemon configuration review on demand.
 func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.PutDaemonConfigReviewParams) middleware.Responder {
 	// Try to get the daemon information from the database.
-	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	daemon, err := dbmodel.GetKeaDaemonByID(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -295,8 +308,8 @@ func convertConfigCheckerStateFromRestAPI(state models.ConfigCheckerState) (conf
 func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.GetGlobalConfigCheckersParams) middleware.Responder {
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(nil)
 	if err != nil {
-		log.Error(err)
 		msg := "cannot get the global checkers metadata"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetGlobalConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -310,10 +323,10 @@ func (r *RestAPI) GetGlobalConfigCheckers(ctx context.Context, params services.G
 
 // Returns the config checkers metadata for a given daemon.
 func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.GetDaemonConfigCheckersParams) middleware.Responder {
-	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	daemon, err := dbmodel.GetDaemonByIDWithRelations(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -329,8 +342,8 @@ func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.G
 
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(daemon)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get checkers metadata for daemon (ID: %d, Name: %s)", daemon.ID, daemon.Name)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetDaemonConfigCheckersDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -347,10 +360,10 @@ func (r *RestAPI) GetDaemonConfigCheckers(ctx context.Context, params services.G
 // persistent. It returns a list of actual config checker metadata for given
 // daemon.
 func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params services.PutDaemonConfigCheckerPreferencesParams) middleware.Responder {
-	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	daemon, err := dbmodel.GetDaemonByIDWithRelations(r.DB, params.ID)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
 		rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -380,8 +393,8 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 
 		err = r.ReviewDispatcher.SetCheckerState(daemon, change.Name, state)
 		if err != nil {
-			log.Error(err)
 			msg := fmt.Sprintf("Cannot set the state for the %s checker", change.Name)
+			log.WithError(err).Error(msg)
 			rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -407,8 +420,8 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 
 	err = dbmodel.CommitCheckerPreferences(r.DB, newOrUpdatedPreferences, deletedPreferences)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot commit the config checker changes into DB"
+		log.WithError(err).Error(msg)
 		rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -417,8 +430,8 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(daemon)
 	if err != nil {
-		log.Error(err)
 		msg := fmt.Sprintf("Cannot get checkers metadata for daemon (ID: %d, Name: %s)", daemon.ID, daemon.Name)
+		log.WithError(err).Error(msg)
 		rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -442,8 +455,8 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 		if state, ok := convertConfigCheckerStateFromRestAPI(apiState); ok {
 			err := r.ReviewDispatcher.SetCheckerState(nil, change.Name, state)
 			if err != nil {
-				log.Error(err)
 				msg := fmt.Sprintf("Cannot set the global state for the %s checker", change.Name)
+				log.WithError(err).Error(msg)
 				rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 					Message: &msg,
 				})
@@ -466,8 +479,8 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 
 	err := dbmodel.CommitCheckerPreferences(r.DB, newOrUpdatedPreferences, deletedPreferences)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot commit the config checker changes into DB"
+		log.WithError(err).Error(msg)
 		rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -476,8 +489,8 @@ func (r *RestAPI) PutGlobalConfigCheckerPreferences(ctx context.Context, params 
 
 	metadata, err := r.ReviewDispatcher.GetCheckersMetadata(nil)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get global checkers metadata for daemon"
+		log.WithError(err).Error(msg)
 		rsp := services.NewPutDaemonConfigCheckerPreferencesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -600,12 +613,13 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 			}
 		}
 
+		app := daemon.GetVirtualApp()
 		configs = append(configs, &models.KeaDaemonConfig{
-			AppID:         daemon.GetAppID(),
-			AppName:       daemon.App.GetName(),
-			AppType:       "kea",
+			AppID:         app.ID,
+			AppName:       app.Name,
+			AppType:       string(app.Type),
 			DaemonID:      daemon.ID,
-			DaemonName:    daemon.Name,
+			DaemonName:    string(daemon.Name),
 			DaemonVersion: daemon.Version,
 			Config:        daemon.KeaDaemon.Config,
 			Options:       options,
@@ -650,12 +664,31 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 	for i := range params.Request.Configs {
 		receivedConfig := params.Request.Configs[i]
 		var settableConfig *keaconfig.SettableConfig
-		switch receivedConfig.DaemonName {
-		case dbmodel.DaemonNameDHCPv4:
+
+		daemonName, ok := daemonname.Parse(receivedConfig.DaemonName)
+		if !ok {
+			msg := "Problem with parsing daemon name"
+			log.WithField("name", receivedConfig.DaemonName).Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		if !daemonName.IsKea() {
+			msg := fmt.Sprintf("Daemon %s is not a Kea daemon", daemonName)
+			log.Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+
+		switch daemonName {
+		case daemonname.DHCPv4:
 			settableConfig = keaconfig.NewSettableDHCPv4Config()
-		case dbmodel.DaemonNameDHCPv6:
+		case daemonname.DHCPv6:
 			settableConfig = keaconfig.NewSettableDHCPv6Config()
-		case dbmodel.DaemonNameD2:
+		case daemonname.D2:
 			settableConfig = keaconfig.NewSettableD2Config()
 		default:
 			settableConfig = keaconfig.NewSettableCtrlAgentConfig()

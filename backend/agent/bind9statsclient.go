@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	pkgerrors "github.com/pkg/errors"
-	"isc.org/stork/appdata/bind9stats"
+	"isc.org/stork/daemondata/bind9stats"
 	storkutil "isc.org/stork/util"
 )
 
@@ -48,7 +48,7 @@ type httpResponse interface {
 func newBind9StatsClientRequest(innerClient *resty.Client, host string, port int64) *bind9StatsClientRequest {
 	return &bind9StatsClientRequest{
 		innerClient: innerClient,
-		baseURL:     setBind9StatsClientBasePath(storkutil.HostWithPortURL(host, port, false)),
+		baseURL:     setBind9StatsClientBasePath(storkutil.HostWithPortURL(host, port, "http")),
 	}
 }
 

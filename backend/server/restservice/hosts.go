@@ -11,10 +11,10 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	keaconfig "isc.org/stork/appcfg/kea"
-	"isc.org/stork/server/apps/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator/entitymigrator"
+	"isc.org/stork/server/daemons/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -71,9 +71,11 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 			})
 		}
 
+		app := dbLocalHost.Daemon.GetVirtualApp()
+
 		localHost := models.LocalHost{
-			AppID:          dbLocalHost.Daemon.AppID,
-			AppName:        dbLocalHost.Daemon.App.Name,
+			AppID:          app.ID,
+			AppName:        app.Name,
 			DaemonID:       dbLocalHost.Daemon.ID,
 			DataSource:     dbLocalHost.DataSource.String(),
 			NextServer:     dbLocalHost.NextServer,
@@ -185,9 +187,25 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		limit = *params.Limit
 	}
 
+	var machineIDPtr *int64
+	if params.AppID != nil {
+		machineID, err := dbmodel.GetMachineIDByVirtualAppID(r.DB, *params.AppID)
+		if err != nil {
+			msg := fmt.Sprintf("Problem fetching machine ID for app ID %d from the database", *params.AppID)
+			log.WithError(err).Error(msg)
+			rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		if machineID != 0 {
+			machineIDPtr = &machineID
+		}
+	}
+
 	// Get hosts from DB.
 	filters := dbmodel.HostsByPageFilters{
-		AppID:            params.AppID,
+		MachineID:        machineIDPtr,
 		SubnetID:         params.SubnetID,
 		LocalSubnetID:    params.LocalSubnetID,
 		FilterText:       params.Text,
@@ -197,7 +215,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 	hosts, err := r.getHosts(start, limit, filters, "", dbmodel.SortDirAny)
 	if err != nil {
 		msg := "Problem fetching hosts from the database"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -216,7 +234,7 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 	if err != nil {
 		// Error while communicating with the database.
 		msg := fmt.Sprintf("Problem fetching host reservation with ID %d from db", params.ID)
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -635,10 +653,26 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 // configuration to the database. It works in the background. The handler is
 // non-blocking. Returns an initial status of the migration.
 func (r *RestAPI) StartHostsMigration(ctx context.Context, params dhcp.StartHostsMigrationParams) middleware.Responder {
+	var machineIDPtr *int64
+	if params.AppID != nil {
+		machineID, err := dbmodel.GetMachineIDByVirtualAppID(r.DB, *params.AppID)
+		if err != nil {
+			msg := fmt.Sprintf("Problem fetching machine ID for app ID %d from the database", *params.AppID)
+			log.WithError(err).Error(msg)
+			rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		if machineID != 0 {
+			machineIDPtr = &machineID
+		}
+	}
+
 	// Create a new host migrator.
 	migrator := entitymigrator.NewHostMigrator(
 		dbmodel.HostsByPageFilters{
-			AppID:            params.AppID,
+			MachineID:        machineIDPtr,
 			SubnetID:         params.SubnetID,
 			LocalSubnetID:    params.LocalSubnetID,
 			FilterText:       params.Text,
@@ -649,7 +683,7 @@ func (r *RestAPI) StartHostsMigration(ctx context.Context, params dhcp.StartHost
 		r.Agents,
 		r.DHCPOptionDefinitionLookup,
 		r.DaemonLocker,
-		r.Pullers.AppsStatePuller, r.Pullers.KeaHostsPuller,
+		r.Pullers.StatePuller, r.Pullers.KeaHostsPuller,
 	)
 	// Start the migration.
 	status, err := r.MigrationService.StartMigration(ctx, migrator)

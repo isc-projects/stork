@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
-	"isc.org/stork/server/apps"
-	"isc.org/stork/server/apps/kea"
-	appstest "isc.org/stork/server/apps/test"
 	"isc.org/stork/server/config"
+	"isc.org/stork/server/daemons"
+	"isc.org/stork/server/daemons/kea"
+	daemonstest "isc.org/stork/server/daemons/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
@@ -68,13 +68,8 @@ func TestGetSubnets(t *testing.T) {
         }
     }`)
 
-	app, err := dhcp4.GetKea()
+	daemon14, err := dhcp4.GetDaemon()
 	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
-	require.NoError(t, err)
-
-	a4 := app
 
 	dhcp6, err := dbmodeltest.NewKeaDHCPv6Server(db)
 	require.NoError(t, err)
@@ -91,16 +86,13 @@ func TestGetSubnets(t *testing.T) {
         }
     }`)
 
-	app, err = dhcp6.GetKea()
+	daemon26, err := dhcp6.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	m, err := dbmodeltest.NewMachine(db)
 	require.NoError(t, err)
 
-	kea46, err := dbmodeltest.NewKea(db)
-	require.NoError(t, err)
-
-	dhcp4, err = kea46.NewKeaDHCPv4Server()
+	dhcp4, err = m.NewKeaDHCPv4Server()
 	require.NoError(t, err)
 
 	err = dhcp4.Configure(`{
@@ -119,8 +111,10 @@ func TestGetSubnets(t *testing.T) {
         }
     }`)
 	require.NoError(t, err)
+	daemon34, err := dhcp4.GetDaemon()
+	require.NoError(t, err)
 
-	dhcp6, err = kea46.NewKeaDHCPv6Server()
+	dhcp6, err = m.NewKeaDHCPv6Server()
 	require.NoError(t, err)
 
 	err = dhcp6.Configure(`{
@@ -158,12 +152,15 @@ func TestGetSubnets(t *testing.T) {
     }`)
 	require.NoError(t, err)
 
-	app, err = dhcp6.GetKea()
+	daemon36, err := dhcp6.GetDaemon()
 	require.NoError(t, err)
 
-	a46 := app
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon14, daemon26, daemon34, daemon36},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}, {IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.118.0.0/24")
@@ -213,9 +210,10 @@ func TestGetSubnets(t *testing.T) {
 		}
 	}
 
-	// get subnets from app a4
+	// get subnets from daemon DHCPv4 on machine 1
+	virtualApp14 := daemon14.GetVirtualApp()
 	params = dhcp.GetSubnetsParams{
-		AppID: &a4.ID,
+		AppID: &virtualApp14.ID,
 	}
 	rsp = rapi.GetSubnets(ctx, params)
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
@@ -223,15 +221,16 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
-	require.Equal(t, a4.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
+	require.Equal(t, virtualApp14.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
+	require.Equal(t, virtualApp14.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 	require.EqualValues(t, map[string]any(nil), okRsp.Payload.Items[0].Stats)
 	require.Nil(t, okRsp.Payload.Items[0].StatsCollectedAt)
 
-	// get subnets from app a46
+	// get subnets from daemon DHCPv6 on machine 3
+	virtualApp36 := daemon36.GetVirtualApp()
 	params = dhcp.GetSubnetsParams{
-		AppID: &a46.ID,
+		AppID: &virtualApp36.ID,
 	}
 	rsp = rapi.GetSubnets(ctx, params)
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
@@ -302,8 +301,8 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
-	require.Equal(t, a46.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
-	require.Equal(t, a46.Daemons[0].ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
+	require.Equal(t, daemon34.ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
+	require.Equal(t, daemon34.GetVirtualApp().ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 3, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 	require.Nil(t, okRsp.Payload.Items[0].LocalSubnets[0].Stats)
@@ -319,8 +318,8 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
-	require.Equal(t, a4.Daemons[0].ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
+	require.Equal(t, virtualApp14.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
+	require.Equal(t, daemon14.ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 }
@@ -346,11 +345,16 @@ func TestGetSubnet4(t *testing.T) {
 	err = dhcp4.Configure(string(testutil.AllKeysDHCPv4JSON))
 	require.NoError(t, err)
 
-	app, err := dhcp4.GetKea()
+	daemon, err := dhcp4.GetDaemon()
 	require.NoError(t, err)
 
 	// Populate subnets and shared networks from the Kea configuration.
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.0.0/8")
@@ -800,11 +804,16 @@ func TestGetSubnet4MinimalParameters(t *testing.T) {
 	err = dhcp4.Configure(cfg)
 	require.NoError(t, err)
 
-	app, err := dhcp4.GetKea()
+	daemon, err := dhcp4.GetDaemon()
 	require.NoError(t, err)
 
 	// Populate the subnets in the database.
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
@@ -850,11 +859,16 @@ func TestGetSubnet6(t *testing.T) {
 	err = dhcp6.Configure(string(testutil.AllKeysDHCPv6JSON))
 	require.NoError(t, err)
 
-	app, err := dhcp6.GetKea()
+	daemon, err := dhcp6.GetDaemon()
 	require.NoError(t, err)
 
 	// Populate subnets and shared networks from the Kea configuration.
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8::/32")
@@ -1035,11 +1049,16 @@ func TestGetSubnet6MinimalParameters(t *testing.T) {
 	err = dhcp6.Configure(cfg)
 	require.NoError(t, err)
 
-	app, err := dhcp6.GetKea()
+	daemon, err := dhcp6.GetDaemon()
 	require.NoError(t, err)
 
 	// Populates the subnets in the database.
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "3000::/64")
@@ -1151,10 +1170,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
@@ -1162,15 +1178,20 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
 	require.NoError(t, err)
@@ -1184,7 +1205,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -1312,7 +1333,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -1349,7 +1370,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 				},
 				{
 					ID:       1,
-					DaemonID: dbapps[1].Daemons[0].ID,
+					DaemonID: allDaemons[1].ID,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -1486,7 +1507,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 					]
 				}
 			}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		case 1, 3:
 			require.JSONEq(t,
 				`{
@@ -1497,14 +1518,14 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 							"id": 104
 						}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -1645,10 +1666,7 @@ func TestCreateSubnetBeginSubmitNoServers(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
@@ -1656,15 +1674,20 @@ func TestCreateSubnetBeginSubmitNoServers(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
@@ -1672,7 +1695,7 @@ func TestCreateSubnetBeginSubmitNoServers(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -1711,7 +1734,7 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 	// Setup fake agents that return an error in response to reservation-add
 	// command.
 	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
-		mockStatusError("subnet4-add", cmdResponses)
+		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)
 
@@ -1743,10 +1766,7 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app1, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app1, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
@@ -1754,15 +1774,20 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app2, err := server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app2, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
 	require.NoError(t, err)
@@ -1772,7 +1797,7 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -1831,10 +1856,10 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 				Subnet: "192.0.2.0/24",
 				LocalSubnets: []*models.LocalSubnet{
 					{
-						DaemonID: dbapps[0].Daemons[0].ID,
+						DaemonID: allDaemons[0].ID,
 					},
 					{
-						DaemonID: dbapps[1].Daemons[0].ID,
+						DaemonID: allDaemons[1].ID,
 					},
 				},
 			},
@@ -1876,10 +1901,10 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 				Subnet: "192.0.2.0/24",
 				LocalSubnets: []*models.LocalSubnet{
 					{
-						DaemonID: dbapps[0].Daemons[0].ID,
+						DaemonID: allDaemons[0].ID,
 					},
 					{
-						DaemonID: dbapps[1].Daemons[0].ID,
+						DaemonID: allDaemons[1].ID,
 					},
 				},
 			},
@@ -1888,7 +1913,7 @@ func TestCreateSubnetBeginSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateSubnetSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateSubnetSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-		require.Equal(t, fmt.Sprintf("Problem with committing subnet information: subnet4-add command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", app1.GetName()),
+		require.Equal(t, fmt.Sprintf("Problem with committing subnet information: subnet4-add command to %s failed: non-success response result from Kea: 1, text: unable to communicate with the daemon", daemon1.GetName()),
 			*defaultRsp.Payload.Message)
 	})
 }
@@ -1915,10 +1940,7 @@ func TestCreateSubnetBeginCancel(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
@@ -1926,15 +1948,20 @@ func TestCreateSubnetBeginCancel(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	// Create fake agents receiving commands.
 	fa := agentcommtest.NewFakeAgents(nil, nil)
@@ -1944,7 +1971,7 @@ func TestCreateSubnetBeginCancel(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -2062,10 +2089,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
@@ -2073,15 +2097,20 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -2097,7 +2126,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -2413,14 +2442,14 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 					]
 				}
 			}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -2586,15 +2615,20 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -2610,7 +2644,7 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -2663,7 +2697,7 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -2704,7 +2738,7 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 					]
 				}
 			}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		case 1:
 			require.JSONEq(t,
 				`{
@@ -2715,7 +2749,7 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 						"id": 1
 					}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		case 2:
 			require.JSONEq(t,
 				`{
@@ -2726,14 +2760,14 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 						"id": 1
 					}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -2788,15 +2822,20 @@ func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -2812,7 +2851,7 @@ func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -2865,7 +2904,7 @@ func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -2906,7 +2945,7 @@ func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
 					]
 				}
 			}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		case 1:
 			require.JSONEq(t,
 				`{
@@ -2917,14 +2956,14 @@ func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
 						"id": 1
 					}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -2979,15 +3018,20 @@ func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -3003,7 +3047,7 @@ func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -3054,7 +3098,7 @@ func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -3095,7 +3139,7 @@ func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 					]
 				}
 			}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		case 1:
 			require.JSONEq(t,
 				`{
@@ -3106,14 +3150,14 @@ func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 						"id": 1
 					}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -3179,10 +3223,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
@@ -3190,15 +3231,20 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
@@ -3218,7 +3264,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -3284,7 +3330,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					PrefixDelegationPools: []*models.DelegatedPrefixPool{
 						{
 							Prefix:          storkutil.Ptr("2001:db8:1::/64"),
@@ -3326,7 +3372,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 				},
 				{
 					ID:       1,
-					DaemonID: dbapps[1].Daemons[0].ID,
+					DaemonID: allDaemons[1].ID,
 					PrefixDelegationPools: []*models.DelegatedPrefixPool{
 						{
 							Prefix:          storkutil.Ptr("2001:db8:1::/64"),
@@ -3424,14 +3470,14 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 					]
 				}
 			}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp6" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -3512,15 +3558,20 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
@@ -3540,7 +3591,7 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -3590,7 +3641,7 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					PrefixDelegationPools: []*models.DelegatedPrefixPool{
 						{
 							Prefix:          storkutil.Ptr("2001:db8:1::/64"),
@@ -3610,6 +3661,7 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	require.Len(t, fa.RecordedCommands, 3)
 
 	for i, c := range fa.RecordedCommands {
+		marshalled, _ := c.Marshal()
 		switch i {
 		case 0:
 			require.JSONEq(t,
@@ -3631,8 +3683,7 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 						}
 					]
 				}
-			}`,
-				c.Marshal())
+			}`, string(marshalled))
 		case 1:
 			require.JSONEq(t,
 				`{
@@ -3642,15 +3693,14 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 						"name": "foo",
 						"id": 1
 					}
-				}`,
-				c.Marshal())
+				}`, string(marshalled))
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp6" ]
 				}`,
-				c.Marshal())
+				string(marshalled))
 		}
 	}
 
@@ -3704,15 +3754,20 @@ func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
@@ -3732,7 +3787,7 @@ func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -3784,7 +3839,7 @@ func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
 			LocalSubnets: []*models.LocalSubnet{
 				{
 					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					DaemonID: allDaemons[0].ID,
 					PrefixDelegationPools: []*models.DelegatedPrefixPool{
 						{
 							Prefix:          storkutil.Ptr("2001:db8:1::/64"),
@@ -3824,7 +3879,7 @@ func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
 						]
 					}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		case 1:
 			require.JSONEq(t,
 				`{
@@ -3835,14 +3890,14 @@ func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
 						"id": 1
 					}
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp6" ]
 				}`,
-				c.Marshal())
+				func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 
@@ -3892,10 +3947,15 @@ func TestUpdateSubnetBeginNonExistingSubnetID(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
@@ -3909,7 +3969,7 @@ func TestUpdateSubnetBeginNonExistingSubnetID(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -3963,10 +4023,15 @@ func TestUpdateSubnetBeginNoSubnetCmdsHook(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
@@ -3980,7 +4045,7 @@ func TestUpdateSubnetBeginNoSubnetCmdsHook(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -4038,22 +4103,27 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
 
 	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
-		mockStatusError("subnet4-update", cmdResponses)
+		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)
 
@@ -4063,7 +4133,7 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -4121,7 +4191,7 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 				Subnet: "192.0.2.0/24",
 				LocalSubnets: []*models.LocalSubnet{
 					{
-						DaemonID: dbapps[0].Daemons[0].ID,
+						DaemonID: allDaemons[0].ID,
 					},
 				},
 			},
@@ -4160,7 +4230,7 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 			Subnet: &models.Subnet{
 				LocalSubnets: []*models.LocalSubnet{
 					{
-						DaemonID: dbapps[0].Daemons[0].ID,
+						DaemonID: allDaemons[0].ID,
 					},
 				},
 			},
@@ -4169,7 +4239,7 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateSubnetSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateSubnetSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-		require.Equal(t, fmt.Sprintf("Problem with committing subnet information: subnet4-update command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", app.GetName()),
+		require.Equal(t, fmt.Sprintf("Problem with committing subnet information: subnet4-update command to %s failed: non-success response result from Kea: 1, text: unable to communicate with the daemon", daemon.GetName()),
 			*defaultRsp.Payload.Message)
 	})
 }
@@ -4207,10 +4277,7 @@ func TestUpdateSubnetBeginCancel(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
-	require.NoError(t, err)
-
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
@@ -4218,15 +4285,20 @@ func TestUpdateSubnetBeginCancel(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon2, err := server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
@@ -4246,7 +4318,7 @@ func TestUpdateSubnetBeginCancel(t *testing.T) {
 	daemonLocker := config.NewDaemonLocker()
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:           db,
 		Agents:       fa,
 		DefLookup:    lookup,
@@ -4351,10 +4423,15 @@ func TestDeleteSubnet(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
@@ -4362,15 +4439,20 @@ func TestDeleteSubnet(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	daemon, err = server2.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 2)
+	require.Len(t, allDaemons, 2)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -4384,7 +4466,7 @@ func TestDeleteSubnet(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -4425,12 +4507,12 @@ func TestDeleteSubnet(t *testing.T) {
 				"arguments": {
 					"id": 1
 				}
-		}`, c.Marshal())
+		}`, func() string { data, _ := c.Marshal(); return string(data) }())
 		default:
 			require.JSONEq(t, `{
 				"command": "config-write",
 				"service": ["dhcp4"]
-			}`, c.Marshal())
+			}`, func() string { data, _ := c.Marshal(); return string(data) }())
 		}
 	}
 	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
@@ -4446,7 +4528,7 @@ func TestDeleteSubnetError(t *testing.T) {
 	// Setup fake agents that return an error in response to subnet4-del
 	// command.
 	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
-		mockStatusError("subnet4-del", cmdResponses)
+		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)
 
@@ -4476,15 +4558,20 @@ func TestDeleteSubnetError(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	daemon, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
 	require.NoError(t, err)
 
-	dbapps, err := dbmodel.GetAllApps(db, true)
+	allDaemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, dbapps, 1)
+	require.Len(t, allDaemons, 1)
 
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -4494,7 +4581,7 @@ func TestDeleteSubnetError(t *testing.T) {
 	require.NotNil(t, lookup)
 
 	// Create the config manager.
-	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:        db,
 		Agents:    fa,
 		DefLookup: lookup,
@@ -4539,7 +4626,7 @@ func TestDeleteSubnetError(t *testing.T) {
 		require.IsType(t, &dhcp.DeleteSubnetDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.DeleteSubnetDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
-		require.Equal(t, fmt.Sprintf("Problem with deleting a subnet: network4-subnet-del command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", app.GetName()),
+		require.Equal(t, fmt.Sprintf("Problem with deleting a subnet: network4-subnet-del command to %s failed: non-success response result from Kea: 1, text: unable to communicate with the daemon", daemon.GetName()),
 			*defaultRsp.Payload.Message)
 	})
 }

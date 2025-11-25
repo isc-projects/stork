@@ -10,6 +10,7 @@ import (
 
 	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -204,18 +205,22 @@ const (
 // KeaDaemon, KeaDHCPDaemon and KeaDHCPv4Daemon selector for the "dhcp4"
 // daemon. The corresponding checkers will be used to review the
 // daemon configuration.
-func getDispatchGroupSelectors(daemonName string) DispatchGroupSelectors {
+func getDispatchGroupSelectors(daemonName daemonname.Name) DispatchGroupSelectors {
 	switch daemonName {
-	case "dhcp4":
+	case daemonname.DHCPv4:
 		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaDHCPDaemon, KeaDHCPv4Daemon}
-	case "dhcp6":
+	case daemonname.DHCPv6:
 		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaDHCPDaemon, KeaDHCPv6Daemon}
-	case "ca":
+	case daemonname.CA:
 		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaCADaemon}
-	case "d2":
+	case daemonname.D2:
 		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaD2Daemon}
-	case "named":
+	case daemonname.NetConf:
+		return DispatchGroupSelectors{EachDaemon, KeaDaemon}
+	case daemonname.Bind9:
 		return DispatchGroupSelectors{EachDaemon, Bind9Daemon}
+	case daemonname.PDNS:
+		return DispatchGroupSelectors{EachDaemon}
 	}
 	log.WithFields(log.Fields{
 		"daemon_name": daemonName,
@@ -971,7 +976,7 @@ func LoadAndValidateCheckerPreferences(db dbops.DBI, d Dispatcher) error {
 			daemon, ok = daemons[preference.GetDaemonID()]
 			if !ok {
 				// Lookup in database
-				daemon, err = dbmodel.GetDaemonByID(db, preference.GetDaemonID())
+				daemon, err = dbmodel.GetKeaDaemonByID(db, preference.GetDaemonID())
 				if err != nil {
 					// Should never happen
 					return err

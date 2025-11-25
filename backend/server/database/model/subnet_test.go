@@ -13,7 +13,8 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
@@ -63,13 +64,13 @@ func TestAddSubnetWithAddressPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	subnet := &Subnet{
 		Prefix: "192.0.2.0/24",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 				AddressPools: []AddressPool{
 					{
 						LowerBound: "192.0.2.1",
@@ -111,13 +112,13 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	subnet := &Subnet{
 		Prefix: "2001:db8:1::/64",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 				AddressPools: []AddressPool{
 					{
 						LowerBound: "2001:db8:1::1",
@@ -190,7 +191,7 @@ func TestGetSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add a shared network.
 	sharedNetwork := &SharedNetwork{
@@ -198,7 +199,7 @@ func TestGetSubnet(t *testing.T) {
 		Family: 6,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[1].ID,
+				DaemonID: daemons[1].ID,
 			},
 		},
 	}
@@ -215,7 +216,7 @@ func TestGetSubnet(t *testing.T) {
 		SharedNetworkID: sharedNetwork.ID,
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[1].ID,
+				DaemonID: daemons[1].ID,
 				AddressPools: []AddressPool{
 					{
 						LowerBound: "2001:db8:1::1",
@@ -391,16 +392,16 @@ func TestAddSubnetWithExistingSharedNetwork(t *testing.T) {
 	require.Equal(t, returnedSubnet.SharedNetwork.ID, returnedSubnet.SharedNetworkID)
 }
 
-// Test that an app can be associated with the existing subnet and then
+// Test that a daemon can be associated with the existing subnet and then
 // such association can be removed.
-func TestAddDeleteAppToSubnet(t *testing.T) {
+func TestAddDeleteDaemonToSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add apps to the database. They must exist to make any association between
+	// Add daemons to the database. They must exist to make any association between
 	// them and the subnet.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	// Same story for subnet. It must exist.
 	subnet := &Subnet{
@@ -410,8 +411,8 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// Add association of the app to the subnet.
-	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
+	// Add association of the daemon to the subnet.
+	err = AddDaemonToSubnet(db, subnet, daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -422,30 +423,24 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.Len(t, returnedSubnet.LocalSubnets, 1)
 	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[0].LocalSubnetID)
 	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon)
-	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon.App)
 
-	// Also make sure that the app can be retrieved using the GetApp function.
-	returnedApp := returnedSubnet.GetApp(apps[0].ID)
-	require.NotNil(t, returnedApp)
-	returnedApp = returnedSubnet.GetApp(apps[1].ID)
-	require.Nil(t, returnedApp)
+	// Also make sure that the daemon can be retrieved using the machine ID.
+	require.NotZero(t, returnedSubnet.LocalSubnets[0].Daemon.MachineID)
 
-	// Add another app to the same subnet.
-	err = AddDaemonToSubnet(db, subnet, apps[1].Daemons[0])
+	// Add another daemon to the same subnet.
+	err = AddDaemonToSubnet(db, subnet, daemons[2])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// Get the subnet again and expect two apps to be returned.
+	// Get the subnet again and expect two daemons to be returned.
 	returnedSubnet, err = GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
 	require.Len(t, returnedSubnet.LocalSubnets, 2)
 	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[0].LocalSubnetID)
 	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon)
-	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon.App)
 	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[1].LocalSubnetID)
 	require.NotNil(t, returnedSubnet.LocalSubnets[1].Daemon)
-	require.NotNil(t, returnedSubnet.LocalSubnets[1].Daemon.App)
 
 	// Remove the association of the first daemon with the subnet.
 	ok, err := DeleteDaemonFromSubnet(db, subnet.ID, returnedSubnet.LocalSubnets[0].DaemonID)
@@ -459,15 +454,15 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.Len(t, returnedSubnet.LocalSubnets, 1)
 }
 
-// Test that app's associations with multiple subnets can be removed.
-func TestDeleteAppFromSubnets(t *testing.T) {
+// Test that daemon's associations with multiple subnets can be removed.
+func TestDeleteDaemonFromSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add apps to the database. They must exist to make any association between
+	// Add daemons to the database. They must exist to make any association between
 	// them and the subnet.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	subnets := []Subnet{
 		{
@@ -486,29 +481,29 @@ func TestDeleteAppFromSubnets(t *testing.T) {
 		require.NotZero(t, subnets[i].ID)
 	}
 
-	// Associate the first app with two subnets.
-	err := AddDaemonToSubnet(db, &subnets[0], apps[0].Daemons[0])
+	// Associate the first daemon with two subnets.
+	err := AddDaemonToSubnet(db, &subnets[0], daemons[0])
 	require.NoError(t, err)
 
-	err = AddDaemonToSubnet(db, &subnets[1], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, &subnets[1], daemons[0])
 	require.NoError(t, err)
 
-	// Associate the second app with another subnet.
-	err = AddDaemonToSubnet(db, &subnets[2], apps[1].Daemons[0])
+	// Associate the second daemon with another subnet.
+	err = AddDaemonToSubnet(db, &subnets[2], daemons[1])
 	require.NoError(t, err)
 
-	// Remove associations of the first app.
-	count, err := DeleteDaemonFromSubnets(db, apps[0].Daemons[0].ID)
+	// Remove associations of the first daemon.
+	count, err := DeleteDaemonFromSubnets(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
 
-	// Ensure that the associations were removed for the first app.
-	returned, err := GetSubnetsByDaemonID(db, apps[0].Daemons[0].ID)
+	// Ensure that the associations were removed for the first daemon.
+	returned, err := GetSubnetsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Empty(t, returned)
 
-	// The association should still exist for the second app.
-	returned, err = GetSubnetsByDaemonID(db, apps[1].Daemons[0].ID)
+	// The association should still exist for the second daemon.
+	returned, err = GetSubnetsByDaemonID(db, daemons[1].ID)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
 }
@@ -518,12 +513,12 @@ func TestGetSubnetsByDaemonID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add apps to the database. They must exist to make any association between
-	// then and the subnet.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// Add daemons to the database. They must exist to make any association between
+	// them and the subnet.
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
-	// Add several subnets matching configuration of the apps we have added.
+	// Add several subnets matching configuration of the daemons we have added.
 	subnets := []Subnet{
 		{
 			Prefix: "192.0.2.0/24",
@@ -543,36 +538,36 @@ func TestGetSubnetsByDaemonID(t *testing.T) {
 		// Add association of the daemons to the subnets.
 		if i < 2 {
 			// First two subnets associated with the first daemon.
-			err = AddDaemonToSubnet(db, &subnets[i], apps[0].Daemons[0])
+			err = AddDaemonToSubnet(db, &subnets[i], daemons[0])
 		} else {
 			// Last subnet is only associated with the second daemon.
-			err = AddDaemonToSubnet(db, &subnets[i], apps[1].Daemons[0])
+			err = AddDaemonToSubnet(db, &subnets[i], daemons[2])
 		}
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 	}
 
-	// Get all IPv4 subnets for the first app.
-	returnedSubnets, err := GetSubnetsByDaemonID(db, apps[0].Daemons[0].ID)
+	// Get all IPv4 subnets for the first daemon.
+	returnedSubnets, err := GetSubnetsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 2)
 
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.EqualValues(t, 123, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, apps[0].Daemons[0].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, daemons[0].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
 
 	require.Len(t, returnedSubnets[1].LocalSubnets, 1)
 	require.EqualValues(t, 234, returnedSubnets[1].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, apps[0].Daemons[0].ID, returnedSubnets[1].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, daemons[0].ID, returnedSubnets[1].LocalSubnets[0].DaemonID)
 
-	// Get all IPv4 subnets for the second app.
-	returnedSubnets, err = GetSubnetsByDaemonID(db, apps[1].Daemons[0].ID)
+	// Get all IPv4 subnets for the second daemon.
+	returnedSubnets, err = GetSubnetsByDaemonID(db, daemons[2].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 1)
 
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.EqualValues(t, 345, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, apps[1].Daemons[0].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, daemons[2].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
 }
 
 // This test verifies that subnets can be filtered by search text.
@@ -583,7 +578,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add a shared network.
 	sharedNetwork := &SharedNetwork{
@@ -591,7 +586,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 		Family: 4,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}
@@ -609,7 +604,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 			SharedNetworkID: sharedNetwork.ID,
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					AddressPools: []AddressPool{
 						{
 							LowerBound: "192.0.2.1",
@@ -634,7 +629,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 			Prefix: "192.0.3.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					AddressPools: []AddressPool{
 						{
 							LowerBound: "192.0.3.1",
@@ -650,7 +645,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 					},
 				},
 				{
-					DaemonID: apps[1].Daemons[0].ID,
+					DaemonID: daemons[1].ID,
 					UserContext: map[string]interface{}{
 						"subnet-name": "bar",
 					},
@@ -661,7 +656,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 			Prefix: "192.0.4.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 				},
 			},
 		},
@@ -758,14 +753,14 @@ func TestGetSubnetsByPage(t *testing.T) {
 	require.Equal(t, "192.0.3.0/24", returned[0].Prefix)
 }
 
-// Test that the subnet can be fetched by local ID and app ID.
-func TestGetAppLocalSubnets(t *testing.T) {
+// Test that the subnet can be fetched by local ID and daemon ID.
+func TestGetDaemonLocalSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// prepare apps
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// prepare daemons
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	// prepare a subnet
 	subnet := &Subnet{
@@ -775,13 +770,13 @@ func TestGetAppLocalSubnets(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
+	// add association of the daemon to the subnet - this will create LocalSubnet
+	err = AddDaemonToSubnet(db, subnet, daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// check fetching LocalSubnets for given app
-	subnets, err := GetAppLocalSubnets(db, apps[0].ID)
+	// check fetching LocalSubnets for given daemon
+	subnets, err := GetDaemonLocalSubnets(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
 	require.EqualValues(t, 123, subnets[0].LocalSubnetID)
@@ -794,12 +789,12 @@ func TestGetSubnetPrefixes(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add apps to the database. They must exist to make any association between
-	// then and the subnet.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// Add daemons to the database. They must exist to make any association between
+	// them and the subnet.
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
-	// Add several subnets matching configuration of the apps we have added.
+	// Add several subnets matching configuration of the daemons we have added.
 	subnets := []Subnet{
 		{
 			Prefix: "192.0.2.0/24",
@@ -842,9 +837,9 @@ func TestUpdateStats(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// prepare apps
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// prepare daemons
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	// prepare a subnet
 	subnet := &Subnet{
@@ -854,20 +849,17 @@ func TestUpdateStats(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
+	// add association of the daemon to the subnet - this will create LocalSubnet
+	err = AddDaemonToSubnet(db, subnet, daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// check fetching LocalSubnets for given app
-	subnets, err := GetAppLocalSubnets(db, apps[0].ID)
-	require.NoError(t, err)
-	require.Len(t, subnets, 1)
-
 	// check updating stats
-	lsn := subnets[0]
-	lsn.DaemonID = apps[0].Daemons[0].ID
-	lsn.SubnetID = subnet.ID
+	returnedSubnet, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+
+	lsn := returnedSubnet.LocalSubnets[0]
 	stats := Stats{}
 	stats.SetBigCounter("hakuna-matata", storkutil.NewBigCounterFromInt64(123))
 	err = lsn.UpdateStats(db, stats)
@@ -886,8 +878,8 @@ func TestUpdateStats(t *testing.T) {
 }
 
 // Test that global shared networks and subnet instances are committed
-// to the database and associated with the given app. This test is very
-// simple. More exhaustive tests are implemented in backend/apps.
+// to the database and associated with the given daemon. This test is very
+// simple. More exhaustive tests are implemented in backend/daemons.
 func TestCommitNetworksIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -901,22 +893,16 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Creates new app. Its configuration doesn't matter in this test.
-	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "localhost", "", 8000, false)
-	app := App{
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				Name:   DaemonNameDHCPv4,
-				Active: true,
-			},
+	// Creates new daemon. Its configuration doesn't matter in this test.
+	daemon := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	// Add the app to the database.
-	_, err = AddApp(db, &app)
+	})
+	// Add the daemon to the database.
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Create a shared network and subnet.
@@ -937,7 +923,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 							},
 							LocalHosts: []LocalHost{
 								{
-									DaemonID:   app.Daemons[0].ID,
+									DaemonID:   daemon.ID,
 									DataSource: HostDataSourceConfig,
 									IPReservations: []IPReservation{
 										{
@@ -950,7 +936,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					},
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      app.Daemons[0].ID,
+							DaemonID:      daemon.ID,
 							LocalSubnetID: 13,
 							UserContext: map[string]any{
 								"subnet-name": "foo",
@@ -961,7 +947,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID: app.Daemons[0].ID,
+					DaemonID: daemon.ID,
 					DHCPOptionSet: DHCPOptionSet{
 						Hash: "xyz",
 					},
@@ -982,7 +968,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					},
 					LocalHosts: []LocalHost{
 						{
-							DaemonID:   app.Daemons[0].ID,
+							DaemonID:   daemon.ID,
 							DataSource: HostDataSourceConfig,
 							IPReservations: []IPReservation{
 								{
@@ -995,7 +981,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: app.Daemons[0].ID,
+					DaemonID: daemon.ID,
 					SubnetID: 14,
 				},
 			},
@@ -1029,13 +1015,13 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
-	require.EqualValues(t, app.Daemons[0].ID, returnedHosts[0].LocalHosts[0].DaemonID)
+	require.EqualValues(t, daemon.ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	returnedHosts, err = GetHostsBySubnetID(db, returnedSubnets[1].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
-	require.EqualValues(t, app.Daemons[0].ID, returnedHosts[0].LocalHosts[0].DaemonID)
+	require.EqualValues(t, daemon.ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	// Make sure we can commit the networks again without an error.
 	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets)
@@ -1059,9 +1045,9 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// prepare apps
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// prepare daemons
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	// prepare a subnet
 	subnet := &Subnet{
@@ -1071,8 +1057,8 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
+	// add association of the daemon to the subnet - this will create LocalSubnet
+	err = AddDaemonToSubnet(db, subnet, daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -1130,14 +1116,14 @@ func TestUpdateUtilization(t *testing.T) {
 	require.InDelta(t, time.Now().UTC().Unix(), returnedSubnet2.StatsCollectedAt.Unix(), 10.0)
 }
 
-// Test deleting subnets not assigned to any apps.
+// Test deleting subnets not assigned to any daemons.
 func TestDeleteOrphanedSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add apps used in the test.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// Add daemons used in the test.
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	// Add three subnets.
 	subnets := []Subnet{
@@ -1157,12 +1143,12 @@ func TestDeleteOrphanedSubnets(t *testing.T) {
 		require.NotZero(t, subnets[i].ID)
 	}
 
-	// Associate one of the subnets with one of the apps. The
+	// Associate one of the subnets with one of the daemons. The
 	// other two subnets are orphaned.
-	err := AddDaemonToSubnet(db, &subnets[0], apps[0].Daemons[0])
+	err := AddDaemonToSubnet(db, &subnets[0], daemons[0])
 	require.NoError(t, err)
 
-	// Delete subnets not assigned to any apps.
+	// Delete subnets not assigned to any daemons.
 	count, err := DeleteOrphanedSubnets(db)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
@@ -1187,14 +1173,14 @@ func TestDeleteOrphanedSubnets(t *testing.T) {
 	require.Zero(t, count)
 }
 
-// Test deleting subnets belonging to a shared network not assigned to any apps.
+// Test deleting subnets belonging to a shared network not assigned to any daemons.
 func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add apps used in the test.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
+	// Add daemons used in the test.
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
 
 	// Add a shared network with three subnets.
 	network := &SharedNetwork{
@@ -1215,12 +1201,12 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 	err := AddSharedNetwork(db, network)
 	require.NoError(t, err)
 
-	// Associate one of the subnets with one of the apps. The
+	// Associate one of the subnets with one of the daemons. The
 	// other two subnets are orphaned.
-	err = AddDaemonToSubnet(db, &network.Subnets[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, &network.Subnets[0], daemons[0])
 	require.NoError(t, err)
 
-	// Delete subnets not assigned to any apps.
+	// Delete subnets not assigned to any daemons.
 	count, err := DeleteOrphanedSubnets(db)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
@@ -1240,7 +1226,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 	require.Nil(t, returned)
 
 	// Delete the sole daemon from the subnet.
-	count, err = DeleteDaemonFromSubnets(db, apps[0].Daemons[0].ID)
+	count, err = DeleteDaemonFromSubnets(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, count)
 
@@ -1342,7 +1328,7 @@ func TestUpdateSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	sharedNetworkFoo := &SharedNetwork{Name: "foo"}
 	sharedNetworkBar := &SharedNetwork{Name: "bar"}
@@ -1354,7 +1340,7 @@ func TestUpdateSubnet(t *testing.T) {
 		ClientClass: "foo",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 				AddressPools: []AddressPool{
 					{LowerBound: "fe80::1", UpperBound: "fe80::10"},
 					{LowerBound: "fe80::100", UpperBound: "fe80::110"},
@@ -1370,7 +1356,7 @@ func TestUpdateSubnet(t *testing.T) {
 			{
 				LocalHosts: []LocalHost{
 					{
-						DaemonID:   apps[0].Daemons[0].ID,
+						DaemonID:   daemons[0].ID,
 						DataSource: HostDataSourceConfig,
 						Hostname:   "foo",
 					},
@@ -1408,7 +1394,7 @@ func TestUpdateSubnet(t *testing.T) {
 		{
 			LocalHosts: []LocalHost{
 				{
-					DaemonID:   apps[0].Daemons[0].ID,
+					DaemonID:   daemons[0].ID,
 					DataSource: HostDataSourceConfig,
 					Hostname:   "bar",
 				},
@@ -1451,14 +1437,14 @@ func TestDeleteSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add a subnet.
 	subnet := &Subnet{
 		Prefix: "2001:db8:1::/64",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}
@@ -1490,13 +1476,13 @@ func TestAddAndClearSubnetPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	subnetFoo := &Subnet{
 		Prefix: "3001::/64",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[1].ID,
+				DaemonID: daemons[1].ID,
 				AddressPools: []AddressPool{
 					{LowerBound: "3001:1::1", UpperBound: "3001:1::10"},
 					{LowerBound: "3001:2::1", UpperBound: "3001:2::10"},
@@ -1515,7 +1501,7 @@ func TestAddAndClearSubnetPools(t *testing.T) {
 		Prefix: "3002::/64",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[1].ID,
+				DaemonID: daemons[1].ID,
 				AddressPools: []AddressPool{
 					{LowerBound: "3002:1::1", UpperBound: "3002:1::10"},
 					{LowerBound: "3002:2::1", UpperBound: "3002:2::10"},
@@ -1580,8 +1566,8 @@ func BenchmarkAddSubnet(b *testing.B) {
 }
 
 // Benchmark measuring a time to associate a subnet with a daemon. This requires
-// finding local subnet ID within the app configuration by subnet prefix.
-// In order to find a subnet in the app configuration it is possible to use
+// finding local subnet ID within the daemon configuration by subnet prefix.
+// In order to find a subnet in the daemon configuration it is possible to use
 // indexed and unindexed subnets. Thus, this benchmark contains two test cases,
 // one checking performance of the function with indexing and without indexing.
 // The function execution time should be significantly longer without indexing.
@@ -1609,37 +1595,38 @@ func BenchmarkAddDaemonToSubnet(b *testing.B) {
 	}
 	tx.Commit()
 
-	// Also create the configuration including these subnets for the app.
-	rawConfig := &map[string]interface{}{
+	// Also create the configuration including these subnets for the daemon.
+	rawConfig := map[string]interface{}{
 		"Dhcp4": map[string]interface{}{
 			"subnet4": keaSubnets,
 		},
 	}
-	daemon := NewKeaDaemon("dhcp4", true)
-	daemon.SetConfig(NewKeaConfig(rawConfig))
+	rawConfigBytes, _ := json.Marshal(rawConfig)
 
-	// Add machine/app.
+	// Add machine/daemon.
 	machine := &Machine{
 		ID:        0,
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
-	AddMachine(db, machine)
-	app := &App{
-		ID:        0,
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			daemon,
+	err := AddMachine(db, machine)
+	require.NoError(b, err)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	AddApp(db, app)
+	})
+	daemon.SetKeaConfigFromJSON(rawConfigBytes)
+	err = AddDaemon(db, daemon)
+	require.NoError(b, err)
 
 	// Run the actual benchmark.
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		subnetIndex := rand.Intn(len(subnets))
-		AddDaemonToSubnet(db, &subnets[subnetIndex], app.Daemons[0])
+		AddDaemonToSubnet(db, &subnets[subnetIndex], daemon)
 	}
 }
 
@@ -1898,17 +1885,17 @@ func TestPopulateSubnetDaemons(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Insert apps to the database.
-	apps := addTestSubnetApps(t, db)
+	// Insert daemons to the database.
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Create bare subnet that lacks Daemon instances but has valid DaemonID values.
 	subnet := &Subnet{
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 			{
-				DaemonID: apps[1].Daemons[0].ID,
+				DaemonID: daemons[1].ID,
 			},
 		},
 	}
@@ -1918,9 +1905,9 @@ func TestPopulateSubnetDaemons(t *testing.T) {
 	// Make sure that the daemon information was assigned to the subnet.
 	require.Len(t, subnet.LocalSubnets, 2)
 	require.NotNil(t, subnet.LocalSubnets[0].Daemon)
-	require.EqualValues(t, apps[0].Daemons[0].ID, subnet.LocalSubnets[0].Daemon.ID)
+	require.EqualValues(t, daemons[0].ID, subnet.LocalSubnets[0].Daemon.ID)
 	require.NotNil(t, subnet.LocalSubnets[1].Daemon)
-	require.EqualValues(t, apps[1].Daemons[0].ID, subnet.LocalSubnets[1].Daemon.ID)
+	require.EqualValues(t, daemons[1].ID, subnet.LocalSubnets[1].Daemon.ID)
 }
 
 // Test getting max local subnet IDs.
@@ -1928,7 +1915,7 @@ func TestGetMaxLocalSubnetID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add several subnets with different local subnet IDs.
 	subnets := []Subnet{
@@ -1936,7 +1923,7 @@ func TestGetMaxLocalSubnetID(t *testing.T) {
 			Prefix: "192.0.2.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      apps[0].Daemons[0].ID,
+					DaemonID:      daemons[0].ID,
 					LocalSubnetID: 50,
 				},
 			},
@@ -1945,7 +1932,7 @@ func TestGetMaxLocalSubnetID(t *testing.T) {
 			Prefix: "192.0.3.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      apps[0].Daemons[0].ID,
+					DaemonID:      daemons[0].ID,
 					LocalSubnetID: 70,
 				},
 			},
@@ -1954,7 +1941,7 @@ func TestGetMaxLocalSubnetID(t *testing.T) {
 			Prefix: "192.0.4.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      apps[0].Daemons[0].ID,
+					DaemonID:      daemons[0].ID,
 					LocalSubnetID: 63,
 				},
 			},
@@ -1979,7 +1966,7 @@ func TestGetMaxLocalSubnetIDNullValues(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add several subnets with different local subnet IDs.
 	subnets := []Subnet{
@@ -1987,7 +1974,7 @@ func TestGetMaxLocalSubnetIDNullValues(t *testing.T) {
 			Prefix: "192.0.2.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 				},
 			},
 		},
@@ -1995,7 +1982,7 @@ func TestGetMaxLocalSubnetIDNullValues(t *testing.T) {
 			Prefix: "192.0.3.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 				},
 			},
 		},

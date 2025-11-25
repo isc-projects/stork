@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
 )
@@ -90,31 +91,29 @@ func TestAddZoneInventoryState(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	details := NewZoneInventoryStateDetails()
 	details.SetStatus(ZoneInventoryStatusBusy, testError{})
 	details.SetTotalZones(123)
-	state := NewZoneInventoryState(addedDaemons[0].ID, details)
+	state := NewZoneInventoryState(daemon.ID, details)
 
 	err = AddZoneInventoryState(db, state)
 	require.NoError(t, err)
 
-	returnedState, err := GetZoneInventoryState(db, addedDaemons[0].ID)
+	returnedState, err := GetZoneInventoryState(db, daemon.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedState)
 	require.NotZero(t, returnedState.ID)
-	require.Equal(t, addedDaemons[0].ID, returnedState.DaemonID)
+	require.Equal(t, daemon.ID, returnedState.DaemonID)
 	require.NotZero(t, returnedState.CreatedAt)
 	require.NotNil(t, returnedState.State)
 	require.Equal(t, ZoneInventoryStatusBusy, returnedState.State.Status)
@@ -123,7 +122,7 @@ func TestAddZoneInventoryState(t *testing.T) {
 	require.NotNil(t, returnedState.State.ZoneCount)
 	require.EqualValues(t, 123, *returnedState.State.ZoneCount)
 
-	returnedState, err = GetZoneInventoryState(db, addedDaemons[0].ID+1)
+	returnedState, err = GetZoneInventoryState(db, daemon.ID+1)
 	require.NoError(t, err)
 	require.Nil(t, returnedState)
 }
@@ -141,22 +140,20 @@ func TestAddZoneInventoryStateOverride(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	details := NewZoneInventoryStateDetails()
 	details.SetStatus(ZoneInventoryStatusBusy, testError{})
 	details.SetTotalZones(123)
-	state := NewZoneInventoryState(addedDaemons[0].ID, details)
+	state := NewZoneInventoryState(daemon.ID, details)
 
 	err = AddZoneInventoryState(db, state)
 	require.NoError(t, err)
@@ -166,11 +163,11 @@ func TestAddZoneInventoryStateOverride(t *testing.T) {
 	err = AddZoneInventoryState(db, state)
 	require.NoError(t, err)
 
-	returnedState, err := GetZoneInventoryState(db, addedDaemons[0].ID)
+	returnedState, err := GetZoneInventoryState(db, daemon.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedState)
 	require.NotZero(t, returnedState.ID)
-	require.Equal(t, addedDaemons[0].ID, returnedState.DaemonID)
+	require.Equal(t, daemon.ID, returnedState.DaemonID)
 	require.NotZero(t, returnedState.CreatedAt)
 	require.NotNil(t, returnedState.State)
 	require.Equal(t, ZoneInventoryStatusOK, returnedState.State.Status)
@@ -202,7 +199,7 @@ func TestGetZoneInventoryStates(t *testing.T) {
 			ZoneCount: storkutil.Ptr(int64(345)),
 		},
 	}
-	// Add the machines and apps and associate them with the states.
+	// Add the machines and daemons and associate them with the states.
 	for i := range details {
 		machine := &Machine{
 			Address:   "localhost",
@@ -211,18 +208,17 @@ func TestGetZoneInventoryStates(t *testing.T) {
 		err := AddMachine(db, machine)
 		require.NoError(t, err)
 
-		app := &App{
-			MachineID: machine.ID,
-			Type:      AppTypeBind9,
-			Daemons: []*Daemon{
-				NewBind9Daemon(true),
+		daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(8000 + i),
 			},
-		}
-		addedDaemons, err := AddApp(db, app)
+		})
+		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
-		require.Len(t, addedDaemons, 1)
 
-		state := NewZoneInventoryState(addedDaemons[0].ID, details[i])
+		state := NewZoneInventoryState(daemon.ID, details[i])
 		err = AddZoneInventoryState(db, state)
 		require.NoError(t, err)
 	}

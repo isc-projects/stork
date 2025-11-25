@@ -10,12 +10,15 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	bind9config "isc.org/stork/appcfg/bind9"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	storkutil "isc.org/stork/util"
 )
 
 var (
-	_ App             = (*Bind9App)(nil)
+	_ Daemon          = (*Bind9Daemon)(nil)
+	_ dnsDaemon       = (*Bind9Daemon)(nil)
 	_ bind9FileParser = (*bind9config.Parser)(nil)
 
 	// Patterns for detecting named process.
@@ -29,55 +32,16 @@ type bind9FileParser interface {
 	ParseFile(path string) (*bind9config.Config, error)
 }
 
-// Represents the BIND 9 process metadata.
-type Bind9Daemon struct {
-	Pid     int32
-	Name    string
-	Version string
-	Active  bool
-}
-
-// Represents the state of BIND 9.
-type Bind9State struct {
-	Version string
-	Active  bool
-	Daemon  Bind9Daemon
-}
-
 // It holds common and BIND 9 specific runtime information.
-type Bind9App struct {
-	BaseApp
-	RndcClient    *RndcClient // to communicate with BIND 9 via rndc
-	zoneInventory *zoneInventory
+type Bind9Daemon struct {
+	dnsDaemonImpl
+	rndcClient    *RndcClient // to communicate with BIND 9 via rndc
+	pid           int32       // PID of the named process
 	bind9Config   *bind9config.Config
 	rndcKeyConfig *bind9config.Config
 }
 
-// Get base information about BIND 9 app.
-func (ba *Bind9App) GetBaseApp() *BaseApp {
-	return &ba.BaseApp
-}
-
-// Detect allowed logs provided by BIND 9.
-// TODO: currently it is not implemented and not used,
-// it returns always empty list and no error.
-func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
-	return nil, nil
-}
-
-// Stops the zone inventory.
-func (ba *Bind9App) StopZoneInventory() {
-	if ba.zoneInventory != nil {
-		ba.zoneInventory.stop()
-	}
-}
-
-// Returns the zone inventory instance associated with the BIND 9 app.
-func (ba *Bind9App) GetZoneInventory() *zoneInventory {
-	return ba.zoneInventory
-}
-
-// List of BIND 9 executables used during app detection.
+// List of BIND 9 executables used during daemon detection.
 const (
 	namedCheckconfExec = "named-checkconf"
 	rndcExec           = "rndc"
@@ -219,7 +183,7 @@ func parseNamedDefaultPath(output []byte) string {
 	return namedConfMatch[1]
 }
 
-// Detect the BIND 9 application by parsing the named process command line.
+// Detect the BIND 9 daemon by parsing the named process command line.
 // If the path to the configuration file is relative and chroot directory is
 // not specified, the path is resolved against the current working directory of
 // the process. If the chroot directory is specified, the path is resolved
@@ -241,13 +205,13 @@ func parseNamedDefaultPath(output []byte) string {
 // port, and secret key (if configured). The returned instance lacks information
 // about the active daemons. It must be detected separately.
 //
-// It returns the BIND 9 app instance or an error if the BIND 9 is not
+// It returns the BIND 9 daemon instance or an error if the BIND 9 is not
 // recognized or any error occurs.
 //
 // ToDo: Enable the linter check after splitting this function in #1991.
 //
 //nolint:gocyclo
-func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (App, error) {
+func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (Daemon, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil, err
@@ -407,21 +371,23 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 
 	accessPoints := []AccessPoint{
 		{
-			Type:    AccessPointControl,
-			Address: *ctrlAddress,
-			Port:    *ctrlPort,
-			Key:     rndcKey,
+			Type:     AccessPointControl,
+			Address:  *ctrlAddress,
+			Port:     *ctrlPort,
+			Key:      rndcKey,
+			Protocol: protocoltype.RNDC,
 		},
 	}
 
 	// look for statistics channel address in config
-	var inventory *zoneInventory
+	var inventory zoneInventory
 	address, port, enabled := bind9Config.GetStatisticsChannelConnParams()
 	if enabled {
 		accessPoints = append(accessPoints, AccessPoint{
-			Type:    AccessPointStatistics,
-			Address: *address,
-			Port:    *port,
+			Type:     AccessPointStatistics,
+			Address:  *address,
+			Port:     *port,
+			Protocol: protocoltype.HTTP,
 		})
 		client := NewBind9StatsClient()
 		// For larger deployments, it may take several minutes to retrieve the
@@ -448,22 +414,25 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		return nil, errors.Wrapf(err, "failed to determine BIND 9 rndc details")
 	}
 
-	// prepare final BIND 9 app
-	bind9App := &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+	// prepare final BIND 9 daemon
+	daemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name:         daemonname.Bind9,
+				AccessPoints: accessPoints,
+			},
+			zoneInventory: inventory,
 		},
-		RndcClient:    rndcClient,
-		zoneInventory: inventory,
+		rndcClient:    rndcClient,
+		pid:           p.getPid(),
 		bind9Config:   bind9Config,
 		rndcKeyConfig: rndcConfig,
 	}
 
-	return bind9App, nil
+	return daemon, nil
 }
 
 // Send a command to named using rndc client.
-func (ba *Bind9App) sendCommand(command []string) (output []byte, err error) {
-	return ba.RndcClient.SendCommand(command)
+func (ba *Bind9Daemon) sendRNDCCommand(command []string) (output []byte, err error) {
+	return ba.rndcClient.SendCommand(command)
 }

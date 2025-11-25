@@ -1,12 +1,14 @@
 package dbmodel
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/go-pg/pg/v10"
 	require "github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -15,7 +17,7 @@ import (
 // Test that KeaConfig isn't constructed from nil.
 func TestNewKeaConfigFromNil(t *testing.T) {
 	// Act
-	configNil := NewKeaConfig(nil)
+	configNil := newKeaConfig(nil)
 
 	// Assert
 	require.Nil(t, configNil)
@@ -24,11 +26,10 @@ func TestNewKeaConfigFromNil(t *testing.T) {
 // Test that KeaConfig is constructed from an empty map.
 func TestNewKeaConfigFromEmptyMap(t *testing.T) {
 	// Act
-	configEmpty := NewKeaConfig(&map[string]interface{}{})
+	configEmpty := newKeaConfig(&keaconfig.Config{})
 
 	// Assert
 	require.NotNil(t, configEmpty)
-	require.NotNil(t, configEmpty.Raw)
 	require.Nil(t, configEmpty.DHCPv4Config)
 	require.Nil(t, configEmpty.DHCPv6Config)
 	require.Nil(t, configEmpty.D2Config)
@@ -37,16 +38,22 @@ func TestNewKeaConfigFromEmptyMap(t *testing.T) {
 
 // Test that KeaConfig is constructed from a filled map.
 func TestNewKeaConfigFromFilledMap(t *testing.T) {
+	// Arrange
+	config, _ := keaconfig.NewConfigFromMap(
+		map[string]any{"Dhcp4": map[string]any{"foo": "bar"}},
+	)
+
 	// Act
-	configFilled := NewKeaConfig(&map[string]any{"Dhcp4": map[string]any{"foo": "bar"}})
+	configWrapped := newKeaConfig(config)
 
 	// Assert
-	require.NotNil(t, configFilled.DHCPv4Config)
+	require.NotNil(t, configWrapped.DHCPv4Config)
 }
 
 // Verifies that the shared network instance can be created by parsing
 // Kea configuration.
 func TestNewSharedNetworkFromKea(t *testing.T) {
+	machine := &Machine{ID: 1}
 	network := &keaconfig.SharedNetwork6{
 		Name: "foo",
 		Subnet6: []keaconfig.Subnet6{
@@ -71,7 +78,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 			},
 		},
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv6, true, nil)
 	lookup := NewDHCPOptionDefinitionLookup()
 	parsedNetwork, err := NewSharedNetworkFromKea(network, 6, daemon, HostDataSourceConfig, lookup)
 	require.NoError(t, err)
@@ -91,6 +98,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 // Verifies that the subnet instance can be created by parsing Kea
 // configuration.
 func TestNewSubnetFromKea(t *testing.T) {
+	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
 		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 			ID:     1,
@@ -142,7 +150,7 @@ func TestNewSubnetFromKea(t *testing.T) {
 		},
 	}
 
-	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv6, true, nil)
 	daemon.ID = 234
 	lookup := NewDHCPOptionDefinitionLookup()
 	parsedSubnet, err := NewSubnetFromKea(&keaSubnet, daemon, HostDataSourceConfig, lookup)
@@ -187,12 +195,13 @@ func TestNewSubnetFromKea(t *testing.T) {
 // Test that the error is returned when the subnet prefix is invalid.
 func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 	// Arrange
+	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
 		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 			Subnet: "invalid",
 		},
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
 
 	// Act
@@ -207,12 +216,13 @@ func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 // Test that the default mask is added to IPv4 subnet prefix if missing.
 func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 	// Arrange
+	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
 		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 			Subnet: "10.42.42.42",
 		},
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
 
 	// Act
@@ -227,12 +237,13 @@ func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 // Test that the default mask is added to IPv6 subnet prefix if missing.
 func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 	// Arrange
+	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
 		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 			Subnet: "fe80::42",
 		},
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv6, true, nil)
 	daemon.ID = 42
 
 	// Act
@@ -247,12 +258,13 @@ func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 // Test that the IPv4 subnet prefix is converted from non-canonical to canonical form.
 func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 	// Arrange
+	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
 		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 			Subnet: "10.42.42.42/8",
 		},
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
 
 	// Act
@@ -267,12 +279,13 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 // Test that the IPv6 subnet prefix is converted from non-canonical to canonical form.
 func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 	// Arrange
+	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
 		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 			Subnet: "2001:db8:1::42/64",
 		},
 	}
-	daemon := NewKeaDaemon(DaemonNameDHCPv6, true)
+	daemon := NewDaemon(machine, daemonname.DHCPv6, true, nil)
 	daemon.ID = 42
 
 	// Act
@@ -299,11 +312,13 @@ func TestNewLogTargetsFromKea(t *testing.T) {
 		Severity: "DEBUG",
 	}
 
-	targets := NewLogTargetsFromKea(logger)
+	targets := NewLogTargetsFromKea(1, logger)
 	require.Len(t, targets, 2)
+	require.EqualValues(t, 1, targets[0].DaemonID)
 	require.Equal(t, "logger-name", targets[0].Name)
 	require.Equal(t, "stdout", targets[0].Output)
 	require.Equal(t, "debug", targets[0].Severity)
+	require.EqualValues(t, 1, targets[1].DaemonID)
 	require.Equal(t, "logger-name", targets[1].Name)
 	require.Equal(t, "/tmp/log", targets[1].Output)
 	require.Equal(t, "debug", targets[1].Severity)
@@ -347,7 +362,8 @@ func TestKeaConfigAppendAndScanValue(t *testing.T) {
 	for _, item := range testCases {
 		testCase := item
 		t.Run(testCase.label, func(t *testing.T) {
-			inputConfig := NewKeaConfig(&testCase.value)
+			internalConfig, _ := keaconfig.NewConfigFromMap(testCase.value)
+			inputConfig := newKeaConfig(internalConfig)
 			var outputConfig KeaConfig
 			// Act
 			bytes, appendErr := inputConfig.AppendValue([]byte{}, 0)
@@ -475,7 +491,8 @@ func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.
 	require.NoError(t, errMap)
 	require.NoError(t, errConfig)
 	require.EqualValues(t, resMap.Config, resConfig.Config.Config)
-	rawConfig := resMap.Config.Raw
+	rawConfig, err := resMap.Config.GetRawConfig()
+	require.NoError(t, err)
 	require.EqualValues(t, "b'r", rawConfig["foo"])
 }
 
@@ -487,7 +504,8 @@ func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 	// 50MB
 	hugeValue := strings.Repeat("a", 50*1024*1024)
 	rawConfig := map[string]any{"Dhcp4": map[string]any{"b": hugeValue}}
-	keaConfig := NewKeaConfig(&rawConfig)
+	config, _ := keaconfig.NewConfigFromMap(rawConfig)
+	keaConfig := newKeaConfig(config)
 
 	machine := &Machine{
 		Address:   "localhost",
@@ -496,19 +514,15 @@ func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	daemon := NewKeaDaemon("dhcp4", true)
-	err = daemon.SetConfig(keaConfig)
+	configJSON, _ := json.Marshal(keaConfig)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
+	err = daemon.SetKeaConfigFromJSON(configJSON)
 	require.NoError(t, err)
 
-	addedDaemons, err := AddApp(db, &App{
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons:   []*Daemon{daemon},
-	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
 
-	addedDaemonID := addedDaemons[0].ID
-	addedDaemon, err := GetDaemonByID(db, addedDaemonID)
+	addedDaemon, err := GetDaemonByID(db, daemon.ID)
 	require.NoError(t, err)
 	require.EqualValues(t, keaConfig.Config, addedDaemon.KeaDaemon.Config.Config)
 }
@@ -524,14 +538,10 @@ func TestStoreNilValueInDatabase(t *testing.T) {
 		AgentPort: 3000,
 	}
 	_ = AddMachine(db, machine)
-	daemon := NewKeaDaemon("dhcp4", true)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
 	daemon.KeaDaemon.Config = nil
 
-	_, _ = AddApp(db, &App{
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons:   []*Daemon{daemon},
-	})
+	_ = AddDaemon(db, daemon)
 
 	// Act
 	dbDaemon, err := GetDaemonByID(db, daemon.ID)

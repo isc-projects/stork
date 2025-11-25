@@ -10,7 +10,11 @@ import (
 
 type ZoneInventoryStateRelation string
 
-const ZoneInventoryStateRelationApp ZoneInventoryStateRelation = "Daemon.App"
+const (
+	ZoneInventoryStateRelationDaemon       ZoneInventoryStateRelation = "Daemon"
+	ZoneInventoryStateRelationAccessPoints ZoneInventoryStateRelation = "Daemon.AccessPoints"
+	ZoneInventoryStateRelationMachine      ZoneInventoryStateRelation = "Daemon.Machine"
+)
 
 // Represents a status returned by a zone inventory on an agent.
 // When server attempts to fetch the zone information from the
@@ -101,7 +105,7 @@ func NewZoneInventoryState(daemonID int64, state *ZoneInventoryStateDetails) *Zo
 	}
 }
 
-// Upsers zone inventory state in a database.
+// Upserts zone inventory state in a database.
 func AddZoneInventoryState(db pg.DBI, state *ZoneInventoryState) error {
 	_, err := db.Model(state).OnConflict("(daemon_id) DO UPDATE").
 		Set("created_at = EXCLUDED.created_at").

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
+	bind9config "isc.org/stork/daemoncfg/bind9"
 	dbtest "isc.org/stork/server/database/test"
 	dnsop "isc.org/stork/server/dnsop"
 	"isc.org/stork/server/gen/restapi/operations/services"

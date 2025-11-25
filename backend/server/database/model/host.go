@@ -260,8 +260,8 @@ func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
 		Relation("Subnet.LocalSubnets").
-		Relation("LocalHosts.Daemon.App.Machine").
-		Relation("LocalHosts.Daemon.App.AccessPoints").
+		Relation("LocalHosts.Daemon.Machine").
+		Relation("LocalHosts.Daemon.AccessPoints").
 		Where("host.id = ?", hostID).
 		Select()
 	if err != nil {
@@ -317,6 +317,9 @@ func GetHostsBySubnetID(dbi dbops.DBI, subnetID int64) ([]Host, error) {
 	q := dbi.Model(&hosts).
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
+		}).
+		Relation("LocalHosts", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("local_host.id ASC"), nil
 		}).
 		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
@@ -378,8 +381,8 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 
 // Container for values filtering hosts fetched by page.
 //
-// The AppID, if different than 0, is used to fetch hosts whose local hosts belong to
-// the indicated app.
+// The MachineID, if different than 0, is used to fetch hosts whose local hosts belong to
+// the indicated machine.
 //
 // The optional SubnetID is used to fetch hosts belonging to the particular IPv4 or
 // IPv6 subnet. If this value is set to nil all subnets are returned. The value of 0
@@ -399,8 +402,9 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 // The DHCPDataDuplicate flag indicates whether to return hosts with
 // duplicated (the same) DHCP data in related Kea configurations.
 type HostsByPageFilters struct {
-	AppID             *int64
+	MachineID         *int64
 	SubnetID          *int64
+	DaemonID          *int64
 	LocalSubnetID     *int64
 	FilterText        *string
 	Global            *bool
@@ -433,16 +437,21 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	q = q.DistinctOn(distinctOnFields)
 
 	// Join to the local host table.
-	if (filters.AppID != nil && *filters.AppID != 0) || (filters.FilterText != nil && len(*filters.FilterText) > 0) {
+	if (filters.MachineID != nil && *filters.MachineID != 0) || (filters.DaemonID != nil && *filters.DaemonID != 0) || (filters.FilterText != nil && len(*filters.FilterText) > 0) {
 		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
 	}
 
-	// Filter by app ID.
-	// When filtering by appID we also need the local_host
-	// table as it holds the application identifier.
-	if filters.AppID != nil && *filters.AppID != 0 {
+	// Filter by machine ID.
+	// When filtering by machineID we also need the local_host
+	// table as it holds the machine identifier.
+	if filters.MachineID != nil && *filters.MachineID != 0 {
 		q = q.Join("JOIN daemon").JoinOn("local_host.daemon_id = daemon.id")
-		q = q.Where("daemon.app_id = ?", *filters.AppID)
+		q = q.Where("daemon.machine_id = ?", *filters.MachineID)
+	}
+
+	// Filter by daemon ID.
+	if filters.DaemonID != nil && *filters.DaemonID != 0 {
+		q = q.Where("local_host.daemon_id = ?", *filters.DaemonID)
 	}
 
 	// Filter by conflict or duplicate.
@@ -602,9 +611,8 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		Relation("LocalHosts", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("local_host.id ASC"), nil
 		}).
-		Relation("LocalHosts.Daemon.App").
-		Relation("LocalHosts.Daemon.App.Machine").
-		Relation("LocalHosts.Daemon.App.AccessPoints")
+		Relation("LocalHosts.Daemon.Machine").
+		Relation("LocalHosts.Daemon.AccessPoints")
 
 	// Only join the subnet if querying all hosts or hosts belonging to a
 	// given subnet.
@@ -729,7 +737,7 @@ func DeleteDaemonsFromHost(dbi dbops.DBI, hostID int64, dataSource HostDataSourc
 	return int64(result.RowsAffected()), nil
 }
 
-// Deletes hosts which are not associated with any apps. Returns deleted host
+// Deletes hosts which are not associated with any daemons. Returns deleted host
 // count and an error.
 func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 	subquery := dbi.Model(&[]LocalHost{}).
@@ -1209,7 +1217,7 @@ func (host Host) PopulateDaemons(dbi dbops.DBI) error {
 		if lh.DaemonID == 0 {
 			return pkgerrors.Errorf("problem with populating daemons: host %d lacks daemon ID", host.ID)
 		}
-		daemon, err := GetDaemonByID(dbi, lh.DaemonID)
+		daemon, err := GetKeaDaemonByID(dbi, lh.DaemonID)
 		if err != nil {
 			return pkgerrors.WithMessage(err, "problem with populating daemons")
 		}

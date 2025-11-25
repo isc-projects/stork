@@ -1,8 +1,11 @@
 package agent
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
+	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -10,51 +13,81 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
-	keactrl "isc.org/stork/appctrl/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 )
 
-// Fake app monitor that returns some predefined list of apps.
-func newFakeMonitorWithDefaults() *FakeAppMonitor {
-	httpClient := newHTTPClientWithDefaults()
-	fam := &FakeAppMonitor{
-		Apps: []App{
-			&KeaApp{
-				BaseApp: BaseApp{
-					Type:         AppTypeKea,
-					AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
+// Fake daemon monitor that returns some predefined list of daemons.
+func newFakeMonitorWithDefaults(interceptor func(client *http.Client)) *FakeMonitor {
+	fdm := &FakeMonitor{
+		Daemons: []Daemon{
+			&keaDaemon{
+				daemon: daemon{
+					Name: daemonname.DHCPv4,
+					AccessPoints: []AccessPoint{{
+						Type:     AccessPointControl,
+						Address:  "0.1.2.3",
+						Port:     1234,
+						Protocol: protocoltype.HTTP,
+					}},
 				},
-				HTTPClient:        httpClient,
-				ConfiguredDaemons: []string{"dhcp4", "dhcp6"},
-				ActiveDaemons:     []string{"dhcp4", "dhcp6"},
+				connector: newKeaConnector(AccessPoint{
+					Type:     AccessPointControl,
+					Address:  "0.1.2.3",
+					Port:     1234,
+					Protocol: protocoltype.HTTP,
+				}, HTTPClientConfig{Interceptor: interceptor}),
+			},
+			&keaDaemon{
+				daemon: daemon{
+					Name: daemonname.DHCPv6,
+					AccessPoints: []AccessPoint{{
+						Type:     AccessPointControl,
+						Address:  "0.1.2.3",
+						Port:     1234,
+						Protocol: protocoltype.HTTP,
+					}},
+				},
+				connector: newKeaConnector(AccessPoint{
+					Type:     AccessPointControl,
+					Address:  "0.1.2.3",
+					Port:     1234,
+					Protocol: protocoltype.HTTP,
+				}, HTTPClientConfig{Interceptor: interceptor}),
 			},
 		},
-		HTTPClient: httpClient,
 	}
-	return fam
+
+	for i := range fdm.Daemons {
+		gock.InterceptClient(fdm.Daemons[i].(*keaDaemon).connector.(*keaHTTPConnector).httpClient.client)
+	}
+
+	return fdm
 }
 
-// Fake app monitor that returns some predefined list of apps with only
+// Fake daemon monitor that returns some predefined list of daemons with only
 // DHCPv4 daemon configured and active.
-func newFakeMonitorWithDefaultsDHCPv4Only() *FakeAppMonitor {
-	fam := newFakeMonitorWithDefaults()
-	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp4"}
-	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp4"}
-	return fam
+func newFakeMonitorWithDefaultsDHCPv4Only(interceptor func(client *http.Client)) *FakeMonitor {
+	fdm := newFakeMonitorWithDefaults(interceptor)
+	// Keep only the DHCPv4 daemon
+	fdm.Daemons = fdm.Daemons[:1]
+	return fdm
 }
 
-// Fake app monitor that returns some predefined list of apps with only
+// Fake daemon monitor that returns some predefined list of daemons with only
 // DHCPv6 daemon configured and active.
-func newFakeMonitorWithDefaultsDHCPv6Only() *FakeAppMonitor {
-	fam := newFakeMonitorWithDefaults()
-	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
-	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
-	return fam
+func newFakeMonitorWithDefaultsDHCPv6Only(interceptor func(client *http.Client)) *FakeMonitor {
+	fdm := newFakeMonitorWithDefaults(interceptor)
+	// Keep only the DHCPv6 daemon
+	fdm.Daemons = fdm.Daemons[1:]
+	return fdm
 }
 
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
-	fam := newFakeMonitorWithDefaults()
-	pke := NewPromKeaExporter("foo", 42, true, fam)
+	fam := newFakeMonitorWithDefaults(nil)
+	pke := NewPromKeaExporter(t.Context(), "foo", 42, true, fam)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPServer)
@@ -73,9 +106,8 @@ func TestPromKeaExporterStart(t *testing.T) {
 	defer gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4"},
-			"arguments": map[string]string{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp4"},
 		}).
 		Post("/").
 		Persist().
@@ -90,9 +122,8 @@ func TestPromKeaExporterStart(t *testing.T) {
 
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "subnet4-list",
-			"service":   []string{"dhcp4"},
-			"arguments": map[string]string{},
+			"command": "subnet4-list",
+			"service": []string{"dhcp4"},
 		}).
 		Post("/").
 		Persist().
@@ -102,12 +133,10 @@ func TestPromKeaExporterStart(t *testing.T) {
 			"text": "Command not supported"
 		}]`)
 
-	fam := newFakeMonitorWithDefaultsDHCPv4Only()
+	fdm := newFakeMonitorWithDefaultsDHCPv4Only(gock.InterceptClient)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fdm)
 	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Start exporter.
 	pke.Start()
@@ -117,7 +146,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 	pke.Collect(c)
 
 	// Check the collected stats.
-	metric, _ := pke.Addr4StatsMap["assigned-addresses"].GetMetricWith(
+	metric, err := pke.Addr4StatsMap["assigned-addresses"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":         "7",
 			"subnet_id":      "7",
@@ -125,10 +154,12 @@ func TestPromKeaExporterStart(t *testing.T) {
 			"shared_network": "",
 		},
 	)
+	require.NoError(t, err)
 	require.EqualValues(t, 13.0, testutil.ToFloat64(metric))
 
 	// check if pkt4-nak-received is 19
-	metric, _ = pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+	metric, err = pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+	require.NoError(t, err)
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
 
 	require.False(t, gock.HasUnmatchedRequest())
@@ -153,9 +184,8 @@ func TestPromKeaExporterStartKeaPrior2_4_0(t *testing.T) {
 	defer gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp6"},
-			"arguments": map[string]string{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp6"},
 		}).
 		Post("/").
 		Persist().
@@ -164,9 +194,8 @@ func TestPromKeaExporterStartKeaPrior2_4_0(t *testing.T) {
 
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "subnet6-list",
-			"service":   []string{"dhcp6"},
-			"arguments": map[string]string{},
+			"command": "subnet6-list",
+			"service": []string{"dhcp6"},
 		}).
 		Post("/").
 		Persist().
@@ -176,12 +205,10 @@ func TestPromKeaExporterStartKeaPrior2_4_0(t *testing.T) {
 			"text": "Command not supported"
 		}]`)
 
-	fam := newFakeMonitorWithDefaultsDHCPv6Only()
+	fdm := newFakeMonitorWithDefaultsDHCPv6Only(gock.InterceptClient)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fdm)
 	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Start exporter and trigger the stats collection.
 	pke.Start()
@@ -215,9 +242,8 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 	defer gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4"},
-			"arguments": map[string]string{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp4"},
 		}).
 		Post("/").
 		Persist().
@@ -226,9 +252,8 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "subnet4-list",
-			"service":   []string{"dhcp4"},
-			"arguments": map[string]string{},
+			"command": "subnet4-list",
+			"service": []string{"dhcp4"},
 		}).
 		Post("/").
 		Persist().
@@ -238,12 +263,10 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 			"text": "Command not supported"
 		}]`)
 
-	fam := newFakeMonitorWithDefaultsDHCPv4Only()
+	fdm := newFakeMonitorWithDefaultsDHCPv4Only(gock.InterceptClient)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fdm)
 	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Start exporter and trigger the stats collection.
 	pke.Start()
@@ -286,9 +309,8 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	defer gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp6"},
-			"arguments": map[string]string{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp6"},
 		}).
 		Post("/").
 		Persist().
@@ -297,9 +319,8 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "subnet6-list",
-			"service":   []string{"dhcp6"},
-			"arguments": map[string]string{},
+			"command": "subnet6-list",
+			"service": []string{"dhcp6"},
 		}).
 		Post("/").
 		Persist().
@@ -309,12 +330,10 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 			"text": "Command not supported"
 		}]`)
 
-	fam := newFakeMonitorWithDefaultsDHCPv6Only()
+	fdm := newFakeMonitorWithDefaultsDHCPv6Only(gock.InterceptClient)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fdm)
 	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Start exporter and trigger the stats collection.
 	pke.Start()
@@ -386,7 +405,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 // correctly. Uses the response from Kea prior to 2.7.8 version.
 func TestUnmarshalSubnetListOKResponsePriorKea2_7_8(t *testing.T) {
 	// Arrange
-	rawResponse := `[{
+	rawResponse := `{
 		"result": 0,
 		"text": "2 IPv4 subnets found",
 		"arguments": {
@@ -401,25 +420,28 @@ func TestUnmarshalSubnetListOKResponsePriorKea2_7_8(t *testing.T) {
 				}
 			]
 		}
-	}]`
+	}`
 
 	// Act
-	response := newSubnetList()
+	var response subnetListJSON
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
 	require.NoError(t, err)
-	require.Len(t, response, 2)
-	require.Contains(t, response, 100)
-	require.EqualValues(t, "192.0.2.0/24", response[100].prefix)
-	require.Empty(t, response[100].sharedNetwork)
+	idx := slices.IndexFunc(response.Arguments.Subnets, func(item subnetListJSONArgumentsSubnet) bool {
+		return item.ID == 100
+	})
+	require.GreaterOrEqual(t, idx, 0)
+	subnet := response.Arguments.Subnets[idx]
+	require.EqualValues(t, "192.0.2.0/24", subnet.Subnet)
+	require.Empty(t, subnet.SharedNetworkName)
 }
 
 // Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal
 // correctly. Uses the response from Kea 2.7.8 version.
 func TestUnmarshalSubnetListOKResponseKea2_7_8(t *testing.T) {
 	// Arrange
-	rawResponse := `[{
+	rawResponse := `{
 		"result": 0,
 		"text": "2 IPv4 subnets found",
 		"arguments": {
@@ -435,37 +457,41 @@ func TestUnmarshalSubnetListOKResponseKea2_7_8(t *testing.T) {
 				}
 			]
 		}
-	}]`
+	}`
 
 	// Act
-	response := newSubnetList()
+	var response subnetListJSON
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
 	require.NoError(t, err)
-	require.Len(t, response, 2)
-	require.Contains(t, response, 100)
-	require.EqualValues(t, "192.0.2.0/24", response[100].prefix)
-	require.EqualValues(t, "foo", response[100].sharedNetwork)
+	require.Len(t, response.Arguments.Subnets, 2)
+	idx := slices.IndexFunc(response.Arguments.Subnets, func(item subnetListJSONArgumentsSubnet) bool {
+		return item.ID == 100
+	})
+	require.GreaterOrEqual(t, idx, 0)
+	subnet := response.Arguments.Subnets[idx]
+	require.EqualValues(t, "192.0.2.0/24", subnet.Subnet)
+	require.EqualValues(t, "foo", subnet.SharedNetworkName)
 }
 
 // Test the Kea JSON subnet4-list or subnet6-list response when the hook is not installed.
 func TestUnmarshalSubnetListUnsupportedResponse(t *testing.T) {
 	// Arrange
-	rawResponse := `[
+	rawResponse := `
 		{
 			"result": 2,
 			"text": "'subnet4-list' command not supported."
 		}
-	]`
+	`
 
 	// Act
-	response := newSubnetList()
+	var response subnetListJSON
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
 	require.NoError(t, err)
-	require.Len(t, response, 0)
+	require.Len(t, response.Arguments.Subnets, 0)
 }
 
 // Test the Kea JSON subnet4-list or subnet6-list response when error occurs.
@@ -474,12 +500,12 @@ func TestUnmarshalSubnetListErrorResponse(t *testing.T) {
 	rawResponse := ""
 
 	// Act
-	response := newSubnetList()
+	var response subnetListJSON
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
 	require.Error(t, err)
-	require.Len(t, response, 0)
+	require.Len(t, response.Arguments.Subnets, 0)
 }
 
 // Test that the Prometheus metrics use the subnet prefix if available.
@@ -489,9 +515,8 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	gock.New("http://0.1.2.3:1234/").
 		Post("/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4", "dhcp6"},
-			"arguments": map[string]interface{}{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp4"},
 		}).
 		Persist().
 		Reply(200).
@@ -499,14 +524,13 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 					"cumulative-assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 	                "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 	                "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
-	            }}, { "result": 1, "text": "server is likely to be offline" }]`)
+	            }}]`)
 
 	gock.New("http://0.1.2.3:1234/").
 		Post("/").
 		JSON(map[string]interface{}{
-			"command":   "subnet4-list",
-			"service":   []string{"dhcp4"},
-			"arguments": map[string]interface{}{},
+			"command": "subnet4-list",
+			"service": []string{"dhcp4"},
 		}).
 		Persist().
 		Reply(200).
@@ -522,14 +546,12 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 					}
 				]
 			}
-		}, { "result": 1, "text": "server is likely to be offline" }]`)
+		}]`)
 
-	fam := newFakeMonitorWithDefaults()
+	fam := newFakeMonitorWithDefaults(gock.InterceptClient)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fam)
 	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Act
 	pke.Start()
@@ -551,53 +573,56 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	require.NotZero(t, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
 }
 
-// Fake Kea CA request sender.
-type FakeKeaCASender struct {
+// Fake Kea request sender.
+type fakeKeaSender struct {
 	payload   []byte
 	err       error
 	callCount int64
 }
 
-// Construct the fake Kea CA sender with default response.
-func newFakeKeaCASender() *FakeKeaCASender {
-	defaultResponse := []subnetListJSON{
-		{
-			ResponseHeader: keactrl.ResponseHeader{
-				Result: 0,
-			},
-			Arguments: &subnetListJSONArguments{
-				Subnets: []subnetListJSONArgumentsSubnet{
-					{
-						ID:     1,
-						Subnet: "foo",
-					},
-					{
-						ID:                42,
-						Subnet:            "bar",
-						SharedNetworkName: "baz",
-					},
+// Construct the fake Kea sender with default response.
+func newFakeKeaSender() *fakeKeaSender {
+	defaultResponse := subnetListJSON{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+		},
+		Arguments: subnetListJSONArguments{
+			Subnets: []subnetListJSONArgumentsSubnet{
+				{
+					ID:     1,
+					Subnet: "foo",
+				},
+				{
+					ID:                42,
+					Subnet:            "bar",
+					SharedNetworkName: "baz",
 				},
 			},
 		},
 	}
+
 	data, _ := json.Marshal(defaultResponse)
 
-	return &FakeKeaCASender{data, nil, 0}
+	return &fakeKeaSender{data, nil, 0}
 }
 
 // Increment call counter and return fixed data.
-func (s *FakeKeaCASender) sendCommandRaw(request []byte) ([]byte, error) {
+func (s *fakeKeaSender) sendCommand(ctx context.Context, command keactrl.SerializableCommand, response any) error {
 	s.callCount++
-	return s.payload, s.err
+	if s.err != nil {
+		return s.err
+	}
+	err := json.Unmarshal(s.payload, response)
+	return errors.Wrap(err, "unmarshaling fake Kea response")
 }
 
 // Test that the lazy subnet lookup is constructed properly.
 func TestNewLazySubnetLookup(t *testing.T) {
 	// Arrange
-	sender := newFakeKeaCASender()
+	sender := newFakeKeaSender()
 
 	// Act
-	lookup := newLazySubnetLookup(sender)
+	lookup := newLazySubnetLookup(t.Context(), sender)
 
 	// Assert
 	require.NotNil(t, lookup)
@@ -607,8 +632,8 @@ func TestNewLazySubnetLookup(t *testing.T) {
 // Test that the subnet data are retrieved.
 func TestLazySubnetLookupFetchesData(t *testing.T) {
 	// Arrange
-	sender := newFakeKeaCASender()
-	lookup := newLazySubnetLookup(sender)
+	sender := newFakeKeaSender()
+	lookup := newLazySubnetLookup(t.Context(), sender)
 
 	// Act
 	info1, ok1 := lookup.getSubnetInfo(1)
@@ -635,8 +660,8 @@ func TestLazySubnetLookupFetchesData(t *testing.T) {
 // Test that subnets are fetched only once.
 func TestLazySubnetLookupFetchesOnlyOnce(t *testing.T) {
 	// Arrange
-	sender := newFakeKeaCASender()
-	lookup := newLazySubnetLookup(sender)
+	sender := newFakeKeaSender()
+	lookup := newLazySubnetLookup(t.Context(), sender)
 
 	// Act
 	_, _ = lookup.getSubnetInfo(1)
@@ -652,10 +677,10 @@ func TestLazySubnetLookupFetchesOnlyOnce(t *testing.T) {
 // Test that subnets are fetched only once even if an error occurs.
 func TestLazySubnetLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 	// Arrange
-	sender := newFakeKeaCASender()
+	sender := newFakeKeaSender()
 	sender.payload = nil
 	sender.err = errors.New("baz")
-	lookup := newLazySubnetLookup(sender)
+	lookup := newLazySubnetLookup(t.Context(), sender)
 
 	for _, subnetID := range []int{1, 1, 1, 42, 100} {
 		// Act
@@ -669,8 +694,8 @@ func TestLazySubnetLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 // Test that subnets are fetched again after changing the family.
 func TestLazySubnetLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	// Arrange
-	sender := newFakeKeaCASender()
-	lookup := newLazySubnetLookup(sender)
+	sender := newFakeKeaSender()
+	lookup := newLazySubnetLookup(t.Context(), sender)
 
 	// Act
 	_, _ = lookup.getSubnetInfo(1)
@@ -691,9 +716,8 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4"},
-			"arguments": map[string]string{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp4"},
 		}).
 		Post("/").
 		Persist().
@@ -705,12 +729,11 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 					"subnet[7].pd-pool[0].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ]
                 }}]`)
 
-	fam := newFakeMonitorWithDefaultsDHCPv4Only()
+	fam := newFakeMonitorWithDefaultsDHCPv4Only(gock.InterceptClient)
 
 	// Act
-	pke := NewPromKeaExporter("foo", 1234, false, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, false, fam)
 	defer pke.Shutdown()
-	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
 	c := make(chan prometheus.Metric)
 	pke.Collect(c)
@@ -734,9 +757,8 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	gock.New("http://0.1.2.3:1234/").
 		Post("/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4", "dhcp6"},
-			"arguments": map[string]interface{}{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp4"},
 		}).
 		Persist().
 		Reply(200).
@@ -745,7 +767,16 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 			"declined-addresses": [ [ 14, "2019-07-29 10:04:28.386740" ] ],
 			"reclaimed-leases": [ [ 15, "2019-07-28 10:04:28.386740" ] ],
 			"reclaimed-declined-addresses": [ [ 16, "2019-07-27 10:04:28.386740" ] ]
-		}}, {"result":0, "arguments": {
+		}}]`)
+	gock.New("http://0.1.2.3:1234/").
+		Post("/").
+		JSON(map[string]interface{}{
+			"command": "statistic-get-all",
+			"service": []string{"dhcp6"},
+		}).
+		Persist().
+		Reply(200).
+		BodyString(`[{"result":0, "arguments": {
 			"declined-addresses": [ [ 17, "2019-07-26 10:04:28.386740" ] ],
 			"cumulative-assigned-nas": [ [ 18, "2019-07-25 10:04:28.386740" ] ],
 			"cumulative-assigned-pds": [ [ 19, "2019-07-24 10:04:28.386740" ] ],
@@ -753,12 +784,11 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 			"reclaimed-declined-addresses": [ [ 21, "2019-07-22 10:04:28.386740" ] ]
 		}}]`)
 
-	fam := newFakeMonitorWithDefaults()
+	fam := newFakeMonitorWithDefaults(gock.InterceptClient)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
 	c := make(chan prometheus.Metric)
 	pke.Collect(c)
@@ -776,45 +806,6 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	require.Equal(t, 21.0, testutil.ToFloat64(pke.Global6StatMap["reclaimed-declined-addresses"]))
 }
 
-// Test that the Prometheus exporter sends the get-statics-all request only
-// to the configured daemons.
-func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
-	// Arrange
-	defer gock.Off()
-	gock.CleanUnmatchedRequest()
-	defer gock.CleanUnmatchedRequest()
-	gock.New("http://0.1.2.3:1234/").
-		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp6"},
-			"arguments": map[string]string{},
-		}).
-		Post("/").
-		Persist().
-		Reply(200).
-		BodyString(`[{
-			"result":0,
-			"arguments": {
-				"pkt6-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
-            }
-		}]`)
-
-	fam := newFakeMonitorWithDefaults()
-	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
-	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
-
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
-	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
-
-	// Act
-	err := pke.collectStats()
-
-	// Assert
-	require.NoError(t, err)
-}
-
 // Test that the encountered unsupported Kea statistics are appended to the
 // ignore list. It avoids producing a lot of duplicated log entries that grow
 // the log file significantly.
@@ -825,9 +816,8 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 	defer gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
-			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4", "dhcp6"},
-			"arguments": map[string]string{},
+			"command": "statistic-get-all",
+			"service": []string{"dhcp4"},
 		}).
 		Post("/").
 		Persist().
@@ -837,14 +827,27 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 			"arguments": {
 				"foo": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
             }
-		}, { "result": 1, "text": "server is likely to be offline" }]`)
+		}]`)
 
-	fam := newFakeMonitorWithDefaults()
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command": "statistic-get-all",
+			"service": []string{"dhcp6"},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result":0,
+			"arguments": {
+				"bar": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+            }
+		}]`)
 
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	fam := newFakeMonitorWithDefaults(gock.InterceptClient)
+
+	pke := NewPromKeaExporter(t.Context(), "my-host", 1234, true, fam)
 	defer pke.Shutdown()
-
-	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Act
 	err := pke.collectStats()
@@ -852,13 +855,14 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Contains(t, pke.ignoredStats, "foo")
+	require.Contains(t, pke.ignoredStats, "bar")
 }
 
 // Test that the Describe method does nothing.
 func TestDescribe(t *testing.T) {
 	// Arrange
-	fam := newFakeMonitorWithDefaults()
-	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	fam := newFakeMonitorWithDefaults(nil)
+	pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fam)
 	ch := make(chan *prometheus.Desc, 1)
 	defer close(ch)
 	defer pke.Shutdown()

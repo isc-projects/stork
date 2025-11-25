@@ -12,10 +12,9 @@ import (
 
 // Test creation of new config update instance.
 func TestNewConfigUpdate(t *testing.T) {
-	cu := NewConfigUpdate(AppTypeKea, "host_add", 1, 2, 3)
+	cu := NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3)
 	require.NotNil(t, cu)
-	require.Equal(t, AppTypeKea, cu.Target)
-	require.Equal(t, "host_add", cu.Operation)
+	require.Equal(t, ConfigOperationKeaHostAdd, cu.Operation)
 	require.Len(t, cu.DaemonIDs, 3)
 	require.Contains(t, cu.DaemonIDs, int64(1))
 	require.Contains(t, cu.DaemonIDs, int64(2))
@@ -43,8 +42,8 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_add", 1, 2, 3),
-			NewConfigUpdate(AppTypeKea, "host_update", 3),
+			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
+			NewConfigUpdate(ConfigOperationKeaHostUpdate, 3),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -55,7 +54,7 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 15),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_delete", 1),
+			NewConfigUpdate(ConfigOperationKeaHostDelete, 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -66,7 +65,7 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_delete", 2),
+			NewConfigUpdate(ConfigOperationKeaHostDelete, 2),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -80,28 +79,24 @@ func TestAddScheduledConfigChange(t *testing.T) {
 
 	require.NotZero(t, returned[0].ID)
 	require.Len(t, returned[0].Updates, 1)
-	require.Equal(t, AppTypeKea, returned[0].Updates[0].Target)
-	require.Equal(t, "host_delete", returned[0].Updates[0].Operation)
+	require.Equal(t, ConfigOperationKeaHostDelete, returned[0].Updates[0].Operation)
 	require.Len(t, returned[0].Updates[0].DaemonIDs, 1)
 	require.EqualValues(t, 1, returned[0].Updates[0].DaemonIDs[0])
 
 	require.NotZero(t, returned[1].ID)
 	require.Len(t, returned[1].Updates, 1)
-	require.Equal(t, AppTypeKea, returned[1].Updates[0].Target)
-	require.Equal(t, "host_delete", returned[1].Updates[0].Operation)
+	require.Equal(t, ConfigOperationKeaHostDelete, returned[1].Updates[0].Operation)
 	require.Len(t, returned[1].Updates[0].DaemonIDs, 1)
 	require.EqualValues(t, 2, returned[1].Updates[0].DaemonIDs[0])
 
 	require.NotZero(t, returned[2].ID)
 	require.Len(t, returned[2].Updates, 2)
-	require.Equal(t, AppTypeKea, returned[0].Updates[0].Target)
-	require.Equal(t, "host_add", returned[2].Updates[0].Operation)
+	require.Equal(t, ConfigOperationKeaHostAdd, returned[2].Updates[0].Operation)
 	require.Len(t, returned[2].Updates[0].DaemonIDs, 3)
 	require.EqualValues(t, 1, returned[2].Updates[0].DaemonIDs[0])
 	require.EqualValues(t, 2, returned[2].Updates[0].DaemonIDs[1])
 	require.EqualValues(t, 3, returned[2].Updates[0].DaemonIDs[2])
-	require.Equal(t, AppTypeKea, returned[2].Updates[1].Target)
-	require.Equal(t, "host_update", returned[2].Updates[1].Operation)
+	require.Equal(t, ConfigOperationKeaHostUpdate, returned[2].Updates[1].Operation)
 	require.Len(t, returned[2].Updates[1].DaemonIDs, 1)
 	require.EqualValues(t, 3, returned[2].Updates[1].DaemonIDs[0])
 }
@@ -128,8 +123,8 @@ func TestGetDueConfigChanges(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_add", 1, 2, 3),
-			NewConfigUpdate(AppTypeKea, "host_update", 3),
+			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
+			NewConfigUpdate(ConfigOperationKeaHostUpdate, 3),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -140,7 +135,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 15),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_delete", 1),
+			NewConfigUpdate(ConfigOperationKeaHostDelete, 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -151,7 +146,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_delete", 2),
+			NewConfigUpdate(ConfigOperationKeaHostDelete, 2),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -165,15 +160,13 @@ func TestGetDueConfigChanges(t *testing.T) {
 	// Returned config changes should be ordered by deadline.
 	require.NotZero(t, returned[0].ID)
 	require.Len(t, returned[0].Updates, 1)
-	require.Equal(t, AppTypeKea, returned[0].Updates[0].Target)
-	require.Equal(t, "host_delete", returned[0].Updates[0].Operation)
+	require.Equal(t, ConfigOperationKeaHostDelete, returned[0].Updates[0].Operation)
 	require.Len(t, returned[0].Updates[0].DaemonIDs, 1)
 	require.EqualValues(t, 1, returned[0].Updates[0].DaemonIDs[0])
 
 	require.NotZero(t, returned[1].ID)
 	require.Len(t, returned[1].Updates, 1)
-	require.Equal(t, AppTypeKea, returned[1].Updates[0].Target)
-	require.Equal(t, "host_delete", returned[1].Updates[0].Operation)
+	require.Equal(t, ConfigOperationKeaHostDelete, returned[1].Updates[0].Operation)
 	require.Len(t, returned[1].Updates[0].DaemonIDs, 1)
 	require.EqualValues(t, 2, returned[1].Updates[0].DaemonIDs[0])
 
@@ -187,8 +180,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 	require.Len(t, returned, 1)
 
 	require.Len(t, returned[0].Updates, 1)
-	require.Equal(t, AppTypeKea, returned[0].Updates[0].Target)
-	require.Equal(t, "host_delete", returned[0].Updates[0].Operation)
+	require.Equal(t, ConfigOperationKeaHostDelete, returned[0].Updates[0].Operation)
 	require.Len(t, returned[0].Updates[0].DaemonIDs, 1)
 	require.EqualValues(t, 2, returned[0].Updates[0].DaemonIDs[0])
 }
@@ -214,7 +206,7 @@ func TestSetConfigChangeExecuted(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_add", 1, 2, 3),
+			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -279,8 +271,8 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 		UserID:     int64(user.ID),
 		Executed:   true,
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_add", 1, 2, 3),
-			NewConfigUpdate(AppTypeKea, "host_update", 3),
+			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
+			NewConfigUpdate(ConfigOperationKeaHostUpdate, 3),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -291,7 +283,7 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 25),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_delete", 1),
+			NewConfigUpdate(ConfigOperationKeaHostDelete, 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -302,7 +294,7 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_delete", 2),
+			NewConfigUpdate(ConfigOperationKeaHostDelete, 2),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -338,7 +330,7 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_add", 1),
+			NewConfigUpdate(ConfigOperationKeaHostAdd, 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change1)
@@ -350,7 +342,7 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate(AppTypeKea, "host_update", 1),
+			NewConfigUpdate(ConfigOperationKeaHostUpdate, 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change2)
@@ -386,8 +378,8 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 func TestHasKeaUpdates(t *testing.T) {
 	change := ScheduledConfigChange{
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate("bind9", "dns", 1),
-			NewConfigUpdate(AppTypeKea, "host", 2),
+			NewConfigUpdate(ConfigOperation("bind9.dns"), 1),
+			NewConfigUpdate(ConfigOperationKeaHostAdd, 2),
 		},
 	}
 	require.True(t, change.HasKeaUpdates())
@@ -398,7 +390,7 @@ func TestHasKeaUpdates(t *testing.T) {
 func TestHasKeaUpdatesNoKeaUpdate(t *testing.T) {
 	change := ScheduledConfigChange{
 		Updates: []*ConfigUpdate{
-			NewConfigUpdate("bind9", "dns", 1),
+			NewConfigUpdate(ConfigOperation("bind9.dns"), 1),
 		},
 	}
 	require.False(t, change.HasKeaUpdates())

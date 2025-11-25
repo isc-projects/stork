@@ -8,7 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
 )
@@ -44,17 +44,16 @@ const (
 	SharedNetworkRelationLocalSharedNetworks             SharedNetworkRelation = "LocalSharedNetworks"
 	SharedNetworkRelationLocalSharedNetworksDaemon       SharedNetworkRelation = "LocalSharedNetworks.Daemon"
 	SharedNetworkRelationLocalSharedNetworksKeaDaemon    SharedNetworkRelation = "LocalSharedNetworks.Daemon.KeaDaemon"
-	SharedNetworkRelationLocalSharedNetworksApp          SharedNetworkRelation = "LocalSharedNetworks.Daemon.App"
-	SharedNetworkRelationLocalSharedNetworksAccessPoints SharedNetworkRelation = "LocalSharedNetworks.Daemon.App.AccessPoints"
-	SharedNetworkRelationLocalSharedNetworksMachine      SharedNetworkRelation = "LocalSharedNetworks.Daemon.App.Machine"
+	SharedNetworkRelationLocalSharedNetworksAccessPoints SharedNetworkRelation = "LocalSharedNetworks.Daemon.AccessPoints"
+	SharedNetworkRelationLocalSharedNetworksMachine      SharedNetworkRelation = "LocalSharedNetworks.Daemon.Machine"
+	SharedNetworkRelationSubnets                         SharedNetworkRelation = "Subnets"
 	SharedNetworkRelationLocalSubnets                    SharedNetworkRelation = "Subnets.LocalSubnets"
 	SharedNetworkRelationSubnetsAddressPools             SharedNetworkRelation = "Subnets.LocalSubnets.AddressPools"
 	SharedNetworkRelationSubnetsPrefixPools              SharedNetworkRelation = "Subnets.LocalSubnets.PrefixPools"
 	SharedNetworkRelationSubnetsDaemon                   SharedNetworkRelation = "Subnets.LocalSubnets.Daemon"
 	SharedNetworkRelationSubnetsKeaDaemon                SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.KeaDaemon"
-	SharedNetworkRelationSubnetsApp                      SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App"
-	SharedNetworkRelationSubnetsAccessPoints             SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App.AccessPoints"
-	SharedNetworkRelationSubnetsMachine                  SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App.Machine"
+	SharedNetworkRelationSubnetsAccessPoints             SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.AccessPoints"
+	SharedNetworkRelationSubnetsMachine                  SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.Machine"
 )
 
 // This structure holds shared network information retrieved from an app.
@@ -141,7 +140,7 @@ func (sn *SharedNetwork) PopulateDaemons(dbi dbops.DBI) error {
 		if lsn.DaemonID == 0 {
 			return pkgerrors.Errorf("problem with populating daemons: shared network %d lacks daemon ID", sn.ID)
 		}
-		daemon, err := GetDaemonByID(dbi, lsn.DaemonID)
+		daemon, err := GetKeaDaemonByID(dbi, lsn.DaemonID)
 		if err != nil {
 			return pkgerrors.WithMessage(err, "problem with populating daemons")
 		}
@@ -275,7 +274,9 @@ func DeleteDaemonsFromSharedNetwork(dbi dbops.DBI, sharedNetworkID int64) error 
 func GetAllSharedNetworks(dbi dbops.DBI, family int) ([]SharedNetwork, error) {
 	networks := []SharedNetwork{}
 	q := dbi.Model(&networks).
-		Relation("LocalSharedNetworks.Daemon.App.AccessPoints")
+		Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints)).
+		// TODO: Code implemented in below line is a temporary solution for virtual applications.
+		Relation(string(SharedNetworkRelationLocalSharedNetworksMachine))
 
 	if family == 4 || family == 6 {
 		q = q.Where("inet_family = ?", family)
@@ -341,8 +342,8 @@ func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, e
 
 // Fetches a collection of shared networks from the database. The
 // offset and limit specify the beginning of the page and the maximum
-// size of the page. The appID is used to filter shared networks to
-// those handled by the given application.  The family is used to
+// size of the page. The daemonID is used to filter shared networks to
+// those handled by the given daemon.  The family is used to
 // filter by IPv4 (if 4) or IPv6 (if 6). For all other values of the
 // family parameter both IPv4 and IPv6 shared networks are
 // returned. The filterText can be used to match the shared network
@@ -352,7 +353,7 @@ func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, e
 // empty then id is used for sorting.  in SortDirAny is used then ASC
 // order is used. This function returns a collection of shared
 // networks, the total number of shared networks and error.
-func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SharedNetwork, int64, error) {
+func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, daemonID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SharedNetwork, int64, error) {
 	networks := []SharedNetwork{}
 	q := dbi.Model(&networks)
 
@@ -363,25 +364,25 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 	}
 	q = q.DistinctOn(distinctOnFields)
 
-	q = q.Relation("LocalSharedNetworks.Daemon.App.AccessPoints")
+	q = q.Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints)).
+		// TODO: Code implemented in below line is a temporary solution for virtual applications.
+		Relation(string(SharedNetworkRelationLocalSharedNetworksMachine))
 
 	// If any of the filtering parameters are specified we need to explicitly join
 	// the subnets table so as we can access its columns in the Where clause.
-	if appID != 0 || family != 0 || filterText != nil {
+	if daemonID != 0 || family != 0 || filterText != nil {
 		q = q.Join("JOIN subnet AS s").JoinOn("shared_network.id = s.shared_network_id")
 	}
-	// When filtering by appID we also need the daemon table (via joined local_subnet)
-	// as it holds the app identifier.
-	if appID != 0 {
+	// When filtering by daemonID we also need the local_subnet table.
+	if daemonID != 0 {
 		q = q.Join("JOIN local_subnet AS ls").JoinOn("s.id = ls.subnet_id")
-		q = q.Join("JOIN daemon AS d").JoinOn("d.id = ls.daemon_id")
 	}
 	// Include address pools, prefix pools and the local subnet info in the results.
-	q = q.Relation("Subnets", func(q *orm.Query) (*orm.Query, error) {
+	q = q.Relation(string(SharedNetworkRelationSubnets), func(q *orm.Query) (*orm.Query, error) {
 		return q.Order("prefix ASC"), nil
 	}).
-		Relation("Subnets.LocalSubnets.Daemon.App.AccessPoints").
-		Relation("Subnets.LocalSubnets.Daemon.App.Machine")
+		Relation(string(SharedNetworkRelationSubnetsAccessPoints)).
+		Relation(string(SharedNetworkRelationSubnetsMachine))
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.
@@ -389,9 +390,9 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 		q = q.Where("family(s.prefix) = ?", family)
 	}
 
-	// Filter by appID.
-	if appID != 0 {
-		q = q.Where("d.app_id = ?", appID)
+	// Filter by daemonID.
+	if daemonID != 0 {
+		q = q.Where("ls.daemon_id = ?", daemonID)
 	}
 
 	// Quick filtering by shared network name or subnet prefix.

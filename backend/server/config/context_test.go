@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/datamodel"
+	dbmodel "isc.org/stork/server/database/model"
 )
 
 // Test configuration recipe used in the tests.
@@ -41,6 +41,7 @@ func TestGetTransactionState(t *testing.T) {
 	returned, ok := GetTransactionState[testRecipe](ctx)
 	require.True(t, ok)
 	require.True(t, returned.Scheduled)
+	require.NotNil(t, returned)
 }
 
 // Test convenience function returning transaction state when the
@@ -93,7 +94,7 @@ func TestGetAnyTransactionStateNoCast(t *testing.T) {
 
 // Test setting and getting recipe for an update in the transaction state.
 func TestSetRecipeForUpdateInContext(t *testing.T) {
-	state := NewTransactionStateWithUpdate[testRecipe](datamodel.AppTypeKea, "host_update", 1)
+	state := NewTransactionStateWithUpdate[testRecipe](dbmodel.ConfigOperationKeaHostUpdate, 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
 
 	recipe := testRecipe{
@@ -123,7 +124,7 @@ func TestSetValueForUpdateInContextNoState(t *testing.T) {
 // state when update index is out of bounds.
 func TestSetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
 	recipe := testRecipe{}
-	state := NewTransactionStateWithUpdate[testRecipe](datamodel.AppTypeKea, "host_update", 1)
+	state := NewTransactionStateWithUpdate[testRecipe](dbmodel.ConfigOperationKeaHostUpdate, 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
 	_, err := SetRecipeForUpdate(ctx, 1, &recipe)
 	require.Error(t, err)
@@ -131,7 +132,7 @@ func TestSetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
 
 // Test getting a recipe for update from the context.
 func TestGetValueForUpdateInContext(t *testing.T) {
-	state := NewTransactionStateWithUpdate[testRecipe](datamodel.AppTypeKea, "host_update", 1)
+	state := NewTransactionStateWithUpdate[testRecipe](dbmodel.ConfigOperationKeaHostUpdate, 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
 
 	recipe := testRecipe{
@@ -156,7 +157,7 @@ func TestGetValueForUpdateInContextNoState(t *testing.T) {
 // Test that an error is returned when trying to get a recipe for update from the
 // context when update index is out of bounds.
 func TestGetValueForUpdateInContextIndexOutOfBounds(t *testing.T) {
-	state := NewTransactionStateWithUpdate[testRecipe](datamodel.AppTypeKea, "host_update", 1)
+	state := NewTransactionStateWithUpdate[testRecipe](dbmodel.ConfigOperationKeaHostUpdate, 1)
 	ctx := context.WithValue(context.Background(), StateContextKey, *state)
 
 	recipe := testRecipe{

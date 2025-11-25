@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/appcfg/dnsconfig"
+	"isc.org/stork/daemoncfg/dnsconfig"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -23,25 +24,17 @@ func TestAddGetDeleteLocalZoneRRs(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app.
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
-		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	// Add a daemon.
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	// Add a zone.
 	zone := &Zone{
 		Name: "example.com.",
 		LocalZones: []*LocalZone{
 			{
-				DaemonID: app.Daemons[0].ID,
+				DaemonID: daemon.ID,
 				View:     "_default",
 				Class:    "IN",
 				Serial:   123456,

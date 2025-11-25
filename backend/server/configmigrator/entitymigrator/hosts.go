@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
-	keactrl "isc.org/stork/appctrl/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
@@ -341,9 +341,9 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	}
 
 	// Send the command.
-	responses := make([]*keactrl.ResponseList, 0, len(commands))
+	responses := make([]*keactrl.Response, 0, len(commands))
 	for range commands {
-		responses = append(responses, &keactrl.ResponseList{})
+		responses = append(responses, &keactrl.Response{})
 	}
 
 	responsesAny := make([]any, 0, len(responses))
@@ -352,7 +352,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	}
 
 	result, err := m.connectedAgents.ForwardToKeaOverHTTP(
-		context.Background(), daemon.App, commands, responsesAny...,
+		context.Background(), daemon, commands, responsesAny...,
 	)
 	if err == nil {
 		err = result.Error
@@ -388,17 +388,11 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	}
 
 	// Execution error of the command.
-	for i, responsePerDaemon := range responses {
+	for i, response := range responses {
 		hostID := commandHostIDs[i]
 		if m.isHostErrored(hostID) {
 			continue
 		}
-
-		if len(*responsePerDaemon) == 0 {
-			// Should not happen.
-			continue
-		}
-		response := (*responsePerDaemon)[0]
 
 		if err := response.GetError(); err != nil {
 			if errors.As(err, &keactrl.UnsupportedOperationKeaError{}) {
@@ -437,15 +431,15 @@ func (m *hostMigrator) saveConfigChanges(daemon *dbmodel.Daemon) {
 	// Send the config-write command.
 	commandWrite := keactrl.NewCommandBase(keactrl.ConfigWrite, daemon.Name)
 
-	var response keactrl.ResponseList
+	var response keactrl.Response
 	result, err := m.connectedAgents.ForwardToKeaOverHTTP(
-		context.Background(), daemon.App,
+		context.Background(), daemon,
 		[]keactrl.SerializableCommand{commandWrite}, &response,
 	)
 	if err == nil {
 		err = result.GetFirstError()
-		if err == nil && len(response) > 0 {
-			err = response[0].GetError()
+		if err == nil {
+			err = response.GetError()
 		}
 	}
 	if err != nil {
@@ -492,5 +486,5 @@ func getHostLabel(host dbmodel.Host) string {
 
 // Creates a label for the daemon.
 func getDaemonLabel(daemon *dbmodel.Daemon) string {
-	return daemon.Name
+	return string(daemon.Name)
 }

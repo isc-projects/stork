@@ -13,8 +13,8 @@ import (
 	"isc.org/stork/hooks"
 	authenticationcallouts "isc.org/stork/hooks/server/authenticationcallouts"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
-	apps "isc.org/stork/server/apps"
-	appstest "isc.org/stork/server/apps/test"
+	"isc.org/stork/server/daemons"
+	daemonstest "isc.org/stork/server/daemons/test"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/hookmanager"
 	storktest "isc.org/stork/server/test"
@@ -42,9 +42,9 @@ func TestNewRestAPI(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(nil, nil)
 	eventcenter := &storktestdbmodel.FakeEventCenter{}
 	dispatcher := &storktestdbmodel.FakeDispatcher{}
-	pullers := &apps.Pullers{}
+	pullers := &daemons.Pullers{}
 	collector := storktest.NewFakeMetricsCollector()
-	configManager := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+	configManager := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
 		DB:     db,
 		Agents: agents,
 	})

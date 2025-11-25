@@ -9,12 +9,14 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	pdnsconfig "isc.org/stork/appcfg/pdns"
+	pdnsconfig "isc.org/stork/daemoncfg/pdns"
+	"isc.org/stork/datamodel/daemonname"
 	storkutil "isc.org/stork/util"
 )
 
 var (
-	_ App              = (*PDNSApp)(nil)
+	_ Daemon           = (*pdnsDaemon)(nil)
+	_ dnsDaemon        = (*pdnsDaemon)(nil)
 	_ pdnsConfigParser = (*pdnsconfig.Parser)(nil)
 
 	// Pattern for detecting PowerDNS process.
@@ -37,42 +39,34 @@ type pdnsConfigParser interface {
 	ParseFile(path string) (*pdnsconfig.Config, error)
 }
 
-// PDNSApp implements the App interface for PowerDNS.
-type PDNSApp struct {
-	BaseApp
-	zoneInventory *zoneInventory
+// Implements the Daemon interface for PowerDNS.
+type pdnsDaemon struct {
+	dnsDaemonImpl
 }
 
-// Returns the base app.
-func (pa *PDNSApp) GetBaseApp() *BaseApp {
-	return &pa.BaseApp
-}
-
-// Returns the allowed logs. Always returns nil.
-func (pa *PDNSApp) DetectAllowedLogs() ([]string, error) {
-	return nil, nil
-}
-
-// Waits for the zone inventory to complete background tasks.
-func (pa *PDNSApp) AwaitBackgroundTasks() {
-	if pa.zoneInventory != nil {
-		pa.zoneInventory.awaitBackgroundTasks()
+// It returns the PowerDNS daemon instance or an error if the PowerDNS is not
+// recognized or any error occurs.
+func detectPowerDNSDaemon(p supportedProcess, commander storkutil.CommandExecutor, parser pdnsConfigParser, explicitConfigPath string) (Daemon, error) {
+	// PowerDNS server configuration location detection.
+	configPath, err := detectPowerDNSConfigPath(p, commander, explicitConfigPath)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to detect PowerDNS server config path")
+		return nil, err
 	}
-}
+	log.WithFields(log.Fields{
+		"path": *configPath,
+	}).Debug("PowerDNS server config path detected")
 
-// Returns the zone inventory.
-func (pa *PDNSApp) GetZoneInventory() *zoneInventory {
-	return pa.zoneInventory
-}
-
-// Stops the zone inventory.
-func (pa *PDNSApp) StopZoneInventory() {
-	if pa.zoneInventory != nil {
-		pa.zoneInventory.stop()
+	// Parse and interpret the PowerDNS server configuration.
+	daemon, err := configurePowerDNSDaemon(*configPath, parser)
+	if err != nil {
+		err = errors.WithMessage(err, "PowerDNS server configuration is invalid")
+		return nil, err
 	}
+	return daemon, nil
 }
 
-// Detects the PowerDNS application config path using the following algorithm:
+// Detects the PowerDNS daemon config path using the following algorithm:
 //
 // STEP 1: Parse the command line arguments. If the config-dir is specified
 // in the process command line it points to the directory with the config file
@@ -89,7 +83,7 @@ func (pa *PDNSApp) StopZoneInventory() {
 // STEP 3: Try to find the config file in the common locations:
 // - Use the locations returned by getPotentialPDNSConfLocations() function.
 // - Prepend the chroot directory if it is set.
-func detectPowerDNSAppConfigPath(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string) (*string, error) {
+func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string) (*string, error) {
 	// We can't proceed without the command line.
 	cmdline, err := p.getCmdline()
 	if err != nil {
@@ -245,7 +239,7 @@ func detectPowerDNSAppConfigPath(p supportedProcess, executor storkutil.CommandE
 // the webserver configuration and the API key. If the webserver is disabled or the
 // API key does not exist it returns an error. Otherwise it instantiates the
 // PowerDNS app and the zone inventory.
-func configurePowerDNSApp(configPath string, parser pdnsConfigParser) (App, error) {
+func configurePowerDNSDaemon(configPath string, parser pdnsConfigParser) (*pdnsDaemon, error) {
 	// Parse the configuration file.
 	parsedConfig, err := parser.ParseFile(configPath)
 	if err != nil {
@@ -271,19 +265,21 @@ func configurePowerDNSApp(configPath string, parser pdnsConfigParser) (App, erro
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), parsedConfig, client, *webserverAddress, *webserverPort)
 
 	// Create the PowerDNS app.
-	pdnsApp := &PDNSApp{
-		BaseApp: BaseApp{
-			Type: AppTypePowerDNS,
-			AccessPoints: []AccessPoint{
-				{
-					Type:    AccessPointControl,
-					Address: *webserverAddress,
-					Port:    *webserverPort,
-					Key:     *key,
+	daemon := &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{
+					{
+						Type:    AccessPointControl,
+						Address: *webserverAddress,
+						Port:    *webserverPort,
+						Key:     *key,
+					},
 				},
 			},
+			zoneInventory: inventory,
 		},
-		zoneInventory: inventory,
 	}
-	return pdnsApp, nil
+	return daemon, nil
 }

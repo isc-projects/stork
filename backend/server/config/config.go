@@ -6,8 +6,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
-	"isc.org/stork/datamodel"
+	keaconfig "isc.org/stork/daemoncfg/kea"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -27,12 +26,10 @@ type TransactionStateAccessor interface {
 // A structure describing a single configuration update that may be applied
 // to multiple daemons. The T type is the Recipe type. Having this type
 // generic allows for using the Update structure for configuring different
-// app types.
+// daemon types.
 type Update[T any] struct {
-	// Type of the configured daemon, e.g. "kea".
-	Target datamodel.AppType
-	// Type of the operation to perform, e.g. "host_add".
-	Operation string
+	// Type of the operation to perform, e.g. "kea.host_add".
+	Operation dbmodel.ConfigOperation
 	// Identifiers of the daemons affected by the update. For example,
 	// a host reservation can be shared by two daemons.
 	DaemonIDs []int64
@@ -171,7 +168,6 @@ type ManagerLocker interface {
 func (state TransactionState[T]) GetUpdates() (updates []*Update[any]) {
 	for _, u := range state.Updates {
 		update := Update[any]{
-			Target:    u.Target,
 			Operation: u.Operation,
 			DaemonIDs: u.DaemonIDs,
 			Recipe:    u.Recipe,
@@ -182,9 +178,8 @@ func (state TransactionState[T]) GetUpdates() (updates []*Update[any]) {
 }
 
 // Creates new config update instance.
-func NewUpdate[T any](target datamodel.AppType, operation string, daemonIDs ...int64) *Update[T] {
+func NewUpdate[T any](operation dbmodel.ConfigOperation, daemonIDs ...int64) *Update[T] {
 	return &Update[T]{
-		Target:    target,
 		Operation: operation,
 		DaemonIDs: daemonIDs,
 	}
@@ -192,8 +187,8 @@ func NewUpdate[T any](target datamodel.AppType, operation string, daemonIDs ...i
 
 // Creates new transaction state with one config update instance. It is
 // the most typical use case.
-func NewTransactionStateWithUpdate[T any](target datamodel.AppType, operation string, daemonIDs ...int64) *TransactionState[T] {
-	update := NewUpdate[T](target, operation, daemonIDs...)
+func NewTransactionStateWithUpdate[T any](operation dbmodel.ConfigOperation, daemonIDs ...int64) *TransactionState[T] {
+	update := NewUpdate[T](operation, daemonIDs...)
 	state := &TransactionState[T]{}
 	state.Updates = append(state.Updates, update)
 	return state

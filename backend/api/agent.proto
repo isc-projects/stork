@@ -67,7 +67,7 @@ message GetStateReq {
 // State of machine and its system
 message GetStateRsp {
   string agentVersion = 1;
-  repeated App apps = 2;
+  repeated Daemon daemons = 2;
   string hostname = 3;
   int64 cpus = 4;
   string cpusLoad = 5;
@@ -87,21 +87,25 @@ message GetStateRsp {
   // Parameter is no longer used, but it is kept for backward compatibility.
   // Always false.
   // TODO: Remove it when the API will be changed.
-  bool agentUsesHTTPCredentials = 19;
+  bool agentUsesHTTPCredentials = 19 [deprecated = true];
 }
 
-// Application access point
+// Access point
 message AccessPoint {
   string type = 1;  // currently supported types are: "control" and "statistics"
   string address = 2;
   int64 port = 3;
   string key = 4;
-  bool useSecureProtocol = 5;
+  bool useSecureProtocol = 5 [deprecated = true];
+  string protocol = 6;
 }
 
-// Basic information about application.
-message App {
-  string type = 1;  // currently supported types are: "kea" and "bind9"
+// Basic information about the detected daemon.
+message Daemon {
+  // Daemon name.
+  // One of "ca", "dhcp4", "dhcp6", "d2", "netconf", "bind9", "pdns".
+  // Legacy agents returns: "kea" (for Kea CA daemon), "bind9", or "pdns".
+  string name = 1;
   repeated AccessPoint accessPoints = 2;
 }
 

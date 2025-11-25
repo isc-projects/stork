@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 )
@@ -51,7 +52,7 @@ func TestGracefulShutdown(t *testing.T) {
 	require.NotNil(t, dispatcher)
 
 	// We will simulate reviews for all daemon types.
-	daemonNames := []string{"dhcp4", "dhcp6", "ca", "d2", "named"}
+	daemonNames := []daemonname.Name{daemonname.DHCPv4, daemonname.DHCPv6, daemonname.CA, daemonname.D2, daemonname.Bind9}
 	// Selectors must correspond to the daemons above.
 	selectors := []DispatchGroupSelector{
 		KeaDHCPv4Daemon,
@@ -140,36 +141,32 @@ func TestPopulateKeaReports(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Create the configs for daemons.
-	config1, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	// Add daemons with configurations.
+	daemon1 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
+		},
+	})
+	err = daemon1.SetKeaConfigFromJSON([]byte(`{"Dhcp4": { }}`))
 	require.NoError(t, err)
-	config2, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp6": { }}`)
+	err = dbmodel.AddDaemon(db, daemon1)
 	require.NoError(t, err)
 
-	// Add an app with two daemons into the database.
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   "dhcp4",
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config:     config1,
-					ConfigHash: "1234",
-				},
-			},
-			{
-				Name:   "dhcp6",
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config:     config2,
-					ConfigHash: "2345",
-				},
-			},
+	daemon2 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-	}
-	daemons, err := dbmodel.AddApp(db, app)
+	})
+	err = daemon2.SetKeaConfigFromJSON([]byte(`{"Dhcp6": { }}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon2)
+	require.NoError(t, err)
+
+	daemons := []*dbmodel.Daemon{daemon1, daemon2}
 	require.NoError(t, err)
 	require.Len(t, daemons, 2)
 
@@ -276,18 +273,18 @@ func TestPopulateBind9Reports(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app with a BIND9 daemon into the database.
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeBind9,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   "named",
-				Active: true,
-			},
+	// Add a daemon with BIND9.
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	daemons, err := dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	daemons := []*dbmodel.Daemon{daemon}
 	require.NoError(t, err)
 	require.Len(t, daemons, 1)
 
@@ -346,18 +343,18 @@ func TestReviewInProgress(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app with a BIND9 daemon.
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeBind9,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   "named",
-				Active: true,
-			},
+	// Add a daemon with BIND9.
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	daemons, err := dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	daemons := []*dbmodel.Daemon{daemon}
 	require.NoError(t, err)
 	require.Len(t, daemons, 1)
 
@@ -441,36 +438,32 @@ func TestCascadeReview(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Create the configs for daemons.
-	config1, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	// Add daemons with configurations.
+	daemon1 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
+		},
+	})
+	err = daemon1.SetKeaConfigFromJSON([]byte(`{"Dhcp4": { }}`))
 	require.NoError(t, err)
-	config2, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp6": { }}`)
+	err = dbmodel.AddDaemon(db, daemon1)
 	require.NoError(t, err)
 
-	// Add an app with two daemons.
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   "dhcp4",
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config:     config1,
-					ConfigHash: "1234",
-				},
-			},
-			{
-				Name:   "ca",
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config:     config2,
-					ConfigHash: "2345",
-				},
-			},
+	daemon2 := dbmodel.NewDaemon(machine, daemonname.CA, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-	}
-	daemons, err := dbmodel.AddApp(db, app)
+	})
+	err = daemon2.SetKeaConfigFromJSON([]byte(`{"Control-agent": { }}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon2)
+	require.NoError(t, err)
+
+	daemons := []*dbmodel.Daemon{daemon1, daemon2}
 	require.NoError(t, err)
 	require.Len(t, daemons, 2)
 
@@ -571,36 +564,32 @@ func TestTriggers(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Create the configs for daemons.
-	config1, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	// Add daemons with configurations.
+	daemon1 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
+		},
+	})
+	err = daemon1.SetKeaConfigFromJSON([]byte(`{"Dhcp4": { }}`))
 	require.NoError(t, err)
-	config2, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp6": { }}`)
+	err = dbmodel.AddDaemon(db, daemon1)
 	require.NoError(t, err)
 
-	// Add an app with two daemons.
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   "dhcp4",
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config:     config1,
-					ConfigHash: "1234",
-				},
-			},
-			{
-				Name:   "dhcp6",
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config:     config2,
-					ConfigHash: "2345",
-				},
-			},
+	daemon2 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-	}
-	daemons, err := dbmodel.AddApp(db, app)
+	})
+	err = daemon2.SetKeaConfigFromJSON([]byte(`{"Dhcp6": { }}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon2)
+	require.NoError(t, err)
+
+	daemons := []*dbmodel.Daemon{daemon1, daemon2}
 	require.NoError(t, err)
 	require.Len(t, daemons, 2)
 
@@ -801,8 +790,8 @@ func TestGetCheckersMetadata(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	daemon1 := &dbmodel.Daemon{ID: 1, Name: dbmodel.DaemonNameDHCPv4}
-	daemon2 := &dbmodel.Daemon{ID: 2, Name: dbmodel.DaemonNameBind9}
+	daemon1 := &dbmodel.Daemon{ID: 1, Name: daemonname.DHCPv4}
+	daemon2 := &dbmodel.Daemon{ID: 2, Name: daemonname.Bind9}
 	daemon3 := &dbmodel.Daemon{ID: 3, Name: "unknown"}
 	dispatcher := NewDispatcher(db)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
@@ -879,15 +868,15 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 		AgentPort: 8080,
 	}
 	_ = dbmodel.AddMachine(db, machine)
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-	}
-	daemons, _ := dbmodel.AddApp(db, app)
-	daemon := daemons[0]
+	})
+	err := dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
 
 	dispatcher := NewDispatcher(db)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
@@ -906,7 +895,7 @@ func TestLoadAndValidateCheckerState(t *testing.T) {
 	}, nil)
 
 	// Act
-	err := LoadAndValidateCheckerPreferences(db, dispatcher)
+	err = LoadAndValidateCheckerPreferences(db, dispatcher)
 
 	// Assert
 	require.NoError(t, err)
@@ -938,15 +927,15 @@ func TestBeginReviewForDaemonWithAllCheckersDisabled(t *testing.T) {
 		AgentPort: 8080,
 	}
 	_ = dbmodel.AddMachine(db, machine)
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-	}
-	daemons, _ := dbmodel.AddApp(db, app)
-	daemon := daemons[0]
+	})
+	err := dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
 
 	dispatcher := NewDispatcher(db)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, func(rc *ReviewContext) (*Report, error) {
@@ -980,15 +969,15 @@ func TestBeginReviewForDaemonWithSomeCheckersDisabled(t *testing.T) {
 		AgentPort: 8080,
 	}
 	_ = dbmodel.AddMachine(db, machine)
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-	}
-	daemons, _ := dbmodel.AddApp(db, app)
-	daemon := daemons[0]
+	})
+	err := dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
 	checkerCallCount := 0
 
 	dispatcher := NewDispatcher(db)
@@ -1023,7 +1012,7 @@ func TestSetCheckerStateToInvalidValue(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	daemon := &dbmodel.Daemon{ID: 1, Name: dbmodel.DaemonNameDHCPv4}
+	daemon := &dbmodel.Daemon{ID: 1, Name: daemonname.DHCPv4}
 	dispatcher := NewDispatcher(db)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "foo", Triggers{ManualRun, ConfigModified}, nil)
 

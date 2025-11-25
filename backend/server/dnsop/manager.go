@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
-	"isc.org/stork/appcfg/dnsconfig"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/daemoncfg/dnsconfig"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -99,8 +99,8 @@ type Manager interface {
 	FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error)
 	// Checks if the DNS Manager is currently fetching the zones and returns progress.
 	// The first boolean flag indicates whether or not fetch is in progress. The int
-	// parameters indicate the number of apps from which the zones are fetched and the
-	// number of apps from which the zones have been fetched already.
+	// parameters indicate the number of daemons from which the zones are fetched and
+	// the number of daemons from which the zones have been fetched already.
 	GetFetchZonesProgress() (bool, int, int)
 	// Returns the RRs for the specified zone, daemon and view name.
 	// Using the options, the caller can request to force zone transfer even when RRs
@@ -127,10 +127,10 @@ const (
 // A zones fetching state including the flag whether or not the fetch
 // is in progress, and other data useful to track fetch progress.
 type fetchingState struct {
-	fetching           bool
-	completedAppsCount int
-	appsCount          int
-	mutex              sync.RWMutex
+	fetching              bool
+	completedDaemonsCount int
+	daemonsCount          int
+	mutex                 sync.RWMutex
 }
 
 // Attempts to start fetching the zones. If we're already in the fetching state
@@ -143,8 +143,8 @@ func (state *fetchingState) startFetching() bool {
 		return false
 	}
 	state.fetching = true
-	state.appsCount = 0
-	state.completedAppsCount = 0
+	state.daemonsCount = 0
+	state.completedDaemonsCount = 0
 	return true
 }
 
@@ -156,27 +156,27 @@ func (state *fetchingState) stopFetching() {
 }
 
 // Returns the underlying state values: a flag indicating whether or not
-// fetch is in progress, the number of apps from which the zones are being
-// fetched, and the number of apps from which the zones have been fetched
+// fetch is in progress, the number of daemons from which the zones are being
+// fetched, and the number of daemons from which the zones have been fetched
 // already.
 func (state *fetchingState) getFetchZonesProgress() (bool, int, int) {
 	state.mutex.RLock()
 	defer state.mutex.RUnlock()
-	return state.fetching, state.appsCount, state.completedAppsCount
+	return state.fetching, state.daemonsCount, state.completedDaemonsCount
 }
 
-// Sets the total number of apps from which the zones are to be fetched.
-func (state *fetchingState) setAppsCount(appsCount int) {
+// Sets the total number of daemons from which the zones are to be fetched.
+func (state *fetchingState) setDaemonsCount(daemonsCount int) {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
-	state.appsCount = appsCount
+	state.daemonsCount = daemonsCount
 }
 
-// Increases a counter of apps from which the zones have been fetched.
-func (state *fetchingState) increaseCompletedAppsCount() {
+// Increases a counter of daemons from which the zones have been fetched.
+func (state *fetchingState) increaseCompletedDaemonsCount() {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
-	state.completedAppsCount += 1
+	state.completedDaemonsCount += 1
 }
 
 // A state of requests sent to the agents to fetch RRs.
@@ -189,7 +189,7 @@ type rrsRequestingState struct {
 // A structure holding a request to fetch RRs for a zone.
 type rrsRequest struct {
 	ctx       context.Context
-	app       *dbmodel.App
+	daemon    *dbmodel.Daemon
 	zoneName  string
 	viewName  string
 	respChan  chan *RRResponse
@@ -198,10 +198,10 @@ type rrsRequest struct {
 }
 
 // Instantiates a new RRs request.
-func newRRsRequest(ctx context.Context, key uint64, app *dbmodel.App, zoneName string, viewName string) *rrsRequest {
+func newRRsRequest(ctx context.Context, key uint64, daemon *dbmodel.Daemon, zoneName string, viewName string) *rrsRequest {
 	return &rrsRequest{
 		ctx:       ctx,
-		app:       app,
+		daemon:    daemon,
 		zoneName:  zoneName,
 		viewName:  viewName,
 		respChan:  make(chan *RRResponse),
@@ -255,7 +255,7 @@ type bind9FormattedConfigRequestingState struct {
 // A structure holding a request to receive BIND 9 configuration from the agent.
 type bind9FormattedConfigRequest struct {
 	ctx          context.Context
-	app          *dbmodel.App
+	daemon       *dbmodel.Daemon
 	fileSelector *bind9config.FileTypeSelector
 	filter       *bind9config.Filter
 	respChan     chan *Bind9FormattedConfigResponse
@@ -264,10 +264,10 @@ type bind9FormattedConfigRequest struct {
 }
 
 // Instantiates a new BIND 9 configuration request.
-func newBind9FormattedConfigRequest(ctx context.Context, daemonID int64, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) *bind9FormattedConfigRequest {
+func newBind9FormattedConfigRequest(ctx context.Context, daemonID int64, daemon *dbmodel.Daemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) *bind9FormattedConfigRequest {
 	return &bind9FormattedConfigRequest{
 		ctx:          ctx,
-		app:          app,
+		daemon:       daemon,
 		fileSelector: fileSelector,
 		filter:       filter,
 		respChan:     make(chan *Bind9FormattedConfigResponse),
@@ -373,12 +373,12 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 	// Get the list of monitored DNS servers. We're going to communicate
 	// with the zone inventories created for these servers to fetch the
 	// list of zones.
-	apps, err := dbmodel.GetAppsByType(manager.db, dbmodel.AppTypeBind9, dbmodel.AppTypePDNS)
+	daemons, err := dbmodel.GetDNSDaemons(manager.db)
 	if err != nil {
 		manager.fetchingState.stopFetching()
 		return nil, err
 	}
-	manager.fetchingState.setAppsCount(len(apps))
+	manager.fetchingState.setDaemonsCount(len(daemons))
 	// Use the channel to communicate when the fetch has finished.
 	// By default the channel is non-blocking in case the caller doesn't
 	// want to wait for the completion. The buffer length of 1 ensures
@@ -397,27 +397,27 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		// communicates with one machine. Concurrently fetching from
 		// multiple machines should significantly decrease the time to
 		// populate all zones.
-		appsChan := make(chan dbmodel.App, len(apps))
-		for _, app := range apps {
-			appsChan <- app
+		daemonsChan := make(chan dbmodel.Daemon, len(daemons))
+		for _, daemon := range daemons {
+			daemonsChan <- daemon
 		}
-		close(appsChan)
+		close(daemonsChan)
 		// Wait group is used to ensure we wait for zone fetch from all DNS servers.
 		wg := sync.WaitGroup{}
-		wg.Add(len(apps))
+		wg.Add(len(daemons))
 		// Mutex protects the results map from concurrent write. The results hold
 		// a map of errors for respective daemons.
 		mutex := sync.Mutex{}
 		results := make(map[int64]*dbmodel.ZoneInventoryStateDetails)
 		// Create worker goroutines. The goroutines will read from the common
-		// channel and fetch the zones from the apps listed in the channel.
+		// channel and fetch the zones from the daemons listed in the channel.
 		for i := 0; i < poolSize; i++ {
-			go func(appsChan <-chan dbmodel.App) {
-				// Read next app from the channel.
-				for app := range appsChan {
-					manager.fetchZonesFromDNSServer(&app, batchSize, &wg, &mutex, results)
+			go func(daemonsChan <-chan dbmodel.Daemon) {
+				// Read next daemon from the channel.
+				for daemon := range daemonsChan {
+					manager.fetchZonesFromDNSServer(&daemon, batchSize, &wg, &mutex, results)
 				}
-			}(appsChan)
+			}(daemonsChan)
 		}
 		// Wait for all the go-routines to complete.
 		wg.Wait()
@@ -435,8 +435,8 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 			}
 		}
 		log.WithFields(log.Fields{
-			"appCount":  len(results),
-			"zoneCount": zoneCount,
+			"daemonCount": len(results),
+			"zoneCount":   zoneCount,
 		}).Info("Completed fetching the zones from the agents")
 
 		// Return the result.
@@ -448,14 +448,14 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 	return notifyChannel, nil
 }
 
-// Contacts a specified DNS server and fetches zones from it. The app
+// Contacts a specified DNS server and fetches zones from it. The daemon
 // indicates the DNS server to contact. The batchSize parameter controls
 // the size of the batch of zones to be inserted into the database in a single
 // SQL INSERT. The wg and mutex parameters are used to synchronize the work
 // between multiple goroutines. The results parameter is a map of errors for
 // respective daemons. This function can merely be called from the
 // FetchZones function.
-func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize int, wg *sync.WaitGroup, mutex *sync.Mutex, results map[int64]*dbmodel.ZoneInventoryStateDetails) {
+func (manager *managerImpl) fetchZonesFromDNSServer(daemon *dbmodel.Daemon, batchSize int, wg *sync.WaitGroup, mutex *sync.Mutex, results map[int64]*dbmodel.ZoneInventoryStateDetails) {
 	defer wg.Done()
 	var (
 		// Track views. We need to flush the batch when the view changes.
@@ -471,7 +471,7 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 	// performance for large number of zones.
 	batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
 	state := dbmodel.NewZoneInventoryStateDetails()
-	for zone, err := range manager.agents.ReceiveZones(context.Background(), app, nil) {
+	for zone, err := range manager.agents.ReceiveZones(context.Background(), daemon, nil) {
 		if err != nil {
 			// Returned status depends on the returned error type. Some
 			// errors require special handling.
@@ -497,7 +497,7 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 		if isFirst {
 			// Delete the local zones.
 			isFirst = false
-			err = dbmodel.DeleteLocalZones(manager.db, app.Daemons[0].ID)
+			err = dbmodel.DeleteLocalZones(manager.db, daemon.ID)
 			if err != nil {
 				state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 				break
@@ -509,7 +509,7 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 			Name: zone.Name(),
 			LocalZones: []*dbmodel.LocalZone{
 				{
-					DaemonID: app.Daemons[0].ID,
+					DaemonID: daemon.ID,
 					View:     zone.ViewName,
 					Class:    zone.Class,
 					Serial:   zone.Serial,
@@ -543,7 +543,7 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 			state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 		}
 	}
-	zoneCountStats, err := dbmodel.GetZoneCountStatsByDaemon(manager.db, app.Daemons[0].ID)
+	zoneCountStats, err := dbmodel.GetZoneCountStatsByDaemon(manager.db, daemon.ID)
 	if err != nil {
 		state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 	} else {
@@ -551,19 +551,19 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 		state.SetBuiltinZoneCount(zoneCountStats.BuiltinZones)
 	}
 	// Add the zone inventory state into the database for this DNS server.
-	if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(app.Daemons[0].ID, state)); err != nil {
+	if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(daemon.ID, state)); err != nil {
 		// This is an exceptional situation and normally shouldn't happen.
 		// Let's communicate this issue to the caller and log it. The
 		// zone inventory state won't be available for this server.
 		state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 		log.WithFields(log.Fields{
-			"app": app.Name,
+			"daemon": daemon.Name,
 		}).WithError(err).Error("Failed to save the zone inventory status in the database")
 	}
 	// Store the inventory state in the common map, so it can be returned
 	// to a caller.
-	storeResult(mutex, results, app.Daemons[0].ID, state)
-	manager.fetchingState.increaseCompletedAppsCount()
+	storeResult(mutex, results, daemon.ID, state)
+	manager.fetchingState.increaseCompletedDaemonsCount()
 }
 
 // Checks if the DNS Manager is currently fetching the zones.
@@ -580,7 +580,7 @@ func (manager *managerImpl) runRRsRequest(request *rrsRequest) {
 		defer manager.rrsReqsState.mutex.Unlock()
 		delete(manager.rrsReqsState.requests, request.key)
 	}()
-	for rr, err := range manager.agents.ReceiveZoneRRs(context.Background(), request.app, request.zoneName, request.viewName) {
+	for rr, err := range manager.agents.ReceiveZoneRRs(context.Background(), request.daemon, request.zoneName, request.viewName) {
 		var response *RRResponse
 		if err != nil {
 			response = NewErrorRRResponse(err)
@@ -601,7 +601,7 @@ func (manager *managerImpl) runRRsRequest(request *rrsRequest) {
 // over the response channel. The specified key should uniquely identify a
 // zone, view and daemon for which the RRs are requested. If there is an
 // ongoing request for the same key, the function returns an error.
-func (manager *managerImpl) requestZoneRRs(ctx context.Context, key uint64, app *dbmodel.App, zoneName string, viewName string) (chan *RRResponse, error) {
+func (manager *managerImpl) requestZoneRRs(ctx context.Context, key uint64, daemon *dbmodel.Daemon, zoneName string, viewName string) (chan *RRResponse, error) {
 	// Try to mark the request as ongoing. If the request is already present
 	// under the same key, return an error.
 	manager.rrsReqsState.mutex.Lock()
@@ -613,7 +613,7 @@ func (manager *managerImpl) requestZoneRRs(ctx context.Context, key uint64, app 
 	manager.rrsReqsState.mutex.Unlock()
 
 	// Create a new request and send it to the channel.
-	request := newRRsRequest(ctx, key, app, zoneName, viewName)
+	request := newRRsRequest(ctx, key, daemon, zoneName, viewName)
 	manager.rrsReqsState.requestChan <- request
 	// Return the response channel, so the caller can receive the RRs.
 	return request.respChan, nil
@@ -628,7 +628,7 @@ func (manager *managerImpl) runBind9FormattedConfigRequest(request *bind9Formatt
 		defer manager.bind9FormattedConfigReqsState.mutex.Unlock()
 		delete(manager.bind9FormattedConfigReqsState.requests, request.daemonID)
 	}()
-	for rsp, err := range manager.agents.ReceiveBind9FormattedConfig(request.ctx, request.app, request.fileSelector, request.filter) {
+	for rsp, err := range manager.agents.ReceiveBind9FormattedConfig(request.ctx, request.daemon, request.fileSelector, request.filter) {
 		var response *Bind9FormattedConfigResponse
 		switch {
 		case err != nil:
@@ -662,7 +662,7 @@ func (manager *managerImpl) runBind9FormattedConfigRequest(request *bind9Formatt
 // Requests BIND 9 configuration from the agent and returns it over the response channel.
 // This function prevents concurrent requests for the same daemon. If another
 // request for the same daemon is in progress, the function returns an error.
-func (manager *managerImpl) requestBind9FormattedConfig(ctx context.Context, daemonID int64, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (chan *Bind9FormattedConfigResponse, error) {
+func (manager *managerImpl) requestBind9FormattedConfig(ctx context.Context, daemonID int64, daemon *dbmodel.Daemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) (chan *Bind9FormattedConfigResponse, error) {
 	// Try to mark the request as ongoing. If the request is already present
 	// for the same daemon, return an error.
 	manager.bind9FormattedConfigReqsState.mutex.Lock()
@@ -674,7 +674,7 @@ func (manager *managerImpl) requestBind9FormattedConfig(ctx context.Context, dae
 	manager.bind9FormattedConfigReqsState.mutex.Unlock()
 
 	// Create a new request and send it to the channel.
-	request := newBind9FormattedConfigRequest(ctx, daemonID, app, fileSelector, filter)
+	request := newBind9FormattedConfigRequest(ctx, daemonID, daemon, fileSelector, filter)
 	manager.bind9FormattedConfigReqsState.requestChan <- request
 	// Return the response channel, so the caller can receive the BIND 9 configuration.
 	return request.respChan, nil
@@ -740,11 +740,11 @@ func (manager *managerImpl) Shutdown() {
 // override the cached RRs.
 func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse] {
 	return func(yield func(*RRResponse) bool) {
-		// We need an app associated with the daemon.
-		daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
+		// We need a daemon associated with the zone.
+		daemon, err := dbmodel.GetDNSDaemonByID(manager.db, daemonID)
 		if err != nil {
 			// This is unexpected and we can't proceed because we
-			// don't have the app instance.
+			// don't have the daemon instance.
 			_ = yield(NewErrorRRResponse(err))
 			return
 		}
@@ -753,7 +753,6 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 			_ = yield(NewErrorRRResponse(errors.Errorf("daemon with the ID of %d not found", daemonID)))
 			return
 		}
-		app := daemon.App
 
 		// We need a zone name, so let's get it from the database.
 		zone, err := dbmodel.GetZoneByID(manager.db, zoneID, dbmodel.ZoneRelationLocalZones)
@@ -795,7 +794,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		key := h.Sum64()
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		ch, err := manager.requestZoneRRs(ctx, key, app, zone.Name, viewName)
+		ch, err := manager.requestZoneRRs(ctx, key, daemon, zone.Name, viewName)
 		if err != nil {
 			// The zone inventory is most likely busy.
 			_ = yield(NewErrorRRResponse(err))
@@ -882,10 +881,9 @@ func (manager *managerImpl) GetBind9FormattedConfig(ctx context.Context, daemonI
 			_ = yield(NewBind9FormattedConfigResponseError(errors.Errorf("unable to get BIND 9 configuration from non-existent daemon with the ID %d", daemonID)))
 			return
 		}
-		app := daemon.App
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		ch, err := manager.requestBind9FormattedConfig(ctx, daemonID, app, fileSelector, filter)
+		ch, err := manager.requestBind9FormattedConfig(ctx, daemonID, daemon, fileSelector, filter)
 		if err != nil {
 			// The zone inventory is most likely busy.
 			_ = yield(NewBind9FormattedConfigResponseError(err))

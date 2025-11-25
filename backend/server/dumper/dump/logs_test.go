@@ -42,18 +42,14 @@ func TestLogDumpExecute(t *testing.T) {
 	m := dbmodel.Machine{
 		Address:   "foo",
 		AgentPort: 42,
-		Apps: []*dbmodel.App{
+		Daemons: []*dbmodel.Daemon{
 			{
-				Daemons: []*dbmodel.Daemon{
+				LogTargets: []*dbmodel.LogTarget{
 					{
-						LogTargets: []*dbmodel.LogTarget{
-							{
-								Output: "/var/log/foo.log",
-							},
-							{
-								Output: "stdout",
-							},
-						},
+						Output: "/var/log/foo.log",
+					},
+					{
+						Output: "stdout",
 					},
 				},
 			},

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/database/maintenance"
 	dbtest "isc.org/stork/server/database/test"
+	"isc.org/stork/testutil"
 )
 
 // Test that the database is created properly.
@@ -129,4 +131,39 @@ func TestDropDatabaseIfExistsForNonExistingDatabase(t *testing.T) {
 	settings.DBName = databaseName
 	_, err = dbops.NewPgDBConn(settings)
 	require.ErrorContains(t, err, fmt.Sprintf(`database "%s" does not exist`, databaseName))
+}
+
+// Test that the database can be restored from a dump.
+func TestRestoreDatabaseFromDump(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	dumpFilePath, _ := sb.Write("dump.sql", `
+		-- Unsupported parameter should be ignored.
+		SET unsupported_parameter = 'unsupported';
+		-- Commands allowed only for the superuser and owner should be ignored.
+		COMMENT ON SCHEMA public IS 'standard public schema';
+		CREATE SCHEMA public;
+
+		CREATE TABLE test_table (
+			id SERIAL PRIMARY KEY,
+			name TEXT NOT NULL
+		);
+		INSERT INTO test_table (name) VALUES ('test1'), ('test2');
+	`)
+
+	db, _, teardown := dbtest.SetupDatabaseTestCaseWithMaintenanceCredentials(t)
+	defer teardown()
+
+	// Act
+	err := maintenance.RestoreDatabaseFromDump(db, dumpFilePath)
+
+	// Assert
+	require.NoError(t, err)
+
+	var count int
+	_, err = db.QueryOne(pg.Scan(&count), "SELECT COUNT(*) FROM test_table;")
+	require.NoError(t, err)
+	require.Equal(t, 2, count)
 }

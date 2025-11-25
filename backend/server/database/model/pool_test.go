@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 )
@@ -70,13 +70,13 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestSubnetApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	subnet := Subnet{
 		Prefix: "192.0.2.0/24",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}
@@ -122,13 +122,13 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestSubnetApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	subnet := Subnet{
 		Prefix: "2001:db8:1::/64",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}
@@ -292,12 +292,12 @@ func TestAddressPoolUpdateStats(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestSubnetApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 	subnet := Subnet{
 		Prefix: "192.0.2.0/24",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}
@@ -343,12 +343,12 @@ func TestPrefixPoolUpdateStats(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestSubnetApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 	subnet := Subnet{
 		Prefix: "fe80::/64",
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}

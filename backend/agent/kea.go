@@ -2,7 +2,11 @@ package agent
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -12,117 +16,53 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	keaconfig "isc.org/stork/appcfg/kea"
-	keactrl "isc.org/stork/appctrl/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	storkutil "isc.org/stork/util"
 )
 
-var (
-	_ App = (*KeaApp)(nil)
-
-	// Pattern for detecting Kea Control Agent process.
-	keaCtrlAgentPattern = regexp.MustCompile(`(.*?)kea-ctrl-agent\s+.*-c\s+(\S+)`)
-)
+var _ Daemon = (*keaDaemon)(nil)
 
 // It holds common and Kea specific runtime information.
-type KeaApp struct {
-	BaseApp
-	HTTPClient *httpClient // to communicate with Kea Control Agent
-	// Active daemons are those which are running and can be communicated with.
-	// Nil value means that the active daemons have not been detected yet.
-	// An empty list means that no daemons are running.
-	ActiveDaemons     []string
-	ConfiguredDaemons []string
-}
-
-// Get base information about Kea app.
-func (ka *KeaApp) GetBaseApp() *BaseApp {
-	return &ka.BaseApp
+type keaDaemon struct {
+	daemon
+	connector keaConnector // to communicate with Kea daemon
 }
 
 // Sends a command to Kea and returns a response.
-func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) error {
-	// Get the textual representation of the command.
-	request := command.Marshal()
-
-	// Send the command to Kea CA.
-	body, err := ka.sendCommandRaw([]byte(request))
-	if err != nil {
-		return err
+func (d *keaDaemon) sendCommand(ctx context.Context, command keactrl.SerializableCommand, response any) error {
+	if d.connector == nil {
+		return errors.New("cannot send command to Kea because no control access point is configured")
 	}
 
-	// Parse the response.
-	err = keactrl.UnmarshalResponseList(command, body, responses)
+	commandBytes, err := command.Marshal()
 	if err != nil {
-		return errors.WithMessage(err, "failed to parse Kea response body received")
+		return errors.WithMessagef(err, "failed to marshal command to JSON")
 	}
+
+	// Send the command to the Kea server.
+	responseBytes, err := d.connector.sendPayload(ctx, commandBytes)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to send command to Kea")
+	}
+
+	err = json.Unmarshal(responseBytes, response)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse Kea response")
+	}
+
 	return nil
 }
 
-// Sends a serialized command to Kea and returns a serialized response.
-func (ka *KeaApp) sendCommandRaw(command []byte) ([]byte, error) {
-	var accessPoint *AccessPoint
-	for _, ap := range ka.AccessPoints {
-		if ap.Type == AccessPointControl {
-			accessPoint = &ap
-			break
-		}
-	}
-	if accessPoint == nil {
-		return nil, errors.New("no control access point found")
-	}
-
-	caURL := storkutil.HostWithPortURL(
-		accessPoint.Address,
-		accessPoint.Port,
-		accessPoint.UseSecureProtocol,
-	)
-
-	// Send the command to the Kea server.
-	response, err := ka.HTTPClient.Call(caURL, bytes.NewBuffer(command))
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to send command to Kea: %s", caURL)
-	}
-
-	// Kea returned a non-success status code.
-	if response.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("received non-success status code %d from Kea, with status text: %s; url: %s", response.StatusCode, response.Status, caURL)
-	}
-
-	// Read the response.
-	body, err := io.ReadAll(response.Body)
-	response.Body.Close()
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to read Kea response body received from %s", caURL)
-	}
-
-	return body, nil
-}
-
 // Collect the list of log files which can be viewed by the Stork user
-// from the UI. The response variable holds the pointer to the
-// response to the config-get command returned by one of the Kea
-// daemons. If this response contains loggers' configuration the log
-// files are extracted from it and returned. This function is intended
-// to be called by the functions which intercept config-get commands
-// sent periodically by the server to the agents and by the
-// DetectAllowedLogs when the agent is started.
-func collectKeaAllowedLogs(response *keactrl.Response) []string {
-	if err := response.GetError(); err != nil {
-		log.WithError(err).Warn("Skipped refreshing viewable log files because config-get returned unsuccessful result")
-		return nil
-	}
-	if response.Arguments == nil {
-		log.Warn("Skipped refreshing viewable log files because config-get response has no arguments")
-		return nil
-	}
-	cfg := keaconfig.NewConfigFromMap(response.Arguments)
-	if cfg == nil {
-		log.Warn("Skipped refreshing viewable log files because config-get response contains arguments which could not be parsed")
-		return nil
-	}
-
-	loggers := cfg.GetLoggers()
+// from the UI. The config variable holds the Kea config fetched by the
+// config-get command returned by one of the Kea daemons. If the config
+// contains loggers' configuration the log files are extracted from it
+// and returned.
+func collectKeaAllowedLogs(config *keaconfig.Config) []string {
+	loggers := config.GetLoggers()
 	if len(loggers) == 0 {
 		log.Info("No loggers found in the returned configuration while trying to refresh the viewable log files")
 		return nil
@@ -132,6 +72,9 @@ func collectKeaAllowedLogs(response *keactrl.Response) []string {
 	var paths []string
 	for _, l := range loggers {
 		for _, o := range l.GetAllOutputOptions() {
+			// TODO: We could read the stdout and stderr too by reading
+			// "/proc/<pid>/fd/1" and "/proc/<pid>/fd/2" symlinks.
+			// It is also possible to read syslog.
 			if o.Output != "stdout" && o.Output != "stderr" && !strings.HasPrefix(o.Output, "syslog") {
 				paths = append(paths, o.Output)
 			}
@@ -140,84 +83,35 @@ func collectKeaAllowedLogs(response *keactrl.Response) []string {
 	return paths
 }
 
-// Sends config-get command to all running Kea daemons belonging to the given Kea app
-// to fetch logging configuration. The first config-get command is sent to the Kea CA,
-// to fetch its logging configuration and to find the daemons running behind it. Next, the
-// config-get command is sent to the daemons behind CA and their logging configuration
-// is fetched. The log files locations are stored in the logTailer instance of the
-// agent as allowed for viewing. This function should be called when the agent has
-// been started and the running Kea apps have been detected.
-func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
+// Fetches the Kea configuration from the daemon by sending config-get command.
+func (d *keaDaemon) fetchConfig(ctx context.Context) (*keaconfig.Config, error) {
 	// Prepare config-get command to be sent to Kea Control Agent.
-	command := keactrl.NewCommandBase(keactrl.ConfigGet)
+	command := keactrl.NewCommandBase(keactrl.ConfigGet, d.GetName())
 	// Send the command to Kea.
-	responses := keactrl.ResponseList{}
-	err := ka.sendCommand(command, &responses)
+	response := keactrl.Response{}
+	err := d.sendCommand(ctx, command, &response)
 	if err != nil {
 		return nil, err
-	}
-
-	ap := ka.AccessPoints[0]
-
-	// There should be exactly one response received because we sent the command
-	// to only one daemon.
-	if len(responses) != 1 {
-		return nil, errors.Errorf("invalid response received from Kea CA to config-get command sent to %s:%d", ap.Address, ap.Port)
 	}
 
 	// It does not make sense to proceed if the CA returned non-success status
 	// because this response neither contains logging configuration nor
 	// sockets configurations.
-	if err := responses[0].GetError(); err != nil {
+	if err := response.GetError(); err != nil {
 		return nil, errors.WithMessagef(
-			err,
-			"unsuccessful response received from Kea CA to config-get command sent to %s:%d",
-			ap.Address, ap.Port,
+			err, "unsuccessful response received from Kea CA to config-get command sent to %s", d,
 		)
 	}
 
-	// Allow the log files used by the CA.
-	paths := collectKeaAllowedLogs(&responses[0])
-
-	// Send the command only to the active daemons from all daemons configured
-	// in the CA.
-	daemonNames := ka.ActiveDaemons
-
-	// Apparently, it isn't configured to forward commands to the daemons behind it.
-	if len(daemonNames) == 0 {
-		return nil, nil
+	if response.Arguments == nil {
+		return nil, errors.New("config-get response has no arguments")
 	}
-
-	// Prepare config-get command to be sent to the daemons behind CA.
-	command = keactrl.NewCommandBase(keactrl.ConfigGet, daemonNames...)
-
-	// Send config-get to the daemons behind CA.
-	responses = keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	config, err := keaconfig.NewConfig(response.Arguments)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "config-get response contains arguments which could not be parsed")
 	}
 
-	// Check that we got responses for all daemons.
-	if len(responses) != len(daemonNames) {
-		return nil, errors.Errorf("invalid number of responses received from daemons to config-get command sent via %s:%d", ap.Address, ap.Port)
-	}
-
-	// For each daemon try to extract its logging configuration and allow view
-	// the log files it contains.
-	for i := range responses {
-		paths = append(paths, collectKeaAllowedLogs(&responses[i])...)
-	}
-
-	return paths, nil
-}
-
-// It does nothing as it applies to DNS servers only.
-func (ka *KeaApp) StopZoneInventory() {}
-
-// Always returns nil. It is implemented to satisfy the App interface.
-func (ka *KeaApp) GetZoneInventory() *zoneInventory {
-	return nil
+	return config, nil
 }
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
@@ -230,22 +124,49 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 
 	config, err := keaconfig.NewConfig(text)
 	if err != nil {
-		err = errors.WithMessage(err, "Cannot parse Kea Control Agent config file")
+		err = errors.WithMessage(err, "Cannot parse Kea config file")
 		return nil, err
 	}
 
 	return config, err
 }
 
-// Detect the Kea application by parsing the Kea CA process command line.
-// This function parses the command line of the specified process. It looks
-// for the Kea CA configuration file path in the command line. If the path is
-// relative, it is resolved against the current working directory of the process.
+// Detect the Kea daemon(s).
 //
-// It reads the Kea CA configuration file and extracts its HTTP host, port,
-// TLS configuration, basic authentication credentials, and list of configured
-// daemons. The returned instance lacks information about the active daemons.
-// It must be detected separately.
+// The communication model with Kea changed significantly with the release of
+// Kea 3.0. The Kea Control Agent is no longer required to establish connection
+// with the Kea daemons (DHCP, DDNS, etc.). Instead, the daemons provide its
+// own control channels. The Kea CA still exists and can be used to manage the
+// daemons but it is deprecated and may be removed in future releases.
+// The Kea daemons support two modes of control channel: HTTP-based (same as
+// the Kea CA) and socket-based. In both cases, the expected data format is
+// JSON.
+//
+// This function supports all Kea versions (prior and post 3.0) and all modes
+// of control channel (HTTP- and socket-based).
+//
+// For Kea prior to 3.0, the function detects multiple daemons if CA daemon is
+// passed, and no daemons if any other daemon is passed. It is because only Kea
+// CA can contact other daemons in this Kea version. All daemons detected this
+// way have the same control access point because they are connected via the
+// CA.
+// For Kea 3.0 and later, the function detects only the passed daemon because
+// it expects the connection will be established directly with the daemon. Each
+// daemon has its own control channel.
+//
+// The access points of the daemons are detected by reading the daemon
+// configuration file. The function parses command line of the specified
+// process. It looks for the configuration file path in the command line. If
+// the path is relative, it is resolved against the current working directory
+// of the process.
+//
+// It reads the configuration file and extracts its HTTP host, port,
+// TLS configuration, basic authentication credentials. For Kea prior to 3.0,
+// the function also reads the list of configured daemons and then sends the
+// version-get command to each daemon to check if it is running.
+//
+// The version of the Kea daemon is recognized by calling its executable with
+// the --version flag.
 //
 // The specified httpClientConfig is used to create a new HTTP client instance
 // for the detected Kea app. The client inherits the the general HTTP client
@@ -255,9 +176,21 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // starting with "stork." If there are no such credentials, it picks the first
 // one. See @readClientCredentials for details.
 //
-// It returns the Kea app instance or an error if the Kea is not recognized or
+// It returns the Kea daemon instance or an error if the Kea is not recognized or
 // any error occurs.
-func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (App, error) {
+func detectKeaDaemons(ctx context.Context, p supportedProcess, httpClientConfig HTTPClientConfig, commander storkutil.CommandExecutor) ([]Daemon, error) {
+	// Extract the daemon name from the process.
+	processName, err := p.getName()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get process name")
+	}
+
+	daemonName := p.getDaemonName()
+	if daemonName == "" {
+		return nil, errors.Errorf("unsupported Kea process: %s", processName)
+	}
+
+	// Extract the config path and the executable path from the command line.
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil, err
@@ -267,7 +200,9 @@ func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (App, e
 		log.WithError(err).Warn("Cannot get Kea process current working directory")
 	}
 
-	match := keaCtrlAgentPattern.FindStringSubmatch(cmdline)
+	pattern := regexp.MustCompile(fmt.Sprintf(`(.*?)%s\s+.*-c\s+(\S+)`, processName))
+
+	match := pattern.FindStringSubmatch(cmdline)
 	if match == nil {
 		return nil, errors.Errorf("problem parsing Kea command line: %s", cmdline)
 	}
@@ -275,118 +210,127 @@ func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (App, e
 	if len(match) < 3 {
 		return nil, errors.Errorf("problem parsing Kea command line: %s", match[0])
 	}
-	keaConfPath := match[2]
 
-	// if path to config is not absolute then join it with CWD of kea
-	if !strings.HasPrefix(keaConfPath, "/") {
-		keaConfPath = path.Join(cwd, keaConfPath)
-	}
-
-	config, err := readKeaConfig(keaConfPath)
-	if err != nil {
-		return nil, errors.WithMessage(err, "invalid Kea Control Agent config")
-	}
-
-	// Port
-	port, ok := config.GetHTTPPort()
-	if !ok || port == 0 {
-		return nil, errors.Errorf("cannot parse the port")
-	}
-
-	// Address
-	address, _ := config.GetHTTPHost()
-
-	// Credentials
-	authentication := config.GetBasicAuthenticationDetails()
-	// Key is a user name that Stork uses to authenticate with Kea.
-	var key string
-	if authentication != nil {
-		allCredentials, err := readClientCredentials(authentication)
-		if err != nil {
-			return nil, errors.WithMessage(err, "cannot read client credentials")
+	// Check the version of the Kea binary. We need to differentiate between
+	// Kea prior to 3.0 and Kea post 3.0.
+	executablePath := match[1] + processName
+	if !path.IsAbs(executablePath) {
+		if cwd == "" {
+			return nil, errors.New("cannot resolve Kea executable path because the current working directory is unknown")
 		}
+		executablePath = path.Join(cwd, executablePath)
+	}
 
-		if len(allCredentials) > 0 {
-			// Fall back to the first set of credentials.
-			credentials := allCredentials[0]
+	versionRaw, err := commander.Output(executablePath, "-v")
+	if err != nil {
+		return nil, errors.WithMessagef(err, "cannot get Kea version by executing %s -v", executablePath)
+	}
+	version, err := storkutil.ParseSemanticVersion(string(versionRaw))
+	if err != nil {
+		return nil, errors.WithMessagef(err, "cannot parse Kea version: %s", string(versionRaw))
+	}
+	shouldTunnelViaCA := version.LessThan(storkutil.SemanticVersion{Major: 3, Minor: 0, Patch: 0})
+	if shouldTunnelViaCA && daemonName != daemonname.CA {
+		// For Kea prior to 3.0, only the CA daemon can connect to other daemons.
+		// If the process is not CA, we cannot detect any daemons.
+		return nil, nil
+	}
 
-			// Look for the credentials prefixed with "stork".
-			for _, c := range allCredentials {
-				if strings.HasPrefix(c.User, "stork") {
-					credentials = c
-					break
-				}
+	// Read the configuration file.
+	configPath := match[2]
+
+	if !strings.HasPrefix(configPath, "/") {
+		// If path to config is not absolute then join it with CWD of Kea.
+		configPath = path.Join(cwd, configPath)
+	}
+
+	config, err := readKeaConfig(configPath)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "invalid Kea %s config: %s", daemonName, configPath)
+	}
+
+	var accessPoints []AccessPoint
+	var connector keaConnector
+	controlSockets := config.GetListeningControlSockets()
+	if len(controlSockets) != 0 {
+		controlSocket := controlSockets[0]
+
+		// Credentials
+		// Key is a user name that Stork uses to authenticate with Kea.
+		var key string
+		if controlSocket.Authentication != nil {
+			allCredentials, err := readClientCredentials(controlSocket.Authentication)
+			if err != nil {
+				return nil, errors.WithMessage(err, "cannot read client credentials")
 			}
 
-			httpClientConfig.BasicAuth = basicAuthCredentials(credentials)
-			key = credentials.User
+			if len(allCredentials) > 0 {
+				// Fall back to the first set of credentials.
+				credentials := allCredentials[0]
+
+				// Look for the credentials prefixed with "stork".
+				for _, c := range allCredentials {
+					if strings.HasPrefix(c.User, "stork") {
+						credentials = c
+						break
+					}
+				}
+
+				httpClientConfig.BasicAuth = basicAuthCredentials(credentials)
+				key = credentials.User
+			}
 		}
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  controlSocket.GetAddress(),
+			Port:     controlSocket.GetPort(),
+			Protocol: controlSocket.GetProtocol(),
+			Key:      key,
+		}
+		accessPoints = append(accessPoints, accessPoint)
+		connector = newKeaConnector(accessPoint, httpClientConfig)
 	}
 
-	accessPoints := []AccessPoint{
-		{
-			Type:              AccessPointControl,
-			Address:           address,
-			Port:              port,
-			UseSecureProtocol: config.UseSecureProtocol(),
-			Key:               key,
-		},
-	}
-	keaApp := &KeaApp{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
+	thisDaemon := &keaDaemon{
+		daemon: daemon{
+			Name:         daemonName,
 			AccessPoints: accessPoints,
 		},
-		HTTPClient: NewHTTPClient(httpClientConfig),
-		// Set active daemons to nil, because we do not know them yet.
-		ActiveDaemons:     nil,
-		ConfiguredDaemons: config.GetControlSockets().GetConfiguredDaemonNames(),
-	}
-	return keaApp, nil
-}
-
-// Detects the active Kea daemons by sending the version-get command to each daemon.
-// The non-nil list of active daemons is returned.
-// Returns an error if the Kea CA is down but it doesn't throw an error if Kea
-// daemons are down. In the latter case, the error is logged but only if the
-// daemon was not already detected as inactive.
-func detectKeaActiveDaemons(keaApp *KeaApp, previousActiveDaemons []string) (daemons []string, err error) {
-	// Detect active daemons.
-	// Send the version-get command to each daemon to check if it is running.
-	command := keactrl.NewCommandBase(keactrl.VersionGet, keaApp.ConfiguredDaemons...)
-	responses := keactrl.ResponseList{}
-	err = keaApp.sendCommand(command, &responses)
-	if err != nil {
-		// The Kea CA seems to be down, so we cannot detect the active daemons.
-		return nil, errors.WithMessage(err, "failed to send command to Kea Control Agent")
+		connector: connector,
 	}
 
-	// Return non-nil list of active daemons to indicate that the detection was performed.
-	daemons = []string{}
-	for _, r := range responses {
-		if err := r.GetError(); err != nil {
-			// If it is a first detection, the daemon is newly inactive.
-			// Otherwise, it depends on the previous state.
-			isNewlyInactive := previousActiveDaemons == nil
-			for _, ad := range previousActiveDaemons {
-				if ad == r.GetDaemon() {
-					// Daemon was previously active.
-					isNewlyInactive = true
-					break
-				}
+	detectedDaemons := []Daemon{thisDaemon}
+	if shouldTunnelViaCA && len(accessPoints) != 0 {
+		// For Kea prior to 3.0, get the list of configured daemons.
+		managementControlSockets := config.GetManagementControlSockets()
+		managedDaemonNames := managementControlSockets.GetManagedDaemonNames()
+		for _, managedDaemonName := range managedDaemonNames {
+			command := keactrl.NewCommandBase(keactrl.VersionGet, managedDaemonName)
+			response := keactrl.Response{}
+			err = thisDaemon.sendCommand(ctx, command, &response)
+			if err == nil {
+				err = response.GetError()
+			}
+			if err != nil {
+				log.WithError(err).WithField("daemon", managedDaemonName).
+					Error("Cannot send version-get command to Kea daemon")
+				continue
 			}
 
-			if isNewlyInactive {
-				log.WithError(err).
-					WithField("daemon", r.GetDaemon()).
-					Errorf("Failed to communicate with Kea daemon")
+			// Add the detected daemon.
+			managedDaemon := &keaDaemon{
+				daemon: daemon{
+					Name:         managedDaemonName,
+					AccessPoints: accessPoints,
+				},
+				connector: thisDaemon.connector,
 			}
-		} else {
-			daemons = append(daemons, r.GetDaemon())
+			detectedDaemons = append(detectedDaemons, managedDaemon)
 		}
 	}
 
-	return daemons, nil
+	return detectedDaemons, nil
 }
 
 type ClientCredentials struct {
@@ -484,4 +428,124 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 		allCredentials = append(allCredentials, credentials)
 	}
 	return allCredentials, nil
+}
+
+// Lifecycle of the daemon.
+// Called once when the daemon is newly detected.
+func (d *keaDaemon) Bootstrap() error {
+	return nil
+}
+
+// Called periodically to update the daemon state.
+// Gathers the configured log files for detected apps and enables them
+// for viewing from the UI.
+func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error {
+	config, err := d.fetchConfig(ctx)
+	if err != nil {
+		return errors.WithMessage(err, "cannot fetch Kea configuration")
+	}
+	paths := collectKeaAllowedLogs(config)
+
+	for _, p := range paths {
+		agent.allowLog(p)
+	}
+	return nil
+}
+
+// Called once before the daemon is removed.
+func (d *keaDaemon) Cleanup() error {
+	return nil
+}
+
+// Interface for sending bytes to Kea and receiving bytes back.
+// All kinds of API supported by Kea (HTTP, socket) expect JSON data.
+// This abstraction encapsulates the way how the data is sent and received.
+type keaConnector interface {
+	sendPayload(ctx context.Context, command []byte) ([]byte, error)
+}
+
+// Factory function to create a keaConnector based on the access point
+// configuration.
+func newKeaConnector(accessPoint AccessPoint, httpClientConfig HTTPClientConfig) keaConnector {
+	if accessPoint.Protocol == protocoltype.Socket {
+		socketPath := accessPoint.Address
+		return &keaSocketConnector{socketPath: socketPath}
+	}
+
+	// HTTP or HTTPS
+	url := storkutil.HostWithPortURL(
+		accessPoint.Address,
+		accessPoint.Port,
+		string(accessPoint.Protocol),
+	)
+	return &keaHTTPConnector{
+		url:        url,
+		httpClient: NewHTTPClient(httpClientConfig),
+	}
+}
+
+// Implements keaConnector interface for connecting to Kea via a Unix socket.
+type keaSocketConnector struct {
+	socketPath string
+}
+
+// Sends the command to Kea via a Unix socket and returns the response.
+func (c *keaSocketConnector) sendPayload(ctx context.Context, command []byte) ([]byte, error) {
+	var dialer net.Dialer
+	conn, err := dialer.DialContext(ctx, "unix", c.socketPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to connect to unix socket: %s", c.socketPath)
+	}
+	defer conn.Close()
+
+	_, err = conn.Write(command)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to write command to unix socket")
+	}
+
+	response, err := io.ReadAll(conn)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response from unix socket")
+	}
+
+	return response, nil
+}
+
+// Implements keaConnector interface for connecting to Kea via HTTP.
+type keaHTTPConnector struct {
+	url        string
+	httpClient *httpClient
+}
+
+// Sends the command to Kea via HTTP and returns the response.
+func (c *keaHTTPConnector) sendPayload(ctx context.Context, command []byte) ([]byte, error) {
+	response, err := c.httpClient.Call(ctx, c.url, bytes.NewBuffer(command))
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to send command to Kea: %s", c.url)
+	}
+
+	// Kea returned a non-success status code.
+	if response.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("received non-success status code %d from Kea, with status text: %s; url: %s", response.StatusCode, response.Status, c.url)
+	}
+
+	// Read the response.
+	body, err := io.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to read Kea response body received from %s", c.url)
+	}
+
+	// The responses from the Kea send over HTTP are wrapped in a JSON array.
+	// Responses from the socket channel are always single JSON objects.
+	var arrayBody []json.RawMessage
+	err = json.Unmarshal(body, &arrayBody)
+	if err == nil {
+		if len(arrayBody) != 1 {
+			return nil, errors.Errorf("invalid number of responses received, got: %d, expected: 1", len(arrayBody))
+		}
+		body = arrayBody[0]
+	}
+
+	return body, nil
 }

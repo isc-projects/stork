@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -19,7 +18,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
-	keactrl "isc.org/stork/appctrl/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/datamodel/daemonname"
+	storkutil "isc.org/stork/util"
 )
 
 // Parsed subnet list item.
@@ -28,14 +29,6 @@ type subnetListItem struct {
 	prefix string
 	// Shared network name.
 	sharedNetwork string
-}
-
-// Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.
-type subnetList map[int]subnetListItem
-
-// Constructor of the subnetList type.
-func newSubnetList() subnetList {
-	return make(subnetList)
 }
 
 // JSON structures of Kea `subnet4-list` and `subnet6-list` response.
@@ -52,55 +45,7 @@ type subnetListJSONArguments struct {
 
 type subnetListJSON struct {
 	keactrl.ResponseHeader
-	Arguments *subnetListJSONArguments
-}
-
-// UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
-// to map.
-func (l *subnetList) UnmarshalJSON(b []byte) error {
-	// Unmarshal must be called with existing instance.
-	if *l == nil {
-		*l = newSubnetList()
-	}
-
-	// Standard unmarshal
-	var dhcpLabelsJSONs []subnetListJSON
-	err := json.Unmarshal(b, &dhcpLabelsJSONs)
-	// Parse JSON content
-	if err != nil {
-		return errors.Wrap(err, "problem parsing DHCP4 labels from Kea")
-	}
-
-	if len(dhcpLabelsJSONs) == 0 {
-		return errors.New("empty JSON list")
-	}
-
-	dhcpLabelsJSON := dhcpLabelsJSONs[0]
-
-	// Check the response error.
-	if err := dhcpLabelsJSON.GetError(); err != nil {
-		if errors.As(err, &keactrl.UnsupportedOperationKeaError{}) {
-			// Hook not installed. Return empty mapping
-			return nil
-		}
-		return errors.WithMessage(err, "problem with content of DHCP labels response from Kea")
-	}
-
-	// Result is OK, parse the mapping content
-
-	// No entries
-	if dhcpLabelsJSON.Arguments == nil {
-		return nil
-	}
-
-	for _, subnet := range dhcpLabelsJSON.Arguments.Subnets {
-		(*l)[subnet.ID] = subnetListItem{
-			prefix:        subnet.Subnet,
-			sharedNetwork: subnet.SharedNetworkName,
-		}
-	}
-
-	return nil
+	Arguments subnetListJSONArguments
 }
 
 // Stats descriptor that holds reference to prometheus stats
@@ -121,7 +66,7 @@ type subnetLookup interface {
 
 // An object that implements this interface can send requests to the Kea CA.
 type keaCommandSender interface {
-	sendCommandRaw(command []byte) ([]byte, error)
+	sendCommand(ctx context.Context, command keactrl.SerializableCommand, response any) error
 }
 
 // Subnet lookup that fetches the subnet data only if necessary.
@@ -132,69 +77,77 @@ type keaCommandSender interface {
 type lazySubnetLookup struct {
 	sender keaCommandSender
 	// Cached subnet list from current family.
-	cachedList subnetList
+	cachedSubnets map[int]subnetListItem
 	// Indicates that the subnet data was fetched for current family.
 	cached bool
 	// Family to use during lookups.
 	family int8
+	// Context to use during requests.
+	ctx context.Context
 }
 
 // Constructs the lazySubnetLookup instance. It accepts the Kea CA request sender.
-func newLazySubnetLookup(sender keaCommandSender) subnetLookup {
-	return &lazySubnetLookup{sender, nil, false, 4}
+func newLazySubnetLookup(ctx context.Context, sender keaCommandSender) subnetLookup {
+	return &lazySubnetLookup{sender, nil, false, 4, ctx}
 }
 
 // Fetches the subnet list from Kea and stores the response in a cache.
 // If any error occurs or list is unavailable then the cache for specific
 // family is set to nil. Returns fetched subnet list.
 // Family should be 4 or 6.
-func (l *lazySubnetLookup) fetchAndCacheList() subnetList {
+func (l *lazySubnetLookup) fetchAndCacheList(ctx context.Context) map[int]subnetListItem {
 	// Request to subnet prefixes.
-	var request string
+	var request *keactrl.Command
 	if l.family == 4 {
-		request = `{
-			"command":"subnet4-list",
-			"service":["dhcp4"],
-			"arguments": {}
-		}`
+		request = keactrl.NewCommandBase(keactrl.Subnet4List, daemonname.DHCPv4)
 	} else {
-		request = `{
-			"command":"subnet6-list",
-			"service":["dhcp6"],
-			"arguments": {}
-		}`
+		request = keactrl.NewCommandBase(keactrl.Subnet6List, daemonname.DHCPv6)
 	}
 
-	response, err := l.sender.sendCommandRaw([]byte(request))
-	var list subnetList
-	if err == nil {
-		err = json.Unmarshal(response, &list)
-		if err != nil {
-			log.WithError(err).Errorf(
-				"Problem parsing DHCPv%d prefixes from Kea",
-				l.family,
-			)
+	// If any error occurs then we cache nil value to avoid repeated requests.
+	l.cached = true
+	l.cachedSubnets = nil
+
+	var response subnetListJSON
+	err := l.sender.sendCommand(ctx, request, &response)
+	if err != nil {
+		log.WithError(err).Error("Failed to fetch subnet list from Kea")
+		return nil
+	}
+	if err := response.GetError(); err != nil {
+		if errors.As(err, &keactrl.UnsupportedOperationKeaError{}) {
+			// Hook not installed. Return empty mapping
+			return nil
 		}
+		log.WithError(err).Error("Error returned by Kea when fetching subnet list")
+		return nil
 	}
 
 	// Cache results
-	l.cachedList = list
-	l.cached = true
-	return list
+	subnets := make(map[int]subnetListItem)
+	for _, subnet := range response.Arguments.Subnets {
+		subnets[subnet.ID] = subnetListItem{
+			prefix:        subnet.Subnet,
+			sharedNetwork: subnet.SharedNetworkName,
+		}
+	}
+
+	l.cachedSubnets = subnets
+	return subnets
 }
 
 // Returns the subnet details for specific subnet ID and IP family (4 or 6).
 // If the info is unavailable then it returns empty struct and false.
 func (l *lazySubnetLookup) getSubnetInfo(subnetID int) (subnetListItem, bool) {
-	list := l.cachedList
+	subnets := l.cachedSubnets
 	if !l.cached {
-		list = l.fetchAndCacheList()
+		subnets = l.fetchAndCacheList(l.ctx)
 	}
-	if list == nil {
+	if subnets == nil {
 		return subnetListItem{}, false
 	}
 
-	item, ok := list[subnetID]
+	item, ok := subnets[subnetID]
 	return item, ok
 }
 
@@ -208,10 +161,11 @@ func (l *lazySubnetLookup) setFamily(family int8) {
 type PromKeaExporter struct {
 	Host string
 	Port int
+	Ctx  context.Context
 
 	EnablePerSubnetStats bool
 
-	AppMonitor AppMonitor
+	Monitor    Monitor
 	HTTPServer *http.Server
 
 	StartTime time.Time
@@ -230,12 +184,13 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMonitor AppMonitor) *PromKeaExporter {
+func NewPromKeaExporter(ctx context.Context, host string, port int, enablePerSubnetStats bool, monitor Monitor) *PromKeaExporter {
 	pke := &PromKeaExporter{
 		Host:                 host,
 		Port:                 port,
+		Ctx:                  ctx,
 		EnablePerSubnetStats: enablePerSubnetStats,
-		AppMonitor:           appMonitor,
+		Monitor:              monitor,
 		Registry:             prometheus.NewRegistry(),
 		StartTime:            time.Now(),
 		Addr4StatsMap:        nil,
@@ -255,6 +210,7 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 
 	// stork agent internal stats
 	const storkAgentNamespace = "storkagent"
+	const keaNamespace = "kea"
 	pke.ExporterStatMap = map[string]prometheus.Gauge{
 		"uptime_seconds": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: storkAgentNamespace,
@@ -262,60 +218,48 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 			Name:      "uptime_seconds",
 			Help:      "Uptime of the Prometheus Kea Exporter in seconds",
 		}),
-		"monitored_kea_apps": factory.NewGauge(prometheus.GaugeOpts{
+		"monitored_kea_daemons": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: storkAgentNamespace,
-			Subsystem: "appmonitor",
-			Name:      "monitored_kea_apps_total",
-			Help:      "Number of currently monitored Kea applications",
+			Subsystem: "monitor",
+			Name:      "monitored_kea_daemons_total",
+			Help:      "Number of currently monitored Kea daemons",
 		}),
-		"active_dhcp4_daemons": factory.NewGauge(prometheus.GaugeOpts{
+		"monitored_kea_dhcp4_daemons": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: storkAgentNamespace,
 			Subsystem: "promkeaexporter",
-			Name:      "active_dhcp4_daemons_total",
-			Help:      "Number of DHCPv4 daemons providing statistics",
+			Name:      "monitored_dhcp4_daemons_total",
+			Help:      "Number of monitored DHCPv4 daemons providing statistics",
 		}),
-		"active_dhcp6_daemons": factory.NewGauge(prometheus.GaugeOpts{
+		"monitored_kea_dhcp6_daemons": factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: storkAgentNamespace,
 			Subsystem: "promkeaexporter",
-			Name:      "active_dhcp6_daemons_total",
+			Name:      "monitored_dhcp6_daemons_total",
 			Help:      "Number of DHCPv6 daemons providing statistics",
-		}),
-		"configured_dhcp4_daemons": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: storkAgentNamespace,
-			Subsystem: "promkeaexporter",
-			Name:      "configured_dhcp4_daemons_total",
-			Help:      "Number of configured DHCPv4 daemons in Kea CA",
-		}),
-		"configured_dhcp6_daemons": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: storkAgentNamespace,
-			Subsystem: "promkeaexporter",
-			Name:      "configured_dhcp6_daemons_total",
-			Help:      "Number of configured DHCPv6 daemons in Kea CA",
 		}),
 	}
 
 	// global stats
 	pke.Global4StatMap = map[string]prometheus.Gauge{
 		"cumulative-assigned-addresses": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "global4_cumulative_addresses_assigned_total",
 			Help:      "Cumulative number of assigned addresses since server startup from all subnets",
 		}),
 		"declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "global4_addresses_declined_total",
 			Help:      "Declined counts from all subnets",
 		}),
 		"reclaimed-declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "global4_addresses_declined_reclaimed_total",
 			Help:      "Declined addresses that were reclaimed for all subnets",
 		}),
 		"reclaimed-leases": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "global4_addresses_reclaimed_total",
 			Help:      "Expired addresses that were reclaimed for all subnets",
@@ -324,31 +268,31 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 
 	pke.Global6StatMap = map[string]prometheus.Gauge{
 		"declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "global6_addresses_declined_total",
 			Help:      "Declined counts from all subnets",
 		}),
 		"cumulative-assigned-nas": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "global6_cumulative_nas_assigned_total",
 			Help:      "Cumulative number of assigned NA addresses since server startup from all subnets",
 		}),
 		"cumulative-assigned-pds": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "global6_cumulative_pds_assigned_total",
 			Help:      "Cumulative number of assigned PD prefixes since server startup",
 		}),
 		"reclaimed-declined-addresses": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "global6_addresses_declined_reclaimed_total",
 			Help:      "Declined addresses that were reclaimed for all subnets",
 		}),
 		"reclaimed-leases": factory.NewGauge(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "global6_addresses_reclaimed_total",
 			Help:      "Expired addresses that were reclaimed for all subnets",
@@ -357,13 +301,13 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 
 	// packets dhcp4
 	packets4SentTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
+		Namespace: keaNamespace,
 		Subsystem: "dhcp4",
 		Name:      "packets_sent_total",
 		Help:      "Packets sent",
 	}, []string{"operation"})
 	packets4ReceivedTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
+		Namespace: keaNamespace,
 		Subsystem: "dhcp4",
 		Name:      "packets_received_total",
 		Help:      "Packets received",
@@ -371,25 +315,25 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 
 	// packets dhcp6
 	packets6SentTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
+		Namespace: keaNamespace,
 		Subsystem: "dhcp6",
 		Name:      "packets_sent_total",
 		Help:      "Packets sent",
 	}, []string{"operation"})
 	packets6ReceivedTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
+		Namespace: keaNamespace,
 		Subsystem: "dhcp6",
 		Name:      "packets_received_total",
 		Help:      "Packets received",
 	}, []string{"operation"})
 	packets4o6SentTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
+		Namespace: keaNamespace,
 		Subsystem: "dhcp6",
 		Name:      "packets_sent_dhcp4_total",
 		Help:      "DHCPv4-over-DHCPv6 packets received",
 	}, []string{"operation"})
 	packets4o6ReceivedTotal := factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
+		Namespace: keaNamespace,
 		Subsystem: "dhcp6",
 		Name:      "packets_received_dhcp4_total",
 		Help:      "DHCPv4-over-DHCPv6 packets received",
@@ -450,37 +394,37 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 		// addresses dhcp4
 		addr4StatsMap := make(map[string]*prometheus.GaugeVec)
 		addr4StatsMap["assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "addresses_assigned_total",
 			Help:      "Assigned addresses",
 		}, subnetLabels)
 		addr4StatsMap["declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "addresses_declined_total",
 			Help:      "Declined counts",
 		}, subnetLabels)
 		addr4StatsMap["reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "addresses_declined_reclaimed_total",
 			Help:      "Declined addresses that were reclaimed",
 		}, subnetLabels)
 		addr4StatsMap["reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "addresses_reclaimed_total",
 			Help:      "Expired addresses that were reclaimed",
 		}, subnetLabels)
 		addr4StatsMap["total-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "addresses_total",
 			Help:      "Size of subnet address pool",
 		}, subnetLabels)
 		addr4StatsMap["cumulative-assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "cumulative_addresses_assigned_total",
 			Help:      "Cumulative number of assigned addresses since server startup",
@@ -489,55 +433,55 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 		// addresses dhcp6
 		addr6StatsMap := make(map[string]*prometheus.GaugeVec)
 		addr6StatsMap["total-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "na_total",
 			Help:      "'Size of non-temporary address pool",
 		}, subnetLabels)
 		addr6StatsMap["assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "na_assigned_total",
 			Help:      "Assigned non-temporary addresses (IA_NA)",
 		}, subnetLabels)
 		addr6StatsMap["total-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pd_total",
 			Help:      "Size of prefix delegation pool",
 		}, subnetLabels)
 		addr6StatsMap["assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pd_assigned_total",
 			Help:      "Assigned prefix delegations (IA_PD)",
 		}, subnetLabels)
 		addr6StatsMap["reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "addresses_reclaimed_total",
 			Help:      "Expired addresses that were reclaimed",
 		}, subnetLabels)
 		addr6StatsMap["declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "addresses_declined_total",
 			Help:      "Declined counts",
 		}, subnetLabels)
 		addr6StatsMap["reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "addresses_declined_reclaimed_total",
 			Help:      "Declined addresses that were reclaimed",
 		}, subnetLabels)
 		addr6StatsMap["cumulative-assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "cumulative_nas_assigned_total",
 			Help:      "Cumulative number of assigned NA addresses since server startup",
 		}, subnetLabels)
 		addr6StatsMap["cumulative-assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "cumulative_pds_assigned_total",
 			Help:      "Cumulative number of assigned PD prefixes since server startup",
@@ -547,81 +491,81 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 		poolLabels = append(poolLabels, subnetLabels...)
 
 		addr4StatsMap["pool-assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "pool_addresses_assigned_total",
 			Help:      "Total number of assigned addresses in the DHCPv4 pool",
 		}, poolLabels)
 		addr4StatsMap["pool-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "pool_addresses_declined_total",
 			Help:      "Total number of declined addresses in the DHCPv4 pool",
 		}, poolLabels)
 		addr4StatsMap["pool-reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "pool_addresses_reclaimed_total",
 			Help:      "Total number of reclaimed leases in the DHCPv4 pool",
 		}, poolLabels)
 		addr4StatsMap["pool-reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "pool_addresses_declined_reclaimed_total",
 			Help:      "Total number of reclaimed declined addresses in the DHCPv4 pool",
 		}, poolLabels)
 		addr4StatsMap["pool-cumulative-assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "pool_addresses_cumulative_assigned_total",
 			Help:      "Total number of cumulative assigned addresses in the DHCPv4 pool",
 		}, poolLabels)
 		addr4StatsMap["pool-total-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp4",
 			Name:      "pool_addresses_total",
 			Help:      "Total number of addresses in the DHCPv4 pool",
 		}, poolLabels)
 
 		addr6StatsMap["pool-assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_na_assigned_total",
 			Help:      "Total number of assigned non-temporary addresses in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_addresses_declined_total",
 			Help:      "Total number of declined addresses in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_addresses_reclaimed_total",
 			Help:      "Total number of reclaimed leases in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_addresses_declined_reclaimed_total",
 			Help:      "Total number of reclaimed declined addresses in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-cumulative-assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_cumulative_nas_assigned_total",
 			Help:      "Cumulative number of assigned addresses in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-total-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_na_total",
 			Help:      "Size of non-temporary address pool",
 		}, poolLabels)
 
 		addr6StatsMap["pool-pd-assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_pd_assigned_total",
 			Help:      "Total number of assigned prefixes in the DHCPv6 pool",
@@ -629,19 +573,19 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 		// There is a metric with the same name ("reclaimed-leases") in the
 		// (NA) pools and pd-pools.
 		addr6StatsMap["pool-pd-reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_pd_addresses_reclaimed_total",
 			Help:      "Total number of reclaimed leases in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-pd-cumulative-assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_cumulative_pds_assigned_total",
 			Help:      "Cumulative number of assigned prefixes in the DHCPv6 pool",
 		}, poolLabels)
 		addr6StatsMap["pool-pd-total-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: AppTypeKea,
+			Namespace: keaNamespace,
 			Subsystem: "dhcp6",
 			Name:      "pool_pd_total",
 			Help:      "Size of prefix delegation pool",
@@ -834,153 +778,84 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.Ga
 	}
 }
 
-// Collect stats from all Kea apps.
+// Collect stats from all Kea daemons.
 func (pke *PromKeaExporter) collectStats() error {
 	// Update uptime counter
 	pke.ExporterStatMap["uptime_seconds"].Set(time.Since(pke.StartTime).Seconds())
 
-	var lastErr error
+	var errs []error
 
-	// Request to kea dhcp daemons for getting all stats.
-	requestData := &keactrl.Command{
-		Command: keactrl.StatisticGetAll,
-		// Send the request only to the configured daemons.
-		Daemons:   nil,
-		Arguments: map[string]any{},
-	}
-
-	// Go through all kea apps discovered by monitor and query them for stats.
-	apps := pke.AppMonitor.GetApps()
-	keaAppsCount := 0
+	// Go through all kea daemons discovered by monitor and query them for stats.
+	daemons := pke.Monitor.GetDaemons()
+	keaDaemonsCount := 0
 	activeDHCP4DaemonsCount := 0
 	activeDHCP6DaemonsCount := 0
-	configuredDHCP4DaemonsCount := 0
-	configuredDHCP6DaemonsCount := 0
 
-	const (
-		dhcp4 = "dhcp4"
-		dhcp6 = "dhcp6"
-	)
-
-	for _, app := range apps {
-		// Ignore non-kea apps.
-		if app.GetBaseApp().Type != AppTypeKea {
+	for _, daemon := range daemons {
+		switch daemon.GetName() {
+		case daemonname.CA, daemonname.D2:
+			keaDaemonsCount++
+			// These daemons doesn't support statistic-get-all command.
+			continue
+		case daemonname.DHCPv4, daemonname.DHCPv6:
+			keaDaemonsCount++
+			// Proceed.
+		default:
+			// Ignore non-kea daemons.
 			continue
 		}
-		keaApp := app.(*KeaApp)
-		keaAppsCount++
 
-		// Count the configured daemons.
-		for _, daemon := range keaApp.ConfiguredDaemons {
-			switch daemon {
-			case dhcp4:
-				configuredDHCP4DaemonsCount++
-			case dhcp6:
-				configuredDHCP6DaemonsCount++
-			}
-		}
+		keaDaemon := daemon.(*keaDaemon)
 
-		// Collect the list of the active DHCP daemons in a given app to
-		// avoid sending requests to non-existing daemons.
-		var services []string
-		for _, daemon := range keaApp.ActiveDaemons {
-			// Select services (daemons) that support the statistic-get-all
-			// command.
-			switch daemon {
-			case dhcp4:
-				services = append(services, daemon)
-			case dhcp6:
-				services = append(services, daemon)
-			}
-		}
-		if len(services) == 0 {
-			err := errors.Errorf("missing configured daemons in the application: %+v", app.GetBaseApp())
-			lastErr = err
-			log.WithError(err).Error("The Kea application has no DHCP daemons configured")
-			continue
-		}
-		requestData.Daemons = services
-
-		// get stats from kea
-		requestDataBytes, err := json.Marshal(requestData)
-		if err != nil {
-			err = errors.Wrap(err, "cannot serialize a request to JSON")
-			lastErr = err
-			log.WithError(err).Error("Problem serializing the statistics request to JSON")
-			continue
-		}
+		// Request to kea dhcp daemons for getting all stats.
+		request := keactrl.NewCommandBase(keactrl.StatisticGetAll, keaDaemon.GetName())
+		var response keactrl.StatisticGetAllResponse
 
 		// Fetching statistics
-		responseData, err := keaApp.sendCommandRaw(requestDataBytes)
+		err := keaDaemon.sendCommand(pke.Ctx, request, &response)
 		if err != nil {
-			lastErr = err
-			log.WithError(err).Error("Problem fetching stats from Kea")
-			continue
-		}
-
-		// Parse response
-		var response keactrl.StatisticGetAllResponse
-		err = json.Unmarshal(responseData, &response)
-		if err != nil {
-			lastErr = err
-			log.WithError(err).
-				WithField("request", requestData).
-				Error("Failed to parse responses from Kea")
-			continue
-		}
-
-		// The number of responses should match the number of services.
-		if len(response) != len(services) {
-			err = errors.Errorf("number of responses (%d) does not match the number of services (%d)", len(response), len(services))
-			lastErr = err
-			log.WithError(err).
-				Error("Unexpected number of responses from Kea")
+			err = errors.WithMessagef(err, "Problem fetching stats from Kea daemon %s", keaDaemon)
+			errs = append(errs, err)
 			continue
 		}
 
 		// Prepare subnet lookup
-		subnetLookup := newLazySubnetLookup(keaApp)
+		subnetLookup := newLazySubnetLookup(pke.Ctx, keaDaemon)
 
-		// Go though responses from daemons (it can have none or some responses from dhcp4/dhcp6)
-		// and store collected stats in Prometheus structures.
+		// Process the response from the daemon and store collected stats in
+		// Prometheus structures.
 		// Fetching also DHCP subnet prefixes. It may fail if Kea doesn't support
 		// required commands.
-		for i, service := range services {
-			addrStatsMap := pke.Addr4StatsMap
-			globalStatMap := pke.Global4StatMap
-			activeDaemonsCount := &activeDHCP4DaemonsCount
-			var family int8 = 4
-			if service == dhcp6 {
-				addrStatsMap = pke.Addr6StatsMap
-				globalStatMap = pke.Global6StatMap
-				activeDaemonsCount = &activeDHCP6DaemonsCount
-				family = 6
-			}
-
-			*activeDaemonsCount++
-
-			serviceResponse := response[i]
-			if err := serviceResponse.GetError(); err != nil {
-				if !errors.As(err, &keactrl.NumberOverflowKeaError{}) {
-					*activeDaemonsCount--
-				}
-				log.WithError(err).
-					WithField("service", service).
-					Error("Problem fetching stats from Kea")
-				continue
-			}
-
-			subnetLookup.setFamily(family)
-			pke.setDaemonStats(addrStatsMap, globalStatMap, serviceResponse.Arguments, pke.ignoredStats, subnetLookup)
+		addrStatsMap := pke.Addr4StatsMap
+		globalStatMap := pke.Global4StatMap
+		activeDaemonsCount := &activeDHCP4DaemonsCount
+		family := int8(4)
+		if daemon.GetName() == daemonname.DHCPv6 {
+			addrStatsMap = pke.Addr6StatsMap
+			globalStatMap = pke.Global6StatMap
+			activeDaemonsCount = &activeDHCP6DaemonsCount
+			family = 6
 		}
+
+		*activeDaemonsCount++
+
+		if err := response.GetError(); err != nil {
+			if !errors.As(err, &keactrl.NumberOverflowKeaError{}) {
+				*activeDaemonsCount--
+			}
+			err = errors.WithMessagef(err, "problem fetching stats from Kea: %s", keaDaemon)
+			errs = append(errs, err)
+			continue
+		}
+
+		subnetLookup.setFamily(family)
+		pke.setDaemonStats(addrStatsMap, globalStatMap, response.Arguments, pke.ignoredStats, subnetLookup)
 	}
 
-	// Set the number of monitored Kea applications and daemons.
-	pke.ExporterStatMap["monitored_kea_apps"].Set(float64(keaAppsCount))
-	pke.ExporterStatMap["active_dhcp4_daemons"].Set(float64(activeDHCP4DaemonsCount))
-	pke.ExporterStatMap["active_dhcp6_daemons"].Set(float64(activeDHCP6DaemonsCount))
-	pke.ExporterStatMap["configured_dhcp4_daemons"].Set(float64(configuredDHCP4DaemonsCount))
-	pke.ExporterStatMap["configured_dhcp6_daemons"].Set(float64(configuredDHCP6DaemonsCount))
+	// Set the number of monitored Kea daemons.
+	pke.ExporterStatMap["monitored_kea_daemons"].Set(float64(keaDaemonsCount))
+	pke.ExporterStatMap["monitored_kea_dhcp4_daemons"].Set(float64(activeDHCP4DaemonsCount))
+	pke.ExporterStatMap["monitored_kea_dhcp6_daemons"].Set(float64(activeDHCP6DaemonsCount))
 
-	return lastErr
+	return storkutil.CombineErrors("some errors were encountered while collecting stats from Kea", errs)
 }

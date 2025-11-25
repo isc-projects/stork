@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -43,11 +45,10 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *KeaConfig {
         }
     }`
 
-	cfg, err := NewKeaConfigFromJSON(configStr)
+	config, err := keaconfig.NewConfig([]byte(configStr))
 	require.NoError(t, err)
-	require.NotNil(t, cfg)
 
-	return cfg
+	return newKeaConfig(config)
 }
 
 // Returns test Kea configuration including multiple IPv6 subnets.
@@ -86,16 +87,15 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *KeaConfig {
         }
     }`
 
-	cfg, err := NewKeaConfigFromJSON(configStr)
+	config, err := keaconfig.NewConfig([]byte(configStr))
 	require.NoError(t, err)
-	require.NotNil(t, cfg)
 
-	return cfg
+	return newKeaConfig(config)
 }
 
-// Adds apps to be used with subnet tests.
-func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
-	// Add two apps.
+// Adds daemons to be used with subnet tests.
+func addTestSubnetDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon) {
+	// Add two machines with daemons.
 	for i := 0; i < 2; i++ {
 		m := &Machine{
 			ID:        0,
@@ -105,38 +105,28 @@ func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		accessPoints := []*AccessPoint{}
-		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i), true)
-
-		a := &App{
-			ID:           0,
-			MachineID:    m.ID,
-			Type:         AppTypeKea,
-			Active:       true,
-			AccessPoints: accessPoints,
-			Daemons: []*Daemon{
-				{
-					Name: DaemonNameDHCPv4,
-					KeaDaemon: &KeaDaemon{
-						Config: getTestConfigWithIPv4Subnets(t),
-					},
-				},
-				{
-					Name: DaemonNameDHCPv6,
-					KeaDaemon: &KeaDaemon{
-						Config: getTestConfigWithIPv6Subnets(t),
-					},
-				},
+		accessPoints := []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "cool.example.org",
+				Port:    int64(1234 + i),
+				Key:     "",
 			},
 		}
 
-		apps = append(apps, a)
-	}
-
-	// Add the apps to be database.
-	for _, app := range apps {
-		_, err := AddApp(db, app)
+		// Create DHCPv4 daemon
+		daemon4 := NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
+		daemon4.KeaDaemon.Config = getTestConfigWithIPv4Subnets(t)
+		err = AddDaemon(db, daemon4)
 		require.NoError(t, err)
+		daemons = append(daemons, daemon4)
+
+		// Create DHCPv6 daemon
+		daemon6 := NewDaemon(m, daemonname.DHCPv6, true, accessPoints)
+		daemon6.KeaDaemon.Config = getTestConfigWithIPv6Subnets(t)
+		err = AddDaemon(db, daemon6)
+		require.NoError(t, err)
+		daemons = append(daemons, daemon6)
 	}
-	return apps
+	return daemons
 }

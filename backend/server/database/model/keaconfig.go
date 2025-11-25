@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/go-pg/pg/v10/types"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	storkutil "isc.org/stork/util"
 )
 
@@ -109,27 +110,14 @@ func (c *KeaConfig) ScanValue(rd types.Reader, n int) error {
 	return json.Unmarshal(jsonBytes, c)
 }
 
-// Creates new instance from the pointer to the map of interfaces.
-func NewKeaConfig(rawCfg *map[string]interface{}) *KeaConfig {
-	if rawCfg == nil {
-		return nil
-	}
-	config := keaconfig.NewConfigFromMap(rawCfg)
+// Creates new instance from the pointer to the config.
+func newKeaConfig(config *keaconfig.Config) *KeaConfig {
 	if config == nil {
 		return nil
 	}
 	return &KeaConfig{
 		Config: config,
 	}
-}
-
-// Create new instance from the configuration provided as JSON text.
-func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
-	config, err := keaconfig.NewConfig(rawCfg)
-	if err != nil {
-		return nil, err
-	}
-	return &KeaConfig{Config: config}, nil
 }
 
 // Converts a structure holding subnet in Kea format to Stork representation
@@ -316,7 +304,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 		Hostname:       hostname,
 	}
 	universe := storkutil.IPv4
-	if daemon.Name == DaemonNameDHCPv6 {
+	if daemon.Name == daemonname.DHCPv6 {
 		universe = storkutil.IPv6
 	}
 	optionSet := []DHCPOption{}
@@ -352,12 +340,13 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 // Creates log targets from Kea logger configuration. The Kea logger configuration
 // can comprise multiple output options. Therefore, this function may return multiple
 // targets, each corresponding to a single output option.
-func NewLogTargetsFromKea(logger keaconfig.Logger) (targets []*LogTarget) {
+func NewLogTargetsFromKea(daemonID int64, logger keaconfig.Logger) (targets []*LogTarget) {
 	for _, opt := range logger.GetAllOutputOptions() {
 		target := &LogTarget{
 			Name:     logger.Name,
 			Severity: strings.ToLower(logger.Severity),
 			Output:   opt.Output,
+			DaemonID: daemonID,
 		}
 		targets = append(targets, target)
 	}

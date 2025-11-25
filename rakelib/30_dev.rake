@@ -267,7 +267,7 @@ namespace :unittest do
                     # tests for testing code. They can still be written but we shouldn't fail
                     # if they are not.
                     'backend/server/test',
-                    'backend/server/apps/test',
+                    'backend/server/daemons/test',
                     'backend/server/agentcomm/test',
                     'backend/server/database/test',
                     'backend/server/database/model/test',

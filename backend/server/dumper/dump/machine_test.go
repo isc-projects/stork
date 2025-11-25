@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	dumppkg "isc.org/stork/server/dumper/dump"
@@ -23,64 +24,64 @@ func initDatabase(db *pg.DB) *dbmodel.Machine {
 	}
 	_ = dbmodel.AddMachine(db, m)
 
-	a := &dbmodel.App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      "bind9",
-		AccessPoints: []*dbmodel.AccessPoint{
-			{
-				MachineID: m.ID,
-				Type:      "control",
-				Address:   "dns.example.",
-				Port:      953,
-				Key:       "abcd",
-			},
-		},
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
-			{
-				Name:    dbmodel.DaemonNameBind9,
-				Version: "1.0.0",
-				Active:  true,
-				LogTargets: []*dbmodel.LogTarget{
-					{
-						Output: "stdout",
-					},
-					{
-						Output: "/tmp/filename.log",
-					},
-				},
-				Bind9Daemon: &dbmodel.Bind9Daemon{},
-			},
+	// Create access points
+	accessPoints1 := []*dbmodel.AccessPoint{
+		{
+			Type:    "control",
+			Address: "localhost",
+			Port:    8080,
+			Key:     "secret",
 		},
 	}
-	ds, _ := dbmodel.AddApp(db, a)
 
-	d := ds[0]
-	_ = d.SetConfigFromJSON(`{
+	accessPoints2 := []*dbmodel.AccessPoint{
+		{
+			Type:    "control",
+			Address: "dns.example.",
+			Port:    953,
+			Key:     "abcd",
+		},
+	}
+
+	// Create daemons
+	daemon1 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints1)
+	daemon2 := dbmodel.NewDaemon(m, daemonname.Bind9, true, accessPoints2)
+	daemon2.Version = "1.0.0"
+	daemon2.LogTargets = []*dbmodel.LogTarget{
+		{
+			Output: "stdout",
+		},
+		{
+			Output: "/tmp/filename.log",
+		},
+	}
+
+	_ = dbmodel.AddDaemon(db, daemon1)
+	_ = dbmodel.AddDaemon(db, daemon2)
+
+	_ = daemon1.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "valid-lifetime": 1234,
 			"secret": "hidden"
         }
-    }`)
-	d.LogTargets = []*dbmodel.LogTarget{
+    }`))
+	daemon1.LogTargets = []*dbmodel.LogTarget{
 		{
 			Name:      "foo",
 			Severity:  "bar",
 			Output:    "/var/log/foo",
 			CreatedAt: time.Time{},
-			DaemonID:  d.ID,
+			DaemonID:  daemon1.ID,
 		},
 	}
-	_ = dbmodel.UpdateDaemon(db, d)
+	_ = dbmodel.UpdateDaemon(db, daemon1)
 
 	m, _ = dbmodel.GetMachineByIDWithRelations(db, m.ID,
-		dbmodel.MachineRelationApps,
 		dbmodel.MachineRelationDaemons,
 		dbmodel.MachineRelationKeaDaemons,
 		dbmodel.MachineRelationBind9Daemons,
 		dbmodel.MachineRelationDaemonLogTargets,
-		dbmodel.MachineRelationAppAccessPoints,
+		dbmodel.MachineRelationDaemonAccessPoints,
 		dbmodel.MachineRelationKeaDHCPConfigs,
 	)
 	return m
@@ -117,17 +118,17 @@ func TestMachineDumpExecute(t *testing.T) {
 	require.True(t, ok)
 
 	require.EqualValues(t, "localhost", machine.Address)
-	require.Len(t, machine.Apps, 1)
-	require.Len(t, machine.Apps[0].AccessPoints, 1)
-	require.Len(t, machine.Apps[0].Daemons, 2)
+	require.Len(t, machine.Daemons, 2)
 	// Daemons can be returned out of order from the database, so we
 	// have to iterate over them.
-	for _, daemon := range machine.Apps[0].Daemons {
+	for _, daemon := range machine.Daemons {
 		switch daemon.Name {
-		case dbmodel.DaemonNameDHCPv4:
+		case daemonname.DHCPv4:
 			require.NotNil(t, daemon.KeaDaemon.Config)
-		case dbmodel.DaemonNameBind9:
+		case daemonname.Bind9:
 			require.Len(t, daemon.LogTargets, 2)
+		default:
+			require.FailNow(t, "unknown daemon name", daemon.Name)
 		}
 	}
 }
@@ -146,12 +147,11 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 	require.True(t, ok)
 
 	// Assert
-	app := machine.Apps[0]
-	for _, daemon := range app.Daemons {
+	for _, daemon := range machine.Daemons {
 		// Daemons can be returned out of order from the database, so we
 		// have to iterate over them.
-		if daemon.Name == dbmodel.DaemonNameDHCPv4 {
-			config := daemon.KeaDaemon.Config.Raw
+		if daemon.Name == daemonname.DHCPv4 {
+			config, _ := daemon.KeaDaemon.Config.GetRawConfig()
 			secret := (config["Dhcp4"]).(map[string]interface{})["secret"]
 			require.Nil(t, secret)
 			require.Empty(t, machine.AgentToken)

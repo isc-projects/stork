@@ -175,7 +175,7 @@ func (executor *PeriodicExecutor) executorLoop() {
 			if executor.pauseCount == 1 {
 				err := executor.executorFunc()
 				if err != nil {
-					log.WithError(err).Errorf("Errors were encountered while pulling data from apps")
+					log.WithError(err).Errorf("Errors were encountered while executing a periodic action of %s", executor.name)
 				}
 			}
 			executor.Unpause()

@@ -19,13 +19,12 @@ import (
 // nil and no error.
 func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID int64) (io.ReadCloser, error) {
 	m, err := dbmodel.GetMachineByIDWithRelations(db, machineID,
-		dbmodel.MachineRelationApps,
 		dbmodel.MachineRelationDaemons,
 		dbmodel.MachineRelationKeaDaemons,
 		dbmodel.MachineRelationBind9Daemons,
 		dbmodel.MachineRelationPDNSDaemons,
 		dbmodel.MachineRelationDaemonLogTargets,
-		dbmodel.MachineRelationAppAccessPoints,
+		dbmodel.MachineRelationDaemonAccessPoints,
 		dbmodel.MachineRelationKeaDHCPConfigs,
 		dbmodel.MachineRelationDaemonHAServices,
 	)

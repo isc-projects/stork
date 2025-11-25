@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -28,40 +30,35 @@ func TestGetLogTail(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, m.ID)
 
-	a := &dbmodel.App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      dbmodel.AppTypeKea,
-		Name:      "test-app",
-		Active:    true,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:    "kea-dhcp4",
-				Version: "1.7.5",
-				Active:  true,
-				LogTargets: []*dbmodel.LogTarget{
-					{
-						Output: "/tmp/filename.log",
-					},
-				},
-			},
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     1234,
+		Key:      "",
+		Protocol: protocoltype.HTTP,
+	}
+
+	daemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon.Version = "1.7.5"
+	daemon.LogTargets = []*dbmodel.LogTarget{
+		{
+			Output: "/tmp/filename.log",
 		},
 	}
-	_, err = dbmodel.AddApp(db, a)
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.NotZero(t, a.ID)
-	require.Len(t, a.Daemons, 1)
-	require.Len(t, a.Daemons[0].LogTargets, 1)
-	require.NotZero(t, a.Daemons[0].LogTargets[0].ID)
+	require.NotZero(t, daemon.ID)
+	require.Len(t, daemon.LogTargets, 1)
+	require.NotZero(t, daemon.LogTargets[0].ID)
 
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// Try to tail the log associated with our app. The response should be ok.
+	// Try to tail the log associated with our daemon. The response should be ok.
 	params := services.GetLogTailParams{
-		ID: a.Daemons[0].LogTargets[0].ID,
+		ID: daemon.LogTargets[0].ID,
 	}
 	rsp := rapi.GetLogTail(ctx, params)
 	require.IsType(t, &services.GetLogTailOK{}, rsp)
@@ -70,9 +67,9 @@ func TestGetLogTail(t *testing.T) {
 	// Make sure that all values have been set correctly.
 	require.Equal(t, "localhost", okRsp.Machine.Address)
 	require.EqualValues(t, m.ID, okRsp.Machine.ID)
-	require.EqualValues(t, a.ID, *okRsp.AppID)
-	require.Equal(t, a.Type.String(), *okRsp.AppType)
-	require.Equal(t, a.Name, *okRsp.AppName)
+	require.EqualValues(t, daemon.GetVirtualApp().ID, *okRsp.AppID)
+	require.Equal(t, string(daemon.GetVirtualApp().Type), *okRsp.AppType)
+	require.Equal(t, daemon.GetVirtualApp().Name, *okRsp.AppName)
 	require.Equal(t, "/tmp/filename.log", *okRsp.LogTargetOutput)
 	require.Len(t, okRsp.Contents, 1)
 	require.Equal(t, "lorem ipsum", okRsp.Contents[0])
@@ -93,37 +90,33 @@ func TestLogTailBadParams(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, m.ID)
 
-	a := &dbmodel.App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      dbmodel.AppTypeKea,
-		Active:    true,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:    "kea-dhcp4",
-				Version: "1.7.5",
-				Active:  true,
-				LogTargets: []*dbmodel.LogTarget{
-					{
-						Output: "syslog:xyz",
-					},
-					{
-						Output: "stdout",
-					},
-					{
-						Output: "stderr",
-					},
-				},
-			},
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     1234,
+		Key:      "",
+		Protocol: protocoltype.HTTP,
+	}
+
+	daemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon.Version = "1.7.5"
+	daemon.LogTargets = []*dbmodel.LogTarget{
+		{
+			Output: "syslog:xyz",
+		},
+		{
+			Output: "stdout",
+		},
+		{
+			Output: "stderr",
 		},
 	}
-	_, err = dbmodel.AddApp(db, a)
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.NotZero(t, a.ID)
-	require.Len(t, a.Daemons, 1)
-	require.Len(t, a.Daemons[0].LogTargets, 3)
-	for i := range a.Daemons[0].LogTargets {
-		require.NotZero(t, a.Daemons[0].LogTargets[i].ID)
+	require.NotZero(t, daemon.ID)
+	require.Len(t, daemon.LogTargets, 3)
+	for i := range daemon.LogTargets {
+		require.NotZero(t, daemon.LogTargets[i].ID)
 	}
 
 	fa := agentcommtest.NewFakeAgents(nil, nil)
@@ -133,7 +126,7 @@ func TestLogTailBadParams(t *testing.T) {
 
 	// Specify ID of non-existing log file.
 	params := services.GetLogTailParams{
-		ID: a.Daemons[0].LogTargets[0].ID + 10,
+		ID: daemon.LogTargets[0].ID + 10,
 	}
 	rsp := rapi.GetLogTail(ctx, params)
 	require.IsType(t, &services.GetLogTailDefault{}, rsp)
@@ -144,15 +137,15 @@ func TestLogTailBadParams(t *testing.T) {
 
 	// Make sure that an attempt to view the log from the targets other than file
 	// is not allowed.
-	for i := range a.Daemons[0].LogTargets {
+	for i := range daemon.LogTargets {
 		params = services.GetLogTailParams{
-			ID: a.Daemons[0].LogTargets[i].ID,
+			ID: daemon.LogTargets[i].ID,
 		}
 		rsp = rapi.GetLogTail(ctx, params)
 		require.IsType(t, &services.GetLogTailDefault{}, rsp)
 		defaultRsp = rsp.(*services.GetLogTailDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-		require.Equal(t, fmt.Sprintf("Viewing log from %s is not supported", a.Daemons[0].LogTargets[i].Output),
+		require.Equal(t, fmt.Sprintf("Viewing log from %s is not supported", daemon.LogTargets[i].Output),
 			*defaultRsp.Payload.Message)
 	}
 }

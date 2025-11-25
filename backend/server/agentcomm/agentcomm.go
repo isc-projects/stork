@@ -17,11 +17,11 @@ import (
 	"google.golang.org/grpc/security/advancedtls"
 
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
-	"isc.org/stork/appcfg/dnsconfig"
-	keactrl "isc.org/stork/appctrl/kea"
-	"isc.org/stork/appdata/bind9stats"
-	pdnsdata "isc.org/stork/appdata/pdns"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/daemoncfg/dnsconfig"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9stats"
+	pdnsdata "isc.org/stork/daemondata/pdns"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
 )
@@ -37,17 +37,17 @@ type ForwardToNamedStatsRequestType = agentapi.ForwardToNamedStatsReq_RequestTyp
 // Interface for interacting with Agents via gRPC.
 type ConnectedAgents interface {
 	Shutdown()
-	GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper
+	GetConnectedAgentStatsWrapper(address string, port int64) *CommStatsWrapper
 	Ping(ctx context.Context, machine dbmodel.MachineTag) error
 	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
-	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
-	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, requestType ForwardToNamedStatsRequestType, statsOutput any) error
-	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...any) (*KeaCmdsResult, error)
-	GetPowerDNSServerInfo(ctx context.Context, app ControlledApp) (*pdnsdata.ServerInfo, error)
+	ForwardRndcCommand(ctx context.Context, daemon ControlledDaemon, command string) (*RndcOutput, error)
+	ForwardToNamedStats(ctx context.Context, daemon ControlledDaemon, requestType ForwardToNamedStatsRequestType, statsOutput any) error
+	ForwardToKeaOverHTTP(ctx context.Context, daemon ControlledDaemon, commands []keactrl.SerializableCommand, cmdResponses ...any) (*KeaCmdsResult, error)
+	GetPowerDNSServerInfo(ctx context.Context, daemon ControlledDaemon) (*pdnsdata.ServerInfo, error)
 	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
-	ReceiveZones(ctx context.Context, app ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error]
-	ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error]
-	ReceiveBind9FormattedConfig(ctx context.Context, app ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error]
+	ReceiveZones(ctx context.Context, daemon ControlledDaemon, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error]
+	ReceiveZoneRRs(ctx context.Context, daemon ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error]
+	ReceiveBind9FormattedConfig(ctx context.Context, daemon ControlledDaemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error]
 }
 
 // Interface representing a connector to a selected agent over gRPC.
@@ -141,7 +141,7 @@ func (impl *agentConnectorImpl) createClient() agentapi.AgentClient {
 type agentState struct {
 	address   string
 	connector agentConnector
-	stats     *AgentCommStats
+	stats     *CommStats
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
@@ -238,7 +238,7 @@ func (agents *connectedAgentsImpl) getConnectedAgent(address string) (*agentStat
 // Returns statistics for the connected agent. The statistics include number
 // of errors to communicate with the agent and the number of errors to
 // communicate with the apps behind the agent.
-func (agents *connectedAgentsImpl) getConnectedAgentStats(address string, port int64) *AgentCommStats {
+func (agents *connectedAgentsImpl) getConnectedAgentStats(address string, port int64) *CommStats {
 	if port != 0 {
 		address = net.JoinHostPort(address, strconv.FormatInt(port, 10))
 	}
@@ -253,12 +253,12 @@ func (agents *connectedAgentsImpl) getConnectedAgentStats(address string, port i
 
 // Returns a wrapper for statistics. The wrapper can be used to safely
 // access the returned statistics for reading in other packages.
-func (agents *connectedAgentsImpl) GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper {
+func (agents *connectedAgentsImpl) GetConnectedAgentStatsWrapper(address string, port int64) *CommStatsWrapper {
 	stats := agents.getConnectedAgentStats(address, port)
 	if stats == nil {
 		return nil
 	}
-	return NewAgentCommStatsWrapper(stats)
+	return NewCommStatsWrapper(stats)
 }
 
 // The GRPC client callback to perform extra verification of the peer

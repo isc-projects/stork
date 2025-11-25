@@ -52,8 +52,7 @@ func TestConnectingToAgent(t *testing.T) {
 	// Initially, there should be no stats.
 	require.NotNil(t, agent)
 	require.Empty(t, agent.stats.agentCommErrors)
-	require.Empty(t, agent.stats.keaCommErrors)
-	require.Empty(t, agent.stats.bind9CommErrors)
+	require.Empty(t, agent.stats.daemonCommErrors)
 
 	// Let's modify some stats.
 	agent.stats.agentCommErrors["foo"] = 1

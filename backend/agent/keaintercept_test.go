@@ -1,14 +1,12 @@
 package agent
 
 import (
-	"bytes"
-	"encoding/json"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	agentapi "isc.org/stork/api"
-	keactrl "isc.org/stork/appctrl/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/datamodel/daemonname"
 )
 
 // Test that new instance of the Kea interceptor is created successfully.
@@ -48,42 +46,43 @@ func TestKeaInterceptorAsyncHandle(t *testing.T) {
 
 	// Simulate sending config-get command to the DHCPv4 and DHCPv6
 	// server.
-	command := keactrl.NewCommandBase(keactrl.ConfigGet, keactrl.DHCPv4, keactrl.DHCPv6)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.ConfigGet, daemonname.DHCPv4)
+	response := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "invoked successfully",
+		},
 	}
-	response := []byte(`[
-            {
-                "result": 0,
-                "text": "invoked successfully"
-            },
-            {
-                "result": 1,
-                "text": "invoked unsuccessfully"
-            }
-        ]`)
 
 	// Invoke the registered callbacks for config-get.
-	interceptor.asyncHandle(nil, request, response)
+	interceptor.asyncHandle(nil, command, response)
 	require.Equal(t, "config-get", commandInvoked)
+
+	command = *keactrl.NewCommandBase(keactrl.ConfigGet, daemonname.DHCPv6)
+	response = keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 1,
+			Text:   "invoked unsuccessfully",
+		},
+	}
+
+	// Invoke the registered callbacks for config-get.
+	interceptor.asyncHandle(nil, command, response)
+	require.Equal(t, "config-get", commandInvoked)
+
 	// There should be two responses recorded, one for the DHCPv4 and
 	// one for DHCPv6.
 	require.Len(t, capturedResponses, 2)
 	// Check that the callback received the response correctly.
 	require.Zero(t, capturedResponses[0].Result)
 	require.Equal(t, "invoked successfully", capturedResponses[0].Text)
-	require.Equal(t, "dhcp4", capturedResponses[0].Daemon)
 	require.EqualValues(t, 1, capturedResponses[1].Result)
 	require.Equal(t, "invoked unsuccessfully", capturedResponses[1].Text)
-	require.Equal(t, "dhcp6", capturedResponses[1].Daemon)
 
 	// Make sure that we can invoke different callback when using different
 	// command.
-	command = keactrl.NewCommandBase(keactrl.Subnet4Get, keactrl.DHCPv4)
-	request = &agentapi.KeaRequest{
-		Request: command.Marshal(),
-	}
-	interceptor.asyncHandle(nil, request, response)
+	command = *keactrl.NewCommandBase(keactrl.Subnet4Get, daemonname.DHCPv4)
+	interceptor.asyncHandle(nil, command, response)
 	require.Equal(t, "subnet4-get", commandInvoked)
 }
 
@@ -99,24 +98,19 @@ func TestKeaInterceptorAsyncHandleControlAgent(t *testing.T) {
 	}, "config-get")
 
 	// Simulate sending command to the Control Agent.
-	command := keactrl.NewCommandBase(keactrl.ConfigGet)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.ConfigGet, daemonname.DHCPv4)
+	response := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 1,
+			Text:   "invocation error",
+		},
 	}
-	response := []byte(`[
-            {
-                "result": 1,
-                "text": "invocation error"
-            }
-        ]`)
-
 	// Invoke the callbacks and validate the data recorded by this
 	// callback.
-	interceptor.asyncHandle(nil, request, response)
+	interceptor.asyncHandle(nil, command, response)
 	require.Len(t, capturedResponses, 1)
 	require.EqualValues(t, 1, capturedResponses[0].Result)
 	require.Equal(t, "invocation error", capturedResponses[0].Text)
-	require.Empty(t, capturedResponses[0].Daemon)
 }
 
 // Test that it is possible to register multiple async handlers for a single
@@ -140,19 +134,16 @@ func TestKeaInterceptorMultipleAsyncHandlers(t *testing.T) {
 	}, "config-get")
 
 	// Send the command matching the handlers.
-	command := keactrl.NewCommandBase(keactrl.ConfigGet)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.ConfigGet, daemonname.DHCPv4)
+	response := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "fine",
+		},
 	}
-	response := []byte(`[
-            {
-                "result": 0,
-                "text": "fine"
-            }
-        ]`)
 
 	// Make sure that both handlers have been invoked.
-	interceptor.asyncHandle(nil, request, response)
+	interceptor.asyncHandle(nil, command, response)
 	require.True(t, func1Invoked)
 	require.True(t, func2Invoked)
 }
@@ -184,26 +175,20 @@ func TestKeaInterceptorSyncHandleExecute(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.CommandName("foobar"), daemonname.DHCPv4)
+	response := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "fine",
+		},
 	}
-	inResponse := []byte(`[
-		{
-			"result": 0,
-			"text": "fine"
-		}
-	]`)
-	var buffer bytes.Buffer
-	_ = json.Compact(&buffer, inResponse)
-	expectedOutResponse := buffer.Bytes()
 
 	// Act
-	outResponse, err := interceptor.syncHandle(nil, request, inResponse)
+	outResponse, err := interceptor.syncHandle(nil, command, response)
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, expectedOutResponse, outResponse)
+	require.EqualValues(t, response, outResponse)
 	require.EqualValues(t, 1, callCount)
 }
 
@@ -225,26 +210,20 @@ func TestKeaInterceptorMultipleSyncHandlesExecute(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.CommandName("foobar"), daemonname.DHCPv4)
+	response := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "fine",
+		},
 	}
-	inResponse := []byte(`[
-		{
-			"result": 0,
-			"text": "fine"
-		}
-	]`)
-	var buffer bytes.Buffer
-	_ = json.Compact(&buffer, inResponse)
-	expectedOutResponse := buffer.Bytes()
 
 	// Act
-	outResponse, err := interceptor.syncHandle(nil, request, inResponse)
+	outResponse, err := interceptor.syncHandle(nil, command, response)
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, expectedOutResponse, outResponse)
+	require.EqualValues(t, response, outResponse)
 	require.EqualValues(t, 1, callCount["foo"])
 	require.EqualValues(t, 1, callCount["bar"])
 }
@@ -259,30 +238,23 @@ func TestKeaInterceptorSyncHandleRewriteResponse(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.CommandName("foobar"), daemonname.DHCPv4)
+	inResponse := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "fine",
+		},
 	}
 
-	inResponse := []byte(`[
-		{
-			"result": 0,
-			"text": "fine"
-		}
-	]`)
-
-	expectedOutResponse := []byte(`[
-		{
-			"result": 42,
-			"text": "barfoo"
-		}
-	]`)
-	var buffer bytes.Buffer
-	_ = json.Compact(&buffer, expectedOutResponse)
-	expectedOutResponse = buffer.Bytes()
+	expectedOutResponse := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 42,
+			Text:   "barfoo",
+		},
+	}
 
 	// Act
-	outResponse, _ := interceptor.syncHandle(nil, request, inResponse)
+	outResponse, _ := interceptor.syncHandle(nil, command, inResponse)
 
 	// Assert
 	require.EqualValues(t, expectedOutResponse, outResponse)
@@ -302,23 +274,19 @@ func TestKeaInterceptorSyncHandleReturnError(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
-	request := &agentapi.KeaRequest{
-		Request: command.Marshal(),
+	command := *keactrl.NewCommandBase(keactrl.CommandName("foobar"), daemonname.DHCPv4)
+	inResponse := keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "fine",
+		},
 	}
 
-	inResponse := []byte(`[
-		{
-			"result": 0,
-			"text": "fine"
-		}
-	]`)
-
 	// Act
-	outResponse, err := interceptor.syncHandle(nil, request, inResponse)
+	outResponse, err := interceptor.syncHandle(nil, command, inResponse)
 
 	// Assert
-	require.Nil(t, outResponse)
+	require.Empty(t, outResponse)
 	require.Error(t, err)
 	require.Zero(t, callCount)
 }

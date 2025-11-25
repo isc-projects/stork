@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -191,14 +193,13 @@ func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 // hook library is loaded because host reservations may be present in
 // the database.
 func subnetDispensable(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf(
 			"unsupported daemon %s",
 			ctx.subjectDaemon.Name,
 		)
 	}
-	if ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv4 {
+	if ctx.subjectDaemon.Name == daemonname.DHCPv4 {
 		return checkSubnet4Dispensable(ctx)
 	}
 	return checkSubnet6Dispensable(ctx)
@@ -492,11 +493,10 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 // when there are subnets with all host reservations outside of the
 // dynamic pools.
 func reservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
-	if ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv4 {
+	if ctx.subjectDaemon.Name == daemonname.DHCPv4 {
 		return checkDHCPv4ReservationsOutOfPool(ctx)
 	}
 	return checkDHCPv6ReservationsOutOfPool(ctx)
@@ -510,8 +510,7 @@ type minimalSubnetPair struct {
 // The checker validates that subnets (global or from shared networks) don't
 // overlap.
 func subnetsOverlapping(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf(
 			"unsupported daemon %s", ctx.subjectDaemon.Name,
 		)
@@ -639,8 +638,7 @@ func findOverlaps(subnets []keaconfig.Subnet, maxOverlaps int) (overlaps []minim
 
 // The checker validates that all subnet prefixes are in canonical form.
 func canonicalPrefixes(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
@@ -839,23 +837,23 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 			// There is no possibility of binding the access point to a
 			// specific CA daemon.
 			var caDaemons []*dbmodel.Daemon
-			for _, peerApp := range peerMachine.Apps {
-				// Search for an application that contains the collided access point.
-				for _, peerAccessPoint := range peerApp.AccessPoints {
+			for _, peerDaemon := range peerMachine.Daemons {
+				if peerDaemon.ID == ctx.subjectDaemon.ID {
+					// Prevent referencing the subject daemon twice.
+					continue
+				}
+
+				if peerDaemon.Name != daemonname.CA {
+					// We are interested only in the Kea Control Agent daemons.
+					continue
+				}
+
+				// Search for a daemon that contains the collided access point.
+				for _, peerAccessPoint := range peerDaemon.AccessPoints {
 					if peerAccessPoint.Port != peerPort {
 						continue
 					}
-
-					for _, peerDaemon := range peerApp.Daemons {
-						if peerDaemon.ID == ctx.subjectDaemon.ID {
-							// Prevent referencing the subject daemon twice.
-							continue
-						}
-
-						if peerDaemon.Name == dbmodel.DaemonNameCA {
-							caDaemons = append(caDaemons, peerDaemon)
-						}
-					}
+					caDaemons = append(caDaemons, peerDaemon)
 				}
 			}
 
@@ -881,8 +879,7 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 // The checker validates when a size of pool equals to the number of
 // reservations.
 func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
@@ -1016,8 +1013,7 @@ func addressPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
 // The checker validates when a size of delegated prefix pool equals to the
 // number of reservations.
 func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
@@ -1150,8 +1146,7 @@ func delegatedPrefixPoolsExhaustedByReservations(ctx *ReviewContext) (*Report, e
 // The checker validates that the subnet commands hook is not used mutually
 // with the config backend.
 func subnetCmdsAndConfigBackendMutualExclusion(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
@@ -1184,7 +1179,7 @@ func subnetCmdsAndConfigBackendMutualExclusion(ctx *ReviewContext) (*Report, err
 // (i.e., Basic Auth) are configured.
 func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 	daemon := ctx.subjectDaemon
-	if daemon.Name != dbmodel.DaemonNameCA {
+	if daemon.Name != daemonname.CA {
 		return nil, errors.Errorf("unsupported daemon %s", daemon.Name)
 	}
 
@@ -1195,7 +1190,16 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	if config.UseSecureProtocol() {
+	controlSockets := config.GetListeningControlSockets()
+	if len(controlSockets) == 0 {
+		// The listening control socket is not configured. It means that
+		// the Stork agent cannot connect to the Kea Control Agent.
+		return nil, nil
+	}
+	// It is always one listening control socket.
+	controlSocket := controlSockets[0]
+
+	if controlSocket.GetProtocol() == protocoltype.HTTPS {
 		// The TLS is configured. All is OK.
 		return nil, nil
 	}
@@ -1215,12 +1219,12 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 // The checker validates that the control sockets of Kea Control Agent are
 // configured.
 func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameCA {
+	if ctx.subjectDaemon.Name != daemonname.CA {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
 	config := ctx.subjectDaemon.KeaDaemon.Config
-	controlSockets := config.GetControlSockets()
+	controlSockets := config.GetManagementControlSockets()
 
 	switch {
 	case controlSockets == nil:
@@ -1230,7 +1234,7 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 			"monitor them. You need to provide the proper socket paths in the "+
 			"\"control-sockets\" top-level entry.").
 			referencingDaemon(ctx.subjectDaemon).create()
-	case !controlSockets.HasAnyConfiguredDaemon():
+	case !controlSockets.HasAnyManagedDaemon():
 		return NewReport(ctx, "The control sockets entry in the Kea Control "+
 			"Agent {daemon} configuration is empty. It causes the Kea "+
 			"Control Agent to not connect to the Kea daemons, so Stork cannot "+
@@ -1256,8 +1260,7 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 //     addresses or a delegated prefix pool with more than 2^63-1 prefixes.
 func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Report, error) {
 	// Check the daemon type.
-	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
-		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+	if !ctx.subjectDaemon.Name.IsDHCP() {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
 
@@ -1279,7 +1282,7 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 
 	// Look for the subnets and shared networks with the number of delegated
 	// prefixes that cause the statistics overflow.
-	if !isOverflow && ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv6 {
+	if !isOverflow && ctx.subjectDaemon.Name == daemonname.DHCPv6 {
 		isOverflow, overflowReason = findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
 	}
 

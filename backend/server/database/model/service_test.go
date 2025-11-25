@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
@@ -84,27 +85,10 @@ func daemonsMatch(daemon1, daemon2 *Daemon) bool {
 	if daemon1.CreatedAt != daemon2.CreatedAt {
 		return false
 	}
-	if (daemon1.App == nil && daemon2.App != nil) || (daemon1.App != nil && daemon2.App == nil) {
+	if daemon1.MachineID != daemon2.MachineID {
 		return false
 	}
-	if daemon1.App != nil {
-		if daemon1.App.ID != daemon2.App.ID {
-			return false
-		}
-		if daemon1.App.CreatedAt != daemon2.App.CreatedAt {
-			return false
-		}
-		if daemon1.App.MachineID != daemon2.App.MachineID {
-			return false
-		}
-		if daemon1.App.Type != daemon2.App.Type {
-			return false
-		}
-		if daemon1.App.Active != daemon2.App.Active {
-			return false
-		}
-	}
-	return accessPointArraysMatch(daemon1.App.AccessPoints, daemon2.App.AccessPoints)
+	return accessPointArraysMatch(daemon1.AccessPoints, daemon2.AccessPoints)
 }
 
 // daemonArraysMatch compares two daemons arrays.  The two arrays may be
@@ -139,9 +123,9 @@ func daemonArraysMatch(daemonArray1, daemonArray2 []*Daemon) bool {
 	return true
 }
 
-// Adds 10 test apps.
-func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
-	// Add 10 machines, each including a single Kea app.
+// Adds 20 test daemons.
+func addTestDaemonsForServices(t *testing.T, db dbops.DBI) (daemons []*Daemon) {
+	// Add 10 machines, each including two Kea daemons.
 	for i := 0; i < 10; i++ {
 		m := &Machine{
 			ID:        0,
@@ -151,29 +135,32 @@ func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		var accessPoints []*AccessPoint
-		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i), false)
-		a := &App{
-			ID:           0,
-			MachineID:    m.ID,
-			Type:         AppTypeKea,
-			Active:       true,
-			AccessPoints: accessPoints,
-			Daemons: []*Daemon{
-				NewKeaDaemon(DaemonNameDHCPv4, true),
-				NewKeaDaemon(DaemonNameDHCPv6, true),
+		d1 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "cool.example.org",
+				Port:    int64(1234 + i),
 			},
-		}
-
-		_, err = AddApp(db, a)
+		})
+		err = AddDaemon(db, d1)
 		require.NoError(t, err)
 
-		apps = append(apps, a)
+		d2 := NewDaemon(m, daemonname.DHCPv6, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "cool.example.org",
+				Port:    int64(1234 + i + 100),
+			},
+		})
+		err = AddDaemon(db, d2)
+		require.NoError(t, err)
+
+		daemons = append(daemons, d1, d2)
 	}
-	return apps
+	return daemons
 }
 
-// This function adds four services and ten apps. It associates each app
+// This function adds four services and ten daemons. It associates each daemon
 // with two services.
 func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	service1 := &Service{
@@ -199,16 +186,16 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		},
 	}
 
-	apps := addTestApps(t, db)
-	for i := range apps {
-		apps[i].Daemons[0].App = apps[i]
-		// 5 apps added to service 1 and 3. 5 added to service 2 and 4.
-		if i%2 == 0 {
-			service1.Daemons = append(service1.Daemons, apps[i].Daemons[0])
-			service3.Daemons = append(service3.Daemons, apps[i].Daemons[0])
-		} else {
-			service2.Daemons = append(service2.Daemons, apps[i].Daemons[0])
-			service4.Daemons = append(service4.Daemons, apps[i].Daemons[0])
+	daemons := addTestDaemonsForServices(t, db)
+	for i := range daemons {
+		// 5 daemons added to service 1 and 3. 5 added to service 2 and 4.
+		switch i % 4 {
+		case 0:
+			service1.Daemons = append(service1.Daemons, daemons[i])
+			service3.Daemons = append(service3.Daemons, daemons[i])
+		case 2:
+			service2.Daemons = append(service2.Daemons, daemons[i])
+			service4.Daemons = append(service4.Daemons, daemons[i])
 		}
 	}
 
@@ -341,7 +328,7 @@ func TestUpdateService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, service)
 	require.NotNil(t, service.HAService)
-	require.Equal(t, "dhcp4", service.HAService.HAType)
+	require.Equal(t, daemonname.DHCPv4, service.HAService.HAType)
 	require.Equal(t, "server1", service.HAService.Relationship)
 	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
@@ -382,7 +369,7 @@ func TestGetServiceById(t *testing.T) {
 	require.NotNil(t, service)
 	require.Len(t, service.Daemons, 5)
 	require.NotNil(t, service.HAService)
-	require.Equal(t, "dhcp4", service.HAService.HAType)
+	require.Equal(t, daemonname.DHCPv4, service.HAService.HAType)
 	require.Equal(t, service.Daemons[0].ID, service.HAService.PrimaryID)
 	require.Equal(t, service.Daemons[1].ID, service.HAService.SecondaryID)
 	require.Len(t, service.HAService.BackupID, 2)
@@ -408,84 +395,83 @@ func TestGetServiceById(t *testing.T) {
 	require.Zero(t, service.HAService.SecondaryAnalyzedPackets)
 }
 
-// Test getting services for an app.
-func TestGetServicesByAppID(t *testing.T) {
+// Test getting services for a daemon.
+func TestGetServicesByDaemonID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	services := addTestServices(t, db)
 	require.GreaterOrEqual(t, len(services), 4)
 
-	// Get a service instance to which the forth application of the service1 belongs.
-	appServices, err := GetDetailedServicesByAppID(db, services[0].Daemons[3].AppID)
+	// Get a service instance to which the forth daemons of the service1 belongs.
+	daemonServices, err := GetDetailedServicesByDaemonID(db, services[0].Daemons[3].ID)
 	require.NoError(t, err)
-	require.Len(t, appServices, 2)
-	sort.Slice(appServices, func(i, j int) bool {
-		return appServices[i].Name < appServices[j].Name
+	require.Len(t, daemonServices, 2)
+	sort.Slice(daemonServices, func(i, j int) bool {
+		return daemonServices[i].Name < daemonServices[j].Name
 	})
-	require.Len(t, appServices[0].Daemons[0].App.AccessPoints, 1)
+	require.Len(t, daemonServices[0].Daemons[0].AccessPoints, 1)
 
 	// Validate that the service returned is the service1.
-	service := appServices[0]
+	service := daemonServices[0]
 	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[0].Name, service.Name)
 	require.True(t, daemonArraysMatch(service.Daemons, services[0].Daemons))
 
-	// Repeat the same test for the fifth application belonging to the service2.
-	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[4].AppID)
-	sort.Slice(appServices, func(i, j int) bool {
-		return appServices[i].Name < appServices[j].Name
+	// Repeat the same test for the fifth daemon belonging to the service2.
+	daemonServices, err = GetDetailedServicesByDaemonID(db, services[1].Daemons[4].ID)
+	sort.Slice(daemonServices, func(i, j int) bool {
+		return daemonServices[i].Name < daemonServices[j].Name
 	})
 	require.NoError(t, err)
-	require.Len(t, appServices, 2)
+	require.Len(t, daemonServices, 2)
 
 	// Validate that the returned service is the service2.
-	service = appServices[0]
+	service = daemonServices[0]
 	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[1].Name, service.Name)
 	require.True(t, daemonArraysMatch(service.Daemons, services[1].Daemons))
 
 	// Second one is service4.
-	service = appServices[1]
+	service = daemonServices[1]
 	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[3].Name, service.Name)
 	require.True(t, daemonArraysMatch(service.Daemons, services[3].Daemons))
 
-	// Finally, make one of the application shared between two services.
+	// Finally, make one of the daemons shared between two services.
 	err = AddDaemonToService(db, services[0].ID, services[1].Daemons[0])
 	require.NoError(t, err)
 
-	// When querying the services for this app service1, 2 and 4 should
+	// When querying the services for this daemon service1, 2 and 4 should
 	// be returned.
-	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[0].AppID)
+	daemonServices, err = GetDetailedServicesByDaemonID(db, services[1].Daemons[0].ID)
 	require.NoError(t, err)
-	require.Len(t, appServices, 3)
-	sort.Slice(appServices, func(i, j int) bool {
-		return appServices[i].Name < appServices[j].Name
+	require.Len(t, daemonServices, 3)
+	sort.Slice(daemonServices, func(i, j int) bool {
+		return daemonServices[i].Name < daemonServices[j].Name
 	})
 
-	require.Equal(t, services[0].Name, appServices[0].Name)
-	require.Equal(t, services[1].Name, appServices[1].Name)
-	require.Equal(t, services[3].Name, appServices[2].Name)
+	require.Equal(t, services[0].Name, daemonServices[0].Name)
+	require.Equal(t, services[1].Name, daemonServices[1].Name)
+	require.Equal(t, services[3].Name, daemonServices[2].Name)
 }
 
-// Test that it is possible to get apps by type and get the services
+// Test that it is possible to get daemons by type and get the services
 // returned along with them.
-func TestGetAppWithServices(t *testing.T) {
+func TestGetDaemonWithServices(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	services := addTestServices(t, db)
 	require.GreaterOrEqual(t, len(services), 4)
 
-	apps, err := GetAppsByType(db, AppTypeKea)
+	daemons, err := GetDaemonsByName(db, daemonname.DHCPv4)
 	require.NoError(t, err)
-	require.Len(t, apps, 10)
+	require.Len(t, daemons, 10)
 
-	// Make sure that all returned apps contain references to the services.
-	for _, app := range apps {
-		require.Len(t, app.Daemons, 2)
-		require.Len(t, app.Daemons[0].Services, 2, "Failed for daemon id %d", app.Daemons[0].ID)
+	// Make sure that all returned daemons contain references to the services.
+	for _, daemon := range daemons {
+		require.Len(t, daemon.Services, 2)
 	}
 }
 
@@ -517,7 +503,7 @@ func TestGetAllServices(t *testing.T) {
 	// Make sure that the HA specific information was returned for the
 	// second service.
 	require.NotNil(t, service.HAService)
-	require.Equal(t, "dhcp4", service.HAService.HAType)
+	require.Equal(t, daemonname.DHCPv4, service.HAService.HAType)
 
 	service = allServices[2]
 	require.Len(t, service.Daemons, 5)
@@ -552,8 +538,8 @@ func TestDeleteService(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that a single app can be associated with the service.
-func TestAddAppToService(t *testing.T) {
+// Test that a single daemon can be associated with the service.
+func TestAddDaemonToService(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -613,13 +599,13 @@ func TestDeleteDaemonFromServices(t *testing.T) {
 	require.Len(t, service.Daemons, 4)
 }
 
-// Test that multiple services can be added/updated and associated with an
-// app within a single transaction.
+// Test that multiple services can be added/updated and associated with a
+// daemon within a single transaction.
 func TestCommitServicesIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestDaemonsForServices(t, db)
 
 	services := []Service{
 		{
@@ -639,8 +625,8 @@ func TestCommitServicesIntoDB(t *testing.T) {
 		},
 	}
 
-	// Add first two services into db and associate with the first app.
-	err := CommitServicesIntoDB(db, services[:2], apps[0].Daemons[0])
+	// Add first two services into db and associate with the first daemon.
+	err := CommitServicesIntoDB(db, services[:2], daemons[0])
 	require.NoError(t, err)
 
 	// Get the services. There should be two in the database.
@@ -649,15 +635,15 @@ func TestCommitServicesIntoDB(t *testing.T) {
 	require.Len(t, returned, 2)
 
 	for i := range returned {
-		// Make sure they are both associated with our app.
+		// Make sure they are both associated with our daemon.
 		require.Len(t, returned[i].Daemons, 1)
 		require.Equal(t, services[i].Name, returned[i].Name)
-		require.EqualValues(t, apps[0].Daemons[0].ID, returned[i].Daemons[0].ID)
+		require.EqualValues(t, daemons[0].ID, returned[i].Daemons[0].ID)
 	}
 
-	// This time commit app #2 and #3 into db and associate them with the
-	// second app's daemon.
-	err = CommitServicesIntoDB(db, services[1:3], apps[1].Daemons[0])
+	// This time commit daemon #2 and #3 into db and associate them with the
+	// second daemon.
+	err = CommitServicesIntoDB(db, services[1:3], daemons[1])
 	require.NoError(t, err)
 
 	// Get the services snapshot from the db again.
@@ -665,8 +651,8 @@ func TestCommitServicesIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returned, 3)
 
-	// The first and third app should be associated with one app and the
-	// second one should be associated with both apps' daemons.
+	// The first and third daemon should be associated with one daemon and the
+	// second one should be associated with both daemons.
 	require.Len(t, returned[0].Daemons, 1)
 	require.Len(t, returned[1].Daemons, 2)
 	require.Len(t, returned[2].Daemons, 1)

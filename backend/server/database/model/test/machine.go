@@ -5,6 +5,8 @@ import (
 	"math/rand"
 
 	"github.com/go-pg/pg/v10"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -40,25 +42,41 @@ func NewMachine(db *pg.DB) (*Machine, error) {
 	return machine, nil
 }
 
-// Creates new Kea app instance in the machine.
-func (machine *Machine) NewKea() (*Kea, error) {
-	ap := []*dbmodel.AccessPoint{}
-	ap = dbmodel.AppendAccessPoint(ap, dbmodel.AccessPointControl, "localhost", "", int64(getRandInt31()), true)
+// Creates new Kea daemon instance in the machine.
+func (m *Machine) newKeaDaemon(name daemonname.Name) (*KeaServer, error) {
+	ap := []*dbmodel.AccessPoint{{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     int64(getRandInt31()),
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
+	}}
 
-	keaApp := dbmodel.App{
-		MachineID:    machine.ID,
-		Type:         dbmodel.AppTypeKea,
-		Name:         fmt.Sprintf("dhcp%d", getRandInt31()),
+	daemon := &dbmodel.Daemon{
+		MachineID:    m.ID,
+		Name:         name,
 		Active:       true,
 		AccessPoints: ap,
-		Daemons:      []*dbmodel.Daemon{},
+		KeaDaemon: &dbmodel.KeaDaemon{
+			KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+		},
 	}
-	if _, err := dbmodel.AddApp(machine.db, &keaApp); err != nil {
+	if err := dbmodel.AddDaemon(m.db, daemon); err != nil {
 		return nil, err
 	}
-	kea := &Kea{
-		machine: machine,
-		ID:      keaApp.ID,
-	}
-	return kea, nil
+
+	return &KeaServer{
+		machine:  m,
+		DaemonID: daemon.ID,
+	}, nil
+}
+
+// Creates DHCPPv4 server instance for the Kea app.
+func (m *Machine) NewKeaDHCPv4Server() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.DHCPv4)
+}
+
+// Creates DHCPv6 server instance for the Kea app.
+func (m *Machine) NewKeaDHCPv6Server() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.DHCPv6)
 }

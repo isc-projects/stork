@@ -1,57 +1,69 @@
 package dbmodel
 
 import (
-	"errors"
-
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/datamodel/protocoltype"
 	dbops "isc.org/stork/server/database"
+)
+
+// Valid kinds of the access points.
+type AccessPointType string
+
+const (
+	AccessPointControl    AccessPointType = "control"
+	AccessPointStatistics AccessPointType = "statistics"
 )
 
 // A structure reflecting the access_point SQL table.
 type AccessPoint struct {
-	AppID             int64  `pg:",pk"`
-	Type              string `pg:",pk"`
-	MachineID         int64
-	Address           string
-	Port              int64
-	Key               string
-	UseSecureProtocol bool `pg:",use_zero"`
+	DaemonID int64           `pg:",pk"`
+	Daemon   *Daemon         `pg:"rel:has-one"`
+	Type     AccessPointType `pg:",pk"`
+	Address  string
+	Port     int64
+	// For BIND 9 when the RNDC key is set, this value is: RNDC key name,
+	// algorithm and secret joined by colon.
+	// For Kea when the Basic Auth is set, this is a username of the user used
+	// by the Stork agent to authenticate to the Kea server.
+	// Otherwise it is empty string.
+	Key      string
+	Protocol protocoltype.ProtocolType `pg:",use_zero"`
 }
 
-// Valid kinds of the access points.
-const (
-	AccessPointControl    = "control"
-	AccessPointStatistics = "statistics"
-)
-
-// AppendAccessPoint is an utility function that appends an access point to a
-// list.
-func AppendAccessPoint(list []*AccessPoint, tp, address, key string, port int64, useSecureProtocol bool) []*AccessPoint {
-	list = append(list, &AccessPoint{
-		Type:              tp,
-		Address:           address,
-		Port:              port,
-		Key:               key,
-		UseSecureProtocol: useSecureProtocol,
-	})
-	return list
-}
-
-// Get an access point by app id and access point type.
-func GetAccessPointByID(db dbops.DBI, appID int64, accessPointType string) (*AccessPoint, error) {
-	accessPoint := &AccessPoint{AppID: appID, Type: accessPointType}
-	err := db.Model(accessPoint).WherePK().Select()
-
-	if errors.Is(err, pg.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		return nil, pkgerrors.Wrapf(
+// Add or update an access point in the database.
+func addOrUpdateAccessPoint(db dbops.DBI, accessPoint *AccessPoint) error {
+	// If the access point already exists, update it.
+	_, err := db.Model(accessPoint).WherePK().OnConflict("(daemon_id, type) DO UPDATE").Insert()
+	if err != nil {
+		return pkgerrors.Wrapf(
 			err,
-			"problem getting access point of app: %d and with type: %s",
-			appID,
-			accessPointType,
+			"problem adding or updating access point: %v",
+			accessPoint,
 		)
 	}
-	return accessPoint, nil
+	return nil
+}
+
+// Deletes all access points for a given daemon that don't match the provided
+// types. If `keepTypes` is empty, all access points for the daemon will be
+// deleted.
+func deleteAccessPointsExcept(db dbops.DBI, daemonID int64, keepTypes []AccessPointType) error {
+	accessPoint := &AccessPoint{DaemonID: daemonID}
+	query := db.Model(accessPoint).Where("daemon_id = ?", daemonID)
+
+	if len(keepTypes) > 0 {
+		query.Where("type NOT IN (?)", pg.In(keepTypes))
+	}
+
+	_, err := query.Delete()
+	if err != nil {
+		return pkgerrors.Wrapf(
+			err,
+			"problem deleting access points for daemon: %d, keeping types: %v",
+			daemonID,
+			keepTypes,
+		)
+	}
+	return nil
 }

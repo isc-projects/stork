@@ -109,9 +109,9 @@ func (agents *connectedAgentsImpl) handleRequest(req *commLoopReq) {
 		// be broken so we should retry at least once.
 		err2 := agent.connector.connect()
 		if err2 != nil {
-			log.WithFields(log.Fields{
+			log.WithError(err).WithFields(log.Fields{
 				"agent": agent.address,
-			}).Warn(err)
+			}).Warn("Failed to reconnect to the agent")
 			req.RespChan <- &channelResp{
 				Response: nil,
 				Err:      errors.WithMessagef(err2, "grpc manager is unable to re-establish connection with the agent %s", agent.address),
@@ -122,9 +122,9 @@ func (agents *connectedAgentsImpl) handleRequest(req *commLoopReq) {
 		// do call once again
 		response, err2 = doCall(ctx, agent, req.ReqData)
 		if err2 != nil {
-			log.WithFields(log.Fields{
+			log.WithError(err).WithFields(log.Fields{
 				"agent": agent.address,
-			}).Warn(err)
+			}).Warn("Failed to communicate with the agent")
 			req.RespChan <- &channelResp{
 				Response: nil,
 				Err:      errors.WithMessagef(err2, "grpc manager is unable to make a call to the agent %s", agent.address),

@@ -1,14 +1,30 @@
 package agent
 
 import (
-	keactrl "isc.org/stork/appctrl/kea"
+	"github.com/pkg/errors"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
 )
 
 // Intercept callback function for config-get. It records log files
 // found in the daemon's configuration, making them accessible by the
 // log viewer.
 func interceptConfigGetLoggers(agent *StorkAgent, response *keactrl.Response) error {
-	paths := collectKeaAllowedLogs(response)
+	if err := response.GetError(); err != nil {
+		err = errors.WithMessage(err, "skipped refreshing viewable log files because config-get returned unsuccessful result")
+		return err
+	}
+	if response.Arguments == nil {
+		err := errors.New("skipped refreshing viewable log files because config-get response has no arguments")
+		return err
+	}
+	config, err := keaconfig.NewConfig(response.Arguments)
+	if err != nil {
+		err := errors.WithMessage(err, "skipped refreshing viewable log files because config-get response contains arguments which could not be parsed")
+		return err
+	}
+
+	paths := collectKeaAllowedLogs(config)
 	for _, p := range paths {
 		agent.logTailer.allow(p)
 	}

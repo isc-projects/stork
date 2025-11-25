@@ -9,8 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
-	keaconfig "isc.org/stork/appcfg/kea"
-	keactrl "isc.org/stork/appctrl/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
@@ -71,17 +72,17 @@ func TestMigrate(t *testing.T) {
 
 	expectForwardToKeaOverHTTP := func(daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, err mockErrors) *gomock.Call {
 		return agentMock.EXPECT().ForwardToKeaOverHTTP(
-			gomock.Any(),          // Context.
-			gomock.Eq(daemon.App), // App.
-			gomock.Eq(cmds),       // Commands.
-			gomock.Any(),          // Responses.
-		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
+			gomock.Any(),      // Context.
+			gomock.Eq(daemon), // Daemon.
+			gomock.Eq(cmds),   // Commands.
+			gomock.Any(),      // Responses.
+		).Do(func(ctx context.Context, daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
 			for i := range cmdResponses {
 				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
 					continue
 				}
 
-				r := cmdResponses[i].(*keactrl.ResponseList)
+				r := cmdResponses[i].(*keactrl.Response)
 				require.Empty(t, *r)
 
 				status := keactrl.ResponseError
@@ -89,12 +90,12 @@ func TestMigrate(t *testing.T) {
 					status = err.executionStatuses[i]
 				}
 
-				(*r) = append(*r, keactrl.Response{
+				(*r) = keactrl.Response{
 					ResponseHeader: keactrl.ResponseHeader{
 						Result: status,
 						Text:   err.executionErrs[i].Error(),
 					},
-				})
+				}
 			}
 		}).Return(&agentcomm.KeaCmdsResult{
 			Error:      err.keaErr,
@@ -201,8 +202,8 @@ func TestMigrate(t *testing.T) {
 	createDaemon := func() *dbmodel.Daemon {
 		daemon := &dbmodel.Daemon{
 			ID:      nextDaemonID,
-			Name:    dbmodel.DaemonNameDHCPv4,
-			App:     &dbmodel.App{ID: nextDaemonID},
+			Name:    daemonname.DHCPv4,
+			Machine: &dbmodel.Machine{ID: nextDaemonID},
 			Version: "2.3.8",
 			Active:  true,
 		}

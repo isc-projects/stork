@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	require "github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -28,18 +29,16 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app with two daemons.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-			NewKeaDaemon("dhcp6", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add two daemons to the machine.
+	daemon1 := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon1)
 	require.NoError(t, err)
-	require.Len(t, daemons, 2)
+
+	daemon2 := NewDaemon(machine, daemonname.DHCPv6, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon2)
+	require.NoError(t, err)
+
+	daemons := []*Daemon{daemon1, daemon2}
 
 	// Add a configuration report shared by both daemons.
 	configReport := &ConfigReport{
@@ -68,11 +67,9 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	require.Len(t, configReports, 2)
 	require.NotZero(t, configReports[0].DaemonID)
 	require.Len(t, configReports[0].RefDaemons, 2)
-	require.Equal(t, "dhcp4", configReports[0].RefDaemons[0].Name)
-	require.NotNil(t, configReports[0].RefDaemons[0].App)
-	require.Equal(t, "dhcp6", configReports[0].RefDaemons[1].Name)
-	require.NotNil(t, configReports[0].RefDaemons[1].App)
-	require.Equal(t, "Here is the test report for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\">, <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\"> and {daemon}", *configReports[0].Content)
+	require.Equal(t, daemonname.DHCPv4, configReports[0].RefDaemons[0].Name)
+	require.Equal(t, daemonname.DHCPv6, configReports[0].RefDaemons[1].Name)
+	require.Equal(t, "Here is the test report for <daemon id=\"1\" name=\"dhcp4\" machineId=\"1\">, <daemon id=\"2\" name=\"dhcp6\" machineId=\"1\"> and {daemon}", *configReports[0].Content)
 	require.Equal(t, "empty", configReports[1].CheckerName)
 	require.Nil(t, configReports[1].Content)
 
@@ -102,24 +99,17 @@ func TestGetConfigReportsExceptEmpty(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app with two daemons.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add a daemon to the machine.
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, daemons, 1)
 
 	// Add a configuration report shared by both daemons.
 	configReport := &ConfigReport{
 		CheckerName: "test",
 		Content:     newPtr("Here is the test report for {daemon}, {daemon} and {daemon}"),
-		DaemonID:    daemons[0].ID,
-		RefDaemons:  daemons,
+		DaemonID:    daemon.ID,
+		RefDaemons:  []*Daemon{daemon},
 	}
 	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
@@ -128,13 +118,13 @@ func TestGetConfigReportsExceptEmpty(t *testing.T) {
 	configReport = &ConfigReport{
 		CheckerName: "empty",
 		Content:     nil,
-		DaemonID:    daemons[0].ID,
+		DaemonID:    daemon.ID,
 		RefDaemons:  []*Daemon{},
 	}
 	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
 	// Act
-	reports, total, err := GetConfigReportsByDaemonID(db, 0, 10, daemons[0].ID, true)
+	reports, total, err := GetConfigReportsByDaemonID(db, 0, 10, daemon.ID, true)
 
 	// Assert
 	require.Len(t, reports, 1)
@@ -157,18 +147,16 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-			NewKeaDaemon("dhcp6", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add two daemons to the machine.
+	daemon1 := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon1)
 	require.NoError(t, err)
-	require.Len(t, daemons, 2)
+
+	daemon2 := NewDaemon(machine, daemonname.DHCPv6, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon2)
+	require.NoError(t, err)
+
+	daemons := []*Daemon{daemon1, daemon2}
 
 	// Associate configuration reports with distinct daemons.
 	configReports := []ConfigReport{
@@ -201,7 +189,6 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 		require.EqualValues(t, 1, total)
 		require.Len(t, returnedConfigReports, 1)
 		require.Len(t, returnedConfigReports[0].RefDaemons, 1)
-		require.NotNil(t, returnedConfigReports[0].RefDaemons[0].App)
 		require.Equal(t, configReports[i].Content, returnedConfigReports[0].Content)
 	}
 
@@ -235,32 +222,25 @@ func TestConfigReportsPaging(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add a daemon to the machine.
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, daemons, 1)
 
 	// Add several configuration reports.
 	for i := 0; i < 10; i++ {
 		configReport := &ConfigReport{
 			CheckerName: fmt.Sprintf("test%d", i),
 			Content:     newPtr(fmt.Sprintf("Here is the test report no %d", i)),
-			DaemonID:    daemons[0].ID,
-			RefDaemons:  daemons,
+			DaemonID:    daemon.ID,
+			RefDaemons:  []*Daemon{daemon},
 		}
 		err = AddConfigReport(db, configReport)
 		require.NoError(t, err)
 	}
 
 	// When specifying the offset and limit of 0, all reports should be returned.
-	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID, false)
+	configReports, total, err := GetConfigReportsByDaemonID(db, 0, 0, daemon.ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, configReports, 10)
@@ -276,7 +256,7 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Len(t, allReportIDs, 10)
 
 	// Get the reports from the first to fifth.
-	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 5, daemons[0].ID, false)
+	configReports, total, err = GetConfigReportsByDaemonID(db, 0, 5, daemon.ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, configReports, 5)
@@ -292,7 +272,7 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Len(t, pagedReportIDs, 5)
 
 	// Get the reports from fifth to the last one.
-	configReports, total, err = GetConfigReportsByDaemonID(db, 5, 10, daemons[0].ID, false)
+	configReports, total, err = GetConfigReportsByDaemonID(db, 5, 10, daemon.ID, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, configReports, 5)
@@ -322,24 +302,17 @@ func TestCountConfigReports(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app with two daemons.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add a daemon to the machine.
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, daemons, 1)
 
 	// Add some empty reports
 	for i := 0; i < 10; i++ {
 		configReport := &ConfigReport{
 			CheckerName: fmt.Sprintf("empty %d", i),
 			Content:     nil,
-			DaemonID:    daemons[0].ID,
+			DaemonID:    daemon.ID,
 			RefDaemons:  []*Daemon{},
 		}
 
@@ -352,7 +325,7 @@ func TestCountConfigReports(t *testing.T) {
 		configReport := &ConfigReport{
 			CheckerName: fmt.Sprintf("checker %d", i),
 			Content:     newPtr(fmt.Sprintf("content %d", i)),
-			DaemonID:    daemons[0].ID,
+			DaemonID:    daemon.ID,
 			RefDaemons:  []*Daemon{},
 		}
 
@@ -361,8 +334,8 @@ func TestCountConfigReports(t *testing.T) {
 	}
 
 	// Act
-	totalReports, reportsErr := CountConfigReportsByDaemonID(db, daemons[0].ID, false)
-	totalIssues, issuesErr := CountConfigReportsByDaemonID(db, daemons[0].ID, true)
+	totalReports, reportsErr := CountConfigReportsByDaemonID(db, daemon.ID, false)
+	totalIssues, issuesErr := CountConfigReportsByDaemonID(db, daemon.ID, true)
 
 	// Assert
 	require.NoError(t, reportsErr)
@@ -385,17 +358,10 @@ func TestInvalidConfigReport(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add a daemon to the machine.
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, daemons, 1)
 
 	testCases := []string{
 		"empty checker name",
@@ -406,26 +372,20 @@ func TestInvalidConfigReport(t *testing.T) {
 		{
 			CheckerName: "",
 			Content:     newPtr("Here is the first test report"),
-			DaemonID:    daemons[0].ID,
-			RefDaemons: []*Daemon{
-				daemons[0],
-			},
+			DaemonID:    daemon.ID,
+			RefDaemons:  []*Daemon{daemon},
 		},
 		{
 			CheckerName: "test",
 			Content:     newPtr(""),
-			DaemonID:    daemons[0].ID,
-			RefDaemons: []*Daemon{
-				daemons[0],
-			},
+			DaemonID:    daemon.ID,
+			RefDaemons:  []*Daemon{daemon},
 		},
 		{
 			CheckerName: "test",
 			Content:     newPtr("contents"),
 			DaemonID:    111111,
-			RefDaemons: []*Daemon{
-				daemons[0],
-			},
+			RefDaemons:  []*Daemon{daemon},
 		},
 	}
 
@@ -450,7 +410,7 @@ func TestConfigReportDeleteNonExisting(t *testing.T) {
 
 // This test verifies that it is possible to delete a daemon
 // having configuration reviews.
-func TestDeleteAppWithConfigReview(t *testing.T) {
+func TestDeleteDaemonWithConfigReview(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -462,32 +422,25 @@ func TestDeleteAppWithConfigReview(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add a daemon to the machine.
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, daemons, 1)
 
 	// Add config report for the daemon.
 	configReport := &ConfigReport{
 		CheckerName: "test",
 		Content:     newPtr("Here is the first test report"),
-		DaemonID:    daemons[0].ID,
+		DaemonID:    daemon.ID,
 		RefDaemons: []*Daemon{
-			daemons[0],
+			daemon,
 		},
 	}
 	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
-	// Make sure we can delete an app. The associated config
+	// Make sure we can delete a daemon. The associated config
 	// reports should be deleted.
-	err = DeleteApp(db, app)
+	err = DeleteDaemon(db, daemon)
 	require.NoError(t, err)
 }

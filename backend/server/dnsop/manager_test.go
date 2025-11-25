@@ -13,11 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
-	dnsconfig "isc.org/stork/appcfg/dnsconfig"
-	bind9stats "isc.org/stork/appdata/bind9stats"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	dnsconfig "isc.org/stork/daemoncfg/dnsconfig"
+	bind9stats "isc.org/stork/daemondata/bind9stats"
+	"isc.org/stork/datamodel/daemonname"
 	agentcomm "isc.org/stork/server/agentcomm"
-	appstest "isc.org/stork/server/apps/test"
+	appstest "isc.org/stork/server/daemons/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
@@ -135,7 +136,7 @@ func TestFetchZonesDatabaseError(t *testing.T) {
 
 	_, err = manager.FetchZones(10, 1000, true)
 	require.Error(t, err)
-	require.ErrorContains(t, err, "problem getting")
+	require.ErrorContains(t, err, "problem selecting daemons with names: [named pdns]")
 }
 
 // This test verifies that "busy" status is set in the database when zone
@@ -147,7 +148,7 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Add a machine and app.
+	// Add a machine and daemon.
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -156,21 +157,20 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Return "busy" error on first iteration.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 			_ = !yield(nil, agentcomm.NewZoneInventoryBusyError("foo"))
 		}
@@ -190,14 +190,14 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 
 	// Make sure the "busy" error was reported.
 	require.Len(t, notification.results, 1)
-	require.NotNil(t, notification.results[app.Daemons[0].ID].Error)
-	require.Contains(t, *notification.results[app.Daemons[0].ID].Error, "Zone inventory is temporarily busy on the agent foo")
+	require.NotNil(t, notification.results[daemon.ID].Error)
+	require.Contains(t, *notification.results[daemon.ID].Error, "Zone inventory is temporarily busy on the agent foo")
 
 	// The database should also hold the fetch result.
-	state, err := dbmodel.GetZoneInventoryState(db, app.Daemons[0].ID)
+	state, err := dbmodel.GetZoneInventoryState(db, daemon.ID)
 	require.NoError(t, err)
 	require.NotNil(t, state)
-	require.Equal(t, app.Daemons[0].ID, state.DaemonID)
+	require.Equal(t, daemon.ID, state.DaemonID)
 	require.NotZero(t, state.CreatedAt)
 	require.NotNil(t, state.State.Error)
 	require.Contains(t, *state.State.Error, "Zone inventory is temporarily busy on the agent foo")
@@ -220,7 +220,7 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Add a machine and app.
+	// Add a machine and daemon.
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -229,21 +229,20 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Return "uninitialized" error on first iteration.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 			_ = !yield(nil, agentcomm.NewZoneInventoryNotInitedError("foo"))
 		}
@@ -264,14 +263,14 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 
 	// Make sure the "busy" error was reported.
 	require.Len(t, notification.results, 1)
-	require.NotNil(t, notification.results[app.Daemons[0].ID].Error)
-	require.Contains(t, *notification.results[app.Daemons[0].ID].Error, "DNS zones have not been loaded on the agent foo")
+	require.NotNil(t, notification.results[daemon.ID].Error)
+	require.Contains(t, *notification.results[daemon.ID].Error, "DNS zones have not been loaded on the agent foo")
 
 	// The database should also hold the fetch result.
-	state, err := dbmodel.GetZoneInventoryState(db, app.Daemons[0].ID)
+	state, err := dbmodel.GetZoneInventoryState(db, daemon.ID)
 	require.NoError(t, err)
 	require.NotNil(t, state)
-	require.Equal(t, app.Daemons[0].ID, state.DaemonID)
+	require.Equal(t, daemon.ID, state.DaemonID)
 	require.NotZero(t, state.CreatedAt)
 	require.NotNil(t, state.State.Error)
 	require.Contains(t, *state.State.Error, "DNS zones have not been loaded on the agent foo")
@@ -294,7 +293,7 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Add a machine and app.
+	// Add a machine and daemon.
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -303,21 +302,20 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Return "uninitialized" error on first iteration.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 			_ = !yield(nil, &testError{})
 		}
@@ -338,14 +336,14 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 
 	// Make sure other error was reported.
 	require.Len(t, notification.results, 1)
-	require.NotNil(t, notification.results[app.Daemons[0].ID].Error)
-	require.Contains(t, *notification.results[app.Daemons[0].ID].Error, "test error")
+	require.NotNil(t, notification.results[daemon.ID].Error)
+	require.Contains(t, *notification.results[daemon.ID].Error, "test error")
 
 	// The database should also hold the fetch result.
-	state, err := dbmodel.GetZoneInventoryState(db, app.Daemons[0].ID)
+	state, err := dbmodel.GetZoneInventoryState(db, daemon.ID)
 	require.NoError(t, err)
 	require.NotNil(t, state)
-	require.Equal(t, app.Daemons[0].ID, state.DaemonID)
+	require.Equal(t, daemon.ID, state.DaemonID)
 	require.NotZero(t, state.CreatedAt)
 	require.NotNil(t, state.State.Error)
 	require.Contains(t, *state.State.Error, "test error")
@@ -370,7 +368,7 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 
 	randomZones := testutil.GenerateRandomZones(1)
 
-	// Add a machine and app.
+	// Add a machine and daemon.
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -379,21 +377,20 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Return "uninitialized" error on first iteration.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 			// We are on the fist iteration. Let's close the database connection
 			// to cause an error.
@@ -429,8 +426,8 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 
 	// Make sure other error was reported.
 	require.Len(t, notification.results, 1)
-	require.NotNil(t, notification.results[app.Daemons[0].ID].Error)
-	require.Contains(t, *notification.results[app.Daemons[0].ID].Error, "database is closed")
+	require.NotNil(t, notification.results[daemon.ID].Error)
+	require.Contains(t, *notification.results[daemon.ID].Error, "database is closed")
 }
 
 // This test verifies that the manager can fetch zones from many servers
@@ -444,7 +441,7 @@ func TestFetchZones(t *testing.T) {
 
 	randomZones := testutil.GenerateRandomZones(1000)
 
-	// Generate many machines and apps.
+	// Generate many machines and daemons.
 	for i := 0; i < 100; i++ {
 		machine := &dbmodel.Machine{
 			ID:        0,
@@ -454,24 +451,23 @@ func TestFetchZones(t *testing.T) {
 		err := dbmodel.AddMachine(db, machine)
 		require.NoError(t, err)
 
-		app := &dbmodel.App{
-			ID:        0,
-			MachineID: machine.ID,
-			Type:      dbmodel.AppTypeBind9,
-			Daemons: []*dbmodel.Daemon{
-				dbmodel.NewBind9Daemon(true),
+		daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "localhost",
+				Port:    953,
 			},
-		}
-		_, err = dbmodel.AddApp(db, app)
+		})
+		err = dbmodel.AddDaemon(db, daemon)
 		require.NoError(t, err)
 
 		// We're going to test a corner case all of the servers have exactly the
 		// same set of zones. This is unrealistic scenario but it well stresses
 		// the code generating many conflicts in the database. We want to make
 		// sure that no zone is lost due to conflicts.
-		mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
-			return a.(*dbmodel.App).ID == app.ID
-		}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+		mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+			return d.(*dbmodel.Daemon).ID == daemon.ID
+		}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 			return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 				for _, zone := range randomZones {
 					zone := &bind9stats.ExtendedZone{
@@ -574,22 +570,21 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
 	// Return an empty iterator. Getting actual zones is not in scope for this test.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 			for _, zone := range randomZones {
 				zone := &bind9stats.ExtendedZone{
@@ -699,20 +694,19 @@ func TestFetchRepeatedZones(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 			// Return the same zones from two different views.
 			for _, view := range []string{"foo", "bar"} {
@@ -781,7 +775,7 @@ func TestGetZoneRRs(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Create a machine and an app. The manager will determine the app
+	// Create a machine and a daemon. The manager will determine the daemon
 	// to contact based on the daemon ID.
 	machine := &dbmodel.Machine{
 		ID:        0,
@@ -791,15 +785,14 @@ func TestGetZoneRRs(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Add a zone. We will use zone ID to fetch the RRs.
@@ -811,7 +804,7 @@ func TestGetZoneRRs(t *testing.T) {
 			{
 				ID:       1,
 				View:     "_default",
-				DaemonID: app.Daemons[0].ID,
+				DaemonID: daemon.ID,
 				Class:    "IN",
 				Type:     "primary",
 				Serial:   1,
@@ -828,9 +821,9 @@ func TestGetZoneRRs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Return the RRs using the mock.
-	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
 		return func(yield func([]*dnsconfig.RR, error) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -852,7 +845,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Collect received RRs.
 	collectedRRs := make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
 	for rrResponse := range rrResponses {
 		require.False(t, rrResponse.Cached)
 		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
@@ -875,7 +868,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Get RRs again. It should return cached RRs.
 	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
+	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
 	for rrResponse := range rrResponses {
 		require.True(t, rrResponse.Cached)
 		require.Equal(t, *zone.LocalZones[0].ZoneTransferAt, rrResponse.ZoneTransferAt)
@@ -897,7 +890,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Finally, get RRs again with forcing zone transfer.
 	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default", GetZoneRRsOptionForceZoneTransfer)
+	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default", GetZoneRRsOptionForceZoneTransfer)
 	for rrResponse := range rrResponses {
 		require.False(t, rrResponse.Cached)
 		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
@@ -957,7 +950,7 @@ func TestGetZoneRRsNoZone(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the app to ensure that the manager will not fail on
+	// Create the daemon to ensure that the manager will not fail on
 	// trying to get the daemon from the database.
 	machine := &dbmodel.Machine{
 		ID:        0,
@@ -967,15 +960,14 @@ func TestGetZoneRRsNoZone(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
@@ -995,7 +987,7 @@ func TestGetZoneRRsNoZone(t *testing.T) {
 	defer manager.Shutdown()
 
 	var errors []error
-	responses := manager.GetZoneRRs(12, app.Daemons[0].ID, "_default")
+	responses := manager.GetZoneRRs(12, daemon.ID, "_default")
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -1022,15 +1014,8 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Create the zone and associated with the app/daemon.
@@ -1042,7 +1027,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 			{
 				ID:       1,
 				View:     "_default",
-				DaemonID: app.Daemons[0].ID,
+				DaemonID: daemon.ID,
 				Class:    "IN",
 				Type:     "primary",
 				Serial:   1,
@@ -1061,9 +1046,9 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	wg2 := sync.WaitGroup{}
 	wg1.Add(1)
 	wg2.Add(1)
-	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
 		return func(yield func([]*dnsconfig.RR, error) bool) {
 			// Signalling here that the second request can start.
 			wg1.Done()
@@ -1088,7 +1073,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
+		responses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
 		for response := range responses {
 			require.NoError(t, response.Err)
 		}
@@ -1101,7 +1086,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	// Since we use the same IDs and view name, the manager should
 	// refuse it.
 	var errors []error
-	responses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
+	responses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -1125,7 +1110,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Create the app.
+	// Create the machine and daemons.
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -1134,16 +1119,24 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-			dbmodel.NewBind9Daemon(true),
+	daemon1 := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon1)
+	require.NoError(t, err)
+
+	daemon2 := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    954,
+		},
+	})
+	err = dbmodel.AddDaemon(db, daemon2)
 	require.NoError(t, err)
 
 	// Create two zones associated with the daemons.
@@ -1154,7 +1147,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 			LocalZones: []*dbmodel.LocalZone{
 				{
 					View:     "_default",
-					DaemonID: app.Daemons[0].ID,
+					DaemonID: daemon1.ID,
 					Class:    "IN",
 					Type:     "primary",
 					Serial:   1,
@@ -1162,7 +1155,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 				},
 				{
 					View:     "trusted",
-					DaemonID: app.Daemons[0].ID,
+					DaemonID: daemon1.ID,
 					Class:    "IN",
 					Type:     "primary",
 					Serial:   1,
@@ -1170,7 +1163,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 				},
 				{
 					View:     "_default",
-					DaemonID: app.Daemons[1].ID,
+					DaemonID: daemon2.ID,
 					Class:    "IN",
 					Type:     "primary",
 					Serial:   1,
@@ -1178,7 +1171,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 				},
 				{
 					View:     "trusted",
-					DaemonID: app.Daemons[1].ID,
+					DaemonID: daemon2.ID,
 					Class:    "IN",
 					Type:     "primary",
 					Serial:   1,
@@ -1192,7 +1185,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 			LocalZones: []*dbmodel.LocalZone{
 				{
 					View:     "_default",
-					DaemonID: app.Daemons[0].ID,
+					DaemonID: daemon1.ID,
 					Class:    "IN",
 					Type:     "primary",
 					Serial:   1,
@@ -1200,7 +1193,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 				},
 				{
 					View:     "_default",
-					DaemonID: app.Daemons[1].ID,
+					DaemonID: daemon2.ID,
 					Class:    "IN",
 					Type:     "primary",
 					Serial:   1,
@@ -1221,9 +1214,9 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 	wg1.Add(1)
 	wg2.Add(1)
 	var mocks []any
-	mocks = append(mocks, mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *dbmodel.App, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+	mocks = append(mocks, mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon1.ID
+	}), gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
 		return func(yield func([]*dnsconfig.RR, error) bool) {
 			// Signalling here that the second request can start.
 			wg1.Done()
@@ -1233,9 +1226,9 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 			yield([]*dnsconfig.RR{}, nil)
 		}
 	}))
-	mocks = append(mocks, mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+	mocks = append(mocks, mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon1.ID || d.(*dbmodel.Daemon).ID == daemon2.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
 		return func(yield func([]*dnsconfig.RR, error) bool) {
 			yield([]*dnsconfig.RR{}, nil)
 		}
@@ -1255,7 +1248,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetZoneRRs(zones[0].ID, app.Daemons[0].ID, "_default")
+		responses := manager.GetZoneRRs(zones[0].ID, daemon1.ID, "_default")
 		for response := range responses {
 			// Since these responses will be read in the cleanup phase, it is expected
 			// that some of them will indicate failures while communicating with the
@@ -1276,7 +1269,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 
 	t.Run("different zone ID", func(t *testing.T) {
 		var errors []error
-		responses := manager.GetZoneRRs(zones[1].ID, app.Daemons[0].ID, "_default")
+		responses := manager.GetZoneRRs(zones[1].ID, daemon1.ID, "_default")
 		for response := range responses {
 			errors = append(errors, response.Err)
 		}
@@ -1286,7 +1279,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 
 	t.Run("different daemon ID", func(t *testing.T) {
 		var errors []error
-		responses := manager.GetZoneRRs(zones[0].ID, app.Daemons[1].ID, "_default")
+		responses := manager.GetZoneRRs(zones[0].ID, daemon2.ID, "_default")
 		for response := range responses {
 			errors = append(errors, response.Err)
 		}
@@ -1296,7 +1289,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 
 	t.Run("different view name", func(t *testing.T) {
 		var errors []error
-		responses := manager.GetZoneRRs(zones[0].ID, app.Daemons[0].ID, "trusted")
+		responses := manager.GetZoneRRs(zones[0].ID, daemon1.ID, "trusted")
 		for response := range responses {
 			errors = append(errors, response.Err)
 		}
@@ -1314,7 +1307,7 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Create a machine and an app. The manager will determine the app
+	// Create a machine and a daemon. The manager will determine the daemon
 	// to contact based on the daemon ID.
 	machine := &dbmodel.Machine{
 		ID:        0,
@@ -1324,15 +1317,14 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Add a zone. We will use zone ID to fetch the RRs.
@@ -1344,7 +1336,7 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 			{
 				ID:       1,
 				View:     "_default",
-				DaemonID: app.Daemons[0].ID,
+				DaemonID: daemon.ID,
 				Class:    "IN",
 				Type:     "primary",
 				Serial:   1,
@@ -1361,9 +1353,9 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	require.NoError(t, err)
 
 	// Return the RRs using the mock.
-	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
 		return func(yield func([]*dnsconfig.RR, error) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -1384,7 +1376,7 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Start reading the RRs.
-	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
 
 	// Read only the first RR and stop the iterator.
 	next, stop := iter.Pull(rrResponses)
@@ -1411,7 +1403,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
-	// Create a machine and an app. The manager will determine the app
+	// Create a machine and a daemon. The manager will determine the daemon
 	// to contact based on the daemon ID.
 	machine := &dbmodel.Machine{
 		ID:        0,
@@ -1421,15 +1413,14 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
 		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Add a zone. We will use zone ID to fetch the RRs.
@@ -1441,7 +1432,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 			{
 				ID:       1,
 				View:     "_default",
-				DaemonID: app.Daemons[0].ID,
+				DaemonID: daemon.ID,
 				Class:    "IN",
 				Type:     "primary",
 				Serial:   1,
@@ -1458,9 +1449,9 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Return the RRs using the mock.
-	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
-	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
 		return func(yield func([]*dnsconfig.RR, error) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -1481,7 +1472,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Start reading the RRs.
-	rrResponses := manager.GetZoneRRs(zone.ID, app.Daemons[0].ID, "_default")
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
 
 	next, stop := iter.Pull(rrResponses)
 	defer stop()
@@ -1526,20 +1517,13 @@ func TestGetBind9FormattedConfig(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, false, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
-		DoAndReturn(func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+		DoAndReturn(func(ctx context.Context, daemon *dbmodel.Daemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 			require.NotNil(t, fileSelector)
 			require.NotNil(t, filter)
 			require.True(t, filter.IsEnabled(bind9config.FilterTypeConfig))
@@ -1586,7 +1570,7 @@ func TestGetBind9FormattedConfig(t *testing.T) {
 	next, cancel := iter.Pull(
 		manager.GetBind9FormattedConfig(
 			context.Background(),
-			app.Daemons[0].ID,
+			daemon.ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
 			bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView),
 		),
@@ -1631,15 +1615,8 @@ func TestGetBind9FormattedConfigMultipleFiles(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Depending on the filter the mock returns different configurations.
@@ -1647,7 +1624,7 @@ func TestGetBind9FormattedConfigMultipleFiles(t *testing.T) {
 	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(
-			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			func(ctx context.Context, app *dbmodel.Daemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 					responses := []*agentapi.ReceiveBind9ConfigRsp{
 						{
@@ -1696,7 +1673,7 @@ func TestGetBind9FormattedConfigMultipleFiles(t *testing.T) {
 	next, cancel := iter.Pull(
 		manager.GetBind9FormattedConfig(
 			context.Background(),
-			app.Daemons[0].ID,
+			daemon.ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey),
 			nil),
 	)
@@ -1794,21 +1771,14 @@ func TestGetBind9FormattedConfigNilResponse(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(
-			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			func(ctx context.Context, daemon *dbmodel.Daemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 					yield(nil, nil)
 				}
@@ -1846,15 +1816,8 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// We need to run first request and ensure it stops, so we can
@@ -1865,12 +1828,12 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	wg2 := sync.WaitGroup{}
 	wg1.Add(1)
 	wg2.Add(1)
-	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
+	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
 	}), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(
-			func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			func(context.Context, *dbmodel.Daemon, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 					// Signalling here that the second request can start.
 					wg1.Done()
@@ -1902,7 +1865,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+		responses := manager.GetBind9FormattedConfig(context.Background(), daemon.ID, nil, nil)
 		for response := range responses {
 			require.NoError(t, response.Err)
 		}
@@ -1914,7 +1877,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	// Run the second request while the first one is in progress.
 	// Since we use the same daemon ID, the manager should refuse it.
 	var errors []error
-	responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+	responses := manager.GetBind9FormattedConfig(context.Background(), daemon.ID, nil, nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -1946,16 +1909,12 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon1 := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon1)
+	require.NoError(t, err)
+
+	daemon2 := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon2)
 	require.NoError(t, err)
 
 	// We need to run first request and ensure it stops, so we can
@@ -1967,11 +1926,11 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	wg1.Add(1)
 	wg2.Add(1)
 	var mocks []any
-	mocks = append(mocks, mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
+	mocks = append(mocks, mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon1.ID
 	}), gomock.Any(), gomock.Any()).
 		DoAndReturn(
-			func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			func(context.Context, *dbmodel.Daemon, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 					// Signalling here that the second request can start.
 					wg1.Done()
@@ -1989,12 +1948,12 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 			},
 		),
 	)
-	mocks = append(mocks, mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(a any) bool {
-		return a.(*dbmodel.App).ID == app.ID
+	mocks = append(mocks, mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon2.ID
 	}), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(
-			func(context.Context, *dbmodel.App, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			func(context.Context, *dbmodel.Daemon, *bind9config.FileTypeSelector, *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 					yield(&agentapi.ReceiveBind9ConfigRsp{
 						Response: &agentapi.ReceiveBind9ConfigRsp_File{
@@ -2022,7 +1981,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[0].ID, nil, nil)
+		responses := manager.GetBind9FormattedConfig(context.Background(), daemon1.ID, nil, nil)
 		for response := range responses {
 			// Since these responses will be read in the cleanup phase, it is expected
 			// that some of them will indicate failures while communicating with the
@@ -2042,7 +2001,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	})
 
 	var errors []error
-	responses := manager.GetBind9FormattedConfig(context.Background(), app.Daemons[1].ID, nil, nil)
+	responses := manager.GetBind9FormattedConfig(context.Background(), daemon2.ID, nil, nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -2066,21 +2025,14 @@ func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	mock.EXPECT().ReceiveBind9FormattedConfig(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		DoAndReturn(
-			func(ctx context.Context, app *dbmodel.App, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+			func(ctx context.Context, daemon *dbmodel.Daemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 				return func(yield func(*agentapi.ReceiveBind9ConfigRsp, error) bool) {
 					responses := []*agentapi.ReceiveBind9ConfigRsp{
 						{
@@ -2118,7 +2070,7 @@ func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	next, cancel := iter.Pull(
 		manager.GetBind9FormattedConfig(
 			ctx,
-			app.Daemons[0].ID,
+			daemon.ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
 			bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView),
 		),

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	apps "isc.org/stork/server/apps"
-	"isc.org/stork/server/apps/bind9"
+	"isc.org/stork/server/daemons"
+	"isc.org/stork/server/daemons/bind9"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/restapi/operations/settings"
@@ -22,10 +22,10 @@ func TestGetPullers(t *testing.T) {
 
 	rapiSettings := RestAPISettings{}
 
-	statePuller, _ := apps.NewStatePuller(db, nil, nil, nil, nil)
+	statePuller, _ := daemons.NewStatePuller(db, nil, nil, nil, nil)
 	bind9Puller, _ := bind9.NewStatsPuller(db, nil, nil)
-	pullers := &apps.Pullers{
-		AppsStatePuller:  statePuller,
+	pullers := &daemons.Pullers{
+		StatePuller:      statePuller,
 		Bind9StatsPuller: bind9Puller,
 	}
 	rapi, _ := NewRestAPI(&rapiSettings, dbSettings, db, pullers)
@@ -52,10 +52,10 @@ func TestGetPuller(t *testing.T) {
 
 	rapiSettings := RestAPISettings{}
 
-	statePuller, _ := apps.NewStatePuller(db, nil, nil, nil, nil)
+	statePuller, _ := daemons.NewStatePuller(db, nil, nil, nil, nil)
 	bind9Puller, _ := bind9.NewStatsPuller(db, nil, nil)
-	pullers := &apps.Pullers{
-		AppsStatePuller:  statePuller,
+	pullers := &daemons.Pullers{
+		StatePuller:      statePuller,
 		Bind9StatsPuller: bind9Puller,
 	}
 	rapi, _ := NewRestAPI(&rapiSettings, dbSettings, db, pullers)
@@ -84,7 +84,7 @@ func TestGetNonExistPuller(t *testing.T) {
 
 	rapiSettings := RestAPISettings{}
 
-	pullers := &apps.Pullers{}
+	pullers := &daemons.Pullers{}
 	rapi, _ := NewRestAPI(&rapiSettings, dbSettings, db, pullers)
 
 	ctx := context.Background()

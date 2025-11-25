@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
-	"isc.org/stork/appcfg/dnsconfig"
+	"isc.org/stork/daemoncfg/dnsconfig"
 )
 
 // Represents a DNS resource record in the database.

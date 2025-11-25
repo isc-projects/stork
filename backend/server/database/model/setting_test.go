@@ -138,7 +138,7 @@ func TestInitializeSettingsWithInterval(t *testing.T) {
 	bind9Interval, err3 := GetSettingInt(db, "bind9_stats_puller_interval")
 	keaStatsInterval, err4 := GetSettingInt(db, "kea_stats_puller_interval")
 	hostsInterval, err5 := GetSettingInt(db, "kea_hosts_puller_interval")
-	appsStateInterval, err6 := GetSettingInt(db, "apps_state_puller_interval")
+	appsStateInterval, err6 := GetSettingInt(db, "state_puller_interval")
 	haStatusInterval, err7 := GetSettingInt(db, "kea_status_puller_interval")
 
 	// Assert

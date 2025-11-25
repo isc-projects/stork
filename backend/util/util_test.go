@@ -18,33 +18,34 @@ import (
 
 // Test that HostWithPort function generates proper output.
 func TestHostWithPortURL(t *testing.T) {
-	require.Equal(t, "http://localhost:1000/", HostWithPortURL("localhost", 1000, false))
-	require.Equal(t, "http://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, false))
-	require.Equal(t, "https://localhost:1000/", HostWithPortURL("localhost", 1000, true))
-	require.Equal(t, "https://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, true))
+	require.Equal(t, "http://localhost:1000/", HostWithPortURL("localhost", 1000, "http"))
+	require.Equal(t, "http://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, "http"))
+	require.Equal(t, "https://localhost:1000/", HostWithPortURL("localhost", 1000, "https"))
+	require.Equal(t, "https://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, "https"))
+	require.Equal(t, "unix://socket/path/", HostWithPortURL("socket/path", 0, "unix"))
 }
 
 // Test parsing URL into host and port.
 func TestParseURL(t *testing.T) {
-	host, port, secure := ParseURL("https://xyz:8080/")
+	host, port, protocol := ParseURL("https://xyz:8080/")
 	require.Equal(t, "xyz", host)
 	require.EqualValues(t, 8080, port)
-	require.True(t, secure)
+	require.Equal(t, "https", protocol)
 
-	host, port, secure = ParseURL("https://[2001:db8:1::]:8080")
+	host, port, protocol = ParseURL("https://[2001:db8:1::]:8080")
 	require.Equal(t, "2001:db8:1::", host)
 	require.EqualValues(t, 8080, port)
-	require.True(t, secure)
+	require.Equal(t, "https", protocol)
 
-	host, port, secure = ParseURL("http://host.example.org/")
+	host, port, protocol = ParseURL("http://host.example.org/")
 	require.Equal(t, "host.example.org", host)
 	require.EqualValues(t, 80, port)
-	require.False(t, secure)
+	require.Equal(t, "http", protocol)
 
-	host, port, secure = ParseURL("https://host.example.org/")
+	host, port, protocol = ParseURL("https://host.example.org/")
 	require.Equal(t, "host.example.org", host)
 	require.EqualValues(t, 443, port)
-	require.True(t, secure)
+	require.Equal(t, "https", protocol)
 }
 
 // Test conversion of a string consisting of a string of hexadecimal
@@ -150,7 +151,8 @@ func TestReadConfigurationWithoutIncludes(t *testing.T) {
 	require.NoError(t, err)
 
 	var content interface{}
-	json.Unmarshal([]byte(raw), &content)
+	err = json.Unmarshal(raw, &content)
+	require.NoError(t, err)
 	data := content.(map[string]interface{})
 
 	require.Contains(t, data, "foo", "bar", "baz")
@@ -169,7 +171,8 @@ func TestReadFileWithIncludes(t *testing.T) {
 	require.NoError(t, err)
 
 	var content interface{}
-	json.Unmarshal([]byte(raw), &content)
+	err = json.Unmarshal(raw, &content)
+	require.NoError(t, err)
 	data := content.(map[string]interface{})
 	require.Contains(t, data, "biz", "buz", "boz")
 
@@ -197,7 +200,8 @@ func TestReadFileWithIncludesNonJSONExtension(t *testing.T) {
 	require.NoError(t, err)
 
 	var content interface{}
-	json.Unmarshal([]byte(raw), &content)
+	err = json.Unmarshal(raw, &content)
+	require.NoError(t, err)
 	data := content.(map[string]interface{})
 	require.Contains(t, data, "biz", "buz", "boz")
 
@@ -225,7 +229,8 @@ func TestReadConfigurationWithNestedIncludes(t *testing.T) {
 	require.NoError(t, err)
 
 	var content interface{}
-	json.Unmarshal([]byte(raw), &content)
+	err = json.Unmarshal(raw, &content)
+	require.NoError(t, err)
 	data := content.(map[string]interface{})
 	require.Contains(t, data, "ban")
 
@@ -271,7 +276,7 @@ func TestReadConfigurationWithMultipleTheSameIncludes(t *testing.T) {
 	require.NoError(t, err)
 
 	var content interface{}
-	err = json.Unmarshal([]byte(raw), &content)
+	err = json.Unmarshal(raw, &content)
 	require.NoError(t, err)
 	data := content.(map[string]interface{})
 	require.Contains(t, data, "biz", "buz", "boz")

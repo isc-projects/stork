@@ -60,6 +60,8 @@ tests/system/config/kea-many-host-reservations/kea-dhcp4-*.conf
 /.pkgs-build
 /dist
 **/.bundle/config
+backend/**/tools/golang/gopath/pkg/sumdb/sum.golang.org/latest
+.DS_Store
 
 # Protoc generated files
 /backend/api/stork/backend/api/agent/protocol/agent.pb.go
@@ -97,8 +99,8 @@ tests/system/openapi_client_README.md
 webui/documentation.json
 
 # Code-gen generated files
-backend/appcfg/kea/stdoptiondef4.go
-backend/appcfg/kea/stdoptiondef6.go
+backend/daemoncfg/kea/stdoptiondef4.go
+backend/daemoncfg/kea/stdoptiondef6.go
 webui/src/app/std-dhcpv4-option-defs.ts
 webui/src/app/std-dhcpv6-option-defs.ts
 

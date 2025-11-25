@@ -7,23 +7,20 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
-// Sort daemons in the machine apps by name. It is used by the unit
+// Sort daemons in the machine by name. It is used by the unit
 // test to ensure the predictable order of daemons to validate.
 func sortMachineDaemonsByName(machine *Machine) {
-	if len(machine.Apps) == 0 {
+	if len(machine.Daemons) == 0 {
 		return
 	}
-	for i := range machine.Apps {
-		if len(machine.Apps[i].Daemons) == 0 {
-			continue
-		}
-		sort.Slice(machine.Apps[i].Daemons, func(j, k int) bool {
-			return machine.Apps[i].Daemons[j].Name < machine.Apps[i].Daemons[k].Name
-		})
-	}
+	sort.Slice(machine.Daemons, func(i, j int) bool {
+		return machine.Daemons[i].Name < machine.Daemons[j].Name
+	})
 }
 
 // Check if adding machine to database works.
@@ -104,34 +101,28 @@ func TestGetMachineByAddress(t *testing.T) {
 	err = AddMachine(db, m2)
 	require.NoError(t, err)
 
-	// add app
-	a := &App{
-		ID:        0,
-		MachineID: m2.ID,
-		Type:      "kea",
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m2.ID,
-				Type:      "control",
-				Address:   "localhost",
-				Port:      1234,
-				Key:       "",
-			},
+	// add daemon
+	d := NewDaemon(m2, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    1234,
+			Key:     "",
 		},
-	}
-	_, err = AddApp(db, a)
+	})
+	err = AddDaemon(db, d)
 	require.NoError(t, err)
 
 	// get added machine
 	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
-	require.Len(t, m.Apps, 1)
-	require.Len(t, m.Apps[0].AccessPoints, 1)
-	require.Equal(t, "control", m.Apps[0].AccessPoints[0].Type)
-	require.Equal(t, "localhost", m.Apps[0].AccessPoints[0].Address)
-	require.EqualValues(t, 1234, m.Apps[0].AccessPoints[0].Port)
-	require.Empty(t, m.Apps[0].AccessPoints[0].Key)
+	require.Len(t, m.Daemons, 1)
+	require.Len(t, m.Daemons[0].AccessPoints, 1)
+	require.Equal(t, AccessPointControl, m.Daemons[0].AccessPoints[0].Type)
+	require.Equal(t, "localhost", m.Daemons[0].AccessPoints[0].Address)
+	require.EqualValues(t, 1234, m.Daemons[0].AccessPoints[0].Port)
+	require.Empty(t, m.Daemons[0].AccessPoints[0].Key)
 
 	// delete machine
 	err = DeleteMachine(db, m)
@@ -161,43 +152,31 @@ func TestGetMachineByID(t *testing.T) {
 	err = AddMachine(db, m2)
 	require.NoError(t, err)
 
-	// add app
-	a := &App{
-		ID:        0,
-		MachineID: m2.ID,
-		Type:      "bind9",
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m2.ID,
-				Type:      "control",
-				Address:   "dns.example.",
-				Port:      953,
-				Key:       "abcd",
-			},
+	// add daemon
+	d := NewDaemon(m2, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "dns.example.",
+			Port:    953,
+			Key:     "abcd",
 		},
-		Daemons: []*Daemon{
-			{
-				Name:    "kea-dhcp4",
-				Version: "1.7.5",
-				Active:  true,
-			},
-		},
-	}
-	_, err = AddApp(db, a)
+	})
+	d.Version = "1.7.5"
+	d.Active = true
+	err = AddDaemon(db, d)
 	require.NoError(t, err)
 
 	// get added machine
 	m, err = GetMachineByID(db, m2.ID)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
-	require.Len(t, m.Apps, 1)
-	require.Len(t, m.Apps[0].AccessPoints, 1)
-	require.Equal(t, "control", m.Apps[0].AccessPoints[0].Type)
-	require.Equal(t, "dns.example.", m.Apps[0].AccessPoints[0].Address)
-	require.EqualValues(t, 953, m.Apps[0].AccessPoints[0].Port)
-	require.Equal(t, "abcd", m.Apps[0].AccessPoints[0].Key)
-	require.Len(t, m.Apps[0].Daemons, 1)
-	require.Equal(t, "kea-dhcp4", m.Apps[0].Daemons[0].Name)
+	require.Len(t, m.Daemons, 1)
+	require.Len(t, m.Daemons[0].AccessPoints, 1)
+	require.Equal(t, AccessPointControl, m.Daemons[0].AccessPoints[0].Type)
+	require.Equal(t, "dns.example.", m.Daemons[0].AccessPoints[0].Address)
+	require.EqualValues(t, 953, m.Daemons[0].AccessPoints[0].Port)
+	require.Equal(t, "abcd", m.Daemons[0].AccessPoints[0].Key)
+	require.Equal(t, daemonname.DHCPv4, m.Daemons[0].Name)
 	require.True(t, m.LastVisitedAt.IsZero())
 
 	// delete machine
@@ -224,61 +203,50 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	}
 	_ = AddMachine(db, m)
 
-	a := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      "bind9",
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m.ID,
-				Type:      "control",
-				Address:   "dns.example.",
-				Port:      953,
-				Key:       "abcd",
-			},
+	daemonKea := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "dns.example.",
+			Port:    953,
+			Key:     "abcd",
 		},
-		Daemons: []*Daemon{
-			NewKeaDaemon(DaemonNameDHCPv4, true),
-			{
-				Name:    DaemonNameBind9,
-				Version: "1.0.0",
-				Active:  true,
-				LogTargets: []*LogTarget{
-					{
-						Output: "stdout",
-					},
-					{
-						Output: "/tmp/filename.log",
-					},
-				},
-				Bind9Daemon: &Bind9Daemon{},
-			},
+	})
+	err := daemonKea.SetKeaConfigFromJSON([]byte(`{
+		"Dhcp4": {
+			"valid-lifetime": 1234,
+			"secret": "hidden"
+		}
+	}`))
+	require.NoError(t, err)
+	daemonKea.Version = "1.7.5"
+	daemonKea.LogTargets = []*LogTarget{
+		{
+			Output: "stdout",
+		},
+		{
+			Output: "/tmp/filename.log",
 		},
 	}
-	ds, _ := AddApp(db, a)
+	err = AddDaemon(db, daemonKea)
+	require.NoError(t, err)
 
-	d := ds[0]
-	_ = d.SetConfigFromJSON(`{
-        "Dhcp4": {
-            "valid-lifetime": 1234,
-			"secret": "hidden"
-        }
-    }`)
-	_ = UpdateDaemon(db, d)
+	daemonBind9 := NewDaemon(m, daemonname.Bind9, true, []*AccessPoint{})
+	err = AddDaemon(db, daemonBind9)
+	require.NoError(t, err)
 
 	service := &Service{
 		BaseService: BaseService{
 			Name: "service",
 			Daemons: []*Daemon{
 				{
-					ID: a.Daemons[0].ID,
+					ID: daemonKea.ID,
 				},
 			},
 		},
 		HAService: &BaseHAService{
 			HAType:                     "dhcp4",
 			Relationship:               "server1",
-			PrimaryID:                  a.Daemons[0].ID,
+			PrimaryID:                  daemonKea.ID,
 			PrimaryStatusCollectedAt:   time.Now(),
 			SecondaryStatusCollectedAt: time.Now(),
 			PrimaryReachable:           true,
@@ -291,93 +259,78 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 		},
 	}
 
-	err := AddService(db, service)
+	err = AddService(db, service)
 	require.NoError(t, err)
 
 	// Act
 	machine, machineErr := GetMachineByIDWithRelations(db, 42)
-	machineApps, machineAppsErr := GetMachineByIDWithRelations(db, 42, MachineRelationApps)
 	machineDaemons, machineDaemonsErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemons)
 	machineKeaDaemons, machineKeaDaemonsErr := GetMachineByIDWithRelations(db, 42, MachineRelationKeaDaemons)
 	machineBind9Daemons, machineBind9DaemonsErr := GetMachineByIDWithRelations(db, 42, MachineRelationBind9Daemons)
 	machineDaemonLogTargets, machineDaemonLogTargetsErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemonLogTargets)
-	machineAppAccessPoints, machineAppAccessPointsErr := GetMachineByIDWithRelations(db, 42, MachineRelationAppAccessPoints)
+	machineDaemonAccessPoints, machineDaemonAccessPointsErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemonAccessPoints)
 	machineKeaDHCPConfigs, machineKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationKeaDHCPConfigs)
-	machineAppAccessPointsKeaDHCPConfigs, machineAppAccessPointsKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationAppAccessPoints, MachineRelationKeaDHCPConfigs)
+	machineDaemonAccessPointsKeaDHCPConfigs, machineDaemonAccessPointsKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemonAccessPoints, MachineRelationKeaDHCPConfigs)
 	machineDaemonHAServices, machineDaemonHAServicesErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemonHAServices)
 
 	// Assert
 	require.NoError(t, machineErr)
-	require.NoError(t, machineAppsErr)
 	require.NoError(t, machineDaemonsErr)
 	require.NoError(t, machineKeaDaemonsErr)
 	require.NoError(t, machineBind9DaemonsErr)
 	require.NoError(t, machineDaemonLogTargetsErr)
-	require.NoError(t, machineAppAccessPointsErr)
+	require.NoError(t, machineDaemonAccessPointsErr)
 	require.NoError(t, machineKeaDHCPConfigsErr)
-	require.NoError(t, machineAppAccessPointsKeaDHCPConfigsErr)
+	require.NoError(t, machineDaemonAccessPointsKeaDHCPConfigsErr)
 	require.NoError(t, machineDaemonHAServicesErr)
 
 	// Just machine
 	require.NotNil(t, machine.State)
-	require.Len(t, machine.Apps, 0)
-	// Machine with apps
-	require.Len(t, machineApps.Apps, 1)
-	require.Nil(t, machineApps.Apps[0].AccessPoints)
-	require.Nil(t, machineApps.Apps[0].Daemons)
+	require.Len(t, machine.Daemons, 0)
 	// Machine with daemons
-	require.Len(t, machineDaemons.Apps, 1)
-	require.Nil(t, machineDaemons.Apps[0].AccessPoints)
-	require.Len(t, machineDaemons.Apps[0].Daemons, 2)
+	require.Len(t, machineDaemons.Daemons, 2)
 	sortMachineDaemonsByName(machineDaemons)
-	require.Nil(t, machineDaemons.Apps[0].Daemons[0].LogTargets)
-	require.Nil(t, machineDaemons.Apps[0].Daemons[0].KeaDaemon)
-	require.Nil(t, machineDaemons.Apps[0].Daemons[1].Bind9Daemon)
+	require.Nil(t, machineDaemons.Daemons[0].LogTargets)
+	require.Nil(t, machineDaemons.Daemons[0].KeaDaemon)
+	require.Nil(t, machineDaemons.Daemons[1].Bind9Daemon)
 	// Machine with kea daemons
-	require.Len(t, machineKeaDaemons.Apps, 1)
-	require.Len(t, machineKeaDaemons.Apps[0].Daemons, 2)
+	require.Len(t, machineKeaDaemons.Daemons, 2)
 	sortMachineDaemonsByName(machineKeaDaemons)
-	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
-	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[0].LogTargets)
-	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[1].Bind9Daemon)
+	require.Nil(t, machineKeaDaemons.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	require.Nil(t, machineKeaDaemons.Daemons[0].LogTargets)
+	require.Nil(t, machineKeaDaemons.Daemons[1].Bind9Daemon)
 	// Machine with Bind9 daemons
-	require.Len(t, machineBind9Daemons.Apps, 1)
-	require.Len(t, machineBind9Daemons.Apps[0].Daemons, 2)
+	require.Len(t, machineBind9Daemons.Daemons, 2)
 	sortMachineDaemonsByName(machineBind9Daemons)
-	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[0].KeaDaemon)
-	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[0].LogTargets)
-	require.NotNil(t, machineBind9Daemons.Apps[0].Daemons[1].Bind9Daemon)
+	require.Nil(t, machineBind9Daemons.Daemons[0].KeaDaemon)
+	require.Nil(t, machineBind9Daemons.Daemons[0].LogTargets)
+	require.NotNil(t, machineBind9Daemons.Daemons[1].Bind9Daemon)
 	// Machine with daemon log targets
-	require.Len(t, machineDaemonLogTargets.Apps, 1)
-	require.Len(t, machineDaemonLogTargets.Apps[0].Daemons, 2)
+	require.Len(t, machineDaemonLogTargets.Daemons, 2)
 	sortMachineDaemonsByName(machineDaemonLogTargets)
-	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[0].KeaDaemon)
-	require.Len(t, machineDaemonLogTargets.Apps[0].Daemons[1].LogTargets, 2)
-	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[1].Bind9Daemon)
-	require.Nil(t, machineDaemonLogTargets.Apps[0].AccessPoints)
+	require.Nil(t, machineDaemonLogTargets.Daemons[0].KeaDaemon)
+	require.Len(t, machineDaemonLogTargets.Daemons[0].LogTargets, 2)
+	require.Nil(t, machineDaemonLogTargets.Daemons[0].Bind9Daemon)
 	// Machine with the access points
-	require.Len(t, machineAppAccessPoints.Apps, 1)
-	sortMachineDaemonsByName(machineAppAccessPoints)
-	require.NotNil(t, machineAppAccessPoints.Apps[0].AccessPoints)
-	require.Nil(t, machineAppAccessPoints.Apps[0].Daemons)
+	require.Len(t, machineDaemonAccessPoints.Daemons, 2)
+	sortMachineDaemonsByName(machineDaemonAccessPoints)
+	require.Len(t, machineDaemonAccessPoints.Daemons[0].AccessPoints, 1)
+	require.Empty(t, machineDaemonAccessPoints.Daemons[1].AccessPoints)
 	// Machine with Kea DHCP configurations
-	require.Len(t, machineKeaDHCPConfigs.Apps, 1)
-	require.Len(t, machineKeaDHCPConfigs.Apps[0].Daemons, 2)
+	require.Len(t, machineKeaDHCPConfigs.Daemons, 2)
 	sortMachineDaemonsByName(machineKeaDHCPConfigs)
-	require.NotNil(t, machineKeaDHCPConfigs.Apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	require.NotNil(t, machineKeaDHCPConfigs.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	// Machine with the access points and Kea DHCP configurations
-	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps, 1)
-	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].Daemons, 2)
-	sortMachineDaemonsByName(machineAppAccessPointsKeaDHCPConfigs)
-	require.NotNil(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
-	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].AccessPoints, 1)
+	require.Len(t, machineDaemonAccessPointsKeaDHCPConfigs.Daemons, 2)
+	sortMachineDaemonsByName(machineDaemonAccessPointsKeaDHCPConfigs)
+	require.NotNil(t, machineDaemonAccessPointsKeaDHCPConfigs.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	require.Len(t, machineDaemonAccessPointsKeaDHCPConfigs.Daemons[0].AccessPoints, 1)
 	// Machine with the HA services
-	require.Len(t, machineDaemonHAServices.Apps, 1)
-	require.Len(t, machineDaemonHAServices.Apps[0].Daemons, 2)
+	require.Len(t, machineDaemonHAServices.Daemons, 2)
 	sortMachineDaemonsByName(machineDaemonHAServices)
-	require.Len(t, machineDaemonHAServices.Apps[0].Daemons[0].Services, 1)
-	require.NotNil(t, machineDaemonHAServices.Apps[0].Daemons[0].Services[0].HAService)
-	require.Empty(t, machineDaemonHAServices.Apps[0].Daemons[1].Services)
+	require.Len(t, machineDaemonHAServices.Daemons[0].Services, 1)
+	require.NotNil(t, machineDaemonHAServices.Daemons[0].Services[0].HAService)
+	require.Empty(t, machineDaemonHAServices.Daemons[1].Services)
 }
 
 // Test that the machine is selected by the address and port of an access point.
@@ -389,51 +342,35 @@ func TestGetMachineByAddressAndAccessPointPort(t *testing.T) {
 	m1 := &Machine{Address: "fe80::1", AgentPort: 8080}
 	_ = AddMachine(db, m1)
 
-	a1 := &App{
-		MachineID: m1.ID,
-		Type:      AppTypeKea,
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m1.ID,
-				Type:      AccessPointControl,
-				Address:   "fe80::1",
-				Port:      8001,
-			},
+	d1 := NewDaemon(m1, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "fe80::1",
+			Port:    8001,
 		},
-	}
-	_, _ = AddApp(db, a1)
+	})
+	_ = AddDaemon(db, d1)
 
-	a2 := &App{
-		MachineID: m1.ID,
-		Type:      AppTypeKea,
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m1.ID,
-				Type:      AccessPointControl,
-				Address:   "127.0.0.1",
-				Port:      8003,
-			},
+	d2 := NewDaemon(m1, daemonname.DHCPv6, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "127.0.0.1",
+			Port:    8003,
 		},
-	}
-	_, _ = AddApp(db, a2)
+	})
+	_ = AddDaemon(db, d2)
 
 	m2 := &Machine{Address: "fe80::1:1", AgentPort: 8090}
 	_ = AddMachine(db, m2)
 
-	a3 := &App{
-		ID:        0,
-		MachineID: m2.ID,
-		Type:      AppTypeKea,
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m2.ID,
-				Type:      AccessPointControl,
-				Address:   "fe80::1:2",
-				Port:      8001,
-			},
+	d3 := NewDaemon(m2, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "fe80::1:2",
+			Port:    8001,
 		},
-	}
-	_, _ = AddApp(db, a3)
+	})
+	_ = AddDaemon(db, d3)
 
 	// Act
 	machine, err := GetMachineByAddressAndAccessPointPort(db, "fe80::1", 8001, nil)
@@ -454,33 +391,23 @@ func TestGetMachineByAddressAndAccessPointPortFilterByType(t *testing.T) {
 	m1 := &Machine{Address: "fe80::1", AgentPort: 8080}
 	_ = AddMachine(db, m1)
 
-	a1 := &App{
-		MachineID: m1.ID,
-		Type:      AppTypeKea,
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m1.ID,
-				Type:      AccessPointControl,
-				Address:   "127.0.0.1",
-				Port:      8001,
-			},
+	d1 := NewDaemon(m1, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "127.0.0.1",
+			Port:    8001,
 		},
-	}
-	_, _ = AddApp(db, a1)
+	})
+	_ = AddDaemon(db, d1)
 
-	a2 := &App{
-		MachineID: m1.ID,
-		Type:      AppTypeKea,
-		AccessPoints: []*AccessPoint{
-			{
-				MachineID: m1.ID,
-				Type:      AccessPointStatistics,
-				Address:   "127.0.0.1",
-				Port:      8003,
-			},
+	d2 := NewDaemon(m1, daemonname.DHCPv6, true, []*AccessPoint{
+		{
+			Type:    AccessPointStatistics,
+			Address: "127.0.0.1",
+			Port:    8003,
 		},
-	}
-	_, _ = AddApp(db, a2)
+	})
+	_ = AddDaemon(db, d2)
 
 	t.Run("Filter the Kea Control Agent only", func(t *testing.T) {
 		accessPointType := AccessPointControl
@@ -546,22 +473,16 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 		err = AddMachine(db, m)
 		require.NoError(t, err)
 
-		// add app
-		a := &App{
-			ID:        0,
-			MachineID: m.ID,
-			Type:      "bind9",
-			AccessPoints: []*AccessPoint{
-				{
-					MachineID: m.ID,
-					Type:      "control",
-					Address:   "localhost",
-					Port:      int64(8000 + i),
-					Key:       "",
-				},
+		// add daemon
+		d := NewDaemon(m, daemonname.Bind9, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(8000 + i),
+				Key:     "",
 			},
-		}
-		_, err = AddApp(db, a)
+		})
+		err = AddDaemon(db, d)
 		require.NoError(t, err)
 	}
 
@@ -591,19 +512,19 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.Len(t, ms, 2)
 
 	// check machine details
-	require.Len(t, ms[0].Apps, 1)
-	require.Len(t, ms[0].Apps[0].AccessPoints, 1)
-	require.Equal(t, "control", ms[0].Apps[0].AccessPoints[0].Type)
-	require.Equal(t, "localhost", ms[0].Apps[0].AccessPoints[0].Address)
-	require.EqualValues(t, 8001, ms[0].Apps[0].AccessPoints[0].Port)
-	require.Empty(t, ms[0].Apps[0].AccessPoints[0].Key)
+	require.Len(t, ms[0].Daemons, 1)
+	require.Len(t, ms[0].Daemons[0].AccessPoints, 1)
+	require.Equal(t, AccessPointControl, ms[0].Daemons[0].AccessPoints[0].Type)
+	require.Equal(t, "localhost", ms[0].Daemons[0].AccessPoints[0].Address)
+	require.EqualValues(t, 8001, ms[0].Daemons[0].AccessPoints[0].Port)
+	require.Empty(t, ms[0].Daemons[0].AccessPoints[0].Key)
 
-	require.Len(t, ms[1].Apps, 1)
-	require.Len(t, ms[1].Apps[0].AccessPoints, 1)
-	require.Equal(t, "control", ms[1].Apps[0].AccessPoints[0].Type)
-	require.Equal(t, "localhost", ms[1].Apps[0].AccessPoints[0].Address)
-	require.EqualValues(t, 8009, ms[1].Apps[0].AccessPoints[0].Port)
-	require.Empty(t, ms[1].Apps[0].AccessPoints[0].Key)
+	require.Len(t, ms[1].Daemons, 1)
+	require.Len(t, ms[1].Daemons[0].AccessPoints, 1)
+	require.Equal(t, AccessPointControl, ms[1].Daemons[0].AccessPoints[0].Type)
+	require.Equal(t, "localhost", ms[1].Daemons[0].AccessPoints[0].Address)
+	require.EqualValues(t, 8009, ms[1].Daemons[0].AccessPoints[0].Port)
+	require.Empty(t, ms[1].Daemons[0].AccessPoints[0].Key)
 
 	// check sorting by id asc
 	ms, total, err = GetMachinesByPage(db, 0, 100, nil, nil, "", SortDirAsc)
@@ -737,7 +658,7 @@ func TestGetUnauthorizedMachinesCount(t *testing.T) {
 	require.EqualValues(t, 8, count)
 }
 
-// Check if an attempt to delete a machine without specifying the apps
+// Check if an attempt to delete a machine without specifying the daemons
 // relation fails.
 func TestDeleteMachineOnly(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -754,11 +675,11 @@ func TestDeleteMachineOnly(t *testing.T) {
 	// delete machine
 	err = DeleteMachine(db, m)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "deleted machine with ID 1 has no apps relation")
+	require.Contains(t, err.Error(), "deleted machine with ID 1 has no daemons relation")
 }
 
-// Check if deleting machine and its apps works.
-func TestDeleteMachineWithApps(t *testing.T) {
+// Check if deleting machine and its daemons works.
+func TestDeleteMachineWithDaemons(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -770,20 +691,16 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app
-	a := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      AppTypeKea,
-	}
-	_, err = AddApp(db, a)
+	// add daemon
+	d := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, d)
 	require.NoError(t, err)
-	appID := a.ID
-	require.NotEqual(t, 0, appID)
+	daemonID := d.ID
+	require.NotEqual(t, 0, daemonID)
 
-	m.Apps = []*App{a}
+	m.Daemons = []*Daemon{d}
 
-	// reload machine from db to get apps relation loaded
+	// reload machine from db to get daemons relation loaded
 	err = RefreshMachineFromDB(db, m)
 	require.Nil(t, err)
 
@@ -791,10 +708,10 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	err = DeleteMachine(db, m)
 	require.NoError(t, err)
 
-	// check if app is also deleted
-	a, err = GetAppByID(db, appID)
+	// check if daemon is also deleted
+	d, err = GetDaemonByID(db, daemonID)
 	require.NoError(t, err)
-	require.Nil(t, a)
+	require.Nil(t, d)
 }
 
 // Test that the machine associated with an empty config report may be deleted
@@ -810,26 +727,19 @@ func TestDeleteMachineWithEmptyConfigReport(t *testing.T) {
 	}
 	_ = AddMachine(db, machine)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, _ := AddApp(db, app)
-	daemon := daemons[0]
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err := AddDaemon(db, daemon)
+	require.NoError(t, err)
 
 	configReport := &ConfigReport{
 		CheckerName: "empty",
 		Content:     nil,
 		DaemonID:    daemon.ID,
 	}
-	err := AddConfigReport(db, configReport)
+	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
-	machine.Apps = []*App{app}
+	machine.Daemons = []*Daemon{daemon}
 
 	// Act
 	err = DeleteMachine(db, machine)
@@ -851,27 +761,20 @@ func TestDeleteMachineWithConfigReport(t *testing.T) {
 	}
 	_ = AddMachine(db, machine)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	daemons, _ := AddApp(db, app)
-	daemon := daemons[0]
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err := AddDaemon(db, daemon)
+	require.NoError(t, err)
 
 	configReport := &ConfigReport{
 		CheckerName: "checker",
 		Content:     newPtr("my {daemon}"),
 		DaemonID:    daemon.ID,
-		RefDaemons:  daemons,
+		RefDaemons:  []*Daemon{daemon},
 	}
-	err := AddConfigReport(db, configReport)
+	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
-	machine.Apps = []*App{app}
+	machine.Daemons = []*Daemon{daemon}
 
 	// Act
 	err = DeleteMachine(db, machine)
@@ -894,15 +797,9 @@ func TestDeleteMachineWithKeaDaemonOrphans(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add an app.
-	a := &App{
-		MachineID: m.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-		},
-	}
-	_, err = AddApp(db, a)
+	// Add a daemon.
+	daemon := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	m, err = GetMachineByID(db, m.ID)
@@ -922,7 +819,7 @@ func TestDeleteMachineWithKeaDaemonOrphans(t *testing.T) {
 		SharedNetworkID: sharedNetwork.ID,
 		LocalSubnets: []*LocalSubnet{
 			{
-				DaemonID: a.Daemons[0].ID,
+				DaemonID: daemon.ID,
 			},
 		},
 	}
@@ -940,7 +837,7 @@ func TestDeleteMachineWithKeaDaemonOrphans(t *testing.T) {
 		LocalHosts: []LocalHost{
 			{
 				DataSource: HostDataSourceAPI,
-				DaemonID:   a.Daemons[0].ID,
+				DaemonID:   daemon.ID,
 			},
 		},
 	}
@@ -967,38 +864,33 @@ func TestDeleteMachineWithKeaDaemonOrphans(t *testing.T) {
 
 // Test deleting a machine and cascaded deletion of the orphaned
 // objects such as zones.
-func TestDeleteMachineWithBind9DaemonOrphans(t *testing.T) {
+func TestDeleteMachineWithDNSDaemonsOrphans(t *testing.T) {
+	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Add a machine.
-	m := &Machine{
+	machine := &Machine{
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
-	err := AddMachine(db, m)
-	require.NoError(t, err)
+	_ = AddMachine(db, machine)
 
-	// Add an app.
-	a := &App{
-		MachineID: m.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
-		},
-	}
-	_, err = AddApp(db, a)
-	require.NoError(t, err)
+	// Add daemons.
+	bind9Daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{})
+	_ = AddDaemon(db, bind9Daemon)
+	pdnsDaemon := NewDaemon(machine, daemonname.PDNS, true, []*AccessPoint{})
+	_ = AddDaemon(db, pdnsDaemon)
 
-	m, err = GetMachineByID(db, m.ID)
-	require.NoError(t, err)
+	// Re-fetch the machine instance.
+	machine, _ = GetMachineByID(db, machine.ID)
 
-	// Add a zone.
+	// Add zones.
 	zone := &Zone{
-		Name: "example.org",
+		Name: "exampleA.org",
 		LocalZones: []*LocalZone{
 			{
-				DaemonID: a.Daemons[0].ID,
+				DaemonID: bind9Daemon.ID,
 				Class:    "IN",
 				Type:     "master",
 				Serial:   1,
@@ -1006,11 +898,27 @@ func TestDeleteMachineWithBind9DaemonOrphans(t *testing.T) {
 			},
 		},
 	}
-	err = AddZones(db, zone)
-	require.NoError(t, err)
+	_ = AddZones(db, zone)
 
+	zone = &Zone{
+		Name: "exampleB.com",
+		LocalZones: []*LocalZone{
+			{
+				DaemonID: pdnsDaemon.ID,
+				Class:    "IN",
+				Type:     "master",
+				Serial:   1,
+				LoadedAt: time.Now(),
+			},
+		},
+	}
+	_ = AddZones(db, zone)
+
+	// Act
 	// Deleting the machine should cause deletion of the associated zone.
-	err = DeleteMachine(db, m)
+	err := DeleteMachine(db, machine)
+
+	// Assert
 	require.NoError(t, err)
 
 	returnedZones, _, err := GetZones(db, nil)
@@ -1067,32 +975,21 @@ func TestGetAllMachines(t *testing.T) {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		a := &App{
-			MachineID: m.ID,
-			Type:      AppTypeKea,
-			AccessPoints: []*AccessPoint{
-				{
-					MachineID: m.ID,
-					Type:      "control",
-					Address:   "localhost",
-					Port:      1234,
-					Key:       "",
-				},
+		d := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    1234,
+				Key:     "",
 			},
-			Daemons: []*Daemon{
-				{
-					Name:   "dhcp4",
-					Active: true,
-				},
-			},
-		}
-		_, err = AddApp(db, a)
+		})
+		err = AddDaemon(db, d)
 		require.NoError(t, err)
 
 		cr := &ConfigReview{
 			ConfigHash: "1234",
 			Signature:  "2345",
-			DaemonID:   a.Daemons[0].ID,
+			DaemonID:   d.ID,
 		}
 		err = AddConfigReview(db, cr)
 		require.NoError(t, err)
@@ -1110,12 +1007,11 @@ func TestGetAllMachines(t *testing.T) {
 	require.EqualValues(t, 4, machines[19].State.Cpus)
 	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
 
-	// Ensure that we fetched apps, daemons and config reviews too.
-	require.Len(t, machines[0].Apps, 1)
-	require.Len(t, machines[0].Apps[0].Daemons, 1)
-	require.NotNil(t, machines[0].Apps[0].Daemons[0].ConfigReview)
-	require.Equal(t, "1234", machines[0].Apps[0].Daemons[0].ConfigReview.ConfigHash)
-	require.Equal(t, "2345", machines[0].Apps[0].Daemons[0].ConfigReview.Signature)
+	// Ensure that we fetched daemons and config reviews too.
+	require.Len(t, machines[0].Daemons, 1)
+	require.NotNil(t, machines[0].Daemons[0].ConfigReview)
+	require.Equal(t, "1234", machines[0].Daemons[0].ConfigReview.ConfigHash)
+	require.Equal(t, "2345", machines[0].Daemons[0].ConfigReview.Signature)
 
 	// get only unauthorized machines
 	authorized := false
@@ -1136,6 +1032,385 @@ func TestGetAllMachines(t *testing.T) {
 	require.EqualValues(t, 20, total)
 }
 
+// Test that getting all machines with relations works.
+func TestGetAllMachinesWithRelations(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	_ = AddMachine(db, m)
+
+	mUnauthorized := &Machine{
+		Address:    "unauthorized",
+		AgentPort:  8081,
+		Authorized: false,
+	}
+	_ = AddMachine(db, mUnauthorized)
+
+	daemonKea := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{{
+		Type:    AccessPointControl,
+		Address: "kea",
+		Port:    8000,
+		Key:     "",
+	}})
+	daemonKea.LogTargets = append(daemonKea.LogTargets, &LogTarget{
+		Name:     "syslog",
+		Severity: "info",
+		Output:   "syslog",
+	})
+	_ = AddDaemon(db, daemonKea)
+	_ = AddConfigReview(db, &ConfigReview{
+		ConfigHash: "hash",
+		Signature:  "signature",
+		DaemonID:   daemonKea.ID,
+	})
+
+	daemonBind9 := NewDaemon(m, daemonname.Bind9, true, []*AccessPoint{{
+		Type:    AccessPointControl,
+		Address: "bind9",
+		Port:    8053,
+		Key:     "",
+	}})
+	_ = AddDaemon(db, daemonBind9)
+
+	daemonPDNS := NewDaemon(m, daemonname.PDNS, true, []*AccessPoint{{
+		Type:    AccessPointControl,
+		Address: "pdns",
+		Port:    8054,
+		Key:     "",
+	}})
+	_ = AddDaemon(db, daemonPDNS)
+
+	_ = AddService(db, &Service{
+		BaseService: BaseService{
+			Name:    "service",
+			Daemons: []*Daemon{daemonKea},
+		},
+		HAService: &BaseHAService{
+			HAType:       daemonname.DHCPv4,
+			HAMode:       HAModeHotStandby,
+			Relationship: "server1",
+			PrimaryID:    daemonKea.ID,
+		},
+	})
+
+	t.Run("No relations - all", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, nil)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 2)
+		require.Nil(t, machines[0].Daemons)
+	})
+
+	t.Run("No relations - unauthorized", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(false))
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Equal(t, "unauthorized", machines[0].Address)
+	})
+
+	t.Run("No relations - authorized", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true))
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Equal(t, "localhost", machines[0].Address)
+	})
+
+	t.Run("With daemons", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationDaemons,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+	})
+
+	t.Run("With log targets", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationDaemonLogTargets,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Len(t, machines[0].Daemons[0].LogTargets, 1)
+		require.Equal(t, "syslog", machines[0].Daemons[0].LogTargets[0].Name)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With access points", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationDaemonAccessPoints,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Len(t, machines[0].Daemons[0].AccessPoints, 1)
+		require.Equal(t, "kea", machines[0].Daemons[0].AccessPoints[0].Address)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Len(t, machines[0].Daemons[1].AccessPoints, 1)
+		require.Equal(t, "bind9", machines[0].Daemons[1].AccessPoints[0].Address)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Len(t, machines[0].Daemons[2].AccessPoints, 1)
+		require.Equal(t, "pdns", machines[0].Daemons[2].AccessPoints[0].Address)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With Kea daemons", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationKeaDaemons,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.NotNil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With BIND9 daemons", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationBind9Daemons,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.NotNil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With PDNS daemons", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationPDNSDaemons,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.NotNil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With Kea DHCP configs", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationKeaDHCPConfigs,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.NotNil(t, machines[0].Daemons[0].KeaDaemon)
+		require.NotNil(t, machines[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With config reviews", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationDaemonConfigReview,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.NotNil(t, machines[0].Daemons[0].ConfigReview)
+		require.Equal(t, "hash", machines[0].Daemons[0].ConfigReview.ConfigHash)
+		require.Equal(t, "signature", machines[0].Daemons[0].ConfigReview.Signature)
+		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With services", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationDaemonHAServices,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Empty(t, machines[0].Daemons[0].LogTargets)
+		require.Empty(t, machines[0].Daemons[0].AccessPoints)
+		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
+		require.Nil(t, machines[0].Daemons[0].ConfigReview)
+		require.Len(t, machines[0].Daemons[0].Services, 1)
+		require.Equal(t, "service", machines[0].Daemons[0].Services[0].Name)
+		require.NotNil(t, machines[0].Daemons[0].Services[0].HAService)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.Nil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+
+	t.Run("With all relations", func(t *testing.T) {
+		// Act
+		machines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true),
+			MachineRelationBind9Daemons,
+			MachineRelationDaemonAccessPoints,
+			MachineRelationDaemonConfigReview,
+			MachineRelationDaemonHAServices,
+			MachineRelationKeaDaemons,
+			MachineRelationKeaDHCPConfigs,
+			MachineRelationPDNSDaemons,
+			MachineRelationDaemonLogTargets,
+		)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, machines, 1)
+		require.Len(t, machines[0].Daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
+		require.Len(t, machines[0].Daemons[0].LogTargets, 1)
+		require.Len(t, machines[0].Daemons[0].AccessPoints, 1)
+		require.NotNil(t, machines[0].Daemons[0].KeaDaemon)
+		require.NotNil(t, machines[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+		require.NotNil(t, machines[0].Daemons[0].ConfigReview)
+		require.Len(t, machines[0].Daemons[0].Services, 1)
+		require.Equal(t, "service", machines[0].Daemons[0].Services[0].Name)
+		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
+		require.NotNil(t, machines[0].Daemons[1].Bind9Daemon)
+		require.Len(t, machines[0].Daemons[1].AccessPoints, 1)
+		require.Nil(t, machines[0].Daemons[1].ConfigReview)
+		require.Empty(t, machines[0].Daemons[1].Services)
+		require.Equal(t, daemonname.PDNS, machines[0].Daemons[2].Name)
+		require.NotNil(t, machines[0].Daemons[2].PDNSDaemon)
+		require.Len(t, machines[0].Daemons[2].AccessPoints, 1)
+		require.Nil(t, machines[0].Daemons[2].ConfigReview)
+		require.Empty(t, machines[0].Daemons[2].Services)
+	})
+}
+
 // Test MachineTag interface implementation.
 func TestMachineTag(t *testing.T) {
 	machine := Machine{
@@ -1150,87 +1425,6 @@ func TestMachineTag(t *testing.T) {
 	require.Equal(t, "192.0.2.2", machine.GetAddress())
 	require.EqualValues(t, 1234, machine.GetAgentPort())
 	require.Equal(t, "cool.example.org", machine.GetHostname())
-}
-
-// Check if getting all machines simplified works.
-func TestGetAllMachinesSimplified(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// add 20 machines
-	for i := 1; i <= 20; i++ {
-		m := &Machine{
-			Address:   "localhost",
-			AgentPort: 8080 + int64(i),
-			Error:     "some error",
-			State: MachineState{
-				Hostname: "aaaa",
-				Cpus:     4,
-			},
-			Authorized: i%2 == 0,
-		}
-		err := AddMachine(db, m)
-		require.NoError(t, err)
-
-		a := &App{
-			MachineID: m.ID,
-			Type:      AppTypeKea,
-			AccessPoints: []*AccessPoint{
-				{
-					MachineID: m.ID,
-					Type:      "control",
-					Address:   "localhost",
-					Port:      1234,
-					Key:       "",
-				},
-			},
-			Daemons: []*Daemon{
-				{
-					Name:   "dhcp4",
-					Active: true,
-				},
-			},
-		}
-		_, err = AddApp(db, a)
-		require.NoError(t, err)
-
-		cr := &ConfigReview{
-			ConfigHash: "1234",
-			Signature:  "2345",
-			DaemonID:   a.Daemons[0].ID,
-		}
-		err = AddConfigReview(db, cr)
-		require.NoError(t, err)
-	}
-
-	// get all machines should return 20 machines
-	machines, err := GetAllMachinesSimplified(db, nil)
-	require.NoError(t, err)
-	require.Len(t, machines, 20)
-	require.EqualValues(t, "localhost", machines[0].Address)
-	require.EqualValues(t, "localhost", machines[19].Address)
-	require.EqualValues(t, "some error", machines[0].Error)
-	require.EqualValues(t, "some error", machines[19].Error)
-	require.EqualValues(t, 4, machines[0].State.Cpus)
-	require.EqualValues(t, 4, machines[19].State.Cpus)
-	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
-
-	// Ensure that we fetched apps and daemons but no config reviews.
-	require.Len(t, machines[0].Apps, 1)
-	require.Len(t, machines[0].Apps[0].Daemons, 1)
-	require.Nil(t, machines[0].Apps[0].Daemons[0].ConfigReview)
-
-	// get only unauthorized machines
-	authorized := false
-	machines, err = GetAllMachinesSimplified(db, &authorized)
-	require.NoError(t, err)
-	require.Len(t, machines, 10)
-
-	// and now only authorized machines
-	authorized = true
-	machines, err = GetAllMachinesSimplified(db, &authorized)
-	require.NoError(t, err)
-	require.Len(t, machines, 10)
 }
 
 // Check if getting all machines without any relations works.
@@ -1253,32 +1447,21 @@ func TestGetAllMachinesNoRelations(t *testing.T) {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		a := &App{
-			MachineID: m.ID,
-			Type:      AppTypeKea,
-			AccessPoints: []*AccessPoint{
-				{
-					MachineID: m.ID,
-					Type:      "control",
-					Address:   "localhost",
-					Port:      1234,
-					Key:       "",
-				},
+		d := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    1234,
+				Key:     "",
 			},
-			Daemons: []*Daemon{
-				{
-					Name:   "dhcp4",
-					Active: true,
-				},
-			},
-		}
-		_, err = AddApp(db, a)
+		})
+		err = AddDaemon(db, d)
 		require.NoError(t, err)
 
 		cr := &ConfigReview{
 			ConfigHash: "1234",
 			Signature:  "2345",
-			DaemonID:   a.Daemons[0].ID,
+			DaemonID:   d.ID,
 		}
 		err = AddConfigReview(db, cr)
 		require.NoError(t, err)
@@ -1297,7 +1480,7 @@ func TestGetAllMachinesNoRelations(t *testing.T) {
 			require.NotEqual(t, machines[i-1].AgentPort, machine.AgentPort)
 		}
 		// Ensure that no relations were involved.
-		require.Nil(t, machine.Apps)
+		require.Nil(t, machine.Daemons)
 	}
 
 	// get only unauthorized machines

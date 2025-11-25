@@ -37,7 +37,7 @@ func (d *EventsDump) Execute() error {
 		// Severity - accepts all events
 		0,
 		// Filters
-		nil, nil, &d.machineID, nil,
+		nil, &d.machineID, nil,
 		// Sorting
 		"created_at", dbmodel.SortDirDesc)
 	if err != nil {

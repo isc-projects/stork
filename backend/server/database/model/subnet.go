@@ -13,7 +13,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
@@ -60,6 +60,21 @@ const (
 	StatNameTotalOutOfPoolPDs StatName = "total-out-of-pool-pds"
 	// Number of assigned out-of-pool delegated prefixes.
 	StatNameAssignedOutOfPoolPDs StatName = "assigned-out-of-pool-pds"
+)
+
+// Identifier of the relations between a subnet and other tables.
+type SubnetRelation string
+
+const (
+	SubnetRelationLocalSubnets             SubnetRelation = "LocalSubnets"
+	SubnetRelationLocalSubnetsAddressPools SubnetRelation = "LocalSubnets.AddressPools"
+	SubnetRelationLocalSubnetsPrefixPools  SubnetRelation = "LocalSubnets.PrefixPools"
+	SubnetRelationSharedNetwork            SubnetRelation = "SharedNetwork"
+	SubnetRelationLocalSharedNetworks      SubnetRelation = "SharedNetwork.LocalSharedNetworks"
+	SubnetRelationDaemons                  SubnetRelation = "LocalSubnets.Daemon"
+	SubnetRelationKeaDaemons               SubnetRelation = "LocalSubnets.Daemon.KeaDaemon"
+	SubnetRelationAccessPoints             SubnetRelation = "LocalSubnets.Daemon.AccessPoints"
+	SubnetRelationMachines                 SubnetRelation = "LocalSubnets.Daemon.Machine"
 )
 
 // Custom statistic type to redefine JSON marshalling.
@@ -363,7 +378,7 @@ func (s Subnet) PopulateDaemons(dbi dbops.DBI) error {
 		if ls.DaemonID == 0 {
 			return pkgerrors.Errorf("problem with populating daemons: subnet %d lacks daemon ID", s.ID)
 		}
-		daemon, err := GetDaemonByID(dbi, ls.DaemonID)
+		daemon, err := GetKeaDaemonByID(dbi, ls.DaemonID)
 		if err != nil {
 			return pkgerrors.WithMessage(err, "problem with populating daemons")
 		}
@@ -516,16 +531,16 @@ func AddLocalSubnets(dbi dbops.DBI, subnet *Subnet) error {
 func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 	subnet := &Subnet{}
 	err := dbi.Model(subnet).
-		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsAddressPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Relation("LocalSubnets.Daemon.App.Machine").
-		Relation("LocalSubnets.Daemon.KeaDaemon").
-		Relation("SharedNetwork.LocalSharedNetworks").
+		Relation(string(SubnetRelationAccessPoints)).
+		Relation(string(SubnetRelationMachines)).
+		Relation(string(SubnetRelationKeaDaemons)).
+		Relation(string(SubnetRelationLocalSharedNetworks)).
 		Where("subnet.id = ?", subnetID).
 		Select()
 	if err != nil {
@@ -544,14 +559,14 @@ func GetSubnetsByDaemonID(dbi dbops.DBI, daemonID int64) ([]Subnet, error) {
 
 	q := dbi.Model(&subnets).
 		Join("INNER JOIN local_subnet AS ls ON ls.subnet_id = subnet.id").
-		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsAddressPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Relation("SharedNetwork").
+		Relation(string(SubnetRelationAccessPoints)).
+		Relation(string(SubnetRelationSharedNetwork)).
 		Where("ls.daemon_id = ?", daemonID)
 
 	err := q.Select()
@@ -569,14 +584,14 @@ func GetSubnetsByDaemonID(dbi dbops.DBI, daemonID int64) ([]Subnet, error) {
 func GetSubnetsByPrefix(dbi dbops.DBI, prefix string) ([]Subnet, error) {
 	subnets := []Subnet{}
 	err := dbi.Model(&subnets).
-		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsAddressPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Relation("SharedNetwork").
+		Relation(string(SubnetRelationAccessPoints)).
+		Relation(string(SubnetRelationSharedNetwork)).
 		Where("subnet.prefix = ?", prefix).
 		Select()
 	if err != nil {
@@ -594,15 +609,15 @@ func GetSubnetsByPrefix(dbi dbops.DBI, prefix string) ([]Subnet, error) {
 func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets).
-		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsAddressPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Relation("LocalSubnets.Daemon.App.Machine").
-		Relation("SharedNetwork").
+		Relation(string(SubnetRelationAccessPoints)).
+		Relation(string(SubnetRelationMachines)).
+		Relation(string(SubnetRelationSharedNetwork)).
 		OrderExpr("id ASC")
 
 	// Let's be liberal and allow other values than 0 too. The only special
@@ -626,13 +641,13 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets).
-		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsAddressPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Relation(string(SubnetRelationAccessPoints)).
 		OrderExpr("id ASC").
 		Where("subnet.shared_network_id IS NULL")
 
@@ -654,7 +669,9 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 
 // Container for values filtering subnets fetched by page.
 type SubnetsByPageFilters struct {
-	AppID         *int64
+	// TODO: Code implemented in below line is a temporary solution for virtual applications.
+	MachineID     *int64
+	DaemonID      *int64
 	LocalSubnetID *int64
 	Family        *int64
 	Text          *string
@@ -688,37 +705,41 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets).Distinct()
 
-	if filters.AppID != nil || filters.LocalSubnetID != nil || filters.Text != nil {
+	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil ||
+		// TODO: Code implemented in below line is a temporary solution for virtual applications.
+		filters.MachineID != nil {
 		q = q.Join("INNER JOIN local_subnet AS ls ON subnet.id = ls.subnet_id")
-	}
-	// When filtering by appID we also need the local_subnet table as it holds the
-	// application identifier.
-	if filters.AppID != nil {
-		q = q.Join("INNER JOIN daemon AS d ON ls.daemon_id = d.id")
+		// TODO: Code implemented in below block is a temporary solution for virtual applications.
+		if filters.MachineID != nil {
+			q = q.Join("INNER JOIN daemon AS d ON ls.daemon_id = d.id")
+			q = q.Where("d.machine_id = ?", *filters.MachineID)
+		}
 	}
 	// Pools are also required when trying to filter by text.
 	if filters.Text != nil {
 		q = q.Join("LEFT JOIN address_pool AS ap ON ls.id = ap.local_subnet_id")
 	}
 	// Include pools, shared network the subnets belong to, local subnet info
-	// and the associated apps in the results.
-	q = q.Relation("SharedNetwork").
-		Relation("LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+	// and the associated daemons in the results.
+	q = q.Relation(string(SubnetRelationSharedNetwork)).
+		Relation(string(SubnetRelationLocalSubnetsAddressPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.Daemon.App.Machine")
+		Relation(string(SubnetRelationAccessPoints)).
+		// TODO: Code implemented in below line is a temporary solution for virtual applications.
+		Relation(string(SubnetRelationMachines))
 
 	// Applicable family values are 4 and 6.
 	if filters.Family != nil {
 		q = q.Where("family(subnet.prefix) = ?", *filters.Family)
 	}
 
-	// Filter by appID.
-	if filters.AppID != nil {
-		q = q.Where("d.app_id = ?", *filters.AppID)
+	// Filter by daemonID.
+	if filters.DaemonID != nil {
+		q = q.Where("ls.daemon_id = ?", *filters.DaemonID)
 	}
 
 	// Filter by local subnet ID.
@@ -763,9 +784,9 @@ func GetSubnetsWithLocalSubnets(dbi dbops.DBI) ([]*Subnet, error) {
 	q := dbi.Model(&subnets)
 	// only selected columns are returned for performance reasons
 	q = q.Column("id", "shared_network_id", "prefix")
-	q = q.Relation("LocalSubnets")
-	q = q.Relation("LocalSubnets.AddressPools")
-	q = q.Relation("LocalSubnets.PrefixPools")
+	q = q.Relation(string(SubnetRelationLocalSubnets))
+	q = q.Relation(string(SubnetRelationLocalSubnetsAddressPools))
+	q = q.Relation(string(SubnetRelationLocalSubnetsPrefixPools))
 	q = q.Order("shared_network_id ASC")
 
 	err := q.Select()
@@ -872,17 +893,6 @@ func DeleteDaemonFromSubnets(dbi dbops.DBI, daemonID int64) (int64, error) {
 	return int64(result.RowsAffected()), nil
 }
 
-// Finds and returns an app associated with a subnet having the specified id.
-func (s *Subnet) GetApp(appID int64) *App {
-	for _, s := range s.LocalSubnets {
-		daemon := s.Daemon
-		if daemon.App != nil && daemon.App.ID == appID {
-			return daemon.App
-		}
-	}
-	return nil
-}
-
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application. Returns a list of added subnets.
@@ -987,8 +997,8 @@ func CommitNetworksIntoDB(dbi dbops.DBI, networks []SharedNetwork, subnets []Sub
 	return
 }
 
-// Fetch all local subnets for indicated app.
-func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
+// Fetch all local subnets for indicated daemon.
+func GetDaemonLocalSubnets(dbi dbops.DBI, daemonID int64) ([]*LocalSubnet, error) {
 	subnets := []*LocalSubnet{}
 	q := dbi.Model(&subnets)
 	q = q.Join("INNER JOIN daemon AS d ON local_subnet.daemon_id = d.id")
@@ -997,15 +1007,14 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 	q = q.Relation("Subnet")
 	q = q.Relation("AddressPools")
 	q = q.Relation("PrefixPools")
-	q = q.Relation("Daemon.App")
-	q = q.Where("d.app_id = ?", appID)
+	q = q.Where("d.id = ?", daemonID)
 
 	err := q.Select()
 	if err != nil {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem getting all local subnets for app %d", appID)
+		err = pkgerrors.Wrapf(err, "problem getting all local subnets for daemon %d", daemonID)
 		return nil, err
 	}
 	return subnets, nil
@@ -1057,7 +1066,7 @@ func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics utilizationStats) er
 	return err
 }
 
-// Deletes subnets which are not associated with any apps. Returns deleted subnet
+// Deletes subnets which are not associated with any daemons. Returns deleted subnet
 // count and an error.
 func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 	subquery := dbi.Model(&[]LocalSubnet{}).

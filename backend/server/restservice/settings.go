@@ -32,7 +32,7 @@ func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsPa
 		KeaHostsPullerInterval:       dbSettingsMap["kea_hosts_puller_interval"].(int64),
 		KeaStatsPullerInterval:       dbSettingsMap["kea_stats_puller_interval"].(int64),
 		KeaStatusPullerInterval:      dbSettingsMap["kea_status_puller_interval"].(int64),
-		AppsStatePullerInterval:      dbSettingsMap["apps_state_puller_interval"].(int64),
+		AppsStatePullerInterval:      dbSettingsMap["state_puller_interval"].(int64),
 		EnableMachineRegistration:    dbSettingsMap["enable_machine_registration"].(bool),
 		EnableOnlineSoftwareVersions: dbSettingsMap["enable_online_software_versions"].(bool),
 	}
@@ -93,9 +93,9 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		log.WithError(err).Error("Cannot update kea_status_puller_interval")
 		return errRsp
 	}
-	err = dbmodel.SetSettingInt(r.DB, "apps_state_puller_interval", s.AppsStatePullerInterval)
+	err = dbmodel.SetSettingInt(r.DB, "state_puller_interval", s.AppsStatePullerInterval)
 	if err != nil {
-		log.WithError(err).Error("Cannot update apps_state_puller_interval")
+		log.WithError(err).Error("Cannot update state_puller_interval")
 		return errRsp
 	}
 	err = dbmodel.SetSettingBool(r.DB, "enable_machine_registration", s.EnableMachineRegistration)

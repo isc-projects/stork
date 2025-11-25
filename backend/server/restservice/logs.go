@@ -57,7 +57,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	}
 
 	// Send the request to the agent to tail the file.
-	contents, err := r.Agents.TailTextFile(ctx, dbLogTarget.Daemon.App.Machine, dbLogTarget.Output, maxLength)
+	contents, err := r.Agents.TailTextFile(ctx, dbLogTarget.Daemon.Machine, dbLogTarget.Output, maxLength)
 
 	errStr := ""
 	if err != nil {
@@ -65,15 +65,17 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	}
 
 	// Everything ok. Return the response.
+	app := dbLogTarget.Daemon.GetVirtualApp()
+
 	tail := &models.LogTail{
 		Machine: &models.AppMachine{
-			ID:       dbLogTarget.Daemon.App.MachineID,
-			Address:  dbLogTarget.Daemon.App.Machine.Address,
-			Hostname: dbLogTarget.Daemon.App.Machine.State.Hostname,
+			ID:       dbLogTarget.Daemon.MachineID,
+			Address:  dbLogTarget.Daemon.Machine.Address,
+			Hostname: dbLogTarget.Daemon.Machine.State.Hostname,
 		},
-		AppID:           storkutil.Ptr(dbLogTarget.Daemon.App.ID),
-		AppName:         storkutil.Ptr(dbLogTarget.Daemon.App.Name),
-		AppType:         storkutil.Ptr(dbLogTarget.Daemon.App.Type.String()),
+		AppID:           storkutil.Ptr(app.ID),
+		AppName:         storkutil.Ptr(app.Name),
+		AppType:         storkutil.Ptr(string(app.Type)),
 		LogTargetOutput: storkutil.Ptr(dbLogTarget.Output),
 		Contents:        contents,
 		Error:           errStr,

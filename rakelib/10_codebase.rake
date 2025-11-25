@@ -160,25 +160,25 @@ end
 file agent_grpc_pb_go_file => [agent_pb_go_file]
 CLEAN.append agent_pb_go_file, agent_grpc_pb_go_file
 
-std_option_defs6_go_file = "backend/appcfg/kea/stdoptiondef6.go"
+std_option_defs6_go_file = "backend/daemoncfg/kea/stdoptiondef6.go"
 file std_option_defs6_go_file => [GO, CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
     "--input", std_dhcpv6_option_definitions_json,
     "--output", std_option_defs6_go_file,
-    "--template", "backend/appcfg/kea/stdoptiondef6.go.template"
+    "--template", "backend/daemoncfg/kea/stdoptiondef6.go.template"
     Dir.chdir('backend') do
-        sh GO, "fmt", "./appcfg/kea/..."
+        sh GO, "fmt", "./daemoncfg/kea/..."
     end
 end
 
-std_option_defs4_go_file = "backend/appcfg/kea/stdoptiondef4.go"
+std_option_defs4_go_file = "backend/daemoncfg/kea/stdoptiondef4.go"
 file std_option_defs4_go_file => [GO, CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
     "--input", std_dhcpv4_option_definitions_json,
     "--output", std_option_defs4_go_file,
-    "--template", "backend/appcfg/kea/stdoptiondef4.go.template"
+    "--template", "backend/daemoncfg/kea/stdoptiondef4.go.template"
     Dir.chdir('backend') do
-        sh GO, "fmt", "./appcfg/kea/..."
+        sh GO, "fmt", "./daemoncfg/kea/..."
     end
 end
 
@@ -467,6 +467,9 @@ namespace :gen do
 
         desc 'Generate standard DHCP option definitions for the backend'
         task :std_option_defs => [std_option_defs4_go_file, std_option_defs6_go_file]
+
+        desc 'Generate Protobuf files for the backend'
+        task :protobuf => [agent_pb_go_file, agent_grpc_pb_go_file]
     end
 
     namespace :ui do

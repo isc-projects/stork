@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -59,20 +60,19 @@ func TestAddZonesOverlap(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add two apps that share zone information.
-	var apps []*App
+	// Add two daemons that share zone information.
+	var daemons []*Daemon
 	for i := 0; i < 2; i++ {
-		apps = append(apps, &App{
-			ID:        0,
-			MachineID: machine.ID,
-			Type:      AppTypeKea,
-			Daemons: []*Daemon{
-				NewBind9Daemon(true),
+		daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(8000 + i),
 			},
 		})
-		addedDaemons, err := AddApp(db, apps[i])
+		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
-		require.Len(t, addedDaemons, 1)
+		daemons = append(daemons, daemon)
 	}
 
 	randomZones := testutil.GenerateRandomZones(100)
@@ -84,7 +84,7 @@ func TestAddZonesOverlap(t *testing.T) {
 			Name: randomZones[i].Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -97,14 +97,14 @@ func TestAddZonesOverlap(t *testing.T) {
 	err = AddZones(db, zones...)
 	require.NoError(t, err)
 
-	// Make sure that the zones have been added and are associated with one server.
+	// Make sure that the zones have been added and are associated with one daemon.
 	zones, total, err := GetZones(db, nil, ZoneRelationLocalZones)
 	require.NoError(t, err)
 	require.Equal(t, 100, total)
 	require.Len(t, zones, 100)
 	for _, zone := range zones {
 		require.Len(t, zone.LocalZones, 1)
-		require.Equal(t, zone.LocalZones[0].DaemonID, apps[0].Daemons[0].ID)
+		require.Equal(t, zone.LocalZones[0].DaemonID, daemons[0].ID)
 	}
 
 	// This time associate the same zones with another server.
@@ -114,7 +114,7 @@ func TestAddZonesOverlap(t *testing.T) {
 			Name: randomZones[i].Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: apps[1].Daemons[0].ID,
+					DaemonID: daemons[1].ID,
 					View:     "_bind",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -153,19 +153,17 @@ func TestGetZones(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
-	// Store zones in the database and associate them with our app.
+	// Store zones in the database and associate them with our daemon.
 	randomZones := testutil.GenerateRandomZones(25)
 	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
@@ -179,7 +177,7 @@ func TestGetZones(t *testing.T) {
 			Name: randomZones[i].Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: addedDaemons[0].ID,
+					DaemonID: daemon.ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -201,8 +199,8 @@ func TestGetZones(t *testing.T) {
 	})
 
 	t.Run("relations", func(t *testing.T) {
-		// Include daemon and app tables.
-		zones, total, err := GetZones(db, nil, ZoneRelationLocalZonesApp)
+		// Include a daemon table.
+		zones, total, err := GetZones(db, nil, ZoneRelationLocalZonesMachine)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)
@@ -210,7 +208,7 @@ func TestGetZones(t *testing.T) {
 		for _, zone := range zones {
 			require.Len(t, zone.LocalZones, 1)
 			require.NotNil(t, zone.LocalZones[0].Daemon)
-			require.NotNil(t, zone.LocalZones[0].Daemon.App)
+			require.NotNil(t, zone.LocalZones[0].Daemon.Machine)
 		}
 	})
 
@@ -372,19 +370,17 @@ func TestGetZonesFilterByRootZone(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
-	// Store zones in the database and associate them with our app.
+	// Store zones in the database and associate them with our daemon.
 	var zones []*Zone
 	rootZone := &Zone{
 		Name:       ".",
@@ -397,7 +393,7 @@ func TestGetZonesFilterByRootZone(t *testing.T) {
 	zones = append(zones, rootZone, anotherZone)
 	for _, zone := range zones {
 		zone.LocalZones = append(zone.LocalZones, &LocalZone{
-			DaemonID: addedDaemons[0].ID,
+			DaemonID: daemon.ID,
 			View:     "_default",
 			Class:    "IN",
 			Serial:   123456,
@@ -446,8 +442,8 @@ func TestGetZonesFilterByRootZone(t *testing.T) {
 	})
 }
 
-// Test getting zones with app ID filter.
-func TestGetZonesWithAppIDFilter(t *testing.T) {
+// Test getting zones with daemon ID filter.
+func TestGetZonesWithDaemonIDFilter(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -459,28 +455,25 @@ func TestGetZonesWithAppIDFilter(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add several apps.
-	var apps []*App
+	// Add several daemons.
+	var daemons []*Daemon
 	for i := 0; i < 3; i++ {
-		app := &App{
-			ID:        0,
-			MachineID: machine.ID,
-			Type:      AppTypeBind9,
-			Name:      fmt.Sprintf("app%d", i),
-			Daemons: []*Daemon{
-				NewBind9Daemon(true),
+		daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(8000 + i),
 			},
-		}
-		addedDaemons, err := AddApp(db, app)
+		})
+		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
-		require.Len(t, addedDaemons, 1)
-		apps = append(apps, app)
+		daemons = append(daemons, daemon)
 	}
 
-	// Generate random zones and associate them with the apps.
+	// Generate random zones and associate them with the daemons.
 	randomZones := testutil.GenerateRandomZones(75)
 	for i, randomZone := range randomZones {
-		daemonID := apps[i%len(apps)].Daemons[0].ID
+		daemonID := daemons[i%len(daemons)].ID
 		zone := &Zone{
 			Name: randomZone.Name,
 			LocalZones: []*LocalZone{
@@ -498,40 +491,40 @@ func TestGetZonesWithAppIDFilter(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// Sort apps by app ID to ensure that the last one has the highest ID.
+	// Sort daemons by daemon ID to ensure that the last one has the highest ID.
 	// When we increase this ID by 1 we should get non-existing ID and
 	// no zones should be returned.
-	sort.Slice(apps, func(i, j int) bool {
-		return apps[i].ID < apps[j].ID
+	sort.Slice(daemons, func(i, j int) bool {
+		return daemons[i].ID < daemons[j].ID
 	})
 
-	// Make sure that the zones are returned for each app.
+	// Make sure that the zones are returned for each daemon.
 	for i := 0; i < 3; i++ {
 		filter := &GetZonesFilter{
-			AppID: storkutil.Ptr(apps[i].ID),
+			DaemonID: storkutil.Ptr(daemons[i].ID),
 		}
-		zones, total, err := GetZones(db, filter, ZoneRelationLocalZonesApp)
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 25, total)
 		require.Len(t, zones, 25)
 		for _, zone := range zones {
-			require.Equal(t, apps[i].ID, zone.LocalZones[0].Daemon.AppID)
+			require.Equal(t, daemons[i].ID, zone.LocalZones[0].DaemonID)
 		}
 	}
 
-	// Make sure that the zones are not returned for non-existing app ID.
+	// Make sure that the zones are not returned for non-existing daemon ID.
 	filter := &GetZonesFilter{
-		AppID: storkutil.Ptr(apps[2].ID + 1),
+		DaemonID: storkutil.Ptr(daemons[2].ID + 1),
 	}
-	zones, total, err := GetZones(db, filter, ZoneRelationLocalZonesApp)
+	zones, total, err := GetZones(db, filter)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, zones)
 }
 
-// Test getting zones with app ID filter when all apps and some views
+// Test getting zones with daemon ID filter when all daemons and some views
 // shared the same zones.
-func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
+func TestGetZonesWithDaemonIDFilterOverlappingZones(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -543,32 +536,29 @@ func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add several apps.
-	var apps []*App
+	// Add several daemons.
+	var daemons []*Daemon
 	for i := 0; i < 3; i++ {
-		app := &App{
-			ID:        0,
-			MachineID: machine.ID,
-			Type:      AppTypeBind9,
-			Name:      fmt.Sprintf("app%d", i),
-			Daemons: []*Daemon{
-				NewBind9Daemon(true),
+		daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(8000 + i),
 			},
-		}
-		addedDaemons, err := AddApp(db, app)
+		})
+		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
-		require.Len(t, addedDaemons, 1)
-		apps = append(apps, app)
+		daemons = append(daemons, daemon)
 	}
 
-	// Generate random zones and associate them with the apps.
+	// Generate random zones and associate them with the daemons.
 	randomZones := testutil.GenerateRandomZones(75)
 	for _, randomZone := range randomZones {
 		zone := &Zone{
 			Name: randomZone.Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -576,7 +566,7 @@ func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
 					LoadedAt: time.Now().UTC(),
 				},
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					View:     "trusted",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -584,7 +574,7 @@ func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
 					LoadedAt: time.Now().UTC(),
 				},
 				{
-					DaemonID: apps[1].Daemons[0].ID,
+					DaemonID: daemons[1].ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -592,7 +582,7 @@ func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
 					LoadedAt: time.Now().UTC(),
 				},
 				{
-					DaemonID: apps[2].Daemons[0].ID,
+					DaemonID: daemons[2].ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -608,9 +598,9 @@ func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
 	// Make sure that the zones are returned for each app.
 	for i := 0; i < 3; i++ {
 		filter := &GetZonesFilter{
-			AppID: storkutil.Ptr(apps[i].ID),
+			DaemonID: storkutil.Ptr(daemons[i].ID),
 		}
-		zones, total, err := GetZones(db, filter, ZoneRelationLocalZonesApp)
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 75, total)
 		require.Len(t, zones, 75)
@@ -634,24 +624,21 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 3; i++ {
-		app := &App{
-			ID:        0,
-			MachineID: machine.ID,
-			Type:      AppTypeBind9,
-			Name:      fmt.Sprintf("app%d", i),
-			Daemons: []*Daemon{
-				NewBind9Daemon(true),
+		daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(8000 + i),
 			},
-		}
-		addedDaemons, err := AddApp(db, app)
+		})
+		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
-		require.Len(t, addedDaemons, 1)
 
 		zone := &Zone{
 			Name: fmt.Sprintf("example%d.org", i),
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: addedDaemons[0].ID,
+					DaemonID: daemon.ID,
 					View:     fmt.Sprintf("view%d", i),
 					Class:    "IN",
 					Serial:   123456,
@@ -666,8 +653,7 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 
 	t.Run("filter by zone name", func(t *testing.T) {
 		filter := &GetZonesFilter{
-			AppType: storkutil.Ptr("bind9"),
-			Text:    storkutil.Ptr("mple0.org"),
+			Text: storkutil.Ptr("mple0.org"),
 		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
@@ -676,22 +662,22 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 		require.Equal(t, "example0.org", zones[0].Name)
 	})
 
-	t.Run("filter by app name", func(t *testing.T) {
+	t.Run("filter by daemon name", func(t *testing.T) {
 		filter := &GetZonesFilter{
-			AppType: storkutil.Ptr("bind9"),
-			Text:    storkutil.Ptr("pp1"),
+			DaemonName: storkutil.Ptr(daemonname.Bind9),
 		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 1, total)
-		require.Len(t, zones, 1)
-		require.Equal(t, "example1.org", zones[0].Name)
+		require.Equal(t, 3, total)
+		require.Len(t, zones, 3)
+		require.Equal(t, "example0.org", zones[0].Name)
+		require.Equal(t, "example1.org", zones[1].Name)
 	})
 
 	t.Run("filter by view", func(t *testing.T) {
 		filter := &GetZonesFilter{
-			AppType: storkutil.Ptr("bind9"),
-			Text:    storkutil.Ptr("ew2"),
+			DaemonName: storkutil.Ptr(daemonname.Bind9),
+			Text:       storkutil.Ptr("ew2"),
 		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
@@ -709,15 +695,6 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 		require.Equal(t, 3, total)
 	})
 
-	t.Run("match all app names", func(t *testing.T) {
-		filter := &GetZonesFilter{
-			Text: storkutil.Ptr("app"),
-		}
-		_, total, err := GetZones(db, filter, ZoneRelationLocalZones)
-		require.NoError(t, err)
-		require.Equal(t, 3, total)
-	})
-
 	t.Run("match all views", func(t *testing.T) {
 		filter := &GetZonesFilter{
 			Text: storkutil.Ptr("vi"),
@@ -729,12 +706,12 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 
 	t.Run("combined filtering", func(t *testing.T) {
 		filter := &GetZonesFilter{
-			AppType: storkutil.Ptr("kea"),
-			Text:    storkutil.Ptr("mple0.org"),
+			DaemonName: storkutil.Ptr(daemonname.Bind9),
+			Text:       storkutil.Ptr("mple0.org"),
 		}
 		_, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Zero(t, total)
+		require.Equal(t, 1, total)
 	})
 }
 
@@ -751,17 +728,15 @@ func TestGetZoneCountStatsByDaemon(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	// Store zones in the database and associate them with our app.
 	randomZones := testutil.GenerateRandomZones(25)
@@ -780,7 +755,7 @@ func TestGetZoneCountStatsByDaemon(t *testing.T) {
 				Name: randomZone.Name,
 				LocalZones: []*LocalZone{
 					{
-						DaemonID: addedDaemons[0].ID,
+						DaemonID: daemon.ID,
 						View:     fmt.Sprintf("view%d", i),
 						Class:    randomZone.Class,
 						Serial:   randomZone.Serial,
@@ -794,7 +769,7 @@ func TestGetZoneCountStatsByDaemon(t *testing.T) {
 		}
 	}
 
-	stats, err := GetZoneCountStatsByDaemon(db, addedDaemons[0].ID)
+	stats, err := GetZoneCountStatsByDaemon(db, daemon.ID)
 	require.NoError(t, err)
 	require.Equal(t, int64(49), stats.DistinctZones)
 	require.Equal(t, int64(24), stats.BuiltinZones)
@@ -813,24 +788,21 @@ func TestGetZoneByID(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Name:      "app",
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	zone := &Zone{
 		Name: "example.org",
 		LocalZones: []*LocalZone{
 			{
-				DaemonID: addedDaemons[0].ID,
+				DaemonID: daemon.ID,
 				View:     "_default",
 				Class:    "IN",
 				Serial:   123456,
@@ -867,17 +839,15 @@ func TestDeleteOrphanedZones(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	randomZones := testutil.GenerateRandomZones(100)
 
@@ -888,7 +858,7 @@ func TestDeleteOrphanedZones(t *testing.T) {
 			Name: randomZones[i].Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: addedDaemons[0].ID,
+					DaemonID: daemon.ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -907,7 +877,7 @@ func TestDeleteOrphanedZones(t *testing.T) {
 	require.Zero(t, affectedRows)
 
 	// Remove associations of the daemon with our zones.
-	err = DeleteLocalZones(db, addedDaemons[0].ID)
+	err = DeleteLocalZones(db, daemon.ID)
 	require.NoError(t, err)
 
 	// This time all zones are orphaned, so they should get removed.
@@ -935,23 +905,21 @@ func TestUpdateLocalZoneRRsTransferAt(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	zone := &Zone{
 		Name: "example.org",
 		LocalZones: []*LocalZone{
 			{
-				DaemonID: addedDaemons[0].ID,
+				DaemonID: daemon.ID,
 				View:     "_default",
 				Class:    "IN",
 				Serial:   123456,
@@ -1056,16 +1024,15 @@ func BenchmarkAddZones(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	// Add an app.
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	// Add a daemon.
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -1082,7 +1049,7 @@ func BenchmarkAddZones(b *testing.B) {
 			Name: randomZone.Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: addedDaemons[0].ID,
+					DaemonID: daemon.ID,
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
 					Type:     randomZone.Type,
@@ -1143,20 +1110,19 @@ func BenchmarkGetZones(b *testing.B) {
 				b.Fatal(err)
 			}
 
-			app := &App{
-				ID:        0,
-				MachineID: machine.ID,
-				Type:      AppTypeKea,
-				Daemons: []*Daemon{
-					NewBind9Daemon(true),
+			daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "localhost",
+					Port:    int64(8000 + i),
 				},
-			}
-			addedDaemons, err := AddApp(db, app)
+			})
+			err = AddDaemon(db, daemon)
 			if err != nil {
 				b.Fatal(err)
 			}
 
-			daemons = append(daemons, addedDaemons...)
+			daemons = append(daemons, daemon)
 		}
 	}
 	// Add the zones to the database.
@@ -1226,20 +1192,19 @@ func BenchmarkGetZonesWithZoneTypeFilter(b *testing.B) {
 				b.Fatal(err)
 			}
 
-			app := &App{
-				ID:        0,
-				MachineID: machine.ID,
-				Type:      AppTypeKea,
-				Daemons: []*Daemon{
-					NewBind9Daemon(true),
+			daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "localhost",
+					Port:    int64(8000 + i),
 				},
-			}
-			addedDaemons, err := AddApp(db, app)
+			})
+			err = AddDaemon(db, daemon)
 			if err != nil {
 				b.Fatal(err)
 			}
 
-			daemons = append(daemons, addedDaemons...)
+			daemons = append(daemons, daemon)
 		}
 	}
 	// Add the zones to the database.
@@ -1311,20 +1276,17 @@ func BenchmarkGetDistinctZoneCount(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeKea,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	if err != nil {
 		b.Fatal(err)
 	}
-
-	daemons := addedDaemons
 
 	// Add the zones to the database to different views.
 	var views []string
@@ -1340,7 +1302,7 @@ func BenchmarkGetDistinctZoneCount(b *testing.B) {
 				Name: randomZone.Name,
 				LocalZones: []*LocalZone{
 					{
-						DaemonID: daemons[0].ID,
+						DaemonID: daemon.ID,
 						Class:    randomZone.Class,
 						Serial:   randomZone.Serial,
 						Type:     randomZone.Type,
@@ -1361,7 +1323,7 @@ func BenchmarkGetDistinctZoneCount(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		stats, err := GetZoneCountStatsByDaemon(db, daemons[0].ID)
+		stats, err := GetZoneCountStatsByDaemon(db, daemon.ID)
 		if err != nil {
 			b.Fatal(err)
 		}

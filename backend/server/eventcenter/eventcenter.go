@@ -78,14 +78,6 @@ func CreateEvent(level dbmodel.EventLevel, text string, objects ...interface{}) 
 		case dbmodel.DaemonTag:
 			text = strings.ReplaceAll(text, "{daemon}", daemonTag(entity))
 			relations.DaemonID = entity.GetID()
-			relations.AppID = entity.GetAppID()
-			if machineID := entity.GetMachineID(); machineID != nil {
-				relations.MachineID = *machineID
-			}
-
-		case dbmodel.AppTag:
-			text = strings.ReplaceAll(text, "{app}", appTag(entity))
-			relations.AppID = entity.GetID()
 			relations.MachineID = entity.GetMachineID()
 
 		case dbmodel.MachineTag:
@@ -193,14 +185,12 @@ func (ec *eventCenter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // Prepare a tag describing a daemon.
 func daemonTag(daemon dbmodel.DaemonTag) string {
-	tag := fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">", daemon.GetID(), daemon.GetName(), daemon.GetAppID(), daemon.GetAppType())
-	return tag
-}
-
-// Prepare a tag describing an app.
-func appTag(app dbmodel.AppTag) string {
-	tag := fmt.Sprintf("<app id=\"%d\" name=\"%s\" type=\"%s\" version=\"%s\">",
-		app.GetID(), app.GetName(), app.GetType(), app.GetVersion())
+	app := daemon.GetVirtualApp()
+	tag := fmt.Sprintf(
+		"<daemon id=\"%d\" name=\"%s\" machineId=\"%d\" appId=\"%d\" appType=\"%s\">",
+		daemon.GetID(), daemon.GetName(),
+		daemon.GetMachineID(),
+		app.ID, app.Type)
 	return tag
 }
 

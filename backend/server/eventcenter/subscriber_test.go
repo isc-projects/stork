@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -27,7 +28,6 @@ func TestNewSubscriber(t *testing.T) {
 	require.False(t, subscriber.useFilter)
 	require.Equal(t, dbmodel.EvInfo, subscriber.filters.level)
 	require.Zero(t, subscriber.filters.MachineID)
-	require.Zero(t, subscriber.filters.AppID)
 	require.Zero(t, subscriber.filters.SubnetID)
 	require.Zero(t, subscriber.filters.DaemonID)
 	require.Zero(t, subscriber.filters.UserID)
@@ -38,8 +38,16 @@ func TestSetFilterValues(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	daemon, err := server.GetDaemon()
+	require.NoError(t, err)
+
 	// Use an URL with all parameters set.
-	url, err := url.Parse("http://example.org/sse?stream=connectivity&stream=message&machine=1&app=2&subnet=3&daemon=4&user=5&level=1")
+	url, err := url.Parse(fmt.Sprintf(
+		"http://example.org/sse?stream=connectivity&stream=message&machine=1&app=%d&subnet=3&daemon=%d&user=5&level=1",
+		daemon.GetVirtualApp().ID, daemon.ID,
+	))
 	require.NoError(t, err)
 
 	subscriber := newSubscriber(url, "localhost:8080")
@@ -55,9 +63,8 @@ func TestSetFilterValues(t *testing.T) {
 	// Verify that the values were parsed correctly.
 	require.Len(t, subscriber.filters.SSEStreams, 2)
 	require.EqualValues(t, 1, subscriber.filters.MachineID)
-	require.EqualValues(t, 2, subscriber.filters.AppID)
 	require.EqualValues(t, 3, subscriber.filters.SubnetID)
-	require.EqualValues(t, 4, subscriber.filters.DaemonID)
+	require.EqualValues(t, daemon.ID, subscriber.filters.DaemonID)
 	require.EqualValues(t, 5, subscriber.filters.UserID)
 	require.EqualValues(t, 1, subscriber.filters.level)
 }
@@ -67,12 +74,22 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	daemon, err := server.GetDaemon()
+	require.NoError(t, err)
+
 	testCases := []string{"machine", "app", "subnet", "daemon", "user"}
 	for i := range testCases {
 		tc := testCases[i]
 		t.Run(tc, func(t *testing.T) {
+			id := int64(123)
+			if tc == "app" {
+				id = daemon.GetVirtualApp().ID
+			}
+
 			// Create an URL with a test case specific parameter.
-			rawURL := fmt.Sprintf("http://example.org/sse?stream=message&%s=123", tc)
+			rawURL := fmt.Sprintf("http://example.org/sse?stream=message&%s=%d", tc, id)
 			url, err := url.Parse(rawURL)
 			require.NoError(t, err)
 
@@ -92,7 +109,8 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 			case "machine":
 				ev.Relations.MachineID = 123
 			case "app":
-				ev.Relations.AppID = 123
+				ev.Relations.MachineID = daemon.MachineID
+				ev.Relations.DaemonID = daemon.ID
 			case "subnet":
 				ev.Relations.SubnetID = 123
 			case "daemon":
@@ -116,8 +134,16 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	daemon, err := server.GetDaemon()
+	require.NoError(t, err)
+
 	// Create a filtering rule by machine ID, app ID and warning event level.
-	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&app=2&level=1")
+	url, err := url.Parse(fmt.Sprintf(
+		"http://example.org/sse?stream=message&machine=%d&app=%d&daemon=%d&level=%d",
+		daemon.MachineID, daemon.GetVirtualApp().ID, daemon.ID, dbmodel.EvWarning,
+	))
 	require.NoError(t, err)
 
 	subscriber := newSubscriber(url, "localhost:8080")
@@ -137,51 +163,41 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 	}
 	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
-	// This is similar to previous case but this time app id is lacking.
-	ev = &dbmodel.Event{
-		Level: dbmodel.EvError,
-		Relations: &dbmodel.Relations{
-			AppID: 2,
-		},
-	}
-	require.Empty(t, subscriber.findMatchingEventStreams(ev))
-
 	// The first parameter is not matching.
 	ev = &dbmodel.Event{
 		Level: dbmodel.EvError,
 		Relations: &dbmodel.Relations{
-			UserID: 1,
-			AppID:  2,
+			UserID:    1,
+			MachineID: daemon.MachineID,
 		},
 	}
 	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
-	// Both IDs are matching but it doesn't match the event level.
+	// ID is matching but it doesn't match the event level.
 	ev = &dbmodel.Event{
 		Level: dbmodel.EvInfo,
 		Relations: &dbmodel.Relations{
-			MachineID: 1,
-			AppID:     2,
+			MachineID: daemon.MachineID,
 		},
 	}
 	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
 	// Everything is matching.
 	ev = &dbmodel.Event{
-		Level: dbmodel.EvError,
+		Level: dbmodel.EvWarning,
 		Relations: &dbmodel.Relations{
-			MachineID: 1,
-			AppID:     2,
+			MachineID: daemon.MachineID,
+			DaemonID:  daemon.ID,
 		},
 	}
 	require.Contains(t, subscriber.findMatchingEventStreams(ev), dbmodel.SSERegularMessage)
 
-	// More parameters is also fine as long as the first two are matching.
+	// More parameters is also fine as long as the first is matching.
 	ev = &dbmodel.Event{
 		Level: dbmodel.EvWarning,
 		Relations: &dbmodel.Relations{
-			MachineID: 1,
-			AppID:     2,
+			MachineID: daemon.MachineID,
+			DaemonID:  daemon.ID,
 			UserID:    5,
 		},
 	}
@@ -194,24 +210,11 @@ func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	machine := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, machine)
+	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
-
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Active:    true,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	machine, err := server.GetMachine()
+	require.NoError(t, err)
+	daemon, err := server.GetDaemon()
 	require.NoError(t, err)
 
 	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&appType=kea&daemonName=dhcp4&level=1")
@@ -225,8 +228,8 @@ func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
 
 	require.True(t, subscriber.useFilter)
 	require.EqualValues(t, 1, subscriber.filters.MachineID)
-	require.EqualValues(t, app.ID, subscriber.filters.AppID)
-	require.EqualValues(t, app.Daemons[0].ID, subscriber.filters.DaemonID)
+	require.EqualValues(t, machine.ID, subscriber.filters.MachineID)
+	require.EqualValues(t, daemon.ID, subscriber.filters.DaemonID)
 	require.EqualValues(t, dbmodel.EvWarning, subscriber.filters.level)
 	require.Equal(t, "localhost:8080", subscriber.subscriberAddress)
 }
@@ -237,24 +240,9 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	machine := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, machine)
+	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
-
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Active:    true,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon, err := server.GetDaemon()
 	require.NoError(t, err)
 
 	t.Run("NoMachineID", func(t *testing.T) {
@@ -269,9 +257,9 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("NoAppType", func(t *testing.T) {
-		// Daemon name requires app type.
-		url, err := url.Parse("http://example.org/sse?stream=message&machine=1&daemonName=dhcp4")
+	t.Run("missing machine ID", func(t *testing.T) {
+		// Daemon name requires machine ID.
+		url, err := url.Parse("http://example.org/sse?stream=message&daemonName=dhcp4")
 		require.NoError(t, err)
 
 		subscriber := newSubscriber(url, "localhost:8080")
@@ -281,9 +269,9 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("AppAndAppType", func(t *testing.T) {
-		// App ID with app type are mutually exclusive.
-		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&app=%d&appType=kea", app.ID)
+	t.Run("app ID and app type", func(t *testing.T) {
+		// App type is ignored.
+		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&app=%d&appType=kea", daemon.GetVirtualApp().ID)
 		url, err := url.Parse(rawURL)
 		require.NoError(t, err)
 
@@ -291,13 +279,13 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 		require.NotNil(t, subscriber)
 
 		err = subscriber.applyFiltersFromQuery(db)
-		require.Error(t, err)
+		require.NoError(t, err)
 	})
 
-	t.Run("DaemonAndDaemonID", func(t *testing.T) {
+	t.Run("daemon ID and daemon name", func(t *testing.T) {
 		// Daemon ID with daemon name are mutually exclusive.
 		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&appType=kea&daemon=%d&daemonName=dhcp4",
-			app.Daemons[0].ID)
+			daemon.ID)
 		url, err := url.Parse(rawURL)
 		require.NoError(t, err)
 

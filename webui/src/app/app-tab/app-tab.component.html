@@ -17,7 +17,9 @@
                 <div class="flex justify-content-between flex-wrap gap-2 w-full">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
+                        <!-- Application renaming is no longer supported. -->
                         <p-button
+                            class="hidden"
                             *ngIf="!showRenameDialogClicked"
                             icon="pi pi-pencil"
                             styleClass="ml-1"

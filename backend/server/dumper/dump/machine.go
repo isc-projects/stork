@@ -30,11 +30,9 @@ func (d *MachineDump) Execute() error {
 	// Hide agent tokens
 	d.machine.AgentToken = ""
 	// Hide sensitive data from the daemon configurations
-	for _, app := range d.machine.Apps {
-		for _, daemon := range app.Daemons {
-			if daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
-				daemon.KeaDaemon.Config.HideSensitiveData()
-			}
+	for _, daemon := range d.machine.Daemons {
+		if daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
+			daemon.KeaDaemon.Config.HideSensitiveData()
 		}
 	}
 

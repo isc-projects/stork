@@ -6,6 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -59,37 +61,32 @@ func TestSearchRecords(t *testing.T) {
 	err = dbmodel.AddMachine(db, unauthorized)
 	require.NoError(t, err)
 
-	// add app kea with dhcp4 to machine
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114, true)
-
-	a4 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": &map[string]interface{}{
-							"subnet4": []map[string]interface{}{{
-								"id":     1,
-								"subnet": "192.168.0.0/24",
-								"pools": []map[string]interface{}{{
-									"pool": "192.168.0.1-192.168.0.100",
-								}, {
-									"pool": "192.168.0.150-192.168.0.200",
-								}},
-							}},
-						},
-					}),
-				},
-			},
-		},
+	// add daemon kea with dhcp4 to machine
+	accessPoint1 := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1114,
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, a4)
+
+	d4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint1})
+	config4 := []byte(`{
+		"Dhcp4": {
+			"subnet4": [{
+				"id": 1,
+				"subnet": "192.168.0.0/24",
+				"pools": [{
+					"pool": "192.168.0.1-192.168.0.100"
+				}, {
+					"pool": "192.168.0.150-192.168.0.200"
+				}]
+			}]
+		}
+	}`)
+	err = d4.SetKeaConfigFromJSON(config4)
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, d4)
 	require.NoError(t, err)
 
 	appSubnets := []dbmodel.Subnet{
@@ -97,7 +94,7 @@ func TestSearchRecords(t *testing.T) {
 			Prefix: "192.168.0.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					DaemonID: a4.Daemons[0].ID,
+					DaemonID: d4.ID,
 					AddressPools: []dbmodel.AddressPool{
 						{
 							LowerBound: "192.168.0.1",
@@ -116,33 +113,28 @@ func TestSearchRecords(t *testing.T) {
 	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets)
 	require.NoError(t, err)
 
-	// add app kea with dhcp6 to machine
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116, false)
-
-	a6 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": &map[string]interface{}{
-							"subnet6": []map[string]interface{}{{
-								"id":     2,
-								"subnet": "2001:db8:1::/64",
-								"pools":  []map[string]interface{}{},
-							}},
-						},
-					}),
-				},
-			},
-		},
+	// add daemon kea with dhcp6 to machine
+	accessPoint6 := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1116,
+		Key:      "",
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, a6)
+
+	d6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{accessPoint6})
+	config6 := []byte(`{
+		"Dhcp6": {
+			"subnet6": [{
+				"id": 2,
+				"subnet": "2001:db8:1::/64",
+				"pools": []
+			}]
+		}
+	}`)
+	err = d6.SetKeaConfigFromJSON(config6)
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, d6)
 	require.NoError(t, err)
 
 	appSubnets = []dbmodel.Subnet{
@@ -153,57 +145,62 @@ func TestSearchRecords(t *testing.T) {
 	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets)
 	require.NoError(t, err)
 
-	// add app kea with dhcp4 and dhcp6 to machine
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1146, true)
-
-	a46 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": &map[string]interface{}{
-							"subnet4": []map[string]interface{}{{
-								"id":     3,
-								"subnet": "192.118.0.0/24",
-								"pools": []map[string]interface{}{{
-									"pool": "192.118.0.1-192.118.0.200",
-								}},
-							}},
-						},
-					}),
-				},
-			},
-			{
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": &map[string]interface{}{
-							"subnet6": []map[string]interface{}{{
-								"id":     4,
-								"subnet": "3001:db8:1::/64",
-								"pools": []map[string]interface{}{{
-									"pool": "3001:db8:1::/80",
-								}},
-							}},
-							"shared-networks": []map[string]interface{}{{
-								"name": "fox",
-								"subnet6": []map[string]interface{}{{
-									"id":     21,
-									"subnet": "5001:db8:1::/64",
-								}},
-							}},
-						},
-					}),
-				},
-			},
-		},
+	// add additional daemons kea with dhcp4 and dhcp6 to machine
+	accessPoint46_4 := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1146,
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, a46)
+
+	d46_4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint46_4})
+	config46_4 := []byte(`{
+		"Dhcp4": {
+			"subnet4": [{
+				"id": 3,
+				"subnet": "192.118.0.0/24",
+				"pools": [{
+					"pool": "192.118.0.1-192.118.0.200"
+				}]
+			}]
+		}
+	}`)
+	err = d46_4.SetKeaConfigFromJSON(config46_4)
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, d46_4)
+	require.NoError(t, err)
+
+	accessPoint46_6 := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1147,
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
+	}
+
+	d46_6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{accessPoint46_6})
+	config46_6 := []byte(`{
+		"Dhcp6": {
+			"subnet6": [{
+				"id": 4,
+				"subnet": "3001:db8:1::/64",
+				"pools": [{
+					"pool": "3001:db8:1::/80"
+				}]
+			}],
+			"shared-networks": [{
+				"name": "fox",
+				"subnet6": [{
+					"id": 21,
+					"subnet": "5001:db8:1::/64"
+				}]
+			}]
+		}
+	}`)
+	err = d46_6.SetKeaConfigFromJSON(config46_6)
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, d46_6)
 	require.NoError(t, err)
 
 	appNetworks := []dbmodel.SharedNetwork{
@@ -215,14 +212,14 @@ func TestSearchRecords(t *testing.T) {
 					Prefix: "5001:db8:1::/64",
 					LocalSubnets: []*dbmodel.LocalSubnet{
 						{
-							DaemonID: a46.Daemons[1].ID,
+							DaemonID: d46_6.ID,
 						},
 					},
 				},
 			},
 			LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
 				{
-					DaemonID: a46.Daemons[1].ID,
+					DaemonID: d46_6.ID,
 				},
 			},
 		},
@@ -233,7 +230,7 @@ func TestSearchRecords(t *testing.T) {
 			Prefix: "192.118.0.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					DaemonID: a46.Daemons[0].ID,
+					DaemonID: d46_4.ID,
 					AddressPools: []dbmodel.AddressPool{
 						{
 							LowerBound: "192.118.0.1",
@@ -247,7 +244,7 @@ func TestSearchRecords(t *testing.T) {
 			Prefix: "3001:db8:1::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					DaemonID: a46.Daemons[1].ID,
+					DaemonID: d46_6.ID,
 					AddressPools: []dbmodel.AddressPool{
 						{
 							LowerBound: "3001:db8:1::",
@@ -363,8 +360,8 @@ func TestSearchRecords(t *testing.T) {
 	rsp = rapi.SearchRecords(ctx, params)
 	require.IsType(t, &search.SearchRecordsOK{}, rsp)
 	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Apps.Items, 3)
-	require.EqualValues(t, 3, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Apps.Items, 4)
+	require.EqualValues(t, 4, okRsp.Payload.Apps.Total)
 	require.Len(t, okRsp.Payload.Groups.Items, 0)
 	require.Zero(t, okRsp.Payload.Groups.Total)
 	require.Len(t, okRsp.Payload.Hosts.Items, 0)
@@ -378,16 +375,16 @@ func TestSearchRecords(t *testing.T) {
 	require.Len(t, okRsp.Payload.Users.Items, 0)
 	require.Zero(t, okRsp.Payload.Users.Total)
 
-	// search for 'kea' - app is expected
-	text = "kea"
+	// search for 'dhcp' - all daemons are expected
+	text = "dhcp"
 	params = search.SearchRecordsParams{
 		Text: &text,
 	}
 	rsp = rapi.SearchRecords(ctx, params)
 	require.IsType(t, &search.SearchRecordsOK{}, rsp)
 	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Apps.Items, 3)
-	require.EqualValues(t, 3, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Apps.Items, 4)
+	require.EqualValues(t, 4, okRsp.Payload.Apps.Total)
 	require.Len(t, okRsp.Payload.Groups.Items, 0)
 	require.Zero(t, okRsp.Payload.Groups.Total)
 	require.Len(t, okRsp.Payload.Hosts.Items, 0)

@@ -94,7 +94,7 @@ func SetStats(db *pg.DB, statsMap Stats) error {
 	q := db.Model(&statsList)
 	_, err := q.Update()
 	if err != nil {
-		log.Printf("SET STATS ERR: %+v", err)
+		log.WithError(err).Error("SET STATS ERR")
 		return errors.Wrapf(err, "problem setting statistics")
 	}
 	return nil

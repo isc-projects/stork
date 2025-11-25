@@ -5,6 +5,7 @@ import (
 	"time"
 
 	require "github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -22,18 +23,16 @@ func TestConfigReport(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add an app with two daemons.
-	app := &App{
-		Type:      AppTypeKea,
-		MachineID: machine.ID,
-		Daemons: []*Daemon{
-			NewKeaDaemon("dhcp4", true),
-			NewKeaDaemon("dhcp6", true),
-		},
-	}
-	daemons, err := AddApp(db, app)
+	// Add two daemons to the machine.
+	daemon1 := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon1)
 	require.NoError(t, err)
-	require.Len(t, daemons, 2)
+
+	daemon2 := NewDaemon(machine, daemonname.DHCPv6, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon2)
+	require.NoError(t, err)
+
+	daemons := []*Daemon{daemon1, daemon2}
 
 	// Add config review entry into the config_review table.
 	configReview := &ConfigReview{

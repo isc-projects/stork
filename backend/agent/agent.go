@@ -30,29 +30,24 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
-	"isc.org/stork/appdata/bind9stats"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9stats"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
 )
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Host string
-	Port int
-	// Explicitly provided BIND 9 configuration path by user. It will be used
-	// to detect the BIND 9 app. It may be empty.
-	ExplicitBind9ConfigPath string
-	// Explicitly provided PowerDNS configuration path by user. It will be used
-	// to detect the PowerDNS app. It may be empty.
-	ExplicitPowerDNSConfigPath string
-	AppMonitor                 AppMonitor
+	Host    string
+	Port    int
+	Monitor Monitor
 	// BIND9 HTTP stats client.
 	bind9StatsClient *bind9StatsClient
 	// PowerDNS webserver client.
 	pdnsClient *pdnsClient
 	// An HTTP client configuration used to create the HTTP clients for
-	// particular Kea applications.
+	// particular Kea daemons.
 	// If the agent is registered, it will use the GRPC credentials obtained
 	// from the server as TLS client certificate.
 	KeaHTTPClientConfig HTTPClientConfig
@@ -66,21 +61,18 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClientConfig HTTPClientConfig, hookManager *HookManager, explicitBind9ConfigPath string, explicitPowerDNSConfigPath string) *StorkAgent {
+func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Host:                       host,
-		Port:                       port,
-		ExplicitBind9ConfigPath:    explicitBind9ConfigPath,
-		ExplicitPowerDNSConfigPath: explicitPowerDNSConfigPath,
-		AppMonitor:                 appMonitor,
-		bind9StatsClient:           bind9StatsClient,
-		pdnsClient:                 newPDNSClient(),
-		KeaHTTPClientConfig:        keaHTTPClientConfig,
-		logTailer:                  logTailer,
-		keaInterceptor:             newKeaInterceptor(),
-		hookManager:                hookManager,
+		Host:             host,
+		Port:             port,
+		Monitor:          monitor,
+		bind9StatsClient: bind9StatsClient,
+		pdnsClient:       newPDNSClient(),
+		logTailer:        logTailer,
+		keaInterceptor:   newKeaInterceptor(),
+		hookManager:      hookManager,
 	}
 
 	registerKeaInterceptFns(sa)
@@ -239,29 +231,30 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	load, _ := load.Avg()
 	loadStr := fmt.Sprintf("%.2f %.2f %.2f", load.Load1, load.Load5, load.Load15)
 
-	var apps []*agentapi.App
+	var daemons []*agentapi.Daemon
 
-	for _, app := range sa.AppMonitor.GetApps() {
+	for _, daemon := range sa.Monitor.GetDaemons() {
 		var accessPoints []*agentapi.AccessPoint
-		for _, point := range app.GetBaseApp().AccessPoints {
+		for _, point := range daemon.GetAccessPoints() {
 			accessPoints = append(accessPoints, &agentapi.AccessPoint{
 				Type:              point.Type,
 				Address:           point.Address,
 				Port:              point.Port,
 				Key:               point.Key,
-				UseSecureProtocol: point.UseSecureProtocol,
+				Protocol:          string(point.Protocol),
+				UseSecureProtocol: point.Protocol.IsSecure(),
 			})
 		}
 
-		apps = append(apps, &agentapi.App{
-			Type:         app.GetBaseApp().Type,
+		daemons = append(daemons, &agentapi.Daemon{
+			Name:         string(daemon.GetName()),
 			AccessPoints: accessPoints,
 		})
 	}
 
 	state := agentapi.GetStateRsp{
 		AgentVersion:         stork.Version,
-		Apps:                 apps,
+		Daemons:              daemons,
 		Hostname:             hostInfo.Hostname,
 		Cpus:                 int64(runtime.NumCPU()),
 		CpusLoad:             loadStr,
@@ -300,18 +293,18 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		RndcResponse: rndcRsp,
 	}
 
-	app := sa.AppMonitor.GetApp(AccessPointControl, in.Address, in.Port)
-	if app == nil {
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, in.Address, in.Port)
+	if daemon == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
-		rndcRsp.Status.Message = "cannot find BIND 9 app"
+		rndcRsp.Status.Message = "cannot find BIND 9 daemon"
 		response.Status = rndcRsp.Status
 		return response, nil
 	}
 
-	bind9App := app.(*Bind9App)
-	if bind9App == nil {
+	bind9Daemon := daemon.(*Bind9Daemon)
+	if bind9Daemon == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
-		rndcRsp.Status.Message = fmt.Sprintf("incorrect app found: %s instead of BIND 9", app.GetBaseApp().Type)
+		rndcRsp.Status.Message = fmt.Sprintf("incorrect daemon found: %s instead of BIND 9", daemon.GetName())
 		response.Status = rndcRsp.Status
 		return response, nil
 	}
@@ -319,7 +312,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	request := in.GetRndcRequest()
 
 	// Try to forward the command to rndc.
-	output, err := bind9App.sendCommand(strings.Fields(request.Request))
+	output, err := bind9Daemon.sendRNDCCommand(strings.Fields(request.Request))
 	if err != nil {
 		log.WithError(err).
 			WithFields(log.Fields{
@@ -474,11 +467,11 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 // PowerDNS REST API to retrieve this information from the /api/v1/servers/localhost
 // endpoint.
 func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.GetPowerDNSServerInfoReq) (*agentapi.GetPowerDNSServerInfoRsp, error) {
-	app := sa.AppMonitor.GetApp(AccessPointControl, req.WebserverAddress, req.WebserverPort)
-	if app == nil {
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, req.WebserverAddress, req.WebserverPort)
+	if daemon == nil {
 		st := status.Newf(codes.FailedPrecondition, "PowerDNS server %s:%d not found", req.WebserverAddress, req.WebserverPort)
 		ds, err := st.WithDetails(&errdetails.ErrorInfo{
-			Reason: "APP_NOT_FOUND",
+			Reason: "DAEMON_NOT_FOUND",
 		})
 		if err != nil {
 			// If this unlikely error occurs, it is better to return the original
@@ -489,7 +482,7 @@ func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.G
 	}
 
 	// The API key is required to access the PowerDNS REST API.
-	accessPoint := app.GetBaseApp().GetAccessPoint(AccessPointControl)
+	accessPoint := daemon.GetAccessPoint(AccessPointControl)
 	if accessPoint == nil || accessPoint.Key == "" {
 		st := status.Newf(codes.FailedPrecondition, "API key not configured for PowerDNS server %s:%d", req.WebserverAddress, req.WebserverPort)
 		ds, err := st.WithDetails(&errdetails.ErrorInfo{
@@ -557,57 +550,89 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		return response, nil
 	}
 
-	host, port, _ := storkutil.ParseURL(reqURL)
-	app := sa.AppMonitor.GetApp(AccessPointControl, host, port)
-	if app == nil {
-		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = "cannot find Kea app"
-		return response, nil
-	}
-	keaApp := app.(*KeaApp)
-	if keaApp == nil {
-		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = fmt.Sprintf("incorrect app found: %s instead of Kea", app.GetBaseApp().Type)
-		return response, nil
+	logFields := log.Fields{
+		"url": reqURL,
 	}
 
-	requests := in.GetKeaRequests()
+	host, port, _ := storkutil.ParseURL(reqURL)
+	var daemon *keaDaemon
+	if unknownDaemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, host, port); unknownDaemon != nil {
+		logFields["daemon"] = unknownDaemon.String()
+		daemon = unknownDaemon.(*keaDaemon)
+		if daemon == nil {
+			log.WithFields(logFields).Warn("daemon found is not a Kea daemon")
+			response.Status.Code = agentapi.Status_ERROR
+			response.Status.Message = "incorrect URL to Kea CA"
+			return response, nil
+		}
+	}
 
 	// forward requests to kea one by one
-	for _, req := range requests {
-		rsp := &agentapi.KeaResponse{
+	for _, keaRequest := range in.GetKeaRequests() {
+		grpcResponse := &agentapi.KeaResponse{
 			Status: &agentapi.Status{},
 		}
+
+		// Handle unknown daemon as a Kea request error, not as a general error
+		// because it is a problem on the Kea side or related to the Kea daemon.
+		if daemon == nil {
+			log.WithFields(logFields).Warn("Cannot find Kea daemon")
+			grpcResponse.Status.Code = agentapi.Status_ERROR
+			grpcResponse.Status.Message = "cannot find Kea daemon"
+			response.KeaResponses = append(response.KeaResponses, grpcResponse)
+			continue
+		}
+
+		// Unmarshal only the command header to find out the command name.
+		// The arguments are kept in raw form.
+		var keaCommand keactrl.CommandWithRawArguments
+		if err := json.Unmarshal([]byte(keaRequest.Request), &keaCommand); err != nil {
+			log.WithFields(logFields).WithError(err).Error("Failed to parse Kea request")
+			grpcResponse.Status.Code = agentapi.Status_ERROR
+			grpcResponse.Status.Message = fmt.Sprintf("failed to parse Kea request: %s", err.Error())
+			response.KeaResponses = append(response.KeaResponses, grpcResponse)
+			continue
+		}
+		var keaResponse keactrl.Response
+
 		// Try to forward the command to Kea Control Agent.
-		body, err := keaApp.sendCommandRaw([]byte(req.Request))
+		err := daemon.sendCommand(ctx, &keaCommand, &keaResponse)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"URL": reqURL,
-			}).Errorf("Failed to forward commands to Kea CA: %+v", err)
-			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = fmt.Sprintf("failed to forward commands to Kea: %s", err.Error())
-			response.KeaResponses = append(response.KeaResponses, rsp)
+			log.WithError(err).WithFields(logFields).Errorf("Failed to forward commands to Kea")
+			grpcResponse.Status.Code = agentapi.Status_ERROR
+			grpcResponse.Status.Message = fmt.Sprintf("failed to forward commands to Kea: %s", err.Error())
+			response.KeaResponses = append(response.KeaResponses, grpcResponse)
 			continue
 		}
 
 		// Push Kea response for synchronous processing. It may modify the
 		// response body.
-		body, err = sa.keaInterceptor.syncHandle(sa, req, body)
+		keaResponse, err = sa.keaInterceptor.syncHandle(sa, keaCommand, keaResponse)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"URL": reqURL,
-			}).Errorf("Failed to apply synchronous interceptors on Kea response: %+v", err)
+			log.WithFields(logFields).WithError(err).Error("Failed to apply synchronous interceptors on Kea response")
+			grpcResponse.Status.Code = agentapi.Status_ERROR
+			grpcResponse.Status.Message = fmt.Sprintf("failed to postprocess response from Kea: %s", err.Error())
+			response.KeaResponses = append(response.KeaResponses, grpcResponse)
 			continue
 		}
 
 		// Push Kea response for async processing. It is done in background.
 		// One of the use cases is to extract log files used by Kea and to
 		// allow the log viewer to access them.
-		go sa.keaInterceptor.asyncHandle(sa, req, body)
+		go sa.keaInterceptor.asyncHandle(sa, keaCommand, keaResponse)
 
-		rsp.Response = body
-		rsp.Status.Code = agentapi.Status_OK
-		response.KeaResponses = append(response.KeaResponses, rsp)
+		body, err := json.Marshal(keaResponse)
+		if err != nil {
+			log.WithFields(logFields).WithError(err).Error("Failed to marshal Kea response")
+			grpcResponse.Status.Code = agentapi.Status_ERROR
+			grpcResponse.Status.Message = fmt.Sprintf("failed to marshal Kea response: %s", err.Error())
+			response.KeaResponses = append(response.KeaResponses, grpcResponse)
+			continue
+		}
+
+		grpcResponse.Response = body
+		grpcResponse.Status.Code = agentapi.Status_OK
+		response.KeaResponses = append(response.KeaResponses, grpcResponse)
 	}
 
 	return response, nil
@@ -636,22 +661,26 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 // agent. The response can be filtered or unfiltered, depending on the
 // request.
 func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.ServerStreamingServer[agentapi.Zone]) error {
-	appI := sa.AppMonitor.GetApp(AccessPointControl, req.ControlAddress, req.ControlPort)
-	var inventory *zoneInventory
-	switch app := appI.(type) {
-	case *Bind9App:
-		inventory = app.zoneInventory
-	case *PDNSApp:
-		inventory = app.zoneInventory
-	default:
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, req.ControlAddress, req.ControlPort)
+	if daemon == nil {
+		return status.New(codes.NotFound, fmt.Sprintf("DNS daemon not found at %s:%d", req.ControlAddress, req.ControlPort)).Err()
+	}
+
+	dnsDaemon, ok := daemon.(dnsDaemon)
+	if !ok {
 		// This is rather an exceptional case, so we don't necessarily need to
 		// include the detailed error message.
-		return status.New(codes.InvalidArgument, "attempted to receive DNS zones from an unsupported app").Err()
+		return status.New(
+			codes.InvalidArgument,
+			fmt.Sprintf("attempted to receive DNS zones from an unsupported daemon: %s", daemon.GetName()),
+		).Err()
 	}
+
+	inventory := dnsDaemon.getZoneInventory()
 	if inventory == nil {
 		// This is also an exceptional case. All DNS servers should have the
 		// zone inventory initialized.
-		return status.New(codes.FailedPrecondition, "attempted to receive DNS zones from an app for which zone inventory was not instantiated").Err()
+		return status.New(codes.FailedPrecondition, "attempted to receive DNS zones from a daemon for which zone inventory was not instantiated").Err()
 	}
 	// Set filtering rules based on the request.
 	var filter *bind9stats.ZoneFilter
@@ -724,22 +753,26 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 
 // Generate a streaming response returning DNS zone RRs from a specified agent.
 func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grpc.ServerStreamingServer[agentapi.ReceiveZoneRRsRsp]) error {
-	appI := sa.AppMonitor.GetApp(AccessPointControl, req.ControlAddress, req.ControlPort)
-	var inventory *zoneInventory
-	switch app := appI.(type) {
-	case *Bind9App:
-		inventory = app.zoneInventory
-	case *PDNSApp:
-		inventory = app.zoneInventory
-	default:
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, req.ControlAddress, req.ControlPort)
+	if daemon == nil {
+		return status.New(codes.NotFound, fmt.Sprintf("DNS daemon not found at %s:%d", req.ControlAddress, req.ControlPort)).Err()
+	}
+
+	dnsDaemon, ok := daemon.(dnsDaemon)
+	if !ok {
 		// This is rather an exceptional case, so we don't necessarily need to
 		// include the detailed error message.
-		return status.Error(codes.InvalidArgument, "attempted to receive DNS zone RRs from an unsupported app")
+		return status.New(
+			codes.InvalidArgument,
+			fmt.Sprintf("attempted to receive DNS zones from an unsupported daemon: %s", daemon.GetName()),
+		).Err()
 	}
+
+	inventory := dnsDaemon.getZoneInventory()
 	if inventory == nil {
 		// This is also an exceptional case. All DNS servers should have the
 		// zone inventory initialized.
-		return status.New(codes.FailedPrecondition, "attempted to receive DNS zone RRs from an app for which zone inventory was not instantiated").Err()
+		return status.New(codes.FailedPrecondition, "attempted to receive DNS zone RRs from a daemon for which zone inventory was not instantiated").Err()
 	}
 	respChan, err := inventory.requestAXFR(req.ZoneName, req.ViewName)
 	if err != nil {
@@ -843,22 +876,22 @@ func receiveBind9Config(fileType agentapi.Bind9ConfigFileType, bind9Config *bind
 // is marked with a preamble containing the file type and source path. The subsequent
 // lines contain the contents of the file.
 func (sa *StorkAgent) ReceiveBind9Config(req *agentapi.ReceiveBind9ConfigReq, server grpc.ServerStreamingServer[agentapi.ReceiveBind9ConfigRsp]) (err error) {
-	app := sa.AppMonitor.GetApp(AccessPointControl, req.ControlAddress, req.ControlPort)
-	if app == nil {
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, req.ControlAddress, req.ControlPort)
+	if daemon == nil {
 		return status.Newf(codes.FailedPrecondition, "BIND 9 server %s:%d not found", req.ControlAddress, req.ControlPort).Err()
 	}
-	bind9App, ok := app.(*Bind9App)
+	bind9Daemon, ok := daemon.(*Bind9Daemon)
 	if !ok {
-		return status.Newf(codes.InvalidArgument, "attempted to get BIND 9 configuration from app type %s instead of BIND 9", app.GetBaseApp().Type).Err()
+		return status.Newf(codes.InvalidArgument, "attempted to get BIND 9 configuration from daemon %s instead of BIND 9", daemon.GetName()).Err()
 	}
 	var (
 		configReceived  bool
 		rndcKeyReceived bool
 	)
-	if configReceived, err = receiveBind9Config(agentapi.Bind9ConfigFileType_CONFIG, bind9App.bind9Config, req, server); err != nil {
+	if configReceived, err = receiveBind9Config(agentapi.Bind9ConfigFileType_CONFIG, bind9Daemon.bind9Config, req, server); err != nil {
 		return
 	}
-	if rndcKeyReceived, err = receiveBind9Config(agentapi.Bind9ConfigFileType_RNDC_KEY, bind9App.rndcKeyConfig, req, server); err != nil {
+	if rndcKeyReceived, err = receiveBind9Config(agentapi.Bind9ConfigFileType_RNDC_KEY, bind9Daemon.rndcKeyConfig, req, server); err != nil {
 		return
 	}
 	if !configReceived && !rndcKeyReceived {
@@ -909,4 +942,9 @@ func (sa *StorkAgent) Shutdown(reload bool) {
 			sa.server.GracefulStop()
 		}
 	})
+}
+
+// Allows access to the specific log file by the log viewer.
+func (sa *StorkAgent) allowLog(path string) {
+	sa.logTailer.allow(path)
 }

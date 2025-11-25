@@ -2,14 +2,16 @@ package agentcommtest
 
 import (
 	"context"
+	"encoding/json"
 	"iter"
 
+	"github.com/pkg/errors"
 	agentapi "isc.org/stork/api"
-	bind9config "isc.org/stork/appcfg/bind9"
-	"isc.org/stork/appcfg/dnsconfig"
-	keactrl "isc.org/stork/appctrl/kea"
-	"isc.org/stork/appdata/bind9stats"
-	pdnsdata "isc.org/stork/appdata/pdns"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/daemoncfg/dnsconfig"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9stats"
+	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -21,7 +23,7 @@ var _ agentcomm.ConnectedAgents = (*FakeAgents)(nil)
 type FakeAgents struct {
 	RecordedURLs     []string
 	RecordedCommands []keactrl.SerializableCommand
-	mockKeaFunc      []func(int, []interface{})
+	mockKeaFunc      []func(int, []any)
 	CallNo           int
 
 	RecordedAddress string
@@ -60,7 +62,7 @@ server is up and running`
 
 // Creates new instance of the FakeAgents structure with the function returning
 // a custom response set.
-func NewFakeAgents(fnKea func(int, []interface{}), fnNamed func(int, interface{})) *FakeAgents {
+func NewFakeAgents(fnKea func(int, []any), fnNamed func(int, interface{})) *FakeAgents {
 	fa := &FakeAgents{
 		mockNamedFunc:  fnNamed,
 		mockRndcOutput: mockRndcOutput(),
@@ -75,7 +77,7 @@ func NewFakeAgents(fnKea func(int, []interface{}), fnNamed func(int, interface{}
 // Create new instance of the FakeAgents structure with multiple mock functions
 // returning Kea responses. The subsequent mock functions are invoked for each
 // new call.
-func NewKeaFakeAgents(fnsKea ...func(int, []interface{})) *FakeAgents {
+func NewKeaFakeAgents(fnsKea ...func(int, []any)) *FakeAgents {
 	fa := &FakeAgents{
 		mockKeaFunc: fnsKea,
 	}
@@ -91,8 +93,8 @@ func (fa *FakeAgents) Ping(ctx context.Context, machine dbmodel.MachineTag) erro
 func (fa *FakeAgents) Shutdown() {}
 
 // Returns fake statistics for the selected connected agent.
-func (fa *FakeAgents) GetConnectedAgentStatsWrapper(address string, port int64) *agentcomm.AgentCommStatsWrapper {
-	return agentcomm.NewAgentCommStatsWrapper(agentcomm.NewAgentStats())
+func (fa *FakeAgents) GetConnectedAgentStatsWrapper(address string, port int64) *agentcomm.CommStatsWrapper {
+	return agentcomm.NewCommStatsWrapper(agentcomm.NewAgentStats())
 }
 
 // FakeAgents specific implementation of the GetState.
@@ -104,19 +106,47 @@ func (fa *FakeAgents) GetState(ctx context.Context, machine dbmodel.MachineTag) 
 	}
 
 	state := agentcomm.State{
-		Cpus:   1,
-		Memory: 4,
+		Cpus:         1,
+		Memory:       4,
+		AgentVersion: "2.3.0",
 	}
 	return &state, nil
+}
+
+// Returns the received command by FakeAgents with a specific index or nil if
+// no command has been received yet or the index is out of range.
+func (fa *FakeAgents) GetCommand(index int) *keactrl.Command {
+	if index < 0 || index >= len(fa.RecordedCommands) {
+		return nil
+	}
+	return fa.RecordedCommands[index].(*keactrl.Command)
 }
 
 // Returns last received command by FakeAgents or nil if no command
 // has been received yet.
 func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
-	if len(fa.RecordedCommands) == 0 {
+	return fa.GetCommand(len(fa.RecordedCommands) - 1)
+}
+
+// Returns arguments of the received command by FakeAgents with a specific
+// index or nil if no command has been received yet.
+func (fa *FakeAgents) GetCommandArguments(index int) map[string]any {
+	command := fa.GetCommand(index)
+	if command == nil {
 		return nil
 	}
-	return fa.RecordedCommands[len(fa.RecordedCommands)-1].(*keactrl.Command)
+
+	arguments, ok := command.Arguments.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return arguments
+}
+
+// Returns arguments of the last received command by FakeAgents or nil if no
+// command has been received yet.
+func (fa *FakeAgents) GetLastCommandArguments() map[string]any {
+	return fa.GetCommandArguments(len(fa.RecordedCommands) - 1)
 }
 
 // FakeAgents specific implementation of the function to forward a command
@@ -124,18 +154,18 @@ func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents or NewKeaFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
-	caAddress, caPort, _, caUseSecureProtocol, _ := app.GetControlAccessPoint()
-	caURL := storkutil.HostWithPortURL(caAddress, caPort, caUseSecureProtocol)
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, daemon agentcomm.ControlledDaemon, commands []keactrl.SerializableCommand, cmdResponses ...any) (*agentcomm.KeaCmdsResult, error) {
+	if len(cmdResponses) != len(commands) {
+		return nil, errors.New("number of command responses does not match number of commands")
+	}
+
+	accessPoint, _ := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+	caURL := storkutil.HostWithPortURL(accessPoint.Address, accessPoint.Port, string(accessPoint.Protocol))
 
 	fa.RecordedURLs = append(fa.RecordedURLs, caURL)
-	result := &agentcomm.KeaCmdsResult{}
-	for _, cmd := range commands {
-		fa.RecordedCommands = append(fa.RecordedCommands, cmd)
-		result.CmdsErrors = append(result.CmdsErrors, nil)
-	}
+
 	// Generate response.
-	var mock func(int, []interface{})
+	var mock func(int, []any)
 	if len(fa.mockKeaFunc) > 0 {
 		if fa.CallNo >= len(fa.mockKeaFunc) {
 			mock = fa.mockKeaFunc[len(fa.mockKeaFunc)-1]
@@ -145,6 +175,19 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.Co
 		mock(fa.CallNo, cmdResponses)
 	}
 	fa.CallNo++
+
+	result := &agentcomm.KeaCmdsResult{}
+	for i, cmd := range commands {
+		fa.RecordedCommands = append(fa.RecordedCommands, cmd)
+
+		responseBytes, _ := json.Marshal(cmdResponses[i])
+		var response keactrl.Response
+		_ = json.Unmarshal(responseBytes, &response)
+
+		err := response.GetError()
+		result.CmdsErrors = append(result.CmdsErrors, err)
+	}
+
 	return result, nil
 }
 
@@ -153,8 +196,9 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.Co
 // to this function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, app agentcomm.ControlledApp, statsAddress string, statsPort int64, requestType agentcomm.ForwardToNamedStatsRequestType, statsOutput interface{}) error {
-	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort, false)
+func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, daemon agentcomm.ControlledDaemon, requestType agentcomm.ForwardToNamedStatsRequestType, statsOutput interface{}) error {
+	accessPoint, _ := daemon.GetAccessPoint(dbmodel.AccessPointStatistics)
+	fa.RecordedStatsURL = storkutil.HostWithPortURL(accessPoint.Address, accessPoint.Port, string(accessPoint.Protocol))
 
 	// Generate response.
 	if fa.mockNamedFunc != nil {
@@ -169,8 +213,15 @@ func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, app agentcomm.Con
 // so as they can be later validated. It also returns a custom response
 // to the command by calling the function specified in the call to
 // NewFakeAgents.
-func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.ControlledApp, command string) (*agentcomm.RndcOutput, error) {
-	fa.RecordedAddress, fa.RecordedPort, fa.RecordedKey, _, _ = app.GetControlAccessPoint()
+func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, daemon agentcomm.ControlledDaemon, command string) (*agentcomm.RndcOutput, error) {
+	accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+	if err != nil {
+		return nil, err
+	}
+
+	fa.RecordedAddress = accessPoint.Address
+	fa.RecordedPort = accessPoint.Port
+	fa.RecordedKey = accessPoint.Key
 	fa.RecordedCommand = command
 
 	if fa.mockRndcOutput != "" {
@@ -185,7 +236,7 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.Cont
 
 // FakeAgents specific implementation of the function to get the PowerDNS
 // server information. It returns nil.
-func (fa *FakeAgents) GetPowerDNSServerInfo(ctx context.Context, app agentcomm.ControlledApp) (*pdnsdata.ServerInfo, error) {
+func (fa *FakeAgents) GetPowerDNSServerInfo(ctx context.Context, daemon agentcomm.ControlledDaemon) (*pdnsdata.ServerInfo, error) {
 	return &pdnsdata.ServerInfo{
 		Version: "4.7.0",
 	}, nil
@@ -198,14 +249,14 @@ func (fa *FakeAgents) TailTextFile(ctx context.Context, machine dbmodel.MachineT
 
 // FakeAgents specific implementation of the function which gathers the zones from the
 // agents one by one.
-func (fa *FakeAgents) ReceiveZones(ctx context.Context, app agentcomm.ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+func (fa *FakeAgents) ReceiveZones(ctx context.Context, daemon agentcomm.ControlledDaemon, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 	return nil
 }
 
-func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, app agentcomm.ControlledApp, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error] {
+func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, daemon agentcomm.ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error] {
 	return nil
 }
 
-func (fa *FakeAgents) ReceiveBind9FormattedConfig(ctx context.Context, app agentcomm.ControlledApp, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
+func (fa *FakeAgents) ReceiveBind9FormattedConfig(ctx context.Context, app agentcomm.ControlledDaemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 	return nil
 }

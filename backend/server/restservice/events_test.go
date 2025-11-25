@@ -21,7 +21,7 @@ func TestEvents(t *testing.T) {
 		Text:  "some event",
 		Level: dbmodel.EvInfo,
 		Relations: &dbmodel.Relations{
-			AppID: 2,
+			DaemonID: 2,
 		},
 	}
 
@@ -54,7 +54,7 @@ func TestDeleteEvents(t *testing.T) {
 		Text:  "some event",
 		Level: dbmodel.EvInfo,
 		Relations: &dbmodel.Relations{
-			AppID: 2,
+			DaemonID: 2,
 		},
 	}
 

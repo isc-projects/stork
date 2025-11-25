@@ -14,15 +14,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
-	keaconfig "isc.org/stork/appcfg/kea"
-	keactrl "isc.org/stork/appctrl/kea"
-	"isc.org/stork/appdata/bind9stats"
-	pdnsdata "isc.org/stork/appdata/pdns"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9stats"
+	pdnsdata "isc.org/stork/daemondata/pdns"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
-	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
+	"isc.org/stork/server/daemons/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -38,13 +40,13 @@ import (
 //go:generate mockgen -package=restservice -destination=connectedagentsmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
 
 // Type of the function returning agent communication stats wrapped.
-type wrapperFunc = func(string, int64) *agentcomm.AgentCommStatsWrapper
+type wrapperFunc = func(string, int64) *agentcomm.CommStatsWrapper
 
-// Convenience function wrapping statistics in AgentCommStatsWrapper and
+// Convenience function wrapping statistics in CommStatsWrapper and
 // returning in tests mocks.
-func wrap(stats *agentcomm.AgentCommStats) wrapperFunc {
-	return func(string, int64) *agentcomm.AgentCommStatsWrapper {
-		return agentcomm.NewAgentCommStatsWrapper(stats)
+func wrap(stats *agentcomm.CommStats) wrapperFunc {
+	return func(string, int64) *agentcomm.CommStatsWrapper {
+		return agentcomm.NewCommStatsWrapper(stats)
 	}
 }
 
@@ -117,90 +119,81 @@ func TestGetMachineStateOnly(t *testing.T) {
 func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 	switch callNo {
 	case 0:
-		list1 := cmdResponses[0].(*[]kea.VersionGetResponse)
-		*list1 = []kea.VersionGetResponse{
-			{
-				ResponseHeader: keactrl.ResponseHeader{
-					Result: 0,
-					Daemon: "ca",
-				},
-				Arguments: &kea.VersionGetRespArgs{
-					Extended: "Extended version",
-				},
+		versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
+		*versionResponse = kea.VersionGetResponse{
+			ResponseHeader: keactrl.ResponseHeader{
+				Result: 0,
+				Text:   "2.3.2",
+			},
+			Arguments: &kea.VersionGetRespArgs{
+				Extended: "Extended version",
 			},
 		}
-		list2 := cmdResponses[1].(*[]keactrl.HashedResponse)
-		*list2 = []keactrl.HashedResponse{
-			{
-				ResponseHeader: keactrl.ResponseHeader{
-					Result: 0,
-					Daemon: "ca",
-				},
-				Arguments: &map[string]interface{}{
-					"Control-agent": map[string]interface{}{
-						"control-sockets": map[string]interface{}{
-							"dhcp4": map[string]interface{}{
-								"socket-name": "aaa",
-								"socket-type": "unix",
-							},
-						},
-					},
-				},
+		response := cmdResponses[1].(*keactrl.Response)
+		*response = keactrl.Response{
+			ResponseHeader: keactrl.ResponseHeader{
+				Result: 0,
 			},
+			Arguments: []byte(`{
+				"Control-agent": {
+					"control-sockets": {
+						"dhcp4": {
+							"socket-name": "aaa",
+							"socket-type": "unix"
+						}
+					}
+				}
+			}`),
 		}
 	case 1:
 		// version-get response
-		list1 := cmdResponses[0].(*[]kea.VersionGetResponse)
-		*list1 = []kea.VersionGetResponse{
-			{
-				ResponseHeader: keactrl.ResponseHeader{
-					Result: 0,
-					Daemon: "dhcp4",
-				},
-				Arguments: &kea.VersionGetRespArgs{
-					Extended: "Extended version",
-				},
+		versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
+		*versionResponse = kea.VersionGetResponse{
+			ResponseHeader: keactrl.ResponseHeader{
+				Result: 0,
+				Text:   "2.3.0",
+			},
+			Arguments: &kea.VersionGetRespArgs{
+				Extended: "Extended version",
 			},
 		}
-		// status-get response
-		list2 := cmdResponses[1].(*[]kea.StatusGetResponse)
-		*list2 = []kea.StatusGetResponse{
-			{
-				ResponseHeader: keactrl.ResponseHeader{
-					Result: 0,
-					Daemon: "dhcp4",
-				},
-				Arguments: &kea.StatusGetRespArgs{
-					Pid: 123,
-				},
-			},
-		}
+
 		// config-get response
-		list3 := cmdResponses[2].(*[]keactrl.HashedResponse)
-		*list3 = []keactrl.HashedResponse{
-			{
-				ResponseHeader: keactrl.ResponseHeader{
-					Result: 0,
-					Daemon: "dhcp4",
-				},
-				Arguments: &map[string]interface{}{
-					"Dhcp4": map[string]interface{}{
-						"hooks-libraries": []interface{}{
-							map[string]interface{}{
-								"library": "hook_abc.so",
-							},
-							map[string]interface{}{
-								"library": "hook_def.so",
-							},
+		response := cmdResponses[1].(*keactrl.Response)
+		*response = keactrl.Response{
+			ResponseHeader: keactrl.ResponseHeader{
+				Result: 0,
+			},
+			Arguments: []byte(`{
+				"Dhcp4": {
+					"hooks-libraries": [
+						{
+							"library": "hook_abc.so"
 						},
-					},
-				},
+						{
+							"library": "hook_def.so"
+						}
+					]
+				}
+			}`),
+		}
+
+		// status-get response
+		statusResponse := cmdResponses[2].(*kea.StatusGetResponse)
+		*statusResponse = kea.StatusGetResponse{
+			ResponseHeader: keactrl.ResponseHeader{
+				Result: 0,
+			},
+			Arguments: &kea.StatusGetRespArgs{
+				Pid: 123,
 			},
 		}
+	default:
+		panic("unexpected call number")
 	}
 }
 
-func TestGetMachineAndAppsState(t *testing.T) {
+func TestGetMachineAndDaemonsState(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -220,41 +213,62 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add kea app
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "1.2.3.4", "", 123, false)
-	keaApp := &dbmodel.App{
-		MachineID:    m.ID,
-		Machine:      m,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: keaPoints,
+	// add kea daemon
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "1.2.3.4",
+		Port:     123,
+		Key:      "",
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
-	m.Apps = append(m.Apps, keaApp)
 
-	// add BIND 9 app
-	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124, true)
-	bind9App := &dbmodel.App{
-		MachineID:    m.ID,
-		Machine:      m,
-		Type:         dbmodel.AppTypeBind9,
-		AccessPoints: bind9Points,
+	// add BIND 9 daemon
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "1.2.3.4",
+		Port:     124,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, bind9App)
+	bind9Daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	err = dbmodel.AddDaemon(db, bind9Daemon)
 	require.NoError(t, err)
-	m.Apps = append(m.Apps, bind9App)
 
 	fa.MachineState = &agentcomm.State{
-		Apps: []*agentcomm.App{
+		AgentVersion: "2.3.2",
+		Daemons: []*agentcomm.Daemon{
 			{
-				Type:         dbmodel.AppTypeKea.String(),
-				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 123),
+				Name: daemonname.CA,
+				AccessPoints: []dbmodel.AccessPoint{{
+					Type:     dbmodel.AccessPointControl,
+					Address:  "1.2.3.4",
+					Port:     123,
+					Key:      "",
+					Protocol: protocoltype.HTTP,
+				}},
+				Machine: m,
 			},
 			{
-				Type:         dbmodel.AppTypeBind9.String(),
-				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124),
+				Name: daemonname.Bind9,
+				AccessPoints: []dbmodel.AccessPoint{
+					{
+						Type:     dbmodel.AccessPointControl,
+						Address:  "1.2.3.4",
+						Port:     124,
+						Key:      "abcd",
+						Protocol: protocoltype.RNDC,
+					},
+					{
+						Type:     dbmodel.AccessPointStatistics,
+						Address:  "1.2.3.4",
+						Port:     125,
+						Protocol: protocoltype.HTTP,
+					},
+				},
+				Machine: m,
 			},
 		},
 	}
@@ -267,12 +281,12 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
 	require.Len(t, okRsp.Payload.Apps, 2)
-	require.Equal(t, dbmodel.AppTypeKea.String(), okRsp.Payload.Apps[0].Type)
-	require.Equal(t, dbmodel.AppTypeBind9.String(), okRsp.Payload.Apps[1].Type)
+	require.Equal(t, string(dbmodel.VirtualAppTypeKea), okRsp.Payload.Apps[0].Type)
+	require.Equal(t, string(dbmodel.VirtualAppTypeBind9), okRsp.Payload.Apps[1].Type)
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
-// Test that machine state includes PowerDNS app information and that this
+// Test that machine state includes PowerDNS daemon information and that this
 // information is correctly populated.
 func TestGetMachineAndPowerDNSState(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -286,38 +300,29 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add PowerDNS app to db.
-	pdnsApp := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypePDNS,
-		AccessPoints: []*dbmodel.AccessPoint{
-			{
-				Type:    dbmodel.AccessPointControl,
-				Address: "1.2.3.4",
-				Port:    123,
-			},
-		},
-		Daemons: []*dbmodel.Daemon{
-			{
-				Pid:             123,
-				Name:            "pdns",
-				Active:          true,
-				Monitored:       true,
-				Version:         "4.7.3",
-				ExtendedVersion: "4.7.3",
-				Uptime:          1000,
-				PDNSDaemon: &dbmodel.PDNSDaemon{
-					Details: dbmodel.PDNSDaemonDetails{
-						URL:              "http://1.2.3.4:123",
-						ConfigURL:        "http://1.2.3.4:123/config",
-						ZonesURL:         "http://1.2.3.4:123/zones",
-						AutoprimariesURL: "http://1.2.3.4:123/autoprimaries",
-					},
-				},
-			},
+	// Add PowerDNS daemon to db.
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "1.2.3.4",
+		Port:     124,
+		Protocol: protocoltype.HTTP,
+	}
+	pdnsDaemon := dbmodel.NewDaemon(machine, daemonname.PDNS, true, []*dbmodel.AccessPoint{accessPoint})
+	pdnsDaemon.Pid = 123
+	pdnsDaemon.Active = true
+	pdnsDaemon.Monitored = true
+	pdnsDaemon.Version = "4.7.3"
+	pdnsDaemon.ExtendedVersion = "4.7.3"
+	pdnsDaemon.Uptime = 1000
+	pdnsDaemon.PDNSDaemon = &dbmodel.PDNSDaemon{
+		Details: dbmodel.PDNSDaemonDetails{
+			URL:              "http://1.2.3.4:123",
+			ConfigURL:        "http://1.2.3.4:123/config",
+			ZonesURL:         "http://1.2.3.4:123/zones",
+			AutoprimariesURL: "http://1.2.3.4:123/autoprimaries",
 		},
 	}
-	_, err = dbmodel.AddApp(db, pdnsApp)
+	err = dbmodel.AddDaemon(db, pdnsDaemon)
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
@@ -326,17 +331,24 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	mockAgents.EXPECT().GetState(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, machineTag dbmodel.MachineTag) (*agentcomm.State, error) {
 		require.EqualValues(t, machine.ID, machineTag.GetID())
 		return &agentcomm.State{
-			Apps: []*agentcomm.App{
+			AgentVersion: "2.3.2",
+			Daemons: []*agentcomm.Daemon{
 				{
-					Type:         dbmodel.AppTypePDNS.String(),
-					AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 124),
+					Name: daemonname.PDNS,
+					AccessPoints: []dbmodel.AccessPoint{{
+						Type:     dbmodel.AccessPointControl,
+						Address:  "1.2.3.4",
+						Port:     124,
+						Key:      "",
+						Protocol: protocoltype.HTTP,
+					}},
 				},
 			},
 		}, nil
 	})
 
-	mockAgents.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, appTag dbmodel.AppTag) (*pdnsdata.ServerInfo, error) {
-		require.EqualValues(t, pdnsApp.ID, appTag.GetID())
+	mockAgents.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, daemon agentcomm.ControlledDaemon) (*pdnsdata.ServerInfo, error) {
+		require.EqualValues(t, pdnsDaemon.ID, daemon.GetMachineTag().GetID())
 		return &pdnsdata.ServerInfo{
 			Type:             "PowerDNS",
 			ID:               "127.0.0.1",
@@ -363,34 +375,35 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	require.Len(t, okRsp.Payload.Apps, 1)
 
 	returnedApp := okRsp.Payload.Apps[0]
+	virtualApp := pdnsDaemon.GetVirtualApp()
 
-	require.EqualValues(t, pdnsApp.ID, returnedApp.ID)
-	require.Equal(t, pdnsApp.Name, returnedApp.Name)
-	require.EqualValues(t, dbmodel.AppTypePDNS, returnedApp.Type)
+	require.EqualValues(t, virtualApp.ID, returnedApp.ID)
+	require.Equal(t, virtualApp.Name, returnedApp.Name)
+	require.EqualValues(t, virtualApp.Type, returnedApp.Type)
 	require.Equal(t, "1.2.3.4", returnedApp.AccessPoints[0].Address)
 	require.Len(t, returnedApp.AccessPoints, 1)
 	require.EqualValues(t, 124, returnedApp.AccessPoints[0].Port)
 
-	pdnsDaemon := returnedApp.Details.PdnsDaemon
-	require.NotNil(t, pdnsDaemon)
-	require.Equal(t, pdnsApp.Daemons[0].Name, pdnsDaemon.Name)
-	require.Equal(t, "4.7.0", pdnsDaemon.Version)
-	require.EqualValues(t, 1234, pdnsDaemon.Uptime)
-	require.Equal(t, "http://127.0.0.1:8081", pdnsDaemon.URL)
-	require.Equal(t, "http://127.0.0.1:8081/config", pdnsDaemon.ConfigURL)
-	require.Equal(t, "http://127.0.0.1:8081/zones", pdnsDaemon.ZonesURL)
-	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", pdnsDaemon.AutoprimariesURL)
+	apiDaemon := returnedApp.Details.PdnsDaemon
+	require.NotNil(t, apiDaemon)
+	require.Equal(t, string(pdnsDaemon.Name), apiDaemon.Name)
+	require.Equal(t, "4.7.0", apiDaemon.Version)
+	require.EqualValues(t, 1234, apiDaemon.Uptime)
+	require.Equal(t, "http://127.0.0.1:8081", apiDaemon.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", apiDaemon.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", apiDaemon.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", apiDaemon.AutoprimariesURL)
 
-	updatedApp, err := dbmodel.GetAppByID(db, pdnsApp.ID)
+	updatedDaemon, err := dbmodel.GetDaemonByID(db, pdnsDaemon.ID)
 	require.NoError(t, err)
-	require.Equal(t, pdnsApp.Daemons[0].Name, updatedApp.Daemons[0].Name)
-	require.Equal(t, "4.7.0", updatedApp.Daemons[0].Version)
-	require.Equal(t, "4.7.0", updatedApp.Daemons[0].ExtendedVersion)
-	require.EqualValues(t, 1234, updatedApp.Daemons[0].Uptime)
-	require.Equal(t, "http://127.0.0.1:8081", updatedApp.Daemons[0].PDNSDaemon.Details.URL)
-	require.Equal(t, "http://127.0.0.1:8081/config", updatedApp.Daemons[0].PDNSDaemon.Details.ConfigURL)
-	require.Equal(t, "http://127.0.0.1:8081/zones", updatedApp.Daemons[0].PDNSDaemon.Details.ZonesURL)
-	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", updatedApp.Daemons[0].PDNSDaemon.Details.AutoprimariesURL)
+	require.EqualValues(t, apiDaemon.Name, updatedDaemon.Name)
+	require.Equal(t, "4.7.0", updatedDaemon.Version)
+	require.Equal(t, "4.7.0", updatedDaemon.ExtendedVersion)
+	require.EqualValues(t, 1234, updatedDaemon.Uptime)
+	require.Equal(t, "http://127.0.0.1:8081", updatedDaemon.PDNSDaemon.Details.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", updatedDaemon.PDNSDaemon.Details.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", updatedDaemon.PDNSDaemon.Details.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", updatedDaemon.PDNSDaemon.Details.AutoprimariesURL)
 }
 
 func TestCreateMachine(t *testing.T) {
@@ -1049,20 +1062,16 @@ func TestGetMachine(t *testing.T) {
 	err = dbmodel.AddMachine(db, m2)
 	require.NoError(t, err)
 
-	// add app to machine 2
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	s := &dbmodel.App{
-		ID:           0,
-		MachineID:    m2.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons:      []*dbmodel.Daemon{},
+	// add daemon to machine 2
+	accessPoint := &dbmodel.AccessPoint{
+		Type:    dbmodel.AccessPointControl,
+		Address: "",
+		Port:    1234,
 	}
-	_, err = dbmodel.AddApp(db, s)
+	daemon := dbmodel.NewDaemon(m2, daemonname.CA, true, []*dbmodel.AccessPoint{accessPoint})
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.ID)
+	require.NotEqual(t, 0, daemon.ID)
 
 	// get added machine 2 with kea app
 	params = services.GetMachineParams{
@@ -1073,7 +1082,7 @@ func TestGetMachine(t *testing.T) {
 	okRsp = rsp.(*services.GetMachineOK)
 	require.Equal(t, m2.ID, okRsp.Payload.ID)
 	require.Len(t, okRsp.Payload.Apps, 1)
-	require.Equal(t, s.ID, okRsp.Payload.Apps[0].ID)
+	require.Equal(t, daemon.GetVirtualApp().ID, okRsp.Payload.Apps[0].ID)
 	require.Len(t, okRsp.Payload.Apps[0].AccessPoints, 1)
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
@@ -1247,20 +1256,15 @@ func TestDeleteMachine(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add an app.
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
-	app := &dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Name:         "test-app",
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
+	// Add a daemon.
+	accessPoint := &dbmodel.AccessPoint{
+		Type:    dbmodel.AccessPointControl,
+		Address: "localhost",
+		Port:    1234,
 	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Add a zone associated with the app. We will later check if its deleted
@@ -1269,7 +1273,7 @@ func TestDeleteMachine(t *testing.T) {
 		Name: "example.org",
 		LocalZones: []*dbmodel.LocalZone{
 			{
-				DaemonID: app.Daemons[0].ID,
+				DaemonID: daemon.ID,
 				View:     "default",
 				Class:    "IN",
 				Serial:   1,
@@ -1332,7 +1336,7 @@ func TestGetApp(t *testing.T) {
 	require.IsType(t, &services.GetAppDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetAppDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Cannot find app with ID 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "App with ID 123 not found", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1342,28 +1346,25 @@ func TestGetApp(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app to machine
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, true)
-	s := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons:      []*dbmodel.Daemon{},
+	// add daemon to machine
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, s)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{accessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
 	// get added app
 	params = services.GetAppParams{
-		ID: s.ID,
+		ID: keaDaemon.GetVirtualApp().ID,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, s.ID, okRsp.Payload.ID)
+	require.Equal(t, keaDaemon.GetVirtualApp().ID, okRsp.Payload.ID)
 }
 
 func TestRestGetApp(t *testing.T) {
@@ -1386,7 +1387,7 @@ func TestRestGetApp(t *testing.T) {
 	require.IsType(t, &services.GetAppDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetAppDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Cannot find app with ID 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "App with ID 123 not found", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1396,59 +1397,51 @@ func TestRestGetApp(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add kea app to machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	keaApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		Name:         "fancy-app",
-		AccessPoints: keaPoints,
-		Daemons:      []*dbmodel.Daemon{},
+	// add kea daemon to machine
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{accessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
 	// get added kea app
+	app := keaDaemon.GetVirtualApp()
 	params = services.GetAppParams{
-		ID: keaApp.ID,
+		ID: app.ID,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
-	require.Equal(t, keaApp.Name, okRsp.Payload.Name)
+	require.Equal(t, app.ID, okRsp.Payload.ID)
+	require.Equal(t, app.Name, okRsp.Payload.Name)
 
-	// add BIND 9 app to machine
-	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 953, true)
-	bind9App := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Active:       true,
-		Name:         "another-fancy-app",
-		AccessPoints: bind9Points,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Bind9Daemon: &dbmodel.Bind9Daemon{},
-			},
-		},
+	// add BIND 9 daemon to machine
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     953,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, bind9App)
+	bind9Daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	bind9Daemon.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	err = dbmodel.AddDaemon(db, bind9Daemon)
 	require.NoError(t, err)
 
-	// get added BIND 9 app
+	// get added BIND 9 daemon
+	app = bind9Daemon.GetVirtualApp()
 	params = services.GetAppParams{
-		ID: bind9App.ID,
+		ID: app.ID,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp = rsp.(*services.GetAppOK)
-	require.Equal(t, bind9App.ID, okRsp.Payload.ID)
-	require.Equal(t, bind9App.Name, okRsp.Payload.Name)
+	require.Equal(t, app.ID, okRsp.Payload.ID)
+	require.Equal(t, app.Name, okRsp.Payload.Name)
 }
 
 // Test getting PowerDNS app by ID.
@@ -1472,41 +1465,35 @@ func TestGetPowerDNSApp(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add PowerDNS app to machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	pdnsApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypePDNS,
-		Active:       true,
-		Name:         "pdns",
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				PDNSDaemon: &dbmodel.PDNSDaemon{
-					Details: dbmodel.PDNSDaemonDetails{
-						URL:              "https://pdns.example.com",
-						ConfigURL:        "https://pdns.example.com/config",
-						ZonesURL:         "https://pdns.example.com/zones",
-						AutoprimariesURL: "https://pdns.example.com/autoprimaries",
-					},
-				},
-			},
+	// Add PowerDNS daemon to machine
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
+	}
+	pdnsDaemon := dbmodel.NewDaemon(m, daemonname.PDNS, true, []*dbmodel.AccessPoint{accessPoint})
+	pdnsDaemon.PDNSDaemon = &dbmodel.PDNSDaemon{
+		Details: dbmodel.PDNSDaemonDetails{
+			URL:              "https://pdns.example.com",
+			ConfigURL:        "https://pdns.example.com/config",
+			ZonesURL:         "https://pdns.example.com/zones",
+			AutoprimariesURL: "https://pdns.example.com/autoprimaries",
 		},
 	}
-	_, err = dbmodel.AddApp(db, pdnsApp)
+	err = dbmodel.AddDaemon(db, pdnsDaemon)
 	require.NoError(t, err)
 
 	// get added kea app
+	app := pdnsDaemon.GetVirtualApp()
 	params := services.GetAppParams{
-		ID: pdnsApp.ID,
+		ID: app.ID,
 	}
 	rsp := rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, pdnsApp.ID, okRsp.Payload.ID)
-	require.Equal(t, pdnsApp.Name, okRsp.Payload.Name)
+	require.Equal(t, app.ID, okRsp.Payload.ID)
+	require.Equal(t, app.Name, okRsp.Payload.Name)
 	require.Equal(t, "https://pdns.example.com", okRsp.Payload.Details.PdnsDaemon.URL)
 	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.Details.PdnsDaemon.ConfigURL)
 	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.Details.PdnsDaemon.ZonesURL)
@@ -1542,82 +1529,69 @@ func TestRestGetApps(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app kea to machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	s1 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		Name:         "fancy-app",
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:      "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{},
-				LogTargets: []*dbmodel.LogTarget{
-					{
-						Name:     "kea-dhcp4",
-						Severity: "DEBUG",
-						Output:   "/tmp/log",
-					},
-				},
-			},
+	// add kea daemon to machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
+	}
+	s1 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	s1.KeaDaemon = &dbmodel.KeaDaemon{}
+	s1.LogTargets = []*dbmodel.LogTarget{
+		{
+			Name:     "kea-dhcp4",
+			Severity: "DEBUG",
+			Output:   "/tmp/log",
 		},
 	}
-	_, err = dbmodel.AddApp(db, s1)
+	err = dbmodel.AddDaemon(db, s1)
 	require.NoError(t, err)
 
-	// add app BIND 9 to machine
-	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
-	s2 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Active:       true,
-		Name:         "another-fancy-app",
-		AccessPoints: bind9Points,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Bind9Daemon: &dbmodel.Bind9Daemon{},
-			},
-		},
+	// add BIND 9 daemon to machine
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     4321,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, s2)
+	s2 := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	s2.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	err = dbmodel.AddDaemon(db, s2)
 	require.NoError(t, err)
 
-	// add PowerDNS to machine
-	var pdnsPoints []*dbmodel.AccessPoint
-	pdnsPoints = dbmodel.AppendAccessPoint(pdnsPoints, dbmodel.AccessPointControl, "", "defg", 5300, false)
-	pdnsApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypePDNS,
-		AccessPoints: pdnsPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				PDNSDaemon: &dbmodel.PDNSDaemon{
-					Details: dbmodel.PDNSDaemonDetails{
-						URL:              "https://pdns.example.com",
-						ConfigURL:        "https://pdns.example.com/config",
-						ZonesURL:         "https://pdns.example.com/zones",
-						AutoprimariesURL: "https://pdns.example.com/autoprimaries",
-					},
-				},
-			},
+	// add PowerDNS daemon to machine
+	pdnsAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     5300,
+		Key:      "defg",
+		Protocol: protocoltype.HTTP,
+	}
+	pdnsDaemon := dbmodel.NewDaemon(m, daemonname.PDNS, true, []*dbmodel.AccessPoint{pdnsAccessPoint})
+	pdnsDaemon.PDNSDaemon = &dbmodel.PDNSDaemon{
+		Details: dbmodel.PDNSDaemonDetails{
+			URL:              "https://pdns.example.com",
+			ConfigURL:        "https://pdns.example.com/config",
+			ZonesURL:         "https://pdns.example.com/zones",
+			AutoprimariesURL: "https://pdns.example.com/autoprimaries",
 		},
 	}
-	_, err = dbmodel.AddApp(db, pdnsApp)
+	err = dbmodel.AddDaemon(db, pdnsDaemon)
 	require.NoError(t, err)
 
 	stats := agentcomm.NewAgentStats()
-	stats.IncreaseErrorCount("foo")
-	stats.GetKeaCommErrorStats(s1.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 2)
-	stats.GetKeaCommErrorStats(s1.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonDHCPv4, 5)
-	stats.GetBind9CommErrorStats(s2.ID).IncreaseErrorCountBy(agentcomm.Bind9ChannelRNDC, 2)
-	stats.GetBind9CommErrorStats(s2.ID).IncreaseErrorCountBy(agentcomm.Bind9ChannelStats, 3)
+	stats.IncreaseAgentErrorCount("foo")
+
+	keaStats := stats.GetKeaStats()
+	keaStats.IncreaseErrorCountBy(daemonname.CA, 2)
+	keaStats.IncreaseErrorCountBy(daemonname.DHCPv4, 5)
+
+	bind9Stats := stats.GetBind9Stats()
+	bind9Stats.IncreaseErrorCountBy(dbmodel.AccessPointControl, 2)
+	bind9Stats.IncreaseErrorCountBy(dbmodel.AccessPointStatistics, 3)
+
 	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).DoAndReturn(wrap(stats)).AnyTimes()
 
 	t.Run("get all apps", func(t *testing.T) {
@@ -1632,8 +1606,8 @@ func TestRestGetApps(t *testing.T) {
 		require.Len(t, okRsp.Payload.Items, 3)
 		for _, app := range okRsp.Payload.Items {
 			switch app.Type {
-			case dbmodel.AppTypeKea.String():
-				require.Equal(t, "fancy-app", app.Name)
+			case string(dbmodel.VirtualAppTypeKea):
+				require.Equal(t, "kea@localhost%791348537", app.Name)
 				appKea := app.Details.AppKea
 				require.Len(t, appKea.Daemons, 1)
 				daemon := appKea.Daemons[0]
@@ -1644,15 +1618,15 @@ func TestRestGetApps(t *testing.T) {
 				require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
 				require.Equal(t, "debug", daemon.LogTargets[0].Severity)
 				require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
-			case dbmodel.AppTypeBind9.String():
-				require.Equal(t, "another-fancy-app", app.Name)
+			case string(dbmodel.VirtualAppTypeBind9):
+				require.Equal(t, "bind9@localhost%792003897", app.Name)
 				appBind9 := app.Details.AppBind9
 				daemon := appBind9.Daemon
 				require.EqualValues(t, 1, daemon.AgentCommErrors)
 				require.EqualValues(t, 2, daemon.RndcCommErrors)
 				require.EqualValues(t, 3, daemon.StatsCommErrors)
-			case dbmodel.AppTypePDNS.String():
-				require.Equal(t, "pdns@localhost", app.Name)
+			case string(dbmodel.VirtualAppTypePDNS):
+				require.Equal(t, "pdns@localhost%791938359", app.Name)
 				appPdns := app.Details.AppPdns
 				require.Equal(t, "https://pdns.example.com", appPdns.PdnsDaemon.URL)
 				require.Equal(t, "https://pdns.example.com/config", appPdns.PdnsDaemon.ConfigURL)
@@ -1664,43 +1638,43 @@ func TestRestGetApps(t *testing.T) {
 
 	t.Run("get kea apps", func(t *testing.T) {
 		params = services.GetAppsParams{
-			Apps: []string{dbmodel.AppTypeKea.String()},
+			Apps: []string{string(dbmodel.VirtualAppTypeKea)},
 		}
 		rsp = rapi.GetApps(ctx, params)
 		require.IsType(t, &services.GetAppsOK{}, rsp)
 		okRsp = rsp.(*services.GetAppsOK)
 		require.EqualValues(t, 1, okRsp.Payload.Total)
-		require.EqualValues(t, dbmodel.AppTypeKea.String(), okRsp.Payload.Items[0].Type)
-		require.EqualValues(t, "fancy-app", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, string(dbmodel.VirtualAppTypeKea), okRsp.Payload.Items[0].Type)
+		require.EqualValues(t, "kea@localhost%791348537", okRsp.Payload.Items[0].Name)
 	})
 
 	t.Run("get bind9 apps", func(t *testing.T) {
 		params = services.GetAppsParams{
-			Apps: []string{dbmodel.AppTypeBind9.String()},
+			Apps: []string{string(dbmodel.VirtualAppTypeBind9)},
 		}
 		rsp = rapi.GetApps(ctx, params)
 		require.IsType(t, &services.GetAppsOK{}, rsp)
 		okRsp = rsp.(*services.GetAppsOK)
 		require.EqualValues(t, 1, okRsp.Payload.Total)
-		require.EqualValues(t, dbmodel.AppTypeBind9.String(), okRsp.Payload.Items[0].Type)
-		require.EqualValues(t, "another-fancy-app", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, string(dbmodel.VirtualAppTypeBind9), okRsp.Payload.Items[0].Type)
+		require.EqualValues(t, "bind9@localhost%792003897", okRsp.Payload.Items[0].Name)
 	})
 
 	t.Run("get pdns apps", func(t *testing.T) {
 		params = services.GetAppsParams{
-			Apps: []string{dbmodel.AppTypePDNS.String()},
+			Apps: []string{string(dbmodel.VirtualAppTypePDNS)},
 		}
 		rsp = rapi.GetApps(ctx, params)
 		require.IsType(t, &services.GetAppsOK{}, rsp)
 		okRsp = rsp.(*services.GetAppsOK)
 		require.EqualValues(t, 1, okRsp.Payload.Total)
-		require.EqualValues(t, dbmodel.AppTypePDNS.String(), okRsp.Payload.Items[0].Type)
-		require.EqualValues(t, "pdns@localhost", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, string(dbmodel.VirtualAppTypePDNS), okRsp.Payload.Items[0].Type)
+		require.EqualValues(t, "pdns@localhost%791938359", okRsp.Payload.Items[0].Name)
 	})
 
 	t.Run("get apps with multiple types", func(t *testing.T) {
 		params = services.GetAppsParams{
-			Apps: []string{dbmodel.AppTypeKea.String(), dbmodel.AppTypeBind9.String()},
+			Apps: []string{string(dbmodel.VirtualAppTypeKea), string(dbmodel.VirtualAppTypeBind9)},
 		}
 		rsp = rapi.GetApps(ctx, params)
 		require.IsType(t, &services.GetAppsOK{}, rsp)
@@ -1708,10 +1682,10 @@ func TestRestGetApps(t *testing.T) {
 		require.EqualValues(t, 2, okRsp.Payload.Total)
 		for _, app := range okRsp.Payload.Items {
 			switch app.Type {
-			case dbmodel.AppTypeKea.String():
-				require.Equal(t, "fancy-app", app.Name)
-			case dbmodel.AppTypeBind9.String():
-				require.Equal(t, "another-fancy-app", app.Name)
+			case string(dbmodel.VirtualAppTypeKea):
+				require.Equal(t, "kea@localhost%791348537", app.Name)
+			case string(dbmodel.VirtualAppTypeBind9):
+				require.Equal(t, "bind9@localhost%792003897", app.Name)
 			}
 		}
 	})
@@ -1747,42 +1721,36 @@ func TestRestGetBind9AppWithQueryStats(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add BIND 9  app to the machine.
-	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
-	app := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Active:       true,
-		Name:         "named",
-		AccessPoints: bind9Points,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Bind9Daemon: &dbmodel.Bind9Daemon{
-					Stats: dbmodel.Bind9DaemonStats{
-						ZoneCount:          int64(100),
-						AutomaticZoneCount: int64(50),
-						NamedStats: &bind9stats.Bind9NamedStats{
-							Views: map[string]*bind9stats.Bind9StatsView{
-								"trusted": {
-									Resolver: &bind9stats.Bind9StatsResolver{
-										CacheStats: map[string]int64{"QueryHits": 150, "QueryMisses": 50},
-									},
-								},
-								"guest": {
-									Resolver: &bind9stats.Bind9StatsResolver{
-										CacheStats: map[string]int64{"QueryHits": 75, "QueryMisses": 50},
-									},
-								},
-							},
+	// Add BIND 9 daemon to the machine.
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     4321,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
+	}
+	daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	daemon.Bind9Daemon = &dbmodel.Bind9Daemon{
+		Stats: dbmodel.Bind9DaemonStats{
+			ZoneCount:          int64(100),
+			AutomaticZoneCount: int64(50),
+			NamedStats: bind9stats.Bind9NamedStats{
+				Views: map[string]*bind9stats.Bind9StatsView{
+					"trusted": {
+						Resolver: &bind9stats.Bind9StatsResolver{
+							CacheStats: map[string]int64{"QueryHits": 150, "QueryMisses": 50},
+						},
+					},
+					"guest": {
+						Resolver: &bind9stats.Bind9StatsResolver{
+							CacheStats: map[string]int64{"QueryHits": 75, "QueryMisses": 50},
 						},
 					},
 				},
 			},
 		},
 	}
-	_, err = dbmodel.AddApp(db, app)
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	stats := agentcomm.NewAgentStats()
@@ -1842,30 +1810,28 @@ func TestGetAppsDirectory(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea app to the machine.
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	keaApp := &dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		Name:         "kea-app",
-		AccessPoints: keaPoints,
+	// Add Kea daemon to the machine.
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
-	// Add BIND 9 app to the machine.
-	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
-	bind9App := &dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Active:       true,
-		Name:         "bind9-app",
-		AccessPoints: bind9Points,
+	// Add BIND 9 daemon to the machine.
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     4321,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, bind9App)
+	bind9Daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	bind9Daemon.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	err = dbmodel.AddDaemon(db, bind9Daemon)
 	require.NoError(t, err)
 
 	params := services.GetAppsDirectoryParams{}
@@ -1880,6 +1846,8 @@ func TestGetAppsDirectory(t *testing.T) {
 	})
 
 	// Validate the returned data.
+	keaApp := keaDaemon.GetVirtualApp()
+	bind9App := bind9Daemon.GetVirtualApp()
 	require.Equal(t, keaApp.ID, apps.Items[0].ID)
 	require.NotNil(t, apps.Items[0].Name)
 	require.Equal(t, keaApp.Name, apps.Items[0].Name)
@@ -1922,69 +1890,44 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	err = dbmodel.AddMachine(db, m3)
 	require.NoError(t, err)
 
-	// Add Kea app to the first machine.
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	keaApp := &dbmodel.App{
-		MachineID:    m1.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		Name:         "kea1",
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:      "dhcp4",
-				Monitored: true,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-			},
-		},
+	// Add Kea daemon to the first machine.
+	keaAccessPoint1 := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
-	require.NoError(t, err)
-	id1 := keaApp.ID
-
-	// Add Kea app to the second machine.
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345, false)
-	keaApp = &dbmodel.App{
-		MachineID:    m2.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		Name:         "kea2",
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:      "dhcp4",
-				Monitored: true,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-			},
-		},
-	}
-
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon1 := dbmodel.NewDaemon(m1, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint1})
+	keaDaemon1.Monitored = true
+	keaDaemon1.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, keaDaemon1)
 	require.NoError(t, err)
 
-	// Add Bind9 app to the third machine.
-	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 3456, false)
-	bind9App := &dbmodel.App{
-		MachineID:    m3.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Active:       true,
-		Name:         "bind9",
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:        "bind9",
-				Monitored:   true,
-				Bind9Daemon: &dbmodel.Bind9Daemon{},
-			},
-		},
+	// Add Kea daemon to the second machine.
+	keaAccessPoint2 := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     2345,
+		Protocol: protocoltype.HTTP,
 	}
-
-	_, err = dbmodel.AddApp(db, bind9App)
+	keaDaemon2 := dbmodel.NewDaemon(m2, daemonname.CA, true, []*dbmodel.AccessPoint{keaAccessPoint2})
+	keaDaemon2.Monitored = true
+	keaDaemon2.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, keaDaemon2)
 	require.NoError(t, err)
-	id3 := bind9App.ID
+
+	// Add BIND 9 daemon to the third machine.
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     3456,
+		Protocol: protocoltype.HTTP,
+	}
+	bind9Daemon := dbmodel.NewDaemon(m3, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	bind9Daemon.Monitored = true
+	bind9Daemon.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	err = dbmodel.AddDaemon(db, bind9Daemon)
+	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
@@ -1994,7 +1937,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 
 	t.Run("current errors", func(t *testing.T) {
 		stats1 := agentcomm.NewAgentStats()
-		stats1.IncreaseErrorCount("foo")
+		stats1.IncreaseAgentErrorCount("foo")
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8080)).DoAndReturn(wrap(stats1))
 
 		stats2 := agentcomm.NewAgentStats()
@@ -2008,12 +1951,13 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
 		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "kea1", apps.Items[0].Name)
+		require.Equal(t, "kea@localhost%791348537", apps.Items[0].Name)
 	})
 
 	t.Run("ca errors", func(t *testing.T) {
 		stats1 := agentcomm.NewAgentStats()
-		stats1.GetKeaCommErrorStats(id1).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 10)
+		keaStats := stats1.GetKeaStats()
+		keaStats.IncreaseErrorCountBy(daemonname.CA, 10)
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8080)).DoAndReturn(wrap(stats1))
 
 		stats2 := agentcomm.NewAgentStats()
@@ -2027,12 +1971,13 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
 		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "kea1", apps.Items[0].Name)
+		require.Equal(t, "kea@localhost%791348537", apps.Items[0].Name)
 	})
 
 	t.Run("kea daemon errors", func(t *testing.T) {
 		stats1 := agentcomm.NewAgentStats()
-		stats1.GetKeaCommErrorStats(id1).IncreaseErrorCountBy(agentcomm.KeaDaemonDHCPv4, 1)
+		keaStats := stats1.GetKeaStats()
+		keaStats.IncreaseErrorCount(daemonname.DHCPv4)
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8080)).DoAndReturn(wrap(stats1))
 
 		stats2 := agentcomm.NewAgentStats()
@@ -2046,7 +1991,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
 		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "kea1", apps.Items[0].Name)
+		require.Equal(t, "kea@localhost%791348537", apps.Items[0].Name)
 	})
 
 	t.Run("bind9 current errors", func(t *testing.T) {
@@ -2057,7 +2002,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8081)).DoAndReturn(wrap(stats2))
 
 		stats3 := agentcomm.NewAgentStats()
-		stats3.IncreaseErrorCount("foo")
+		stats3.IncreaseAgentErrorCount("foo")
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
@@ -2065,7 +2010,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
 		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "bind9", apps.Items[0].Name)
+		require.Equal(t, "bind9@localhost%794756419", apps.Items[0].Name)
 	})
 
 	t.Run("rndc errors", func(t *testing.T) {
@@ -2076,7 +2021,8 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8081)).DoAndReturn(wrap(stats2))
 
 		stats3 := agentcomm.NewAgentStats()
-		stats3.GetBind9CommErrorStats(id3).IncreaseErrorCountBy(agentcomm.Bind9ChannelRNDC, 10)
+		bind9Stats := stats3.GetBind9Stats()
+		bind9Stats.IncreaseErrorCountBy(dbmodel.AccessPointControl, 10)
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
@@ -2084,7 +2030,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
 		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "bind9", apps.Items[0].Name)
+		require.Equal(t, "bind9@localhost%794756419", apps.Items[0].Name)
 	})
 
 	t.Run("stats errors", func(t *testing.T) {
@@ -2095,7 +2041,8 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8081)).DoAndReturn(wrap(stats2))
 
 		stats3 := agentcomm.NewAgentStats()
-		stats3.GetBind9CommErrorStats(id3).IncreaseErrorCountBy(agentcomm.Bind9ChannelStats, 10)
+		bind9Stats := stats3.GetBind9Stats()
+		bind9Stats.IncreaseErrorCountBy(dbmodel.AccessPointStatistics, 10)
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
@@ -2103,7 +2050,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
 		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "bind9", apps.Items[0].Name)
+		require.Equal(t, "bind9@localhost%794756419", apps.Items[0].Name)
 	})
 }
 
@@ -2126,24 +2073,16 @@ func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
 	err := dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea app to the machine.
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	keaApp := &dbmodel.App{
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		Name:         "kea1",
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:      "dhcp4",
-				Monitored: false,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-			},
-		},
+	// Add Kea daemon to the machine.
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	keaDaemon.Monitored = false
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
@@ -2153,7 +2092,7 @@ func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
 	require.NoError(t, err)
 
 	stats := agentcomm.NewAgentStats()
-	stats.IncreaseErrorCount("foo")
+	stats.IncreaseAgentErrorCount("foo")
 	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8080)).DoAndReturn(wrap(stats))
 
 	params := services.GetAppsWithCommunicationIssuesParams{}
@@ -2187,22 +2126,17 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea application to the machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, false)
-	keaApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
-		},
+	// Add Kea daemon to the machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
-	require.NotZero(t, keaApp.ID)
+	require.NotZero(t, keaDaemon.ID)
 
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
 	commInterrupted := []bool{true, true}
@@ -2213,7 +2147,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
 				Relationship:                "server1",
-				PrimaryID:                   keaApp.ID,
+				PrimaryID:                   keaDaemon.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
 				PrimaryLastState:            "load-balancing",
@@ -2240,7 +2174,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
 				Relationship:                "server3",
-				PrimaryID:                   keaApp.ID,
+				PrimaryID:                   keaDaemon.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
 				PrimaryLastState:            "load-balancing",
@@ -2267,7 +2201,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				HAType:                      "dhcp6",
 				HAMode:                      "hot-standby",
 				Relationship:                "server1",
-				PrimaryID:                   keaApp.ID,
+				PrimaryID:                   keaDaemon.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
 				PrimaryLastState:            "hot-standby",
@@ -2294,12 +2228,12 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	for i := range keaServices {
 		err = dbmodel.AddService(db, &keaServices[i])
 		require.NoError(t, err)
-		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaApp.Daemons[0])
+		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaDaemon)
 		require.NoError(t, err)
 	}
 
 	params := services.GetAppServicesStatusParams{
-		ID: keaApp.ID,
+		ID: keaDaemon.GetVirtualApp().ID,
 	}
 	rsp := rapi.GetAppServicesStatus(ctx, params)
 
@@ -2325,14 +2259,14 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	require.Equal(t, "server1", haStatus.Relationship)
 
-	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
+	require.EqualValues(t, keaDaemon.GetVirtualApp().ID, haStatus.PrimaryServer.AppID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 7, haStatus.PrimaryServer.ConnectingClients)
@@ -2364,14 +2298,14 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	require.Equal(t, "server3", haStatus.Relationship)
 
-	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server3")
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
+	require.EqualValues(t, keaDaemon.GetVirtualApp().ID, haStatus.PrimaryServer.AppID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 1, haStatus.PrimaryServer.ConnectingClients)
@@ -2403,7 +2337,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	require.Equal(t, "server1", haStatus.Relationship)
 
-	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
@@ -2453,22 +2387,17 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea application to the machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, true)
-	keaApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
-		},
+	// Add Kea daemon to the machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     1234,
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
-	require.NotZero(t, keaApp.ID)
+	require.NotZero(t, keaDaemon.ID)
 
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
 	keaServices := []dbmodel.Service{
@@ -2478,7 +2407,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 				HAType:                   "dhcp4",
 				HAMode:                   "passive-backup",
 				Relationship:             "server1",
-				PrimaryID:                keaApp.ID,
+				PrimaryID:                keaDaemon.ID,
 				PrimaryStatusCollectedAt: exampleTime,
 				PrimaryLastState:         "passive-backup",
 				PrimaryLastScopes:        []string{"server1"},
@@ -2490,12 +2419,12 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	for i := range keaServices {
 		err = dbmodel.AddService(db, &keaServices[i])
 		require.NoError(t, err)
-		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaApp.Daemons[0])
+		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaDaemon)
 		require.NoError(t, err)
 	}
 
 	params := services.GetAppServicesStatusParams{
-		ID: keaApp.ID,
+		ID: keaDaemon.GetVirtualApp().ID,
 	}
 	rsp := rapi.GetAppServicesStatus(ctx, params)
 
@@ -2518,14 +2447,14 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	require.NotNil(t, haStatus.PrimaryServer)
 	require.Nil(t, haStatus.SecondaryServer)
 
-	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "passive-backup", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
+	require.EqualValues(t, keaDaemon.GetVirtualApp().ID, haStatus.PrimaryServer.AppID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, -1, haStatus.PrimaryServer.CommInterrupted)
 	require.Zero(t, haStatus.PrimaryServer.ConnectingClients)
@@ -2562,46 +2491,42 @@ func TestRestGetAppsStats(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app kea to machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
-	s1 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons:      []*dbmodel.Daemon{},
+	// add kea daemon to machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, s1)
+	s1 := dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	s1.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, s1)
 	require.NoError(t, err)
 
-	// add app bind9 to machine
-	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
-	s2 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeBind9,
-		Active:       false,
-		AccessPoints: bind9Points,
-		Daemons:      []*dbmodel.Daemon{},
+	// add bind9 daemon to machine
+	bind9AccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     4321,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, s2)
+	s2 := dbmodel.NewDaemon(m, daemonname.Bind9, false, []*dbmodel.AccessPoint{bind9AccessPoint})
+	s2.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	err = dbmodel.AddDaemon(db, s2)
 	require.NoError(t, err)
 
-	// Add PowerDNS app to the machine.
-	var pdnsPoints []*dbmodel.AccessPoint
-	pdnsPoints = dbmodel.AppendAccessPoint(pdnsPoints, dbmodel.AccessPointControl, "", "abcd", 5432, true)
-	s3 := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypePDNS,
-		Active:       false,
-		AccessPoints: pdnsPoints,
-		Daemons:      []*dbmodel.Daemon{},
+	// Add PowerDNS daemon to the machine.
+	pdnsAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     5432,
+		Key:      "abcd",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, s3)
+	s3 := dbmodel.NewDaemon(m, daemonname.PDNS, false, []*dbmodel.AccessPoint{pdnsAccessPoint})
+	s3.PDNSDaemon = &dbmodel.PDNSDaemon{}
+	err = dbmodel.AddDaemon(db, s3)
 	require.NoError(t, err)
 
 	// get added app
@@ -2626,24 +2551,22 @@ func TestGetDhcpOverview(t *testing.T) {
 	err := dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app kea to machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
-	app := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Name:         "test-app",
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
-			dbmodel.NewKeaDaemon("dhcp6", true),
-		},
+	// add daemon kea to machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	// dhcp6 is not monitored, only dhcp4 should be visible
-	app.Daemons[1].Monitored = false
-	_, err = dbmodel.AddApp(db, app)
+	dhcp4Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	dhcp4Daemon.Monitored = true
+	err = dbmodel.AddDaemon(db, dhcp4Daemon)
+	require.NoError(t, err)
+
+	dhcp6Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	dhcp6Daemon.KeaDaemon = &dbmodel.KeaDaemon{}
+	dhcp6Daemon.Monitored = false
+	err = dbmodel.AddDaemon(db, dhcp6Daemon)
 	require.NoError(t, err)
 
 	err = dbmodel.AddSubnet(db, &dbmodel.Subnet{
@@ -2664,9 +2587,10 @@ func TestGetDhcpOverview(t *testing.T) {
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 	stats := agentcomm.NewAgentStats()
-	stats.IncreaseErrorCount("foo")
-	stats.GetKeaCommErrorStats(app.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 2)
-	stats.GetKeaCommErrorStats(app.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonDHCPv4, 5)
+	stats.IncreaseAgentErrorCount("foo")
+	keaStats := stats.GetKeaStats()
+	keaStats.IncreaseErrorCountBy(daemonname.CA, 2)
+	keaStats.IncreaseErrorCountBy(daemonname.DHCPv4, 5)
 	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8080)).DoAndReturn(wrap(stats))
 
 	settings := RestAPISettings{}
@@ -2691,7 +2615,7 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	// only dhcp4 is present
 	require.EqualValues(t, "dhcp4", okRsp.Payload.DhcpDaemons[0].Name)
-	require.EqualValues(t, "test-app", okRsp.Payload.DhcpDaemons[0].AppName)
+	require.EqualValues(t, "kea@localhost%791348537", okRsp.Payload.DhcpDaemons[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
 	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
 	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)
@@ -2724,22 +2648,17 @@ func TestHAInDhcpOverview(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea application to the machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, true)
-	keaApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
-		},
+	// Add Kea daemon to the machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     1234,
+		Protocol: protocoltype.HTTPS,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
-	require.NotZero(t, keaApp.ID)
+	require.NotZero(t, keaDaemon.ID)
 
 	// Create an HA service.
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
@@ -2749,7 +2668,7 @@ func TestHAInDhcpOverview(t *testing.T) {
 			HAType:                   "dhcp4",
 			HAMode:                   "load-balancing",
 			Relationship:             "server1",
-			PrimaryID:                keaApp.ID,
+			PrimaryID:                keaDaemon.ID,
 			PrimaryStatusCollectedAt: exampleTime,
 			PrimaryLastState:         "load-balancing",
 			SecondaryLastFailoverAt:  exampleTime,
@@ -2759,7 +2678,7 @@ func TestHAInDhcpOverview(t *testing.T) {
 	// Add the service and associate the daemon with that service.
 	err = dbmodel.AddService(db, &keaService)
 	require.NoError(t, err)
-	err = dbmodel.AddDaemonToService(db, keaService.ID, keaApp.Daemons[0])
+	err = dbmodel.AddDaemonToService(db, keaService.ID, keaDaemon)
 	require.NoError(t, err)
 
 	// Get the overview.
@@ -2825,25 +2744,21 @@ func TestUpdateDaemon(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea application to the machine
-	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, false)
-	keaApp := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: keaPoints,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
-		},
+	// Add Kea daemon to the machine
+	keaAccessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     1234,
+		Protocol: protocoltype.HTTP,
 	}
-	_, err = dbmodel.AddApp(db, keaApp)
+	keaDaemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	keaDaemon.Monitored = true
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
-	require.NotZero(t, keaApp.ID)
-	require.NotZero(t, keaApp.Daemons[0].ID)
+	require.NotZero(t, keaDaemon.ID)
 
 	// get added app
+	keaApp := keaDaemon.GetVirtualApp()
 	getAppParams := services.GetAppParams{
 		ID: keaApp.ID,
 	}
@@ -2863,7 +2778,7 @@ func TestUpdateDaemon(t *testing.T) {
 
 	// update daemon: change monitored to false
 	params := services.UpdateDaemonParams{
-		ID: keaApp.Daemons[0].ID,
+		ID: keaDaemon.ID,
 		Daemon: services.UpdateDaemonBody{
 			Monitored: false,
 		},
@@ -2941,15 +2856,11 @@ func TestRenameApp(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add Kea application to the machine
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Name:      "dhcp-server1",
-	}
-	_, err = dbmodel.AddApp(db, app)
+	// Add Kea daemon to the machine
+	keaDaemon := dbmodel.NewDaemon(machine, daemonname.CA, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
-	require.NotZero(t, app.ID)
+	require.NotZero(t, keaDaemon.ID)
 
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
@@ -2961,6 +2872,7 @@ func TestRenameApp(t *testing.T) {
 
 	// Use correct parameters.
 	newName := "dhcp-server2"
+	app := keaDaemon.GetVirtualApp()
 	params := services.RenameAppParams{
 		ID: app.ID,
 		NewAppName: services.RenameAppBody{
@@ -2968,43 +2880,12 @@ func TestRenameApp(t *testing.T) {
 		},
 	}
 	rsp := rapi.RenameApp(ctx, params)
-	require.IsType(t, &services.RenameAppOK{}, rsp)
-
-	// Make sure the app has been successfully renamed.
-	returnedApp, err := dbmodel.GetAppByID(db, app.ID)
-	require.NoError(t, err)
-	require.NotNil(t, returnedApp)
-	require.Equal(t, "dhcp-server2", returnedApp.Name)
-
-	// Use an incorrect app name.
-	newName = "dhcp-server2@machine3"
-	rsp = rapi.RenameApp(ctx, params)
 	require.IsType(t, &services.RenameAppDefault{}, rsp)
+
+	// Check the error message.
 	defaultRsp := rsp.(*services.RenameAppDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-
-	// Ensure that the event informing about renaming the app was emitted.
-	require.Len(t, fec.Events, 1)
-	require.Contains(t, fec.Events[0].Text, "renamed from dhcp-server1")
-	require.NotNil(t, fec.Events[0].Relations)
-	require.Equal(t, machine.ID, fec.Events[0].Relations.MachineID)
-	require.Equal(t, app.ID, fec.Events[0].Relations.AppID)
-
-	// Empty name (with only whitespace) should cause an error too.
-	newName = "   "
-	rsp = rapi.RenameApp(ctx, params)
-	require.IsType(t, &services.RenameAppDefault{}, rsp)
-	defaultRsp = rsp.(*services.RenameAppDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-
-	// Finally, let's try supplying a nil value.
-	params.NewAppName = services.RenameAppBody{
-		Name: nil,
-	}
-	rsp = rapi.RenameApp(ctx, params)
-	require.IsType(t, &services.RenameAppDefault{}, rsp)
-	defaultRsp = rsp.(*services.RenameAppDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Unable to rename app - this feature is no longer supported", *defaultRsp.Payload.Message)
+	require.Equal(t, http.StatusServiceUnavailable, getStatusCode(*defaultRsp))
 }
 
 // This test verifies that database backend configurations are parsed correctly
@@ -3040,7 +2921,7 @@ func TestGetKeaStorages(t *testing.T) {
             ]
         }
     }`
-	keaConfig, err := keaconfig.NewConfig(configString)
+	keaConfig, err := keaconfig.NewConfig([]byte(configString))
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 
@@ -3090,7 +2971,7 @@ func TestGetKeaStoragesNonPersist(t *testing.T) {
             ]
         }
     }`
-	keaConfig, err := keaconfig.NewConfig(configString)
+	keaConfig, err := keaconfig.NewConfig([]byte(configString))
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 
@@ -3109,110 +2990,29 @@ func TestGetKeaStoragesNonPersist(t *testing.T) {
 	require.False(t, files[1].Persist)
 }
 
-// Test that converting app with nil Kea config doesn't cause panic.
-func TestAppToRestAPIForNilKeaConfig(t *testing.T) {
+// Test that converting machine with a daemon with nil Kea config doesn't cause panic.
+func TestMachineToRestAPIForNilKeaConfig(t *testing.T) {
 	// Arrange
-	app := &dbmodel.App{
-		MachineID: 1,
-		Type:      dbmodel.AppTypeKea,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon("dhcp4", true),
-		},
-	}
-	rapi, err := NewRestAPI(&dbops.DatabaseSettings{})
+	machine := &dbmodel.Machine{ID: 1}
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{})
+	machine.Daemons = []*dbmodel.Daemon{daemon}
+
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	rapi, err := NewRestAPI(&dbops.DatabaseSettings{}, fa)
 	require.NoError(t, err)
 
 	// Act
-	restApp := rapi.appToRestAPI(app)
+	restMachine := rapi.machineToRestAPI(*machine)
 
 	// Assert
-	require.NotNil(t, restApp)
-}
-
-// Test that converting app with nil BIND9 daemon doesn't cause panic.
-func TestAppToRestAPIForNilBIND9Daemon(t *testing.T) {
-	// Arrange
-	app := &dbmodel.App{
-		MachineID: 1,
-		Type:      dbmodel.AppTypeBind9,
-		Machine: &dbmodel.Machine{
-			Address:   "localhost",
-			AgentPort: 8080,
-		},
-	}
-
-	bind9Mock := func(callNo int, statsOutput interface{}) {
-		json := `{
-		    "json-stats-version":"1.2",
-		    "views":{
-		        "_default":{
-		            "resolver":{
-		                "cachestats":{
-		                    "CacheHits": 60,
-		                    "CacheMisses": 40,
-		                    "QueryHits": 10,
-		                    "QueryMisses": 90
-		                }
-		            }
-		        },
-		        "_bind":{
-		            "resolver":{
-		                "cachestats":{
-		                    "CacheHits": 30,
-		                    "CacheMisses": 70,
-		                    "QueryHits": 20,
-		                    "QueryMisses": 80
-		                }
-		            }
-		        }
-		    }
-		}`
-
-		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
-	}
-	fa := agentcommtest.NewFakeAgents(nil, bind9Mock)
-
-	rapi, _ := NewRestAPI(&dbops.DatabaseSettings{}, fa)
-
-	// Act & Assert
-	var restApp *models.App
-	require.NotPanics(t, func() {
-		restApp = rapi.appToRestAPI(app)
-	})
-
-	require.NotNil(t, restApp)
-	require.EqualValues(t, dbmodel.AppTypeBind9, restApp.Type)
-	require.NotNil(t, restApp.Details.AppBind9)
-	require.Nil(t, restApp.Details.Daemon)
-	require.Empty(t, restApp.Details.Daemons)
-}
-
-// Test that converting BIND9 app with no daemons doesn't cause panic.
-// The daemon list is empty when the Stork agent detects the BIND9 process but
-// it fails to establish connection to it through the RNDC control channel
-// (e.g. due to insufficient permissions to BIND9 configurations of the Stork
-// agent user).
-func TestAppToRestAPIForPartiallyDetectedBind9(t *testing.T) {
-	// Arrange
-	app := &dbmodel.App{
-		MachineID: 1,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons:   []*dbmodel.Daemon{},
-	}
-	rapi, err := NewRestAPI(&dbops.DatabaseSettings{})
-	require.NoError(t, err)
-
-	// Act & Assert
-	var restApp *models.App
-	require.NotPanics(t, func() {
-		restApp = rapi.appToRestAPI(app)
-	})
-
-	require.NotNil(t, restApp)
+	require.NotNil(t, restMachine)
+	require.Len(t, restMachine.Apps, 1)
+	require.Len(t, restMachine.Apps[0].Details.Daemons, 1)
 }
 
 // Test conversion of a KeaDaemon to REST API format.
 func TestKeaDaemonToRestAPI(t *testing.T) {
+	machine := &dbmodel.Machine{ID: 2}
 	daemon := &dbmodel.Daemon{
 		ID:              1,
 		Pid:             1234,
@@ -3223,23 +3023,25 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 		ExtendedVersion: "2.1.x",
 		Uptime:          1000,
 		ReloadedAt:      time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+		Machine:         machine,
 		KeaDaemon: &dbmodel.KeaDaemon{
-			Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-				"Dhcp4": map[string]interface{}{
-					"hooks-libraries": []interface{}{
-						map[string]interface{}{
-							"library": "hook_abc.so",
-						},
-						map[string]interface{}{
-							"library": "hook_def.so",
-						},
-					},
-				},
-			}),
-		},
-		App: &dbmodel.App{
-			ID:   2,
-			Name: "funny",
+			Config: &dbmodel.KeaConfig{
+				Config: func() *keaconfig.Config {
+					cfg, _ := keaconfig.NewConfig([]byte(`{
+						"Dhcp4": {
+							"hooks-libraries": [
+								{
+									"library": "hook_abc.so"
+								},
+								{
+									"library": "hook_def.so"
+								}
+							]
+						}
+					}`))
+					return cfg
+				}(),
+			},
 		},
 	}
 	converted := keaDaemonToRestAPI(daemon)
@@ -3256,8 +3058,9 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 	require.Contains(t, converted.Hooks, "hook_abc.so")
 	require.Contains(t, converted.Hooks, "hook_def.so")
 	require.NotNil(t, converted.App)
-	require.EqualValues(t, daemon.App.ID, converted.App.ID)
-	require.Equal(t, daemon.App.Name, converted.App.Name)
+	virtualApp := daemon.GetVirtualApp()
+	require.EqualValues(t, virtualApp.ID, converted.App.ID)
+	require.Equal(t, virtualApp.Name, converted.App.Name)
 }
 
 // This test verifies that the lease database configuration storing the
@@ -3271,7 +3074,7 @@ func TestGetKeaStoragesLeaseDatabase(t *testing.T) {
             }
         }
     }`
-	keaConfig, err := keaconfig.NewConfig(configString)
+	keaConfig, err := keaconfig.NewConfig([]byte(configString))
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 
@@ -3300,7 +3103,7 @@ func TestGetKeaStoragesForensicDatabase(t *testing.T) {
             ]
         }
     }`
-	keaConfig, err := keaconfig.NewConfig(configString)
+	keaConfig, err := keaconfig.NewConfig([]byte(configString))
 	require.NoError(t, err)
 	require.NotNil(t, keaConfig)
 
@@ -3487,7 +3290,7 @@ func TestGetAccessPointKeyIsRestrictedToSuperAdmins(t *testing.T) {
 	// Act
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
 		AppID: 42,
-		Type:  dbmodel.AccessPointControl,
+		Type:  string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -3513,7 +3316,7 @@ func TestGetAccessPointKeyForInvalidDatabase(t *testing.T) {
 	teardown()
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
 		AppID: 42,
-		Type:  dbmodel.AccessPointControl,
+		Type:  string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -3539,7 +3342,7 @@ func TestGetAccessPointKeyForMissingEntry(t *testing.T) {
 	// Act
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
 		AppID: 42,
-		Type:  dbmodel.AccessPointControl,
+		Type:  string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -3563,23 +3366,24 @@ func TestGetAccessPointKey(t *testing.T) {
 
 	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
 	_ = dbmodel.AddMachine(db, machine)
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		AccessPoints: []*dbmodel.AccessPoint{{
-			Type:              dbmodel.AccessPointControl,
-			Address:           "127.0.0.1",
-			Port:              8080,
-			Key:               "secret",
-			UseSecureProtocol: true,
-		}},
+
+	accessPoint := &dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     8080,
+		Key:      "secret",
+		Protocol: protocoltype.HTTPS,
 	}
-	_, _ = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon.Bind9Daemon = &dbmodel.Bind9Daemon{}
+	_ = dbmodel.AddDaemon(db, daemon)
+
+	app := daemon.GetVirtualApp()
 
 	// Act
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
 		AppID: app.ID,
-		Type:  dbmodel.AccessPointControl,
+		Type:  string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -4450,32 +4254,17 @@ func TestGetMachinesAppsVersions(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine1)
 	require.NoError(t, err)
 
-	// Add Kea app with software versions.
-	app1 := &dbmodel.App{
-		// ID:        0,
-		MachineID: machine1.ID,
-		Type:      dbmodel.AppTypeKea,
-		Active:    true,
-		Name:      "fancy-app",
-		Meta: dbmodel.AppMeta{
-			Version: "3.2.1",
-		},
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:      "dhcp4",
-				Active:    true,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-				Version:   "3.2.2",
-			},
-			{
-				Name:      "dhcp6",
-				Active:    true,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-				Version:   "3.2.1",
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, app1)
+	// Add Kea daemons with software versions.
+	dhcp4Daemon1 := dbmodel.NewDaemon(machine1, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{})
+	dhcp4Daemon1.Version = "3.2.2"
+	dhcp4Daemon1.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, dhcp4Daemon1)
+	require.NoError(t, err)
+
+	dhcp6Daemon1 := dbmodel.NewDaemon(machine1, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{})
+	dhcp6Daemon1.Version = "3.2.1"
+	dhcp6Daemon1.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, dhcp6Daemon1)
 	require.NoError(t, err)
 
 	machine2 := &dbmodel.Machine{
@@ -4489,31 +4278,17 @@ func TestGetMachinesAppsVersions(t *testing.T) {
 	err = dbmodel.AddMachine(db, machine2)
 	require.NoError(t, err)
 
-	// Add Kea app with software versions.
-	app2 := &dbmodel.App{
-		MachineID: machine2.ID,
-		Type:      dbmodel.AppTypeKea,
-		Active:    true,
-		Name:      "fancy-app-two",
-		Meta: dbmodel.AppMeta{
-			Version: "1.2.1",
-		},
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:      "dhcp4",
-				Active:    true,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-				Version:   "1.2.1",
-			},
-			{
-				Name:      "dhcp6",
-				Active:    true,
-				KeaDaemon: &dbmodel.KeaDaemon{},
-				Version:   "1.2.1",
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, app2)
+	// Add Kea daemons with software versions.
+	dhcp4Daemon2 := dbmodel.NewDaemon(machine2, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{})
+	dhcp4Daemon2.Version = "1.2.1"
+	dhcp4Daemon2.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, dhcp4Daemon2)
+	require.NoError(t, err)
+
+	dhcp6Daemon2 := dbmodel.NewDaemon(machine2, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{})
+	dhcp6Daemon2.Version = "1.2.1"
+	dhcp6Daemon2.KeaDaemon = &dbmodel.KeaDaemon{}
+	err = dbmodel.AddDaemon(db, dhcp6Daemon2)
 	require.NoError(t, err)
 
 	machine3 := &dbmodel.Machine{
@@ -4555,7 +4330,7 @@ func TestGetMachinesAppsVersions(t *testing.T) {
 	require.Equal(t, machine2.Address, *machines.Items[1].Address)
 	require.NotNil(t, machines.Items[0].Apps)
 	require.NotNil(t, machines.Items[1].Apps)
-	require.Equal(t, "3.2.1", machines.Items[0].Apps[0].Version)
+	require.Equal(t, "3.2.2", machines.Items[0].Apps[0].Version)
 	require.Equal(t, "9.8.7", machines.Items[0].AgentVersion)
 	require.Equal(t, "3.2.2", machines.Items[0].Apps[0].Details.Daemons[0].Version)
 	require.Equal(t, "3.2.1", machines.Items[0].Apps[0].Details.Daemons[1].Version)

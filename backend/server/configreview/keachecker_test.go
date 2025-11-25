@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -16,43 +17,46 @@ import (
 
 // Creates review context from configuration string.
 func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string, keaVersion string) *ReviewContext {
-	config, err := dbmodel.NewKeaConfigFromJSON(configStr)
-	require.NoError(t, err)
-
 	// Configuration must contain one of the keywords that identify the
 	// daemon type.
-	daemonName := dbmodel.DaemonNameDHCPv4
+	daemonName := daemonname.DHCPv4
 	if strings.Contains(configStr, "Dhcp6") {
-		daemonName = dbmodel.DaemonNameDHCPv6
+		daemonName = daemonname.DHCPv6
 	} else if strings.Contains(configStr, "Control-agent") {
-		daemonName = dbmodel.DaemonNameCA
+		daemonName = daemonname.CA
 	}
 
 	// Create the daemon instance and the context.
-	ctx := newReviewContext(db, &dbmodel.Daemon{
-		ID:      1,
-		Name:    daemonName,
-		Version: keaVersion,
-		KeaDaemon: &dbmodel.KeaDaemon{
-			Config: config,
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	daemon := dbmodel.NewDaemon(machine, daemonName, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
 		},
-		// The subject daemon may lack the app. The dispatcher accepts the
-		// daemon object and doesn't validate if it contains non-nil references
-		// to the app and machine.
-	}, []Trigger{ManualRun}, nil)
+	})
+	daemon.ID = 1
+	daemon.Version = keaVersion
+	err := daemon.SetKeaConfigFromJSON([]byte(configStr))
+	require.NoError(t, err)
+
+	ctx := newReviewContext(db, daemon, []Trigger{ManualRun}, nil)
 	require.NotNil(t, ctx)
 
 	return ctx
 }
 
 // Creates a new host with IP reservations in the database. Adding a host
-// requires a machine, app and subnet which are also added by this function.
+// requires a machine, daemon and subnet which are also added by this function.
 func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix string, reservationAddress ...string) {
 	// Detect whether we're dealing with DHCPv4 or DHCPv6.
-	daemonName := dbmodel.DaemonNameDHCPv4
+	daemonName := daemonname.DHCPv4
 	parsedPrefix := storkutil.ParseIP(subnetPrefix)
 	if parsedPrefix != nil && parsedPrefix.Protocol == storkutil.IPv6 {
-		daemonName = dbmodel.DaemonNameDHCPv6
+		daemonName = daemonname.DHCPv6
 	}
 	// Create the machine.
 	machine := &dbmodel.Machine{
@@ -64,26 +68,13 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	require.NoError(t, err)
 	require.NotZero(t, machine.ID)
 
-	config, err := dbmodel.NewKeaConfigFromJSON(configStr)
+	// Create the daemon.
+	daemon := dbmodel.NewDaemon(machine, daemonName, true, nil)
+	err = daemon.SetKeaConfigFromJSON([]byte(configStr))
 	require.NoError(t, err)
 
-	// Create the app.
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   daemonName,
-				Active: true,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: config,
-				},
-			},
-		},
-	}
-	addedDaemons, err := dbmodel.AddApp(db, app)
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	// Create the subnet.
 	subnet := dbmodel.Subnet{
@@ -93,7 +84,7 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	require.NoError(t, err)
 
 	// Associate the daemon with the subnet.
-	err = dbmodel.AddDaemonToSubnet(db, &subnet, app.Daemons[0])
+	err = dbmodel.AddDaemonToSubnet(db, &subnet, daemon)
 	require.NoError(t, err)
 
 	// Add the host for this subnet.
@@ -108,7 +99,7 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	}
 
 	localHost := &dbmodel.LocalHost{
-		DaemonID:   app.Daemons[0].ID,
+		DaemonID:   daemon.ID,
 		DataSource: dbmodel.HostDataSourceAPI,
 	}
 
@@ -2172,7 +2163,8 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 // Test that error is generated for non-DHCP daemon.
 func TestSubnetsOverlappingReportErrorForNonDHCPDaemon(t *testing.T) {
 	// Arrange
-	ctx := newReviewContext(nil, dbmodel.NewBind9Daemon(true), Triggers{ManualRun},
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.Bind9, true, nil)
+	ctx := newReviewContext(nil, daemon, Triggers{ManualRun},
 		func(i int64, err error) {})
 
 	// Act
@@ -2186,12 +2178,12 @@ func TestSubnetsOverlappingReportErrorForNonDHCPDaemon(t *testing.T) {
 // Test that report is nil for non-overlapping subnets.
 func TestSubnetsOverlappingReportForNonOverlappingSubnets(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
-	_ = daemon.SetConfigFromJSON(`{
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "subnet4": []
         }
-    }`)
+    }`))
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
 
@@ -2206,9 +2198,9 @@ func TestSubnetsOverlappingReportForNonOverlappingSubnets(t *testing.T) {
 // Test that report has a proper content for a single overlap.
 func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
-	_ = daemon.SetConfigFromJSON(`{
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "subnet4": [
                 {
@@ -2221,7 +2213,7 @@ func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
                 }
             ]
         }
-    }`)
+    }`))
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
 
@@ -2239,9 +2231,9 @@ func TestSubnetsOverlappingReportForSingleOverlap(t *testing.T) {
 // Test that report has a proper content for a single overlap and subnets without IDs.
 func TestSubnetsOverlappingReportForSingleOverlapAndNoSubnetIDs(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
-	_ = daemon.SetConfigFromJSON(`{
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "subnet4": [
                 {
@@ -2252,7 +2244,7 @@ func TestSubnetsOverlappingReportForSingleOverlapAndNoSubnetIDs(t *testing.T) {
                 }
             ]
         }
-    }`)
+    }`))
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
 
@@ -2271,7 +2263,7 @@ func TestSubnetsOverlappingReportForSingleOverlapAndNoSubnetIDs(t *testing.T) {
 // Test that report has a proper content for a multiple overlaps.
 func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
 
 	var subnetsConfig []interface{}
@@ -2286,7 +2278,7 @@ func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 			"subnet4": subnetsConfig,
 		},
 	})
-	_ = daemon.SetConfigFromJSON(string(config))
+	_ = daemon.SetKeaConfigFromJSON(config)
 
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
@@ -2308,10 +2300,10 @@ func TestSubnetsOverlappingReportForMultipleOverlap(t *testing.T) {
 // node.
 func TestSubnetsOverlappingForMissingSubnetNode(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
-	_ = daemon.SetConfigFromJSON(`{
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": { }
-    }`)
+    }`))
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
 
@@ -2326,9 +2318,9 @@ func TestSubnetsOverlappingForMissingSubnetNode(t *testing.T) {
 // Test that shared networks are processed by the overlapping checker.
 func TestSubnetsOverlappingForSharedNetworks(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
-	_ = daemon.SetConfigFromJSON(`{
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "shared-networks": [
                 {
@@ -2343,7 +2335,7 @@ func TestSubnetsOverlappingForSharedNetworks(t *testing.T) {
                 }
             ]
         }
-    }`)
+    }`))
 
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
@@ -2424,9 +2416,9 @@ func TestIsCanonicalPrefixForInvalidPrefixes(t *testing.T) {
 // Test that the canonical prefixes checker generates an expected report.
 func TestCanonicalPrefixes(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
-	_ = daemon.SetConfigFromJSON(`{
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "subnet4": [
                 {
@@ -2457,7 +2449,7 @@ func TestCanonicalPrefixes(t *testing.T) {
                 }
             ]
         }
-    }`)
+    }`))
 
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
@@ -2477,9 +2469,9 @@ func TestCanonicalPrefixes(t *testing.T) {
 // Test that the canonical prefixes report is not generated if all prefixes are valid.
 func TestCanonicalPrefixesForValidPrefixes(t *testing.T) {
 	// Arrange
-	daemon := dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true)
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
 	daemon.ID = 42
-	_ = daemon.SetConfigFromJSON(`{
+	_ = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
             "subnet4": [
                 {
@@ -2497,7 +2489,7 @@ func TestCanonicalPrefixesForValidPrefixes(t *testing.T) {
                 }
             ]
         }
-    }`)
+    }`))
 
 	ctx := newReviewContext(nil, daemon,
 		Triggers{ManualRun}, func(i int64, err error) {})
@@ -2886,9 +2878,9 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 	}
 	_ = dbmodel.AddMachine(db, failoverMachine)
 
-	failoverApp := &dbmodel.App{
+	failoverDaemon := &dbmodel.Daemon{
 		MachineID: failoverMachine.ID,
-		Type:      dbmodel.AppTypeKea,
+		Name:      daemonname.CA,
 		AccessPoints: []*dbmodel.AccessPoint{
 			{
 				Type:    dbmodel.AccessPointControl,
@@ -2896,9 +2888,8 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 				Port:    8000,
 			},
 		},
-		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
 	}
-	_, _ = dbmodel.AddApp(db, failoverApp)
+	_ = dbmodel.AddDaemon(db, failoverDaemon)
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
@@ -2934,7 +2925,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
-	ctx.subjectDaemon.AppID = 2
+
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
 
@@ -2944,7 +2935,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 
 	require.Len(t, report.refDaemonIDs, 2)
 	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
-	require.Contains(t, report.refDaemonIDs, failoverApp.Daemons[0].ID)
+	require.Contains(t, report.refDaemonIDs, failoverDaemon.ID)
 	require.NotNil(t, report.content)
 	require.Contains(t, *report.content,
 		"High Availability hook configured to use dedicated HTTP "+
@@ -3082,9 +3073,9 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 	}
 	_ = dbmodel.AddMachine(db, failoverMachine)
 
-	failoverApp := &dbmodel.App{
+	failoverDaemon := &dbmodel.Daemon{
 		MachineID: failoverMachine.ID,
-		Type:      dbmodel.AppTypeKea,
+		Name:      daemonname.CA,
 		AccessPoints: []*dbmodel.AccessPoint{
 			{
 				Type:    dbmodel.AccessPointControl,
@@ -3092,9 +3083,8 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 				Port:    8000,
 			},
 		},
-		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
 	}
-	_, _ = dbmodel.AddApp(db, failoverApp)
+	_ = dbmodel.AddDaemon(db, failoverDaemon)
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
@@ -3130,7 +3120,6 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
-	ctx.subjectDaemon.AppID = 2
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -3154,9 +3143,9 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfigurationMultipleRelati
 	}
 	_ = dbmodel.AddMachine(db, failoverMachine)
 
-	failoverApp := &dbmodel.App{
+	failoverDaemon := &dbmodel.Daemon{
 		MachineID: failoverMachine.ID,
-		Type:      dbmodel.AppTypeKea,
+		Name:      daemonname.CA,
 		AccessPoints: []*dbmodel.AccessPoint{
 			{
 				Type:    dbmodel.AccessPointControl,
@@ -3164,9 +3153,8 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfigurationMultipleRelati
 				Port:    8000,
 			},
 		},
-		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
 	}
-	_, _ = dbmodel.AddApp(db, failoverApp)
+	_ = dbmodel.AddDaemon(db, failoverDaemon)
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
@@ -3216,7 +3204,6 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfigurationMultipleRelati
 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
-	ctx.subjectDaemon.AppID = 2
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -3240,9 +3227,9 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 	}
 	_ = dbmodel.AddMachine(db, machine)
 
-	failoverApp := &dbmodel.App{
+	failoverDaemon := &dbmodel.Daemon{
 		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
+		Name:      daemonname.CA,
 		AccessPoints: []*dbmodel.AccessPoint{
 			{
 				Type:    dbmodel.AccessPointControl,
@@ -3250,9 +3237,8 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 				Port:    8000,
 			},
 		},
-		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
 	}
-	_, _ = dbmodel.AddApp(db, failoverApp)
+	_ = dbmodel.AddDaemon(db, failoverDaemon)
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
@@ -4790,25 +4776,18 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 			"subnet4": subnets,
 		},
 	}
-	configStr, err := json.Marshal(configMap)
+	configBytes, err := json.Marshal(configMap)
 	if err != nil {
 		b.Fatalf("failed to marshal configuration map: %+v", err)
 	}
-	config, err := dbmodel.NewKeaConfigFromJSON(string(configStr))
-	if err != nil {
-		b.Fatalf("failed to create new Kea configuration from JSON: %+v", err)
-	}
+
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
+	_ = daemon.SetKeaConfigFromJSON(configBytes)
 
 	// The benchmark starts here.
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ctx := newReviewContext(nil, &dbmodel.Daemon{
-			ID:   1,
-			Name: dbmodel.DaemonNameDHCPv4,
-			KeaDaemon: &dbmodel.KeaDaemon{
-				Config: config,
-			},
-		}, Triggers{ManualRun}, nil)
+		ctx := newReviewContext(nil, daemon, Triggers{ManualRun}, nil)
 		_, err = reservationsOutOfPool(ctx)
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)
@@ -4835,19 +4814,15 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 	}
 
 	// Create the app.
-	app := &dbmodel.App{
+	daemon := &dbmodel.Daemon{
 		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name:   dbmodel.DaemonNameDHCPv4,
-				Active: true,
-			},
-		},
+		Name:      daemonname.DHCPv4,
+		Active:    true,
 	}
-	_, err = dbmodel.AddApp(db, app)
+
+	err = dbmodel.AddDaemon(db, daemon)
 	if err != nil {
-		b.Fatalf("failed to add an app: %+v", err)
+		b.Fatalf("failed to add a daemon: %+v", err)
 	}
 
 	// Create 10.000 subnets with a pool and out of pool reservation.
@@ -4878,9 +4853,9 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 			b.Fatalf("failed to add a subnet %s: %+v", dbSubnet.Prefix, err)
 		}
 		// Associate the daemon with the subnet.
-		err = dbmodel.AddDaemonToSubnet(db, &dbSubnet, app.Daemons[0])
+		err = dbmodel.AddDaemonToSubnet(db, &dbSubnet, daemon)
 		if err != nil {
-			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
+			b.Fatalf("failed to add daemon to subnet %s: %+v", dbSubnet.Prefix, err)
 		}
 		// Add the host for this subnet.
 		host := &dbmodel.Host{
@@ -4893,7 +4868,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
-					DaemonID:   app.Daemons[0].ID,
+					DaemonID:   daemon.ID,
 					DataSource: dbmodel.HostDataSourceAPI,
 					IPReservations: []dbmodel.IPReservation{
 						{
@@ -4906,7 +4881,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 		// Add the host.
 		err = dbmodel.AddHost(db, host)
 		if err != nil {
-			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
+			b.Fatalf("failed to add host to subnet %s: %+v", dbSubnet.Prefix, err)
 		}
 	}
 
@@ -4916,25 +4891,21 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 			"subnet4": subnets,
 		},
 	}
-	configStr, err := json.Marshal(configMap)
+	configBytes, err := json.Marshal(configMap)
 	if err != nil {
 		b.Fatalf("failed to marshal configuration map: %+v", err)
 	}
-	config, err := dbmodel.NewKeaConfigFromJSON(string(configStr))
+
+	daemon = dbmodel.NewDaemon(&dbmodel.Machine{}, daemonname.DHCPv4, true, nil)
+	err = daemon.SetKeaConfigFromJSON(configBytes)
 	if err != nil {
-		b.Fatalf("failed to create new Kea configuration from JSON: %+v", err)
+		b.Fatalf("failed to set config: %+v", err)
 	}
 
 	// The benchmark starts here.
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ctx := newReviewContext(db, &dbmodel.Daemon{
-			ID:   1,
-			Name: dbmodel.DaemonNameDHCPv4,
-			KeaDaemon: &dbmodel.KeaDaemon{
-				Config: config,
-			},
-		}, Triggers{ManualRun}, nil)
+		ctx := newReviewContext(db, daemon, Triggers{ManualRun}, nil)
 		_, err = reservationsOutOfPool(ctx)
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)

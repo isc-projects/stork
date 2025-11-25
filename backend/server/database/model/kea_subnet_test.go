@@ -1,9 +1,11 @@
 package dbmodel
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -20,64 +22,61 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea app with DHCPv4 subnets in two shared networks.
-	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114, false)
-	a4 := &App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"subnet4": []map[string]interface{}{{
-								"id":     1,
-								"subnet": "192.168.0.0/24",
-								"pools": []map[string]interface{}{{
-									"pool": "192.168.0.1-192.168.0.100",
-								}, {
-									"pool": "192.168.0.150-192.168.0.200",
-								}},
-							}},
-							"shared-networks": []map[string]interface{}{{
-								"name": "frog",
-								"subnet4": []map[string]interface{}{{
-									"id":     11,
-									"subnet": "192.1.0.0/24",
-									"pools": []map[string]interface{}{{
-										"pool": "192.1.0.1-192.1.0.100",
-									}, {
-										"pool": "192.1.0.150-192.1.0.200",
-									}},
-								}},
-							}, {
-								"name": "mouse",
-								"subnet4": []map[string]interface{}{{
-									"id":     12,
-									"subnet": "192.2.0.0/24",
-									"pools": []map[string]interface{}{{
-										"pool": "192.2.0.1-192.2.0.100",
-									}, {
-										"pool": "192.2.0.150-192.2.0.200",
-									}},
-								}},
-							}},
-						},
-					}),
-				},
-			},
+	// Add Kea daemon with DHCPv4 subnets in two shared networks.
+	accessPoints := []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1114,
+			Key:     "",
 		},
 	}
+	d4 := NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
+	configRaw := &map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": []map[string]interface{}{{
+				"id":     1,
+				"subnet": "192.168.0.0/24",
+				"pools": []map[string]interface{}{{
+					"pool": "192.168.0.1-192.168.0.100",
+				}, {
+					"pool": "192.168.0.150-192.168.0.200",
+				}},
+			}},
+			"shared-networks": []map[string]interface{}{{
+				"name": "frog",
+				"subnet4": []map[string]interface{}{{
+					"id":     11,
+					"subnet": "192.1.0.0/24",
+					"pools": []map[string]interface{}{{
+						"pool": "192.1.0.1-192.1.0.100",
+					}, {
+						"pool": "192.1.0.150-192.1.0.200",
+					}},
+				}},
+			}, {
+				"name": "mouse",
+				"subnet4": []map[string]interface{}{{
+					"id":     12,
+					"subnet": "192.2.0.0/24",
+					"pools": []map[string]interface{}{{
+						"pool": "192.2.0.1-192.2.0.100",
+					}, {
+						"pool": "192.2.0.150-192.2.0.200",
+					}},
+				}},
+			}},
+		},
+	}
+	configJSON, _ := json.Marshal(configRaw)
+	err = d4.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
 
-	_, err = AddApp(db, a4)
+	err = AddDaemon(db, d4)
 	require.NoError(t, err)
 	// Specify the shared networks to be committed as global shared networks
-	// and associated with this app.
-	appNetworks := []SharedNetwork{
+	// and associated with this daemon.
+	daemonNetworks := []SharedNetwork{
 		{
 			Name:   "frog",
 			Family: 4,
@@ -86,7 +85,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 					Prefix: "192.1.0.0/24",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a4.Daemons[0].ID,
+							DaemonID:      d4.ID,
 							LocalSubnetID: 11,
 							AddressPools: []AddressPool{
 								{
@@ -104,7 +103,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID: a4.Daemons[0].ID,
+					DaemonID: d4.ID,
 				},
 			},
 		},
@@ -116,7 +115,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 					Prefix: "192.2.0.0/24",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a4.Daemons[0].ID,
+							DaemonID:      d4.ID,
 							LocalSubnetID: 12,
 							AddressPools: []AddressPool{
 								{
@@ -134,18 +133,18 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID: a4.Daemons[0].ID,
+					DaemonID: d4.ID,
 				},
 			},
 		},
 	}
 
-	appSubnets := []Subnet{
+	daemonSubnets := []Subnet{
 		{
 			Prefix: "192.168.0.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      a4.Daemons[0].ID,
+					DaemonID:      d4.ID,
 					LocalSubnetID: 1,
 					AddressPools: []AddressPool{
 						{
@@ -162,44 +161,41 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
+	_, err = CommitNetworksIntoDB(db, daemonNetworks, daemonSubnets)
 	require.NoError(t, err)
 
-	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
-	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1116, true)
-	a6 := &App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"subnet6": []map[string]interface{}{{
-								"id":     2,
-								"subnet": "2001:db8:1::/64",
-							}},
-							"shared-networks": []map[string]interface{}{{
-								"name": "fox",
-								"subnet6": []map[string]interface{}{{
-									"id":     21,
-									"subnet": "5001:db8:1::/64",
-								}},
-							}},
-						},
-					}),
-				},
-			},
+	// Add Kea daemon with DHCPv6 subnets, one global and one within a shared network.
+	accessPoints6 := []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1116,
+			Key:     "",
 		},
 	}
-	_, err = AddApp(db, a6)
+	d6 := NewDaemon(m, daemonname.DHCPv6, true, accessPoints6)
+	configRaw = &map[string]interface{}{
+		"Dhcp6": map[string]interface{}{
+			"subnet6": []map[string]interface{}{{
+				"id":     2,
+				"subnet": "2001:db8:1::/64",
+			}},
+			"shared-networks": []map[string]interface{}{{
+				"name": "fox",
+				"subnet6": []map[string]interface{}{{
+					"id":     21,
+					"subnet": "5001:db8:1::/64",
+				}},
+			}},
+		},
+	}
+	configJSON, _ = json.Marshal(configRaw)
+	err = d6.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
+	err = AddDaemon(db, d6)
 	require.NoError(t, err)
 
-	appNetworks = []SharedNetwork{
+	daemonNetworks = []SharedNetwork{
 		{
 			Name:   "fox",
 			Family: 6,
@@ -208,7 +204,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 					Prefix: "5001:db8:1::/64",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a6.Daemons[0].ID,
+							DaemonID:      d6.ID,
 							LocalSubnetID: 21,
 						},
 					},
@@ -216,91 +212,99 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID: a6.Daemons[0].ID,
+					DaemonID: d6.ID,
 				},
 			},
 		},
 	}
 
-	appSubnets = []Subnet{
+	daemonSubnets = []Subnet{
 		{
 			Prefix: "2001:db8:1::/64",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      a6.Daemons[0].ID,
+					DaemonID:      d6.ID,
 					LocalSubnetID: 2,
 				},
 			},
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
+	_, err = CommitNetworksIntoDB(db, daemonNetworks, daemonSubnets)
 	require.NoError(t, err)
 
-	// Kea app with DHCPv4 and DHCPv6 subnets.
-	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1146, false)
-	a46 := &App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": &map[string]interface{}{
-							"subnet4": []map[string]interface{}{{
-								"id":     3,
-								"subnet": "192.118.0.0/24",
-								"pools": []map[string]interface{}{{
-									"pool": "192.118.0.1-192.118.0.200",
-								}},
-							}},
-						},
-					}),
-				},
-			},
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"subnet6": []map[string]interface{}{{
-								"id":     4,
-								"subnet": "3001:db8:1::/64",
-								"pools": []map[string]interface{}{{
-									"pool": "3001:db8:1::/80",
-								}},
-								"pd-pools": []map[string]interface{}{
-									{
-										"prefix":        "3001:db8:1:1::",
-										"prefix-len":    80,
-										"delegated-len": 96,
-									},
-									{
-										"prefix":              "3001:db8:1:2::",
-										"prefix-len":          80,
-										"delegated-len":       96,
-										"excluded-prefix":     "3001:db8:1:2:1::",
-										"excluded-prefix-len": 112,
-									},
-								},
-							}},
-						},
-					}),
-				},
-			},
+	// Kea daemon with DHCPv4 and DHCPv6 subnets.
+	d46v4 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1146,
+			Key:     "",
+		},
+	})
+	configRaw = &map[string]interface{}{
+		"Dhcp4": &map[string]interface{}{
+			"subnet4": []map[string]interface{}{{
+				"id":     3,
+				"subnet": "192.118.0.0/24",
+				"pools": []map[string]interface{}{{
+					"pool": "192.118.0.1-192.118.0.200",
+				}},
+			}},
 		},
 	}
-	_, err = AddApp(db, a46)
+	configJSON, _ = json.Marshal(configRaw)
+	err = d46v4.SetKeaConfigFromJSON(configJSON)
 	require.NoError(t, err)
 
-	appSubnets = []Subnet{
+	err = AddDaemon(db, d46v4)
+	require.NoError(t, err)
+
+	d46v6 := NewDaemon(m, daemonname.DHCPv6, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1147,
+			Key:     "",
+		},
+	})
+	configRaw = &map[string]interface{}{
+		"Dhcp6": map[string]interface{}{
+			"subnet6": []map[string]interface{}{{
+				"id":     4,
+				"subnet": "3001:db8:1::/64",
+				"pools": []map[string]interface{}{{
+					"pool": "3001:db8:1::/80",
+				}},
+				"pd-pools": []map[string]interface{}{
+					{
+						"prefix":        "3001:db8:1:1::",
+						"prefix-len":    80,
+						"delegated-len": 96,
+					},
+					{
+						"prefix":              "3001:db8:1:2::",
+						"prefix-len":          80,
+						"delegated-len":       96,
+						"excluded-prefix":     "3001:db8:1:2:1::",
+						"excluded-prefix-len": 112,
+					},
+				},
+			}},
+		},
+	}
+	configJSON, _ = json.Marshal(configRaw)
+	err = d46v6.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
+
+	err = AddDaemon(db, d46v6)
+	require.NoError(t, err)
+
+	daemonSubnets = []Subnet{
 		{
 			Prefix: "192.118.0.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      a46.Daemons[0].ID,
+					DaemonID:      d46v4.ID,
 					LocalSubnetID: 3,
 					AddressPools: []AddressPool{
 						{
@@ -315,7 +319,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			Prefix: "3001:db8:1::/64",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      a46.Daemons[1].ID,
+					DaemonID:      d46v6.ID,
 					LocalSubnetID: 4,
 					AddressPools: []AddressPool{
 						{
@@ -338,10 +342,11 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	for i := range a46.Daemons {
-		_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{appSubnets[i]})
-		require.NoError(t, err)
-	}
+
+	_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{daemonSubnets[0]})
+	require.NoError(t, err)
+	_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{daemonSubnets[1]})
+	require.NoError(t, err)
 
 	// Get all subnets.
 	subnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
@@ -374,41 +379,41 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Make sure that all subnets have local subnet ids set.
 	require.ElementsMatch(t, localSubnetIDs, []int64{1, 2, 3, 4, 11, 12, 21})
 
-	// Get subnets from app a4
-	filters := &SubnetsByPageFilters{
-		AppID: &a4.ID,
-	}
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
+	// Get subnets from daemon d4
+	// Note: AppID filter no longer exists, so we verify daemon associations directly
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
-	require.EqualValues(t, 3, total)
-	require.Len(t, subnets, 3)
+	require.EqualValues(t, 7, total)
+	require.Len(t, subnets, 7)
+
+	// Verify daemon associations are correct
+	subnetsByDaemon := make(map[int64][]Subnet)
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
-	}
-	// Subnets should be associated with appropriate daemons.
-	require.EqualValues(t, a4.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
-	require.EqualValues(t, a4.Daemons[0].ID, subnets[1].LocalSubnets[0].DaemonID)
-	require.EqualValues(t, a4.Daemons[0].ID, subnets[2].LocalSubnets[0].DaemonID)
-	// And local subnet ids should be set.
-	for _, s := range subnets {
-		require.Contains(t, []int64{1, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
+		daemonID := s.LocalSubnets[0].DaemonID
+		subnetsByDaemon[daemonID] = append(subnetsByDaemon[daemonID], s)
 	}
 
-	// Get subnets from app a46.
-	filters.AppID = &a46.ID
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, total)
-	require.Len(t, subnets, 2)
-	for _, s := range subnets {
-		require.Len(t, s.LocalSubnets, 1)
+	// d4 should have 3 subnets
+	require.Len(t, subnetsByDaemon[d4.ID], 3)
+	// Verify local subnet IDs for d4
+	d4LocalIDs := []int64{}
+	for _, s := range subnetsByDaemon[d4.ID] {
+		d4LocalIDs = append(d4LocalIDs, s.LocalSubnets[0].LocalSubnetID)
 	}
-	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, 4, subnets[1].LocalSubnets[0].LocalSubnetID)
+	require.ElementsMatch(t, []int64{1, 11, 12}, d4LocalIDs)
+
+	// Get subnets from the combined daemons (d46v4 and d46v6)
+	// Verify d46v4 and d46v6 each have their subnets
+	require.Len(t, subnetsByDaemon[d46v4.ID], 1)
+	require.Len(t, subnetsByDaemon[d46v6.ID], 1)
+	require.EqualValues(t, 3, subnetsByDaemon[d46v4.ID][0].LocalSubnets[0].LocalSubnetID)
+	require.EqualValues(t, 4, subnetsByDaemon[d46v6.ID][0].LocalSubnets[0].LocalSubnetID)
 
 	// Get IPv4 subnets
-	filters.AppID = nil
-	filters.Family = newPtr(int64(4))
+	filters := &SubnetsByPageFilters{
+		Family: newPtr(int64(4)),
+	}
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
@@ -420,7 +425,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		require.Contains(t, []int64{1, 3, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
 	}
 
-	// Get IPv4 subnets
+	// Get IPv6 subnets
 	filters.Family = newPtr(int64(6))
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
@@ -433,20 +438,6 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		require.Contains(t, []int64{2, 4, 21}, s.LocalSubnets[0].LocalSubnetID)
 	}
 
-	// Get IPv4 subnets for app a4
-	filters.Family = newPtr(int64(4))
-	filters.AppID = &a4.ID
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
-	require.NoError(t, err)
-	require.EqualValues(t, 3, total)
-	require.Len(t, subnets, 3)
-	for _, s := range subnets {
-		require.Len(t, s.LocalSubnets, 1)
-	}
-	for _, s := range subnets {
-		require.Contains(t, []int64{1, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
-	}
-
 	// Get subnets by text '118.0.0/2'
 	filters = &SubnetsByPageFilters{
 		Text: newPtr("118.0.0/2"),
@@ -456,7 +447,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d46v4.ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '0.150-192.168'
@@ -466,28 +457,27 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a4.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d4.ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 1, subnets[0].LocalSubnets[0].LocalSubnetID)
 
-	// get subnets by text '200' and app a46
-	filters.Text = newPtr("200")
-	filters.AppID = &a46.ID
+	// get subnets by text '118' - should find the d46v4 daemon subnet
+	filters.Text = newPtr("118")
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d46v4.ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
-	// get v4 subnets by text '200' and app a46
+	// get v4 subnets by text '200'
 	filters.Family = newPtr(int64(4))
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d46v4.ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get v4 subnets by local subnet ID '2'
@@ -499,7 +489,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a6.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d6.ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 2, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets sorted by id ascending
@@ -535,7 +525,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, subnets[6].ID)
 }
 
-// Check if getting subnets works when there is no subnets in config of kea app.
+// Check if getting subnets works when there is no subnets in config of kea daemon.
 func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -548,26 +538,24 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// Add Kea DHCPv4 without subnets
-	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114, true)
-	a4 := &App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": &map[string]interface{}{},
-					}),
-				},
-			},
+	// Add Kea DHCPv4 daemon without subnets
+	accessPoints := []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1114,
+			Key:     "",
 		},
 	}
-	_, err = AddApp(db, a4)
+	d4 := NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
+	configRaw := &map[string]interface{}{
+		"Dhcp4": &map[string]interface{}{},
+	}
+	configJSON, _ := json.Marshal(configRaw)
+	err = d4.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
+
+	err = AddDaemon(db, d4)
 	require.NoError(t, err)
 
 	// Get all subnets -> empty list should be returned
@@ -590,48 +578,45 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app kea with dhcp4 to machine
-	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114, false)
-	a4 := &App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"subnet4": []map[string]interface{}{{
-								"id":     1,
-								"subnet": "192.168.0.0/24",
-								"pools":  []map[string]interface{}{},
-							}},
-							"shared-networks": []map[string]interface{}{{
-								"name": "frog",
-								"subnet4": []map[string]interface{}{{
-									"id":     11,
-									"subnet": "192.1.0.0/24",
-								}},
-							}, {
-								"name": "mouse",
-								"subnet4": []map[string]interface{}{{
-									"id":     12,
-									"subnet": "192.2.0.0/24",
-								}, {
-									"id":     13,
-									"subnet": "192.3.0.0/24",
-								}},
-							}},
-						},
-					}),
-				},
-			},
+	// add daemon with dhcp4 to machine
+	d4 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1114,
+			Key:     "",
+		},
+	})
+	configRaw := &map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": []map[string]interface{}{{
+				"id":     1,
+				"subnet": "192.168.0.0/24",
+				"pools":  []map[string]interface{}{},
+			}},
+			"shared-networks": []map[string]interface{}{{
+				"name": "frog",
+				"subnet4": []map[string]interface{}{{
+					"id":     11,
+					"subnet": "192.1.0.0/24",
+				}},
+			}, {
+				"name": "mouse",
+				"subnet4": []map[string]interface{}{{
+					"id":     12,
+					"subnet": "192.2.0.0/24",
+				}, {
+					"id":     13,
+					"subnet": "192.3.0.0/24",
+				}},
+			}},
 		},
 	}
-	_, err = AddApp(db, a4)
+	configJSON, _ := json.Marshal(configRaw)
+	err = d4.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
+
+	err = AddDaemon(db, d4)
 	require.NoError(t, err)
 
 	appNetworks := []SharedNetwork{
@@ -643,7 +628,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 					Prefix: "192.1.0.0/24",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a4.Daemons[0].ID,
+							DaemonID:      d4.ID,
 							LocalSubnetID: 11,
 						},
 					},
@@ -658,7 +643,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 					Prefix: "192.2.0.0/24",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a4.Daemons[0].ID,
+							DaemonID:      d4.ID,
 							LocalSubnetID: 12,
 						},
 					},
@@ -667,7 +652,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 					Prefix: "192.3.0.0/24",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a4.Daemons[0].ID,
+							DaemonID:      d4.ID,
 							LocalSubnetID: 13,
 						},
 					},
@@ -681,7 +666,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Prefix: "192.168.0.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      a4.Daemons[0].ID,
+					DaemonID:      d4.ID,
 					LocalSubnetID: 1,
 				},
 			},
@@ -690,42 +675,39 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
 	require.NoError(t, err)
 
-	// add app kea with dhcp6 to machine
-	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1116, true)
-	a6 := &App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*Daemon{
-			{
-				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"subnet6": []map[string]interface{}{{
-								"id":     2,
-								"subnet": "2001:db8:1::/64",
-								"pools":  []map[string]interface{}{},
-							}},
-							"shared-networks": []map[string]interface{}{{
-								"name": "fox",
-								"subnet6": []map[string]interface{}{{
-									"id":     21,
-									"subnet": "5001:db8:1::/64",
-								}, {
-									"id":     22,
-									"subnet": "6001:db8:1::/64",
-								}},
-							}},
-						},
-					}),
-				},
-			},
+	// add daemon with dhcp6 to machine
+	d6 := NewDaemon(m, daemonname.DHCPv6, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    1116,
+			Key:     "",
+		},
+	})
+	configRaw = &map[string]interface{}{
+		"Dhcp6": map[string]interface{}{
+			"subnet6": []map[string]interface{}{{
+				"id":     2,
+				"subnet": "2001:db8:1::/64",
+				"pools":  []map[string]interface{}{},
+			}},
+			"shared-networks": []map[string]interface{}{{
+				"name": "fox",
+				"subnet6": []map[string]interface{}{{
+					"id":     21,
+					"subnet": "5001:db8:1::/64",
+				}, {
+					"id":     22,
+					"subnet": "6001:db8:1::/64",
+				}},
+			}},
 		},
 	}
-	_, err = AddApp(db, a6)
+	configJSON, _ = json.Marshal(configRaw)
+	err = d6.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
+
+	err = AddDaemon(db, d6)
 	require.NoError(t, err)
 
 	appNetworks = []SharedNetwork{
@@ -737,7 +719,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 					Prefix: "5001:db8:1::/64",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a6.Daemons[0].ID,
+							DaemonID:      d6.ID,
 							LocalSubnetID: 21,
 						},
 					},
@@ -746,7 +728,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 					Prefix: "6001:db8:1::/64",
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      a6.Daemons[0].ID,
+							DaemonID:      d6.ID,
 							LocalSubnetID: 22,
 						},
 					},
@@ -760,7 +742,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID:      a6.Daemons[0].ID,
+					DaemonID:      d6.ID,
 					LocalSubnetID: 2,
 				},
 			},
@@ -787,24 +769,24 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		}
 	}
 
-	// Get shared networks for Kea app a4.
-	networks, total, err = GetSharedNetworksByPage(db, 0, 10, a4.ID, 0, nil, "", SortDirAny)
+	// Get shared networks for Kea daemon d4.
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, d4.ID, 0, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, networks, 2)
 
 	require.Len(t, networks[0].Subnets, 1)
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a4.Daemons[0].ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d4.ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
 
 	require.Len(t, networks[1].Subnets, 2)
 	require.Len(t, networks[1].Subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a4.Daemons[0].ID, networks[1].Subnets[0].LocalSubnets[0].DaemonID)
-	require.EqualValues(t, a4.Daemons[0].ID, networks[1].Subnets[1].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d4.ID, networks[1].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d4.ID, networks[1].Subnets[1].LocalSubnets[0].DaemonID)
 
 	require.ElementsMatch(t, []string{"frog", "mouse"}, []string{networks[0].Name, networks[1].Name})
 
-	// Get shared networks for Kea app a6.
+	// Get shared networks for Kea daemon d6.
 	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 6, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
@@ -812,8 +794,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.Len(t, networks[0].Subnets, 2)
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
 	require.Len(t, networks[0].Subnets[1].LocalSubnets, 1)
-	require.EqualValues(t, a6.Daemons[0].ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
-	require.EqualValues(t, a6.Daemons[0].ID, networks[0].Subnets[1].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d6.ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d6.ID, networks[0].Subnets[1].LocalSubnets[0].DaemonID)
 	require.Equal(t, "fox", networks[0].Name)
 
 	// Get networks by text "mous".
@@ -825,8 +807,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.Len(t, networks[0].Subnets, 2)
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
 	require.Len(t, networks[0].Subnets[1].LocalSubnets, 1)
-	require.EqualValues(t, a4.Daemons[0].ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
-	require.EqualValues(t, a4.Daemons[0].ID, networks[0].Subnets[1].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d4.ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, d4.ID, networks[0].Subnets[1].LocalSubnets[0].DaemonID)
 	require.Equal(t, "mouse", networks[0].Name)
 
 	// check sorting by id asc

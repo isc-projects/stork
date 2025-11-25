@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -41,7 +42,7 @@ func (e *ctrlcError) Error() string {
 
 // Helper function that starts agent, apps monitor and prometheus exports
 // if they are enabled.
-func runAgent(settings *generalSettings, reload bool) error {
+func runAgent(ctx context.Context, settings *generalSettings, reload bool) error {
 	if !reload {
 		// We need to print this statement only after we check if the only purpose is to print a version.
 		log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
@@ -84,16 +85,13 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
-		if err := agent.Register(settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient); err != nil {
+		if err := agent.Register(ctx, settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient); err != nil {
 			log.WithError(err).Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
 
 	// Create BIND9 stats client.
 	bind9StatsClient := agent.NewBind9StatsClient()
-
-	// Start app monitor.
-	appMonitor := agent.NewAppMonitor()
 
 	// A base HTTP client. It may use the certificates obtained during
 	// the registration and GRPC credentials as TLS credentials.
@@ -111,20 +109,20 @@ func runAgent(settings *generalSettings, reload bool) error {
 		log.Info("The GRPC credentials will be used as the client TLS certificate when connecting to Kea")
 	}
 
+	// Start daemon monitor.
+	daemonMonitor := agent.NewMonitor(settings.Bind9Path, settings.PowerDNSPath, keaHTTPClientConfig)
+
 	// Prepare agent gRPC handler
 	storkAgent := agent.NewStorkAgent(
 		settings.Host,
 		settings.Port,
-		appMonitor,
+		daemonMonitor,
 		bind9StatsClient,
-		keaHTTPClientConfig,
 		hookManager,
-		settings.Bind9Path,
-		settings.PowerDNSPath,
 	)
 
-	// Let's start the app monitor.
-	appMonitor.Start(storkAgent)
+	// Let's start the daemon monitor.
+	daemonMonitor.Start(ctx, storkAgent)
 
 	// Only start the exporters if they're enabled.
 	if !settings.ListenStorkOnly {
@@ -135,15 +133,16 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 		// Prepare Prometheus exporters.
 		promKeaExporter := agent.NewPromKeaExporter(
+			ctx,
 			settings.PrometheusKeaExporterAddress,
 			settings.PrometheusKeaExporterPort,
 			prometheusKeaExporterPerSubnetStats,
-			appMonitor,
+			daemonMonitor,
 		)
 		promBind9Exporter := agent.NewPromBind9Exporter(
 			settings.PrometheusBind9ExporterAddress,
 			settings.PrometheusBind9ExporterPort,
-			appMonitor,
+			daemonMonitor,
 			bind9StatsClient,
 		)
 
@@ -163,7 +162,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 		go func() {
 			if err := storkAgent.Serve(); err != nil {
-				log.Fatalf("Failed to serve the Stork Agent: %+v", err)
+				log.WithError(err).Fatal("Failed to serve the Stork Agent")
 			}
 		}()
 		defer storkAgent.Shutdown(reload)
@@ -280,7 +279,7 @@ func promptForMissingArguments(settings *registerSettings) error {
 }
 
 // Helper function that checks command line options and runs registration.
-func runRegister(settings *registerSettings) {
+func runRegister(ctx context.Context, settings *registerSettings) {
 	// Complete the missing arguments.
 	var err error
 	if !settings.NonInteractive && storkutil.IsRunningInTerminal() {
@@ -309,7 +308,7 @@ func runRegister(settings *registerSettings) {
 		SkipTLSVerification: settings.SkipTLSCertVerification,
 	})
 
-	if err := agent.Register(settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient); err != nil {
+	if err := agent.Register(ctx, settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient); err != nil {
 		log.WithError(err).Fatalf("Registration failed")
 	} else {
 		log.Println("Registration completed successfully")
@@ -498,7 +497,7 @@ func isHelpRequest(err error) bool {
 }
 
 // Parses the command line arguments and runs the specific Stork Agent command.
-func runApp(reload bool) error {
+func runApp(ctx context.Context, reload bool) error {
 	profilerShutdown := profiler.Start(profiler.AgentProfilerPort)
 	defer profilerShutdown()
 
@@ -522,11 +521,11 @@ func runApp(reload bool) error {
 			return err
 		}
 
-		return runAgent(generalSettings, reload)
+		return runAgent(ctx, generalSettings, reload)
 	}
 
 	if registerSettings != nil {
-		runRegister(registerSettings)
+		runRegister(ctx, registerSettings)
 		return nil
 	}
 
@@ -536,9 +535,10 @@ func runApp(reload bool) error {
 // Main stork-agent function.
 func main() {
 	reload := false
+	ctx := context.Background()
 	for {
 		storkutil.SetupLogging()
-		err := runApp(reload)
+		err := runApp(ctx, reload)
 		switch {
 		case err == nil:
 			return

@@ -2,10 +2,13 @@ package restservice
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	keactrl "isc.org/stork/appctrl/kea"
+	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -15,7 +18,7 @@ import (
 // Generates a success mock response to a command fetching a DHCPv4
 // lease by IP address.
 func mockLease4Get(callNo int, responses []interface{}) {
-	json := []byte(`[
+	bytes := []byte(`
         {
             "result": 0,
             "text": "Lease found",
@@ -33,15 +36,14 @@ func mockLease4Get(callNo int, responses []interface{}) {
                 "user-context": { "ISC": { "client-classes": [ "ALL", "HA_primary", "UNKNOWN" ] }}
             }
         }
-    ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+    `)
+	_ = json.Unmarshal(bytes, responses[0])
 }
 
 // Generates a success mock response to a command fetching a DHCPv4
 // lease by IP address.
 func mockLease6Get(callNo int, responses []interface{}) {
-	json := []byte(`[
+	bytes := []byte(`
         {
             "result": 0,
             "text": "Lease found",
@@ -57,15 +59,14 @@ func mockLease6Get(callNo int, responses []interface{}) {
                 "valid-lft": 3600
             }
         }
-    ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6Get, keactrl.DHCPv6)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+    `)
+	_ = json.Unmarshal(bytes, responses[0])
 }
 
 // Generates a success mock response to a command fetching DHCPv6 leases
 // by DUID.
 func mockLeases6Get(callNo int, responses []interface{}) {
-	json := []byte(`[
+	bytes := []byte(`
         {
             "result": 0,
             "text": "Leases found",
@@ -106,26 +107,26 @@ func mockLeases6Get(callNo int, responses []interface{}) {
                 ]
             }
         }
-    ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6GetByDUID, keactrl.DHCPv6)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+    `)
+	_ = json.Unmarshal(bytes, responses[0])
 }
 
 // Generates an error response to lease4-get command.
 func mockLease4GetError(callNo int, responses []interface{}) {
-	json := []byte(`[
+	bytes := []byte(`
         {
             "result": 1,
             "text": "Lease erred"
         }
-    ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+    `)
+	_ = json.Unmarshal(bytes, responses[0])
 }
 
 // Generates response to declined leases searching on the DHCPv4 and DHCPv6 server.
 func mockLeasesGetDeclined(callNo int, responses []interface{}) {
-	json4 := []byte(`[
+	switch callNo % 2 {
+	case 0:
+		bytes := []byte(`
         {
             "result": 0,
             "text": "Lease found.",
@@ -140,12 +141,10 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
                     }
                 ]
             }
-        }
-    ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, keactrl.DHCPv4)
-	_ = keactrl.UnmarshalResponseList(command, json4, responses[0])
-
-	json6 := []byte(`[
+        }`)
+		_ = json.Unmarshal(bytes, responses[0])
+	case 1:
+		bytes := []byte(`
         {
             "result": 0,
             "text": "Lease found.",
@@ -164,11 +163,11 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
                     }
                 ]
             }
-        }
-    ]`)
-
-	command = keactrl.NewCommandBase(keactrl.Lease6GetByDUID, keactrl.DHCPv6)
-	_ = keactrl.UnmarshalResponseList(command, json6, responses[1])
+        }`)
+		_ = json.Unmarshal(bytes, responses[0])
+	default:
+		panic("Unexpected call number")
+	}
 }
 
 // This test verifies that it is possible to search DHCPv4 leases by text
@@ -186,32 +185,29 @@ func TestFindLeases4(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
-	app := &dbmodel.App{
-		Name:         "fxz",
-		MachineID:    machine.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: dbmodel.DaemonNameDHCPv4,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
+	// Add Kea daemon with a DHCPv4 configuration loading the lease_cmds hooks library.
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Key:      "",
+			Protocol: protocoltype.HTTPS,
 		},
 	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	config := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon.SetKeaConfigFromJSON([]byte(config))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Setup REST API.
@@ -233,6 +229,7 @@ func TestFindLeases4(t *testing.T) {
 	require.Empty(t, okRsp.Payload.ErredApps)
 
 	lease := okRsp.Payload.Items[0]
+	app := daemon.GetVirtualApp()
 	require.NotNil(t, lease.AppID)
 	require.EqualValues(t, app.ID, *lease.AppID)
 	require.NotNil(t, lease.AppName)
@@ -274,7 +271,7 @@ func TestFindLeases4(t *testing.T) {
 	require.Empty(t, okRsp.Payload.Items)
 	require.Zero(t, okRsp.Payload.Total)
 
-	// Erred apps should contain our app.
+	// Erred apps should contain our daemon.
 	require.Len(t, okRsp.Payload.ErredApps, 1)
 	require.NotNil(t, okRsp.Payload.ErredApps[0].ID)
 	require.EqualValues(t, app.ID, *okRsp.Payload.ErredApps[0].ID)
@@ -297,32 +294,28 @@ func TestFindLeases6(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add Kea app with a DHCPv6 configuration loading the lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
-	app := &dbmodel.App{
-		Name:         "fyz",
-		MachineID:    machine.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: dbmodel.DaemonNameDHCPv6,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
+	// Add Kea daemon with a DHCPv6 configuration loading the lease_cmds hooks library.
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Protocol: protocoltype.HTTP,
 		},
 	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	config := `{
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon.SetKeaConfigFromJSON([]byte(config))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
 	// Setup REST API.
@@ -343,6 +336,7 @@ func TestFindLeases6(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.Empty(t, okRsp.Payload.ErredApps)
 
+	app := daemon.GetVirtualApp()
 	lease := okRsp.Payload.Items[0]
 	require.NotNil(t, lease.AppID)
 	require.EqualValues(t, app.ID, *lease.AppID)
@@ -429,31 +423,29 @@ func TestFindLeasesEmptyText(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
-	app := &dbmodel.App{
-		MachineID:    machine.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: dbmodel.DaemonNameDHCPv4,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
+	// Add Kea daemon with a DHCPv4 configuration loading the lease_cmds hooks library.
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Protocol: protocoltype.HTTP,
 		},
 	}
-	_, err = dbmodel.AddApp(db, app)
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	config := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon.SetKeaConfigFromJSON([]byte(config))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
 	require.NoError(t, err)
 
 	// Setup REST API.
@@ -491,47 +483,47 @@ func TestFindDeclinedLeases(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add Kea app with a DHCPv4 and DHCPv6 configuration loading the
+	// Add Kea daemons with a DHCPv4 and DHCPv6 configuration loading the
 	// lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
-	app := &dbmodel.App{
-		Name:         "fxz",
-		MachineID:    machine.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: dbmodel.DaemonNameDHCPv4,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
-			{
-				Name: dbmodel.DaemonNameDHCPv6,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Protocol: protocoltype.HTTP,
 		},
 	}
-	_, err = dbmodel.AddApp(db, app)
+
+	// Create DHCPv4 daemon
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	config4 := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon4.SetKeaConfigFromJSON([]byte(config4))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon4)
+	require.NoError(t, err)
+
+	// Create DHCPv6 daemon
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	config6 := `{
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon6.SetKeaConfigFromJSON([]byte(config6))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon6)
 	require.NoError(t, err)
 
 	// Setup REST API.
@@ -617,45 +609,46 @@ func TestFindLeasesByHostID(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
-	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
-	app := &dbmodel.App{
-		MachineID:    machine.ID,
-		Type:         dbmodel.AppTypeKea,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: dbmodel.DaemonNameDHCPv4,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
-			{
-				Name: dbmodel.DaemonNameDHCPv6,
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "libdhcp_lease_cmds.so",
-								},
-							},
-						},
-					}),
-				},
-			},
+	// Add Kea daemons with a DHCPv4 and DHCPv6 configuration loading the lease_cmds hooks library.
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Protocol: protocoltype.HTTPS,
 		},
 	}
-	_, err = dbmodel.AddApp(db, app)
+
+	// Create DHCPv4 daemon
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	config4 := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon4.SetKeaConfigFromJSON([]byte(config4))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon4)
+	require.NoError(t, err)
+
+	// Create DHCPv6 daemon
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	config6 := `{
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`
+	err = daemon6.SetKeaConfigFromJSON([]byte(config6))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon6)
 	require.NoError(t, err)
 
 	// Add a host.
@@ -668,7 +661,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				DaemonID:   app.Daemons[0].ID,
+				DaemonID:   daemon4.ID,
 				DataSource: dbmodel.HostDataSourceConfig,
 				IPReservations: []dbmodel.IPReservation{
 					{

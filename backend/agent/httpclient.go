@@ -39,6 +39,11 @@ type HTTPClientConfig struct {
 	TLSCert   *tls.Certificate
 	TLSRootCA *x509.CertPool
 	Timeout   time.Duration
+	// The interceptor function that is invoked after creating the client.
+	// It allows to setup the client for testing purposes.
+	// It shouldn't be used in production code. The HTTP client for production
+	// purposes should be configured using fields above.
+	Interceptor func(client *http.Client)
 }
 
 // Loads the TLS certificates from a file. The certificates will be attached
@@ -126,11 +131,17 @@ func NewHTTPClient(config HTTPClientConfig) *httpClient {
 		timeout = defaultHTTPClientTimeout
 	}
 
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   timeout,
+	}
+
+	if config.Interceptor != nil {
+		config.Interceptor(client)
+	}
+
 	return &httpClient{
-		client: &http.Client{
-			Transport: transport,
-			Timeout:   timeout,
-		},
+		client:    client,
 		basicAuth: config.BasicAuth,
 	}
 }
@@ -139,8 +150,8 @@ func NewHTTPClient(config HTTPClientConfig) *httpClient {
 // must contain the valid JSON. If the authentication credentials or TLS
 // certificates are provided in the application configuration, they are added
 // to the request.
-func (c *httpClient) Call(url string, payload io.Reader) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
+func (c *httpClient) Call(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, payload)
 	if err != nil {
 		err = errors.Wrapf(err, "problem creating POST request to %s", url)
 

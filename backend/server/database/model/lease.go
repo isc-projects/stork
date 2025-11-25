@@ -1,7 +1,7 @@
 package dbmodel
 
 import (
-	keadata "isc.org/stork/appdata/kea"
+	keadata "isc.org/stork/daemondata/kea"
 )
 
 // Extends basic Lease information with database specific information.
@@ -10,6 +10,6 @@ type Lease struct {
 
 	keadata.Lease
 
-	AppID int64
-	App   *App
+	DaemonID int64
+	Daemon   *Daemon
 }

@@ -7,91 +7,147 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
-// Test that the access point is appended properly.
-func TestAppendAccessPoint(t *testing.T) {
-	// Arrange
-	var accessPoints []*AccessPoint
-
-	// Act
-	accessPoints = AppendAccessPoint(
-		accessPoints,
-		AccessPointControl,
-		"42.42.42.42",
-		"secret",
-		4242,
-		true,
-	)
-
-	// Assert
-	require.Len(t, accessPoints, 1)
-	require.EqualValues(t, "42.42.42.42", accessPoints[0].Address)
-	require.Zero(t, accessPoints[0].AppID)
-	require.EqualValues(t, "secret", accessPoints[0].Key)
-	require.Zero(t, accessPoints[0].MachineID)
-	require.EqualValues(t, 4242, accessPoints[0].Port)
-	require.EqualValues(t, AccessPointControl, accessPoints[0].Type)
-	require.True(t, accessPoints[0].UseSecureProtocol)
-}
-
-// Test that the no output and no error are returned if the entry is not found.
-func TestGetAccessPointByIDForMissingEntry(t *testing.T) {
+// Test that the access point can be added to the database.
+func TestAddAccessPoint(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, m)
+
+	daemon := NewDaemon(m, "kea-dhcp4", true, nil)
+	_ = AddDaemon(db, daemon)
+
 	// Act
-	accessPoint, err := GetAccessPointByID(db, 42, AccessPointControl)
+	err := addOrUpdateAccessPoint(db, &AccessPoint{
+		DaemonID: daemon.ID,
+		Type:     AccessPointControl,
+		Address:  "foo",
+		Port:     8000,
+		Key:      "bar",
+	})
 
 	// Assert
 	require.NoError(t, err)
-	require.Nil(t, accessPoint)
+	daemon, _ = GetDaemonByID(db, daemon.ID)
+	require.Len(t, daemon.AccessPoints, 1)
+	require.Equal(t, AccessPointControl, daemon.AccessPoints[0].Type)
+	require.Equal(t, "foo", daemon.AccessPoints[0].Address)
+	require.Equal(t, int64(8000), daemon.AccessPoints[0].Port)
+	require.Equal(t, "bar", daemon.AccessPoints[0].Key)
 }
 
-// Test that the error is returned if any database problem occurs.
-func TestGetAccessPointByIDForInvalidDatabase(t *testing.T) {
+// Test that the access point can be updated in the database.
+func TestUpdateAccessPoint(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, m)
+
+	daemon := NewDaemon(m, "kea-dhcp4", true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "",
+			Port:    8000,
+			Key:     "",
+		},
+	})
+	_ = AddDaemon(db, daemon)
+
+	// Act
+	err := addOrUpdateAccessPoint(db, &AccessPoint{
+		DaemonID: daemon.ID,
+		Type:     AccessPointControl,
+		Address:  "updated-address",
+		Port:     9000,
+		Key:      "updated-key",
+	})
+
+	// Assert
+	require.NoError(t, err)
+	daemon, _ = GetDaemonByID(db, daemon.ID)
+	require.Len(t, daemon.AccessPoints, 1)
+	require.Equal(t, "updated-address", daemon.AccessPoints[0].Address)
+	require.Equal(t, int64(9000), daemon.AccessPoints[0].Port)
+	require.Equal(t, "updated-key", daemon.AccessPoints[0].Key)
+}
+
+// Test that adding or updating an access point returns an error when the database
+// operation fails.
+func TestAddOrUpdateAccessPointDatabaseError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, m)
+
+	daemon := NewDaemon(m, "kea-dhcp4", true, nil)
+	_ = AddDaemon(db, daemon)
 
 	// Act
 	teardown()
-	accessPoint, err := GetAccessPointByID(db, 42, AccessPointControl)
+	err := addOrUpdateAccessPoint(db, &AccessPoint{
+		DaemonID: daemon.ID,
+		Type:     AccessPointControl,
+		Address:  "foo",
+		Port:     8000,
+		Key:      "bar",
+	})
 
 	// Assert
 	require.Error(t, err)
-	require.Nil(t, accessPoint)
 }
 
-// Test that the access point is properly returned.
-func TestGetAccessPointByID(t *testing.T) {
+// Test that deleting access points works correctly.
+func TestDeleteAccessPoints(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	machine := &Machine{Address: "localhost", AgentPort: 8080}
-	_ = AddMachine(db, machine)
-	app := &App{
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		AccessPoints: []*AccessPoint{{
-			Type:              AccessPointControl,
-			Address:           "127.0.0.1",
-			Port:              8080,
-			Key:               "secret",
-			UseSecureProtocol: true,
-		}},
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
 	}
-	_, _ = AddApp(db, app)
+	_ = AddMachine(db, m)
+
+	daemon := NewDaemon(m, "kea-dhcp4", true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "addr1",
+			Port:    8000,
+			Key:     "key1",
+		},
+		{
+			Type:    AccessPointStatistics,
+			Address: "addr2",
+			Port:    9000,
+			Key:     "key2",
+		},
+	})
+	_ = AddDaemon(db, daemon)
 
 	// Act
-	accessPoint, err := GetAccessPointByID(db, app.ID, AccessPointControl)
+	err := deleteAccessPointsExcept(db, daemon.ID, []AccessPointType{AccessPointControl})
+	require.NoError(t, err)
 
 	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, "127.0.0.1", accessPoint.Address)
-	require.EqualValues(t, app.ID, accessPoint.AppID)
-	require.EqualValues(t, "secret", accessPoint.Key)
-	require.EqualValues(t, machine.ID, accessPoint.MachineID)
-	require.EqualValues(t, 8080, accessPoint.Port)
-	require.EqualValues(t, AccessPointControl, accessPoint.Type)
-	require.True(t, accessPoint.UseSecureProtocol)
+	daemon, _ = GetDaemonByID(db, daemon.ID)
+	require.Len(t, daemon.AccessPoints, 1)
+	require.Equal(t, AccessPointControl, daemon.AccessPoints[0].Type)
 }

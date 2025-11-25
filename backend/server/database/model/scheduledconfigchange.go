@@ -4,12 +4,36 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
+
+// Represents an identifier of a configuration operation. Each modification
+// that can be applied to the daemon configuration by the config manager
+// has its own unique operation.
+type ConfigOperation string
+
+const (
+	ConfigOperationKeaHostAdd                ConfigOperation = "kea.host_add"
+	ConfigOperationKeaHostUpdate             ConfigOperation = "kea.host_update"
+	ConfigOperationKeaHostDelete             ConfigOperation = "kea.host_delete"
+	ConfigOperationKeaSharedNetworkAdd       ConfigOperation = "kea.shared_network_add"
+	ConfigOperationKeaSharedNetworkUpdate    ConfigOperation = "kea.shared_network_update"
+	ConfigOperationKeaSharedNetworkDelete    ConfigOperation = "kea.shared_network_delete"
+	ConfigOperationKeaSubnetAdd              ConfigOperation = "kea.subnet_add"
+	ConfigOperationKeaSubnetUpdate           ConfigOperation = "kea.subnet_update"
+	ConfigOperationKeaSubnetDelete           ConfigOperation = "kea.subnet_delete"
+	ConfigOperationKeaGlobalParametersUpdate ConfigOperation = "kea.global_parameters_update"
+)
+
+// Indicates whether the config operation pertains to Kea.
+func (op ConfigOperation) IsKeaOperation() bool {
+	return strings.HasPrefix(string(op), "kea.")
+}
 
 // Representation of the config changes scheduled by the config
 // manager (see server/apps). Each scheduled config change includes
@@ -34,10 +58,8 @@ type ScheduledConfigChange struct {
 
 // Represents a single config update belonging to a config change.
 type ConfigUpdate struct {
-	// Type of the configured daemon, e.g. "kea".
-	Target AppType
-	// Type of the operation to perform, e.g. "host_add".
-	Operation string
+	// Type of the operation to perform, e.g. "kea.host_add".
+	Operation ConfigOperation
 	// Identifiers of the daemons affected by the update. For example,
 	// a host reservation can be shared by two daemons.
 	DaemonIDs []int64
@@ -51,7 +73,7 @@ type ConfigUpdate struct {
 // Checks if any of the updates pertain to Kea.
 func (c ScheduledConfigChange) HasKeaUpdates() bool {
 	for _, update := range c.Updates {
-		if update.Target == "kea" {
+		if update.Operation.IsKeaOperation() {
 			return true
 		}
 	}
@@ -59,9 +81,8 @@ func (c ScheduledConfigChange) HasKeaUpdates() bool {
 }
 
 // Creates new config update instance.
-func NewConfigUpdate(target AppType, operation string, daemonIDs ...int64) *ConfigUpdate {
+func NewConfigUpdate(operation ConfigOperation, daemonIDs ...int64) *ConfigUpdate {
 	return &ConfigUpdate{
-		Target:    target,
 		Operation: operation,
 		DaemonIDs: daemonIDs,
 	}

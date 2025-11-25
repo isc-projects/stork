@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -72,8 +73,8 @@ func TestCheckerPreferenceToString(t *testing.T) {
 	require.EqualValues(t, "foo checker is enabled for 42 daemon ID", nonGlobalPreferenceEnabled.String())
 }
 
-// Creates two demon entries in the database. The daemons belong to different
-// apps and machines.
+// Creates two daemon entries in the database. The daemons belong to different
+// machines.
 func addTestDaemons(db *pg.DB) (*Daemon, *Daemon, error) {
 	var createdDaemons []*Daemon
 
@@ -88,22 +89,13 @@ func addTestDaemons(db *pg.DB) (*Daemon, *Daemon, error) {
 			return nil, nil, err
 		}
 
-		app := &App{
-			ID:   0,
-			Type: AppTypeKea,
-			Daemons: []*Daemon{
-				NewKeaDaemon(DaemonNameDHCPv4, true),
-			},
-			MachineID: m.ID,
-		}
-
-		daemons, err := AddApp(db, app)
+		daemon := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{})
+		err = AddDaemon(db, daemon)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		daemons[0].App = app
-		createdDaemons = append(createdDaemons, daemons[0])
+		createdDaemons = append(createdDaemons, daemon)
 	}
 
 	return createdDaemons[0], createdDaemons[1], nil
@@ -251,7 +243,7 @@ func TestDeleteDaemonAndRelatedCheckerPreferences(t *testing.T) {
 	_ = addOrUpdateCheckerPreferences(db, preferences)
 
 	// Act
-	err := DeleteApp(db, daemon1.App)
+	err := DeleteDaemon(db, daemon1)
 
 	// Assert
 	// Delete the config checker preferences related to the first daemon.

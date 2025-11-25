@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -188,19 +189,14 @@ func TestBootstrap(t *testing.T) {
 	// Initializes DB.
 	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
 	_ = dbmodel.AddMachine(db, machine)
-	app := &dbmodel.App{
-		Type:      dbmodel.AppTypeKea,
-		MachineID: machine.ID,
-		Active:    true,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
-			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv6, true),
-		},
-	}
-	daemons, _ := dbmodel.AddApp(db, app)
+	daemon1 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{})
+	_ = dbmodel.AddDaemon(db, daemon1)
+	daemon2 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{})
+	_ = dbmodel.AddDaemon(db, daemon2)
+
 	_ = dbmodel.CommitCheckerPreferences(db, []*dbmodel.ConfigCheckerPreference{
 		dbmodel.NewGlobalConfigCheckerPreference("host_cmds_presence"),
-		dbmodel.NewDaemonConfigCheckerPreference(daemons[0].ID, "out_of_pool_reservation", false),
+		dbmodel.NewDaemonConfigCheckerPreference(daemon1.ID, "out_of_pool_reservation", false),
 	}, nil)
 
 	// Temporary hook directory.
@@ -228,14 +224,14 @@ func TestBootstrap(t *testing.T) {
 	// they appear.
 	var events []dbmodel.Event
 	require.Eventually(t, func() bool {
-		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, "", dbmodel.SortDirAny)
 		return len(events) > 0
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 1)
 	require.Contains(t, events[0].Text, "started Stork Server")
 
 	// Checks if the config review checker states were loaded from the database.
-	configReviewCheckerPreferences, _ := server.ReviewDispatcher.GetCheckersMetadata(daemons[0])
+	configReviewCheckerPreferences, _ := server.ReviewDispatcher.GetCheckersMetadata(daemon1)
 	configPreferencesByName := make(map[string]*configreview.CheckerMetadata)
 	for _, preference := range configReviewCheckerPreferences {
 		configPreferencesByName[preference.Name] = preference
@@ -247,7 +243,7 @@ func TestBootstrap(t *testing.T) {
 	require.Contains(t, configPreferencesByName, "out_of_pool_reservation")
 	require.True(t, configPreferencesByName["out_of_pool_reservation"].GloballyEnabled)
 
-	configReviewCheckerPreferences, _ = server.ReviewDispatcher.GetCheckersMetadata(daemons[1])
+	configReviewCheckerPreferences, _ = server.ReviewDispatcher.GetCheckersMetadata(daemon2)
 	configPreferencesByName = make(map[string]*configreview.CheckerMetadata)
 	for _, preference := range configReviewCheckerPreferences {
 		configPreferencesByName[preference.Name] = preference
@@ -274,7 +270,7 @@ func TestBootstrap(t *testing.T) {
 
 	// Expect that the new event has been emitted.
 	require.Eventually(t, func() bool {
-		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, "", dbmodel.SortDirAny)
 		return len(events) > 1
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 2)
@@ -289,7 +285,7 @@ func TestBootstrap(t *testing.T) {
 
 	// Make sure that the shutdown event has been added.
 	require.Eventually(t, func() bool {
-		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, "", dbmodel.SortDirAny)
 		return len(events) > 2
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 3)

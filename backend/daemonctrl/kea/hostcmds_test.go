@@ -1,0 +1,98 @@
+package keactrl
+
+import (
+	"testing"
+
+	require "github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
+)
+
+// Tests reservation-add command.
+func TestNewCommandReservationAdd(t *testing.T) {
+	command := NewCommandReservationAdd(&keaconfig.HostCmdsReservation{
+		Reservation: keaconfig.Reservation{
+			HWAddress: "00:01:02:03:04:05",
+			Hostname:  "foo.example.org",
+		},
+		SubnetID: 123,
+	}, daemonname.DHCPv4)
+	require.NotNil(t, command)
+	require.Len(t, command.Daemons, 1)
+	require.Equal(t, daemonname.DHCPv4, command.Daemons[0])
+	bytes, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "reservation-add",
+		"service": [ "dhcp4" ],
+		"arguments": {
+			"reservation": {
+				"hw-address": "00:01:02:03:04:05",
+				"hostname": "foo.example.org",
+				"subnet-id": 123
+			}
+		}
+	}`, string(bytes))
+}
+
+// Tests reservation-del command.
+func TestNewCommandReservationDel(t *testing.T) {
+	command := NewCommandReservationDel(&keaconfig.HostCmdsDeletedReservation{
+		IdentifierType: "hw-address",
+		Identifier:     "00:01:02:03:04:05",
+		SubnetID:       123,
+	}, daemonname.DHCPv4)
+	require.NotNil(t, command)
+	require.Len(t, command.Daemons, 1)
+	require.Equal(t, daemonname.DHCPv4, command.Daemons[0])
+	bytes, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "reservation-del",
+		"service": [ "dhcp4" ],
+		"arguments": {
+			"identifier-type": "hw-address",
+			"identifier": "00:01:02:03:04:05",
+			"subnet-id": 123
+		}
+	}`, string(bytes))
+}
+
+// Tests reservation-get-page command when all arguments are specified.
+func TestNewCommandReservationGetPageAllArgs(t *testing.T) {
+	command := NewCommandReservationGetPage(234, 1, 5, 100, daemonname.DHCPv4)
+	require.NotNil(t, command)
+	require.Len(t, command.Daemons, 1)
+	require.Equal(t, daemonname.DHCPv4, command.Daemons[0])
+	bytes, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "reservation-get-page",
+		"service": [ "dhcp4" ],
+		"arguments": {
+			"subnet-id": 234,
+			"source-index": 1,
+			"from": 5,
+			"limit": 100
+		}
+	}`, string(bytes))
+}
+
+// Tests reservation-get-page command when mandatory arguments are
+// specified and non-mandatory are zero and not included.
+func TestNewCommandReservationGetPageAllMandatoryArgs(t *testing.T) {
+	command := NewCommandReservationGetPage(234, 0, 0, 100, daemonname.DHCPv4)
+	require.NotNil(t, command)
+	require.Len(t, command.Daemons, 1)
+	require.Equal(t, daemonname.DHCPv4, command.Daemons[0])
+	bytes, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "reservation-get-page",
+		"service": [ "dhcp4" ],
+		"arguments": {
+			"subnet-id": 234,
+			"limit": 100
+		}
+	}`, string(bytes))
+}

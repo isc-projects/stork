@@ -10,6 +10,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/miekg/dns"
 	"github.com/pkg/errors"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -17,8 +18,10 @@ import (
 type ZoneRelation string
 
 const (
-	ZoneRelationLocalZones    = "LocalZones"
-	ZoneRelationLocalZonesApp = "LocalZones.Daemon.App"
+	ZoneRelationLocalZones             ZoneRelation = "LocalZones"
+	ZoneRelationLocalZonesDaemon       ZoneRelation = "LocalZones.Daemon"
+	ZoneRelationLocalZonesAccessPoints ZoneRelation = "LocalZones.Daemon.AccessPoints"
+	ZoneRelationLocalZonesMachine      ZoneRelation = "LocalZones.Daemon.Machine"
 )
 
 type ZoneType string
@@ -86,10 +89,13 @@ func (f *GetZonesFilterZoneTypes) GetEnabled() iter.Seq[ZoneType] {
 // Filter used in the GetZones function for complex filtering of
 // the zones returned from the database.
 type GetZonesFilter struct {
-	// Filter by an explicit app ID.
-	AppID *int64
-	// Filter by DNS app type (e.g., "bind9").
-	AppType *string
+	// Filter by an explicit daemon ID.
+	DaemonID *int64
+	// Filter by DNS daemon name (e.g., "bind9").
+	DaemonName *daemonname.Name
+	// Filter by machine ID.
+	// TODO: Code implemented in below line is a temporary solution for virtual applications.
+	MachineID *int64
 	// Filter by class (typically, IN).
 	Class *string
 	// Filter by lower bound zone.
@@ -104,7 +110,7 @@ type GetZonesFilter struct {
 	Serial *string
 	// Filter by zone type (e.g., primary or secondary).
 	Types *GetZonesFilterZoneTypes
-	// Filter by partial zone name, app name or view.
+	// Filter by partial zone name, daemon name or view.
 	Text *string
 }
 
@@ -217,14 +223,14 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 
 // Retrieves a list of zones from the database with optional relations and filtering.
 // The ORM-based implementation may result in multiple queries when deep relations
-// (with daemon and with app) are used. The only alternative would be raw queries.
+// (with daemon) are used. The only alternative would be raw queries.
 // However, raw queries don't improve performance of getting the zones for one
 // relation (LocalZones). They could possibly improve the performance when cascaded
-// relations (i.e., LocalZones.Daemon.App) are used. Unfortunately, it would significantly
+// relations (i.e., LocalZones.Daemon) are used. Unfortunately, it would significantly
 // complicate the implementation. Note that this function is primarily used for
 // paging zones, so the number of records is typically low, and the performance gain
 // would be negligible.
-func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*Zone, int, error) {
+func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*Zone, int, error) { //nolint: gocyclo
 	var zones []*Zone
 	q := db.Model(&zones).Group("zone.id")
 	// Add relations.
@@ -259,11 +265,17 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		q = q.Offset(*filter.Offset)
 	}
 	// Join relations required for filtering.
-	if filter.Serial != nil || filter.Class != nil || filter.Types != nil && filter.Types.IsAnySpecified() || filter.RPZ != nil || filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
+	if filter.Serial != nil || filter.Class != nil ||
+		filter.Types != nil && filter.Types.IsAnySpecified() ||
+		filter.RPZ != nil || filter.DaemonID != nil ||
+		filter.DaemonName != nil || filter.Text != nil ||
+		// TODO: Code implemented in below line is a temporary solution for virtual applications.
+		filter.MachineID != nil {
 		q = q.Join("JOIN local_zone AS lz").JoinOn("lz.zone_id = zone.id")
-		if filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
-			q = q.Join("JOIN daemon AS d").JoinOn("d.id = lz.daemon_id").
-				Join("JOIN app AS a").JoinOn("a.id = d.app_id")
+		if filter.DaemonName != nil || filter.Text != nil ||
+			// TODO: Code implemented in below line is a temporary solution for virtual applications.
+			filter.MachineID != nil {
+			q = q.Join("JOIN daemon AS d").JoinOn("d.id = lz.daemon_id")
 		}
 	}
 	// Filter by serial.
@@ -285,15 +297,20 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 	if filter.RPZ != nil {
 		q = q.Where("lz.rpz = ?", *filter.RPZ)
 	}
-	// Filter by app ID.
-	if filter.AppID != nil {
-		q = q.Where("a.id = ?", *filter.AppID)
+	// Filter by daemon ID.
+	if filter.DaemonID != nil {
+		q = q.Where("lz.daemon_id = ?", *filter.DaemonID)
 	}
-	// Filter by app type.
-	if filter.AppType != nil {
-		q = q.Where("a.type = ?", *filter.AppType)
+	// Filter by daemon name.
+	if filter.DaemonName != nil {
+		q = q.Where("d.name ILIKE ?", "%"+*filter.DaemonName+"%")
 	}
-	// Filter by zone name, app name or local zone view using partial matching.
+	// Filter by machine ID.
+	// TODO: Code implemented in below block is a temporary solution for virtual applications.
+	if filter.MachineID != nil {
+		q = q.Where("d.machine_id = ?", *filter.MachineID)
+	}
+	// Filter by zone name, daemon name or local zone view using partial matching.
 	if filter.Text != nil {
 		// Ensure case-insensitive comparison against root and (root).
 		filterText := strings.ToLower(*filter.Text)
@@ -307,7 +324,6 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 				q = q.Where("zone.name = ?", ".")
 			}
 			q = q.WhereOr("zone.name ILIKE ?", "%"+filterText+"%").
-				WhereOr("a.name ILIKE ?", "%"+*filter.Text+"%").
 				WhereOr("lz.view ILIKE ?", "%"+*filter.Text+"%")
 			return q, nil
 		})

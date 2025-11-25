@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
-	bind9config "isc.org/stork/appcfg/bind9"
+	bind9config "isc.org/stork/daemoncfg/bind9"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
 )

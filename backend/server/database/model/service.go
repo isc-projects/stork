@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -39,7 +40,7 @@ type DaemonToService struct {
 type HAMode = string
 
 // High Availability type.
-type HAType = string
+type HAType = daemonname.Name
 
 // High Availability state.
 type HAState = string
@@ -49,9 +50,6 @@ const (
 	HAModeHotStandby    HAMode = "hot-standby"
 	HAModePassiveBackup HAMode = "passive-backup"
 	HAModeLoadBalancing HAMode = "load-balancing"
-
-	HATypeDhcp4 HAType = "dhcp4"
-	HATypeDhcp6 HAType = "dhcp6"
 
 	HAStateNone                  HAState = ""
 	HAStateBackup                HAState = "backup"
@@ -312,7 +310,6 @@ func GetDetailedService(dbi dbops.DBI, serviceID int64) (*Service, error) {
 	err := dbi.Model(service).
 		Relation("HAService").
 		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
-		Relation("Daemons.App").
 		Where("service.id = ?", serviceID).
 		Select()
 	if err != nil {
@@ -325,24 +322,24 @@ func GetDetailedService(dbi dbops.DBI, serviceID int64) (*Service, error) {
 	return service, err
 }
 
-// Fetches all services to which the given app belongs.
-func GetDetailedServicesByAppID(dbi dbops.DBI, appID int64) ([]Service, error) {
+// Fetches all services to which the given daemon belongs.
+func GetDetailedServicesByDaemonID(dbi dbops.DBI, daemonID int64) ([]Service, error) {
 	var services []Service
 
 	err := dbi.Model(&services).
 		Join("INNER JOIN daemon_to_service AS dtos ON dtos.service_id = service.id").
 		Join("INNER JOIN daemon AS d ON d.id = dtos.daemon_id").
-		Join("INNER JOIN app AS a ON d.app_id = a.ID").
 		Relation("HAService").
 		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
-		Relation("Daemons.App").
-		Relation("Daemons.App.AccessPoints").
-		Where("app_id = ?", appID).
+		Relation("Daemons.AccessPoints").
+		// TODO: Code implemented in below line is a temporary solution for virtual applications.
+		Relation("Daemons.Machine").
+		Where("d.id = ?", daemonID).
 		OrderExpr("service.id ASC").
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem getting services for app ID %d", appID)
+		err = pkgerrors.Wrapf(err, "problem getting services for daemon ID %d", daemonID)
 		return services, err
 	}
 
@@ -356,7 +353,6 @@ func GetDetailedAllServices(dbi dbops.DBI) ([]Service, error) {
 	err := dbi.Model(&services).
 		Relation("HAService").
 		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
-		Relation("Daemons.App").
 		OrderExpr("id ASC").
 		Select()
 
@@ -398,7 +394,7 @@ func commitServicesIntoDB(tx *pg.Tx, services []Service, daemon *Daemon) error {
 			err = pkgerrors.WithMessagef(err, "problem committing services into the database")
 			return err
 		}
-		// Try to associate the app with the service. If the association already
+		// Try to associate the daemon with the service. If the association already
 		// exists this is no-op.
 		err = AddDaemonToService(tx, services[i].ID, daemon)
 		if err != nil {

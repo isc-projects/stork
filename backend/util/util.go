@@ -28,36 +28,39 @@ func UTCNow() time.Time {
 }
 
 // Returns URL of the host with port.
-func HostWithPortURL(address string, port int64, secure bool) string {
-	protocol := "http"
-	if secure {
-		protocol = "https"
+func HostWithPortURL(address string, port int64, protocol string) string {
+	if port == 0 {
+		return fmt.Sprintf("%s://%s/", protocol, address)
 	}
 	return fmt.Sprintf("%s://%s:%d/", protocol, address, port)
 }
 
-// Parses URL into host and port.
-func ParseURL(url string) (host string, port int64, secure bool) {
-	pattern := regexp.MustCompile(`https{0,1}:\/\/\[{1}(\S+)\]{1}(:([0-9]+)){0,1}`)
+// Parses URL into host, port and protocol.
+func ParseURL(url string) (host string, port int64, protocol string) {
+	url = strings.TrimRight(url, "/")
+	if strings.HasPrefix(url, "unix://") {
+		return url[len("unix://"):], 0, "unix"
+	}
+
+	pattern := regexp.MustCompile(`(http|https|rndc):\/\/\[(\S+)\](:([0-9]+))?`)
 	m := pattern.FindStringSubmatch(url)
 
 	if len(m) == 0 {
-		pattern := regexp.MustCompile(`https{0,1}:\/\/([^\s\:\/]+)(:([0-9]+)){0,1}`)
+		pattern := regexp.MustCompile(`(http|https|rndc):\/\/([^\s\:\/]+)(:([0-9]+))?`)
 		m = pattern.FindStringSubmatch(url)
 	}
 
-	if len(m) > 1 {
-		host = m[1]
+	if len(m) > 2 {
+		protocol = m[1]
+		host = m[2]
 	}
 
-	if len(m) > 3 {
-		p, err := strconv.Atoi(m[3])
+	if len(m) > 4 {
+		p, err := strconv.Atoi(m[4])
 		if err == nil {
 			port = int64(p)
 		}
 	}
-
-	secure = strings.HasPrefix(url, "https://")
 
 	// Set default ports
 	if port == 0 {
@@ -69,7 +72,7 @@ func ParseURL(url string) (host string, port int64, secure bool) {
 		}
 	}
 
-	return host, port, secure
+	return host, port, protocol
 }
 
 // Formats provided string of hexadecimal digits to MAC address format
@@ -307,20 +310,18 @@ func IsRunningInTerminal() bool {
 }
 
 // Read a file and resolve all include statements.
-func ReadFileWithIncludes(path string) (string, error) {
+func ReadFileWithIncludes(path string) ([]byte, error) {
 	parentPaths := map[string]bool{}
 	return readFileWithIncludes(path, parentPaths)
 }
 
 // Recursive function to read a file and resolve all include statements.
-func readFileWithIncludes(path string, parentPaths map[string]bool) (string, error) {
+func readFileWithIncludes(path string, parentPaths map[string]bool) ([]byte, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		err = errors.Wrap(err, "cannot read the configuration file")
-		return "", err
+		return nil, err
 	}
-
-	text := string(raw)
 
 	// Include pattern definition:
 	// - Must start with prefix: <?include
@@ -330,22 +331,22 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 	// - May to contains spacing before and after the path quotes
 	// Produce two groups: first for the whole statement and second for path.
 	includePattern := regexp.MustCompile(`<\?include\s*\"([^"]+\..*)\"\s*\?>`)
-	matchesGroupIndices := includePattern.FindAllStringSubmatchIndex(text, -1)
-	matchesGroups := includePattern.FindAllStringSubmatch(text, -1)
+	matchesGroupIndices := includePattern.FindAllSubmatchIndex(raw, -1)
+	matchesGroups := includePattern.FindAllSubmatch(raw, -1)
 
 	// Probably never met
 	if (matchesGroupIndices == nil) != (matchesGroups == nil) {
-		return "", errors.New("include statement recognition failed")
+		return nil, errors.New("include statement recognition failed")
 	}
 
 	// No matches - nothing to expand
 	if matchesGroupIndices == nil {
-		return text, nil
+		return raw, nil
 	}
 
 	// Probably never met
 	if len(matchesGroupIndices) != len(matchesGroups) {
-		return "", errors.New("include statement recognition asymmetric")
+		return nil, errors.New("include statement recognition asymmetric")
 	}
 
 	// The root directory for includes
@@ -363,7 +364,7 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 		statementEndIndex := statementStartIndex + matchedStatementLength
 
 		// Include path may be absolute or relative to a parent file
-		nestedIncludePath := matchedPath
+		nestedIncludePath := string(matchedPath)
 		if !filepath.IsAbs(nestedIncludePath) {
 			nestedIncludePath = filepath.Join(baseDirectory, nestedIncludePath)
 		}
@@ -373,7 +374,7 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 		_, isVisited := parentPaths[nestedIncludePath]
 		if isVisited {
 			err := errors.Errorf("detected infinite loop on include '%s' in file '%s'", matchedPath, path)
-			return "", err
+			return nil, err
 		}
 
 		// Prepare the parent paths for the nested level
@@ -386,14 +387,19 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 		// Recursive call
 		content, err := readFileWithIncludes(nestedIncludePath, nestedParentPaths)
 		if err != nil {
-			return "", errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedIncludePath)
+			return nil, errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedIncludePath)
 		}
 
 		// Replace include statement with included content
-		text = text[:statementStartIndex] + content + text[statementEndIndex:]
+		var buffer bytes.Buffer
+		buffer.Grow(len(raw) - matchedStatementLength + len(content))
+		buffer.Write(raw[:statementStartIndex])
+		buffer.Write(content)
+		buffer.Write(raw[statementEndIndex:])
+		raw = buffer.Bytes()
 	}
 
-	return text, nil
+	return raw, nil
 }
 
 // Check if it is possible to create a file

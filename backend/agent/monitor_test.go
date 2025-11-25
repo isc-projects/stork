@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -13,15 +14,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
-	"gopkg.in/h2non/gock.v1"
 
-	bind9config "isc.org/stork/appcfg/bind9"
-	pdnsconfig "isc.org/stork/appcfg/pdns"
+	bind9config "isc.org/stork/daemoncfg/bind9"
+	pdnsconfig "isc.org/stork/daemoncfg/pdns"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/testutil"
 )
 
 //go:generate mockgen -source process.go -package=agent -destination=processmock_test.go -mock_names=processLister=MockProcessLister,supportedProcess=MockSupportedProcess isc.org/agent supportedProcess processLister
-//go:generate mockgen -source monitor.go -package=agent -destination=monitormock_test.go isc.org/agent App
+//go:generate mockgen -source monitor.go -package=agent -destination=monitormock_test.go -mock_names=agentManager=MockAgentManager isc.org/agent agentManager
 
 const defaultBind9Config = `
 	key "foo" {
@@ -55,94 +57,100 @@ const defaultPDNSConfig = `
 	api-key=stork
 `
 
-func TestGetApps(t *testing.T) {
-	am := NewAppMonitor()
+func TestGetDaemons(t *testing.T) {
+	monitor := NewMonitor("", "", HTTPClientConfig{})
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	httpClientConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClientConfig, hm, "", "")
-	am.Start(sa)
-	apps := am.GetApps()
-	require.Len(t, apps, 0)
-	am.Shutdown()
+	sa := NewStorkAgent("foo", 42, monitor, bind9StatsClient, hm)
+	monitor.Start(t.Context(), sa)
+	daemons := monitor.GetDaemons()
+	require.Len(t, daemons, 0)
+	monitor.Shutdown()
 }
 
-// Check if detected apps are returned by GetApp.
-func TestGetApp(t *testing.T) {
-	am := NewAppMonitor()
+// Check if detected daemons are returned by GetDaemonByAccessPoint.
+func TestGetDaemonByAccessPoint(t *testing.T) {
+	m := NewMonitor("", "", HTTPClientConfig{})
 
-	apps := []App{
-		&KeaApp{
-			BaseApp: BaseApp{
-				Type:         AppTypeKea,
-				AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, true),
-			},
-			HTTPClient: nil,
-		},
-		&Bind9App{
-			BaseApp: BaseApp{
-				Type: AppTypeBind9,
+	daemons := []Daemon{
+		&keaDaemon{
+			daemon: daemon{
+				Name: daemonname.CA,
 				AccessPoints: []AccessPoint{
 					{
-						Type:              AccessPointControl,
-						Address:           "2.3.4.4",
-						Port:              2345,
-						UseSecureProtocol: false,
-						Key:               "abcd",
+						Type:     AccessPointControl,
+						Address:  "1.2.3.1",
+						Port:     1234,
+						Protocol: protocoltype.HTTP,
 					},
-					{
-						Type:              AccessPointStatistics,
-						Address:           "2.3.4.5",
-						Port:              2346,
-						UseSecureProtocol: false,
-						Key:               "",
+				},
+			},
+		},
+		&Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "2.3.4.4",
+							Port:     2345,
+							Protocol: protocoltype.HTTP,
+							Key:      "abcd",
+						},
+						{
+							Type:     AccessPointStatistics,
+							Address:  "2.3.4.5",
+							Port:     2346,
+							Protocol: protocoltype.HTTP,
+						},
 					},
 				},
 			},
 		},
 	}
 
-	// Monitor holds apps in background goroutine. So to get apps we need
+	// Monitor holds daemons in background goroutine. So to get daemons we need
 	// to send a request over a channel to this goroutine and wait for
-	// a response with detected apps. We do not want to spawn monitor background
-	// goroutine so we are calling GetApp in our background goroutine
+	// a response with detected daemons. We do not want to spawn monitor background
+	// goroutine so we are calling GetDaemonByAccessPoint in our background goroutine
 	// and are serving this request in the main thread.
 	// To make it in sync the wait group is used here.
 	var wg sync.WaitGroup
 
-	// find kea app
+	// find kea daemon
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AccessPointControl, "1.2.3.1", 1234)
-		require.NotNil(t, app)
-		require.EqualValues(t, AppTypeKea, app.GetBaseApp().Type)
+		daemon := m.GetDaemonByAccessPoint(AccessPointControl, "1.2.3.1", 1234)
+		require.NotNil(t, daemon)
+		require.EqualValues(t, daemonname.CA, daemon.GetName())
 	}()
-	ret := <-am.(*appMonitor).requests
-	ret <- apps
+	ret := <-m.(*monitor).requests
+	ret <- daemons
 	wg.Wait()
 
-	// find bind app
+	// find bind daemon
 	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AccessPointControl, "2.3.4.4", 2345)
-		require.NotNil(t, app)
-		require.EqualValues(t, AppTypeBind9, app.GetBaseApp().Type)
+		daemon := m.GetDaemonByAccessPoint(AccessPointControl, "2.3.4.4", 2345)
+		require.NotNil(t, daemon)
+		require.EqualValues(t, daemonname.Bind9, daemon.GetName())
 	}()
-	ret = <-am.(*appMonitor).requests
-	ret <- apps
+	ret = <-m.(*monitor).requests
+	ret <- daemons
 	wg.Wait()
 
-	// find not existing app - should return nil
+	// find not existing daemon - should return nil
 	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AccessPointControl, "0.0.0.0", 1)
-		require.Nil(t, app)
+		daemon := m.GetDaemonByAccessPoint(AccessPointControl, "0.0.0.0", 1)
+		require.Nil(t, daemon)
 	}()
-	ret = <-am.(*appMonitor).requests
-	ret <- apps
+	ret = <-m.(*monitor).requests
+	ret <- daemons
 	wg.Wait()
 }
 
@@ -192,17 +200,22 @@ func TestReadKeaConfigOk(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, config)
 
-	port, _ := config.GetHTTPPort()
+	controlSockets := config.GetListeningControlSockets()
+	require.Len(t, controlSockets, 1)
+	controlSocket := controlSockets[0]
+
+	port := controlSocket.GetPort()
 	require.EqualValues(t, 1234, port)
 
-	address, _ := config.GetHTTPHost()
+	address := controlSocket.GetAddress()
 	require.Equal(t, "host.example.org", address)
 
-	require.False(t, config.UseSecureProtocol())
+	protocol := controlSocket.GetProtocol()
+	require.Equal(t, protocoltype.HTTP, protocol)
 }
 
-// Test that the Kea, BIND 9 and PowerDNS apps are detected properly.
-func TestDetectApps(t *testing.T) {
+// Test that the Kea, BIND 9 and PowerDNS daemons are detected properly.
+func TestDetectDaemons(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -222,6 +235,7 @@ func TestDetectApps(t *testing.T) {
 
 	keaProcess := NewMockSupportedProcess(ctrl)
 	keaProcess.EXPECT().getName().AnyTimes().Return("kea-ctrl-agent", nil)
+	keaProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.CA)
 	keaProcess.EXPECT().getCmdline().AnyTimes().Return(fmt.Sprintf(
 		"kea-ctrl-agent -c %s", keaConfPath,
 	), nil)
@@ -231,6 +245,7 @@ func TestDetectApps(t *testing.T) {
 
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
 	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
 	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
@@ -238,6 +253,7 @@ func TestDetectApps(t *testing.T) {
 
 	pdnsProcess := NewMockSupportedProcess(ctrl)
 	pdnsProcess.EXPECT().getName().AnyTimes().Return("pdns_server", nil)
+	pdnsProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.PDNS)
 	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server --config-dir=/etc/powerdns", nil)
 	pdnsProcess.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	pdnsProcess.EXPECT().getPid().AnyTimes().Return(int32(7890))
@@ -245,6 +261,7 @@ func TestDetectApps(t *testing.T) {
 
 	unknownProcess := NewMockSupportedProcess(ctrl)
 	unknownProcess.EXPECT().getName().AnyTimes().Return("unknown", nil)
+	unknownProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Name(""))
 	unknownProcess.EXPECT().getPid().AnyTimes().Return(int32(3456))
 	unknownProcess.EXPECT().getParentPid().AnyTimes().Return(int32(4567), nil)
 
@@ -265,78 +282,83 @@ func TestDetectApps(t *testing.T) {
 		return pdnsconfig.NewParser().Parse(configPath, strings.NewReader(defaultPDNSConfig))
 	})
 
-	am := &appMonitor{
+	monitor := &monitor{
 		processManager:   processManager,
 		commander:        commander,
 		bind9FileParser:  bind9ConfigParser,
 		pdnsConfigParser: pdnsConfigParser,
 	}
-	hm := NewHookManager()
-	bind9StatsClient := NewBind9StatsClient()
-	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
 
-	// Create fake app for which the zone inventory should be stopped
+	// Create fake daemon for which the zone inventory should be stopped
 	// when new apps are detected.
-	fakeApp := NewMockApp(ctrl)
-	fakeApp.EXPECT().GetBaseApp().AnyTimes().Return(&BaseApp{})
-	fakeApp.EXPECT().StopZoneInventory().Times(1)
+	fakeDaemon := NewMockDaemon(ctrl)
+	fakeDaemon.EXPECT().Cleanup().Times(1)
+	fakeDaemon.EXPECT().IsEqual(gomock.Any()).AnyTimes().Return(false)
+	fakeDaemon.EXPECT().String().AnyTimes().Return("fake-daemon")
 
-	am.apps = append(am.apps, fakeApp)
+	monitor.daemons = append(monitor.daemons, fakeDaemon)
 
 	// Act
-	am.detectApps(sa)
-	apps := am.apps
+	monitor.detectDaemons(t.Context())
+	daemons := monitor.daemons
+	sort.Slice(daemons, func(i, j int) bool {
+		return daemons[i].GetName() < daemons[j].GetName()
+	})
 
 	// Assert
-	require.Len(t, apps, 3)
-	require.Equal(t, AppTypeKea, apps[0].GetBaseApp().Type)
-	require.EqualValues(t, 1234, apps[0].GetBaseApp().Pid)
-	require.Equal(t, AppTypeBind9, apps[1].GetBaseApp().Type)
-	require.EqualValues(t, 5678, apps[1].GetBaseApp().Pid)
-	require.Equal(t, AppTypePowerDNS, apps[2].GetBaseApp().Type)
-	require.EqualValues(t, 7890, apps[2].GetBaseApp().Pid)
+	require.Len(t, daemons, 3)
+	require.Equal(t, daemonname.CA, daemons[0].GetName())
+	require.Equal(t, daemonname.Bind9, daemons[1].GetName())
+	require.Equal(t, daemonname.PDNS, daemons[2].GetName())
 
 	// Detect tha apps again. The zone inventory should be preserved.
-	am.detectApps(sa)
-	apps2 := am.apps
-	require.Len(t, apps2, 3)
-	require.Equal(t, apps[1].(*Bind9App).zoneInventory, apps2[1].(*Bind9App).zoneInventory)
-	require.True(t, apps[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
-	require.True(t, apps2[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
-	require.Equal(t, apps[2].(*PDNSApp).zoneInventory, apps2[2].(*PDNSApp).zoneInventory)
-	require.True(t, apps[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
-	require.True(t, apps2[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
+	monitor.detectDaemons(t.Context())
+	daemons2 := monitor.daemons
+	sort.Slice(daemons2, func(i, j int) bool {
+		return daemons2[i].GetName() < daemons2[j].GetName()
+	})
 
-	// If the app access point changes, the inventory should be recreated.
-	for index, accessPoint := range am.apps[1].(*Bind9App).AccessPoints {
+	require.Len(t, daemons2, 3)
+	require.Equal(t, daemons[1].(*Bind9Daemon).zoneInventory, daemons2[1].(*Bind9Daemon).zoneInventory)
+	require.True(t, daemons[1].(*Bind9Daemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+	require.True(t, daemons2[1].(*Bind9Daemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+	require.Equal(t, daemons[2].(*pdnsDaemon).zoneInventory, daemons2[2].(*pdnsDaemon).zoneInventory)
+	require.True(t, daemons[2].(*pdnsDaemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+	require.True(t, daemons2[2].(*pdnsDaemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+
+	// If the daemon access point changes, the inventory should be recreated.
+	for index, accessPoint := range monitor.daemons[1].(*Bind9Daemon).AccessPoints {
 		if accessPoint.Type == AccessPointControl {
 			// Change the access point port.
-			am.apps[1].(*Bind9App).AccessPoints[index].Port = 5453
+			monitor.daemons[1].(*Bind9Daemon).AccessPoints[index].Port = 5453
 		}
 	}
-	for index, accessPoint := range am.apps[2].(*PDNSApp).AccessPoints {
+	for index, accessPoint := range monitor.daemons[2].(*pdnsDaemon).AccessPoints {
 		if accessPoint.Type == AccessPointControl {
 			// Change the access point port.
-			am.apps[2].(*PDNSApp).AccessPoints[index].Port = 8082
+			monitor.daemons[2].(*pdnsDaemon).AccessPoints[index].Port = 8082
 		}
 	}
 
 	// Redetect apps. It should result in recreating the zone inventory.
-	am.detectApps(sa)
-	apps3 := am.apps
-	require.Len(t, apps3, 3)
-	require.NotEqual(t, apps[1].(*Bind9App).zoneInventory, apps3[1].(*Bind9App).zoneInventory)
-	require.False(t, apps[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
-	require.True(t, apps3[1].(*Bind9App).zoneInventory.isAXFRWorkersActive())
-	require.NotEqual(t, apps[2].(*PDNSApp).zoneInventory, apps3[2].(*PDNSApp).zoneInventory)
-	require.False(t, apps[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
-	require.True(t, apps3[2].(*PDNSApp).zoneInventory.isAXFRWorkersActive())
+	monitor.detectDaemons(t.Context())
+	daemons3 := monitor.daemons
+	sort.Slice(daemons3, func(i, j int) bool {
+		return daemons3[i].GetName() < daemons3[j].GetName()
+	})
+
+	require.Len(t, daemons3, 3)
+	require.NotEqual(t, daemons[1].(*Bind9Daemon).zoneInventory, daemons3[1].(*Bind9Daemon).zoneInventory)
+	require.False(t, daemons[1].(*Bind9Daemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+	require.True(t, daemons3[1].(*Bind9Daemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+	require.NotEqual(t, daemons[2].(*pdnsDaemon).zoneInventory, daemons3[2].(*pdnsDaemon).zoneInventory)
+	require.False(t, daemons[2].(*pdnsDaemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
+	require.True(t, daemons3[2].(*pdnsDaemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
 }
 
 // Test that verifies that when the zone inventory is not initialized
-// re-detecting the app does not cause an error.
-func TestDetectAppsConfigNoStatistics(t *testing.T) {
+// re-detecting the daemons does not cause an error.
+func TestDetectDaemonsConfigNoStatistics(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -352,6 +374,7 @@ func TestDetectAppsConfigNoStatistics(t *testing.T) {
 
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
 	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
 	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
@@ -368,45 +391,44 @@ func TestDetectAppsConfigNoStatistics(t *testing.T) {
 	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
 		return bind9config.NewParser().Parse(configPath, strings.NewReader(bind9ConfigWithoutStatistics))
 	})
-	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
-	hm := NewHookManager()
-	bind9StatsClient := NewBind9StatsClient()
-	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
+	monitor := &monitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 
-	// Create fake app to test that the monitor stops zone inventory
-	// when new apps are detected.
-	fakeApp := NewMockApp(ctrl)
-	fakeApp.EXPECT().GetBaseApp().AnyTimes().Return(&BaseApp{})
-	fakeApp.EXPECT().StopZoneInventory().Times(1)
+	// Create fake daemon to test that the monitor stops zone inventory
+	// when new daemons are detected.
+	fakeDaemon := NewMockDaemon(ctrl)
+	fakeDaemon.EXPECT().RefreshState(gomock.Any(), gomock.Any()).AnyTimes()
+	fakeDaemon.EXPECT().Cleanup().Times(1)
+	fakeDaemon.EXPECT().IsEqual(gomock.Any()).AnyTimes().Return(false)
+	fakeDaemon.EXPECT().String().AnyTimes().Return("fake-daemon")
 
-	am.apps = append(am.apps, fakeApp)
+	monitor.daemons = append(monitor.daemons, fakeDaemon)
 
-	// Detect apps for the first time.
-	am.detectApps(sa)
-	apps := am.apps
+	// Detect daemons for the first time.
+	monitor.detectDaemons(t.Context())
+	daemons := monitor.daemons
 
 	// Zone inventory should not be initialized.
-	require.Len(t, apps, 1)
-	require.Nil(t, apps[0].(*Bind9App).zoneInventory)
+	require.Len(t, daemons, 1)
+	require.Nil(t, daemons[0].(*Bind9Daemon).zoneInventory)
 
-	// Detect apps again. It should not panic even though the zone
+	// Detect daemons again. It should not panic even though the zone
 	// inventory is not initialized.
-	am.detectApps(sa)
-	apps2 := am.apps
-	require.Len(t, apps2, 1)
-	require.Nil(t, apps2[0].(*Bind9App).zoneInventory)
+	monitor.detectDaemons(t.Context())
+	daemons2 := monitor.daemons
+	require.Len(t, daemons2, 1)
+	require.Nil(t, daemons2[0].(*Bind9Daemon).zoneInventory)
 }
 
 // Test that the processes for which the command line cannot be read are
 // not skipped.
-func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
+func TestDetectDaemonsContinueOnNotAvailableCommandLine(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
 	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
 	bind9Process.EXPECT().getCwd().Return("", errors.New("no current working directory"))
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
@@ -424,29 +446,26 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
 	})
 	executor := newTestCommandExecutorDefault()
-	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
-	hm := NewHookManager()
-	bind9StatsClient := NewBind9StatsClient()
-	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
+	monitor := &monitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 
 	// Act
-	am.detectApps(sa)
+	monitor.detectDaemons(t.Context())
 
 	// Assert
-	require.Len(t, am.apps, 1)
-	require.Equal(t, AppTypeBind9, am.apps[0].GetBaseApp().Type)
+	require.Len(t, monitor.daemons, 1)
+	require.Equal(t, daemonname.Bind9, monitor.daemons[0].GetName())
 }
 
 // Test that the processes for which the current working directory cannot be
 // read are skipped.
-func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
+func TestDetectDaemonsSkipOnNotAvailableCwd(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	noCwdProcess := NewMockSupportedProcess(ctrl)
 	noCwdProcess.EXPECT().getName().AnyTimes().Return("kea-ctrl-agent", nil)
+	noCwdProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.CA)
 	noCwdProcess.EXPECT().getCmdline().AnyTimes().Return("kea-ctrl-agent -c /etc/kea/kea.conf", nil)
 	noCwdProcess.EXPECT().getCwd().AnyTimes().Return("", errors.New("no current working directory"))
 	noCwdProcess.EXPECT().getPid().AnyTimes().Return(int32(1234))
@@ -454,6 +473,7 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
 	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
 	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
@@ -473,22 +493,18 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
 	})
 
-	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
-	hm := NewHookManager()
-	bind9StatsClient := NewBind9StatsClient()
-	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
+	monitor := &monitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 
 	// Act
-	am.detectApps(sa)
+	monitor.detectDaemons(t.Context())
 
 	// Assert
-	require.Len(t, am.apps, 1)
-	require.Equal(t, AppTypeBind9, am.apps[0].GetBaseApp().Type)
+	require.Len(t, monitor.daemons, 1)
+	require.Equal(t, daemonname.Bind9, monitor.daemons[0].GetName())
 }
 
 // The monitor periodically searches for the Kea/Bind9 instances. Usually, at
-// least one application should be available. If no monitored app is found,
+// least one application should be available. If no monitored daemon is found,
 // the Stork prints the warning message to indicate that something unexpected
 // happened.
 func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
@@ -511,28 +527,22 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 	processManager.lister = lister
 
 	executor := newTestCommandExecutorDefault()
-	am := &appMonitor{processManager: processManager, commander: executor}
-	hm := NewHookManager()
-	bind9StatsClient := NewBind9StatsClient()
-	httpConfig := HTTPClientConfig{}
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
+	monitor := &monitor{processManager: processManager, commander: executor}
 
 	// Act
-	am.detectApps(sa)
+	monitor.detectDaemons(t.Context())
 
 	// Assert
-	require.Contains(t, buffer.String(), "No app detected for monitoring")
+	require.Contains(t, buffer.String(), "No daemon detected for monitoring")
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
-	am := &appMonitor{}
+	monitor := &monitor{}
 	bind9StatsClient := NewBind9StatsClient()
-	httpConfig := HTTPClientConfig{}
-	httpClient := NewHTTPClient(httpConfig)
-	am.apps = append(am.apps, &KeaApp{
-		BaseApp: BaseApp{
-			Type: AppTypeKea,
+	monitor.daemons = append(monitor.daemons, &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
 			AccessPoints: []AccessPoint{
 				{
 					Type:    AccessPointControl,
@@ -541,13 +551,12 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 				},
 			},
 		},
-		HTTPClient: httpClient,
 	})
 
 	hm := NewHookManager()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "", "")
+	sa := NewStorkAgent("foo", 42, monitor, bind9StatsClient, hm)
 
-	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
+	require.NotPanics(t, func() { monitor.refreshDaemons(t.Context(), sa) })
 }
 
 // Returns a fixed output and no error for any data. The output contains the
@@ -558,9 +567,9 @@ func newTestCommandExecutorDefault() *testCommandExecutor {
 		setConfigPathInNamedOutput("/etc/named.conf")
 }
 
-// Check BIND 9 app detection when its conf file is absolute path.
-func TestDetectBind9AppAbsPath(t *testing.T) {
-	// check BIND 9 app detection
+// Check BIND 9 daemon detection when its conf file is absolute path.
+func TestDetectBind9DaemonAbsPath(t *testing.T) {
+	// check BIND 9 daemon detection
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -571,26 +580,27 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/named -c /etc/named.conf", nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getPid().Return(int32(1234))
 	executor := newTestCommandExecutorDefault()
-	app, err := detectBind9App(process, executor, "", parser)
+	daemon, err := detectBind9Daemon(process, executor, "", parser)
 	require.NoError(t, err)
-	require.NotNil(t, app)
-	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
-	require.Len(t, app.GetBaseApp().AccessPoints, 2)
-	point := app.GetBaseApp().AccessPoints[0]
+	require.NotNil(t, daemon)
+	require.Equal(t, daemonname.Bind9, daemon.GetName())
+	require.Len(t, daemon.GetAccessPoints(), 2)
+	point := daemon.GetAccessPoint(AccessPointControl)
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
 	require.NotEmpty(t, point.Key)
-	point = app.GetBaseApp().AccessPoints[1]
+	point = daemon.GetAccessPoint(AccessPointStatistics)
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
 	require.EqualValues(t, 80, point.Port)
 	require.Empty(t, point.Key)
 }
 
-// Check BIND 9 app detection when its conf file is relative to CWD of its process.
-func TestDetectBind9AppRelativePath(t *testing.T) {
+// Check BIND 9 daemon detection when its conf file is relative to CWD of its process.
+func TestDetectBind9DaemonRelativePath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -602,10 +612,11 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/named -c named.conf", nil)
 	process.EXPECT().getCwd().Return("/etc", nil)
-	app, err := detectBind9App(process, executor, "", parser)
+	process.EXPECT().getPid().Return(int32(1234))
+	daemon, err := detectBind9Daemon(process, executor, "", parser)
 	require.NoError(t, err)
-	require.NotNil(t, app)
-	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.NotNil(t, daemon)
+	require.Equal(t, daemonname.Bind9, daemon.GetName())
 }
 
 // Creates a basic Kea configuration file.
@@ -653,46 +664,50 @@ func makeKeaConfFileWithInclude() (string, func()) {
 	return parentPath, func() { sb.Close() }
 }
 
-func TestDetectKeaApp(t *testing.T) {
-	checkApp := func(app App) {
-		keaApp, ok := app.(*KeaApp)
+func TestDetectKeaDaemon(t *testing.T) {
+	checkDaemon := func(daemons []Daemon) {
+		require.Len(t, daemons, 1)
+		keaDaemon, ok := daemons[0].(*keaDaemon)
 		require.True(t, ok)
-		require.NotNil(t, app)
-		require.Equal(t, AppTypeKea, app.GetBaseApp().Type)
-		require.Len(t, app.GetBaseApp().AccessPoints, 1)
-		ctrlPoint := app.GetBaseApp().AccessPoints[0]
+		require.NotNil(t, keaDaemon)
+		require.Equal(t, daemonname.CA, keaDaemon.GetName())
+		require.Len(t, keaDaemon.GetAccessPoints(), 1)
+		ctrlPoint := keaDaemon.GetAccessPoint(AccessPointControl)
 		require.Equal(t, AccessPointControl, ctrlPoint.Type)
 		require.Equal(t, "localhost", ctrlPoint.Address)
 		require.EqualValues(t, 45634, ctrlPoint.Port)
 		require.Empty(t, ctrlPoint.Key)
-		require.Len(t, keaApp.ConfiguredDaemons, 3)
-		require.Nil(t, keaApp.ActiveDaemons)
 	}
 
 	httpClientConfig := HTTPClientConfig{}
+	commander := newTestCommandExecutorDefault()
 
 	t.Run("config file without include statement", func(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFile()
 		defer clean()
 
-		// check kea app detection
+		// check kea daemon detection
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
 		process := NewMockSupportedProcess(ctrl)
-		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", tmpFilePath), nil)
+		process.EXPECT().getName().Return("kea-ctrl-agent", nil)
+		process.EXPECT().getDaemonName().Return(daemonname.CA)
+		process.EXPECT().getCmdline().Return(fmt.Sprintf("/usr/bin/kea-ctrl-agent -c %s", tmpFilePath), nil)
 		process.EXPECT().getCwd().Return("", nil)
-		app, err := detectKeaApp(process, httpClientConfig)
+		daemon, err := detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
 		require.NoError(t, err)
-		checkApp(app)
+		checkDaemon(daemon)
 
-		// check kea app detection when kea conf file is relative to CWD of kea process
+		// check kea daemon detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
+		process.EXPECT().getName().Return("kea-ctrl-agent", nil)
+		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
 		process.EXPECT().getCwd().Return(cwd, nil)
-		app, err = detectKeaApp(process, httpClientConfig)
+		daemon, err = detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
 		require.NoError(t, err)
-		checkApp(app)
+		checkDaemon(daemon)
 	})
 
 	t.Run("config file with include statement", func(t *testing.T) {
@@ -700,52 +715,57 @@ func TestDetectKeaApp(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFileWithInclude()
 		defer clean()
 
-		// check kea app detection
+		// check kea daemon detection
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		process := NewMockSupportedProcess(ctrl)
-		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", tmpFilePath), nil)
+		process.EXPECT().getName().Return("kea-ctrl-agent", nil)
+		process.EXPECT().getDaemonName().Return(daemonname.CA)
+		process.EXPECT().getCmdline().Return(fmt.Sprintf("/usr/bin/kea-ctrl-agent -c %s", tmpFilePath), nil)
 		process.EXPECT().getCwd().Return("", nil)
 
-		app, err := detectKeaApp(process, httpClientConfig)
+		daemon, err := detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
 		require.NoError(t, err)
-		checkApp(app)
+		checkDaemon(daemon)
 
-		// check kea app detection when kea conf file is relative to CWD of kea process
+		// check kea daemon detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
+		process.EXPECT().getName().Return("kea-ctrl-agent", nil)
+		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
 		process.EXPECT().getCwd().Return(cwd, nil)
-		app, err = detectKeaApp(process, httpClientConfig)
+		daemon, err = detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
 		require.NoError(t, err)
-		checkApp(app)
+		checkDaemon(daemon)
 	})
 }
 
 func TestGetAccessPoint(t *testing.T) {
-	bind9App := &Bind9App{
-		BaseApp: BaseApp{
-			Type: AppTypeBind9,
-			AccessPoints: []AccessPoint{
-				{
-					Type:    AccessPointControl,
-					Address: "127.0.0.53",
-					Port:    int64(5353),
-					Key:     "hmac-sha256:abcd",
-				},
-				{
-					Type:    AccessPointStatistics,
-					Address: "127.0.0.80",
-					Port:    int64(80),
-					Key:     "",
+	bind9Daemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{
+					{
+						Type:    AccessPointControl,
+						Address: "127.0.0.53",
+						Port:    int64(5353),
+						Key:     "hmac-sha256:abcd",
+					},
+					{
+						Type:    AccessPointStatistics,
+						Address: "127.0.0.80",
+						Port:    int64(80),
+						Key:     "",
+					},
 				},
 			},
 		},
-		RndcClient: nil,
 	}
 
-	keaApp := &KeaApp{
-		BaseApp: BaseApp{
-			Type: AppTypeKea,
+	keaDaemon := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
 			AccessPoints: []AccessPoint{
 				{
 					Type:    AccessPointControl,
@@ -755,342 +775,119 @@ func TestGetAccessPoint(t *testing.T) {
 				},
 			},
 		},
-		HTTPClient: nil,
 	}
 
 	// test get bind 9 access points
-	point, err := getAccessPoint(bind9App, AccessPointControl)
+	point := bind9Daemon.GetAccessPoint(AccessPointControl)
 	require.NotNil(t, point)
-	require.NoError(t, err)
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
 	require.Equal(t, "hmac-sha256:abcd", point.Key)
 
-	point, err = getAccessPoint(bind9App, AccessPointStatistics)
+	point = bind9Daemon.GetAccessPoint(AccessPointStatistics)
 	require.NotNil(t, point)
-	require.NoError(t, err)
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
 	require.EqualValues(t, 80, point.Port)
 	require.Empty(t, point.Key)
 
 	// test get kea access points
-	point, err = getAccessPoint(keaApp, AccessPointControl)
+	point = keaDaemon.GetAccessPoint(AccessPointControl)
 	require.NotNil(t, point)
-	require.NoError(t, err)
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "localhost", point.Address)
 	require.EqualValues(t, 45634, point.Port)
 	require.Empty(t, point.Key)
 
-	point, err = getAccessPoint(keaApp, AccessPointStatistics)
-	require.Error(t, err)
+	point = keaDaemon.GetAccessPoint(AccessPointStatistics)
 	require.Nil(t, point)
 }
 
-func TestPrintNewOrUpdatedApps(t *testing.T) {
-	output := logrus.StandardLogger().Out
-	defer func() {
-		logrus.SetOutput(output)
-	}()
-	var buffer bytes.Buffer
-	logrus.SetOutput(&buffer)
-
-	bind9App := &Bind9App{
-		BaseApp: BaseApp{
-			Type: AppTypeBind9,
-			AccessPoints: []AccessPoint{
-				{
-					Type:    AccessPointControl,
-					Address: "127.0.0.53",
-					Port:    int64(5353),
-					Key:     "hmac-sha256:abcd",
-				},
-				{
-					Type:    AccessPointStatistics,
-					Address: "127.0.0.80",
-					Port:    int64(80),
-					Key:     "",
-				},
-			},
-		},
-		RndcClient: nil,
-	}
-
-	keaApp := &KeaApp{
-		BaseApp: BaseApp{
-			Type: AppTypeKea,
-			AccessPoints: []AccessPoint{
-				{
-					Type:    AccessPointControl,
-					Address: "localhost",
-					Port:    int64(45634),
-					Key:     "",
-				},
-			},
-		},
-		HTTPClient: nil,
-	}
-
-	newApps := []App{bind9App, keaApp}
-	var oldApps []App
-
-	printNewOrUpdatedApps(newApps, oldApps)
-
-	require.Contains(t, buffer.String(), "New or updated apps detected:")
-	require.Contains(t, buffer.String(),
-		"bind9: control: http://127.0.0.53:5353/ (auth key: found), statistics: http://127.0.0.80:80/",
-	)
-	require.Contains(t, buffer.String(), "kea: control: http://localhost:45634/")
-}
-
-// Test that the active Kea daemons are recognized properly.
-func TestDetectActiveDaemons(t *testing.T) {
+// Test that the access point can be retrieved from the daemon.
+func TestDaemonGetAccessPoint(t *testing.T) {
 	// Arrange
-	output := logrus.StandardLogger().Out
-	defer func() {
-		logrus.SetOutput(output)
-	}()
-	var buffer bytes.Buffer
-	logrus.SetOutput(&buffer)
-
-	httpClient := newHTTPClientWithDefaults()
-	gock.InterceptClient(httpClient.client)
-
-	defer gock.Off()
-	gock.New("http://localhost:45634/").
-		JSON(map[string]interface{}{
-			"command": "version-get",
-			"service": []string{"d2", "dhcp4", "dhcp6"},
-		}).
-		Post("/").
-		Persist().
-		Reply(200).
-		BodyString(`[{
-			"result": 1,
-			"text": "Detection error occurred",
-			"arguments": {}
-		}, {
-			"result": 0,
-			"arguments": {}
-		}, {
-			"result": 0,
-			"arguments": {}
-		}]`)
-
-	app := &KeaApp{
-		ConfiguredDaemons: []string{"d2", "dhcp4", "dhcp6"},
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
+	daemon := daemon{
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
 		},
-		HTTPClient: httpClient,
-	}
-
-	t.Run("first detection", func(t *testing.T) {
-		buffer.Reset()
-
-		// Act
-		activeDaemons, err := detectKeaActiveDaemons(app, nil)
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, activeDaemons, 2)
-		require.Contains(t, activeDaemons, "dhcp4")
-		require.Contains(t, activeDaemons, "dhcp6")
-		require.Contains(t, buffer.String(), "Detection error occurred")
-	})
-
-	t.Run("previous detection doesn't find any active daemons", func(t *testing.T) {
-		buffer.Reset()
-
-		// Act
-		activeDaemons, err := detectKeaActiveDaemons(app, []string{})
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, activeDaemons, 2)
-		require.Contains(t, activeDaemons, "dhcp4")
-		require.Contains(t, activeDaemons, "dhcp6")
-		require.NotContains(t, buffer.String(), "Detection error occurred")
-	})
-
-	t.Run("following detection, D2 is still inactive", func(t *testing.T) {
-		buffer.Reset()
-
-		// Act
-		activeDaemons, err := detectKeaActiveDaemons(app, []string{"dhcp4"})
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, activeDaemons, 2)
-		require.Contains(t, activeDaemons, "dhcp4")
-		require.Contains(t, activeDaemons, "dhcp6")
-		require.NotContains(t, buffer.String(), "Detection error occurred")
-	})
-
-	t.Run("following detection, D2 switch to the inactive state", func(t *testing.T) {
-		buffer.Reset()
-
-		// Act
-		activeDaemons, err := detectKeaActiveDaemons(app, []string{"d2", "dhcp4"})
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, activeDaemons, 2)
-		require.Contains(t, activeDaemons, "dhcp4")
-		require.Contains(t, activeDaemons, "dhcp6")
-		require.Contains(t, buffer.String(), "Detection error occurred")
-	})
-
-	t.Run("previous detection finds all active daemons", func(t *testing.T) {
-		buffer.Reset()
-
-		//	Act
-		activeDaemons, err := detectKeaActiveDaemons(app, []string{"dhcp4", "dhcp6"})
-
-		//	Assert
-		require.NoError(t, err)
-		require.Len(t, activeDaemons, 2)
-		require.Contains(t, activeDaemons, "dhcp4")
-		require.Contains(t, activeDaemons, "dhcp6")
-		require.NotContains(t, buffer.String(), "Detection error occurred")
-	})
-}
-
-// Test that the access point can be retrieved from the type.
-func TestBaseAppGetAccessPoint(t *testing.T) {
-	// Arrange
-	app := BaseApp{
-		AccessPoints: makeAccessPoint(AccessPointControl, "", "", 0, false),
 	}
 
 	// Act & Assert
 	// Known access point.
-	require.NotNil(t, app.GetAccessPoint(AccessPointControl))
+	require.NotNil(t, daemon.GetAccessPoint(AccessPointControl))
 	// Unknown access point.
-	require.Nil(t, app.GetAccessPoint(AccessPointStatistics))
+	require.Nil(t, daemon.GetAccessPoint(AccessPointStatistics))
 }
 
-// Test that the applications can be compared by their types.
-func TestBaseAppHasEqualType(t *testing.T) {
+// Test that the daemon can be compared by their overall content.
+func TestDaemonEqual(t *testing.T) {
 	// Arrange
-	appKea1 := &BaseApp{Type: AppTypeKea}
-	appKea2 := &BaseApp{Type: AppTypeKea}
-	appBind := &BaseApp{Type: AppTypeBind9}
-
-	// Act & Assert
-	require.True(t, appKea1.HasEqualType(appKea2))
-	require.True(t, appKea2.HasEqualType(appKea1))
-	require.False(t, appKea1.HasEqualType(appBind))
-	require.False(t, appBind.HasEqualType(appKea2))
-}
-
-// Test that the applications can be compared by their access points.
-func TestBaseAppHasEqualAccessPoints(t *testing.T) {
-	// Arrange
-	app1 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-		},
-	}
-	app2 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-		},
-	}
-	app3 := &BaseApp{
-		Type: AppTypeBind9,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-		},
-	}
-	app4 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{
-				Type: AccessPointControl, Address: "localhost", Port: 1235,
-				UseSecureProtocol: true, Key: "key",
+	daemon1 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
+			AccessPoints: []AccessPoint{
+				{Type: AccessPointControl, Address: "localhost", Port: 1234},
 			},
 		},
 	}
-	app5 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-			{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
-		},
-	}
-
-	// Act & Assert
-	// Same app types and access points.
-	require.True(t, app1.HasEqualAccessPoints(app2))
-	// Different app types but the same access points.
-	require.True(t, app1.HasEqualAccessPoints(app3))
-	// Same app types, and the same access point location but different
-	// configuration.
-	require.False(t, app1.HasEqualAccessPoints(app4))
-	// The second app has the same app type and includes the access points from
-	// the first app but it has an additional access point.
-	require.False(t, app1.HasEqualAccessPoints(app5))
-}
-
-// Test that the applications can be compared by their overall content.
-func TestBaseAppEqual(t *testing.T) {
-	// Arrange
-	app1 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-		},
-	}
-	app2 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-		},
-	}
-	app3 := &BaseApp{
-		Type: AppTypeBind9,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-		},
-	}
-	app4 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{
-				Type: AccessPointControl, Address: "localhost", Port: 1235,
-				UseSecureProtocol: true, Key: "key",
+	daemon2 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
+			AccessPoints: []AccessPoint{
+				{Type: AccessPointControl, Address: "localhost", Port: 1234},
 			},
 		},
 	}
-	app5 := &BaseApp{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{Type: AccessPointControl, Address: "localhost", Port: 1234},
-			{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
+	daemon3 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.DHCPv4,
+			AccessPoints: []AccessPoint{
+				{Type: AccessPointControl, Address: "localhost", Port: 1234},
+			},
+		},
+	}
+	daemon4 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
+			AccessPoints: []AccessPoint{
+				{
+					Type: AccessPointControl, Address: "localhost", Port: 1235,
+					Protocol: protocoltype.HTTPS, Key: "key",
+				},
+			},
+		},
+	}
+	daemon5 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
+			AccessPoints: []AccessPoint{
+				{Type: AccessPointControl, Address: "localhost", Port: 1234},
+				{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
+			},
 		},
 	}
 
 	// Act & Assert
-	// Same app types and access points.
-	require.True(t, app1.IsEqual(app2))
-	// Different app types but the same access points.
-	require.False(t, app1.IsEqual(app3))
-	// Same app types, and the same access point location but different
+	// Same daemon names and access points.
+	require.True(t, daemon1.IsEqual(daemon2))
+	// Different daemon names but the same access points.
+	require.False(t, daemon1.IsEqual(daemon3))
+	// Same daemon names, and the same access point location but different
 	// configuration.
-	require.False(t, app1.IsEqual(app4))
-	// The second app has the same app type and includes the access points from
-	// the first app but it has an additional access point.
-	require.False(t, app1.IsEqual(app5))
+	require.False(t, daemon1.IsEqual(daemon4))
+	// The second daemon has the same daemon name and includes the access
+	// points from the first daemon but it has an additional access point.
+	require.False(t, daemon1.IsEqual(daemon5))
 }
 
 // Test that the DNS zone inventories are successfully populated.
 func TestPopulateZoneInventories(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	agentManager := NewMockAgentManager(ctrl)
+
 	response := map[string]any{
 		"views": map[string]any{
 			"_default": map[string]any{
@@ -1104,53 +901,72 @@ func TestPopulateZoneInventories(t *testing.T) {
 	config := parseDefaultBind9Config(t)
 	require.NotNil(t, config)
 
-	monitor := NewAppMonitor()
-	appMonitor, ok := monitor.(*appMonitor)
+	m := NewMonitor("", "", HTTPClientConfig{})
+	daemonMonitor, ok := m.(*monitor)
 	require.True(t, ok)
 
-	app0 := &Bind9App{
-		BaseApp: BaseApp{
-			Type: AppTypeBind9,
+	daemon0 := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+			},
+			zoneInventory: nil,
 		},
-		zoneInventory: nil,
 	}
 	zi1 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	app1 := &Bind9App{
-		BaseApp: BaseApp{
-			Type: AppTypeBind9,
+	zi1.start()
+	defer zi1.stop()
+
+	daemon1 := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+			},
+			zoneInventory: zi1,
 		},
-		zoneInventory: zi1,
 	}
+
 	zi2 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	app2 := &Bind9App{
-		BaseApp: BaseApp{
-			Type: AppTypeBind9,
+	zi2.start()
+	defer zi2.stop()
+
+	daemon2 := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+			},
+			zoneInventory: zi2,
 		},
-		zoneInventory: zi2,
 	}
 	zi3 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	app3 := &PDNSApp{
-		BaseApp: BaseApp{
-			Type: AppTypePowerDNS,
+	zi3.start()
+	defer zi3.stop()
+
+	daemon3 := &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+			},
+			zoneInventory: zi3,
 		},
-		zoneInventory: zi3,
 	}
-	app4 := &KeaApp{
-		BaseApp: BaseApp{
-			Type: AppTypeKea,
+	daemon4 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
 		},
+		connector: newKeaConnector(AccessPoint{Type: AccessPointControl, Address: "localhost", Port: 45634}, HTTPClientConfig{}),
 	}
-	appMonitor.apps = append(appMonitor.apps, app0, app1, app2, app3, app4)
-	appMonitor.populateZoneInventories()
+	daemonMonitor.daemons = append(daemonMonitor.daemons, daemon0, daemon1, daemon2, daemon3, daemon4)
+	daemonMonitor.refreshDaemons(t.Context(), agentManager)
 
 	require.Eventually(t, func() bool {
-		for _, app := range appMonitor.apps {
-			var zoneInventory *zoneInventory
-			switch concreteApp := app.(type) {
-			case *Bind9App:
-				zoneInventory = concreteApp.zoneInventory
-			case *PDNSApp:
-				zoneInventory = concreteApp.zoneInventory
+		for _, daemon := range daemonMonitor.daemons {
+			var zoneInventory zoneInventory
+			switch concreteDaemon := daemon.(type) {
+			case *Bind9Daemon:
+				zoneInventory = concreteDaemon.zoneInventory
+			case *pdnsDaemon:
+				zoneInventory = concreteDaemon.zoneInventory
 			default:
 				continue
 			}

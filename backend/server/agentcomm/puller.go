@@ -14,7 +14,7 @@ import (
 // Structure representing a periodic puller which is configured to
 // execute a function specified by a caller according to the timer
 // interval specified in the database. The user's function typically
-// pulls and manipulates the data from multiple apps.
+// pulls and manipulates the data from multiple daemons.
 type PeriodicPuller struct {
 	*storkutil.PeriodicExecutor
 	intervalSettingName string

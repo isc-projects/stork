@@ -9,7 +9,7 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/daemons/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -50,25 +50,25 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 
 	// Try to find the leases from monitored Kea servers.
 	var (
-		keaLeases []dbmodel.Lease
-		conflicts []int64
-		erredApps []*dbmodel.App
-		err       error
+		keaLeases    []dbmodel.Lease
+		conflicts    []int64
+		erredDaemons []*dbmodel.Daemon
+		err          error
 	)
 	if len(text) > 0 {
 		// Handle a special case when user specified state:declined search text
 		// to find declined leases.
 		if ok, _ := regexp.MatchString(`^state:\s*declined$`, text); ok {
-			keaLeases, erredApps, err = kea.FindDeclinedLeases(r.DB, r.Agents)
+			keaLeases, erredDaemons, err = kea.FindDeclinedLeases(r.DB, r.Agents)
 		} else {
-			keaLeases, erredApps, err = kea.FindLeases(r.DB, r.Agents, text)
+			keaLeases, erredDaemons, err = kea.FindLeases(r.DB, r.Agents, text)
 		}
 	} else {
-		keaLeases, conflicts, erredApps, err = kea.FindLeasesByHostID(r.DB, r.Agents, hostID)
+		keaLeases, conflicts, erredDaemons, err = kea.FindLeasesByHostID(r.DB, r.Agents, hostID)
 	}
 	if err != nil {
 		msg := "Problem searching leases on Kea servers due to Stork database errors"
-		log.Error(err)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetLeasesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -79,8 +79,11 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	for i := range keaLeases {
 		l := keaLeases[i]
 		var appName string
-		if l.App != nil {
-			appName = l.App.Name
+		var appID int64
+		if l.Daemon != nil {
+			app := l.Daemon.GetVirtualApp()
+			appName = app.Name
+			appID = app.ID
 		}
 		cltt := int64(l.CLTT)
 		state := int64(l.State)
@@ -95,7 +98,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		}
 		lease := models.Lease{
 			ID:                &l.ID,
-			AppID:             &l.AppID,
+			AppID:             &appID,
 			AppName:           &appName,
 			ClientID:          l.ClientID,
 			Cltt:              &cltt,
@@ -122,10 +125,16 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	leases.Total = int64(len(leases.Items))
 
 	// Record apps for which there was an error communicating with the Kea servers.
-	for i := range erredApps {
+	erredApps := map[int64]string{}
+	for _, daemon := range erredDaemons {
+		app := daemon.GetVirtualApp()
+		erredApps[app.ID] = app.Name
+	}
+
+	for id, name := range erredApps {
 		leases.ErredApps = append(leases.ErredApps, &models.LeasesSearchErredApp{
-			ID:   &erredApps[i].ID,
-			Name: &erredApps[i].Name,
+			ID:   &id,
+			Name: &name,
 		})
 	}
 

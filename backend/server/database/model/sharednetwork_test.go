@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	keaconfig "isc.org/stork/appcfg/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/datamodel/daemonname"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
@@ -151,18 +152,18 @@ func TestPopulateSharedNetworkDaemons(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Insert apps to the database.
-	apps := addTestSubnetApps(t, db)
+	// Insert daemons to the database.
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Create bare shared network that lacks Daemon instances but has valid
 	// DaemonID values.
 	sharedNetwork := &SharedNetwork{
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 			{
-				DaemonID: apps[1].Daemons[0].ID,
+				DaemonID: daemons[1].ID,
 			},
 		},
 	}
@@ -172,9 +173,9 @@ func TestPopulateSharedNetworkDaemons(t *testing.T) {
 	// Make sure that the daemon information was assigned to the shared network.
 	require.Len(t, sharedNetwork.LocalSharedNetworks, 2)
 	require.NotNil(t, sharedNetwork.LocalSharedNetworks[0].Daemon)
-	require.EqualValues(t, apps[0].Daemons[0].ID, sharedNetwork.LocalSharedNetworks[0].Daemon.ID)
+	require.EqualValues(t, daemons[0].ID, sharedNetwork.LocalSharedNetworks[0].Daemon.ID)
 	require.NotNil(t, sharedNetwork.LocalSharedNetworks[1].Daemon)
-	require.EqualValues(t, apps[1].Daemons[0].ID, sharedNetwork.LocalSharedNetworks[1].Daemon.ID)
+	require.EqualValues(t, daemons[1].ID, sharedNetwork.LocalSharedNetworks[1].Daemon.ID)
 }
 
 // Tests that the shared network can be added and retrieved.
@@ -186,19 +187,9 @@ func TestAddAndGetSharedNetwork(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		Type: AppTypeKea,
-		Daemons: []*Daemon{{
-			Name: DaemonNameDHCPv4,
-			KeaDaemon: &KeaDaemon{
-				ConfigHash: "hash",
-			},
-		}},
-		MachineID: machine.ID,
-	}
-	daemons, err := AddApp(db, app)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	daemon := daemons[0]
 
 	network := SharedNetwork{
 		Name:   "funny name",
@@ -267,19 +258,9 @@ func TestGetSharedNetworkWithRelations(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		Type: AppTypeKea,
-		Daemons: []*Daemon{{
-			Name: DaemonNameDHCPv4,
-			KeaDaemon: &KeaDaemon{
-				ConfigHash: "hash",
-			},
-		}},
-		MachineID: machine.ID,
-	}
-	daemons, err := AddApp(db, app)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	daemon := daemons[0]
 
 	network := SharedNetwork{
 		Name:   "funny name",
@@ -346,14 +327,14 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestDaemonsForServices(t, db)
 
 	network := &SharedNetwork{
 		Name:   "funny name",
 		Family: 6,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[1].Daemons[1].ID,
+				DaemonID: daemons[1].ID,
 			},
 		},
 		Subnets: []Subnet{
@@ -361,7 +342,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 				Prefix: "2001:db8:1::/64",
 				LocalSubnets: []*LocalSubnet{
 					{
-						DaemonID: apps[1].Daemons[1].ID,
+						DaemonID: daemons[1].ID,
 						AddressPools: []AddressPool{
 							{
 								LowerBound: "2001:db8:1::1",
@@ -385,7 +366,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 				Prefix: "2001:db8:2::/64",
 				LocalSubnets: []*LocalSubnet{
 					{
-						DaemonID: apps[1].Daemons[1].ID,
+						DaemonID: daemons[1].ID,
 						AddressPools: []AddressPool{
 							{
 								LowerBound: "2001:db8:2::1",
@@ -418,7 +399,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	// It accepts the boolean flag indicating whether the shared network was
 	// returned by a function fetching a list of shared networks (true) or
 	// by a function fetching a single shared network (false).
-	verifySharedNetworkFn := func(t *testing.T, returnedNetwork *SharedNetwork, listing bool, includeMachine bool) {
+	verifySharedNetworkFn := func(t *testing.T, returnedNetwork *SharedNetwork, listing bool) {
 		require.Len(t, returnedNetwork.LocalSharedNetworks, 1)
 		require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon)
 
@@ -428,14 +409,9 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		} else {
 			require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.KeaDaemon)
 		}
-		require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.App)
 
-		if includeMachine {
-			require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.App.Machine)
-		} else {
-			require.Nil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.App.Machine)
-		}
-		require.Len(t, returnedNetwork.LocalSharedNetworks[0].Daemon.App.AccessPoints, 1)
+		require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.Machine)
+		require.Len(t, returnedNetwork.LocalSharedNetworks[0].Daemon.AccessPoints, 1)
 
 		require.Len(t, returnedNetwork.Subnets, 2)
 
@@ -447,8 +423,8 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 
 			require.Len(t, s.LocalSubnets, 1)
 			require.NotNil(t, s.LocalSubnets[0].Daemon)
-			require.Len(t, s.LocalSubnets[0].Daemon.App.AccessPoints, 1)
-			require.NotNil(t, s.LocalSubnets[0].Daemon.App.Machine)
+			require.Len(t, s.LocalSubnets[0].Daemon.AccessPoints, 1)
+			require.NotNil(t, s.LocalSubnets[0].Daemon.Machine)
 
 			if listing {
 				// It must be nil to limit memory usage.
@@ -458,7 +434,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 
 			// The below fields are not included in the list of entities.
 			require.NotNil(t, s.LocalSubnets[0].Daemon.KeaDaemon)
-			require.NotNil(t, s.LocalSubnets[0].Daemon.App.Machine)
+			require.NotNil(t, s.LocalSubnets[0].Daemon.Machine)
 
 			require.Len(t, s.LocalSubnets[0].AddressPools, len(network.Subnets[i].LocalSubnets[0].AddressPools))
 			require.Len(t, s.LocalSubnets[0].PrefixPools, len(network.Subnets[i].LocalSubnets[0].PrefixPools))
@@ -482,15 +458,15 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		returnedNetwork, err := GetSharedNetwork(db, network.ID)
 		require.NoError(t, err)
 		require.NotNil(t, returnedNetwork)
-		verifySharedNetworkFn(t, returnedNetwork, false, true)
+		verifySharedNetworkFn(t, returnedNetwork, false)
 	})
 
 	t.Run("GetSharedNetworksByPage", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, apps[1].ID, 6, nil, "", SortDirAny)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, daemons[1].ID, 6, nil, "", SortDirAny)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, total)
 		require.Len(t, returnedNetworks, 1)
-		verifySharedNetworkFn(t, &returnedNetworks[0], true, false)
+		verifySharedNetworkFn(t, &returnedNetworks[0], true)
 	})
 
 	t.Run("GetAllSharedNetworks", func(t *testing.T) {
@@ -527,13 +503,13 @@ func TestAddLocalSharedNetworks(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestSubnetApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 	network := &SharedNetwork{
 		Name:   "my name",
 		Family: 4,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 				KeaParameters: &keaconfig.SharedNetworkParameters{
 					Authoritative: storkutil.Ptr(true),
 					Allocator:     storkutil.Ptr("iterative"),
@@ -555,7 +531,7 @@ func TestAddLocalSharedNetworks(t *testing.T) {
 	require.Equal(t, "my name", returned.Name)
 
 	require.Len(t, returned.LocalSharedNetworks, 1)
-	require.EqualValues(t, returned.LocalSharedNetworks[0].DaemonID, apps[0].Daemons[0].ID)
+	require.EqualValues(t, returned.LocalSharedNetworks[0].DaemonID, daemons[0].ID)
 	require.EqualValues(t, returned.LocalSharedNetworks[0].SharedNetworkID, network.ID)
 
 	require.NotNil(t, returned.LocalSharedNetworks[0].KeaParameters)
@@ -805,7 +781,7 @@ func TestDeleteDaemonFromSharedNetworks(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestDaemonsForServices(t, db)
 
 	// Add a shared network.
 	network := SharedNetwork{
@@ -813,10 +789,10 @@ func TestDeleteDaemonFromSharedNetworks(t *testing.T) {
 		Family: 4,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 			{
-				DaemonID: apps[1].Daemons[0].ID,
+				DaemonID: daemons[1].ID,
 			},
 		},
 	}
@@ -828,7 +804,7 @@ func TestDeleteDaemonFromSharedNetworks(t *testing.T) {
 	require.NoError(t, err)
 
 	// Delete the first daemon's association with the shared network.
-	n, err := DeleteDaemonFromSharedNetworks(db, apps[0].Daemons[0].ID)
+	n, err := DeleteDaemonFromSharedNetworks(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, n)
 
@@ -839,7 +815,7 @@ func TestDeleteDaemonFromSharedNetworks(t *testing.T) {
 
 	// Ensure that the second association remains.
 	require.Len(t, returned.LocalSharedNetworks, 1)
-	require.EqualValues(t, apps[1].Daemons[0].ID, returned.LocalSharedNetworks[0].DaemonID)
+	require.EqualValues(t, daemons[1].ID, returned.LocalSharedNetworks[0].DaemonID)
 }
 
 // Test deleting a shared network associated with no daemons.
@@ -847,7 +823,7 @@ func TestDeleteOrphanedSharedNetworks(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestDaemonsForServices(t, db)
 
 	// Add a shared network.
 	network := SharedNetwork{
@@ -855,10 +831,10 @@ func TestDeleteOrphanedSharedNetworks(t *testing.T) {
 		Family: 4,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 			{
-				DaemonID: apps[1].Daemons[0].ID,
+				DaemonID: daemons[1].ID,
 			},
 		},
 	}
@@ -876,7 +852,7 @@ func TestDeleteOrphanedSharedNetworks(t *testing.T) {
 	require.Zero(t, n)
 
 	// Delete one of the associations.
-	n, err = DeleteDaemonFromSharedNetworks(db, apps[0].Daemons[0].ID)
+	n, err = DeleteDaemonFromSharedNetworks(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, n)
 
@@ -886,7 +862,7 @@ func TestDeleteOrphanedSharedNetworks(t *testing.T) {
 	require.Zero(t, n)
 
 	// Delete the second association.
-	n, err = DeleteDaemonFromSharedNetworks(db, apps[1].Daemons[0].ID)
+	n, err = DeleteDaemonFromSharedNetworks(db, daemons[1].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, n)
 
@@ -978,7 +954,7 @@ func TestDeleteDaemonsFromSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestSubnetApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add some shared networks with subnets. Each of them is associated
 	// with multiple daemons.
@@ -989,10 +965,10 @@ func TestDeleteDaemonsFromSharedNetwork(t *testing.T) {
 			Family: 4,
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 				},
 				{
-					DaemonID: apps[1].Daemons[0].ID,
+					DaemonID: daemons[1].ID,
 				},
 			},
 			Subnets: []Subnet{
@@ -1000,10 +976,10 @@ func TestDeleteDaemonsFromSharedNetwork(t *testing.T) {
 					Prefix: fmt.Sprintf("192.0.%d.0/24", i),
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID: apps[0].Daemons[0].ID,
+							DaemonID: daemons[0].ID,
 						},
 						{
-							DaemonID: apps[1].Daemons[0].ID,
+							DaemonID: daemons[1].ID,
 						},
 					},
 				},
