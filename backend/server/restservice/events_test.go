@@ -3,12 +3,14 @@ package restservice
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/restapi/operations/events"
 	storktest "isc.org/stork/server/test/dbmodel"
+	storkutil "isc.org/stork/util"
 )
 
 // Check searching via rest api functions.
@@ -43,6 +45,153 @@ func TestEvents(t *testing.T) {
 	ev2 := okRsp.Payload.Items[0]
 	require.EqualValues(t, "some event", ev2.Text)
 	require.EqualValues(t, dbmodel.EvInfo, ev2.Level)
+}
+
+// Test if GetEvents sorting works as expected.
+func TestGetEventsSorting(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add test events
+	ev := &dbmodel.Event{
+		Text:      "text a",
+		Level:     dbmodel.EvError,
+		Details:   "detail a",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err := dbmodel.AddEvent(db, ev)
+	require.NoError(t, err)
+
+	ev = &dbmodel.Event{
+		Text:      "text b",
+		Level:     dbmodel.EvInfo,
+		Details:   "detail b",
+		CreatedAt: time.Now().UTC().Add(time.Second),
+	}
+
+	err = dbmodel.AddEvent(db, ev)
+	require.NoError(t, err)
+
+	// prepare RestAPI
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	t.Run("sort by text asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("text"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.EqualValues(t, "text a", okRsp.Payload.Items[0].Text)
+		require.EqualValues(t, "text b", okRsp.Payload.Items[1].Text)
+	})
+
+	t.Run("sort by text desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("text"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.EqualValues(t, "text b", okRsp.Payload.Items[0].Text)
+		require.EqualValues(t, "text a", okRsp.Payload.Items[1].Text)
+	})
+
+	t.Run("sort by level asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("level"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.Less(t, okRsp.Payload.Items[0].Level, okRsp.Payload.Items[1].Level)
+	})
+
+	t.Run("sort by level desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("level"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.Greater(t, okRsp.Payload.Items[0].Level, okRsp.Payload.Items[1].Level)
+	})
+
+	t.Run("sort by details asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("details"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.EqualValues(t, "detail a", okRsp.Payload.Items[0].Details)
+		require.EqualValues(t, "detail b", okRsp.Payload.Items[1].Details)
+	})
+
+	t.Run("sort by details desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("details"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.EqualValues(t, "detail b", okRsp.Payload.Items[0].Details)
+		require.EqualValues(t, "detail a", okRsp.Payload.Items[1].Details)
+	})
+
+	t.Run("sort by created_at asc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("created_at"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.Less(t, okRsp.Payload.Items[0].CreatedAt, okRsp.Payload.Items[1].CreatedAt)
+	})
+
+	t.Run("sort by created_at desc", func(t *testing.T) {
+		ctx := context.Background()
+		params := events.GetEventsParams{
+			SortField: storkutil.Ptr("created_at"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp := rapi.GetEvents(ctx, params)
+		require.IsType(t, &events.GetEventsOK{}, rsp)
+		okRsp := rsp.(*events.GetEventsOK)
+		require.Len(t, okRsp.Payload.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Total)
+		require.Greater(t, okRsp.Payload.Items[0].CreatedAt, okRsp.Payload.Items[1].CreatedAt)
+	})
 }
 
 func TestDeleteEvents(t *testing.T) {
