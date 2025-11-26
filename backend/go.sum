@@ -367,5 +367,3 @@ honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWh
 mellium.im/sasl v0.2.1/go.mod h1:ROaEDLQNuf9vjKqE1SrAfnsobm2YKXT1gnN1uDp1PjQ=
 mellium.im/sasl v0.3.2 h1:PT6Xp7ccn9XaXAnJ03FcEjmAn7kK1x7aoXV6F+Vmrl0=
 mellium.im/sasl v0.3.2/go.mod h1:NKXDi1zkr+BlMHLQjY3ofYuU4KSPFxknb8mfEu6SveY=
-muzzammil.xyz/jsonc v1.0.0 h1:B6kaT3wHueZ87mPz3q1nFuM1BlL32IG0wcq0/uOsQ18=
-muzzammil.xyz/jsonc v1.0.0/go.mod h1:rFv8tUUKe+QLh7v02BhfxXEf4ZHhYD7unR93HL/1Uvo=

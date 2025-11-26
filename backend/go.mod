@@ -41,7 +41,6 @@ require (
 	google.golang.org/grpc/security/advancedtls v1.0.0
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/h2non/gock.v1 v1.1.2
-	muzzammil.xyz/jsonc v1.0.0
 )
 
 require (
