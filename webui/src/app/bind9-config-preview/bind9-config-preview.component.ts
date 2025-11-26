@@ -57,6 +57,10 @@ export class Bind9ConfigPreviewComponent {
 
     /**
      * An event emitter that emits the new value of the visible property.
+     *
+     * The event is emitted when the dialog is opened or closed. The parent
+     * component uses it to hold the state of the dialog visibility and
+     * binds this state to the button showing the dialog.
      */
     @Output() visibleChange = new EventEmitter<boolean>()
 

@@ -23,15 +23,17 @@ describe('Bind9DaemonControlsComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('it should set the dialog visible to true', () => {
-        component.setDialogVisible('config')
+    it('it should set config dialog visibility', () => {
+        component.setDialogVisibility('config', true)
         expect(component.dialogVisible['config']).toBeTrue()
-        expect(component.dialogVisible['rndc-key']).toBeFalse()
+        component.setDialogVisibility('config', false)
+        expect(component.dialogVisible['config']).toBeFalse()
     })
 
-    it('it should set the dialog visible to false', () => {
-        component.setDialogVisible('rndc-key')
-        expect(component.dialogVisible['config']).toBeFalse()
+    it('it should set rndc dialog visibility', () => {
+        component.setDialogVisibility('rndc-key', true)
         expect(component.dialogVisible['rndc-key']).toBeTrue()
+        component.setDialogVisibility('rndc-key', false)
+        expect(component.dialogVisible['rndc-key']).toBeFalse()
     })
 })

@@ -29,11 +29,12 @@ export class Bind9DaemonControlsComponent {
     }
 
     /**
-     * Activates the dialog of the selected type.
+     * Activates or deactivates the dialog of the selected type.
      *
-     * @param type is the type of the dialog to activate.
+     * @param type is the type of the dialog to activate or deactivate.
+     * @param visible indicates if the dialog should be shown or hidden.
      */
-    setDialogVisible(type: 'config' | 'rndc-key'): void {
-        this.dialogVisible[type] = true
+    setDialogVisibility(type: 'config' | 'rndc-key', visible: boolean): void {
+        this.dialogVisible[type] = visible
     }
 }
