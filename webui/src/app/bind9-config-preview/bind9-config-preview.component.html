@@ -10,7 +10,7 @@
 >
     <ng-template #header>
         <div class="text-base text-gray-500">
-            @if (config) {
+            @if (config?.files?.length) {
                 <div class="flex flex-column">
                     <h3>{{ config.files?.[0]?.sourcePath }}</h3>
                     <div class="flex flex-row align-items-center gap-4">
@@ -32,7 +32,7 @@
                                     [(ngModel)]="showFullConfig"
                                     (onChange)="handleFullConfigToggle($event)"
                                 />
-                                <label for="toggle-full-config" class="ml-2">Show Full Config</label>
+                                <label for="toggle-full-config" class="ml-2">Show Zones and Views</label>
                             </div>
                         }
                     </div>
