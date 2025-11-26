@@ -136,3 +136,88 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 	}
 	return 0, errors.Errorf("value not found in the container for key %s", key)
 }
+
+// Normalizes Kea JSON. Kea allows JSON file to not follow the standard strictly.
+// Specifically, it allows:
+//   - trailing commas in arrays and objects
+//   - C-style comments (both single line // and multi-line /* */)
+//   - Python-style comments (# ...)
+//
+// This function removes these non-standard constructs so that the resulting
+// JSON can be parsed by standard JSON parsers.
+//
+// Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
+func NormalizeKeaJSON(input []byte) []byte {
+	var buffer []byte
+
+	isSingleLineComment := false
+	isMultiLineComment := false
+	isString := false
+	remainingSlash := false
+
+	appendRemainingSlash := func() {
+		if remainingSlash {
+			buffer = append(buffer, '/')
+			remainingSlash = false
+		}
+	}
+
+	for i, b := range input {
+		previousChar := byte(0)
+		if i > 0 {
+			previousChar = input[i-1]
+		}
+
+		if isSingleLineComment {
+			if b == '\n' {
+				isSingleLineComment = false
+				buffer = append(buffer, b)
+			}
+			continue
+		}
+		if isMultiLineComment {
+			if previousChar == '*' && b == '/' {
+				isMultiLineComment = false
+			}
+			continue
+		}
+		if isString {
+			if b == '"' && previousChar != '\\' {
+				isString = false
+			}
+			buffer = append(buffer, b)
+			continue
+		}
+
+		if remainingSlash {
+			if b == '/' {
+				isSingleLineComment = true
+				remainingSlash = false
+				continue
+			}
+			if b == '*' {
+				isMultiLineComment = true
+				remainingSlash = false
+				continue
+			}
+			appendRemainingSlash()
+		}
+
+		if b == '/' {
+			remainingSlash = true
+			continue
+		} else if b == '#' {
+			isSingleLineComment = true
+			continue
+		} else if b == '"' {
+			isString = true
+			buffer = append(buffer, b)
+			previousChar = b
+			continue
+		}
+
+		buffer = append(buffer, b)
+	}
+
+	return buffer
+}
