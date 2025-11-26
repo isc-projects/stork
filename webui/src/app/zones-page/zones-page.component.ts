@@ -600,7 +600,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     event?.first ?? 0,
                     event?.rows ?? 10,
                     (event?.filters?.appType as FilterMetadata)?.value ?? null,
-                    (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
+                    // Exclude builtin zones by default when none of the zone types are selected.
+                    (event?.filters?.zoneType as FilterMetadata)?.value ??
+                        this.zoneTypes.filter((t) => t !== 'builtin'),
                     (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
                     (event?.filters?.text as FilterMetadata)?.value || null,
                     (event?.filters?.appId as FilterMetadata)?.value || null,
@@ -735,13 +737,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     get builtinZonesDisplayed(): boolean {
         const selectedZoneTypes = (<FilterMetadata>this.zonesTable?.filters?.['zoneType'])?.value ?? []
-        if (selectedZoneTypes.length === 0 || selectedZoneTypes.length === this.zoneTypes.length) {
-            // Filtering with no zone types selected has the same effect as filtering with all zone types selected.
-            // In this case builtin zones are also displayed.
-            return true
-        }
-
-        return selectedZoneTypes.includes('builtin')
+        // Filtering with all zone types means that builtin zones are displayed. Otherwise, need to
+        // check if builtin zones are included in the selection.
+        return selectedZoneTypes.length === this.zoneTypes.length || selectedZoneTypes.includes('builtin')
     }
 
     /**
@@ -758,21 +756,29 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
         const selectedZoneTypes: string[] = zoneTypeFilterMetadata.value ?? []
 
-        if (this.builtinZonesDisplayed && selectedZoneTypes.length <= 1) {
-            // Builtin zones are displayed because no zoneType filter is applied at all.
-            // Change the filter empty value to all values selected, so that only builtin zones will be filtered out later.
-            zoneTypeFilterMetadata.value = this.zoneTypes
-        } else if (!this.builtinZonesDisplayed && selectedZoneTypes.length === this.zoneTypes.length - 1) {
-            // zoneType filter is applied and builtin zones is the only type that is filtered out.
-            // Adding builtin zones filter means filtering by all types, so the zoneType filter can be cleared.
-            this.clearFilter(zoneTypeFilterMetadata)
-            return
+        if (this.builtinZonesDisplayed) {
+            // Builtin zones are displayed. We want to hide them.
+            if (selectedZoneTypes.length === this.zoneTypes.length) {
+                // Case 1: builtin zones displayed, all zone types selected: clear the filter.
+                // Clearing the filter leaves all zones except builtin zones displayed because
+                // all zones other than builtin are displayed by default.
+                this.clearFilter(zoneTypeFilterMetadata)
+                return
+            }
+            // Case 2: builtin zones displayed. A subset of zone types are explicitly selected: remove builtin from the list.
+            // Removing the builtin zones from the filter leaves all other selected zone types displayed.
+            zoneTypeFilterMetadata.value = selectedZoneTypes.filter((t) => t !== 'builtin')
+        } else {
+            // Builtin zones are not displayed. We want to show them.
+            if (selectedZoneTypes.length === 0) {
+                // Case 3: builtin zones are not displayed, but all other zone types are selected by default: select all zone types.
+                // Selecting all zone types adds builtin zones and explicitly enables all other zone types.
+                zoneTypeFilterMetadata.value = this.zoneTypes
+            } else {
+                // Case 4: builtin zones are not displayed, but a subset of zone types are explicitly selected: add builtin to the selection.
+                zoneTypeFilterMetadata.value = [...selectedZoneTypes, 'builtin']
+            }
         }
-
-        // Add or remove builtin zones to current zoneType filter.
-        zoneTypeFilterMetadata.value = this.builtinZonesDisplayed
-            ? zoneTypeFilterMetadata.value.filter((type) => type !== 'builtin')
-            : [...zoneTypeFilterMetadata.value, 'builtin']
 
         // Apply filters to the zones table.
         this.zone.run(() => this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.zonesTable) }))
