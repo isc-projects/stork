@@ -1182,6 +1182,22 @@ func TestGetUsers(t *testing.T) {
 	// Make sure the ID of the new user is different.
 	// TODO: implement new test that add 100 users and verifies uniqueness of their IDs
 	require.NotEqual(t, *okRsp.Payload.Items[0].ID, *okRsp.Payload.Items[1].ID)
+
+	// Check users sorting.
+	params = users.GetUsersParams{
+		SortField: storkutil.Ptr("login"),
+		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+	}
+
+	rsp = rapi.GetUsers(ctx, params)
+	require.IsType(t, &users.GetUsersOK{}, rsp)
+	okRsp = rsp.(*users.GetUsersOK)
+	require.EqualValues(t, 2, okRsp.Payload.Total) // we expect 2 users (admin and john doe)
+	require.Len(t, okRsp.Payload.Items, 2)         // make sure there's entry with 2 users
+
+	// Check data sorting
+	require.EqualValues(t, "johndoe", okRsp.Payload.Items[0].Login)
+	require.EqualValues(t, "admin", okRsp.Payload.Items[1].Login)
 }
 
 // Tests that user information can be retrieved via REST API.
