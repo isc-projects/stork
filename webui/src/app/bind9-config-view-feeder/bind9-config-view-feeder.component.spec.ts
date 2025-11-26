@@ -71,7 +71,7 @@ describe('Bind9ConfigViewFeederComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
-        expect(component._loaded).toBeFalse()
+        expect((component as any)['_loaded']).toBeFalse()
         expect(component.loading).toBeFalse()
         expect(component.config).toBeNull()
     })
@@ -88,7 +88,7 @@ describe('Bind9ConfigViewFeederComponent', () => {
         )
         expect(messageServiceSpy.add).not.toHaveBeenCalled()
         expect(component.configChange.emit).toHaveBeenCalled()
-        expect(component._loaded).toBeTrue()
+        expect((component as any)['_loaded']).toBeTrue()
         expect(component.loading).toBeFalse()
     }))
 
@@ -100,7 +100,7 @@ describe('Bind9ConfigViewFeederComponent', () => {
         expect(servicesServiceSpy.getBind9FormattedConfig).toHaveBeenCalledWith(component.daemonId, null, ['config'])
         expect(messageServiceSpy.add).not.toHaveBeenCalled()
         expect(component.configChange.emit).toHaveBeenCalled()
-        expect(component._loaded).toBeTrue()
+        expect((component as any)['_loaded']).toBeTrue()
         expect(component.loading).toBeFalse()
     }))
 
@@ -113,7 +113,7 @@ describe('Bind9ConfigViewFeederComponent', () => {
         expect(servicesServiceSpy.getBind9FormattedConfig).toHaveBeenCalledWith(component.daemonId, null, ['rndc-key'])
         expect(messageServiceSpy.add).not.toHaveBeenCalled()
         expect(component.configChange.emit).toHaveBeenCalled()
-        expect(component._loaded).toBeTrue()
+        expect((component as any)['_loaded']).toBeTrue()
         expect(component.loading).toBeFalse()
     }))
 
@@ -130,7 +130,7 @@ describe('Bind9ConfigViewFeederComponent', () => {
             life: 10000,
         })
         expect(component.configChange.emit).not.toHaveBeenCalled()
-        expect(component._loaded).toBeFalse()
+        expect((component as any)['_loaded']).toBeFalse()
         expect(component.loading).toBeFalse()
     }))
 })

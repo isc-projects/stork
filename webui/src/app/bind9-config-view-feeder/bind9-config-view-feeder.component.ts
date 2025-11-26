@@ -50,7 +50,7 @@ export class Bind9ConfigViewFeederComponent implements OnInit {
     config: Bind9FormattedConfig | null = null
 
     /**
-     * Indicates if the configuration has been loaded.
+     * Indicates if the configuration is loading.
      *
      * It is used to display a loading spinner while the configuration is being loaded.
      */
@@ -61,7 +61,7 @@ export class Bind9ConfigViewFeederComponent implements OnInit {
      *
      * It is used to prevent loading the configuration multiple times.
      */
-    _loaded: boolean = false
+    private _loaded: boolean = false
 
     /**
      * A subject used to explicitly trigger the HTTP call to get the configuration.
