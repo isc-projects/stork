@@ -158,6 +158,7 @@ func NormalizeKeaJSON(input []byte) []byte {
 	isMultiLineComment := false
 	isString := false
 	remainingSlash := false
+	possibleTrailingCommaIndex := -1
 
 	for i, b := range input {
 		previousChar := byte(0)
@@ -216,22 +217,23 @@ func NormalizeKeaJSON(input []byte) []byte {
 
 		buffer = append(buffer, b)
 
-		// Trim the trailing comma if it is end of an object or array.
-		if b == '}' || b == ']' {
-			// Look backwards to find the previous non-whitespace character.
-			for j := len(buffer) - 2; j >= 0; j-- {
-				// TODO: Handle all UTF-8 whitespace characters.
-				if buffer[j] == ' ' || buffer[j] == '\n' || buffer[j] == '\t' || buffer[j] == '\r' {
-					continue
-				}
-				if buffer[j] == ',' {
-					// Replace the comma with whitespace to preserve character
-					// positions.
-					buffer[j] = ' '
-					// Only one trailing comma is allowed.
-				}
-				break
-			}
+		// Check if there is trailing comma to remove.
+		// We don't modify the buffer length. Instead, we replace the comma
+		// with a whitespace.
+		if (b == '}' || b == ']') && possibleTrailingCommaIndex != -1 {
+			// Erase the trailing comma prepending a bracket closing an object
+			// or an array.
+			buffer[possibleTrailingCommaIndex] = ' '
+		}
+
+		if b == ',' {
+			// Remember buffer position of the last seen comma.
+			possibleTrailingCommaIndex = len(buffer) - 1
+		} else if b != ' ' && b != '\t' && b != '\r' && b != '\n' {
+			// If the current character is not a whitespace then the last
+			// seen comma is not a trailing one.
+			// TODO: Handle all UTF-8 whitespaces.
+			possibleTrailingCommaIndex = -1
 		}
 	}
 
