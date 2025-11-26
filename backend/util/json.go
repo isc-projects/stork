@@ -222,7 +222,7 @@ func NormalizeKeaJSON(input []byte) []byte {
 
 		buffer = append(buffer, b)
 
-		// Trim the leading comma if it is end of an object or array.
+		// Trim the trailing comma if it is end of an object or array.
 		if b == '}' || b == ']' {
 			// Look backwards to find the previous non-whitespace character.
 			for j := len(buffer) - 2; j >= 0; j-- {
