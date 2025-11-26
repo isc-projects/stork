@@ -197,7 +197,11 @@ func TestGetSubnets(t *testing.T) {
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 5)
 	require.EqualValues(t, 5, okRsp.Payload.Total)
-	for _, sn := range okRsp.Payload.Items {
+	for i, sn := range okRsp.Payload.Items {
+		if i > 0 {
+			// By default, subnets should be sorted by ID in ascending order.
+			require.Greater(t, sn.ID, okRsp.Payload.Items[i-1].ID)
+		}
 		switch sn.LocalSubnets[0].ID {
 		case 1:
 			require.Len(t, sn.LocalSubnets[0].Pools, 2)
@@ -207,6 +211,22 @@ func TestGetSubnets(t *testing.T) {
 			require.Len(t, sn.LocalSubnets[0].Pools, 0)
 		default:
 			require.Len(t, sn.LocalSubnets[0].Pools, 1)
+		}
+	}
+
+	// get all subnets with custom sorting
+	params = dhcp.GetSubnetsParams{
+		SortField: storkutil.Ptr("prefix"),
+		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+	}
+	rsp = rapi.GetSubnets(ctx, params)
+	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
+	okRsp = rsp.(*dhcp.GetSubnetsOK)
+	require.Len(t, okRsp.Payload.Items, 5)
+	require.EqualValues(t, 5, okRsp.Payload.Total)
+	for i, sn := range okRsp.Payload.Items {
+		if i > 0 {
+			require.Less(t, sn.Subnet, okRsp.Payload.Items[i-1].Subnet)
 		}
 	}
 
