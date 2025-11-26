@@ -71,6 +71,12 @@ export class Bind9ConfigPreviewComponent {
 
     /**
      * Indicates if the full configuration should be displayed.
+     *
+     * The partial view is displayed by default. It contains only the
+     * BIND 9 global configuration options (also acls, keys etc.),
+     * but excludes zones, views and elements of the configuration
+     * marked with the @stork:no-parse directive. Full configuration
+     * includes those elements as well.
      */
     showFullConfig: boolean = false
 
