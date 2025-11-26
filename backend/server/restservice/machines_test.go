@@ -876,6 +876,25 @@ func TestGetMachines(t *testing.T) {
 	rsp := rapi.GetMachines(ctx, params)
 	ms := rsp.(*services.GetMachinesOK).Payload
 	require.EqualValues(t, ms.Total, 2)
+
+	// Check if results were sorted by default by ID in ascending order.
+	require.Greater(t, ms.Items[1].ID, ms.Items[0].ID)
+
+	// Test GetMachines again but with explicit sorting applied.
+	params = services.GetMachinesParams{
+		Start:     &start,
+		Limit:     &limit,
+		SortField: storkutil.Ptr("address"),
+		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+	}
+
+	rsp = rapi.GetMachines(ctx, params)
+	ms = rsp.(*services.GetMachinesOK).Payload
+	require.EqualValues(t, ms.Total, 2)
+
+	// Check if results were sorted as expected.
+	require.EqualValues(t, "machine2.example.org", *ms.Items[0].Address)
+	require.EqualValues(t, "machine1.example.org", *ms.Items[1].Address)
 }
 
 // Test that the empty list is returned when the database contains no machines.
