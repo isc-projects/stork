@@ -125,7 +125,11 @@ func TestGetSharedNetworks(t *testing.T) {
 	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 4)
 	require.EqualValues(t, 4, okRsp.Payload.Total)
-	for _, net := range okRsp.Payload.Items {
+	for i, net := range okRsp.Payload.Items {
+		if i > 0 {
+			// By default, networks should be sorted by ID in ascending order.
+			require.Greater(t, net.ID, okRsp.Payload.Items[i-1].ID)
+		}
 		require.Contains(t, []string{"frog", "mouse", "fox", "monkey"}, net.Name)
 		switch net.Name {
 		case "frog":
@@ -151,6 +155,22 @@ func TestGetSharedNetworks(t *testing.T) {
 			require.EqualValues(t, storkutil.IPv6, net.Universe)
 		case "monkey":
 			require.Empty(t, net.Subnets)
+		}
+	}
+
+	// get all shared networks sorted by name descending
+	params = dhcp.GetSharedNetworksParams{
+		SortField: storkutil.Ptr("name"),
+		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+	}
+	rsp = rapi.GetSharedNetworks(ctx, params)
+	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
+	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
+	require.Len(t, okRsp.Payload.Items, 4)
+	require.EqualValues(t, 4, okRsp.Payload.Total)
+	for i, net := range okRsp.Payload.Items {
+		if i > 0 {
+			require.Less(t, net.Name, okRsp.Payload.Items[i-1].Name)
 		}
 	}
 
