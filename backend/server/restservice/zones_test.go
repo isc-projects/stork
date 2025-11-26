@@ -365,6 +365,31 @@ func TestGetZones(t *testing.T) {
 			require.True(t, zone.LocalZones[0].Rpz)
 		}
 	})
+
+	t.Run("zones with custom sorting", func(t *testing.T) {
+		ctx := context.Background()
+		start := int64(0)
+		limit := int64(150)
+		sortField := string(dbmodel.LocalZoneType)
+		sortDir := int64(dbmodel.SortDirDesc)
+		params := dns.GetZonesParams{
+			Start:     &start,
+			Limit:     &limit,
+			SortField: &sortField,
+			SortDir:   &sortDir,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 125)
+		require.EqualValues(t, 125, rspOK.Payload.Total)
+		zones := rspOK.Payload.Items
+		for i := range zones {
+			if i > 0 {
+				require.LessOrEqual(t, zones[i].LocalZones[0].ZoneType, zones[i-1].LocalZones[0].ZoneType)
+			}
+		}
+	})
 }
 
 // Test getting single zone from the database over the REST API.
