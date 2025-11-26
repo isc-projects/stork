@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	storkutil "isc.org/stork/util"
-	"muzzammil.xyz/jsonc"
 )
 
 var (
@@ -100,7 +99,8 @@ func (c *Config) unmarshalIntoAccessibleConfig(data []byte) error {
 	c.D2Config = nil
 	c.DHCPv4Config = nil
 	c.DHCPv6Config = nil
-	err := jsonc.Unmarshal(data, (*ct)(c))
+	data = storkutil.NormalizeKeaJSON(data)
+	err := json.Unmarshal(data, (*ct)(c))
 	return errors.Wrapf(err, "cannot unmarshal the data into an accessible config")
 }
 
@@ -114,7 +114,8 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 	}
 	// Second pass.
 	type rt map[string]any
-	err := jsonc.Unmarshal(data, (*rt)(&c.raw))
+	data = storkutil.NormalizeKeaJSON(data)
+	err := json.Unmarshal(data, (*rt)(&c.raw))
 	return errors.Wrapf(err, "cannot unmarshal the data into a raw config")
 }
 
