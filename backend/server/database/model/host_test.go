@@ -309,6 +309,196 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*Daemon, []Host) {
 	return daemons, hosts
 }
 
+// This function creates machine, app, daemons, subnets, and multiple hosts
+// used in tests.
+//
+// Host configurations:
+//
+// - Host 1
+//   - Defined in subnet 1
+//   - 2 identifiers: hw-address and circuit-id
+//   - 2 reserved IPv4 addresses
+//   - Reserved hostname
+//   - Associated with the single daemon
+//
+// - Host 2
+//   - Global reservation
+//   - 2 identifiers: hw-address and circuit-id
+//   - 2 reserved IPv4 addresses
+//   - No reserved hostname
+//   - Associated with the single daemon
+//
+// - Host 3
+//   - Defined in subnet 2
+//   - 2 identifiers: hw-address and duid
+//   - 1 reserved IPv6 address
+//   - 1 reserved IPv6 prefix
+//   - Reserved hostname
+//   - Associated with the single daemon
+//   - The config is duplicated in the API and JSON configuration.
+//
+// - Host 4
+//   - Global reservation
+//   - 2 identifiers: duid and flex-id
+//   - 1 reserved IPv6 address
+//   - 1 reserved IPv6 prefix
+//   - No reserved hostname
+//   - Associated with the single daemon
+//   - The config is duplicated in the API and JSON configuration with
+//     conflicted DHCP data.
+func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
+	apps := addMachineAppDaemonsAndSubnets(t, db)
+
+	hosts := []Host{
+		// Host 1
+		{
+			SubnetID: 1,
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+				{
+					Type:  "circuit-id",
+					Value: []byte{0xf1, 0xf2, 0xf3, 0xf4},
+				},
+			},
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: HostDataSourceConfig,
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.4/32",
+						},
+						{
+							Address: "192.0.2.5/32",
+						},
+					},
+					Hostname: "first.example.org",
+				},
+			},
+			Subnet: &Subnet{
+				Prefix: "192.0.2.0/24",
+				ID:     1,
+			},
+		},
+		// Host 2
+		{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{2, 3, 4, 5, 6, 7},
+				},
+				{
+					Type:  "circuit-id",
+					Value: []byte{2, 3, 4, 5},
+				},
+			},
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[1].Daemons[0].ID,
+					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.6/32",
+						},
+						{
+							Address: "192.0.2.7/32",
+						},
+					},
+				},
+			},
+		},
+		// Host 3
+		{
+			SubnetID: 2,
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+			},
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: HostDataSourceConfig,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::1/128",
+						},
+						{
+							Address: "2001:db8:1::/64",
+						},
+					},
+					Hostname: "second.example.org",
+				},
+				{
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::1/128",
+						},
+					},
+					Hostname: "second.example.org",
+				},
+			},
+			Subnet: &Subnet{
+				Prefix: "2001:db8:1::/64",
+				ID:     2,
+			},
+		},
+		{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "duid",
+					Value: []byte{1, 2, 3, 4},
+				},
+				{
+					Type:  "flex-id",
+					Value: []byte{0x51, 0x52, 0x53, 0x54},
+				},
+			},
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[1].Daemons[1].ID,
+					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::2/128",
+						},
+						{
+							Address: "2001:db8:1::/63",
+						},
+					},
+				},
+				{
+					DaemonID:       apps[1].Daemons[1].ID,
+					DataSource:     HostDataSourceConfig,
+					NextServer:     "conflict",
+					ServerHostname: "conflict",
+					BootFileName:   "conflict",
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::2/128",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for i, h := range hosts {
+		host := h
+		err := AddHost(db, &host)
+		require.NoError(t, err)
+		require.NotZero(t, host.ID)
+		hosts[i] = host
+	}
+	return apps, hosts
+}
+
 // Test that the function returns true if the data source is config; otherwise,
 // it should return false.
 func TestHostDataSourceIsConfig(t *testing.T) {
@@ -1571,8 +1761,8 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	addTestHosts(t, db)
+	// Add four hosts. Two with IPv4 and two with IPv6 and IPv6 prefix reservations.
+	addMoreTestHosts(t, db)
 
 	// check sorting by id asc
 	filters := HostsByPageFilters{}
@@ -1606,6 +1796,104 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.Len(t, returned, 4)
 	require.EqualValues(t, 3, returned[0].ID)
 	require.EqualValues(t, 4, returned[3].ID)
+
+	// check sorting by subnet prefix asc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "subnet.prefix", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[3].Subnet.Prefix, returned[2].Subnet.Prefix)
+
+	// check sorting by subnet prefix desc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, "subnet.prefix", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[0].Subnet.Prefix, returned[1].Subnet.Prefix)
+
+	// check sorting by local host hostname asc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(LocalHostHostname), SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[3].LocalHosts[0].Hostname, returned[2].LocalHosts[0].Hostname)
+
+	// check sorting by local host hostname desc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(LocalHostHostname), SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[0].LocalHosts[0].Hostname, returned[1].LocalHosts[0].Hostname)
+
+	// check sorting by identifier value asc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(HostIdentifierValue), SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[3].HostIdentifiers[0].Value, returned[2].HostIdentifiers[0].Value)
+
+	// check sorting by identifier value desc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(HostIdentifierValue), SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[0].HostIdentifiers[0].Value, returned[1].HostIdentifiers[0].Value)
+
+	// check sorting by reservation address asc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationAddress), SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[3].LocalHosts[0].IPReservations[0].Address, returned[2].LocalHosts[0].IPReservations[0].Address)
+
+	// check sorting by reservation address desc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationAddress), SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.Greater(t, returned[0].LocalHosts[0].IPReservations[0].Address, returned[1].LocalHosts[0].IPReservations[0].Address)
+
+	// check sorting by reservation ipv6 prefix asc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationIPv6Prefix), SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	firstPrefix := ""
+	for _, r := range returned[2].LocalHosts[0].IPReservations {
+		if r.IsPrefix() {
+			firstPrefix = r.Address
+		}
+	}
+	secondPrefix := ""
+	for _, r := range returned[3].LocalHosts[0].IPReservations {
+		if r.IsPrefix() {
+			secondPrefix = r.Address
+		}
+	}
+	require.NotEqualValues(t, "", firstPrefix)
+	require.NotEqualValues(t, "", secondPrefix)
+	require.Greater(t, secondPrefix, firstPrefix)
+
+	// check sorting by reservation ipv6 prefix desc
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationIPv6Prefix), SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	firstPrefix = ""
+	for _, r := range returned[0].LocalHosts[0].IPReservations {
+		if r.IsPrefix() {
+			firstPrefix = r.Address
+		}
+	}
+	secondPrefix = ""
+	for _, r := range returned[1].LocalHosts[0].IPReservations {
+		if r.IsPrefix() {
+			secondPrefix = r.Address
+		}
+	}
+	require.NotEqualValues(t, "", firstPrefix)
+	require.NotEqualValues(t, "", secondPrefix)
+	require.Greater(t, firstPrefix, secondPrefix)
 }
 
 // Test that the hosts without the reserved IP addresses are included in the
