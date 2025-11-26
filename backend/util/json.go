@@ -146,9 +146,13 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 // This function removes these non-standard constructs so that the resulting
 // JSON can be parsed by standard JSON parsers.
 //
+// The output JSON mostly preserves the whitespace and character positions.
+// However, there might be double spaces where comments or trailing commas were
+// removed.
+//
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
 func NormalizeKeaJSON(input []byte) []byte {
-	var buffer []byte
+	buffer := make([]byte, 0, len(input))
 
 	isSingleLineComment := false
 	isMultiLineComment := false
@@ -217,6 +221,24 @@ func NormalizeKeaJSON(input []byte) []byte {
 		}
 
 		buffer = append(buffer, b)
+
+		// Trim the leading comma if it is end of an object or array.
+		if b == '}' || b == ']' {
+			// Look backwards to find the previous non-whitespace character.
+			for j := len(buffer) - 2; j >= 0; j-- {
+				// TODO: Handle all UTF-8 whitespace characters.
+				if buffer[j] == ' ' || buffer[j] == '\n' || buffer[j] == '\t' || buffer[j] == '\r' {
+					continue
+				}
+				if buffer[j] == ',' {
+					// Replace the comma with whitespace to preserve character
+					// positions.
+					buffer[j] = ' '
+					// Only one trailing comma is allowed.
+				}
+				break
+			}
+		}
 	}
 
 	return buffer

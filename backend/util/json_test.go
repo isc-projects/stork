@@ -426,7 +426,127 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		require.JSONEq(t, expected, string(output))
 	})
 
-	// Check the test cases from the jsonc library to ensure compatibility.
+	t.Run("JSON array with comments between values", func(t *testing.T) {
+		// Arrange
+		input := `[
+			1, // First value
+			2, /* Second value */
+			3  # Third value
+		]`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `[ 1, 2, 3 ]`
+		require.JSONEq(t, expected, string(output))
+	})
+
+	t.Run("JSON string with escaped quotes and comment characters", func(t *testing.T) {
+		// Arrange
+		input := `"This is a string" # and comment`
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `"This is a string"`
+		require.JSONEq(t, expected, string(output))
+	})
+
+	t.Run("JSON object with trailing comma", func(t *testing.T) {
+		// Arrange
+		input := `{ "a": 1, }`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `{ "a": 1 }`
+		require.JSONEq(t, expected, string(output))
+	})
+
+	t.Run("JSON array with trailing comma", func(t *testing.T) {
+		// Arrange
+		input := `[1, 2, 3, ]`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `[1, 2, 3 ]`
+		require.JSONEq(t, expected, string(output))
+	})
+
+	t.Run("JSON object with multiple trailing commas", func(t *testing.T) {
+		// Arrange
+		input := `{ "a": 1,, }`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `{ "a": 1,  }`
+
+		require.Equal(t, expected, string(output))
+	})
+
+	t.Run("nested JSON object with trailing commas", func(t *testing.T) {
+		// Arrange
+		input := `{
+			"a": 1,
+			"b": {
+				"c": 2,
+			},
+		}`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `{ "a": 1, "b": { "c": 2 } }`
+		require.JSONEq(t, expected, string(output))
+	})
+
+	t.Run("trailing commas and comments combined", func(t *testing.T) {
+		// Arrange
+		input := `[ # An array
+			[	// First object
+				1, // First value
+				2, /* Second value */
+				3,  # Third value and tailing comma
+			],
+			{
+				// Trailing comma in comment,
+			},
+			",", // Comma in string
+			[[[[/* , */]]]], # Trailing comma
+			/*
+				Multi
+				line
+				comment
+			*/
+			/* Multi line comment */
+			/* Multi
+				line comment */
+			# Single line comment
+		]`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `[
+			[ 1, 2, 3 ],
+			{},
+			",",
+			[[[[]]]]
+		]`
+		require.JSONEq(t, expected, string(output))
+	})
+}
+
+// Check the test cases from the jsonc library to ensure compatibility.
+func TestNormalizeKeaJSONCompatibilityWithJSONC(t *testing.T) {
 	validCases := []string{
 		`{"foo":"bar foo","true":false,"number":42,"object":{"test":"done"},"array":[1,2,3],"url":"https://github.com","escape":"\"wo//rking"}`,
 		`{"foo": /** this is a bloc/k comm\"ent */ "bar foo", "true": /* true */ false, "number": 42, "object": { "test": "done" }, "array" : [1, 2, 3], "url" : "https://github.com", "escape":"\"wo//rking" }`,
