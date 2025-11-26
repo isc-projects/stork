@@ -159,13 +159,6 @@ func NormalizeKeaJSON(input []byte) []byte {
 	isString := false
 	remainingSlash := false
 
-	appendRemainingSlash := func() {
-		if remainingSlash {
-			buffer = append(buffer, '/')
-			remainingSlash = false
-		}
-	}
-
 	for i, b := range input {
 		previousChar := byte(0)
 		if i > 0 {
@@ -194,26 +187,27 @@ func NormalizeKeaJSON(input []byte) []byte {
 		}
 
 		if remainingSlash {
+			remainingSlash = false
 			if b == '/' {
 				isSingleLineComment = true
-				remainingSlash = false
 				continue
 			}
 			if b == '*' {
 				isMultiLineComment = true
-				remainingSlash = false
 				continue
 			}
-			appendRemainingSlash()
+			buffer = append(buffer, '/')
 		}
 
 		if b == '/' {
 			remainingSlash = true
 			continue
-		} else if b == '#' {
+		}
+		if b == '#' {
 			isSingleLineComment = true
 			continue
-		} else if b == '"' {
+		}
+		if b == '"' {
 			isString = true
 			buffer = append(buffer, b)
 			previousChar = b
