@@ -30,6 +30,10 @@ variables:
   # not cloned by default.
   GIT_SUBMODULE_STRATEGY: none
 
+  # SLSA - enable artifact provenance metadata
+  RUNNER_GENERATE_ARTIFACTS_METADATA: "true"
+
+
 default:
   # AWS can interrupt the spot instance anytime, so let's retry the job when
   # the interruption event happens to avoid a pipeline failure.
