@@ -1689,6 +1689,20 @@ func TestRestGetApps(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("get apps with custom sorting", func(t *testing.T) {
+		params = services.GetAppsParams{
+			SortField: storkutil.Ptr("name"),
+			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		}
+		rsp = rapi.GetApps(ctx, params)
+		require.IsType(t, &services.GetAppsOK{}, rsp)
+		okRsp = rsp.(*services.GetAppsOK)
+		require.EqualValues(t, 3, okRsp.Payload.Total)
+		require.EqualValues(t, "pdns@localhost", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, "fancy-app", okRsp.Payload.Items[1].Name)
+		require.EqualValues(t, "another-fancy-app", okRsp.Payload.Items[2].Name)
+	})
 }
 
 // Test converting BIND9 app to REST API format with DNS query stats.
