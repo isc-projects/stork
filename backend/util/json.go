@@ -184,6 +184,7 @@ func NormalizeKeaJSON(input []byte) []byte {
 				isString = false
 			}
 			buffer = append(buffer, b)
+			possibleTrailingCommaIndex = -1
 			continue
 		}
 
@@ -198,6 +199,7 @@ func NormalizeKeaJSON(input []byte) []byte {
 				continue
 			}
 			buffer = append(buffer, '/')
+			possibleTrailingCommaIndex = -1
 		}
 
 		if b == '/' {
@@ -211,7 +213,7 @@ func NormalizeKeaJSON(input []byte) []byte {
 		if b == '"' {
 			isString = true
 			buffer = append(buffer, b)
-			previousChar = b
+			possibleTrailingCommaIndex = -1
 			continue
 		}
 

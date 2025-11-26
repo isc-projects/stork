@@ -543,6 +543,20 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		]`
 		require.JSONEq(t, expected, string(output))
 	})
+
+	t.Run("string array", func(t *testing.T) {
+		// Arrange
+		input := `[
+			"hw-address",
+			"client-id"
+		]`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		require.JSONEq(t, input, string(output))
+	})
 }
 
 // Check the test cases from the jsonc library to ensure compatibility.
