@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet, SubnetSortField } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
@@ -62,6 +62,11 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
      * Returns true if the table filtering does not exclude IPv6 subnets.
      */
     ipV6SubnetsFilterIncluded = signal<boolean>(true)
+
+    /**
+     * Keeps value for colspan attribute for the table "empty message" placeholder.
+     */
+    emptyMessageColspan = computed<number>(() => (this.ipV6SubnetsFilterIncluded() ? 12 : 9))
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed

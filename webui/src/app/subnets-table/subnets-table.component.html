@@ -359,7 +359,7 @@
     </ng-template>
     <ng-template #emptymessage>
         <tr>
-            <td colspan="9">
+            <td [attr.colspan]="emptyMessageColspan()">
                 No subnets found.
                 <span *ngIf="tableHasFilter(subnetsTable)">
                     Clear filtering and try again.
