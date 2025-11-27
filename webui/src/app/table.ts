@@ -86,7 +86,7 @@ export function convertSortingFields<TSortField>(event: TableLazyLoadEvent): [TS
         return [null, null]
     }
 
-    if (!event.sortOrder) {
+    if (event.sortOrder === null || event.sortOrder === undefined) {
         return [<TSortField>event.sortField, null]
     }
 
