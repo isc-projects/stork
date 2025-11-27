@@ -1,4 +1,7 @@
+import pytest
+
 from openapi_client.api.users_api import User
+from openapi_client.exceptions import BadRequestException
 
 from core.wrappers import Server
 
@@ -57,3 +60,29 @@ def test_user_without_groups(server_service: Server):
 
     server_service.log_in("user", "password")
     server_service.log_out()
+
+
+def test_login_with_extremely_large_payload(server_service: Server):
+    """
+    It verifies that CVE-2025-8696 has been fixed.
+    The bug was that the server accepted any arbitrary size of the request
+    directed to the login form. The attacker could send a request so large that
+    it would exhaust all available memory and cause the server to crash as a
+    result.
+    """
+    # Generate big request. For testing purposes it doesn't need to extremely
+    # huge because the server rejects now requests bigger than several
+    # kilobytes.
+    big_username = "a" * 10_000_000
+    big_password = "b" * 10_000_000
+
+    # TODO: Refactor the backend code to return HTTP 413 Payload Too Large.
+    with pytest.raises(BadRequestException) as ex:
+        # The Pydantic library validates the size of the request and rejects
+        # sending such a big payload. We need to suppress it.
+        server_service.log_in(
+            big_username,
+            big_password,
+            suppress_client_side_validation=True,
+        )
+    assert "request body too large" in str(ex.value).lower()

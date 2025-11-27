@@ -1,3 +1,4 @@
+import functools
 import re
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
@@ -126,11 +127,30 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     # Authentication
 
     def log_in(
-        self, username: str, password: str, authentication_method_id="internal"
+        self,
+        username: str,
+        password: str,
+        authentication_method_id="internal",
+        suppress_client_side_validation: bool = False,
     ) -> User:
-        """Logs in a user. Returns the user info."""
+        """
+        Logs in a user. Returns the user info.
+        It accepts a flag to suppress client-side validation. It is useful when
+        testing sending maliciously payloads.
+        """
         api_instance = UsersApi(self._api_client)
-        http_info = api_instance.create_session_with_http_info(
+        create_session_method = api_instance.create_session_with_http_info
+
+        if suppress_client_side_validation:
+            # The OpenAPI client wraps the method calls with decorators that
+            # perform client-side validation. We need to unwrap the original
+            # method and call it directly. The raw_function needs to have self
+            # parameter bound to the api_instance (original caller object).
+            create_session_method = functools.partial(
+                create_session_method.raw_function, api_instance
+            )
+
+        http_info = create_session_method(
             credentials={
                 "identifier": username,
                 "secret": password,
