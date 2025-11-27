@@ -458,6 +458,9 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.Len(t, contents.Subnets, 2)
 	require.Len(t, contents.ClientClasses, 3)
 	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
+	for _, daemon := range contents.Daemons {
+		require.NotZero(t, daemon.App.ID)
+	}
 
 	// Submit transaction.
 	params2 := dhcp.CreateHostSubmitParams{
@@ -1091,6 +1094,9 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	require.Len(t, contents.Subnets, 2)
 	require.Len(t, contents.ClientClasses, 3)
 	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
+	for _, daemon := range contents.Daemons {
+		require.NotZero(t, daemon.App.ID)
+	}
 
 	// Submit transaction.
 	params2 := dhcp.UpdateHostSubmitParams{

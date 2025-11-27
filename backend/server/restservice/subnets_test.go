@@ -1241,6 +1241,9 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	require.Len(t, contents.SharedNetworks4, 1)
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
+	for _, daemon := range contents.Daemons {
+		require.NotZero(t, daemon.App.ID)
+	}
 
 	keaConfigSubnetParameters := &models.KeaConfigSubnetParameters{
 		SubnetLevelParameters: &models.KeaConfigSubnetDerivedParameters{
@@ -2167,6 +2170,9 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	require.Len(t, contents.SharedNetworks4, 2)
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
+	for _, daemon := range contents.Daemons {
+		require.NotZero(t, daemon.App.ID)
+	}
 
 	keaConfigSubnetParameters := &models.KeaConfigSubnetParameters{
 		SubnetLevelParameters: &models.KeaConfigSubnetDerivedParameters{
