@@ -387,10 +387,41 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 				},
 			},
 		},
+		Stats: Stats{
+			StatNameTotalNAs:    10,
+			StatNameAssignedNAs: 4,
+			StatNameTotalPDs:    4,
+			StatNameAssignedPDs: 2,
+		},
+		PdUtilization:   Utilization(0.5),
+		AddrUtilization: Utilization(0.4),
 	}
 	err := AddSharedNetwork(db, network)
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
+
+	network2 := &SharedNetwork{
+		Name:   "abc",
+		Family: 4,
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[2].Daemons[1].ID,
+			},
+		},
+		Subnets: []Subnet{
+			{
+				Prefix: "192.0.2.0/24",
+			},
+		},
+		Stats: Stats{
+			StatNameTotalAddresses:    20,
+			StatNameAssignedAddresses: 5,
+		},
+		AddrUtilization: Utilization(0.25),
+	}
+	err = AddSharedNetwork(db, network2)
+	require.NoError(t, err)
+	require.NotZero(t, network2.ID)
 
 	_, err = CommitNetworksIntoDB(db, []SharedNetwork{*network}, []Subnet{})
 	require.NoError(t, err)
@@ -469,10 +500,144 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		verifySharedNetworkFn(t, &returnedNetworks[0], true)
 	})
 
+	t.Run("GetSharedNetworksByPage - sort by name", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "name", SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "abc", returnedNetworks[0].Name)
+		require.EqualValues(t, "funny name", returnedNetworks[1].Name)
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by name descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "name", SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "abc", returnedNetworks[1].Name)
+		require.EqualValues(t, "funny name", returnedNetworks[0].Name)
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by addr utilization", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "addr_utilization", SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.Greater(t, returnedNetworks[1].AddrUtilization, returnedNetworks[0].AddrUtilization)
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by addr utilization descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "addr_utilization", SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.Less(t, returnedNetworks[1].AddrUtilization, returnedNetworks[0].AddrUtilization)
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by total addresses", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalAddresses), SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[0].Name) // 10 total NAs
+		require.EqualValues(t, "abc", returnedNetworks[1].Name)        // 20 total addresses
+		require.Greater(t, returnedNetworks[1].Stats[StatNameTotalAddresses], returnedNetworks[0].Stats[StatNameTotalNAs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by total addresses descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalAddresses), SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[1].Name) // 10 total NAs
+		require.EqualValues(t, "abc", returnedNetworks[0].Name)        // 20 total addresses
+		require.Greater(t, returnedNetworks[0].Stats[StatNameTotalAddresses], returnedNetworks[1].Stats[StatNameTotalNAs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by assigned addresses", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedAddresses), SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[0].Name) // 4 assigned NAs
+		require.EqualValues(t, "abc", returnedNetworks[1].Name)        // 5 assigned addresses
+		require.Greater(t, returnedNetworks[1].Stats[StatNameAssignedAddresses], returnedNetworks[0].Stats[StatNameAssignedNAs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by assigned addresses descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedAddresses), SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[1].Name) // 4 assigned NAs
+		require.EqualValues(t, "abc", returnedNetworks[0].Name)        // 5 assigned addresses
+		require.Greater(t, returnedNetworks[0].Stats[StatNameAssignedAddresses], returnedNetworks[1].Stats[StatNameAssignedNAs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by total PDs", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalPDs), SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[1].Name)
+		require.EqualValues(t, "abc", returnedNetworks[0].Name) // total PDs - nil - nulls come first
+		require.Nil(t, returnedNetworks[0].Stats[StatNameTotalPDs])
+		require.NotNil(t, returnedNetworks[1].Stats[StatNameTotalPDs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by total PDs descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalPDs), SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[0].Name)
+		require.EqualValues(t, "abc", returnedNetworks[1].Name) // total PDs - nil - nulls come last
+		require.Nil(t, returnedNetworks[1].Stats[StatNameTotalPDs])
+		require.NotNil(t, returnedNetworks[0].Stats[StatNameTotalPDs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by assigned PDs", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedPDs), SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[1].Name)
+		require.EqualValues(t, "abc", returnedNetworks[0].Name) // assigned PDs - nil - nulls come first
+		require.Nil(t, returnedNetworks[0].Stats[StatNameAssignedPDs])
+		require.NotNil(t, returnedNetworks[1].Stats[StatNameAssignedPDs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by assigned PDs descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedPDs), SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.EqualValues(t, "funny name", returnedNetworks[0].Name)
+		require.EqualValues(t, "abc", returnedNetworks[1].Name) // assigned PDs - nil - nulls come last
+		require.Nil(t, returnedNetworks[1].Stats[StatNameAssignedPDs])
+		require.NotNil(t, returnedNetworks[0].Stats[StatNameAssignedPDs])
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by PD utilization", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(PDUtilization), SortDirAsc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.Greater(t, returnedNetworks[1].PdUtilization, returnedNetworks[0].PdUtilization)
+	})
+
+	t.Run("GetSharedNetworksByPage - sort by PD utilization descending", func(t *testing.T) {
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(PDUtilization), SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, total)
+		require.Len(t, returnedNetworks, 2)
+		require.Greater(t, returnedNetworks[0].PdUtilization, returnedNetworks[1].PdUtilization)
+	})
+
 	t.Run("GetAllSharedNetworks", func(t *testing.T) {
 		baseNetworks, err := GetAllSharedNetworks(db, 0)
 		require.NoError(t, err)
-		require.Len(t, baseNetworks, 1)
+		require.Len(t, baseNetworks, 2)
 		require.Empty(t, baseNetworks[0].Subnets)
 	})
 }

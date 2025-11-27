@@ -310,42 +310,8 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*Daemon, []Host) {
 }
 
 // This function creates machine, app, daemons, subnets, and multiple hosts
-// used in tests.
-//
-// Host configurations:
-//
-// - Host 1
-//   - Defined in subnet 1
-//   - 2 identifiers: hw-address and circuit-id
-//   - 2 reserved IPv4 addresses
-//   - Reserved hostname
-//   - Associated with the single daemon
-//
-// - Host 2
-//   - Global reservation
-//   - 2 identifiers: hw-address and circuit-id
-//   - 2 reserved IPv4 addresses
-//   - No reserved hostname
-//   - Associated with the single daemon
-//
-// - Host 3
-//   - Defined in subnet 2
-//   - 2 identifiers: hw-address and duid
-//   - 1 reserved IPv6 address
-//   - 1 reserved IPv6 prefix
-//   - Reserved hostname
-//   - Associated with the single daemon
-//   - The config is duplicated in the API and JSON configuration.
-//
-// - Host 4
-//   - Global reservation
-//   - 2 identifiers: duid and flex-id
-//   - 1 reserved IPv6 address
-//   - 1 reserved IPv6 prefix
-//   - No reserved hostname
-//   - Associated with the single daemon
-//   - The config is duplicated in the API and JSON configuration with
-//     conflicted DHCP data.
+// in a similar way that addTestHosts does, only that it also adds IPv6 prefix reservations to
+// Host 3 and Host 4.
 func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 	apps := addMachineAppDaemonsAndSubnets(t, db)
 
