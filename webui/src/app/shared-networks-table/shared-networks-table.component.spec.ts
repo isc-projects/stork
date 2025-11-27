@@ -283,6 +283,8 @@ describe('SharedNetworksTableComponent', () => {
         getNetworksSpy = spyOn(dhcpService, 'getSharedNetworks')
         // Prepare response when no filtering is applied.
         getNetworksSpy.withArgs(0, 10, null, null, null, null, null).and.returnValue(of(fakeResponses[0]))
+        getNetworksSpy.withArgs(0, 10, null, '4', null, null, null).and.returnValue(of(fakeResponses[0]))
+        getNetworksSpy.withArgs(0, 10, null, '6', null, null, null).and.returnValue(of(fakeResponses[0]))
         // Prepare response when shared networks are filtered by text to get an item without stats.
         getNetworksSpy.withArgs(0, 10, null, null, 'frog-no-stats', null, null).and.returnValue(of(fakeResponses[1]))
         // Prepare response when shared networks are filtered by text to get an item with 4 subnets.
@@ -365,20 +367,29 @@ describe('SharedNetworksTableComponent', () => {
         // No throw
     })
 
-    it('should detect IPv6 subnets', () => {
-        const networks: SharedNetwork[] = [
-            {
-                subnets: [{ subnet: '10.0.0.0/8' }, { subnet: '192.168.0.0/16' }],
+    it('should detect IPv6 subnets included in filter', () => {
+        expect(component.ipV6SubnetsFilterIncluded()).toBeTrue()
+        expect(component.emptyMessageColspan()).toEqual(9)
+
+        component.loadData({
+            first: 0,
+            rows: 10,
+            filters: {
+                dhcpVersion: { value: '4' },
             },
-        ]
-
-        component.dataCollection = networks
-        expect(component.isAnyIPv6SubnetVisible).toBeFalse()
-
-        networks.push({
-            subnets: [{ subnet: 'fe80::/64' }],
         })
-        expect(component.isAnyIPv6SubnetVisible).toBeTrue()
+        expect(component.ipV6SubnetsFilterIncluded()).toBeFalse()
+        expect(component.emptyMessageColspan()).toEqual(6)
+
+        component.loadData({
+            first: 0,
+            rows: 10,
+            filters: {
+                dhcpVersion: { value: '6' },
+            },
+        })
+        expect(component.ipV6SubnetsFilterIncluded()).toBeTrue()
+        expect(component.emptyMessageColspan()).toEqual(9)
     })
 
     it('should display proper utilization bars', async () => {

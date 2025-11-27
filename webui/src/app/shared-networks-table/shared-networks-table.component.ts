@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, computed, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import {
     getTotalAddresses,
@@ -47,6 +47,16 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     totalRecords: number = 0
 
     /**
+     * Returns true if the table filtering does not exclude IPv6 subnets.
+     */
+    ipV6SubnetsFilterIncluded = signal<boolean>(true)
+
+    /**
+     * Keeps value for colspan attribute for the table "empty message" placeholder.
+     */
+    emptyMessageColspan = computed<number>(() => (this.ipV6SubnetsFilterIncluded() ? 9 : 6))
+
+    /**
      * RxJS subscriptions that may be all unsubscribed when the component gets destroyed.
      * @private
      */
@@ -70,6 +80,8 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
         this.dataLoading = true
         // The goal is to send to backend something as simple as:
         // this.someApi.getSharedNetworks(JSON.stringify(event))
+
+        this.ipV6SubnetsFilterIncluded.set((<FilterMetadata>event.filters['dhcpVersion'])?.value !== '4')
 
         lastValueFrom(
             this.dhcpApi
@@ -133,14 +145,6 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
                     this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
                 })
         )
-    }
-
-    /**
-     * Returns true if at least one of the shared networks contains at least
-     * one IPv6 subnet
-     */
-    get isAnyIPv6SubnetVisible(): boolean {
-        return !!this.dataCollection?.some((n) => n.subnets.some((s) => s.subnet.includes(':')))
     }
 
     /**

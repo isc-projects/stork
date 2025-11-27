@@ -175,7 +175,7 @@
                 <p-sortIcon [field]="NetworkSortField.Name" />
             </th>
             <th colspan="3" style="width: 16rem">Addresses</th>
-            <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
+            <th colspan="3" style="width: 16rem" *ngIf="ipV6SubnetsFilterIncluded()">Prefixes</th>
             <th rowspan="2">Subnets</th>
             <th rowspan="2" style="width: 14rem">App Name</th>
         </tr>
@@ -192,7 +192,7 @@
                 Used %
                 <p-sortIcon [field]="NetworkSortField.AddrUtilization" />
             </th>
-            <ng-container *ngIf="isAnyIPv6SubnetVisible">
+            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
                 <th [pSortableColumn]="NetworkSortField.CustomTotalPds">
                     Total
                     <p-sortIcon [field]="NetworkSortField.CustomTotalPds" />
@@ -230,7 +230,7 @@
                     class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
                 ></i>
             </td>
-            <ng-container *ngIf="isAnyIPv6SubnetVisible">
+            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
                 <td>
                     <app-human-count [value]="getTotalDelegatedPrefixes(net)"></app-human-count>
                 </td>
@@ -265,7 +265,7 @@
     </ng-template>
     <ng-template #emptymessage>
         <tr>
-            <td colspan="6">
+            <td [attr.colspan]="emptyMessageColspan()">
                 No shared networks found.
                 <span *ngIf="tableHasFilter(networksTable)">
                     Clear filtering and try again.
