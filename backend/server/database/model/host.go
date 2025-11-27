@@ -391,10 +391,10 @@ type HostSortField string
 
 // Valid sort fields.
 const (
-	LocalHostHostname     HostSortField = "distinct_lh.hostname"
-	HostIdentifierValue   HostSortField = "distinct_identifier.value"
-	ReservationAddress    HostSortField = "distinct_reservation.address"
-	ReservationIPv6Prefix HostSortField = "distinct_reservation.ipv6_prefix"
+	SortFieldLocalHostHostname     HostSortField = "distinct_lh.hostname"
+	SortFieldHostIdentifierValue   HostSortField = "distinct_identifier.value"
+	SortFieldReservationAddress    HostSortField = "distinct_reservation.address"
+	SortFieldReservationIPv6Prefix HostSortField = "distinct_reservation.ipv6_prefix"
 )
 
 // Container for values filtering hosts fetched by page.
@@ -470,19 +470,19 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// Sort by hostname.
-	if HostSortField(sortField) == LocalHostHostname {
+	if HostSortField(sortField) == SortFieldLocalHostHostname {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).Column("host_id").ColumnExpr("MIN(hostname) AS hostname").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_lh", sortSubquery).JoinOn("host.id = distinct_lh.host_id")
 	}
 
 	// Sort by host identifier value.
-	if HostSortField(sortField) == HostIdentifierValue {
+	if HostSortField(sortField) == SortFieldHostIdentifierValue {
 		sortSubquery := dbi.Model((*HostIdentifier)(nil)).Column("host_id").ColumnExpr("array_agg(value ORDER BY value) AS value").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_identifier", sortSubquery).JoinOn("host.id = distinct_identifier.host_id")
 	}
 
 	// Sort by host reservation address.
-	if HostSortField(sortField) == ReservationAddress {
+	if HostSortField(sortField) == SortFieldReservationAddress {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).
 			Column("host_id").
 			ColumnExpr("array_agg(r.address ORDER BY r.address) AS address").
@@ -494,7 +494,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// Sort by host reservation v6 prefix.
-	if HostSortField(sortField) == ReservationIPv6Prefix {
+	if HostSortField(sortField) == SortFieldReservationIPv6Prefix {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).
 			Column("host_id").
 			ColumnExpr("array_agg(r.address ORDER BY r.address) AS ipv6_prefix").

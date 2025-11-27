@@ -1778,49 +1778,49 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.Greater(t, returned[0].Subnet.Prefix, returned[1].Subnet.Prefix)
 
 	// check sorting by local host hostname asc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(LocalHostHostname), SortDirAsc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldLocalHostHostname), SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 	require.Greater(t, returned[3].LocalHosts[0].Hostname, returned[2].LocalHosts[0].Hostname)
 
 	// check sorting by local host hostname desc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(LocalHostHostname), SortDirDesc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldLocalHostHostname), SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 	require.Greater(t, returned[0].LocalHosts[0].Hostname, returned[1].LocalHosts[0].Hostname)
 
 	// check sorting by identifier value asc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(HostIdentifierValue), SortDirAsc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldHostIdentifierValue), SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 	require.Greater(t, returned[3].HostIdentifiers[0].Value, returned[2].HostIdentifiers[0].Value)
 
 	// check sorting by identifier value desc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(HostIdentifierValue), SortDirDesc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldHostIdentifierValue), SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 	require.Greater(t, returned[0].HostIdentifiers[0].Value, returned[1].HostIdentifiers[0].Value)
 
 	// check sorting by reservation address asc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationAddress), SortDirAsc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldReservationAddress), SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 	require.Greater(t, returned[3].LocalHosts[0].IPReservations[0].Address, returned[2].LocalHosts[0].IPReservations[0].Address)
 
 	// check sorting by reservation address desc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationAddress), SortDirDesc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldReservationAddress), SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 	require.Greater(t, returned[0].LocalHosts[0].IPReservations[0].Address, returned[1].LocalHosts[0].IPReservations[0].Address)
 
 	// check sorting by reservation ipv6 prefix asc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationIPv6Prefix), SortDirAsc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldReservationIPv6Prefix), SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
@@ -1841,7 +1841,7 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.Greater(t, secondPrefix, firstPrefix)
 
 	// check sorting by reservation ipv6 prefix desc
-	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(ReservationIPv6Prefix), SortDirDesc)
+	returned, total, err = GetHostsByPage(db, 0, 10, filters, string(SortFieldReservationIPv6Prefix), SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)

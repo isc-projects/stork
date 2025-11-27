@@ -370,7 +370,7 @@ func TestGetZones(t *testing.T) {
 		ctx := context.Background()
 		start := int64(0)
 		limit := int64(150)
-		sortField := string(dbmodel.LocalZoneType)
+		sortField := string(dbmodel.SortFieldLocalZoneType)
 		sortDir := int64(dbmodel.SortDirDesc)
 		params := dns.GetZonesParams{
 			Start:     &start,

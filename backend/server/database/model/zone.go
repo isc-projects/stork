@@ -233,14 +233,14 @@ type ZoneSortField string
 
 // Valid sort fields.
 const (
-	LocalZoneSerial ZoneSortField = "distinct_lz.serial"
-	LocalZoneType   ZoneSortField = "distinct_lz.type"
+	SortFieldLocalZoneSerial ZoneSortField = "distinct_lz.serial"
+	SortFieldLocalZoneType   ZoneSortField = "distinct_lz.type"
 )
 
 // Helper function adding appropriate JOINs for sorting done in GetZones.
 // This code was extracted from GetZones due to gocyclo linter warning.
 func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
-	if ZoneSortField(sortField) == LocalZoneSerial {
+	if ZoneSortField(sortField) == SortFieldLocalZoneSerial {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
 			ColumnExpr("MIN(serial) AS serial").
@@ -248,7 +248,7 @@ func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
 		q = q.Join("LEFT JOIN (?) AS distinct_lz", sortSubquery).JoinOn("zone.id = distinct_lz.zone_id")
 		q = q.Group("distinct_lz.serial")
 	}
-	if ZoneSortField(sortField) == LocalZoneType {
+	if ZoneSortField(sortField) == SortFieldLocalZoneType {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
 			ColumnExpr("MIN(type) AS type").

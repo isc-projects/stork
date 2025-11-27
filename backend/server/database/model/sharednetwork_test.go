@@ -535,7 +535,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by total addresses", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalAddresses), SortDirAsc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldTotalAddresses), SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -545,7 +545,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by total addresses descending", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalAddresses), SortDirDesc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldTotalAddresses), SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -555,7 +555,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by assigned addresses", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedAddresses), SortDirAsc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldAssignedAddresses), SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -565,7 +565,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by assigned addresses descending", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedAddresses), SortDirDesc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldAssignedAddresses), SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -575,7 +575,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by total PDs", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalPDs), SortDirAsc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldTotalPDs), SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -586,7 +586,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by total PDs descending", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(TotalPDs), SortDirDesc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldTotalPDs), SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -597,7 +597,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by assigned PDs", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedPDs), SortDirAsc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldAssignedPDs), SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -608,7 +608,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by assigned PDs descending", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(AssignedPDs), SortDirDesc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldAssignedPDs), SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -619,7 +619,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by PD utilization", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(PDUtilization), SortDirAsc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldPDUtilization), SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)
@@ -627,7 +627,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	})
 
 	t.Run("GetSharedNetworksByPage - sort by PD utilization descending", func(t *testing.T) {
-		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(PDUtilization), SortDirDesc)
+		returnedNetworks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, string(SortFieldPDUtilization), SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, total)
 		require.Len(t, returnedNetworks, 2)

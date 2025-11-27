@@ -679,8 +679,8 @@ type SubnetSortField string
 
 // Valid sort fields.
 const (
-	LocalSubnetName        SubnetSortField = "distinct_ls.name"
-	LocalSubnetKeaSubnetID SubnetSortField = "distinct_ls.kea_subnet_id"
+	SortFieldLocalSubnetName        SubnetSortField = "distinct_ls.name"
+	SortFieldLocalSubnetKeaSubnetID SubnetSortField = "distinct_ls.kea_subnet_id"
 )
 
 // Container for values filtering subnets fetched by page.
@@ -740,7 +740,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.Join("LEFT JOIN address_pool AS ap ON ls.id = ap.local_subnet_id")
 	}
 	// Sort by subnet name.
-	if SubnetSortField(sortField) == LocalSubnetName {
+	if SubnetSortField(sortField) == SortFieldLocalSubnetName {
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).
 			Column("subnet_id").
 			ColumnExpr("array_agg(user_context->'subnet-name' ORDER BY user_context->'subnet-name') AS name").
@@ -749,7 +749,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.Join("LEFT JOIN (?) AS distinct_ls", sortSubquery).JoinOn("subnet.id = distinct_ls.subnet_id")
 	}
 	// Sort by Kea subnet id.
-	if SubnetSortField(sortField) == LocalSubnetKeaSubnetID {
+	if SubnetSortField(sortField) == SortFieldLocalSubnetKeaSubnetID {
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).Column("subnet_id").ColumnExpr("MIN(local_subnet_id) AS kea_subnet_id").Group("subnet_id")
 		q = q.Join("INNER JOIN (?) AS distinct_ls", sortSubquery).JoinOn("subnet.id = distinct_ls.subnet_id")
 	}

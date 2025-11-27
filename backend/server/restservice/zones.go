@@ -77,7 +77,7 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 	if params.Limit != nil {
 		limit = int(*params.Limit)
 	}
-	sortField := string(dbmodel.RName)
+	sortField := string(dbmodel.SortFieldRName)
 	if params.SortField != nil {
 		sortField = *params.SortField
 	}

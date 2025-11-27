@@ -25,12 +25,12 @@ type CustomSortFieldEnum string
 
 // Valid values of the enum.
 const (
-	TotalAddresses    CustomSortFieldEnum = "custom_total_addresses"
-	AssignedAddresses CustomSortFieldEnum = "custom_assigned_addresses"
-	TotalPDs          CustomSortFieldEnum = "custom_total_pds"
-	AssignedPDs       CustomSortFieldEnum = "custom_assigned_pds"
-	PDUtilization     CustomSortFieldEnum = "custom_pd_utilization"
-	RName             CustomSortFieldEnum = "custom_rname"
+	SortFieldTotalAddresses    CustomSortFieldEnum = "custom_total_addresses"
+	SortFieldAssignedAddresses CustomSortFieldEnum = "custom_assigned_addresses"
+	SortFieldTotalPDs          CustomSortFieldEnum = "custom_total_pds"
+	SortFieldAssignedPDs       CustomSortFieldEnum = "custom_assigned_pds"
+	SortFieldPDUtilization     CustomSortFieldEnum = "custom_pd_utilization"
+	SortFieldRName             CustomSortFieldEnum = "custom_rname"
 )
 
 // Prepare an order expression based on table name, sortField and sortDir.
@@ -62,30 +62,30 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 				// This sort field requires custom handling.
 				statsExpr := ""
 				switch CustomSortFieldEnum(sortField) {
-				case TotalPDs:
+				case SortFieldTotalPDs:
 					statsExpr = fmt.Sprintf("(%s.stats->>'total-pds')::numeric", escapedTableName)
-				case AssignedPDs:
+				case SortFieldAssignedPDs:
 					statsExpr = fmt.Sprintf("(%s.stats->>'assigned-pds')::numeric", escapedTableName)
-				case PDUtilization:
+				case SortFieldPDUtilization:
 					statsExpr = fmt.Sprintf("%s.pd_utilization", escapedTableName)
 				default:
 					// NO-OP
 				}
 				switch CustomSortFieldEnum(sortField) {
-				case TotalAddresses:
+				case SortFieldTotalAddresses:
 					sortField = fmt.Sprintf("COALESCE(%[1]s.stats->>'total-nas', %[1]s.stats->>'total-addresses')::numeric", escapedTableName)
 					distinctOnExpr += ", " + sortField
-				case AssignedAddresses:
+				case SortFieldAssignedAddresses:
 					sortField = fmt.Sprintf("COALESCE(%[1]s.stats->>'assigned-nas', %[1]s.stats->>'assigned-addresses')::numeric", escapedTableName)
 					distinctOnExpr += ", " + sortField
-				case TotalPDs, AssignedPDs, PDUtilization:
+				case SortFieldTotalPDs, SortFieldAssignedPDs, SortFieldPDUtilization:
 					familyExpr := fmt.Sprintf("%s.inet_family", escapedTableName)
 					if tableName == "subnet" {
 						familyExpr = fmt.Sprintf("family(%s.prefix)", escapedTableName)
 					}
 					sortField = fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
 					distinctOnExpr += fmt.Sprintf(", %s, %s", familyExpr, statsExpr)
-				case RName:
+				case SortFieldRName:
 					sortField = fmt.Sprintf("%s.rname COLLATE \"C\"", escapedTableName)
 					distinctOnExpr += fmt.Sprintf("%s.rname", escapedTableName)
 				}
