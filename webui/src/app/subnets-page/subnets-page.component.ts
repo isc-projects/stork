@@ -10,15 +10,19 @@ import { Settings } from '../backend'
 import { MessageService } from 'primeng/api'
 import { SubnetFormState } from '../forms/subnet-form'
 import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { SubnetTabComponent } from '../subnet-tab/subnet-tab.component'
+import { SubnetFormComponent } from '../subnet-form/subnet-form.component'
 
 /**
  * Component for presenting DHCP subnets.
  */
 @Component({
     selector: 'app-subnets-page',
-    standalone: false,
     templateUrl: './subnets-page.component.html',
     styleUrls: ['./subnets-page.component.sass'],
+    imports: [BreadcrumbsComponent, TabViewComponent, SubnetsTableComponent, SubnetTabComponent, SubnetFormComponent],
 })
 export class SubnetsPageComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()

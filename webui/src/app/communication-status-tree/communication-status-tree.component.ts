@@ -1,6 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { App, Bind9Daemon, KeaDaemon } from '../backend'
-import { TreeNode } from 'primeng/api'
+import { TreeNode, PrimeTemplate } from 'primeng/api'
+import { Tree } from 'primeng/tree'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { NgIf } from '@angular/common'
+import { Tooltip } from 'primeng/tooltip'
 
 /**
  * Metadata associated with a tree node presenting communication
@@ -53,9 +57,9 @@ interface CommunicationStatusNodeData {
  */
 @Component({
     selector: 'app-communication-status-tree',
-    standalone: false,
     templateUrl: './communication-status-tree.component.html',
     styleUrl: './communication-status-tree.component.sass',
+    imports: [Tree, PrimeTemplate, EntityLinkComponent, NgIf, Tooltip],
 })
 export class CommunicationStatusTreeComponent implements OnInit {
     /**

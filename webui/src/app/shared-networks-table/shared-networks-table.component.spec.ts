@@ -2,36 +2,17 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 
 import { SharedNetworksTableComponent } from './shared-networks-table.component'
 import { MessageService } from 'primeng/api'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { TableModule } from 'primeng/table'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ButtonModule } from 'primeng/button'
-import { PopoverModule } from 'primeng/popover'
-import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
-import { FormsModule } from '@angular/forms'
-import { PanelModule } from 'primeng/panel'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { TagModule } from 'primeng/tag'
-import { SelectModule } from 'primeng/select'
-import { RouterModule } from '@angular/router'
+import { InputNumber } from 'primeng/inputnumber'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 import { SharedNetworksPageComponent } from '../shared-networks-page/shared-networks-page.component'
 import { DHCPService, SharedNetwork } from '../backend'
 import { of } from 'rxjs'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HumanCountComponent } from '../human-count/human-count.component'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { FloatLabelModule } from 'primeng/floatlabel'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('SharedNetworksTableComponent', () => {
     let component: SharedNetworksTableComponent
@@ -41,28 +22,12 @@ describe('SharedNetworksTableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                SharedNetworksTableComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                EntityLinkComponent,
-                HumanCountComponent,
-                SubnetBarComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                UtilizationBarComponent,
-            ],
-            imports: [
-                TableModule,
-                ButtonModule,
-                PopoverModule,
-                InputNumberModule,
-                FormsModule,
-                PanelModule,
-                BrowserAnimationsModule,
-                TagModule,
-                SelectModule,
-                RouterModule.forRoot([
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'dhcp/shared-networks',
                         pathMatch: 'full',
@@ -73,13 +38,7 @@ describe('SharedNetworksTableComponent', () => {
                         component: SharedNetworksPageComponent,
                     },
                 ]),
-                TooltipModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                IconFieldModule,
-                InputIconModule,
             ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworksTableComponent)

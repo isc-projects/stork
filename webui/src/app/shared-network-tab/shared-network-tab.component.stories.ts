@@ -1,39 +1,11 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SharedNetworkTabComponent } from './shared-network-tab.component'
-import { ChartModule } from 'primeng/chart'
-import { PopoverModule } from 'primeng/popover'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { TooltipModule } from 'primeng/tooltip'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { FieldsetModule } from 'primeng/fieldset'
-import { DividerModule } from 'primeng/divider'
-import { TableModule } from 'primeng/table'
-import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
-import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { ButtonModule } from 'primeng/button'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TreeModule } from 'primeng/tree'
-import { TagModule } from 'primeng/tag'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { IPType } from '../iptype'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { importProvidersFrom } from '@angular/core'
-import { HttpClientModule } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { toastDecorator } from '../utils-stories'
-import { MessageModule } from 'primeng/message'
-import { ToastModule } from 'primeng/toast'
-import { RouterModule, provideRouter } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 export default {
     title: 'App/SharedNetworkTab',
@@ -42,47 +14,13 @@ export default {
         applicationConfig({
             providers: [
                 ConfirmationService,
-                importProvidersFrom(HttpClientModule),
+                provideHttpClient(withInterceptorsFromDi()),
                 MessageService,
-                provideNoopAnimations(),
+                provideAnimations(),
                 provideRouter([
                     { path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent },
                     { path: 'iframe.html', component: SharedNetworkTabComponent },
                 ]),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                ChartModule,
-                CheckboxModule,
-                ConfirmDialogModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                MessageModule,
-                PopoverModule,
-                RouterModule,
-                TableModule,
-                TagModule,
-                ToastModule,
-                TooltipModule,
-                TreeModule,
-            ],
-            declarations: [
-                AddressPoolBarComponent,
-                CascadedParametersBoardComponent,
-                DhcpOptionSetViewComponent,
-                DelegatedPrefixBarComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                PlaceholderPipe,
-                SubnetBarComponent,
-                UtilizationStatsChartComponent,
-                UtilizationStatsChartsComponent,
             ],
         }),
         toastDecorator,

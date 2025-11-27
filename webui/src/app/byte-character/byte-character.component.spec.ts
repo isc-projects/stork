@@ -7,9 +7,7 @@ describe('ByteCharacterComponent', () => {
     let fixture: ComponentFixture<ByteCharacterComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [ByteCharacterComponent],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(ByteCharacterComponent)
         component = fixture.componentInstance

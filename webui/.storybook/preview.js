@@ -1,10 +1,11 @@
 import { setCompodocJson } from '@storybook/addon-docs/angular'
 import docJson from '../documentation.json'
-import { applicationConfig } from '@storybook/angular'
+import { applicationConfig, moduleMetadata } from '@storybook/angular'
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import { providePrimeNG } from 'primeng/config'
+import { ToastModule } from 'primeng/toast'
 import Aura from '@primeng/themes/aura'
-import AuraBluePreset from '../src/app/app.module'
+import AuraBluePreset from '../src/app/app.config'
 setCompodocJson(docJson)
 
 const preview = {
@@ -22,6 +23,11 @@ const preview = {
         docs: false,
     },
     decorators: [
+        moduleMetadata({
+            // Import components injected by decorators.
+            // The toastDecorator dependencies:
+            imports: [ToastModule],
+        }),
         applicationConfig({
             providers: [
                 provideAnimationsAsync(),

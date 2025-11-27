@@ -1,14 +1,16 @@
 import { Component, Input } from '@angular/core'
 import { ServicesService } from '../backend'
+import { NgIf } from '@angular/common'
+import { Button } from 'primeng/button'
 
 /**
  * Control that allows to fetch the access point key on demand.
  */
 @Component({
     selector: 'app-access-point-key',
-    standalone: false,
     templateUrl: './access-point-key.component.html',
     styleUrls: ['./access-point-key.component.sass'],
+    imports: [NgIf, Button],
 })
 export class AccessPointKeyComponent {
     constructor(private servicesApi: ServicesService) {}

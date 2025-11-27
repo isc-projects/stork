@@ -1,24 +1,12 @@
 import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { ChipModule } from 'primeng/chip'
-import { PopoverModule } from 'primeng/popover'
-import { TableModule } from 'primeng/table'
-import { ToastModule } from 'primeng/toast'
 import { of, throwError } from 'rxjs'
 import { ConfigChecker, ConfigCheckers, ServicesService } from '../backend'
-import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
-import { TagModule } from 'primeng/tag'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     let component: ConfigCheckerPreferenceUpdaterComponent
@@ -29,29 +17,11 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                HelpTipComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
-            ],
-            imports: [
-                TableModule,
-                ChipModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                ToastModule,
-                ButtonModule,
-                FormsModule,
-                CheckboxModule,
-                TagModule,
-                ManagedAccessDirective,
-                TriStateCheckboxComponent,
-            ],
             providers: [
                 MessageService,
-                ServicesService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
             ],
         }).compileComponents()
 

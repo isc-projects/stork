@@ -1,25 +1,13 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
-import { TableModule } from 'primeng/table'
 import { ZoneViewerComponent } from './zone-viewer.component'
 import { ZoneRR } from '../backend/model/zoneRR'
 import { By } from '@angular/platform-browser'
-import { ButtonModule } from 'primeng/button'
-import { TooltipModule } from 'primeng/tooltip'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
 import { DNSService, ZoneRRs } from '../backend'
 import { FilterMetadata, MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
-import { PanelModule } from 'primeng/panel'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { FormsModule } from '@angular/forms'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
-import { TagModule } from 'primeng/tag'
 
 describe('ZoneViewerComponent', () => {
     let component: ZoneViewerComponent
@@ -66,39 +54,26 @@ describe('ZoneViewerComponent', () => {
     }
 
     beforeEach(async () => {
-        const dnsSpy = jasmine.createSpyObj('DNSService', ['getZoneRRs', 'putZoneRRsCache'])
+        await TestBed.compileComponents()
+
+        dnsServiceSpy = jasmine.createSpyObj('DNSService', ['getZoneRRs', 'putZoneRRsCache'])
+        dnsServiceSpy.getZoneRRs.and.returnValue(of(mockZoneRRs as any))
+        dnsServiceSpy.putZoneRRsCache.and.returnValue(of(mockRefreshedZoneRRs as any))
         const messageSpy = jasmine.createSpyObj('MessageService', ['add'])
 
         await TestBed.configureTestingModule({
-            imports: [
-                ButtonModule,
-                FloatLabelModule,
-                FormsModule,
-                IconFieldModule,
-                InputIconModule,
-                MultiSelectModule,
-                PanelModule,
-                PopoverModule,
-                TableModule,
-                TagModule,
-                TooltipModule,
-            ],
-            declarations: [HelpTipComponent, LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
             providers: [
-                { provide: DNSService, useValue: dnsSpy },
+                { provide: DNSService, useValue: dnsServiceSpy },
                 { provide: MessageService, useValue: messageSpy },
                 provideNoopAnimations(),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 
-        dnsServiceSpy = TestBed.inject(DNSService) as jasmine.SpyObj<DNSService>
         messageServiceSpy = TestBed.inject(MessageService) as jasmine.SpyObj<MessageService>
-
         fixture = TestBed.createComponent(ZoneViewerComponent)
         component = fixture.componentInstance
-
-        dnsServiceSpy.getZoneRRs.and.returnValue(of(mockZoneRRs as any))
-        dnsServiceSpy.putZoneRRsCache.and.returnValue(of(mockRefreshedZoneRRs as any))
 
         // Set required inputs
         component.daemonId = 1

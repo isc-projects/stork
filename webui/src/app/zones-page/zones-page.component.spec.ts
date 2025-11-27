@@ -3,14 +3,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { ZonesPageComponent } from './zones-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, TableState } from 'primeng/api'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { DialogModule } from 'primeng/dialog'
-import { ButtonModule } from 'primeng/button'
-import { TableModule } from 'primeng/table'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { Router, RouterModule } from '@angular/router'
+import { Router, provideRouter } from '@angular/router'
 import {
     DNSAppType,
     DNSClass,
@@ -32,38 +25,14 @@ import {
     withInterceptorsFromDi,
 } from '@angular/common/http'
 
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { MessageModule } from 'primeng/message'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { SkeletonModule } from 'primeng/skeleton'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
-import { FieldsetModule } from 'primeng/fieldset'
 import { take } from 'rxjs/operators'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { PanelModule } from 'primeng/panel'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { FormsModule } from '@angular/forms'
-import { SelectModule } from 'primeng/select'
-import { MultiSelectModule } from 'primeng/multiselect'
 import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { UnrootPipe } from '../pipes/unroot.pipe'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { DividerModule } from 'primeng/divider'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -317,50 +286,14 @@ describe('ZonesPageComponent', () => {
         messageAddSpy = messageService.add
 
         await TestBed.configureTestingModule({
-            imports: [
-                DialogModule,
-                ButtonModule,
-                TableModule,
-                BreadcrumbModule,
-                PopoverModule,
-                RouterModule.forRoot([]),
-                ConfirmDialogModule,
-                MessageModule,
-                ProgressBarModule,
-                SkeletonModule,
-                BrowserAnimationsModule,
-                TagModule,
-                FieldsetModule,
-                PanelModule,
-                InputNumberModule,
-                FormsModule,
-                SelectModule,
-                MultiSelectModule,
-                ProgressSpinnerModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                DividerModule,
-                TabViewComponent,
-                TooltipModule,
-                IconFieldModule,
-                InputIconModule,
-            ],
-            declarations: [
-                ZoneViewerComponent,
-                ZonesPageComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                PlaceholderPipe,
-                LocaltimePipe,
-                PluralizePipe,
-                UnrootPipe,
-            ],
             providers: [
                 { provide: MessageService, useValue: messageService },
                 { provide: DNSService, useValue: dnsApi },
                 ConfirmationService,
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
 

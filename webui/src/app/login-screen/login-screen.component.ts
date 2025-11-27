@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { GeneralService } from '../backend'
@@ -7,6 +7,14 @@ import { AuthenticationMethod } from '../backend'
 import { AuthService } from '../auth.service'
 import { HttpClient } from '@angular/common/http'
 import { lastValueFrom } from 'rxjs'
+import { NgIf } from '@angular/common'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { FloatLabel } from 'primeng/floatlabel'
+import { Select } from 'primeng/select'
+import { InputText } from 'primeng/inputtext'
+import { Password } from 'primeng/password'
+import { Button } from 'primeng/button'
+import { Message } from 'primeng/message'
 
 /**
  * A component presenting a Stork log in screen.
@@ -25,9 +33,20 @@ import { lastValueFrom } from 'rxjs'
  */
 @Component({
     selector: 'app-login-screen',
-    standalone: false,
     templateUrl: './login-screen.component.html',
     styleUrls: ['./login-screen.component.sass'],
+    imports: [
+        NgIf,
+        ProgressSpinner,
+        FormsModule,
+        ReactiveFormsModule,
+        FloatLabel,
+        Select,
+        InputText,
+        Password,
+        Button,
+        Message,
+    ],
 })
 export class LoginScreenComponent implements OnInit {
     /**

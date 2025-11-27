@@ -1,46 +1,20 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { DashboardComponent } from './dashboard.component'
-import { PanelModule } from 'primeng/panel'
-import { ButtonModule } from 'primeng/button'
-import {
-    AppsStats,
-    AppsVersions,
-    DhcpOverview,
-    DHCPService,
-    DNSService,
-    ServicesService,
-    SettingsService,
-    UsersService,
-} from '../backend'
+import { AppsStats, AppsVersions, DhcpOverview, DHCPService, DNSService, ServicesService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { LocationStrategy, PathLocationStrategy } from '@angular/common'
 import { of } from 'rxjs'
 import { By } from '@angular/platform-browser'
 import { ServerDataService } from '../server-data.service'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { EventsPanelComponent } from '../events-panel/events-panel.component'
-import { PaginatorModule } from 'primeng/paginator'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { PopoverModule } from 'primeng/popover'
-import { TooltipModule } from 'primeng/tooltip'
-import { TableModule } from 'primeng/table'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { SurroundPipe } from '../pipes/surround.pipe'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { SettingService } from '../setting.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { TagModule } from 'primeng/tag'
-import { provideRouter, RouterModule } from '@angular/router'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { provideRouter } from '@angular/router'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -60,41 +34,14 @@ describe('DashboardComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            declarations: [
-                DashboardComponent,
-                EventsPanelComponent,
-                HelpTipComponent,
-                SubnetBarComponent,
-                HumanCountPipe,
-                SurroundPipe,
-                EntityLinkComponent,
-                VersionStatusComponent,
-                UtilizationBarComponent,
-                DaemonNiceNamePipe,
-                PlaceholderPipe,
-            ],
-            imports: [
-                NoopAnimationsModule,
-                PanelModule,
-                PopoverModule,
-                PaginatorModule,
-                TooltipModule,
-                ButtonModule,
-                RouterModule,
-                TableModule,
-                TagModule,
-                ConfirmDialogModule,
-            ],
             providers: [
-                ServicesService,
                 LocationStrategy,
                 DHCPService,
                 MessageService,
-                UsersService,
-                SettingsService,
                 { provide: LocationStrategy, useClass: PathLocationStrategy },
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),

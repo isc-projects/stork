@@ -1,18 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { FormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { PanelModule } from 'primeng/panel'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { AppOverviewComponent } from './app-overview.component'
-import { ButtonModule } from 'primeng/button'
 import { AuthService } from '../auth.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { App } from '../backend'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -21,15 +17,6 @@ describe('AppOverviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [AppOverviewComponent, AccessPointKeyComponent],
-            imports: [
-                FormsModule,
-                NoopAnimationsModule,
-                RouterModule,
-                PanelModule,
-                ButtonModule,
-                ManagedAccessDirective,
-            ],
             providers: [
                 MessageService,
                 {
@@ -39,6 +26,7 @@ describe('AppOverviewComponent', () => {
                         hasPrivilege: () => true,
                     },
                 },
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),

@@ -3,10 +3,7 @@ import { Pipe, PipeTransform } from '@angular/core'
 /**
  * A pipe zeroing negative numbers.
  */
-@Pipe({
-    name: 'positive',
-    standalone: false,
-})
+@Pipe({ name: 'positive' })
 export class PositivePipe implements PipeTransform {
     /**
      * Transforms a number such that the negative number becomes 0. Other

@@ -1,14 +1,33 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { Router } from '@angular/router'
-import { ConfirmationService, MessageService, TableState } from 'primeng/api'
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { Router, RouterLink } from '@angular/router'
+import { ConfirmationService, MessageService, TableState, PrimeTemplate } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { debounceTime, last, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { distinctUntilChanged, map } from 'rxjs/operators'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { NgFor, NgIf } from '@angular/common'
+import { Button } from 'primeng/button'
+import { Panel } from 'primeng/panel'
+import { Tag } from 'primeng/tag'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { FloatLabel } from 'primeng/floatlabel'
+import { InputNumber } from 'primeng/inputnumber'
+import { FormsModule } from '@angular/forms'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { InputText } from 'primeng/inputtext'
+import { IdentifierComponent } from '../identifier/identifier.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
+import { Tooltip } from 'primeng/tooltip'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 /**
  * This component implements a table of hosts reservations.
@@ -20,9 +39,33 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
  */
 @Component({
     selector: 'app-hosts-table',
-    standalone: false,
     templateUrl: './hosts-table.component.html',
     styleUrls: ['./hosts-table.component.sass'],
+    imports: [
+        ManagedAccessDirective,
+        ConfirmDialog,
+        NgFor,
+        Button,
+        RouterLink,
+        TableModule,
+        Panel,
+        NgIf,
+        Tag,
+        HelpTipComponent,
+        PrimeTemplate,
+        FloatLabel,
+        InputNumber,
+        FormsModule,
+        TriStateCheckboxComponent,
+        IconField,
+        InputIcon,
+        InputText,
+        IdentifierComponent,
+        EntityLinkComponent,
+        HostDataSourceLabelComponent,
+        Tooltip,
+        PluralizePipe,
+    ],
 })
 export class HostsTableComponent implements OnInit, OnDestroy {
     /**

@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 
 import { AccessPointKeyComponent } from './access-point-key.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ButtonModule } from 'primeng/button'
 import { ServicesService } from '../backend'
 import { of, throwError } from 'rxjs'
 import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -14,9 +13,7 @@ describe('AccessPointKeyComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [AccessPointKeyComponent],
-            imports: [ButtonModule],
-            providers: [ServicesService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         servicesApi = TestBed.inject(ServicesService)

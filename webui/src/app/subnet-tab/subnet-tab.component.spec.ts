@@ -1,50 +1,15 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
-import { ChartModule } from 'primeng/chart'
-import { PopoverModule } from 'primeng/popover'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { TooltipModule } from 'primeng/tooltip'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { FieldsetModule } from 'primeng/fieldset'
-import { DividerModule } from 'primeng/divider'
-import { TableModule } from 'primeng/table'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { By } from '@angular/platform-browser'
-import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { ButtonModule } from 'primeng/button'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TreeModule } from 'primeng/tree'
-import { TagModule } from 'primeng/tag'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { ToastModule } from 'primeng/toast'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { DHCPService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
-import { RouterModule } from '@angular/router'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { PositivePipe } from '../pipes/positive.pipe'
-import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
-import { JsonTreeComponent } from '../json-tree/json-tree.component'
+import { provideRouter } from '@angular/router'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -56,53 +21,13 @@ describe('SubnetTabComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                AddressPoolBarComponent,
-                CascadedParametersBoardComponent,
-                DelegatedPrefixBarComponent,
-                DhcpOptionSetViewComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                ParameterViewComponent,
-                PlaceholderPipe,
-                PositivePipe,
-                SubnetTabComponent,
-                UncamelPipe,
-                UnhyphenPipe,
-                UtilizationStatsChartComponent,
-                UtilizationStatsChartsComponent,
-                JsonTreeRootComponent,
-                JsonTreeComponent,
-                UtilizationBarComponent,
-                PoolBarsComponent,
-                OutOfPoolBarComponent,
-            ],
-            imports: [
-                ButtonModule,
-                ChartModule,
-                CheckboxModule,
-                ConfirmDialogModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                RouterModule.forRoot([{ path: 'dhcp/subnets/:id', component: SubnetTabComponent }]),
-                TableModule,
-                TagModule,
-                ToastModule,
-                TooltipModule,
-                TreeModule,
-                ManagedAccessDirective,
-            ],
             providers: [
                 ConfirmationService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([{ path: 'dhcp/subnets/:id', component: SubnetTabComponent }]),
             ],
         }).compileComponents()
 

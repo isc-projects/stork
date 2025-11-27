@@ -1,55 +1,16 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { HostsPageComponent } from './hosts-page.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormBuilder } from '@angular/forms'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { TableModule } from 'primeng/table'
 import { DHCPService, Host, LocalHost } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { HostTabComponent } from '../host-tab/host-tab.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TooltipModule } from 'primeng/tooltip'
-import { FieldsetModule } from 'primeng/fieldset'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { IdentifierComponent } from '../identifier/identifier.component'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { SelectModule } from 'primeng/select'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { HostFormComponent } from '../host-form/host-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TreeModule } from 'primeng/tree'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DividerModule } from 'primeng/divider'
-import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
-import { TagModule } from 'primeng/tag'
-import { MessageModule } from 'primeng/message'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { HostsTableComponent } from '../hosts-table/hosts-table.component'
-import { PanelModule } from 'primeng/panel'
-import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -59,31 +20,15 @@ describe('HostsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                EntityLinkComponent,
-                HostsPageComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                HostTabComponent,
-                IdentifierComponent,
-                HostFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpClientClassSetViewComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                DhcpOptionSetViewComponent,
-                HostDataSourceLabelComponent,
-                PluralizePipe,
-                HostsTableComponent,
-                ByteCharacterComponent,
-            ],
-            imports: [
-                ButtonModule,
-                AutoCompleteModule,
-                DividerModule,
-                FormsModule,
-                TableModule,
-                RouterModule.forRoot([
+            providers: [
+                DHCPService,
+                UntypedFormBuilder,
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'dhcp/hosts',
                         pathMatch: 'full',
@@ -94,37 +39,6 @@ describe('HostsPageComponent', () => {
                         component: HostsPageComponent,
                     },
                 ]),
-                BreadcrumbModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                TooltipModule,
-                FieldsetModule,
-                ProgressSpinnerModule,
-                ToggleButtonModule,
-                CheckboxModule,
-                SelectModule,
-                MultiSelectModule,
-                ReactiveFormsModule,
-                ConfirmDialogModule,
-                TreeModule,
-                TagModule,
-                MessageModule,
-                InputNumberModule,
-                PanelModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                TabViewComponent,
-                TriStateCheckboxComponent,
-                IconFieldModule,
-                InputIconModule,
-            ],
-            providers: [
-                DHCPService,
-                UntypedFormBuilder,
-                ConfirmationService,
-                MessageService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

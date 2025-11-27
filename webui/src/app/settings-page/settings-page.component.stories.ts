@@ -1,26 +1,11 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SettingsPageComponent } from './settings-page.component'
-import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { FieldsetModule } from 'primeng/fieldset'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { MessageModule } from 'primeng/message'
-import { PopoverModule } from 'primeng/popover'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { DividerModule } from 'primeng/divider'
 import { Settings } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { CheckboxModule } from 'primeng/checkbox'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { InputTextModule } from 'primeng/inputtext'
-import { provideRouter, RouterModule } from '@angular/router'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { provideRouter } from '@angular/router'
 
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
@@ -42,30 +27,9 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
-                provideNoopAnimations(),
                 provideAnimations(),
                 provideRouter([]),
             ],
-        }),
-        moduleMetadata({
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                CheckboxModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                MessageModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                RouterModule,
-                ToastModule,
-                InputNumberModule,
-                InputTextModule,
-            ],
-            declarations: [BreadcrumbsComponent, HelpTipComponent, SettingsPageComponent],
         }),
         toastDecorator,
     ],

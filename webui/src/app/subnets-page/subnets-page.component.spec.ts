@@ -2,68 +2,16 @@ import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { SelectModule } from 'primeng/select'
-import { TableModule } from 'primeng/table'
-import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { RouterModule, provideRouter } from '@angular/router'
-import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
+import { provideRouter } from '@angular/router'
+import { DHCPService, Subnet } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { MessageModule } from 'primeng/message'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { SubnetTabComponent } from '../subnet-tab/subnet-tab.component'
-import { FieldsetModule } from 'primeng/fieldset'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TreeModule } from 'primeng/tree'
-import { SubnetFormComponent } from '../subnet-form/subnet-form.component'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { CheckboxModule } from 'primeng/checkbox'
-import { ButtonModule } from 'primeng/button'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DividerModule } from 'primeng/divider'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { TagModule } from 'primeng/tag'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { ToastModule } from 'primeng/toast'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { AccordionModule } from 'primeng/accordion'
-import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
-import { PanelModule } from 'primeng/panel'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 import { SettingService } from '../setting.service'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -74,76 +22,12 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                AddressPoolFormComponent,
-                SubnetsPageComponent,
-                SubnetBarComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                DelegatedPrefixBarComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                EntityLinkComponent,
-                AddressPoolBarComponent,
-                SubnetTabComponent,
-                CascadedParametersBoardComponent,
-                DhcpOptionSetViewComponent,
-                SubnetFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                SharedParametersFormComponent,
-                SubnetsTableComponent,
-                PluralizePipe,
-                PlaceholderPipe,
-                ArrayValueSetFormComponent,
-                ParameterViewComponent,
-                UtilizationBarComponent,
-                PoolBarsComponent,
-                OutOfPoolBarComponent,
-            ],
-            imports: [
-                AccordionModule,
-                FormsModule,
-                SelectModule,
-                TableModule,
-                TooltipModule,
-                RouterModule,
-                BreadcrumbModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                MessageModule,
-                FieldsetModule,
-                TreeModule,
-                ProgressSpinnerModule,
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                DividerModule,
-                InputNumberModule,
-                MessageModule,
-                MultiSelectModule,
-                TagModule,
-                ReactiveFormsModule,
-                SplitButtonModule,
-                ToastModule,
-                ConfirmDialogModule,
-                PanelModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                TabViewComponent,
-                IconFieldModule,
-                InputIconModule,
-            ],
             providers: [
                 ConfirmationService,
-                DHCPService,
-                UsersService,
                 MessageService,
-                SettingsService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
                 provideRouter([
                     {
                         path: 'dhcp/subnets',

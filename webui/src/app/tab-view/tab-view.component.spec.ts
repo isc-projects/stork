@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { TabViewComponent } from './tab-view.component'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { Component, viewChild } from '@angular/core'
 import { Table, TableModule } from 'primeng/table'
@@ -14,8 +14,7 @@ describe('TabViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [TabViewComponent, RouterModule.forRoot([]), TestComponent],
-            providers: [MessageService],
+            providers: [MessageService, provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(TabViewComponent)
@@ -297,8 +296,7 @@ describe('TabViewTestComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [TestComponent, RouterModule.forRoot([])],
-            providers: [MessageService],
+            providers: [MessageService, provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(TestComponent)

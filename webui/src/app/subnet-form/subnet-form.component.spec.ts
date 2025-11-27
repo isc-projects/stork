@@ -1,42 +1,15 @@
 import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing'
 
 import { SubnetFormComponent } from './subnet-form.component'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DividerModule } from 'primeng/divider'
-import { SelectModule } from 'primeng/select'
-import { FieldsetModule } from 'primeng/fieldset'
-import { FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
+import { FormArray, FormGroup, UntypedFormArray } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
-import { PopoverModule } from 'primeng/popover'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { ToastModule } from 'primeng/toast'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { DHCPService } from '../backend'
 import { AddressPoolForm, KeaSubnetParametersForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { By } from '@angular/platform-browser'
-import { MessageModule } from 'primeng/message'
-import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
-import { AccordionModule } from 'primeng/accordion'
-import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { provideRouter, RouterModule } from '@angular/router'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { provideRouter } from '@angular/router'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -404,43 +377,13 @@ describe('SubnetFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                AddressPoolFormComponent,
-                ArrayValueSetFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                PrefixPoolFormComponent,
-                SharedParametersFormComponent,
-                SubnetFormComponent,
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideNoopAnimations(),
+                provideRouter([]),
+                provideRouter([]),
             ],
-            imports: [
-                AccordionModule,
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                DividerModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                MessageModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                TableModule,
-                TagModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                RouterModule.forRoot([]),
-                SplitButtonModule,
-                ToastModule,
-                FloatLabelModule,
-                TriStateCheckboxComponent,
-            ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SubnetFormComponent)

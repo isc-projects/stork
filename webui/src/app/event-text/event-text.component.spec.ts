@@ -7,9 +7,7 @@ describe('EventTextComponent', () => {
     let fixture: ComponentFixture<EventTextComponent>
 
     beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [EventTextComponent],
-        }).compileComponents()
+        TestBed.configureTestingModule({}).compileComponents()
     }))
 
     beforeEach(() => {

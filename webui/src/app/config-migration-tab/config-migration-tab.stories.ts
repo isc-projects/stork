@@ -1,16 +1,9 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { FieldsetModule } from 'primeng/fieldset'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { ConfigMigrationTabComponent } from './config-migration-tab.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { SurroundPipe } from '../pipes/surround.pipe'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { MessageService } from 'primeng/api'
 
 export default {
@@ -18,19 +11,12 @@ export default {
     component: ConfigMigrationTabComponent,
     decorators: [
         applicationConfig({
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideRouter([]), MessageService],
-        }),
-        moduleMetadata({
-            imports: [
-                NoopAnimationsModule,
-                TableModule,
-                FieldsetModule,
-                TagModule,
-                ProgressBarModule,
-                RouterModule,
-                ButtonModule,
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([]),
+                provideAnimations(),
+                MessageService,
             ],
-            declarations: [ConfigMigrationTabComponent, EntityLinkComponent, SurroundPipe],
         }),
         toastDecorator,
     ],

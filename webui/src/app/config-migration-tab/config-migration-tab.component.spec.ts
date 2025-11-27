@@ -1,22 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { ConfigMigrationTabComponent } from './config-migration-tab.component'
 import { MigrationStatus } from '../backend'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { TableModule } from 'primeng/table'
-import { FieldsetModule } from 'primeng/fieldset'
-import { TagModule } from 'primeng/tag'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { Table } from 'primeng/table'
 import { ProgressBar } from 'primeng/progressbar'
 import { Tag } from 'primeng/tag'
 import { Fieldset } from 'primeng/fieldset'
-import { ButtonModule } from 'primeng/button'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { DurationPipe } from '../pipes/duration.pipe'
-import { provideRouter, RouterModule } from '@angular/router'
-import { ManagedAccessDirective } from '../managed-access.directive'
+import { provideRouter } from '@angular/router'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { AuthService } from '../auth.service'
@@ -77,18 +68,12 @@ describe('ConfigMigrationTabComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                NoopAnimationsModule,
-                TableModule,
-                FieldsetModule,
-                TagModule,
-                ProgressBarModule,
-                ButtonModule,
-                RouterModule,
-                ManagedAccessDirective,
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                MessageService,
+                provideNoopAnimations(),
+                provideRouter([]),
             ],
-            declarations: [ConfigMigrationTabComponent, EntityLinkComponent, LocaltimePipe, DurationPipe],
-            providers: [provideRouter([]), provideHttpClient(withInterceptorsFromDi()), MessageService],
         }).compileComponents()
     })
 

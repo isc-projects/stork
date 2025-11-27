@@ -3,6 +3,11 @@ import { App, ServicesService } from '../backend'
 import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { MessageService } from 'primeng/api'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { NgIf } from '@angular/common'
+import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
+import { Button } from 'primeng/button'
+import { ProgressSpinner } from 'primeng/progressspinner'
 
 /**
  * A component displaying a page showing the communication issues with
@@ -15,9 +20,9 @@ import { MessageService } from 'primeng/api'
  */
 @Component({
     selector: 'app-communication-status-page',
-    standalone: false,
     templateUrl: './communication-status-page.component.html',
     styleUrl: './communication-status-page.component.sass',
+    imports: [BreadcrumbsComponent, NgIf, CommunicationStatusTreeComponent, Button, ProgressSpinner],
 })
 export class CommunicationStatusPageComponent implements OnInit {
     /**

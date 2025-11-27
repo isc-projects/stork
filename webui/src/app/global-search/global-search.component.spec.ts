@@ -4,11 +4,9 @@ import { GlobalSearchComponent } from './global-search.component'
 import { SearchService } from '../backend/api/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { FormsModule } from '@angular/forms'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
@@ -16,10 +14,9 @@ describe('GlobalSearchComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [GlobalSearchComponent],
-            imports: [PopoverModule, NoopAnimationsModule, FormsModule, RouterModule],
             providers: [
                 SearchService,
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),

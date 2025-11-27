@@ -4,6 +4,7 @@ import { of, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { ConfigChecker, ConfigCheckerPreference, ConfigCheckerPreferences, ServicesService } from '../backend'
 import { getErrorMessage } from '../utils'
+import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 
 /**
  * Smart component to display the config checker metadata and update the config
@@ -16,9 +17,9 @@ import { getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-config-checker-preference-updater',
-    standalone: false,
     templateUrl: './config-checker-preference-updater.component.html',
     styleUrls: ['./config-checker-preference-updater.component.sass'],
+    imports: [ConfigCheckerPreferencePickerComponent],
 })
 export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestroy {
     /**

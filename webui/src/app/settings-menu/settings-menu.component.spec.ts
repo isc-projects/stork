@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ActivatedRoute, RouterModule } from '@angular/router'
-import { MenuModule } from 'primeng/menu'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { ActivatedRoute, provideRouter } from '@angular/router'
 
 import { SettingsMenuComponent } from './settings-menu.component'
 import { AuthService } from '../auth.service'
@@ -17,16 +16,16 @@ describe('SettingsMenuComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [SettingsMenuComponent],
-            imports: [MenuModule, NoopAnimationsModule, RouterModule],
             providers: [
                 {
                     provide: ActivatedRoute,
                     useValue: {},
                 },
                 MessageService,
+                provideRouter([]),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
             ],
         }).compileComponents()
         authService = TestBed.inject(AuthService)

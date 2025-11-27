@@ -1,35 +1,17 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { differentPasswords, UsersPageComponent } from './users-page.component'
-import { ActivatedRoute, convertToParamMap, ParamMap, RouterModule } from '@angular/router'
-import { FormControl, FormGroup, FormsModule, UntypedFormBuilder } from '@angular/forms'
-import { ServicesService, UsersService } from '../backend'
+import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@angular/router'
+import { FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms'
+import { UsersService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ConfirmationService, MessageService, SharedModule } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { of, Subject } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { MenuModule } from 'primeng/menu'
-import { TableModule } from 'primeng/table'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ReactiveFormsModule } from '@angular/forms'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { AuthService } from '../auth.service'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { MockParamMap } from '../utils'
-import { TagModule } from 'primeng/tag'
-import { PanelModule } from 'primeng/panel'
-import { SelectModule } from 'primeng/select'
-import { PasswordModule } from 'primeng/password'
-import { CheckboxModule } from 'primeng/checkbox'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { ButtonModule } from 'primeng/button'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -40,37 +22,8 @@ describe('UsersPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
-            imports: [
-                MenuModule,
-                TableModule,
-                BreadcrumbModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                RouterModule,
-                ReactiveFormsModule,
-                ConfirmDialogModule,
-                SharedModule,
-                TagModule,
-                RouterModule.forRoot([
-                    { path: 'users/1', component: UsersPageComponent },
-                    { path: 'users/new', component: UsersPageComponent },
-                ]),
-                PanelModule,
-                SelectModule,
-                PasswordModule,
-                FormsModule,
-                CheckboxModule,
-                ManagedAccessDirective,
-                TabViewComponent,
-                ButtonModule,
-                IconFieldModule,
-                InputIconModule,
-            ],
             providers: [
                 UntypedFormBuilder,
-                UsersService,
-                ServicesService,
                 MessageService,
                 ConfirmationService,
                 {
@@ -97,6 +50,11 @@ describe('UsersPageComponent', () => {
                 },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
+                    { path: 'users/1', component: UsersPageComponent },
+                    { path: 'users/new', component: UsersPageComponent },
+                ]),
             ],
         }).compileComponents()
     }))

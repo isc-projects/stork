@@ -2,20 +2,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { PoolBarsComponent } from './pool-bars.component'
 import { DelegatedPrefixPool, Pool } from '../backend'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 import { SubnetWithUniquePools } from '../subnets'
-import { TooltipModule } from 'primeng/tooltip'
 
 describe('PoolBarsComponent', () => {
     let component: PoolBarsComponent
     let fixture: ComponentFixture<PoolBarsComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [PoolBarsComponent, OutOfPoolBarComponent, UtilizationBarComponent],
-            imports: [TooltipModule],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(PoolBarsComponent)
         component = fixture.componentInstance

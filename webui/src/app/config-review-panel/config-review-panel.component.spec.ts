@@ -2,26 +2,12 @@ import { fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testin
 import { HttpResponse, HttpStatusCode, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
-import { DividerModule } from 'primeng/divider'
-import { TagModule } from 'primeng/tag'
-import { ButtonModule } from 'primeng/button'
 import { MessageService } from 'primeng/api'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
-import { EventTextComponent } from '../event-text/event-text.component'
 import { ConfigReports, ServicesService } from '../backend'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { TableModule } from 'primeng/table'
-import { ChipModule } from 'primeng/chip'
-import { PopoverModule } from 'primeng/popover'
 import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
-import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { DataViewModule } from 'primeng/dataview'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { FormsModule } from '@angular/forms'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 
 describe('ConfigReviewPanelComponent', () => {
@@ -33,32 +19,11 @@ describe('ConfigReviewPanelComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                ConfigReviewPanelComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
-                EventTextComponent,
-                LocaltimePipe,
-                HelpTipComponent,
-            ],
-            imports: [
-                ButtonModule,
-                DividerModule,
-                NoopAnimationsModule,
-                TagModule,
-                TableModule,
-                ChipModule,
-                FormsModule,
-                PopoverModule,
-                ToggleButtonModule,
-                DataViewModule,
-                ManagedAccessDirective,
-            ],
             providers: [
-                ServicesService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
             ],
         }).compileComponents()
     })

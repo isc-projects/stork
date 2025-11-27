@@ -1,49 +1,19 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { KeaAppTabComponent } from './kea-app-tab.component'
-import { ActivatedRoute, provideRouter, RouterModule } from '@angular/router'
-import { HaStatusComponent } from '../ha-status/ha-status.component'
-import { TableModule } from 'primeng/table'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { ActivatedRoute, provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { PanelModule } from 'primeng/panel'
-import { TooltipModule } from 'primeng/tooltip'
-import { MessageModule } from 'primeng/message'
 import { MessageService } from 'primeng/api'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
-import { AppsVersions, DHCPService, ServicesService, UsersService } from '../backend'
+import { AppsVersions, ServicesService } from '../backend'
 import { ServerDataService } from '../server-data.service'
-import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
-import { ToggleSwitchModule } from 'primeng/toggleswitch'
-import { FieldsetModule } from 'primeng/fieldset'
-import { EventsPanelComponent } from '../events-panel/events-panel.component'
-import { DialogModule } from 'primeng/dialog'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { PaginatorModule } from 'primeng/paginator'
-import { FormsModule } from '@angular/forms'
-import { PopoverModule } from 'primeng/popover'
-import { ConfigReviewPanelComponent } from '../config-review-panel/config-review-panel.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { AppOverviewComponent } from '../app-overview/app-overview.component'
-import { ButtonModule } from 'primeng/button'
-import { DataViewModule } from 'primeng/dataview'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
-import { DividerModule } from 'primeng/divider'
-import { TagModule } from 'primeng/tag'
-import { EventTextComponent } from '../event-text/event-text.component'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
-import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
 
 class Details {
     daemons: any = [
@@ -121,55 +91,14 @@ describe('KeaAppTabComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            declarations: [
-                KeaAppTabComponent,
-                HaStatusComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                RenameAppDialogComponent,
-                EventsPanelComponent,
-                ConfigReviewPanelComponent,
-                HelpTipComponent,
-                AppOverviewComponent,
-                EventTextComponent,
-                VersionStatusComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
-            ],
-            imports: [
-                RouterModule,
-                TableModule,
-                PanelModule,
-                TooltipModule,
-                MessageModule,
-                FormsModule,
-                ToggleSwitchModule,
-                FieldsetModule,
-                DialogModule,
-                NoopAnimationsModule,
-                PaginatorModule,
-                PopoverModule,
-                ButtonModule,
-                FormsModule,
-                ToggleButtonModule,
-                DataViewModule,
-                ProgressSpinnerModule,
-                DividerModule,
-                TagModule,
-                ManagedAccessDirective,
-                ConfirmDialogModule,
-                TabViewComponent,
-            ],
             providers: [
-                UsersService,
-                DHCPService,
-                ServicesService,
                 MessageService,
                 MockLocationStrategy,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
                 provideRouter([]),
             ],
         }).compileComponents()

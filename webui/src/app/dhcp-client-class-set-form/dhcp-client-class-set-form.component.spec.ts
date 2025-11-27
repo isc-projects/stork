@@ -1,13 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { TableModule } from 'primeng/table'
+import { FormBuilder } from '@angular/forms'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { By } from '@angular/platform-browser'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete'
+import { AutoComplete } from 'primeng/autocomplete'
 
 describe('DhcpClientClassSetFormComponent', () => {
     let component: DhcpClientClassSetFormComponent
@@ -16,16 +12,7 @@ describe('DhcpClientClassSetFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [HelpTipComponent, DhcpClientClassSetFormComponent],
-            imports: [
-                ButtonModule,
-                FormsModule,
-                NoopAnimationsModule,
-                ReactiveFormsModule,
-                TableModule,
-                FloatLabelModule,
-                AutoCompleteModule,
-            ],
+            providers: [provideNoopAnimations()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(DhcpClientClassSetFormComponent)

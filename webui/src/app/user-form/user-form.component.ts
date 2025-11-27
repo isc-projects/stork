@@ -18,7 +18,6 @@ import { TabType } from '../tab-view/tab-view.component'
 
 @Component({
     selector: 'app-user-form',
-    standalone: true,
     imports: [
         Button,
         Checkbox,

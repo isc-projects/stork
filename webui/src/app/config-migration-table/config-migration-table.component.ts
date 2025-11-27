@@ -1,9 +1,20 @@
 import { Component, EventEmitter, Output, ViewChild } from '@angular/core'
 import { DHCPService, MigrationStatus } from '../backend'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 import { lastValueFrom } from 'rxjs'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { RouterLink } from '@angular/router'
+import { NgIf } from '@angular/common'
+import { Tag } from 'primeng/tag'
+import { Tooltip } from 'primeng/tooltip'
+import { ProgressBar } from 'primeng/progressbar'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 /**
  * This component implements a table of configuration migrations.
@@ -11,9 +22,22 @@ import { lastValueFrom } from 'rxjs'
  */
 @Component({
     selector: 'app-config-migration-table',
-    standalone: false,
     templateUrl: './config-migration-table.component.html',
     styleUrl: './config-migration-table.component.sass',
+    imports: [
+        ConfirmDialog,
+        Button,
+        ManagedAccessDirective,
+        TableModule,
+        RouterLink,
+        NgIf,
+        Tag,
+        Tooltip,
+        ProgressBar,
+        LocaltimePipe,
+        PluralizePipe,
+        DurationPipe,
+    ],
 })
 export class ConfigMigrationTableComponent {
     /**

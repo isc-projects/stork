@@ -5,6 +5,10 @@ import { SharedNetwork } from '../backend/model/sharedNetwork'
 import { clamp } from '../utils'
 import { LocalSubnet } from '../backend'
 import {} from 'chart.js'
+import { NgIf } from '@angular/common'
+import { UIChart } from 'primeng/chart'
+import { HumanCountComponent } from '../human-count/human-count.component'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 /**
  * A component displaying a pie chart with address or delegated prefix utilization
@@ -17,9 +21,9 @@ import {} from 'chart.js'
  */
 @Component({
     selector: 'app-utilization-stats-chart',
-    standalone: false,
     templateUrl: './utilization-stats-chart.component.html',
     styleUrls: ['./utilization-stats-chart.component.sass'],
+    imports: [NgIf, UIChart, HumanCountComponent, PositivePipe],
 })
 export class UtilizationStatsChartComponent {
     /**

@@ -1,9 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core'
 
-@Pipe({
-    name: 'pluralize',
-    standalone: false,
-})
+@Pipe({ name: 'pluralize' })
 export class PluralizePipe implements PipeTransform {
     /**
      * Returns number and singular/plural form of the word.

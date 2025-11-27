@@ -1,28 +1,9 @@
-import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
-import { TooltipModule } from 'primeng/tooltip'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { Meta, StoryObj } from '@storybook/angular'
 import { PoolBarsComponent } from './pool-bars.component'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 
 export default {
     title: 'App/PoolBars',
     component: PoolBarsComponent,
-    decorators: [
-        applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({
-            imports: [TooltipModule],
-            declarations: [
-                UtilizationBarComponent,
-                AddressPoolBarComponent,
-                DelegatedPrefixBarComponent,
-                OutOfPoolBarComponent,
-            ],
-        }),
-    ],
 } as Meta
 
 type Story = StoryObj<PoolBarsComponent>

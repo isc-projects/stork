@@ -1,18 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { AddressPoolBarComponent } from './address-pool-bar.component'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { TooltipModule } from 'primeng/tooltip'
 
 describe('AddressPoolBarComponent', () => {
     let component: AddressPoolBarComponent
     let fixture: ComponentFixture<AddressPoolBarComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [AddressPoolBarComponent, UtilizationBarComponent],
-            imports: [TooltipModule],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(AddressPoolBarComponent)
         component = fixture.componentInstance

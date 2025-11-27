@@ -3,15 +3,19 @@ import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { User } from '../backend'
 import { Subscription } from 'rxjs'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
+import { Panel } from 'primeng/panel'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 /**
  * This component is for displaying information about the user's account.
  */
 @Component({
     selector: 'app-profile-page',
-    standalone: false,
     templateUrl: './profile-page.component.html',
     styleUrls: ['./profile-page.component.sass'],
+    imports: [BreadcrumbsComponent, SettingsMenuComponent, Panel, PlaceholderPipe],
 })
 export class ProfilePageComponent implements OnInit, OnDestroy {
     breadcrumbs = [{ label: 'User Profile' }]

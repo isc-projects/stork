@@ -1,18 +1,11 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj } from '@storybook/angular'
 import { DelegatedPrefixBarComponent } from './delegated-prefix-bar.component'
 import { DelegatedPrefixPool } from '../backend'
-import { TooltipModule } from 'primeng/tooltip'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 export default {
     title: 'App/DelegatedPrefixBar',
     component: DelegatedPrefixBarComponent,
-    decorators: [
-        moduleMetadata({
-            imports: [TooltipModule],
-            declarations: [UtilizationBarComponent],
-        }),
-    ],
+    decorators: [],
 } as Meta
 
 type Story = StoryObj<DelegatedPrefixBarComponent>

@@ -1,21 +1,10 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { AppComponent } from './app.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { MenubarModule } from 'primeng/menubar'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ToastModule } from 'primeng/toast'
-import { AppsVersions, GeneralService, ServicesService, Settings, SettingsService, UsersService } from './backend'
+import { AppsVersions, Settings, UsersService } from './backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { GlobalSearchComponent } from './global-search/global-search.component'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { FormsModule } from '@angular/forms'
-import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from './server-sent-events.service'
-import { MessageModule } from 'primeng/message'
-import { ToggleButtonModule } from 'primeng/togglebutton'
 import { SettingService } from './setting.service'
 import { of } from 'rxjs'
 import { AuthService } from './auth.service'
@@ -23,7 +12,7 @@ import { ServerDataService } from './server-data.service'
 import { Severity, VersionAlert, VersionService } from './version.service'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 describe('AppComponent', () => {
     let component: AppComponent
@@ -41,28 +30,11 @@ describe('AppComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            declarations: [AppComponent, GlobalSearchComponent, PriorityErrorsPanelComponent],
-            imports: [
-                RouterModule,
-                TooltipModule,
-                MenubarModule,
-                SplitButtonModule,
-                ProgressSpinnerModule,
-                ToastModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                FormsModule,
-                MessageModule,
-                ToggleButtonModule,
-            ],
             providers: [
-                GeneralService,
-                UsersService,
                 MessageService,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
-                ServicesService,
-                SettingsService,
                 { provide: VersionService, useValue: versionServiceStub },
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([{ path: 'abc', component: AppComponent }]),

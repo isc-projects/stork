@@ -1,10 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core'
 import { uncamelCase } from '../utils'
 
-@Pipe({
-    name: 'uncamel',
-    standalone: false,
-})
+@Pipe({ name: 'uncamel' })
 export class UncamelPipe implements PipeTransform {
     /**
      * Converts parameter names from camel case to long names.

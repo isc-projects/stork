@@ -1,11 +1,25 @@
 import { Component, OnInit } from '@angular/core'
-import { Router, ActivatedRoute } from '@angular/router'
+import { Router, ActivatedRoute, RouterLink } from '@angular/router'
 import { map } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { FormsModule } from '@angular/forms'
+import { InputText } from 'primeng/inputtext'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { TableModule } from 'primeng/table'
+import { NgIf, NgFor, NgClass } from '@angular/common'
+import { Message } from 'primeng/message'
+import { Fieldset } from 'primeng/fieldset'
+import { IdentifierComponent } from '../identifier/identifier.component'
+import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 
 /**
  * Enumeration specifying the status of the leases search.
@@ -39,9 +53,27 @@ enum LeasesSearchStatus {
  */
 @Component({
     selector: 'app-lease-search-page',
-    standalone: false,
     templateUrl: './lease-search-page.component.html',
     styleUrls: ['./lease-search-page.component.sass'],
+    imports: [
+        BreadcrumbsComponent,
+        IconField,
+        InputIcon,
+        FormsModule,
+        InputText,
+        HelpTipComponent,
+        TableModule,
+        NgIf,
+        Message,
+        NgFor,
+        RouterLink,
+        NgClass,
+        Fieldset,
+        IdentifierComponent,
+        JsonTreeRootComponent,
+        ProgressSpinner,
+        LocaltimePipe,
+    ],
 })
 export class LeaseSearchPageComponent implements OnInit {
     public Status = LeasesSearchStatus

@@ -1,39 +1,11 @@
-import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { SharedNetworkFormComponent } from './shared-network-form.component'
 import { toastDecorator } from '../utils-stories'
-import { FieldsetModule } from 'primeng/fieldset'
-import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
-import { ToastModule } from 'primeng/toast'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { SelectModule } from 'primeng/select'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
-import { PopoverModule } from 'primeng/popover'
 import { CreateSharedNetworkBeginResponse, UpdateSharedNetworkBeginResponse } from '../backend'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { DividerModule } from 'primeng/divider'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { MessageModule } from 'primeng/message'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
-import { AccordionModule } from 'primeng/accordion'
-import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { provideRouter, RouterModule } from '@angular/router'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { FloatLabelModule } from 'primeng/floatlabel'
+import { provideRouter } from '@angular/router'
 
 let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
     id: 123,
@@ -308,46 +280,8 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
-                provideNoopAnimations(),
                 provideAnimations(),
                 provideRouter([]),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                AccordionModule,
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                DividerModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                MessageModule,
-                MultiSelectModule,
-                TableModule,
-                TagModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                RouterModule,
-                SplitButtonModule,
-                ToastModule,
-                FloatLabelModule,
-            ],
-            declarations: [
-                AddressPoolFormComponent,
-                ArrayValueSetFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                PrefixPoolFormComponent,
-                SharedNetworkFormComponent,
-                SharedParametersFormComponent,
             ],
         }),
         toastDecorator,

@@ -1,29 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import {
-    UntypedFormArray,
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    FormsModule,
-    ReactiveFormsModule,
-} from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { CheckboxModule } from 'primeng/checkbox'
-import { SelectModule } from 'primeng/select'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { PopoverModule } from 'primeng/popover'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { SplitButtonModule } from 'primeng/splitbutton'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionFormComponent } from './dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { IPType } from '../iptype'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
-import { DividerModule } from 'primeng/divider'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { ButtonModule } from 'primeng/button'
-import { TagModule } from 'primeng/tag'
 
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
@@ -31,23 +13,7 @@ describe('DhcpOptionFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [UntypedFormBuilder],
-            imports: [
-                CheckboxModule,
-                SelectModule,
-                FormsModule,
-                InputNumberModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                SplitButtonModule,
-                ToggleButtonModule,
-                DividerModule,
-                FloatLabelModule,
-                ButtonModule,
-                TagModule,
-            ],
-            declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent],
+            providers: [UntypedFormBuilder, provideNoopAnimations()],
         }).compileComponents()
     })
 

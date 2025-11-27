@@ -1,17 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { CommunicationStatusTreeComponent } from './communication-status-tree.component'
-import { TreeModule } from 'primeng/tree'
 
 describe('CommunicationStatusTreeComponent', () => {
     let component: CommunicationStatusTreeComponent
     let fixture: ComponentFixture<CommunicationStatusTreeComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [TreeModule],
-            declarations: [CommunicationStatusTreeComponent],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(CommunicationStatusTreeComponent)
         component = fixture.componentInstance

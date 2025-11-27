@@ -1,20 +1,8 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj } from '@storybook/angular'
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TableModule } from 'primeng/table'
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { PopoverModule } from 'primeng/popover'
-import { ButtonModule } from 'primeng/button'
-import { SelectModule } from 'primeng/select'
-import { TagModule } from 'primeng/tag'
+import { FormControl, FormGroup } from '@angular/forms'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { CheckboxModule } from 'primeng/checkbox'
 import { StorkValidators } from '../validators'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { MultiSelectModule } from 'primeng/multiselect'
 
 interface SubnetForm {
     allocator: SharedParameterFormGroup<string>
@@ -37,28 +25,6 @@ export default {
             },
         },
     },
-    decorators: [
-        applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                SelectModule,
-                FormsModule,
-                InputNumberModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                TableModule,
-                TagModule,
-                PopoverModule,
-                ReactiveFormsModule,
-            ],
-            declarations: [ArrayValueSetFormComponent, DhcpClientClassSetFormComponent, SharedParametersFormComponent],
-        }),
-    ],
 } as Meta
 
 type Story = StoryObj<SharedParametersFormComponent<SubnetForm>>

@@ -7,9 +7,7 @@ describe('TextFileViewerComponent', () => {
     let fixture: ComponentFixture<TextFileViewerComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [TextFileViewerComponent],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(TextFileViewerComponent)
         component = fixture.componentInstance

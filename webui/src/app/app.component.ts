@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { Router } from '@angular/router'
+import { Router, RouterLink, RouterOutlet } from '@angular/router'
 import { firstValueFrom, Observable, Subscription } from 'rxjs'
 
 import { MenuItem, MessageService } from 'primeng/api'
@@ -12,12 +12,38 @@ import { ServerDataService } from './server-data.service'
 import { Settings, User } from './backend'
 import { ThemeService } from './theme.service'
 import { Severity, VersionService } from './version.service'
+import { NgIf, AsyncPipe } from '@angular/common'
+import { Menubar } from 'primeng/menubar'
+import { Tooltip } from 'primeng/tooltip'
+import { Ripple } from 'primeng/ripple'
+import { ToggleButton } from 'primeng/togglebutton'
+import { FormsModule } from '@angular/forms'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { GlobalSearchComponent } from './global-search/global-search.component'
+import { SplitButton } from 'primeng/splitbutton'
+import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
+import { Toast } from 'primeng/toast'
 
 @Component({
     selector: 'app-root',
-    standalone: false,
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.sass'],
+    imports: [
+        NgIf,
+        Menubar,
+        RouterLink,
+        Tooltip,
+        Ripple,
+        ToggleButton,
+        FormsModule,
+        ProgressSpinner,
+        GlobalSearchComponent,
+        SplitButton,
+        PriorityErrorsPanelComponent,
+        Toast,
+        RouterOutlet,
+        AsyncPipe,
+    ],
 })
 export class AppComponent implements OnInit, OnDestroy {
     storkVersion = 'unknown'

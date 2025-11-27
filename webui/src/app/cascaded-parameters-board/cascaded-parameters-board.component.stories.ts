@@ -1,33 +1,14 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { moduleMetadata, Meta, StoryObj } from '@storybook/angular'
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TableModule } from 'primeng/table'
-import { ButtonModule } from 'primeng/button'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { TooltipModule } from 'primeng/tooltip'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { KeaConfigSubnetDerivedParameters } from '../backend'
-import { TreeTableModule } from 'primeng/treetable'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 
 export default {
     title: 'App/CascadedParametersBoard',
     component: CascadedParametersBoardComponent,
     decorators: [
-        applicationConfig({
-            providers: [],
-        }),
         moduleMetadata({
-            imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule, TreeTableModule],
-            declarations: [
-                CascadedParametersBoardComponent,
-                ParameterViewComponent,
-                PlaceholderPipe,
-                UncamelPipe,
-                UnhyphenPipe,
-            ],
-            providers: [],
+            providers: [provideAnimations()],
         }),
     ],
 } as Meta

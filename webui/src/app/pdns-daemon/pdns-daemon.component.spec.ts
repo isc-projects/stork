@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { PdnsDaemonComponent } from './pdns-daemon.component'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { DurationPipe } from '../pipes/duration.pipe'
 import { PdnsDaemon } from '../backend'
 
 const daemon: PdnsDaemon = {
@@ -24,9 +22,7 @@ describe('PdnsDaemonComponent', () => {
     let fixture: ComponentFixture<PdnsDaemonComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [PdnsDaemonComponent, DurationPipe, PlaceholderPipe],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(PdnsDaemonComponent)
         component = fixture.componentInstance

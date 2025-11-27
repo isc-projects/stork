@@ -1,16 +1,10 @@
 import { ByteCharacterComponent } from './byte-character.component'
 
-import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta } from '@storybook/angular'
 
 export default {
     title: 'App/ByteCharacter',
     component: ByteCharacterComponent,
-    decorators: [
-        applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({}),
-    ],
 } as Meta
 
 type Story = StoryObj<ByteCharacterComponent>

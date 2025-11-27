@@ -1,9 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core'
 
-@Pipe({
-    name: 'duration',
-    standalone: false,
-})
+@Pipe({ name: 'duration' })
 export class DurationPipe implements PipeTransform {
     /**
      * Map of Golang-style duration units to human-readable units.

@@ -1,32 +1,12 @@
-import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { PrefixPoolFormComponent } from './prefix-pool-form.component'
 import { toastDecorator } from '../utils-stories'
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray, Validators } from '@angular/forms'
+import { FormControl, FormGroup, UntypedFormArray, Validators } from '@angular/forms'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { ToastModule } from 'primeng/toast'
-import { TableModule } from 'primeng/table'
 import { MessageService } from 'primeng/api'
-import { CheckboxModule } from 'primeng/checkbox'
-import { TagModule } from 'primeng/tag'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { ButtonModule } from 'primeng/button'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { importProvidersFrom } from '@angular/core'
-import { FieldsetModule } from 'primeng/fieldset'
-import { MultiSelectModule } from 'primeng/multiselect'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { KeaPoolParametersForm, PrefixForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { SelectModule } from 'primeng/select'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { DividerModule } from 'primeng/divider'
 import { StorkValidators } from '../validators'
-import { FloatLabelModule } from 'primeng/floatlabel'
 
 export default {
     title: 'App/PrefixPoolForm',
@@ -40,35 +20,7 @@ export default {
     },
     decorators: [
         applicationConfig({
-            providers: [importProvidersFrom(NoopAnimationsModule), MessageService],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                DividerModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                MultiSelectModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                SplitButtonModule,
-                TableModule,
-                TagModule,
-                ToastModule,
-                FloatLabelModule,
-            ],
-            declarations: [
-                PrefixPoolFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                HelpTipComponent,
-                SharedParametersFormComponent,
-            ],
+            providers: [provideAnimations(), MessageService],
         }),
         toastDecorator,
     ],

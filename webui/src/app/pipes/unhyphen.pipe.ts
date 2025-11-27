@@ -1,10 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core'
 import { unhyphen } from '../utils'
 
-@Pipe({
-    name: 'unhyphen',
-    standalone: false,
-})
+@Pipe({ name: 'unhyphen' })
 export class UnhyphenPipe implements PipeTransform {
     /**
      * Converts parameter names from JSON notation with hyphens to camel case.

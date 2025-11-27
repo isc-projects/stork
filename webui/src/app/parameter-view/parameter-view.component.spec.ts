@@ -1,18 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { ParameterViewComponent } from './parameter-view.component'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('ParameterViewComponent', () => {
     let component: ParameterViewComponent
     let fixture: ComponentFixture<ParameterViewComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [ParameterViewComponent, PlaceholderPipe, UncamelPipe, UnhyphenPipe],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(ParameterViewComponent)
         component = fixture.componentInstance

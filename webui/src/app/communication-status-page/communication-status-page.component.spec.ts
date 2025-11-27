@@ -3,21 +3,12 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
 import { MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TooltipModule } from 'primeng/tooltip'
-import { TreeModule } from 'primeng/tree'
-import { ButtonModule } from 'primeng/button'
-import { PopoverModule } from 'primeng/popover'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
 import { ServicesService } from '../backend'
 import { of, throwError } from 'rxjs'
-import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 describe('CommunicationStatusPageComponent', () => {
     let component: CommunicationStatusPageComponent
@@ -27,24 +18,9 @@ describe('CommunicationStatusPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                BreadcrumbsComponent,
-                CommunicationStatusPageComponent,
-                CommunicationStatusTreeComponent,
-                HelpTipComponent,
-            ],
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                NoopAnimationsModule,
-                RouterModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                TooltipModule,
-                TreeModule,
-            ],
             providers: [
                 MessageService,
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),

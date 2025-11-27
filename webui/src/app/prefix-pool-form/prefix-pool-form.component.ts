@@ -1,20 +1,46 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { KeaPoolParametersForm, PrefixPoolForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
+import { Fieldset } from 'primeng/fieldset'
+import { FloatLabel } from 'primeng/floatlabel'
+import { InputText } from 'primeng/inputtext'
+import { InputNumber } from 'primeng/inputnumber'
+import { NgFor, NgIf } from '@angular/common'
+import { MultiSelect } from 'primeng/multiselect'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { Checkbox } from 'primeng/checkbox'
+import { Divider } from 'primeng/divider'
+import { Tag } from 'primeng/tag'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 
 /**
  * A component providing a form for editing and adding a prefix delegation pool.
  */
 @Component({
     selector: 'app-prefix-pool-form',
-    standalone: false,
     templateUrl: './prefix-pool-form.component.html',
     styleUrls: ['./prefix-pool-form.component.sass'],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        Fieldset,
+        FloatLabel,
+        InputText,
+        InputNumber,
+        NgFor,
+        NgIf,
+        MultiSelect,
+        SharedParametersFormComponent,
+        Checkbox,
+        Divider,
+        Tag,
+        DhcpOptionSetFormComponent,
+    ],
 })
 export class PrefixPoolFormComponent implements OnInit {
     /**

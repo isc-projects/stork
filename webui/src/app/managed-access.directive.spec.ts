@@ -1,4 +1,3 @@
-import { ManagedAccessDirective } from './managed-access.directive'
 import { Component } from '@angular/core'
 import { Button } from 'primeng/button'
 import { ComponentFixture, TestBed } from '@angular/core/testing'
@@ -8,9 +7,9 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { By } from '@angular/platform-browser'
 import { provideAnimations } from '@angular/platform-browser/animations'
+import { ManagedAccessDirective } from './managed-access.directive'
 
 @Component({
-    standalone: true,
     template: `<p-button
             label="Create"
             appAccessEntity="subnet"
@@ -31,7 +30,7 @@ import { provideAnimations } from '@angular/platform-browser/animations'
         <div appAccessEntity="subnet" appAccessType="delete" [appHideIfNoAccess]="true">
             This is subnet removal component.
         </div> `,
-    imports: [ManagedAccessDirective, Button],
+    imports: [Button, ManagedAccessDirective],
 })
 class TestHostComponent {
     wasCreated = false
@@ -56,8 +55,6 @@ describe('ManagedAccessDirective', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [],
-            imports: [TestHostComponent],
             providers: [
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),

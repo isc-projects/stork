@@ -3,20 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { VersionPageComponent } from './version-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { PanelModule } from 'primeng/panel'
-import { TableModule } from 'primeng/table'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { RouterModule } from '@angular/router'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 import { Severity, VersionAlert, VersionService } from '../version.service'
 import { of } from 'rxjs'
 import { AppsVersions, ServicesService } from '../backend'
-import { MessageModule } from 'primeng/message'
-import { BadgeModule } from 'primeng/badge'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -247,24 +238,18 @@ describe('VersionPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [VersionPageComponent, BreadcrumbsComponent, HelpTipComponent],
-            imports: [
-                PanelModule,
-                TableModule,
-                BreadcrumbModule,
-                PopoverModule,
-                BrowserAnimationsModule,
-                ButtonModule,
-                RouterModule.forRoot([
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'versions',
                         component: VersionPageComponent,
                     },
                 ]),
-                MessageModule,
-                BadgeModule,
             ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
         fixture = TestBed.createComponent(VersionPageComponent)
         versionService = TestBed.inject(VersionService)

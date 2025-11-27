@@ -1,17 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { HostDataSourceLabelComponent } from './host-data-source-label.component'
-import { TagModule } from 'primeng/tag'
 
 describe('HostDataSourceLabelComponent', () => {
     let component: HostDataSourceLabelComponent
     let fixture: ComponentFixture<HostDataSourceLabelComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [HostDataSourceLabelComponent],
-            imports: [TagModule],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(HostDataSourceLabelComponent)
         component = fixture.componentInstance

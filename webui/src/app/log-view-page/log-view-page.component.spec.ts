@@ -1,16 +1,9 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, convertToParamMap, provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { By } from '@angular/platform-browser'
-import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'
-import { of } from 'rxjs'
-import { PanelModule } from 'primeng/panel'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { SharedModule } from 'primeng/api'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LogViewPageComponent', () => {
@@ -19,23 +12,8 @@ describe('LogViewPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [LogViewPageComponent, EntityLinkComponent],
-            imports: [
-                PanelModule,
-                NoopAnimationsModule,
-                ButtonModule,
-                ProgressSpinnerModule,
-                SharedModule,
-                RouterModule,
-            ],
             providers: [
-                ServicesService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        paramMap: of(convertToParamMap({})),
-                    },
-                },
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),

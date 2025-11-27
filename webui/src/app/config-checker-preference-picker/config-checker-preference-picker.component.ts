@@ -1,5 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfigChecker, ConfigCheckerPreference } from '../backend'
+import { TableModule } from 'primeng/table'
+import { NgClass, NgIf, NgTemplateOutlet, NgFor } from '@angular/common'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Chip } from 'primeng/chip'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { Tag } from 'primeng/tag'
 
 /**
  * Presentational component to display the config checker metadata
@@ -12,9 +20,21 @@ import { ConfigChecker, ConfigCheckerPreference } from '../backend'
  */
 @Component({
     selector: 'app-config-checker-preference-picker',
-    standalone: false,
     templateUrl: './config-checker-preference-picker.component.html',
     styleUrls: ['./config-checker-preference-picker.component.sass'],
+    imports: [
+        TableModule,
+        NgClass,
+        HelpTipComponent,
+        NgIf,
+        NgTemplateOutlet,
+        NgFor,
+        Chip,
+        Button,
+        ManagedAccessDirective,
+        TriStateCheckboxComponent,
+        Tag,
+    ],
 })
 export class ConfigCheckerPreferencePickerComponent {
     /**

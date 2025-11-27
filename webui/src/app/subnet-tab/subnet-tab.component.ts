@@ -2,19 +2,51 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
 import { hasAddressPools, hasDifferentLocalSubnetOptions, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
-import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import {
+    NamedCascadedParameters,
+    CascadedParametersBoardComponent,
+} from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { deepEqual, getErrorMessage } from '../utils'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { NgIf, NgFor } from '@angular/common'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Fieldset } from 'primeng/fieldset'
+import { TableModule } from 'primeng/table'
+import { RouterLink } from '@angular/router'
+import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
+import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
+import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 
 /**
  * A component displaying a tab for a selected subnet.
  */
 @Component({
     selector: 'app-subnet-tab',
-    standalone: false,
     templateUrl: './subnet-tab.component.html',
     styleUrls: ['./subnet-tab.component.sass'],
+    imports: [
+        ConfirmDialog,
+        NgIf,
+        EntityLinkComponent,
+        HelpTipComponent,
+        Button,
+        ManagedAccessDirective,
+        Fieldset,
+        TableModule,
+        NgFor,
+        RouterLink,
+        PoolBarsComponent,
+        UtilizationStatsChartsComponent,
+        JsonTreeRootComponent,
+        CascadedParametersBoardComponent,
+        DhcpOptionSetViewComponent,
+    ],
 })
 export class SubnetTabComponent implements OnInit {
     /**

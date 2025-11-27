@@ -17,7 +17,6 @@ import { TooltipModule } from 'primeng/tooltip'
  */
 @Component({
     selector: 'app-bind9-config-preview',
-    standalone: true,
     imports: [
         Bind9ConfigViewFeederComponent,
         ButtonModule,

@@ -2,61 +2,14 @@ import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { SelectModule } from 'primeng/select'
-import { TableModule } from 'primeng/table'
-import { TooltipModule } from 'primeng/tooltip'
-import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { DHCPService, SharedNetwork } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { SharedNetworkTabComponent } from '../shared-network-tab/shared-network-tab.component'
-import { FieldsetModule } from 'primeng/fieldset'
-import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
-import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
-import { DividerModule } from 'primeng/divider'
-import { ChartModule } from 'primeng/chart'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { SharedNetworkFormComponent } from '../shared-network-form/shared-network-form.component'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ButtonModule } from 'primeng/button'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { CheckboxModule } from 'primeng/checkbox'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { SharedNetworksTableComponent } from '../shared-networks-table/shared-networks-table.component'
-import { PanelModule } from 'primeng/panel'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { TagModule } from 'primeng/tag'
-import { PositivePipe } from '../pipes/positive.pipe'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -66,52 +19,13 @@ describe('SharedNetworksPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                AddressPoolBarComponent,
-                ArrayValueSetFormComponent,
-                BreadcrumbsComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                DelegatedPrefixBarComponent,
-                PlaceholderPipe,
-                PositivePipe,
-                SharedNetworkFormComponent,
-                SharedNetworksPageComponent,
-                SharedNetworkTabComponent,
-                SharedParametersFormComponent,
-                SubnetBarComponent,
-                UtilizationStatsChartComponent,
-                UtilizationStatsChartsComponent,
-                SharedNetworksTableComponent,
-                PluralizePipe,
-                UtilizationBarComponent,
-                PoolBarsComponent,
-                OutOfPoolBarComponent,
-            ],
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                ChartModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                ConfirmDialogModule,
-                DividerModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                RouterModule.forRoot([
+            providers: [
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'dhcp/shared-networks',
                         pathMatch: 'full',
@@ -122,21 +36,6 @@ describe('SharedNetworksPageComponent', () => {
                         component: SharedNetworksPageComponent,
                     },
                 ]),
-                TableModule,
-                TooltipModule,
-                PanelModule,
-                TagModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                TabViewComponent,
-                IconFieldModule,
-                InputIconModule,
-            ],
-            providers: [
-                ConfirmationService,
-                MessageService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
             ],
         })
 

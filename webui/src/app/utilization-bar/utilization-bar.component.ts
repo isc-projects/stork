@@ -1,5 +1,7 @@
 import { Component, Input } from '@angular/core'
 import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
+import { NgClass, NgStyle, NgIf } from '@angular/common'
+import { Tooltip } from 'primeng/tooltip'
 
 /**
  * A component displaying a utilization bar.
@@ -15,9 +17,9 @@ import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
  */
 @Component({
     selector: 'app-utilization-bar',
-    standalone: false,
     templateUrl: './utilization-bar.component.html',
     styleUrl: './utilization-bar.component.sass',
+    imports: [NgClass, Tooltip, NgStyle, NgIf],
 })
 export class UtilizationBarComponent {
     /**

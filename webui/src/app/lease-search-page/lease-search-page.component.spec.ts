@@ -1,34 +1,19 @@
 import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { FormsModule } from '@angular/forms'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ActivatedRoute, provideRouter, Router, RouterModule } from '@angular/router'
+import { ActivatedRoute, provideRouter, Router } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
 import { MessageService } from 'primeng/api'
-import { TableModule } from 'primeng/table'
 
 import { LeaseSearchPageComponent } from './lease-search-page.component'
 import { DHCPService } from '../backend'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { datetimeToLocal } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { MessageModule } from 'primeng/message'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { FieldsetModule } from 'primeng/fieldset'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { ToggleButtonModule } from 'primeng/togglebutton'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
-import { IdentifierComponent } from '../identifier/identifier.component'
-import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
-import { ButtonModule } from 'primeng/button'
 
 describe('LeaseSearchPageComponent', () => {
     let component: LeaseSearchPageComponent
@@ -40,35 +25,10 @@ describe('LeaseSearchPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                LeaseSearchPageComponent,
-                LocaltimePipe,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                JsonTreeComponent,
-                JsonTreeRootComponent,
-                IdentifierComponent,
-                ByteCharacterComponent,
-            ],
-            imports: [
-                FormsModule,
-                RouterModule,
-                TableModule,
-                MessageModule,
-                ProgressSpinnerModule,
-                FieldsetModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                BreadcrumbModule,
-                MessageModule,
-                ToggleButtonModule,
-                IconFieldModule,
-                InputIconModule,
-                ButtonModule,
-            ],
             providers: [
                 DHCPService,
                 MessageService,
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([

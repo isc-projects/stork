@@ -1,7 +1,6 @@
 import { Component, ViewChild } from '@angular/core'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { PaginatorModule } from 'primeng/paginator'
 
 import { JsonTreeComponent } from './json-tree.component'
 
@@ -10,10 +9,7 @@ describe('JsonTreeComponent', () => {
     let fixture: ComponentFixture<JsonTreeComponent>
 
     beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [PaginatorModule],
-            declarations: [JsonTreeComponent],
-        }).compileComponents()
+        TestBed.configureTestingModule({}).compileComponents()
     }))
 
     beforeEach(() => {
@@ -678,7 +674,7 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
             <ng-template #bar>BAR</ng-template>
             <app-json-tree [customValueTemplates]="{ foo: foo, bar: bar }"></app-json-tree>
         `,
-        standalone: false,
+        imports: [JsonTreeComponent],
     })
     class WrapperComponent {
         @ViewChild(JsonTreeComponent, { static: true })
@@ -686,10 +682,7 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
     }
 
     beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [PaginatorModule],
-            declarations: [WrapperComponent, JsonTreeComponent],
-        }).compileComponents()
+        TestBed.configureTestingModule({}).compileComponents()
     }))
 
     beforeEach(() => {

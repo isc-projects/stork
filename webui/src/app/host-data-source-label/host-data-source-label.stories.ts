@@ -1,16 +1,11 @@
 import { HostDataSourceLabelComponent } from './host-data-source-label.component'
 
-import { StoryObj, Meta, moduleMetadata } from '@storybook/angular'
-import { TagModule } from 'primeng/tag'
+import { StoryObj, Meta } from '@storybook/angular'
 
 export default {
     title: 'App/HostDataSourceLabel',
     component: HostDataSourceLabelComponent,
-    decorators: [
-        moduleMetadata({
-            imports: [TagModule],
-        }),
-    ],
+    decorators: [],
 } as Meta
 
 type Story = StoryObj<HostDataSourceLabelComponent>

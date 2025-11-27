@@ -2,7 +2,6 @@ import { fakeAsync, flush, TestBed } from '@angular/core/testing'
 import { ServerDataService } from './server-data.service'
 import { HttpClient, HttpErrorResponse, HttpHandler } from '@angular/common/http'
 import { Router } from '@angular/router'
-import { ServicesService, UsersService } from './backend'
 import { MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { AuthService } from './auth.service'
@@ -15,9 +14,7 @@ describe('ServerDataService', () => {
             providers: [
                 HttpClient,
                 HttpHandler,
-                UsersService,
                 MessageService,
-                ServicesService,
                 {
                     provide: Router,
                     useValue: {},

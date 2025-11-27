@@ -1,22 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { ChipModule } from 'primeng/chip'
-import { PopoverModule } from 'primeng/popover'
-import { TableModule } from 'primeng/table'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ConfigChecker } from '../backend'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker.component'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
-import { TagModule } from 'primeng/tag'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { AuthService } from '../auth.service'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('ConfigCheckerPreferencePickerComponent', () => {
     let component: ConfigCheckerPreferencePickerComponent
@@ -25,20 +16,12 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                TableModule,
-                ChipModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                ButtonModule,
-                FormsModule,
-                CheckboxModule,
-                TagModule,
-                ManagedAccessDirective,
-                TriStateCheckboxComponent,
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                MessageService,
             ],
-            declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],
         }).compileComponents()
     })
 

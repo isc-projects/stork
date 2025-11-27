@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, viewChild } from '@angular/core'
-import { UntypedFormGroup } from '@angular/forms'
-import { ConfirmationService, MessageService, TableState } from 'primeng/api'
+import { UntypedFormGroup, FormsModule } from '@angular/forms'
+import { ConfirmationService, MessageService, TableState, PrimeTemplate } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
@@ -11,10 +11,24 @@ import { Group, User } from '../backend'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { Table } from 'primeng/table'
-import { Router } from '@angular/router'
+import { Table, TableModule } from 'primeng/table'
+import { Router, RouterLink } from '@angular/router'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { UserFormState } from '../forms/user-form'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Panel } from 'primeng/panel'
+import { NgIf } from '@angular/common'
+import { Tag } from 'primeng/tag'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { InputText } from 'primeng/inputtext'
+import { Checkbox } from 'primeng/checkbox'
+import { UserFormComponent } from '../user-form/user-form.component'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 /**
  * Form validator verifying if the confirmed password matches the password
@@ -81,9 +95,29 @@ export function isInternalUser(user: User) {
  */
 @Component({
     selector: 'app-users-page',
-    standalone: false,
     templateUrl: './users-page.component.html',
     styleUrls: ['./users-page.component.sass'],
+    imports: [
+        ConfirmDialog,
+        BreadcrumbsComponent,
+        TabViewComponent,
+        Button,
+        RouterLink,
+        ManagedAccessDirective,
+        TableModule,
+        Panel,
+        NgIf,
+        Tag,
+        HelpTipComponent,
+        PrimeTemplate,
+        IconField,
+        InputIcon,
+        FormsModule,
+        InputText,
+        Checkbox,
+        UserFormComponent,
+        PlaceholderPipe,
+    ],
 })
 export class UsersPageComponent implements OnInit, OnDestroy {
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]

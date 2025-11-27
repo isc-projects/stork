@@ -4,28 +4,12 @@ import { ConfigMigrationPageComponent } from './config-migration-page.component'
 import { DHCPService, MigrationStatus } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'
-import { ConfigMigrationTabComponent } from '../config-migration-tab/config-migration-tab.component'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ActivatedRoute, ParamMap, RouterModule } from '@angular/router'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { ActivatedRoute, ParamMap, provideRouter } from '@angular/router'
 import { BehaviorSubject, of, throwError, Observable } from 'rxjs'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { PopoverModule } from 'primeng/popover'
-import { ButtonModule } from 'primeng/button'
-import { TableModule } from 'primeng/table'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { FieldsetModule } from 'primeng/fieldset'
-import { TagModule } from 'primeng/tag'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { MockParamMap } from '../utils'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { DurationPipe } from '../pipes/duration.pipe'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { TabViewComponent } from '../tab-view/tab-view.component'
 
 describe('ConfigMigrationPageComponent', () => {
     let component: ConfigMigrationPageComponent
@@ -83,34 +67,6 @@ describe('ConfigMigrationPageComponent', () => {
         paramMapSubject = new BehaviorSubject(new MockParamMap({ id: 'all' }))
 
         await TestBed.configureTestingModule({
-            imports: [
-                RouterModule.forRoot([
-                    { path: 'config-migrations/all', component: ConfigMigrationPageComponent },
-                    { path: 'config-migrations/1', component: ConfigMigrationPageComponent },
-                ]),
-                NoopAnimationsModule,
-                BreadcrumbModule,
-                PopoverModule,
-                ButtonModule,
-                TableModule,
-                FieldsetModule,
-                TagModule,
-                ProgressBarModule,
-                ConfirmDialogModule,
-                TabViewComponent,
-            ],
-            declarations: [
-                ConfigMigrationPageComponent,
-                BreadcrumbsComponent,
-                ConfigMigrationTableComponent,
-                ConfigMigrationTabComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                EntityLinkComponent,
-                LocaltimePipe,
-                DurationPipe,
-            ],
             providers: [
                 { provide: DHCPService, useValue: dhcpApi },
                 MessageService,
@@ -123,6 +79,11 @@ describe('ConfigMigrationPageComponent', () => {
                 ConfirmationService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
+                    { path: 'config-migrations/all', component: ConfigMigrationPageComponent },
+                    { path: 'config-migrations/1', component: ConfigMigrationPageComponent },
+                ]),
             ],
         }).compileComponents()
 

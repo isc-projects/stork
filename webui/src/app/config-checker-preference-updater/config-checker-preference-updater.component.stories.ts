@@ -1,24 +1,11 @@
-import { HttpClientModule } from '@angular/common/http'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
-import { ChipModule } from 'primeng/chip'
-import { PopoverModule } from 'primeng/popover'
-import { TableModule } from 'primeng/table'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ServicesService } from '../backend'
-import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
 import { action } from '@storybook/addon-actions'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { ButtonModule } from 'primeng/button'
-import { importProvidersFrom } from '@angular/core'
-import { FormsModule } from '@angular/forms'
-import { CheckboxModule } from 'primeng/checkbox'
-import { TagModule } from 'primeng/tag'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { ManagedAccessDirective } from '../managed-access.directive'
 
 const mockData: ConfigCheckers = {
     items: [
@@ -45,27 +32,11 @@ export default {
     component: ConfigCheckerPreferenceUpdaterComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, ServicesService, importProvidersFrom(HttpClientModule)],
-        }),
-        moduleMetadata({
-            imports: [
-                TableModule,
-                ChipModule,
-                PopoverModule,
-                BrowserAnimationsModule,
-                HttpClientModule,
-                ToastModule,
-                ButtonModule,
-                FormsModule,
-                CheckboxModule,
-                TagModule,
-                TriStateCheckboxComponent,
-                ManagedAccessDirective,
-            ],
-            declarations: [
-                HelpTipComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
+            providers: [
+                MessageService,
+                ServicesService,
+                provideAnimations(),
+                provideHttpClient(withInterceptorsFromDi()),
             ],
         }),
         toastDecorator,

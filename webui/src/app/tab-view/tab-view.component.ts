@@ -90,7 +90,6 @@ function sanitizePath(value: string | undefined): string | undefined {
  */
 @Component({
     selector: 'app-tab-view',
-    standalone: true,
     imports: [Tabs, TabList, Tab, TabPanels, TabPanel, RouterLink, NgTemplateOutlet, NgClass, Button],
     templateUrl: './tab-view.component.html',
     styleUrl: './tab-view.component.sass',

@@ -1,15 +1,39 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { MigrationError, MigrationStatus } from '../backend'
 import { AuthService } from '../auth.service'
+import { NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+import { Fieldset } from 'primeng/fieldset'
+import { Tag } from 'primeng/tag'
+import { ProgressBar } from 'primeng/progressbar'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { TableModule } from 'primeng/table'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 /**
  * Component presenting details for a selected configuration migration.
  */
 @Component({
     selector: 'app-config-migration-tab',
-    standalone: false,
     templateUrl: './config-migration-tab.component.html',
     styleUrl: './config-migration-tab.component.sass',
+    imports: [
+        NgIf,
+        Fieldset,
+        Tag,
+        ProgressBar,
+        EntityLinkComponent,
+        Button,
+        ManagedAccessDirective,
+        TableModule,
+        NgSwitch,
+        NgSwitchCase,
+        NgSwitchDefault,
+        LocaltimePipe,
+        DurationPipe,
+    ],
 })
 export class ConfigMigrationTabComponent {
     /**

@@ -1,14 +1,21 @@
 import { Component, Input } from '@angular/core'
 import { Bind9Daemon, Bind9DaemonView, DNSZoneType } from '../backend'
+import { VersionStatusComponent } from '../version-status/version-status.component'
+import { RouterLink } from '@angular/router'
+import { NgFor, NgIf } from '@angular/common'
+import { Tooltip } from 'primeng/tooltip'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 /**
  * Component for displaying information about a BIND9 daemon.
  */
 @Component({
     selector: 'app-bind9-daemon',
-    standalone: false,
     templateUrl: './bind9-daemon.component.html',
     styleUrl: './bind9-daemon.component.sass',
+    imports: [VersionStatusComponent, RouterLink, NgFor, NgIf, Tooltip, LocaltimePipe, PlaceholderPipe, DurationPipe],
 })
 export class Bind9DaemonComponent {
     /**

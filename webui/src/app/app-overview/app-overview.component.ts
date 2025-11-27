@@ -1,5 +1,10 @@
 import { Component, Input } from '@angular/core'
 import { App } from '../backend'
+import { NgIf, NgFor } from '@angular/common'
+import { RouterLink } from '@angular/router'
+import { Tooltip } from 'primeng/tooltip'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 
 /**
  * A component that displays app overview.
@@ -8,9 +13,9 @@ import { App } from '../backend'
  */
 @Component({
     selector: 'app-app-overview',
-    standalone: false,
     templateUrl: './app-overview.component.html',
     styleUrls: ['./app-overview.component.sass'],
+    imports: [NgIf, RouterLink, NgFor, Tooltip, ManagedAccessDirective, AccessPointKeyComponent],
 })
 export class AppOverviewComponent {
     /**

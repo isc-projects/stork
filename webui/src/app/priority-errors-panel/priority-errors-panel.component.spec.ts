@@ -10,10 +10,10 @@ import {
     ServerSentEventsTestingService,
 } from '../server-sent-events.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageModule } from 'primeng/message'
 import { Subject, of, throwError } from 'rxjs'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter } from '@angular/router'
 
 describe('PriorityErrorsPanelComponent', () => {
     let component: PriorityErrorsPanelComponent
@@ -24,14 +24,13 @@ describe('PriorityErrorsPanelComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [PriorityErrorsPanelComponent],
-            imports: [MessageModule, NoopAnimationsModule],
             providers: [
                 MessageService,
-                ServicesService,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

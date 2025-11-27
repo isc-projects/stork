@@ -1,18 +1,12 @@
-import { HttpClientModule } from '@angular/common/http'
-import { RouterModule } from '@angular/router'
-import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter } from '@angular/router'
+import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
-import { PaginatorModule } from 'primeng/paginator'
-import { Events, EventsService, ServicesService, UsersService } from '../backend'
+import { Events } from '../backend'
 import { toastDecorator } from '../utils-stories'
 import { EventsPanelComponent } from './events-panel.component'
-import { TableModule } from 'primeng/table'
-import { ToastModule } from 'primeng/toast'
 import { action } from '@storybook/addon-actions'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { EventTextComponent } from '../event-text/event-text.component'
-import { ButtonModule } from 'primeng/button'
-import { importProvidersFrom } from '@angular/core'
+import { AuthService } from '../auth.service'
 
 export default {
     title: 'App/EventsPanel',
@@ -20,16 +14,16 @@ export default {
     decorators: [
         applicationConfig({
             providers: [
-                EventsService,
-                UsersService,
-                ServicesService,
                 MessageService,
-                importProvidersFrom(HttpClientModule),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([]),
+                {
+                    provide: AuthService,
+                    useValue: {
+                        hasPrivilege: (privilege: string) => privilege === 'events',
+                    },
+                },
             ],
-        }),
-        moduleMetadata({
-            imports: [HttpClientModule, PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule],
-            declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
         }),
         toastDecorator,
     ],

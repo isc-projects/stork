@@ -1,38 +1,17 @@
 import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker.component'
 
-import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { ConfigChecker } from '../backend'
-import { TableModule } from 'primeng/table'
-import { ChipModule } from 'primeng/chip'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { FormsModule } from '@angular/forms'
-import { CheckboxModule } from 'primeng/checkbox'
-import { TagModule } from 'primeng/tag'
-import { ManagedAccessDirective } from '../managed-access.directive'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { MessageService } from 'primeng/api'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 export default {
     title: 'App/ConfigCheckerPreferencePicker',
     component: ConfigCheckerPreferencePickerComponent,
     decorators: [
         applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({
-            imports: [
-                TableModule,
-                ChipModule,
-                PopoverModule,
-                BrowserAnimationsModule,
-                ButtonModule,
-                FormsModule,
-                CheckboxModule,
-                TagModule,
-                ManagedAccessDirective,
-            ],
-            declarations: [ConfigCheckerPreferencePickerComponent, HelpTipComponent],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideAnimations(), MessageService],
         }),
     ],
     argTypes: {

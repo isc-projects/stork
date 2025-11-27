@@ -1,4 +1,6 @@
 import { Component } from '@angular/core'
+import { Message } from 'primeng/message'
+import { RouterLink } from '@angular/router'
 
 /**
  * This component displays HTTP Error 403 page.
@@ -9,8 +11,8 @@ import { Component } from '@angular/core'
  */
 @Component({
     selector: 'app-forbidden-page',
-    standalone: false,
     templateUrl: './forbidden-page.component.html',
     styleUrl: './forbidden-page.component.sass',
+    imports: [Message, RouterLink],
 })
 export class ForbiddenPageComponent {}

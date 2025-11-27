@@ -1,10 +1,7 @@
 import { IdentifierComponent } from './identifier.component'
 
-import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { FormsModule } from '@angular/forms'
-import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 
 export default {
@@ -12,11 +9,7 @@ export default {
     component: IdentifierComponent,
     decorators: [
         applicationConfig({
-            providers: [provideRouter([])],
-        }),
-        moduleMetadata({
-            imports: [FormsModule, ToggleButtonModule, NoopAnimationsModule],
-            declarations: [ByteCharacterComponent],
+            providers: [provideRouter([]), provideAnimations()],
         }),
     ],
 } as Meta

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { NotFoundPageComponent } from './not-found-page.component'
-import { MessageModule } from 'primeng/message'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 
 describe('NotFoundPageComponent', () => {
     let component: NotFoundPageComponent
@@ -10,8 +10,7 @@ describe('NotFoundPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [MessageModule, NoopAnimationsModule],
-            declarations: [NotFoundPageComponent],
+            providers: [provideNoopAnimations(), provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(NotFoundPageComponent)

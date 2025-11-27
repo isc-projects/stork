@@ -1,4 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core'
+import { NgClass, NgIf, NgTemplateOutlet, NgFor } from '@angular/common'
+import { RouterLink } from '@angular/router'
+import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { Ripple } from 'primeng/ripple'
+import { ToggleButton } from 'primeng/togglebutton'
+import { FormsModule } from '@angular/forms'
 
 /**
  * A component displaying a DHCP identifier in hex and optionally
@@ -27,9 +33,19 @@ import { Component, Input, OnInit } from '@angular/core'
  */
 @Component({
     selector: 'app-identifier',
-    standalone: false,
     templateUrl: './identifier.component.html',
     styleUrls: ['./identifier.component.sass'],
+    imports: [
+        NgClass,
+        NgIf,
+        RouterLink,
+        NgTemplateOutlet,
+        NgFor,
+        ByteCharacterComponent,
+        Ripple,
+        ToggleButton,
+        FormsModule,
+    ],
 })
 export class IdentifierComponent implements OnInit {
     /**

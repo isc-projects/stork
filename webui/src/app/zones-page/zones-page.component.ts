@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
-import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService, TableState, PrimeTemplate } from 'primeng/api'
 import {
     DNSAppType,
     DNSClass,
@@ -25,13 +25,41 @@ import {
     tap,
 } from 'rxjs/operators'
 import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { getErrorMessage, unrootZone } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { NgIf, NgFor, NgTemplateOutlet, TitleCasePipe } from '@angular/common'
+import { Message } from 'primeng/message'
+import { ProgressBar } from 'primeng/progressbar'
+import { Skeleton } from 'primeng/skeleton'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Tag } from 'primeng/tag'
+import { Tooltip } from 'primeng/tooltip'
+import { Dialog } from 'primeng/dialog'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { Panel } from 'primeng/panel'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { FloatLabel } from 'primeng/floatlabel'
+import { MultiSelect } from 'primeng/multiselect'
+import { FormsModule } from '@angular/forms'
+import { Select } from 'primeng/select'
+import { InputNumber } from 'primeng/inputnumber'
+import { InputText } from 'primeng/inputtext'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { Fieldset } from 'primeng/fieldset'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { UnrootPipe } from '../pipes/unroot.pipe'
+import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -43,9 +71,44 @@ interface ExtendedLocalZone extends LocalZone {
 
 @Component({
     selector: 'app-zones-page',
-    standalone: false,
     templateUrl: './zones-page.component.html',
     styleUrl: './zones-page.component.sass',
+    imports: [
+        BreadcrumbsComponent,
+        NgIf,
+        Message,
+        ProgressBar,
+        NgFor,
+        Skeleton,
+        Button,
+        ManagedAccessDirective,
+        RouterLink,
+        Tag,
+        Tooltip,
+        Dialog,
+        TableModule,
+        NgTemplateOutlet,
+        ConfirmDialog,
+        TabViewComponent,
+        Panel,
+        HelpTipComponent,
+        PrimeTemplate,
+        FloatLabel,
+        MultiSelect,
+        FormsModule,
+        Select,
+        InputNumber,
+        InputText,
+        IconField,
+        InputIcon,
+        Fieldset,
+        TitleCasePipe,
+        LocaltimePipe,
+        PlaceholderPipe,
+        PluralizePipe,
+        UnrootPipe,
+        ZoneViewerComponent,
+    ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {
     /**

@@ -3,24 +3,13 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { PasswordChangePageComponent } from './password-change-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ActivatedRoute, RouterModule } from '@angular/router'
-import { UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms'
-import { UsersService } from '../backend'
+import { ActivatedRoute, provideRouter } from '@angular/router'
+import { UntypedFormBuilder } from '@angular/forms'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { PanelModule } from 'primeng/panel'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { MenuModule } from 'primeng/menu'
-import { PasswordModule } from 'primeng/password'
-import { MessageModule } from 'primeng/message'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { AuthService } from '../auth.service'
-import { DialogModule } from 'primeng/dialog'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ButtonModule } from 'primeng/button'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
@@ -29,30 +18,17 @@ describe('PasswordChangePageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
-            imports: [
-                PanelModule,
-                NoopAnimationsModule,
-                BreadcrumbModule,
-                PopoverModule,
-                MenuModule,
-                RouterModule,
-                ReactiveFormsModule,
-                PasswordModule,
-                MessageModule,
-                DialogModule,
-                ButtonModule,
-            ],
             providers: [
                 UntypedFormBuilder,
-                UsersService,
                 MessageService,
                 {
                     provide: ActivatedRoute,
                     useValue: {},
                 },
+                provideRouter([]),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
             ],
         }).compileComponents()
     }))

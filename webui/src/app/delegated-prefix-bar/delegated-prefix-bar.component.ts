@@ -1,6 +1,8 @@
 import { Component, Input } from '@angular/core'
 import { DelegatedPrefixPool } from '../backend'
 import { formatShortExcludedPrefix } from '../utils'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { NgIf } from '@angular/common'
 
 /**
  * Displays the delegated prefix in a bar form.
@@ -9,9 +11,9 @@ import { formatShortExcludedPrefix } from '../utils'
  */
 @Component({
     selector: 'app-delegated-prefix-bar',
-    standalone: false,
     templateUrl: './delegated-prefix-bar.component.html',
     styleUrls: ['./delegated-prefix-bar.component.sass'],
+    imports: [UtilizationBarComponent, NgIf],
 })
 export class DelegatedPrefixBarComponent {
     /**

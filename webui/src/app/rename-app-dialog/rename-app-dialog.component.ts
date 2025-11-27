@@ -1,4 +1,9 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core'
+import { Dialog } from 'primeng/dialog'
+import { FormsModule } from '@angular/forms'
+import { InputText } from 'primeng/inputtext'
+import { NgIf } from '@angular/common'
+import { Button } from 'primeng/button'
 
 /**
  * Component providing a dialog box to rename an app.
@@ -15,9 +20,9 @@ import { Component, OnInit, Input, OnChanges, SimpleChanges, Output, EventEmitte
  */
 @Component({
     selector: 'app-rename-app-dialog',
-    standalone: false,
     templateUrl: './rename-app-dialog.component.html',
     styleUrls: ['./rename-app-dialog.component.sass'],
+    imports: [Dialog, FormsModule, InputText, NgIf, Button],
 })
 export class RenameAppDialogComponent implements OnInit, OnChanges {
     /**

@@ -1,35 +1,12 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page.component'
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { MockParamMap } from '../utils'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { importProvidersFrom } from '@angular/core'
-import { HttpClientModule } from '@angular/common/http'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { ToastModule } from 'primeng/toast'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { FieldsetModule } from 'primeng/fieldset'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { TableModule } from 'primeng/table'
-import { ButtonModule } from 'primeng/button'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
-import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
-import { MessageModule } from 'primeng/message'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TreeModule } from 'primeng/tree'
-import { TagModule } from 'primeng/tag'
-import { FloatLabelModule } from 'primeng/floatlabel'
 
 const mockGetDaemonConfig = {
     appName: 'kea-server',
@@ -226,37 +203,8 @@ export default {
                     },
                 },
                 MessageService,
-                importProvidersFrom(HttpClientModule),
-                importProvidersFrom(NoopAnimationsModule),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                FieldsetModule,
-                MessageModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                TableModule,
-                ToastModule,
-                TreeModule,
-                TagModule,
-                FloatLabelModule,
-            ],
-            declarations: [
-                BreadcrumbsComponent,
-                CascadedParametersBoardComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                KeaGlobalConfigurationFormComponent,
-                KeaGlobalConfigurationViewComponent,
-                KeaGlobalConfigurationPageComponent,
-                ParameterViewComponent,
-                DhcpOptionSetViewComponent,
-                UncamelPipe,
-                UnhyphenPipe,
-                PlaceholderPipe,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideAnimations(),
             ],
         }),
         toastDecorator,

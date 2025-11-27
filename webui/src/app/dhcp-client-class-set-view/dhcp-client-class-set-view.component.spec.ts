@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
-import { ChipModule } from 'primeng/chip'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 
 import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view.component'
 import { By } from '@angular/platform-browser'
@@ -11,8 +10,7 @@ describe('DhcpClientClassSetViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ChipModule, NoopAnimationsModule],
-            declarations: [DhcpClientClassSetViewComponent],
+            providers: [provideNoopAnimations()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(DhcpClientClassSetViewComponent)

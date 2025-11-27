@@ -1,36 +1,13 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view.component'
-import { PopoverModule } from 'primeng/popover'
-import { TagModule } from 'primeng/tag'
-import { TooltipModule } from 'primeng/tooltip'
-import { TreeModule } from 'primeng/tree'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { CheckboxModule } from 'primeng/checkbox'
-import { DividerModule } from 'primeng/divider'
-import { FormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
+import { provideAnimations } from '@angular/platform-browser/animations'
 
 export default {
     title: 'App/DhcpOptionSetView',
     component: DhcpOptionSetViewComponent,
     decorators: [
         applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({
-            imports: [
-                CheckboxModule,
-                DividerModule,
-                FormsModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                TagModule,
-                TooltipModule,
-                TreeModule,
-                ButtonModule,
-            ],
-            declarations: [DhcpOptionSetViewComponent, HelpTipComponent],
+            providers: [provideAnimations()],
         }),
     ],
 } as Meta

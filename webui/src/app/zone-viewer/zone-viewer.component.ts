@@ -1,5 +1,12 @@
 import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { ZoneRR } from '../backend/model/zoneRR'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Button } from 'primeng/button'
+import { Tooltip } from 'primeng/tooltip'
+import { TableModule } from 'primeng/table'
+import { NgClass, NgFor, NgIf, NgTemplateOutlet } from '@angular/common'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { debounceTime, distinctUntilChanged, lastValueFrom, map, Observable, Subject, tap } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { DNSRRType, DNSService, ZoneRRs } from '../backend'
@@ -7,6 +14,13 @@ import { FilterMetadata, LazyLoadEvent, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
 import { tableHasFilter } from '../table'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { Panel } from 'primeng/panel'
+import { Tag } from 'primeng/tag'
+import { FloatLabel } from 'primeng/floatlabel'
+import { MultiSelect } from 'primeng/multiselect'
+import { IconField } from 'primeng/iconfield'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { InputIcon } from 'primeng/inputicon'
 
 /**
  * Interface describing the columns of the table.
@@ -25,9 +39,28 @@ interface Column {
  */
 @Component({
     selector: 'app-zone-viewer',
-    standalone: false,
     templateUrl: './zone-viewer.component.html',
     styleUrl: './zone-viewer.component.sass',
+    imports: [
+        HelpTipComponent,
+        Button,
+        Tooltip,
+        TableModule,
+        Panel,
+        NgClass,
+        NgIf,
+        NgFor,
+        NgTemplateOutlet,
+        Tag,
+        FormsModule,
+        ReactiveFormsModule,
+        FloatLabel,
+        MultiSelect,
+        IconField,
+        InputIcon,
+        LocaltimePipe,
+        PlaceholderPipe,
+    ],
 })
 export class ZoneViewerComponent implements OnInit {
     /**

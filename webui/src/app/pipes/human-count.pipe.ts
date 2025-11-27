@@ -1,10 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core'
 import { humanCount } from '../utils'
 
-@Pipe({
-    name: 'humanCount',
-    standalone: false,
-})
+@Pipe({ name: 'humanCount' })
 export class HumanCountPipe implements PipeTransform {
     /**
      * Formats the given number using the metric prefixes.

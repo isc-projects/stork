@@ -1,6 +1,8 @@
 import { Component, Input, ViewChild } from '@angular/core'
 
 import { Popover } from 'primeng/popover'
+import { Button } from 'primeng/button'
+import { NgStyle } from '@angular/common'
 
 /**
  * Component displaying help box for widgets.
@@ -10,9 +12,9 @@ import { Popover } from 'primeng/popover'
  */
 @Component({
     selector: 'app-help-tip',
-    standalone: false,
     templateUrl: './help-tip.component.html',
     styleUrls: ['./help-tip.component.sass'],
+    imports: [Button, Popover, NgStyle],
 })
 export class HelpTipComponent {
     /**

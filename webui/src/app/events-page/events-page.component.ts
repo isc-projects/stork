@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
 
 /**
  * Component responsible for showing a full page list of events,
@@ -7,9 +9,9 @@ import { ActivatedRoute } from '@angular/router'
  */
 @Component({
     selector: 'app-events-page',
-    standalone: false,
     templateUrl: './events-page.component.html',
     styleUrls: ['./events-page.component.sass'],
+    imports: [BreadcrumbsComponent, EventsPanelComponent],
 })
 export class EventsPageComponent implements OnInit {
     machineId = null

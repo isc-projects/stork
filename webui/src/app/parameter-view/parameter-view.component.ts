@@ -1,4 +1,8 @@
 import { Component, Input } from '@angular/core'
+import { NgIf, NgFor, KeyValuePipe } from '@angular/common'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { UncamelPipe } from '../pipes/uncamel.pipe'
+import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 
 /**
  * A component displaying a parameter in the cascaded parameters board.
@@ -8,9 +12,9 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-parameter-view',
-    standalone: false,
     templateUrl: './parameter-view.component.html',
     styleUrl: './parameter-view.component.sass',
+    imports: [NgIf, NgFor, KeyValuePipe, PlaceholderPipe, UncamelPipe, UnhyphenPipe],
 })
 export class ParameterViewComponent {
     /**

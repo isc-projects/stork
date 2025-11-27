@@ -1,22 +1,10 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
-import { TreeModule } from 'primeng/tree'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { PopoverModule } from 'primeng/popover'
-import { TooltipModule } from 'primeng/tooltip'
-import { importProvidersFrom } from '@angular/core'
-import { HttpClientModule } from '@angular/common/http'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
 import { MessageService } from 'primeng/api'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ButtonModule } from 'primeng/button'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 let mockGetAppsWithCommunicationIssues = {
     items: [
@@ -283,28 +271,9 @@ export default {
         applicationConfig({
             providers: [
                 MessageService,
-                importProvidersFrom(HttpClientModule),
-                importProvidersFrom(NoopAnimationsModule),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideAnimations(),
                 provideRouter([]),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                RouterModule,
-                ToastModule,
-                TooltipModule,
-                TreeModule,
-            ],
-            declarations: [
-                BreadcrumbsComponent,
-                CommunicationStatusPageComponent,
-                CommunicationStatusTreeComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
             ],
         }),
         toastDecorator,

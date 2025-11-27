@@ -1,39 +1,23 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { MachinesTableComponent } from './machines-table.component'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { TableHeaderCheckbox, TableModule } from 'primeng/table'
-import { PanelModule } from 'primeng/panel'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { TagModule } from 'primeng/tag'
+import { TableHeaderCheckbox } from 'primeng/table'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'
 import { AppsVersions, Machine, ServicesService } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { TooltipModule } from 'primeng/tooltip'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { deepCopy } from '../utils'
 import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
-import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { tableHasFilter } from '../table'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -126,37 +110,14 @@ describe('MachinesTableComponent', () => {
         getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
 
         await TestBed.configureTestingModule({
-            declarations: [
-                MachinesTableComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                VersionStatusComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                AppDaemonsStatusComponent,
-            ],
-            imports: [
-                RouterModule.forRoot([]),
-                ButtonModule,
-                TableModule,
-                PanelModule,
-                BrowserAnimationsModule,
-                PopoverModule,
-                CheckboxModule,
-                FormsModule,
-                TagModule,
-                TooltipModule,
-                ManagedAccessDirective,
-                TriStateCheckboxComponent,
-                IconFieldModule,
-                InputIconModule,
-            ],
             providers: [
                 MessageService,
                 { provide: ServicesService, useValue: servicesApi },
                 { provide: VersionService, useValue: versionServiceStub },
+                provideAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
 

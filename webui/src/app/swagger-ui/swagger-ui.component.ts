@@ -4,7 +4,6 @@ import { SwaggerUIBundle } from 'swagger-ui-dist'
 
 @Component({
     selector: 'app-swagger-ui',
-    standalone: false,
     templateUrl: './swagger-ui.component.html',
     styleUrls: ['./swagger-ui.component.sass'],
 })

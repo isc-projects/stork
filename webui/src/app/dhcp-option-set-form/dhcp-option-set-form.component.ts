@@ -1,5 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core'
-import { UntypedFormArray, UntypedFormBuilder } from '@angular/forms'
+import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core'
+import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { NgFor, NgIf } from '@angular/common'
+import { Button } from 'primeng/button'
+import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 
 /**
  * A component aggregating multiple forms for editing DHCP option information.
@@ -10,9 +13,9 @@ import { UntypedFormArray, UntypedFormBuilder } from '@angular/forms'
  */
 @Component({
     selector: 'app-dhcp-option-set-form',
-    standalone: false,
     templateUrl: './dhcp-option-set-form.component.html',
     styleUrls: ['./dhcp-option-set-form.component.sass'],
+    imports: [NgFor, FormsModule, ReactiveFormsModule, NgIf, Button, forwardRef(() => DhcpOptionFormComponent)],
 })
 export class DhcpOptionSetFormComponent {
     /**

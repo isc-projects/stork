@@ -1,95 +1,53 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page.component'
-import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
-import { MockParamMap } from '../utils'
+import { provideRouter } from '@angular/router'
 import { of, throwError } from 'rxjs'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { FieldsetModule } from 'primeng/fieldset'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TableModule } from 'primeng/table'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
-import { ButtonModule } from 'primeng/button'
-import { TreeModule } from 'primeng/tree'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TagModule } from 'primeng/tag'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { FloatLabelModule } from 'primeng/floatlabel'
 import { AppsPageComponent } from '../apps-page/apps-page.component'
+import { RouterTestingHarness } from '@angular/router/testing'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
     let component: KeaGlobalConfigurationPageComponent
-    let fixture: ComponentFixture<KeaGlobalConfigurationPageComponent>
+    let fixture: ComponentFixture<any>
     let messageService: MessageService
     let servicesService: ServicesService
     let validDaemonConfig: KeaDaemonConfig
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                BreadcrumbsComponent,
-                CascadedParametersBoardComponent,
-                HelpTipComponent,
-                KeaGlobalConfigurationPageComponent,
-                KeaGlobalConfigurationViewComponent,
-                ParameterViewComponent,
-                DhcpOptionSetViewComponent,
-                PlaceholderPipe,
-                UncamelPipe,
-                UnhyphenPipe,
-            ],
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                FieldsetModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                TableModule,
-                TreeModule,
-                TagModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                RouterModule.forRoot([
+            providers: [
+                MessageService,
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'apps/:id',
                         component: AppsPageComponent,
                     },
-                ]),
-            ],
-            providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(convertToParamMap({ appId: '2', daemonId: '1' })),
+                    {
+                        path: 'apps/:appId/daemons/:daemonId/global-config',
+                        component: KeaGlobalConfigurationPageComponent,
                     },
-                },
-                MessageService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
+                ]),
             ],
         }).compileComponents()
 
-        fixture = TestBed.createComponent(KeaGlobalConfigurationPageComponent)
-        component = fixture.componentInstance
+        const harness = await RouterTestingHarness.create()
+        component = await harness.navigateByUrl('/apps/2/daemons/1/global-config', KeaGlobalConfigurationPageComponent)
+        fixture = harness.fixture
+
         messageService = fixture.debugElement.injector.get(MessageService)
         servicesService = fixture.debugElement.injector.get(ServicesService)
+
         fixture.detectChanges()
 
         validDaemonConfig = {

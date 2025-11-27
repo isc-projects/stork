@@ -1,20 +1,13 @@
 import { ComponentFixture, TestBed, fakeAsync, waitForAsync, tick } from '@angular/core/testing'
 import { HaStatusComponent } from './ha-status.component'
-import { PanelModule } from 'primeng/panel'
-import { TooltipModule } from 'primeng/tooltip'
-import { MessageModule } from 'primeng/message'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ServicesService, ServicesStatus } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ProgressSpinner, ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ProgressSpinner } from 'primeng/progressspinner'
 import { of, throwError } from 'rxjs'
 import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { By } from '@angular/platform-browser'
 import { MessageService } from 'primeng/api'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { TableModule } from 'primeng/table'
-import { ButtonModule } from 'primeng/button'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 describe('HaStatusComponent', () => {
     let component: HaStatusComponent
@@ -23,21 +16,11 @@ describe('HaStatusComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [EntityLinkComponent, HaStatusComponent, LocaltimePipe],
-            imports: [
-                ButtonModule,
-                MessageModule,
-                PanelModule,
-                ProgressSpinnerModule,
-                RouterModule.forRoot([]),
-                TableModule,
-                TooltipModule,
-            ],
             providers: [
-                ServicesService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
 

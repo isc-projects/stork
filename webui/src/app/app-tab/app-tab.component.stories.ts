@@ -1,45 +1,19 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
-import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
-import { TableModule } from 'primeng/table'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AppTabComponent } from './app-tab.component'
 import { of } from 'rxjs'
-import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
-import { PanelModule } from 'primeng/panel'
-import { AppOverviewComponent } from '../app-overview/app-overview.component'
-import { DialogModule } from 'primeng/dialog'
-import { ButtonModule } from 'primeng/button'
-import { provideRouter, RouterModule } from '@angular/router'
-import { FormsModule } from '@angular/forms'
-import { EventsPanelComponent } from '../events-panel/events-panel.component'
-import { EventTextComponent } from '../event-text/event-text.component'
-import { VersionStatusComponent } from '../version-status/version-status.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { PopoverModule } from 'primeng/popover'
-import { DataViewModule } from 'primeng/dataview'
-import { DurationPipe } from '../pipes/duration.pipe'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { provideRouter } from '@angular/router'
 import { AppsVersions } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { Directive, Input, Output, EventEmitter, AfterViewInit } from '@angular/core'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
-import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
-import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
-import { Bind9ConfigPreviewComponent } from '../bind9-config-preview/bind9-config-preview.component'
 
 // Mock directive that always grants access
 @Directive({
     selector: '[appAccessEntity]',
-    standalone: true,
 })
 class MockManagedAccessDirective implements AfterViewInit {
     @Input() appAccessEntity: any
@@ -192,46 +166,14 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideNoopAnimations(),
+                provideAnimations(),
                 provideRouter([{ path: 'iframe.html', component: AppTabComponent }]),
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
             ],
         }),
         moduleMetadata({
-            imports: [
-                ButtonModule,
-                DialogModule,
-                FormsModule,
-                RouterModule,
-                TooltipModule,
-                PanelModule,
-                PopoverModule,
-                DataViewModule,
-                TableModule,
-                MockManagedAccessDirective,
-                ToastModule,
-                ProgressSpinnerModule,
-                TabViewComponent,
-                ConfirmDialogModule,
-                Bind9DaemonControlsComponent,
-                Bind9ConfigPreviewComponent,
-            ],
-            declarations: [
-                AppOverviewComponent,
-                AppTabComponent,
-                Bind9DaemonComponent,
-                DaemonNiceNamePipe,
-                DurationPipe,
-                LocaltimePipe,
-                PdnsDaemonComponent,
-                PlaceholderPipe,
-                RenameAppDialogComponent,
-                AppOverviewComponent,
-                EventsPanelComponent,
-                EventTextComponent,
-                VersionStatusComponent,
-            ],
+            imports: [MockManagedAccessDirective],
         }),
         toastDecorator,
     ],

@@ -13,6 +13,23 @@ import {
     hasDifferentLocalHostOptions,
 } from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { NgIf, NgFor, NgTemplateOutlet, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Message } from 'primeng/message'
+import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
+import { RouterLink } from '@angular/router'
+import { Fieldset } from 'primeng/fieldset'
+import { TableModule } from 'primeng/table'
+import { IdentifierComponent } from '../identifier/identifier.component'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { Tag } from 'primeng/tag'
+import { Tooltip } from 'primeng/tooltip'
 
 enum HostReservationUsage {
     Conflicted = 1,
@@ -49,9 +66,32 @@ interface LeaseInfo {
  */
 @Component({
     selector: 'app-host-tab',
-    standalone: false,
     templateUrl: './host-tab.component.html',
     styleUrls: ['./host-tab.component.sass'],
+    imports: [
+        ConfirmDialog,
+        NgIf,
+        EntityLinkComponent,
+        HelpTipComponent,
+        Button,
+        ManagedAccessDirective,
+        Message,
+        HostDataSourceLabelComponent,
+        NgFor,
+        RouterLink,
+        Fieldset,
+        TableModule,
+        NgTemplateOutlet,
+        IdentifierComponent,
+        ProgressSpinner,
+        NgSwitch,
+        NgSwitchCase,
+        NgSwitchDefault,
+        DhcpClientClassSetViewComponent,
+        DhcpOptionSetViewComponent,
+        Tag,
+        Tooltip,
+    ],
 })
 export class HostTabComponent {
     /**

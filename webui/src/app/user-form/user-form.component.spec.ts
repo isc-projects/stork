@@ -4,7 +4,7 @@ import { UserFormComponent } from './user-form.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { UserFormState } from '../forms/user-form'
 
 describe('UserFormComponent', () => {
@@ -13,8 +13,12 @@ describe('UserFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [UserFormComponent, NoopAnimationsModule],
-            providers: [provideHttpClientTesting(), provideHttpClient(withInterceptorsFromDi()), MessageService],
+            providers: [
+                provideNoopAnimations(),
+                provideHttpClientTesting(),
+                provideHttpClient(withInterceptorsFromDi()),
+                MessageService,
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(UserFormComponent)

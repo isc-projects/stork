@@ -1,9 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core'
 
-@Pipe({
-    name: 'placeholder',
-    standalone: false,
-})
+@Pipe({ name: 'placeholder' })
 export class PlaceholderPipe implements PipeTransform {
     /**
      * Returns a placeholder if the provided string or array is empty or unspecified

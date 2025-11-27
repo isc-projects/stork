@@ -1,26 +1,11 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
-import { MessageModule } from 'primeng/message'
-import { PanelModule } from 'primeng/panel'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { TooltipModule } from 'primeng/tooltip'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { HaStatusComponent } from './ha-status.component'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ServicesService, ServicesStatus } from '../backend'
 import { MessageService } from 'primeng/api'
-import { importProvidersFrom } from '@angular/core'
-import { HttpClientModule } from '@angular/common/http'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { PopoverModule } from 'primeng/popover'
-import { ToastModule } from 'primeng/toast'
-import { TagModule } from 'primeng/tag'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { TableModule } from 'primeng/table'
-import { ButtonModule } from 'primeng/button'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 
 let mockHubAndSpokeStatus: ServicesStatus = {
     items: [
@@ -142,34 +127,11 @@ export default {
     decorators: [
         applicationConfig({
             providers: [
-                importProvidersFrom(HttpClientModule),
-                importProvidersFrom(NoopAnimationsModule),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideAnimations(),
                 provideRouter([]),
                 ServicesService,
                 MessageService,
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                PanelModule,
-                TooltipModule,
-                MessageModule,
-                PopoverModule,
-                ProgressBarModule,
-                ProgressSpinnerModule,
-                RouterModule,
-                TableModule,
-                TagModule,
-                ToastModule,
-            ],
-            declarations: [
-                EntityLinkComponent,
-                HaStatusComponent,
-                HaStatusComponent,
-                HelpTipComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
             ],
         }),
         toastDecorator,

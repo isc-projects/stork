@@ -2,7 +2,14 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, V
 import { CreateSubnetBeginResponse, DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
-import { FormArray, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import {
+    FormArray,
+    FormGroup,
+    UntypedFormArray,
+    UntypedFormControl,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms'
 import {
     AddressPoolForm,
     KeaSubnetParametersForm,
@@ -18,15 +25,58 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { lastValueFrom } from 'rxjs'
+import { NgIf, NgFor } from '@angular/common'
+import { Fieldset } from 'primeng/fieldset'
+import { FloatLabel } from 'primeng/floatlabel'
+import { MultiSelect } from 'primeng/multiselect'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { InputText } from 'primeng/inputtext'
+import { Select } from 'primeng/select'
+import { Checkbox } from 'primeng/checkbox'
+import { Divider } from 'primeng/divider'
+import { Tag } from 'primeng/tag'
+import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from 'primeng/accordion'
+import { Ripple } from 'primeng/ripple'
+import { Button } from 'primeng/button'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { Message } from 'primeng/message'
 
 /**
  * A component providing a form for editing and adding a subnet.
  */
 @Component({
     selector: 'app-subnet-form',
-    standalone: false,
     templateUrl: './subnet-form.component.html',
     styleUrls: ['./subnet-form.component.sass'],
+    imports: [
+        NgIf,
+        FormsModule,
+        ReactiveFormsModule,
+        Fieldset,
+        FloatLabel,
+        MultiSelect,
+        HelpTipComponent,
+        InputText,
+        Select,
+        Checkbox,
+        NgFor,
+        Divider,
+        Tag,
+        Accordion,
+        AccordionPanel,
+        Ripple,
+        AccordionHeader,
+        AccordionContent,
+        AddressPoolFormComponent,
+        Button,
+        PrefixPoolFormComponent,
+        SharedParametersFormComponent,
+        DhcpOptionSetFormComponent,
+        ProgressSpinner,
+        Message,
+    ],
 })
 export class SubnetFormComponent implements OnInit, OnDestroy {
     @ViewChildren(AddressPoolFormComponent) addressPoolComponents!: QueryList<AddressPoolFormComponent>

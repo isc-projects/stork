@@ -7,9 +7,7 @@ describe('SwaggerUiComponent', () => {
     let fixture: ComponentFixture<SwaggerUiComponent>
 
     beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [SwaggerUiComponent],
-        }).compileComponents()
+        TestBed.configureTestingModule({}).compileComponents()
     }))
 
     beforeEach(() => {

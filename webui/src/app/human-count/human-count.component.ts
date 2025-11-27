@@ -1,4 +1,8 @@
 import { Component, Input } from '@angular/core'
+import { NgIf } from '@angular/common'
+import { Tooltip } from 'primeng/tooltip'
+import { HumanCountPipe } from '../pipes/human-count.pipe'
+import { LocalNumberPipe } from '../pipes/local-number.pipe'
 
 // Expected and supported value types for the below component.
 type ValueType = number | string | bigint | null
@@ -9,9 +13,9 @@ type ValueType = number | string | bigint | null
  */
 @Component({
     selector: 'app-human-count',
-    standalone: false,
     templateUrl: './human-count.component.html',
     styleUrls: ['./human-count.component.sass'],
+    imports: [NgIf, Tooltip, HumanCountPipe, LocalNumberPipe],
 })
 export class HumanCountComponent {
     /**

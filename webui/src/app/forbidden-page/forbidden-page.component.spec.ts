@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { ForbiddenPageComponent } from './forbidden-page.component'
-import { MessageModule } from 'primeng/message'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 
 describe('ForbiddenPageComponent', () => {
     let component: ForbiddenPageComponent
@@ -10,8 +10,7 @@ describe('ForbiddenPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [MessageModule, NoopAnimationsModule],
-            declarations: [ForbiddenPageComponent],
+            providers: [provideNoopAnimations(), provideRouter([])],
         }).compileComponents()
     }))
 

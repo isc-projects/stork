@@ -6,6 +6,19 @@ import { of } from 'rxjs'
 import { concatMap, delay, map, retryWhen, take } from 'rxjs/operators'
 import { getErrorMessage } from '../utils'
 import { ConfigReport, ConfigReview } from '../backend'
+import { DataView } from 'primeng/dataview'
+import { NgIf, NgFor, NgClass } from '@angular/common'
+import { Ripple } from 'primeng/ripple'
+import { ToggleButton } from 'primeng/togglebutton'
+import { FormsModule } from '@angular/forms'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Divider } from 'primeng/divider'
+import { Tag } from 'primeng/tag'
+import { EventTextComponent } from '../event-text/event-text.component'
+import { Popover } from 'primeng/popover'
+import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 
 /**
  * The component comprises a list of configuration review
@@ -29,9 +42,25 @@ import { ConfigReport, ConfigReview } from '../backend'
  */
 @Component({
     selector: 'app-config-review-panel',
-    standalone: false,
     templateUrl: './config-review-panel.component.html',
     styleUrls: ['./config-review-panel.component.sass'],
+    imports: [
+        DataView,
+        NgIf,
+        Ripple,
+        ToggleButton,
+        FormsModule,
+        Button,
+        ManagedAccessDirective,
+        NgFor,
+        Divider,
+        Tag,
+        NgClass,
+        EventTextComponent,
+        Popover,
+        ConfigCheckerPreferenceUpdaterComponent,
+        LocaltimePipe,
+    ],
 })
 export class ConfigReviewPanelComponent implements OnInit {
     /**

@@ -8,15 +8,25 @@ import { finalize, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
 import { SharedNetworksTableComponent } from '../shared-networks-table/shared-networks-table.component'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { SharedNetworkTabComponent } from '../shared-network-tab/shared-network-tab.component'
+import { SharedNetworkFormComponent } from '../shared-network-form/shared-network-form.component'
 
 /**
  * Component for presenting shared networks in a table.
  */
 @Component({
     selector: 'app-shared-networks-page',
-    standalone: false,
     templateUrl: './shared-networks-page.component.html',
     styleUrls: ['./shared-networks-page.component.sass'],
+    imports: [
+        BreadcrumbsComponent,
+        TabViewComponent,
+        SharedNetworksTableComponent,
+        SharedNetworkTabComponent,
+        SharedNetworkFormComponent,
+    ],
 })
 export class SharedNetworksPageComponent {
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Shared Networks' }]

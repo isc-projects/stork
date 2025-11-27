@@ -1,47 +1,18 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { LoginScreenComponent } from './login-screen.component'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { AuthenticationMethod, AuthenticationMethods, GeneralService, UsersService, Version } from '../backend'
+import { AuthenticationMethod, AuthenticationMethods, Version } from '../backend'
 import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { ButtonModule } from 'primeng/button'
 import { action } from '@storybook/addon-actions'
-import { PasswordModule } from 'primeng/password'
-import { SelectModule } from 'primeng/select'
-import { provideRouter, RouterModule } from '@angular/router'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { FloatLabelModule } from 'primeng/floatlabel'
+import { provideRouter } from '@angular/router'
 
 export default {
     title: 'App/LoginScreen',
     component: LoginScreenComponent,
     decorators: [
         applicationConfig({
-            providers: [
-                GeneralService,
-                UsersService,
-                MessageService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
-                provideRouter([]),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                ReactiveFormsModule,
-                FormsModule,
-                RouterModule,
-                ProgressSpinnerModule,
-                SelectModule,
-                ButtonModule,
-                ToastModule,
-                PasswordModule,
-                FloatLabelModule,
-            ],
-            declarations: [LoginScreenComponent],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }),
         toastDecorator,
     ],

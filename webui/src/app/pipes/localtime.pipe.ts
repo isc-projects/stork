@@ -1,10 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core'
 import { datetimeToLocal, epochToLocal } from '../utils'
 
-@Pipe({
-    name: 'localtime',
-    standalone: false,
-})
+@Pipe({ name: 'localtime' })
 export class LocaltimePipe implements PipeTransform {
     /**
      * Formats a given value as local date-time.

@@ -1,19 +1,9 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
-import { RouterTestingModule } from '@angular/router/testing'
-import { TooltipModule } from 'primeng/tooltip'
+import { Meta, StoryObj } from '@storybook/angular'
 import { UtilizationBarComponent } from './utilization-bar.component'
 
 export default {
     title: 'App/UtilizationBar',
     component: UtilizationBarComponent,
-    decorators: [
-        applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({
-            imports: [RouterTestingModule, TooltipModule],
-        }),
-    ],
 } as Meta
 
 type Story = StoryObj<UtilizationBarComponent>

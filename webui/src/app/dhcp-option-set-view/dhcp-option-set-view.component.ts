@@ -1,8 +1,16 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { TreeNode } from 'primeng/api'
+import { TreeNode, PrimeTemplate } from 'primeng/api'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { DhcpOptionsService } from '../dhcp-options.service'
 import { IPType } from '../iptype'
+import { Tree } from 'primeng/tree'
+import { NgIf } from '@angular/common'
+import { Tag } from 'primeng/tag'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Tooltip } from 'primeng/tooltip'
+import { Divider } from 'primeng/divider'
+import { Checkbox } from 'primeng/checkbox'
+import { FormsModule } from '@angular/forms'
 
 /**
  * A node of the displayed option holding its basic description.
@@ -41,9 +49,9 @@ export interface OptionFieldNode {
  */
 @Component({
     selector: 'app-dhcp-option-set-view',
-    standalone: false,
     templateUrl: './dhcp-option-set-view.component.html',
     styleUrls: ['./dhcp-option-set-view.component.sass'],
+    imports: [Tree, PrimeTemplate, NgIf, Tag, HelpTipComponent, Tooltip, Divider, Checkbox, FormsModule],
 })
 export class DhcpOptionSetViewComponent implements OnInit {
     /**

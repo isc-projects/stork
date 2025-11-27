@@ -6,12 +6,8 @@ import { By } from '@angular/platform-browser'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { MessageService } from 'primeng/api'
-import { DurationPipe } from '../pipes/duration.pipe'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { of } from 'rxjs'
-import { provideRouter, RouterModule } from '@angular/router'
-import { TooltipModule } from 'primeng/tooltip'
+import { provideRouter } from '@angular/router'
 
 class Daemon {
     id = 1
@@ -31,9 +27,7 @@ describe('Bind9DaemonComponent', () => {
             getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
         }
         await TestBed.configureTestingModule({
-            declarations: [Bind9DaemonComponent, DurationPipe, LocaltimePipe, PlaceholderPipe, VersionStatusComponent],
-            imports: [RouterModule, TooltipModule],
-            providers: [provideRouter([]), { provide: VersionService, useValue: versionServiceStub }, MessageService],
+            providers: [{ provide: VersionService, useValue: versionServiceStub }, MessageService, provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(Bind9DaemonComponent)

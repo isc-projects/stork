@@ -1,36 +1,15 @@
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 
-import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { CheckboxModule } from 'primeng/checkbox'
-import { ButtonModule } from 'primeng/button'
-import { PopoverModule } from 'primeng/popover'
-import { TableModule } from 'primeng/table'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { AutoCompleteModule } from 'primeng/autocomplete'
+import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { FormBuilder } from '@angular/forms'
 
 export default {
     title: 'App/DhcpClientClassSetForm',
     component: DhcpClientClassSetFormComponent,
     decorators: [
         applicationConfig({
-            providers: [],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                FormsModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                TableModule,
-                FloatLabelModule,
-                AutoCompleteModule,
-            ],
-            declarations: [DhcpClientClassSetFormComponent, HelpTipComponent],
+            providers: [provideAnimations()],
         }),
     ],
 } as Meta

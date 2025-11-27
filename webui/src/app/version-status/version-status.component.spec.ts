@@ -3,12 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { VersionStatusComponent } from './version-status.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { TooltipModule } from 'primeng/tooltip'
 import { Severity, VersionService } from '../version.service'
 import { of } from 'rxjs'
-import { MessageModule } from 'primeng/message'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter } from '@angular/router'
 
 describe('VersionStatusComponent', () => {
     let component: VersionStatusComponent
@@ -87,9 +86,13 @@ describe('VersionStatusComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [VersionStatusComponent],
-            imports: [TooltipModule, MessageModule, BrowserAnimationsModule],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
+            providers: [
+                MessageService,
+                provideNoopAnimations(),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(VersionStatusComponent)

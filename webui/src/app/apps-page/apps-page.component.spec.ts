@@ -2,36 +2,15 @@ import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
 
 import { AppsPageComponent } from './apps-page.component'
-import { MenuModule } from 'primeng/menu'
-import { FormsModule } from '@angular/forms'
-import { TableModule } from 'primeng/table'
-import { AppTabComponent } from '../app-tab/app-tab.component'
-import { KeaAppTabComponent } from '../kea-app-tab/kea-app-tab.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { HaStatusComponent } from '../ha-status/ha-status.component'
-import { PanelModule } from 'primeng/panel'
-import { MessageModule } from 'primeng/message'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { ServicesService } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { ConfirmDialog } from 'primeng/confirmdialog'
 import { of, throwError } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { ButtonModule } from 'primeng/button'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 
 describe('AppsPageComponent', () => {
     let component: AppsPageComponent
@@ -41,41 +20,10 @@ describe('AppsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                AppsPageComponent,
-                AppTabComponent,
-                KeaAppTabComponent,
-                LocaltimePipe,
-                HaStatusComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-            ],
-            imports: [
-                MenuModule,
-                FormsModule,
-                TableModule,
-                TooltipModule,
-                PanelModule,
-                MessageModule,
-                RouterModule,
-                RouterModule,
-                BreadcrumbModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                ProgressSpinnerModule,
-                ConfirmDialogModule,
-                ManagedAccessDirective,
-                TabViewComponent,
-                ButtonModule,
-                FloatLabelModule,
-                MultiSelectModule,
-                IconFieldModule,
-                InputIconModule,
-            ],
             providers: [
                 ConfirmationService,
-                ServicesService,
                 MessageService,
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([{ path: 'apps/all', component: AppsPageComponent }]),

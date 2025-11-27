@@ -1,7 +1,25 @@
 import { Component, Input } from '@angular/core'
-import { AbstractControl, FormArray, FormGroup, UntypedFormGroup } from '@angular/forms'
+import {
+    AbstractControl,
+    FormArray,
+    FormGroup,
+    UntypedFormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms'
 import { getSeverityByIndex, uncamelCase } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
+import { NgIf, NgFor, NgTemplateOutlet, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+import { Checkbox } from 'primeng/checkbox'
+import { Tag } from 'primeng/tag'
+import { MultiSelect } from 'primeng/multiselect'
+import { Select } from 'primeng/select'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { InputText } from 'primeng/inputtext'
+import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
+import { InputNumber } from 'primeng/inputnumber'
+import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { Button } from 'primeng/button'
 
 /**
  * A component providing a form for editing configuration parameters.
@@ -21,9 +39,28 @@ import { SelectableClientClass } from '../forms/selectable-client-class'
  */
 @Component({
     selector: 'app-shared-parameters-form',
-    standalone: false,
     templateUrl: './shared-parameters-form.component.html',
     styleUrls: ['./shared-parameters-form.component.sass'],
+    imports: [
+        NgIf,
+        NgFor,
+        NgTemplateOutlet,
+        FormsModule,
+        ReactiveFormsModule,
+        Checkbox,
+        Tag,
+        NgSwitch,
+        NgSwitchCase,
+        MultiSelect,
+        Select,
+        ArrayValueSetFormComponent,
+        InputText,
+        TriStateCheckboxComponent,
+        InputNumber,
+        DhcpClientClassSetFormComponent,
+        NgSwitchDefault,
+        Button,
+    ],
 })
 export class SharedParametersFormComponent<T extends { [K in keyof T]: AbstractControl<any, any> }> {
     /**

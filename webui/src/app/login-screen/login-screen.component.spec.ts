@@ -1,23 +1,15 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { LoginScreenComponent } from './login-screen.component'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { AuthenticationMethod, GeneralService, UsersService } from '../backend'
+import { AuthenticationMethod } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { SelectButtonModule } from 'primeng/selectbutton'
-import { ButtonModule } from 'primeng/button'
 import { of } from 'rxjs'
 import { By } from '@angular/platform-browser'
-import { RouterModule } from '@angular/router'
-import { MessageModule } from 'primeng/message'
+import { provideRouter } from '@angular/router'
 import { AuthService } from '../auth.service'
-import { SelectModule } from 'primeng/select'
-import { PasswordModule } from 'primeng/password'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
@@ -49,27 +41,13 @@ describe('LoginScreenComponent', () => {
             }),
         }
         TestBed.configureTestingModule({
-            declarations: [LoginScreenComponent],
-            imports: [
-                ReactiveFormsModule,
-                FormsModule,
-                RouterModule.forRoot([]),
-                ProgressSpinnerModule,
-                SelectButtonModule,
-                ButtonModule,
-                MessageModule,
-                SelectModule,
-                PasswordModule,
-                BrowserAnimationsModule,
-                FloatLabelModule,
-            ],
             providers: [
-                GeneralService,
-                UsersService,
                 MessageService,
                 { provide: AuthService, useValue: authServiceStub },
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

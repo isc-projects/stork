@@ -1,16 +1,9 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { MessageService, ConfirmationService, Confirmation } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { PaginatorModule } from 'primeng/paginator'
-import { TableModule } from 'primeng/table'
-import { ToastModule } from 'primeng/toast'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
-import { EventsService, ServicesService, UsersService } from '../backend'
-import { EventTextComponent } from '../event-text/event-text.component'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { EventsService } from '../backend'
 import { EventsPanelComponent } from './events-panel.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { of } from 'rxjs'
@@ -43,21 +36,13 @@ describe('EventsPanelComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
-            imports: [PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule, ConfirmDialogModule],
             providers: [
-                EventsService,
-                UsersService,
-                ServicesService,
                 MessageService,
                 ConfirmationService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {},
-                },
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

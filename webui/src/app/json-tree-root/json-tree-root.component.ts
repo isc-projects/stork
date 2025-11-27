@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, TemplateRef } from '@angular/core'
 import { AuthService } from '../auth.service'
+import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
 /**
  * JSON Tree Component wrapper that minimizes the number of input
@@ -8,13 +9,13 @@ import { AuthService } from '../auth.service'
  */
 @Component({
     selector: 'app-json-tree-root',
-    standalone: false,
     templateUrl: './json-tree-root.component.html',
     styleUrls: [],
     host: {
         // Disable full width expand and enable horizontal scrollbars when content is wider than parent container.
         style: 'display: inline-flex; max-width: 100%; overflow-x: auto',
     },
+    imports: [JsonTreeComponent],
 })
 export class JsonTreeRootComponent implements OnInit {
     private _value: any = null

@@ -1,19 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { PopoverModule } from 'primeng/popover'
-import { TagModule } from 'primeng/tag'
-import { TooltipModule } from 'primeng/tooltip'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { TreeNode } from 'primeng/api'
-import { TreeModule } from 'primeng/tree'
 import { DhcpOptionSetViewComponent, OptionFieldNode, OptionNode } from './dhcp-option-set-view.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DHCPOption } from '../backend/model/dHCPOption'
-import { DividerModule } from 'primeng/divider'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
 import { IPType } from '../iptype'
-import { ButtonModule } from 'primeng/button'
 
 describe('DhcpOptionSetViewComponent', () => {
     let component: DhcpOptionSetViewComponent
@@ -21,18 +12,7 @@ describe('DhcpOptionSetViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                CheckboxModule,
-                DividerModule,
-                FormsModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                TagModule,
-                TooltipModule,
-                TreeModule,
-                ButtonModule,
-            ],
-            declarations: [DhcpOptionSetViewComponent, HelpTipComponent],
+            providers: [provideNoopAnimations()],
         }).compileComponents()
     })
 

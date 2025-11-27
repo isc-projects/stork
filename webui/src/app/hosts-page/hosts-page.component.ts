@@ -8,6 +8,10 @@ import { lastValueFrom } from 'rxjs'
 import { HostForm } from '../forms/host-form'
 import { Host } from '../backend'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { HostTabComponent } from '../host-tab/host-tab.component'
+import { HostFormComponent } from '../host-form/host-form.component'
 
 /**
  * This component implements a page which displays hosts along with
@@ -23,9 +27,9 @@ import { HostsTableComponent } from '../hosts-table/hosts-table.component'
  */
 @Component({
     selector: 'app-hosts-page',
-    standalone: false,
     templateUrl: './hosts-page.component.html',
     styleUrls: ['./hosts-page.component.sass'],
+    imports: [BreadcrumbsComponent, TabViewComponent, HostsTableComponent, HostTabComponent, HostFormComponent],
 })
 export class HostsPageComponent {
     /**

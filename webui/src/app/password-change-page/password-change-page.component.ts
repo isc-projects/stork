@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
 
@@ -8,15 +8,37 @@ import { AuthService } from '../auth.service'
 import { getErrorMessage } from '../utils'
 import { differentPasswords, matchPasswords } from '../users-page/users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
+import { NgIf, NgTemplateOutlet } from '@angular/common'
+import { Dialog } from 'primeng/dialog'
+import { Message } from 'primeng/message'
+import { Panel } from 'primeng/panel'
+import { Password } from 'primeng/password'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 /**
  * This component allows the logged user to change the password.
  */
 @Component({
     selector: 'app-settings-page',
-    standalone: false,
     templateUrl: './password-change-page.component.html',
     styleUrls: ['./password-change-page.component.sass'],
+    imports: [
+        BreadcrumbsComponent,
+        SettingsMenuComponent,
+        NgIf,
+        NgTemplateOutlet,
+        Dialog,
+        Message,
+        FormsModule,
+        ReactiveFormsModule,
+        Panel,
+        Password,
+        Button,
+        ManagedAccessDirective,
+    ],
 })
 export class PasswordChangePageComponent implements OnInit {
     breadcrumbs = [{ label: 'User Profile' }, { label: 'Password Change' }]

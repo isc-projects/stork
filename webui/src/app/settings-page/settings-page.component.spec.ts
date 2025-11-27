@@ -1,28 +1,17 @@
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { FieldsetModule } from 'primeng/fieldset'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageModule } from 'primeng/message'
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { ActivatedRoute, provideRouter, RouterModule } from '@angular/router'
-import { DividerModule } from 'primeng/divider'
+import { ActivatedRoute, provideRouter } from '@angular/router'
 import { of, throwError } from 'rxjs'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { CheckboxModule } from 'primeng/checkbox'
-import { InputNumberModule } from 'primeng/inputnumber'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { ButtonModule } from 'primeng/button'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -33,24 +22,6 @@ describe('SettingsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
-            imports: [
-                BreadcrumbModule,
-                BrowserAnimationsModule,
-                CheckboxModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                ReactiveFormsModule,
-                MessageModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                RouterModule,
-                InputNumberModule,
-                ManagedAccessDirective,
-                ButtonModule,
-            ],
             providers: [
                 SettingsService,
                 MessageService,
@@ -60,6 +31,7 @@ describe('SettingsPageComponent', () => {
                 },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
                 provideRouter([]),
             ],
         }).compileComponents()

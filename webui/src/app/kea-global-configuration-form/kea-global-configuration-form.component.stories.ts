@@ -1,34 +1,13 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { MockParamMap } from '../utils'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { importProvidersFrom } from '@angular/core'
-import { HttpClientModule } from '@angular/common/http'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { PopoverModule } from 'primeng/popover'
-import { FieldsetModule } from 'primeng/fieldset'
-import { TableModule } from 'primeng/table'
-import { ButtonModule } from 'primeng/button'
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
 import { UpdateKeaDaemonsGlobalParametersBeginResponse } from '../backend'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { CheckboxModule } from 'primeng/checkbox'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { SelectModule } from 'primeng/select'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { TagModule } from 'primeng/tag'
-import { MessageModule } from 'primeng/message'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { FloatLabelModule } from 'primeng/floatlabel'
 
 const mockUpdateKeaGlobalParameters4BeginData: UpdateKeaDaemonsGlobalParametersBeginResponse = {
     id: 123,
@@ -213,36 +192,8 @@ export default {
                     },
                 },
                 MessageService,
-                importProvidersFrom(HttpClientModule),
-                importProvidersFrom(NoopAnimationsModule),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                MessageModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                TableModule,
-                TagModule,
-                ToastModule,
-                SplitButtonModule,
-                FloatLabelModule,
-            ],
-            declarations: [
-                ArrayValueSetFormComponent,
-                SharedParametersFormComponent,
-                DhcpOptionSetFormComponent,
-                DhcpOptionFormComponent,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideAnimations(),
             ],
         }),
         toastDecorator,

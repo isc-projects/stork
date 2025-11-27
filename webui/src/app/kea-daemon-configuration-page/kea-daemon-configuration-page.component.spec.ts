@@ -2,65 +2,35 @@ import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@a
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 import { MessageService } from 'primeng/api'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { ButtonModule } from 'primeng/button'
-import { MessageModule } from 'primeng/message'
-import { PopoverModule } from 'primeng/popover'
-import { PanelModule } from 'primeng/panel'
 import { of, throwError } from 'rxjs'
 import { AuthService } from '../auth.service'
-import { ServicesService, UsersService } from '../backend'
+import { UsersService } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
-import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { ServerDataService } from '../server-data.service'
 
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page.component'
-import { MockParamMap } from '../utils'
+import { RouterTestingHarness } from '@angular/router/testing'
 
 describe('KeaDaemonConfigurationPageComponent', () => {
     let component: KeaDaemonConfigurationPageComponent
-    let fixture: ComponentFixture<KeaDaemonConfigurationPageComponent>
+    let fixture: ComponentFixture<unknown>
     let dataService: ServerDataService
     let userService: UsersService
     let authService: AuthService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                KeaDaemonConfigurationPageComponent,
-                JsonTreeComponent,
-                JsonTreeRootComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-            ],
-            imports: [
-                PanelModule,
-                ButtonModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                MessageModule,
-                BreadcrumbModule,
-                RouterModule.forRoot([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
-            ],
             providers: [
-                ServicesService,
                 MessageService,
-                UsersService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
-                    },
-                },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
+                    { path: 'apps/:appId/daemons/:daemonId/config', component: KeaDaemonConfigurationPageComponent },
+                ]),
             ],
         })
         dataService = TestBed.inject(ServerDataService)
@@ -68,7 +38,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         authService = TestBed.inject(AuthService)
     }))
 
-    beforeEach(() => {
+    beforeEach(async () => {
         const fakeResponse: any = {
             id: 1,
             name: 'foo',
@@ -121,8 +91,10 @@ describe('KeaDaemonConfigurationPageComponent', () => {
 
         authService.login('boz', 'foo', 'bar', 'baz')
 
-        fixture = TestBed.createComponent(KeaDaemonConfigurationPageComponent)
-        component = fixture.componentInstance
+        const harness = await RouterTestingHarness.create()
+        component = await harness.navigateByUrl('/apps/1/daemons/2/config', KeaDaemonConfigurationPageComponent)
+        fixture = harness.fixture
+
         fixture.detectChanges()
     })
 

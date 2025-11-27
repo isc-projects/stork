@@ -2,15 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board.component'
 import { KeaConfigSubnetDerivedParameters } from '../backend'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ButtonModule } from 'primeng/button'
-import { TableModule } from 'primeng/table'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { TooltipModule } from 'primeng/tooltip'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 
 describe('CascadedParametersBoardComponent', () => {
     let component: CascadedParametersBoardComponent<KeaConfigSubnetDerivedParameters>
@@ -18,14 +11,7 @@ describe('CascadedParametersBoardComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                CascadedParametersBoardComponent,
-                ParameterViewComponent,
-                PlaceholderPipe,
-                UncamelPipe,
-                UnhyphenPipe,
-            ],
-            imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule],
+            providers: [provideNoopAnimations()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(CascadedParametersBoardComponent)

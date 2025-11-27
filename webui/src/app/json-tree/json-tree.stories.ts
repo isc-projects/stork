@@ -1,17 +1,11 @@
 import { JsonTreeComponent } from './json-tree.component'
 
-import { StoryObj, Meta, moduleMetadata } from '@storybook/angular'
-import { PaginatorModule } from 'primeng/paginator'
+import { StoryObj, Meta } from '@storybook/angular'
 
 export default {
     title: 'App/JSON-Tree',
     component: JsonTreeComponent,
-    decorators: [
-        moduleMetadata({
-            imports: [PaginatorModule],
-            declarations: [JsonTreeComponent],
-        }),
-    ],
+    decorators: [],
     argTypes: {
         value: { control: 'object' },
         customValueTemplates: { defaultValue: {} },

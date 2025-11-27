@@ -10,7 +10,6 @@ import { CommonModule } from '@angular/common'
  */
 @Component({
     selector: 'app-text-file-viewer',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './text-file-viewer.component.html',
     styleUrl: './text-file-viewer.component.sass',

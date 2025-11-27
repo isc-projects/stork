@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { Bind9DaemonControlsComponent } from './bind9-daemon-controls.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 describe('Bind9DaemonControlsComponent', () => {
     let component: Bind9DaemonControlsComponent
@@ -10,8 +11,7 @@ describe('Bind9DaemonControlsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [Bind9DaemonControlsComponent],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
+            providers: [MessageService, provideHttpClientTesting(), provideHttpClient(withInterceptorsFromDi())],
         }).compileComponents()
 
         fixture = TestBed.createComponent(Bind9DaemonControlsComponent)

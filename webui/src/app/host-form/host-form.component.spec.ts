@@ -1,34 +1,15 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
-import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormArray, UntypedFormBuilder } from '@angular/forms'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { SelectModule } from 'primeng/select'
-import { FieldsetModule } from 'primeng/fieldset'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { ToggleSwitchModule } from 'primeng/toggleswitch'
-import { MessageModule } from 'primeng/message'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { PopoverModule } from 'primeng/popover'
 import { HostFormComponent } from './host-form.component'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DHCPService, Host } from '../backend'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { TableModule } from 'primeng/table'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter, RouterModule } from '@angular/router'
-import { FloatLabelModule } from 'primeng/floatlabel'
+import { provideRouter } from '@angular/router'
 
 describe('HostFormComponent', () => {
     let component: HostFormComponent
@@ -125,40 +106,13 @@ describe('HostFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                HelpTipComponent,
-                HostFormComponent,
-            ],
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                ToggleSwitchModule,
-                MessageModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                RouterModule,
-                SplitButtonModule,
-                TableModule,
-                ToggleButtonModule,
-                ProgressSpinnerModule,
-                FloatLabelModule,
-            ],
             providers: [
                 UntypedFormBuilder,
                 DHCPService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
                 provideRouter([]),
             ],
         }).compileComponents()

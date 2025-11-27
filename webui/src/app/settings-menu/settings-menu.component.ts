@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { MenuItem } from 'primeng/api'
 import { AuthService } from '../auth.service'
+import { Menu } from 'primeng/menu'
 
 /**
  * This component provides a menu for navigating between different
@@ -10,9 +11,9 @@ import { AuthService } from '../auth.service'
  */
 @Component({
     selector: 'app-settings-menu',
-    standalone: false,
     templateUrl: './settings-menu.component.html',
     styleUrls: ['./settings-menu.component.sass'],
+    imports: [Menu],
 })
 export class SettingsMenuComponent implements OnInit {
     items: MenuItem[]

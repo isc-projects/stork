@@ -8,18 +8,42 @@ import { lastValueFrom } from 'rxjs'
 import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
 import { KeaGlobalConfigurationForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
-import { FormGroup, UntypedFormArray } from '@angular/forms'
+import { FormGroup, UntypedFormArray, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
+import { NgIf, NgFor } from '@angular/common'
+import { Fieldset } from 'primeng/fieldset'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { Checkbox } from 'primeng/checkbox'
+import { Divider } from 'primeng/divider'
+import { Tag } from 'primeng/tag'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { Button } from 'primeng/button'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { Message } from 'primeng/message'
 
 /**
  * A component providing a form for editing global Kea parameters.
  */
 @Component({
     selector: 'app-kea-global-configuration-form',
-    standalone: false,
     templateUrl: './kea-global-configuration-form.component.html',
     styleUrl: './kea-global-configuration-form.component.sass',
+    imports: [
+        NgIf,
+        Fieldset,
+        SharedParametersFormComponent,
+        FormsModule,
+        ReactiveFormsModule,
+        Checkbox,
+        NgFor,
+        Divider,
+        Tag,
+        DhcpOptionSetFormComponent,
+        Button,
+        ProgressSpinner,
+        Message,
+    ],
 })
 export class KeaGlobalConfigurationFormComponent implements OnInit {
     /**

@@ -1,41 +1,20 @@
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { AppTabComponent } from './app-tab.component'
-import { TooltipModule } from 'primeng/tooltip'
 import { MessageService } from 'primeng/api'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 
-import { AppsVersions, ServicesService, UsersService } from '../backend'
+import { AppsVersions, ServicesService } from '../backend'
 import { ServerDataService } from '../server-data.service'
-import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
-import { DialogModule } from 'primeng/dialog'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { FormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { AppOverviewComponent } from '../app-overview/app-overview.component'
-import { PanelModule } from 'primeng/panel'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { By } from '@angular/platform-browser'
-import { PopoverModule } from 'primeng/popover'
-import { DataViewModule } from 'primeng/dataview'
-import { EventTextComponent } from '../event-text/event-text.component'
-import { TableModule } from 'primeng/table'
-import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter, RouterModule } from '@angular/router'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { ButtonModule } from 'primeng/button'
-import { DurationPipe } from '../pipes/duration.pipe'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
-import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { Bind9ConfigPreviewComponent } from '../bind9-config-preview/bind9-config-preview.component'
+import { provideRouter } from '@angular/router'
 import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
 
 class Daemon {
@@ -79,43 +58,12 @@ describe('AppTabComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            declarations: [
-                AppTabComponent,
-                Bind9DaemonComponent,
-                DaemonNiceNamePipe,
-                LocaltimePipe,
-                PlaceholderPipe,
-                DurationPipe,
-                RenameAppDialogComponent,
-                AppOverviewComponent,
-                EventsPanelComponent,
-                EventTextComponent,
-                VersionStatusComponent,
-            ],
-            imports: [
-                Bind9ConfigPreviewComponent,
-                Bind9DaemonControlsComponent,
-                FormsModule,
-                RouterModule,
-                TooltipModule,
-                DialogModule,
-                NoopAnimationsModule,
-                PanelModule,
-                PopoverModule,
-                DataViewModule,
-                TableModule,
-                ManagedAccessDirective,
-                ButtonModule,
-                ConfirmDialogModule,
-                TabViewComponent,
-            ],
             providers: [
-                UsersService,
-                ServicesService,
                 MessageService,
                 MockLocationStrategy,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
+                provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),

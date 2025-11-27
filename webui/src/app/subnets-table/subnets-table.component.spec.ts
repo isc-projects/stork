@@ -1,41 +1,17 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { SubnetsTableComponent } from './subnets-table.component'
-import { ButtonModule } from 'primeng/button'
-import { PopoverModule } from 'primeng/popover'
-import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
-import { FormsModule } from '@angular/forms'
-import { PanelModule } from 'primeng/panel'
+import { InputNumber } from 'primeng/inputnumber'
 import { MessageService } from 'primeng/api'
-import { TableModule } from 'primeng/table'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { RouterModule } from '@angular/router'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 import { SubnetsPageComponent } from '../subnets-page/subnets-page.component'
-import { TagModule } from 'primeng/tag'
-import { SelectModule } from 'primeng/select'
 import { DHCPService, Subnets } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
-import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { TooltipModule } from 'primeng/tooltip'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { MessageModule } from 'primeng/message'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -45,31 +21,12 @@ describe('SubnetsTableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                EntityLinkComponent,
-                HelpTipComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                SubnetBarComponent,
-                SubnetsTableComponent,
-                PluralizePipe,
-                UtilizationBarComponent,
-                PoolBarsComponent,
-                OutOfPoolBarComponent,
-                LocalNumberPipe,
-                AddressPoolBarComponent,
-            ],
-            imports: [
-                TableModule,
-                ButtonModule,
-                PopoverModule,
-                InputNumberModule,
-                FormsModule,
-                PanelModule,
-                BrowserAnimationsModule,
-                TagModule,
-                SelectModule,
-                RouterModule.forRoot([
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'dhcp/subnets',
                         pathMatch: 'full',
@@ -80,14 +37,7 @@ describe('SubnetsTableComponent', () => {
                         component: SubnetsPageComponent,
                     },
                 ]),
-                TooltipModule,
-                ManagedAccessDirective,
-                FloatLabelModule,
-                IconFieldModule,
-                InputIconModule,
-                MessageModule,
             ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         dhcpApi = TestBed.inject(DHCPService)

@@ -1,16 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { OutOfPoolBarComponent } from './out-of-pool-bar.component'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('OutOfPoolBarComponent', () => {
     let component: OutOfPoolBarComponent
     let fixture: ComponentFixture<OutOfPoolBarComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [OutOfPoolBarComponent, UtilizationBarComponent],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(OutOfPoolBarComponent)
         component = fixture.componentInstance

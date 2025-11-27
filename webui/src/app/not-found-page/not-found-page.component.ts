@@ -1,4 +1,6 @@
 import { Component } from '@angular/core'
+import { Message } from 'primeng/message'
+import { RouterLink } from '@angular/router'
 
 /**
  * This component displays HTTP NotFound 404 page.
@@ -8,8 +10,8 @@ import { Component } from '@angular/core'
  */
 @Component({
     selector: 'app-not-found-page',
-    standalone: false,
     templateUrl: './not-found-page.component.html',
     styleUrl: './not-found-page.component.sass',
+    imports: [Message, RouterLink],
 })
 export class NotFoundPageComponent {}

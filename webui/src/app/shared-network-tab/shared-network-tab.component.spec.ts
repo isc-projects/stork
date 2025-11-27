@@ -1,49 +1,16 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { SharedNetworkTabComponent } from './shared-network-tab.component'
-import { FieldsetModule } from 'primeng/fieldset'
-import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
-import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
-import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
-import { DividerModule } from 'primeng/divider'
-import { ChartModule } from 'primeng/chart'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { FormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { PopoverModule } from 'primeng/popover'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
-import { TooltipModule } from 'primeng/tooltip'
-import { TreeModule } from 'primeng/tree'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { IPType } from '../iptype'
 import { By } from '@angular/platform-browser'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { DHCPService } from '../backend'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { PositivePipe } from '../pipes/positive.pipe'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
-import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
@@ -55,51 +22,13 @@ describe('SharedNetworkTabComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                AddressPoolBarComponent,
-                CascadedParametersBoardComponent,
-                DhcpOptionSetViewComponent,
-                DelegatedPrefixBarComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                ParameterViewComponent,
-                PlaceholderPipe,
-                PositivePipe,
-                UncamelPipe,
-                UnhyphenPipe,
-                SharedNetworkTabComponent,
-                SubnetBarComponent,
-                UtilizationStatsChartComponent,
-                UtilizationStatsChartsComponent,
-                UtilizationBarComponent,
-                PoolBarsComponent,
-                OutOfPoolBarComponent,
-            ],
-            imports: [
-                ButtonModule,
-                ChartModule,
-                CheckboxModule,
-                ConfirmDialogModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                RouterModule.forRoot([{ path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent }]),
-                TableModule,
-                TagModule,
-                TooltipModule,
-                TreeModule,
-                ManagedAccessDirective,
-            ],
             providers: [
                 ConfirmationService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([{ path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent }]),
             ],
         }).compileComponents()
 

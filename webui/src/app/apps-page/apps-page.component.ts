@@ -1,18 +1,36 @@
 import { Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem, ConfirmationService, TableState } from 'primeng/api'
+import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
 
 import { daemonStatusErred } from '../utils'
 import { ServicesService } from '../backend'
 import { App } from '../backend'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { distinctUntilChanged, finalize, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Panel } from 'primeng/panel'
+import { NgIf } from '@angular/common'
+import { Tag } from 'primeng/tag'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { FloatLabel } from 'primeng/floatlabel'
+import { MultiSelect } from 'primeng/multiselect'
+import { FormsModule } from '@angular/forms'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { InputText } from 'primeng/inputtext'
+import { VersionStatusComponent } from '../version-status/version-status.component'
+import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
+import { AppTabComponent } from '../app-tab/app-tab.component'
+import { KeaAppTabComponent } from '../kea-app-tab/kea-app-tab.component'
 
 /**
  * Sets boolean flag indicating if there are communication errors with
@@ -31,9 +49,33 @@ function setDaemonStatusErred(app) {
 
 @Component({
     selector: 'app-apps-page',
-    standalone: false,
     templateUrl: './apps-page.component.html',
     styleUrls: ['./apps-page.component.sass'],
+    imports: [
+        ConfirmDialog,
+        BreadcrumbsComponent,
+        TabViewComponent,
+        Button,
+        ManagedAccessDirective,
+        Menu,
+        TableModule,
+        Panel,
+        NgIf,
+        Tag,
+        HelpTipComponent,
+        PrimeTemplate,
+        FloatLabel,
+        MultiSelect,
+        FormsModule,
+        IconField,
+        InputIcon,
+        InputText,
+        RouterLink,
+        VersionStatusComponent,
+        AppDaemonsStatusComponent,
+        AppTabComponent,
+        KeaAppTabComponent,
+    ],
 })
 export class AppsPageComponent implements OnInit, OnDestroy {
     /**

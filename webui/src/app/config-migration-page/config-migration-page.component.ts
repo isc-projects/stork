@@ -5,6 +5,9 @@ import { DHCPService, MigrationStatus } from '../backend'
 import { getErrorMessage } from '../utils'
 import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'
 import { TabViewComponent } from '../tab-view/tab-view.component'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { NgIf } from '@angular/common'
+import { ConfigMigrationTabComponent } from '../config-migration-tab/config-migration-tab.component'
 
 /**
  * This component implements a page which displays config migrations.
@@ -15,9 +18,9 @@ import { TabViewComponent } from '../tab-view/tab-view.component'
  */
 @Component({
     selector: 'app-config-migration-page',
-    standalone: false,
     templateUrl: './config-migration-page.component.html',
     styleUrl: './config-migration-page.component.sass',
+    imports: [BreadcrumbsComponent, NgIf, TabViewComponent, ConfigMigrationTableComponent, ConfigMigrationTabComponent],
 })
 export class ConfigMigrationPageComponent {
     /**

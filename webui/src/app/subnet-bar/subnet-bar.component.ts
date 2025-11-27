@@ -1,5 +1,7 @@
 import { Component, Input } from '@angular/core'
 import { Subnet } from '../backend'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
  * Component that presents subnet as a bar with a sub-bar that shows utilizations in %.
@@ -7,9 +9,9 @@ import { Subnet } from '../backend'
  */
 @Component({
     selector: 'app-subnet-bar',
-    standalone: false,
     templateUrl: './subnet-bar.component.html',
     styleUrls: ['./subnet-bar.component.sass'],
+    imports: [UtilizationBarComponent, EntityLinkComponent],
 })
 export class SubnetBarComponent {
     /**

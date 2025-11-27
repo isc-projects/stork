@@ -1,6 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
-import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import {
+    NamedCascadedParameters,
+    CascadedParametersBoardComponent,
+} from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { DHCPOption } from '../backend'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Fieldset } from 'primeng/fieldset'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 
 /**
  * A component displaying global Kea configuration including the DHCP global
@@ -10,9 +17,9 @@ import { DHCPOption } from '../backend'
  */
 @Component({
     selector: 'app-kea-global-configuration-view',
-    standalone: false,
     templateUrl: './kea-global-configuration-view.component.html',
     styleUrl: './kea-global-configuration-view.component.sass',
+    imports: [Button, ManagedAccessDirective, Fieldset, CascadedParametersBoardComponent, DhcpOptionSetViewComponent],
 })
 export class KeaGlobalConfigurationViewComponent {
     /**

@@ -9,9 +9,7 @@ describe('TriStateCheckboxComponent', () => {
     let fixture: ComponentFixture<TriStateCheckboxComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [TriStateCheckboxComponent],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(TriStateCheckboxComponent)
         component = fixture.componentInstance

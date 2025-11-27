@@ -10,17 +10,47 @@ import { MessageService } from 'primeng/api'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { deepCopy, getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
-import { UntypedFormArray, Validators } from '@angular/forms'
+import { UntypedFormArray, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
 import { SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { lastValueFrom } from 'rxjs'
 import { StorkValidators } from '../validators'
+import { NgIf, NgFor } from '@angular/common'
+import { Fieldset } from 'primeng/fieldset'
+import { FloatLabel } from 'primeng/floatlabel'
+import { MultiSelect } from 'primeng/multiselect'
+import { InputText } from 'primeng/inputtext'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { Checkbox } from 'primeng/checkbox'
+import { Divider } from 'primeng/divider'
+import { Tag } from 'primeng/tag'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { Button } from 'primeng/button'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { Message } from 'primeng/message'
 
 @Component({
     selector: 'app-shared-network-form',
-    standalone: false,
     templateUrl: './shared-network-form.component.html',
     styleUrl: './shared-network-form.component.sass',
+    imports: [
+        NgIf,
+        FormsModule,
+        ReactiveFormsModule,
+        Fieldset,
+        FloatLabel,
+        MultiSelect,
+        InputText,
+        SharedParametersFormComponent,
+        Checkbox,
+        NgFor,
+        Divider,
+        Tag,
+        DhcpOptionSetFormComponent,
+        Button,
+        ProgressSpinner,
+        Message,
+    ],
 })
 export class SharedNetworkFormComponent implements OnInit, OnDestroy {
     /**

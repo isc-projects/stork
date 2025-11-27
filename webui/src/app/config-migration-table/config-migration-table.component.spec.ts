@@ -2,20 +2,13 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { HttpResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 import { ConfigMigrationTableComponent } from './config-migration-table.component'
-import { TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { TableLazyLoadEvent } from 'primeng/table'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { TagModule } from 'primeng/tag'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { TooltipModule } from 'primeng/tooltip'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { DHCPService, MigrationStatuses } from '../backend'
 import { Observable, of } from 'rxjs'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { DurationPipe } from '../pipes/duration.pipe'
-import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
+import { ConfirmDialog } from 'primeng/confirmdialog'
 import { By } from '@angular/platform-browser'
-import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('ConfigMigrationTableComponent', () => {
     let component: ConfigMigrationTableComponent
@@ -38,18 +31,8 @@ describe('ConfigMigrationTableComponent', () => {
                 { provide: DHCPService, useValue: spy },
                 ConfirmationService,
                 provideHttpClient(withInterceptorsFromDi()),
+                provideNoopAnimations(),
             ],
-            imports: [
-                ButtonModule,
-                BrowserAnimationsModule,
-                TagModule,
-                ProgressBarModule,
-                TooltipModule,
-                TableModule,
-                ConfirmDialogModule,
-                ManagedAccessDirective,
-            ],
-            declarations: [ConfigMigrationTableComponent, PluralizePipe, DurationPipe],
         }).compileComponents()
 
         dhcpServiceSpy = TestBed.inject(DHCPService) as jasmine.SpyObj<DHCPService>

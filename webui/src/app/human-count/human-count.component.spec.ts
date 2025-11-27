@@ -1,19 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { HumanCountComponent } from './human-count.component'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { TooltipModule } from 'primeng/tooltip'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
 
 describe('HumanCountComponent', () => {
     let component: HumanCountComponent
     let fixture: ComponentFixture<HumanCountComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [TooltipModule],
-            declarations: [HumanCountComponent, HumanCountPipe, LocalNumberPipe],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(HumanCountComponent)
         component = fixture.componentInstance

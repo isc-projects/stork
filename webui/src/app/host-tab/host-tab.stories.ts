@@ -1,31 +1,10 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { FormsModule } from '@angular/forms'
-import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { ChipModule } from 'primeng/chip'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { FieldsetModule } from 'primeng/fieldset'
-import { PopoverModule } from 'primeng/popover'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
-import { ToastModule } from 'primeng/toast'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { TreeModule } from 'primeng/tree'
-import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostTabComponent } from './host-tab.component'
-import { IdentifierComponent } from '../identifier/identifier.component'
 import { toastDecorator } from '../utils-stories'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { ByteCharacterComponent } from '../byte-character/byte-character.component'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
-import { ButtonModule } from 'primeng/button'
-import { MessageModule } from 'primeng/message'
 
 export default {
     title: 'App/HostTab',
@@ -36,39 +15,11 @@ export default {
                 ConfirmationService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
-                provideNoopAnimations(),
+                provideAnimations(),
                 provideRouter([
                     { path: 'dhcp/hosts/:id', component: HostTabComponent },
                     { path: 'iframe.html', component: HostTabComponent },
                 ]),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                ChipModule,
-                ConfirmDialogModule,
-                FieldsetModule,
-                FormsModule,
-                MessageModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                TableModule,
-                RouterModule,
-                ToastModule,
-                ToggleButtonModule,
-                TreeModule,
-                TagModule,
-            ],
-            declarations: [
-                HostDataSourceLabelComponent,
-                IdentifierComponent,
-                DhcpClientClassSetViewComponent,
-                DhcpOptionSetViewComponent,
-                HelpTipComponent,
-                EntityLinkComponent,
-                ByteCharacterComponent,
             ],
         }),
         toastDecorator,

@@ -10,7 +10,6 @@ import { CommonModule } from '@angular/common'
 @Component({
     selector: 'app-bind9-daemon-controls',
     imports: [ButtonModule, Bind9ConfigPreviewComponent, CommonModule, DialogModule],
-    standalone: true,
     templateUrl: './bind9-daemon-controls.component.html',
     styleUrl: './bind9-daemon-controls.component.sass',
 })

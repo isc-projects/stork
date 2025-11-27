@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, RouterLink } from '@angular/router'
 import { forkJoin } from 'rxjs'
 import { prerelease, gte } from 'semver'
 
@@ -18,12 +18,58 @@ import {
     getErrorMessage,
 } from '../utils'
 import { KeaDaemon, ModelFile } from '../backend'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
+import { Panel } from 'primeng/panel'
+import { NgIf, NgClass, NgFor } from '@angular/common'
+import { Button } from 'primeng/button'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { AppOverviewComponent } from '../app-overview/app-overview.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { ToggleSwitch } from 'primeng/toggleswitch'
+import { FormsModule } from '@angular/forms'
+import { Message } from 'primeng/message'
+import { Fieldset } from 'primeng/fieldset'
+import { VersionStatusComponent } from '../version-status/version-status.component'
+import { Tooltip } from 'primeng/tooltip'
+import { TableModule } from 'primeng/table'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { ConfigReviewPanelComponent } from '../config-review-panel/config-review-panel.component'
+import { HaStatusComponent } from '../ha-status/ha-status.component'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 @Component({
     selector: 'app-kea-app-tab',
-    standalone: false,
     templateUrl: './kea-app-tab.component.html',
     styleUrls: ['./kea-app-tab.component.sass'],
+    imports: [
+        ManagedAccessDirective,
+        RenameAppDialogComponent,
+        Panel,
+        NgIf,
+        Button,
+        ProgressSpinner,
+        AppOverviewComponent,
+        TabViewComponent,
+        ToggleSwitch,
+        FormsModule,
+        RouterLink,
+        Message,
+        NgClass,
+        Fieldset,
+        VersionStatusComponent,
+        NgFor,
+        Tooltip,
+        TableModule,
+        HelpTipComponent,
+        ConfigReviewPanelComponent,
+        HaStatusComponent,
+        EventsPanelComponent,
+        LocaltimePipe,
+        PlaceholderPipe,
+    ],
 })
 export class KeaAppTabComponent {
     private _appTab: AppTab

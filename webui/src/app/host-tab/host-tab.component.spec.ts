@@ -1,38 +1,17 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
-import { FormsModule } from '@angular/forms'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 
-import { FieldsetModule } from 'primeng/fieldset'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { TableModule } from 'primeng/table'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 import { of, throwError } from 'rxjs'
 
 import { DHCPService, Host, Lease } from '../backend'
 import { HostTabComponent } from './host-tab.component'
-import { provideRouter, RouterModule } from '@angular/router'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { IdentifierComponent } from '../identifier/identifier.component'
-import { TreeModule } from 'primeng/tree'
-import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { TagModule } from 'primeng/tag'
-import { ChipModule } from 'primeng/chip'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { DividerModule } from 'primeng/divider'
-import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { MessageModule } from 'primeng/message'
-import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { provideRouter } from '@angular/router'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { ButtonModule } from 'primeng/button'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -44,40 +23,13 @@ describe('HostTabComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DhcpClientClassSetViewComponent,
-                DhcpOptionSetViewComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                HostTabComponent,
-                IdentifierComponent,
-                HostDataSourceLabelComponent,
-                ByteCharacterComponent,
-            ],
-            imports: [
-                ConfirmDialogModule,
-                ChipModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                TableModule,
-                RouterModule,
-                ToggleButtonModule,
-                TreeModule,
-                TagModule,
-                MessageModule,
-                ProgressSpinnerModule,
-                ManagedAccessDirective,
-                ButtonModule,
-            ],
             providers: [
                 DHCPService,
                 ConfirmationService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
                 provideRouter([]),
             ],
         }).compileComponents()

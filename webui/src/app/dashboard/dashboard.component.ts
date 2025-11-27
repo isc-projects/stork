@@ -28,8 +28,23 @@ import {
     ZoneInventoryState,
 } from '../backend'
 import { ModifyDeep } from '../utiltypes'
-import { TableLazyLoadEvent } from 'primeng/table'
+import { TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { getSeverity, getTooltip } from '../zone-inventory-utils'
+import { NgIf, NgFor, NgStyle, NgTemplateOutlet, DecimalPipe, TitleCasePipe } from '@angular/common'
+import { Panel } from 'primeng/panel'
+import { RouterLink } from '@angular/router'
+import { Button } from 'primeng/button'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { VersionStatusComponent } from '../version-status/version-status.component'
+import { Tooltip } from 'primeng/tooltip'
+import { Tag } from 'primeng/tag'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { HumanCountPipe } from '../pipes/human-count.pipe'
+import { SurroundPipe } from '../pipes/surround.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 type DhcpOverviewParsed = ModifyDeep<
     DhcpOverview,
@@ -81,9 +96,31 @@ type DhcpOverviewParsed = ModifyDeep<
  */
 @Component({
     selector: 'app-dashboard',
-    standalone: false,
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.sass'],
+    imports: [
+        NgIf,
+        Panel,
+        RouterLink,
+        Button,
+        HelpTipComponent,
+        NgFor,
+        SubnetBarComponent,
+        EntityLinkComponent,
+        TableModule,
+        VersionStatusComponent,
+        Tooltip,
+        NgStyle,
+        Tag,
+        NgTemplateOutlet,
+        EventsPanelComponent,
+        DecimalPipe,
+        TitleCasePipe,
+        HumanCountPipe,
+        SurroundPipe,
+        PlaceholderPipe,
+        DaemonNiceNamePipe,
+    ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     /**

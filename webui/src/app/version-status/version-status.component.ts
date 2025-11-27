@@ -4,6 +4,10 @@ import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
+import { NgIf } from '@angular/common'
+import { RouterLink } from '@angular/router'
+import { Tooltip } from 'primeng/tooltip'
+import { Message } from 'primeng/message'
 
 /**
  * This component displays feedback information about the used version of either Kea, BIND 9, or Stork software.
@@ -16,9 +20,9 @@ import { map } from 'rxjs/operators'
  */
 @Component({
     selector: 'app-version-status',
-    standalone: false,
     templateUrl: './version-status.component.html',
     styleUrl: './version-status.component.sass',
+    imports: [NgIf, RouterLink, Tooltip, Message],
 })
 export class VersionStatusComponent implements OnInit, OnDestroy {
     /**

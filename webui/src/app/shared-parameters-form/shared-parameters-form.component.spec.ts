@@ -2,31 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete'
-import { SelectModule } from 'primeng/select'
-import {
-    FormControl,
-    FormGroup,
-    FormsModule,
-    ReactiveFormsModule,
-    UntypedFormArray,
-    UntypedFormControl,
-} from '@angular/forms'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
-import { PopoverModule } from 'primeng/popover'
+import { AutoComplete } from 'primeng/autocomplete'
+import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { InputTextModule } from 'primeng/inputtext'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 /**
  * Intrface to the form used in the unit tests.
@@ -49,28 +29,7 @@ describe('SharedParametersFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                ArrayValueSetFormComponent,
-                DhcpClientClassSetFormComponent,
-                HelpTipComponent,
-                SharedParametersFormComponent,
-            ],
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                SelectModule,
-                FormsModule,
-                InputNumberModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                TableModule,
-                TagModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                InputTextModule,
-                TriStateCheckboxComponent,
-            ],
+            providers: [provideNoopAnimations()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedParametersFormComponent<SubnetForm>)

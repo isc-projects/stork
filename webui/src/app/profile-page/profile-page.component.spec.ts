@@ -3,21 +3,12 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { ProfilePageComponent } from './profile-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ServicesService, User, UsersService } from '../backend'
-import { ActivatedRoute, RouterModule } from '@angular/router'
+import { User } from '../backend'
+import { provideRouter } from '@angular/router'
 import { MessageService } from 'primeng/api'
-import { AuthService } from '../auth.service'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
-import { PanelModule } from 'primeng/panel'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { MenuModule } from 'primeng/menu'
-import { PopoverModule } from 'primeng/popover'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ButtonModule } from 'primeng/button'
 
 describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
@@ -25,34 +16,12 @@ describe('ProfilePageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                ProfilePageComponent,
-                BreadcrumbsComponent,
-                SettingsMenuComponent,
-                HelpTipComponent,
-                PlaceholderPipe,
-            ],
-            imports: [
-                PanelModule,
-                NoopAnimationsModule,
-                BreadcrumbModule,
-                MenuModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                RouterModule,
-                ButtonModule,
-            ],
             providers: [
                 MessageService,
-                UsersService,
-                ServicesService,
-                AuthService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {},
-                },
+                provideRouter([]),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
             ],
         }).compileComponents()
     }))

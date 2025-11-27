@@ -1,7 +1,15 @@
 import { Component, OnInit } from '@angular/core'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, RouterLink } from '@angular/router'
 import { ServicesService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
+import { NgIf, NgFor } from '@angular/common'
+import { Message } from 'primeng/message'
+import { Panel } from 'primeng/panel'
+import { Button } from 'primeng/button'
+import { Tooltip } from 'primeng/tooltip'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { SharedModule } from 'primeng/api'
 
 /**
  * Component providing a simple log viewer for remote log files.
@@ -16,9 +24,20 @@ import { getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-log-view-page',
-    standalone: false,
     templateUrl: './log-view-page.component.html',
     styleUrls: ['./log-view-page.component.sass'],
+    imports: [
+        NgIf,
+        RouterLink,
+        Message,
+        Panel,
+        Button,
+        Tooltip,
+        EntityLinkComponent,
+        NgFor,
+        ProgressSpinner,
+        SharedModule,
+    ],
 })
 export class LogViewPageComponent implements OnInit {
     maxLengthChunk = 4000

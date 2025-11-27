@@ -23,9 +23,7 @@ describe('AppDaemonsStatusComponent', () => {
     let fixture: ComponentFixture<AppDaemonsStatusComponent>
 
     beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [AppDaemonsStatusComponent],
-        }).compileComponents()
+        TestBed.configureTestingModule({}).compileComponents()
     }))
 
     beforeEach(() => {

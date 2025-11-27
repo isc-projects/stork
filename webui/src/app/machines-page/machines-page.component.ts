@@ -1,5 +1,5 @@
 import { Component, computed, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 import { BehaviorSubject, concat, lastValueFrom, Observable } from 'rxjs'
@@ -10,9 +10,26 @@ import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, deepCopy, getErrorMessage } from '../utils'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
-import { SelectButtonChangeEvent } from 'primeng/selectbutton'
+import { SelectButtonChangeEvent, SelectButton } from 'primeng/selectbutton'
 import { AuthService } from '../auth.service'
 import { TabViewComponent } from '../tab-view/tab-view.component'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { NgIf, NgFor, AsyncPipe } from '@angular/common'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Dialog } from 'primeng/dialog'
+import { Button } from 'primeng/button'
+import { Tooltip } from 'primeng/tooltip'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { FormsModule } from '@angular/forms'
+import { Badge } from 'primeng/badge'
+import { Message } from 'primeng/message'
+import { InputText } from 'primeng/inputtext'
+import { VersionStatusComponent } from '../version-status/version-status.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 /**
  * This component implements a page which displays authorized
@@ -25,9 +42,34 @@ import { TabViewComponent } from '../tab-view/tab-view.component'
  */
 @Component({
     selector: 'app-machines-page',
-    standalone: false,
     templateUrl: './machines-page.component.html',
     styleUrls: ['./machines-page.component.sass'],
+    imports: [
+        BreadcrumbsComponent,
+        NgIf,
+        ManagedAccessDirective,
+        Dialog,
+        RouterLink,
+        Button,
+        Tooltip,
+        ConfirmDialog,
+        TabViewComponent,
+        SelectButton,
+        FormsModule,
+        Badge,
+        Message,
+        MachinesTableComponent,
+        Menu,
+        InputText,
+        VersionStatusComponent,
+        HelpTipComponent,
+        NgFor,
+        AppDaemonsStatusComponent,
+        EventsPanelComponent,
+        AsyncPipe,
+        LocaltimePipe,
+        PlaceholderPipe,
+    ],
 })
 export class MachinesPageComponent implements OnInit, OnDestroy {
     /**

@@ -1,25 +1,11 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
-import { ChipModule } from 'primeng/chip'
-import { PopoverModule } from 'primeng/popover'
-import { TableModule } from 'primeng/table'
-import { ToastModule } from 'primeng/toast'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
-import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
-import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
 import { toastDecorator } from '../utils-stories'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { ButtonModule } from 'primeng/button'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { provideRouter, RouterModule } from '@angular/router'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { CheckboxModule } from 'primeng/checkbox'
-import { ManagedAccessDirective } from '../managed-access.directive'
+import { provideRouter } from '@angular/router'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -57,30 +43,8 @@ export default {
                 MessageService,
                 ServicesService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
                 provideRouter([]),
-            ],
-        }),
-        moduleMetadata({
-            imports: [
-                TableModule,
-                ChipModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                ToastModule,
-                BreadcrumbModule,
-                RouterModule,
-                ButtonModule,
-                CheckboxModule,
-                TriStateCheckboxComponent,
-                ManagedAccessDirective,
-            ],
-            declarations: [
-                HelpTipComponent,
-                ConfigCheckerPreferencePageComponent,
-                ConfigCheckerPreferencePickerComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                BreadcrumbsComponent,
+                provideAnimations(),
             ],
         }),
         toastDecorator,

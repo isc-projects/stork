@@ -2,6 +2,10 @@ import { Component, Input } from '@angular/core'
 import { LocalSubnet, SharedNetwork, Subnet } from '../backend'
 import { hasAddressPools, hasPrefixPools } from '../subnets'
 import { IPType } from '../iptype'
+import { NgIf, NgFor, DatePipe } from '@angular/common'
+import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
+import { Divider } from 'primeng/divider'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 /**
  * A component displaying pie charts with address and delegated prefix
@@ -13,9 +17,9 @@ import { IPType } from '../iptype'
  */
 @Component({
     selector: 'app-utilization-stats-charts',
-    standalone: false,
     templateUrl: './utilization-stats-charts.component.html',
     styleUrls: ['./utilization-stats-charts.component.sass'],
+    imports: [NgIf, UtilizationStatsChartComponent, NgFor, Divider, DatePipe, PlaceholderPipe],
 })
 export class UtilizationStatsChartsComponent {
     /**

@@ -1,10 +1,22 @@
 import { Component, OnInit } from '@angular/core'
-import { FormControl, FormGroup, FormBuilder, Validators } from '@angular/forms'
+import { FormControl, FormGroup, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
 
 import { SettingsService } from '../backend'
 import { getErrorMessage } from '../utils'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { RouterLink } from '@angular/router'
+import { Divider } from 'primeng/divider'
+import { NgSwitch, NgSwitchCase, NgFor, NgIf, NgSwitchDefault } from '@angular/common'
+import { Fieldset } from 'primeng/fieldset'
+import { Checkbox } from 'primeng/checkbox'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { InputNumber } from 'primeng/inputnumber'
+import { InputText } from 'primeng/inputtext'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { ProgressSpinner } from 'primeng/progressspinner'
 
 /**
  * An interface specifying the form controls for the server settings.
@@ -37,9 +49,28 @@ interface SettingsItem {
  */
 @Component({
     selector: 'app-settings-page',
-    standalone: false,
     templateUrl: './settings-page.component.html',
     styleUrls: ['./settings-page.component.sass'],
+    imports: [
+        BreadcrumbsComponent,
+        RouterLink,
+        Divider,
+        NgSwitch,
+        NgSwitchCase,
+        FormsModule,
+        ReactiveFormsModule,
+        Fieldset,
+        Checkbox,
+        HelpTipComponent,
+        NgFor,
+        InputNumber,
+        NgIf,
+        InputText,
+        Button,
+        ManagedAccessDirective,
+        NgSwitchDefault,
+        ProgressSpinner,
+    ],
 })
 export class SettingsPageComponent implements OnInit {
     /**

@@ -1,4 +1,6 @@
 import { Component, Input } from '@angular/core'
+import { NgIf } from '@angular/common'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 /**
  * A component displaying out of pool utilization bar. It selects and
@@ -6,9 +8,9 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-out-of-pool-bar',
-    standalone: false,
     templateUrl: './out-of-pool-bar.component.html',
     styleUrl: './out-of-pool-bar.component.sass',
+    imports: [NgIf, UtilizationBarComponent],
 })
 export class OutOfPoolBarComponent {
     /**

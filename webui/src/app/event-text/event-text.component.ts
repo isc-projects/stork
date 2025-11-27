@@ -1,4 +1,6 @@
 import { Component, Input } from '@angular/core'
+import { NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
  * A component that presents event text. It takes raw text, looks there for entities
@@ -8,9 +10,9 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-event-text',
-    standalone: false,
     templateUrl: './event-text.component.html',
     styleUrls: ['./event-text.component.sass'],
+    imports: [NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault, EntityLinkComponent],
 })
 export class EventTextComponent {
     private _text: string

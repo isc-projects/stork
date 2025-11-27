@@ -2,12 +2,15 @@ import { Component, Input } from '@angular/core'
 
 import { daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
 import { App } from '../backend'
+import { NgFor, NgStyle } from '@angular/common'
+import { Tooltip } from 'primeng/tooltip'
+import { RouterLink } from '@angular/router'
 
 @Component({
     selector: 'app-app-daemons-status',
-    standalone: false,
     templateUrl: './app-daemons-status.component.html',
     styleUrls: ['./app-daemons-status.component.sass'],
+    imports: [NgFor, Tooltip, NgStyle, RouterLink],
 })
 export class AppDaemonsStatusComponent {
     @Input() app: any

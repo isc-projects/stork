@@ -4,6 +4,8 @@ import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { EventStream, ServerSentEventsService } from '../server-sent-events.service'
 import { Subscription, filter, lastValueFrom, map } from 'rxjs'
 import { formatNoun, getErrorMessage } from '../utils'
+import { Message } from 'primeng/message'
+import { RouterLink } from '@angular/router'
 
 /**
  * A panel displaying important messages using the events system.
@@ -15,9 +17,9 @@ import { formatNoun, getErrorMessage } from '../utils'
  */
 @Component({
     selector: 'app-priority-errors-panel',
-    standalone: false,
     templateUrl: './priority-errors-panel.component.html',
     styleUrls: ['./priority-errors-panel.component.sass'],
+    imports: [Message, RouterLink],
 })
 export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     /**

@@ -81,7 +81,6 @@ describe('VersionService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [],
             providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         })
         service = TestBed.inject(VersionService)

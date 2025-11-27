@@ -1,12 +1,14 @@
 import { Component, OnInit, Input } from '@angular/core'
 import { Title } from '@angular/platform-browser'
 import { MenuItem } from 'primeng/api'
+import { Breadcrumb } from 'primeng/breadcrumb'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 @Component({
     selector: 'app-breadcrumbs',
-    standalone: false,
     templateUrl: './breadcrumbs.component.html',
     styleUrls: ['./breadcrumbs.component.sass'],
+    imports: [Breadcrumb, HelpTipComponent],
 })
 export class BreadcrumbsComponent implements OnInit {
     @Input() items: any

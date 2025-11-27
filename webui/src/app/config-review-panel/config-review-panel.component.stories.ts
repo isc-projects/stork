@@ -1,28 +1,11 @@
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { DividerModule } from 'primeng/divider'
-import { TagModule } from 'primeng/tag'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
-import { EventTextComponent } from '../event-text/event-text.component'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
-import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-preference-updater/config-checker-preference-updater.component'
-import { ConfigCheckerPreferencePickerComponent } from '../config-checker-preference-picker/config-checker-preference-picker.component'
-import { HttpClientModule } from '@angular/common/http'
-import { TableModule } from 'primeng/table'
-import { ChipModule } from 'primeng/chip'
-import { PopoverModule } from 'primeng/popover'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { action } from '@storybook/addon-actions'
-import { ToastModule } from 'primeng/toast'
 import { toastDecorator } from '../utils-stories'
-import { DataViewModule } from 'primeng/dataview'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { FormsModule } from '@angular/forms'
-import { importProvidersFrom } from '@angular/core'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -56,31 +39,11 @@ export default {
     component: ConfigReviewPanelComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, ServicesService, importProvidersFrom(HttpClientModule)],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                DividerModule,
-                HttpClientModule,
-                NoopAnimationsModule,
-                TagModule,
-                TableModule,
-                ChipModule,
-                PopoverModule,
-                ToastModule,
-                FormsModule,
-                ToggleButtonModule,
-                DataViewModule,
-                TriStateCheckboxComponent,
-            ],
-            declarations: [
-                ConfigReviewPanelComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
-                EventTextComponent,
-                LocaltimePipe,
-                HelpTipComponent,
+            providers: [
+                MessageService,
+                ServicesService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideAnimations(),
             ],
         }),
         toastDecorator,

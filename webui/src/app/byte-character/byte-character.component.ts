@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core'
+import { NgIf } from '@angular/common'
 
 /**
  * A component displaying a byte character. If the byte character is printable,
@@ -13,9 +14,9 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-byte-character',
-    standalone: false,
     templateUrl: './byte-character.component.html',
     styleUrl: './byte-character.component.sass',
+    imports: [NgIf],
 })
 export class ByteCharacterComponent {
     /**

@@ -1,31 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { AddressPoolFormComponent } from './address-pool-form.component'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { SelectModule } from 'primeng/select'
-import { FieldsetModule } from 'primeng/fieldset'
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { PopoverModule } from 'primeng/popover'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { TableModule } from 'primeng/table'
-import { TagModule } from 'primeng/tag'
-import { ToastModule } from 'primeng/toast'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { FormControl, FormGroup, UntypedFormArray } from '@angular/forms'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { AddressPoolForm, AddressRangeForm, KeaPoolParametersForm } from '../forms/subnet-set-form.service'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { DividerModule } from 'primeng/divider'
 import { By } from '@angular/platform-browser'
 import { StorkValidators } from '../validators'
-import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('AddressPoolFormComponent', () => {
     let component: AddressPoolFormComponent
@@ -33,33 +14,7 @@ describe('AddressPoolFormComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                DividerModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                SplitButtonModule,
-                TableModule,
-                TagModule,
-                ToastModule,
-                FloatLabelModule,
-            ],
-            declarations: [
-                AddressPoolFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                HelpTipComponent,
-                SharedParametersFormComponent,
-            ],
+            providers: [provideNoopAnimations()],
         })
         fixture = TestBed.createComponent(AddressPoolFormComponent)
         component = fixture.componentInstance

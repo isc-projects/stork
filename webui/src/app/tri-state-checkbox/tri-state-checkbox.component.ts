@@ -11,7 +11,6 @@ import { CheckIcon, TimesIcon } from 'primeng/icons'
  */
 @Component({
     selector: 'app-tri-state-checkbox',
-    standalone: true,
     imports: [FormsModule, Checkbox, CheckIcon, TimesIcon],
     templateUrl: './tri-state-checkbox.component.html',
     styleUrl: './tri-state-checkbox.component.sass',

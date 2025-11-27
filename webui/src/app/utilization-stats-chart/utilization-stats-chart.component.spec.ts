@@ -2,13 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { UtilizationStatsChartComponent } from './utilization-stats-chart.component'
 import { By } from '@angular/platform-browser'
-import { ChartModule } from 'primeng/chart'
-import { HumanCountComponent } from '../human-count/human-count.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { HumanCountPipe } from '../pipes/human-count.pipe'
-import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { TooltipModule } from 'primeng/tooltip'
-import { PositivePipe } from '../pipes/positive.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 
 describe('UtilizationStatsChartComponent', () => {
     let component: UtilizationStatsChartComponent
@@ -16,14 +10,7 @@ describe('UtilizationStatsChartComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ChartModule, NoopAnimationsModule, TooltipModule],
-            declarations: [
-                HumanCountComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-                PositivePipe,
-                UtilizationStatsChartComponent,
-            ],
+            providers: [provideNoopAnimations()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(UtilizationStatsChartComponent)

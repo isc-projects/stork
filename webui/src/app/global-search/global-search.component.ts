@@ -3,6 +3,10 @@ import { Component, OnInit, ViewChild } from '@angular/core'
 import { Popover } from 'primeng/popover'
 
 import { SearchService } from '../backend/api/api'
+import { FormsModule } from '@angular/forms'
+import { InputText } from 'primeng/inputtext'
+import { NgIf, NgFor } from '@angular/common'
+import { RouterLink } from '@angular/router'
 
 const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', 'users', 'groups']
 
@@ -12,9 +16,9 @@ const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', '
  */
 @Component({
     selector: 'app-global-search',
-    standalone: false,
     templateUrl: './global-search.component.html',
     styleUrls: ['./global-search.component.sass'],
+    imports: [FormsModule, InputText, Popover, NgIf, NgFor, RouterLink],
 })
 export class GlobalSearchComponent implements OnInit {
     @ViewChild('searchResultsBox') searchResultsBox: Popover

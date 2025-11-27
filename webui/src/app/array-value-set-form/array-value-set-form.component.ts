@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
-import { FormControl } from '@angular/forms'
-import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { AutoCompleteCompleteEvent, AutoComplete } from 'primeng/autocomplete'
 
 /**
  * A component providing a form control for specifying an array of values.
@@ -9,9 +9,9 @@ import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
  */
 @Component({
     selector: 'app-array-value-set-form',
-    standalone: false,
     templateUrl: './array-value-set-form.component.html',
     styleUrls: ['./array-value-set-form.component.sass'],
+    imports: [AutoComplete, FormsModule, ReactiveFormsModule],
 })
 export class ArrayValueSetFormComponent<T> {
     /**

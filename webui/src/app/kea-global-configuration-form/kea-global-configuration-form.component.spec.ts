@@ -3,32 +3,15 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import {
     DHCPService,
     UpdateKeaDaemonsGlobalParametersBeginResponse,
     UpdateKeaDaemonsGlobalParametersSubmitRequest,
 } from '../backend'
 import { of, throwError } from 'rxjs'
-import { FieldsetModule } from 'primeng/fieldset'
-import { MessageModule } from 'primeng/message'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { ReactiveFormsModule } from '@angular/forms'
-import { CheckboxModule } from 'primeng/checkbox'
-import { SelectModule } from 'primeng/select'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { MultiSelectModule } from 'primeng/multiselect'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { SplitButtonModule } from 'primeng/splitbutton'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 
 describe('KeaGlobalConfigurationFormComponent', () => {
     let component: KeaGlobalConfigurationFormComponent
@@ -240,30 +223,12 @@ describe('KeaGlobalConfigurationFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                ArrayValueSetFormComponent,
-                KeaGlobalConfigurationFormComponent,
-                SharedParametersFormComponent,
-                DhcpOptionSetFormComponent,
-                DhcpOptionFormComponent,
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
             ],
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                SelectModule,
-                FieldsetModule,
-                InputNumberModule,
-                MessageModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                SplitButtonModule,
-                FloatLabelModule,
-                TriStateCheckboxComponent,
-            ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(KeaGlobalConfigurationFormComponent)

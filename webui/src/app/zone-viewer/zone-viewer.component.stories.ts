@@ -1,27 +1,7 @@
-import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
-import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
-import { TableModule } from 'primeng/table'
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ZoneViewerComponent } from './zone-viewer.component'
-import { ZoneRRs } from '../backend/model/zoneRRs'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { TooltipModule } from 'primeng/tooltip'
-import { DividerModule } from 'primeng/divider'
-import { ButtonModule } from 'primeng/button'
-import { PopoverModule } from 'primeng/popover'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PanelModule } from 'primeng/panel'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { FormsModule } from '@angular/forms'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { TagModule } from 'primeng/tag'
 
 let mockGetZoneRRs: ZoneRRs = {
     zoneTransferAt: '2024-03-15T01:00:00Z',
@@ -98,26 +78,7 @@ export default {
     component: ZoneViewerComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideNoopAnimations()],
-        }),
-        moduleMetadata({
-            imports: [
-                ButtonModule,
-                DividerModule,
-                FloatLabelModule,
-                FormsModule,
-                IconFieldModule,
-                InputIconModule,
-                MultiSelectModule,
-                PanelModule,
-                PopoverModule,
-                ProgressSpinnerModule,
-                TableModule,
-                TagModule,
-                ToastModule,
-                TooltipModule,
-            ],
-            declarations: [HelpTipComponent, LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
+            providers: [provideAnimations(), MessageService],
         }),
         toastDecorator,
     ],

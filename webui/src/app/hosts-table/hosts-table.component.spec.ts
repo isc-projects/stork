@@ -1,35 +1,18 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { HostsTableComponent } from './hosts-table.component'
-import { TableModule } from 'primeng/table'
-import { Router, RouterModule } from '@angular/router'
+import { Router, provideRouter } from '@angular/router'
 import { HostsPageComponent } from '../hosts-page/hosts-page.component'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ButtonModule } from 'primeng/button'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
-import { FormsModule } from '@angular/forms'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { PanelModule } from 'primeng/panel'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { TagModule } from 'primeng/tag'
+import { InputNumber } from 'primeng/inputnumber'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
+import { ConfirmDialog } from 'primeng/confirmdialog'
 import { DHCPService, Host, LocalHost } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
-import { FloatLabelModule } from 'primeng/floatlabel'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
-import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
-import { IdentifierComponent } from '../identifier/identifier.component'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -41,18 +24,13 @@ describe('HostsTableComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                HostsTableComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                IdentifierComponent,
-                HostDataSourceLabelComponent,
-                EntityLinkComponent,
-                ByteCharacterComponent,
-            ],
-            imports: [
-                TableModule,
-                RouterModule.forRoot([
+            providers: [
+                MessageService,
+                ConfirmationService,
+                provideNoopAnimations(),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([
                     {
                         path: 'dhcp/hosts',
                         pathMatch: 'full',
@@ -67,25 +45,6 @@ describe('HostsTableComponent', () => {
                         redirectTo: 'dhcp/hosts/all',
                     },
                 ]),
-                ButtonModule,
-                PopoverModule,
-                InputNumberModule,
-                FormsModule,
-                PanelModule,
-                BrowserAnimationsModule,
-                TagModule,
-                ManagedAccessDirective,
-                ConfirmDialogModule,
-                FloatLabelModule,
-                TriStateCheckboxComponent,
-                IconFieldModule,
-                InputIconModule,
-            ],
-            providers: [
-                MessageService,
-                ConfirmationService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

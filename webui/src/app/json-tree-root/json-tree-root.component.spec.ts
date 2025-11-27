@@ -2,7 +2,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 import { AuthService } from '../auth.service'
@@ -10,7 +10,7 @@ import { UsersService } from '../backend'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
 import { JsonTreeRootComponent } from './json-tree-root.component'
-import { RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('JsonTreeRootComponent', () => {
@@ -21,13 +21,12 @@ describe('JsonTreeRootComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [JsonTreeRootComponent, JsonTreeComponent],
-            imports: [NoopAnimationsModule, RouterModule],
             providers: [
                 MessageService,
-                UsersService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([]),
             ],
         }).compileComponents()
         userService = TestBed.inject(UsersService)

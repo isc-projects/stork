@@ -1,8 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { UntypedFormControl } from '@angular/forms'
+import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { SelectableClientClass } from '../forms/selectable-client-class'
-import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
+import { AutoCompleteCompleteEvent, AutoComplete } from 'primeng/autocomplete'
+import { FloatLabel } from 'primeng/floatlabel'
+import { NgTemplateOutlet } from '@angular/common'
 
 /**
  * A component providing a "chips" input box to specify client classes
@@ -14,9 +16,9 @@ import { AutoCompleteCompleteEvent } from 'primeng/autocomplete'
  */
 @Component({
     selector: 'app-dhcp-client-class-set-form',
-    standalone: false,
     templateUrl: './dhcp-client-class-set-form.component.html',
     styleUrls: ['./dhcp-client-class-set-form.component.sass'],
+    imports: [AutoComplete, FormsModule, ReactiveFormsModule, FloatLabel, NgTemplateOutlet],
 })
 export class DhcpClientClassSetFormComponent implements OnInit {
     /**

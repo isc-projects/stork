@@ -1,9 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core'
 
-@Pipe({
-    name: 'surround',
-    standalone: false,
-})
+@Pipe({ name: 'surround' })
 export class SurroundPipe implements PipeTransform {
     /**
      * Surround a given string with the left prefix and right suffix.

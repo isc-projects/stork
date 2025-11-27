@@ -1,19 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { KeaGlobalConfigurationViewComponent } from './kea-global-configuration-view.component'
-import { FieldsetModule } from 'primeng/fieldset'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { ButtonModule } from 'primeng/button'
-import { TableModule } from 'primeng/table'
-import { TooltipModule } from 'primeng/tooltip'
-import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { TreeModule } from 'primeng/tree'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PopoverModule } from 'primeng/popover'
-import { TagModule } from 'primeng/tag'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
@@ -26,24 +15,12 @@ describe('KeaGlobalConfigurationViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                ButtonModule,
-                FieldsetModule,
-                NoopAnimationsModule,
-                TableModule,
-                TooltipModule,
-                TreeModule,
-                PopoverModule,
-                TagModule,
-                ManagedAccessDirective,
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                MessageService,
             ],
-            declarations: [
-                CascadedParametersBoardComponent,
-                KeaGlobalConfigurationViewComponent,
-                DhcpOptionSetViewComponent,
-                HelpTipComponent,
-            ],
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],
         }).compileComponents()
 
         fixture = TestBed.createComponent(KeaGlobalConfigurationViewComponent)

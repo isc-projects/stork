@@ -1,5 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { uncamelCase, unhyphen } from '../utils'
+import { NgIf, NgFor } from '@angular/common'
+import { TableModule } from 'primeng/table'
+import { Button } from 'primeng/button'
+import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
+import { Tooltip } from 'primeng/tooltip'
 
 /**
  * Allowed types of the parameters displayed in the table.
@@ -68,9 +73,9 @@ export interface NamedCascadedParameters<T> {
  */
 @Component({
     selector: 'app-cascaded-parameters-board',
-    standalone: false,
     templateUrl: './cascaded-parameters-board.component.html',
     styleUrls: ['./cascaded-parameters-board.component.sass'],
+    imports: [NgIf, TableModule, NgFor, Button, ParameterViewComponent, Tooltip],
 })
 export class CascadedParametersBoardComponent<T> implements OnInit {
     /**

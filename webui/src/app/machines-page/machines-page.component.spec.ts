@@ -1,57 +1,29 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
-import { FormsModule } from '@angular/forms'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
 
 import { ConfirmationService, ToastMessageOptions, MessageService } from 'primeng/api'
-import { SelectButtonModule } from 'primeng/selectbutton'
-import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
 import { AppsVersions, GetMachinesServerToken200Response, Machine, ServicesService, SettingsService } from '../backend'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { DialogModule } from 'primeng/dialog'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { MenuModule } from 'primeng/menu'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { PopoverModule } from 'primeng/popover'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import anything = jasmine.anything
-import { MessageModule } from 'primeng/message'
 import {
     ActivatedRoute,
     ActivatedRouteSnapshot,
     convertToParamMap,
     NavigationEnd,
     Router,
-    RouterModule,
+    provideRouter,
 } from '@angular/router'
-import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { MachinesTableComponent } from '../machines-table/machines-table.component'
-import { BadgeModule } from 'primeng/badge'
-import { PanelModule } from 'primeng/panel'
-import { CheckboxModule } from 'primeng/checkbox'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { tableHasFilter } from '../table'
-import { ButtonModule } from 'primeng/button'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
-import { TooltipModule } from 'primeng/tooltip'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -132,19 +104,16 @@ describe('MachinesPageComponent', () => {
         servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(3))
 
         await TestBed.configureTestingModule({
-            declarations: [
-                MachinesPageComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                AppDaemonsStatusComponent,
-                VersionStatusComponent,
-                MachinesTableComponent,
-                PluralizePipe,
-            ],
-            imports: [
-                RouterModule.forRoot([
+            providers: [
+                MessageService,
+                ConfirmationService,
+                { provide: ServicesService, useValue: servicesApi },
+                { provide: VersionService, useValue: versionServiceStub },
+                { provide: SettingsService, useValue: settingsService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideRouter([
                     {
                         path: 'machines',
                         pathMatch: 'full',
@@ -155,37 +124,6 @@ describe('MachinesPageComponent', () => {
                         component: MachinesPageComponent,
                     },
                 ]),
-                FormsModule,
-                SelectButtonModule,
-                TableModule,
-                DialogModule,
-                MenuModule,
-                ProgressBarModule,
-                PopoverModule,
-                NoopAnimationsModule,
-                BreadcrumbModule,
-                MessageModule,
-                ConfirmDialogModule,
-                BadgeModule,
-                PanelModule,
-                CheckboxModule,
-                TagModule,
-                ManagedAccessDirective,
-                ButtonModule,
-                TabViewComponent,
-                TriStateCheckboxComponent,
-                IconFieldModule,
-                InputIconModule,
-                TooltipModule,
-            ],
-            providers: [
-                MessageService,
-                ConfirmationService,
-                { provide: ServicesService, useValue: servicesApi },
-                { provide: VersionService, useValue: versionServiceStub },
-                { provide: SettingsService, useValue: settingsService },
-                provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

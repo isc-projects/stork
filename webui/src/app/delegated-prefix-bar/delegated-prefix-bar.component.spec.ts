@@ -1,18 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { DelegatedPrefixBarComponent } from './delegated-prefix-bar.component'
-import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
-import { TooltipModule } from 'primeng/tooltip'
 
 describe('DelegatedPrefixBarComponent', () => {
     let component: DelegatedPrefixBarComponent
     let fixture: ComponentFixture<DelegatedPrefixBarComponent>
 
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [TooltipModule],
-            declarations: [DelegatedPrefixBarComponent, UtilizationBarComponent],
-        }).compileComponents()
+        await TestBed.compileComponents()
 
         fixture = TestBed.createComponent(DelegatedPrefixBarComponent)
         component = fixture.componentInstance

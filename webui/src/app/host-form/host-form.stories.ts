@@ -1,33 +1,14 @@
 import { HostFormComponent } from './host-form.component'
 
 import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder } from '@angular/forms'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { UntypedFormBuilder } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
-import { ButtonModule } from 'primeng/button'
-import { CheckboxModule } from 'primeng/checkbox'
-import { AutoCompleteModule } from 'primeng/autocomplete'
-import { SelectModule } from 'primeng/select'
-import { FieldsetModule } from 'primeng/fieldset'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { ToggleSwitchModule } from 'primeng/toggleswitch'
-import { MessageModule } from 'primeng/message'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { PopoverModule } from 'primeng/popover'
-import { SplitButtonModule } from 'primeng/splitbutton'
-import { TableModule } from 'primeng/table'
-import { ToggleButtonModule } from 'primeng/togglebutton'
-import { ToastModule } from 'primeng/toast'
 import { toastDecorator } from '../utils-stories'
 import { CreateHostBeginResponse, DHCPService, UpdateHostBeginResponse } from '../backend'
-import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
-import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { FloatLabelModule } from 'primeng/floatlabel'
 
 const mockCreateHostBeginData: CreateHostBeginResponse = {
     id: 123,
@@ -161,35 +142,7 @@ export default {
             providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), provideRouter([])],
         }),
         moduleMetadata({
-            imports: [
-                ButtonModule,
-                CheckboxModule,
-                AutoCompleteModule,
-                SelectModule,
-                FieldsetModule,
-                FormsModule,
-                InputNumberModule,
-                ToggleSwitchModule,
-                MessageModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                PopoverModule,
-                ReactiveFormsModule,
-                RouterModule,
-                SplitButtonModule,
-                TableModule,
-                ToastModule,
-                ToggleButtonModule,
-                FloatLabelModule,
-            ],
-            declarations: [
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                HelpTipComponent,
-                HostFormComponent,
-            ],
-            providers: [UntypedFormBuilder, DHCPService, MessageService],
+            providers: [UntypedFormBuilder, DHCPService, MessageService, provideAnimations()],
         }),
         toastDecorator,
     ],

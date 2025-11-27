@@ -9,6 +9,17 @@ import { getErrorMessage } from '../utils'
 import { Events, EventSortField, Machine } from '../backend'
 import { ServerSentEventsService } from '../server-sent-events.service'
 import { convertSortingFields } from '../table'
+import { NgIf, NgClass } from '@angular/common'
+import { SelectButton } from 'primeng/selectbutton'
+import { FormsModule } from '@angular/forms'
+import { Select } from 'primeng/select'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Button } from 'primeng/button'
+import { Tooltip } from 'primeng/tooltip'
+import { ConfirmDialog } from 'primeng/confirmdialog'
+import { TableModule } from 'primeng/table'
+import { EventTextComponent } from '../event-text/event-text.component'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -16,10 +27,23 @@ import { convertSortingFields } from '../table'
  */
 @Component({
     selector: 'app-events-panel',
-    standalone: false,
     templateUrl: './events-panel.component.html',
     styleUrls: ['./events-panel.component.sass'],
     providers: [ConfirmationService],
+    imports: [
+        NgIf,
+        SelectButton,
+        FormsModule,
+        Select,
+        ManagedAccessDirective,
+        Button,
+        Tooltip,
+        ConfirmDialog,
+        TableModule,
+        NgClass,
+        EventTextComponent,
+        LocaltimePipe,
+    ],
 })
 export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     /**

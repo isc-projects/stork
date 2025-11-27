@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { ArrayValueSetFormComponent } from './array-value-set-form.component'
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { FormControl } from '@angular/forms'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete'
+import { AutoComplete } from 'primeng/autocomplete'
 
 describe('ArrayValueSetFormComponent', () => {
     let component: ArrayValueSetFormComponent<string>
@@ -12,8 +12,7 @@ describe('ArrayValueSetFormComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [ArrayValueSetFormComponent],
-            imports: [FormsModule, NoopAnimationsModule, ReactiveFormsModule, AutoCompleteModule],
+            providers: [provideNoopAnimations()],
         })
         fixture = TestBed.createComponent(ArrayValueSetFormComponent<string>)
         component = fixture.componentInstance

@@ -1,5 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
-import { UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
+import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core'
+import {
+    UntypedFormArray,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { MenuItem } from 'primeng/api'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
@@ -9,6 +16,22 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { StorkValidators } from '../validators'
 import { DhcpOptionDef } from '../dhcp-option-def'
+import { NgIf, NgFor, NgSwitch, NgSwitchCase } from '@angular/common'
+import { Select } from 'primeng/select'
+import { Tooltip } from 'primeng/tooltip'
+import { Divider } from 'primeng/divider'
+import { FloatLabel } from 'primeng/floatlabel'
+import { InputNumber } from 'primeng/inputnumber'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Checkbox } from 'primeng/checkbox'
+import { SplitButton } from 'primeng/splitbutton'
+import { Button } from 'primeng/button'
+import { Textarea } from 'primeng/textarea'
+import { InputText } from 'primeng/inputtext'
+import { Ripple } from 'primeng/ripple'
+import { ToggleButton } from 'primeng/togglebutton'
+import { Tag } from 'primeng/tag'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 
 /**
  * A signature to a function adding a field to the form.
@@ -33,9 +56,31 @@ type AddFieldFn = () => void
  */
 @Component({
     selector: 'app-dhcp-option-form',
-    standalone: false,
     templateUrl: './dhcp-option-form.component.html',
     styleUrls: ['./dhcp-option-form.component.sass'],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        Select,
+        Tooltip,
+        Divider,
+        FloatLabel,
+        InputNumber,
+        HelpTipComponent,
+        NgFor,
+        Checkbox,
+        SplitButton,
+        Button,
+        NgSwitch,
+        NgSwitchCase,
+        Textarea,
+        InputText,
+        Ripple,
+        ToggleButton,
+        Tag,
+        forwardRef(() => DhcpOptionSetFormComponent),
+    ],
 })
 export class DhcpOptionFormComponent implements OnInit {
     /**

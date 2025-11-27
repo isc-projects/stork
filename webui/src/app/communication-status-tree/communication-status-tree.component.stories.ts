@@ -1,30 +1,14 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { CommunicationStatusTreeComponent } from './communication-status-tree.component'
-import { TreeModule } from 'primeng/tree'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { PopoverModule } from 'primeng/popover'
-import { TooltipModule } from 'primeng/tooltip'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideAnimations } from '@angular/platform-browser/animations'
+import { provideRouter } from '@angular/router'
 
 export default {
     title: 'App/CommunicationStatusTree',
     component: CommunicationStatusTreeComponent,
     decorators: [
         applicationConfig({
-            providers: [provideRouter([])],
-        }),
-        moduleMetadata({
-            imports: [BreadcrumbModule, NoopAnimationsModule, PopoverModule, RouterModule, TooltipModule, TreeModule],
-            declarations: [
-                BreadcrumbsComponent,
-                CommunicationStatusTreeComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-            ],
+            providers: [provideRouter([]), provideAnimations()],
         }),
     ],
 } as Meta

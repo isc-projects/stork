@@ -18,7 +18,6 @@ import { Message } from 'primeng/message'
  */
 @Directive({
     selector: '[appAccessEntity]',
-    standalone: true,
 })
 export class ManagedAccessDirective implements AfterViewInit {
     /**

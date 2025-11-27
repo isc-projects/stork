@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { CheckboxChangeEvent } from 'primeng/checkbox'
 import { Bind9FormattedConfig } from '../backend'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 describe('Bind9ConfigPreviewComponent', () => {
     let component: Bind9ConfigPreviewComponent
@@ -12,8 +13,7 @@ describe('Bind9ConfigPreviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
-            imports: [Bind9ConfigPreviewComponent],
+            providers: [MessageService, provideHttpClientTesting(), provideHttpClient(withInterceptorsFromDi())],
         }).compileComponents()
 
         fixture = TestBed.createComponent(Bind9ConfigPreviewComponent)

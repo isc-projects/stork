@@ -1,18 +1,15 @@
-import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
+import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { TextFileViewerComponent } from './text-file-viewer.component'
-import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
+import { MessageService } from 'primeng/api'
 
 export default {
     title: 'App/TextFileViewer',
     component: TextFileViewerComponent,
     decorators: [
         applicationConfig({
-            providers: [provideNoopAnimations()],
-        }),
-        moduleMetadata({
-            imports: [],
-            declarations: [],
+            providers: [MessageService, provideAnimations()],
         }),
         toastDecorator,
     ],

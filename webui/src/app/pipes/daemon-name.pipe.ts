@@ -7,10 +7,7 @@ import { daemonNameToFriendlyName } from '../utils'
  * @param value daemon name to transform.
  * @returns nice name.
  */
-@Pipe({
-    name: 'daemonNiceName',
-    standalone: false,
-})
+@Pipe({ name: 'daemonNiceName' })
 export class DaemonNiceNamePipe implements PipeTransform {
     /**
      * Transforms a daemon name to a nice name.

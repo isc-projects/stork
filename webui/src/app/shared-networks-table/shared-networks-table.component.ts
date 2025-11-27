@@ -7,23 +7,63 @@ import {
     SharedNetworkWithUniquePools,
     extractUniqueSharedNetworkPools,
 } from '../subnets'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { Router } from '@angular/router'
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { Router, RouterLink } from '@angular/router'
 import { DHCPService, NetworkSortField, SharedNetwork } from '../backend'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { MessageService, TableState } from 'primeng/api'
+import { MessageService, TableState, PrimeTemplate } from 'primeng/api'
 import { getErrorMessage } from '../utils'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Panel } from 'primeng/panel'
+import { NgIf, NgFor, DecimalPipe } from '@angular/common'
+import { Tag } from 'primeng/tag'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { FloatLabel } from 'primeng/floatlabel'
+import { InputNumber } from 'primeng/inputnumber'
+import { FormsModule } from '@angular/forms'
+import { Select } from 'primeng/select'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { InputText } from 'primeng/inputtext'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { HumanCountComponent } from '../human-count/human-count.component'
+import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 /**
  * Component for presenting shared networks in a table.
  */
 @Component({
     selector: 'app-shared-networks-table',
-    standalone: false,
     templateUrl: './shared-networks-table.component.html',
     styleUrl: './shared-networks-table.component.sass',
+    imports: [
+        Button,
+        RouterLink,
+        ManagedAccessDirective,
+        TableModule,
+        Panel,
+        NgIf,
+        Tag,
+        HelpTipComponent,
+        PrimeTemplate,
+        FloatLabel,
+        InputNumber,
+        FormsModule,
+        Select,
+        IconField,
+        InputIcon,
+        InputText,
+        EntityLinkComponent,
+        HumanCountComponent,
+        NgFor,
+        SubnetBarComponent,
+        DecimalPipe,
+        PluralizePipe,
+    ],
 })
 export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     /**

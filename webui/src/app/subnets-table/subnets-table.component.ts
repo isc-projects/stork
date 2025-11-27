@@ -1,9 +1,9 @@
 import { Component, computed, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet, SubnetSortField } from '../backend'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { Router } from '@angular/router'
-import { MessageService, TableState } from 'primeng/api'
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { Router, RouterLink } from '@angular/router'
+import { MessageService, TableState, PrimeTemplate } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
@@ -15,12 +15,56 @@ import {
 } from '../subnets'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { Button } from 'primeng/button'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { Panel } from 'primeng/panel'
+import { NgIf, NgFor, DecimalPipe } from '@angular/common'
+import { Tag } from 'primeng/tag'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { FloatLabel } from 'primeng/floatlabel'
+import { InputNumber } from 'primeng/inputnumber'
+import { FormsModule } from '@angular/forms'
+import { Select } from 'primeng/select'
+import { IconField } from 'primeng/iconfield'
+import { InputIcon } from 'primeng/inputicon'
+import { InputText } from 'primeng/inputtext'
+import { Tooltip } from 'primeng/tooltip'
+import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { HumanCountComponent } from '../human-count/human-count.component'
+import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
+import { Message } from 'primeng/message'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 @Component({
     selector: 'app-subnets-table',
-    standalone: false,
     templateUrl: './subnets-table.component.html',
     styleUrl: './subnets-table.component.sass',
+    imports: [
+        Button,
+        RouterLink,
+        ManagedAccessDirective,
+        TableModule,
+        Panel,
+        NgIf,
+        Tag,
+        HelpTipComponent,
+        PrimeTemplate,
+        FloatLabel,
+        InputNumber,
+        FormsModule,
+        Select,
+        IconField,
+        InputIcon,
+        InputText,
+        Tooltip,
+        SubnetBarComponent,
+        NgFor,
+        HumanCountComponent,
+        PoolBarsComponent,
+        Message,
+        DecimalPipe,
+        PluralizePipe,
+    ],
 })
 export class SubnetsTableComponent implements OnInit, OnDestroy {
     /**

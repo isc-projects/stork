@@ -16,6 +16,19 @@ import {
 } from '../utils'
 import { AppTab } from '../apps'
 import { Bind9Daemon } from '../backend'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
+import { Panel } from 'primeng/panel'
+import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common'
+import { Button } from 'primeng/button'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { AppOverviewComponent } from '../app-overview/app-overview.component'
+import { TabViewComponent } from '../tab-view/tab-view.component'
+import { Message } from 'primeng/message'
+import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
+import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
 
 type DaemonInfo = Bind9Daemon & {
     statusErred: boolean
@@ -25,9 +38,25 @@ type DaemonInfo = Bind9Daemon & {
 
 @Component({
     selector: 'app-app-tab',
-    standalone: false,
     templateUrl: './app-tab.component.html',
     styleUrls: ['./app-tab.component.sass'],
+    imports: [
+        ManagedAccessDirective,
+        RenameAppDialogComponent,
+        Panel,
+        NgIf,
+        Button,
+        ProgressSpinner,
+        AppOverviewComponent,
+        TabViewComponent,
+        Message,
+        NgSwitch,
+        NgSwitchCase,
+        Bind9DaemonComponent,
+        PdnsDaemonComponent,
+        EventsPanelComponent,
+        Bind9DaemonControlsComponent,
+    ],
 })
 export class AppTabComponent {
     private _appTab: AppTab

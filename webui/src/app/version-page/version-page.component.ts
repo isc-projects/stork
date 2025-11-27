@@ -5,6 +5,15 @@ import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { NgIf, NgFor, AsyncPipe, UpperCasePipe, TitleCasePipe, DatePipe } from '@angular/common'
+import { Message } from 'primeng/message'
+import { Button } from 'primeng/button'
+import { Panel } from 'primeng/panel'
+import { TableModule } from 'primeng/table'
+import { Badge } from 'primeng/badge'
+import { RouterLink } from '@angular/router'
+import { VersionStatusComponent } from '../version-status/version-status.component'
 
 /**
  * This component displays current known released versions of ISC Kea, BIND 9, and Stork.
@@ -16,9 +25,24 @@ import { MessageService } from 'primeng/api'
  */
 @Component({
     selector: 'app-version-page',
-    standalone: false,
     templateUrl: './version-page.component.html',
     styleUrl: './version-page.component.sass',
+    imports: [
+        BreadcrumbsComponent,
+        NgIf,
+        Message,
+        Button,
+        Panel,
+        TableModule,
+        Badge,
+        RouterLink,
+        NgFor,
+        VersionStatusComponent,
+        AsyncPipe,
+        UpperCasePipe,
+        TitleCasePipe,
+        DatePipe,
+    ],
 })
 export class VersionPageComponent implements OnInit, OnDestroy {
     /**
