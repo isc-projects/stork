@@ -4,8 +4,8 @@ import { applicationConfig, moduleMetadata } from '@storybook/angular'
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import { providePrimeNG } from 'primeng/config'
 import { ToastModule } from 'primeng/toast'
-import Aura from '@primeng/themes/aura'
 import AuraBluePreset from '../src/app/app.config'
+import { withThemeByClassName } from '@storybook/addon-themes'
 setCompodocJson(docJson)
 
 const preview = {
@@ -45,6 +45,13 @@ const preview = {
                 }),
             ],
         }),
+        withThemeByClassName({
+            themes: {
+                light: 'light',
+                dark: 'dark',
+            },
+            defaultTheme: 'light',
+        })
     ],
 }
 export default preview
