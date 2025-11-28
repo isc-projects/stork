@@ -651,6 +651,123 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	require.Zero(t, agent.stats.GetKeaStats().GetErrorCount(daemonname.D2))
 }
 
+// Test that a command can be successfully forwarded to Kea and the response
+// can be parsed even if the agent is in a version prior to 2.3.2.
+func TestForwardToKeaOverHTTPFromOldAgent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// The Kea responses are still wrapped in a JSON array for old agents.
+	rawResponseV4 := []byte(`[
+		{
+			"result": 1,
+			"text": "operation failed"
+		}
+	]`)
+
+	rawResponseV6 := []byte(`[{
+			"result": 0,
+			"text": "operation succeeded",
+			"arguments": {
+				"success": true
+			}
+		}
+	]`)
+
+	rspV4 := agentapi.ForwardToKeaOverHTTPRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{
+			{
+				Status: &agentapi.Status{
+					Code: 0,
+				},
+				Response: rawResponseV4,
+			},
+		},
+	}
+
+	rspV6 := agentapi.ForwardToKeaOverHTTPRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{
+			{
+				Status: &agentapi.Status{
+					Code: 0,
+				},
+				Response: rawResponseV6,
+			},
+		},
+	}
+
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(&rspV4, nil)
+
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(&rspV6, nil)
+
+	ctx := context.Background()
+	commandV4 := keactrl.NewCommandBase(keactrl.CommandName("test-command"), daemonname.DHCPv4)
+	commandV6 := keactrl.NewCommandBase(keactrl.CommandName("test-command"), daemonname.DHCPv6)
+	var responseV4 keactrl.Response
+	var responseV6 keactrl.Response
+	dbDaemon := &dbmodel.Daemon{
+		Name: daemonname.DHCPv4,
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbDaemon, []keactrl.SerializableCommand{commandV4}, &responseV4)
+	require.NoError(t, err)
+	require.NotNil(t, responseV4)
+	require.NoError(t, cmdsResult.Error)
+	require.Len(t, cmdsResult.CmdsErrors, 1)
+	require.Error(t, cmdsResult.CmdsErrors[0])
+
+	require.Equal(t, keactrl.ResponseError, responseV4.Result)
+	require.Equal(t, "operation failed", responseV4.Text)
+	require.Nil(t, responseV4.Arguments)
+
+	dbDaemon.Name = daemonname.DHCPv6
+	cmdsResult, err = agents.ForwardToKeaOverHTTP(ctx, dbDaemon, []keactrl.SerializableCommand{commandV6}, &responseV6)
+	require.NoError(t, err)
+	require.NotNil(t, responseV6)
+	require.NoError(t, cmdsResult.Error)
+	require.Len(t, cmdsResult.CmdsErrors, 1)
+	require.NoError(t, cmdsResult.CmdsErrors[0])
+
+	require.NotNil(t, responseV6)
+	require.Equal(t, keactrl.ResponseSuccess, responseV6.Result)
+	require.Equal(t, "operation succeeded", responseV6.Text)
+	require.NotNil(t, responseV6.Arguments)
+	argumentMap := map[string]any{}
+	err = json.Unmarshal(responseV6.Arguments, &argumentMap)
+	require.NoError(t, err)
+	require.Len(t, argumentMap, 1)
+	require.Contains(t, argumentMap, "success")
+
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.stats.GetTotalAgentErrorCount())
+	require.Zero(t, agent.stats.GetKeaStats().GetErrorCount(daemonname.CA))
+	require.EqualValues(t, 1, agent.stats.GetKeaStats().GetErrorCount(daemonname.DHCPv4))
+	require.Zero(t, agent.stats.GetKeaStats().GetErrorCount(daemonname.DHCPv6))
+	require.Zero(t, agent.stats.GetKeaStats().GetErrorCount(daemonname.D2))
+}
+
 // Test that two commands at once can be successfully forwarded to the same Kea
 // daemon and the response can be parsed.
 func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {

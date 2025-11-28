@@ -315,3 +315,18 @@ func GetResponseError(response ExaminableResponse) (err error) {
 	}
 	return
 }
+
+// Unwraps Kea response from an array. Returns an error if the response is an
+// array but its length is not equal to 1.
+// If the response is not an array, it is returned as is.
+func UnwrapKeaResponseArray(responseData json.RawMessage) (json.RawMessage, error) {
+	var arrayBody []json.RawMessage
+	err := json.Unmarshal(responseData, &arrayBody)
+	if err == nil {
+		if len(arrayBody) != 1 {
+			return nil, errors.Errorf("invalid number of responses received, got: %d, expected: 1", len(arrayBody))
+		}
+		responseData = arrayBody[0]
+	}
+	return responseData, nil
+}

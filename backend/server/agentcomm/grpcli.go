@@ -829,6 +829,19 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, dae
 		return nil, errors.Errorf("wrong response to a Kea command from agent %s", agentURL)
 	}
 
+	// The response may be wrapped in an array if we communicate with a
+	// Stork agent prior 2.3.2 that doesn't unwrap the response for us.
+	for _, keaResponse := range response.KeaResponses {
+		responseBytes, err := keactrl.UnwrapKeaResponseArray(keaResponse.Response)
+		if err != nil {
+			// Leave the response as is.
+			log.WithError(err).Warn("Failed to unwrap Kea response array, leaving the response as is")
+		} else {
+			// Replace the response with the unwrapped one.
+			keaResponse.Response = responseBytes
+		}
+	}
+
 	// We will aggregate the results from various communication levels in this structure.
 	result := &KeaCmdsResult{}
 	if response.Status.Code != agentapi.Status_OK {

@@ -538,13 +538,9 @@ func (c *keaHTTPConnector) sendPayload(ctx context.Context, command []byte) ([]b
 
 	// The responses from the Kea send over HTTP are wrapped in a JSON array.
 	// Responses from the socket channel are always single JSON objects.
-	var arrayBody []json.RawMessage
-	err = json.Unmarshal(body, &arrayBody)
-	if err == nil {
-		if len(arrayBody) != 1 {
-			return nil, errors.Errorf("invalid number of responses received, got: %d, expected: 1", len(arrayBody))
-		}
-		body = arrayBody[0]
+	body, err = keactrl.UnwrapKeaResponseArray(body)
+	if err != nil {
+		return nil, err
 	}
 
 	return body, nil

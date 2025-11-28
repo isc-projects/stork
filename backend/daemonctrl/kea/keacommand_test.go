@@ -634,3 +634,81 @@ func TestResponseUnmarshalViaJSONLibrary(t *testing.T) {
 	require.Equal(t, "value1", arguments["key1"])
 	require.Equal(t, float64(42), arguments["key2"])
 }
+
+// Test that the Kea response wrapped in a JSON array is unwrapped correctly.
+func TestUnwrapKeaResponseArray(t *testing.T) {
+	// Arrange
+	input := []byte(`[
+		{
+			"result": 1,
+			"text": "an error occurred",
+			"arguments": {
+				"key1": "value1",
+				"key2": 42
+			}
+		}
+	]`)
+
+	// Act
+	output, err := UnwrapKeaResponseArray(input)
+
+	// Assert
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"result": 1,
+		"text": "an error occurred",
+		"arguments": {
+			"key1": "value1",
+			"key2": 42
+		}
+	}`, string(output))
+}
+
+// Test that the empty Kea response array cannot be unwrapped.
+func TestUnwrapKeaResponseEmptyArray(t *testing.T) {
+	// Arrange
+	input := []byte(`[]`)
+
+	// Act
+	output, err := UnwrapKeaResponseArray(input)
+
+	// Assert
+	require.ErrorContains(t, err, "invalid number of responses received, got: 0, expected: 1")
+	require.Nil(t, output)
+}
+
+// Test that the Kea response array with more than one element cannot be
+// unwrapped.
+func TestUnwrapKeaResponseMultipleElementsArray(t *testing.T) {
+	// Arrange
+	input := []byte(`[
+		{ "result": 1, "text": "an error occurred" },
+		{ "result": 0, "text": "success" }
+	]`)
+
+	// Act
+	output, err := UnwrapKeaResponseArray(input)
+
+	// Assert
+	require.ErrorContains(t, err, "invalid number of responses received, got: 2, expected: 1")
+	require.Nil(t, output)
+}
+
+// Test that a non-array Kea response is returned as is.
+func TestUnwrapKeaResponseNonArray(t *testing.T) {
+	// Arrange
+	input := []byte(`{
+		"result": 0,
+		"text": "success"
+	}`)
+
+	// Act
+	output, err := UnwrapKeaResponseArray(input)
+
+	// Assert
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"result": 0,
+		"text": "success"
+	}`, string(output))
+}
