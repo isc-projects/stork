@@ -17,7 +17,6 @@ import { IconFieldModule } from 'primeng/iconfield'
 import { InputIconModule } from 'primeng/inputicon'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { ManagedAccessDirective } from '../managed-access.directive'
 import { PopoverModule } from 'primeng/popover'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { MenuModule } from 'primeng/menu'
@@ -25,7 +24,6 @@ import { InputTextModule } from 'primeng/inputtext'
 import { BadgeModule } from 'primeng/badge'
 import { TagModule } from 'primeng/tag'
 import { FormsModule } from '@angular/forms'
-import { AuthService } from '../auth.service'
 import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { VersionStatusComponent } from '../version-status/version-status.component'
@@ -39,36 +37,6 @@ import { AppsVersions } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { userEvent, within, expect } from '@storybook/test'
-
-export class MockedAuthService extends AuthService {
-    superAdmin(): boolean {
-        return true
-    }
-}
-
-class MockedAuthServiceAdmin extends AuthService {
-    superAdmin(): boolean {
-        return false
-    }
-
-    isAdmin(): boolean {
-        return true
-    }
-}
-
-class MockedAuthServiceReadOnly extends AuthService {
-    superAdmin(): boolean {
-        return false
-    }
-
-    isAdmin(): boolean {
-        return false
-    }
-
-    isInReadOnlyGroup(): boolean {
-        return true
-    }
-}
 
 const meta: Meta<MachinesPageComponent> = {
     title: 'App/MachinesPage',
@@ -95,7 +63,6 @@ const meta: Meta<MachinesPageComponent> = {
                         component: MachinesPageComponent,
                     },
                 ]),
-                { provide: AuthService, useClass: MockedAuthService },
                 {
                     provide: VersionService,
                     useValue: {
@@ -128,7 +95,6 @@ const meta: Meta<MachinesPageComponent> = {
                 IconFieldModule,
                 InputIconModule,
                 TriStateCheckboxComponent,
-                ManagedAccessDirective,
                 PopoverModule,
                 SelectButtonModule,
                 MenuModule,
@@ -146,7 +112,7 @@ const meta: Meta<MachinesPageComponent> = {
         toastDecorator,
     ],
     args: {
-        registrationDisabled: true,
+        registrationDisabled: false,
     },
 }
 
@@ -676,7 +642,7 @@ export const EmptyList: Story = {
                 url: 'http://localhost/api/settings',
                 method: 'GET',
                 status: 200,
-                response: () => ({ enableMachineRegistration: true }),
+                response: () => ({ enableMachineRegistration: !meta.args.registrationDisabled }),
             },
             {
                 url: 'http://localhost/api/machines-server-token',
@@ -694,7 +660,7 @@ export const EmptyList: Story = {
     },
 }
 
-export const ListWhenSuperAdminRole: Story = {
+export const ListMachines: Story = {
     parameters: {
         mockData: [
             {
@@ -743,7 +709,7 @@ export const ListWhenSuperAdminRole: Story = {
                 url: 'http://localhost/api/settings',
                 method: 'GET',
                 status: 200,
-                response: () => ({ enableMachineRegistration: true }),
+                response: () => ({ enableMachineRegistration: !meta.args.registrationDisabled }),
             },
             {
                 url: 'http://localhost/api/machines-server-token',
@@ -761,8 +727,11 @@ export const ListWhenSuperAdminRole: Story = {
     },
 }
 
-export const AllMachinesShown: Story = {
-    parameters: ListWhenSuperAdminRole.parameters,
+export const TestAllMachinesShown: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListMachines.parameters,
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
@@ -820,8 +789,11 @@ export const AllMachinesShown: Story = {
     },
 }
 
-export const UnauthorizedShown: Story = {
-    parameters: ListWhenSuperAdminRole.parameters,
+export const TestUnauthorizedShown: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListMachines.parameters,
     play: async ({ canvas }) => {
         // Arrange
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
@@ -869,8 +841,11 @@ export const UnauthorizedShown: Story = {
     },
 }
 
-export const AuthorizedShown: Story = {
-    parameters: ListWhenSuperAdminRole.parameters,
+export const TestAuthorizedShown: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListMachines.parameters,
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
@@ -916,22 +891,4 @@ export const AuthorizedShown: Story = {
             'true'
         )
     },
-}
-
-export const ListWhenAdminRole: Story = {
-    parameters: ListWhenSuperAdminRole.parameters,
-    decorators: [
-        applicationConfig({
-            providers: [{ provide: AuthService, useClass: MockedAuthServiceAdmin }],
-        }),
-    ],
-}
-
-export const WhenListReadOnlyRole: Story = {
-    parameters: ListWhenSuperAdminRole.parameters,
-    decorators: [
-        applicationConfig({
-            providers: [{ provide: AuthService, useClass: MockedAuthServiceReadOnly }],
-        }),
-    ],
 }

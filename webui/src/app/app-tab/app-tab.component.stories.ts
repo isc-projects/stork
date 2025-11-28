@@ -1,4 +1,4 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
@@ -8,23 +8,7 @@ import { of } from 'rxjs'
 import { provideRouter } from '@angular/router'
 import { AppsVersions } from '../backend'
 import { Severity, VersionService } from '../version.service'
-import { Directive, Input, Output, EventEmitter, AfterViewInit } from '@angular/core'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
-
-// Mock directive that always grants access
-@Directive({
-    selector: '[appAccessEntity]',
-})
-class MockManagedAccessDirective implements AfterViewInit {
-    @Input() appAccessEntity: any
-    @Input() appAccessType: any = 'read'
-    @Input() appHideIfNoAccess: boolean = false
-    @Output() appHasAccess = new EventEmitter<boolean>()
-
-    ngAfterViewInit() {
-        this.appHasAccess.emit(true)
-    }
-}
 
 const mockBind9AppTab = {
     app: {
@@ -171,9 +155,6 @@ export default {
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
             ],
-        }),
-        moduleMetadata({
-            imports: [MockManagedAccessDirective],
         }),
         toastDecorator,
     ],
