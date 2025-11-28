@@ -1,4 +1,4 @@
-[func] slawek
+[func] ! slawek
 
     Support for monitoring Kea daemons directly without an intermediate
     Kea Control Agent (direct Kea API). Implemented communication via
