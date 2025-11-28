@@ -52,8 +52,8 @@ func (n *NoParseScope) getFormattedOutput(filter *Filter) formatterOutput {
 	builder := strings.Builder{}
 	builder.WriteString("//@stork:no-parse:scope\n")
 	builder.WriteString(n.Contents.GetString())
-	builder.WriteString("\n//@stork:no-parse:end\n")
-	return newFormatterToken(builder.String())
+	builder.WriteString("\n//@stork:no-parse:end")
+	return newFormatterLines(builder.String())
 }
 
 // Represents the @stork:no-parse:global directive.
@@ -67,6 +67,5 @@ func (n *NoParseGlobal) getFormattedOutput(filter *Filter) formatterOutput {
 	builder := strings.Builder{}
 	builder.WriteString("//@stork:no-parse:global\n")
 	builder.WriteString(n.Contents.GetString())
-	builder.WriteString("\n")
-	return newFormatterToken(builder.String())
+	return newFormatterLines(builder.String())
 }

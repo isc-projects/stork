@@ -19,7 +19,8 @@ func TestAddressMatchListElementFormatACL(t *testing.T) {
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	require.Equal(t, `"test-acl";`, builder.getString())
 }
 
@@ -34,7 +35,8 @@ func TestAddressMatchListElementFormatACLNegation(t *testing.T) {
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	require.Equal(t, `! "test-acl";`, builder.getString())
 }
 
@@ -47,7 +49,8 @@ func TestAddressMatchListElementFormatKey(t *testing.T) {
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	require.Equal(t, `key "test-key";`, builder.getString())
 }
 
@@ -60,7 +63,8 @@ func TestAddressMatchListElementFormatKeyNegation(t *testing.T) {
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	require.Equal(t, `! key "test-key";`, builder.getString())
 }
 
@@ -73,7 +77,8 @@ func TestAddressMatchListElementFormatIPAddress(t *testing.T) {
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	require.Equal(t, `"1.1.1.1";`, builder.getString())
 }
 
@@ -86,7 +91,8 @@ func TestAddressMatchListElementFormatIPAddressNegation(t *testing.T) {
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	require.Equal(t, `! "1.1.1.1";`, builder.getString())
 }
 

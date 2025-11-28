@@ -228,7 +228,8 @@ func TestConfigGetFormattedString(t *testing.T) {
 	t.Run("no filtering", func(t *testing.T) {
 		// Serialize the configuration without filtering.
 		var builder strings.Builder
-		for text := range cfg.GetFormattedTextIterator(1, nil) {
+		for text, err := range cfg.GetFormattedTextIterator(1, nil) {
+			require.NoError(t, err)
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
@@ -244,7 +245,8 @@ func TestConfigGetFormattedString(t *testing.T) {
 	t.Run("filtering", func(t *testing.T) {
 		// Serialize the configuration with filtering.
 		var builder strings.Builder
-		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeConfig, FilterTypeView, FilterTypeZone, FilterTypeNoParse)) {
+		for text, err := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeConfig, FilterTypeView, FilterTypeZone, FilterTypeNoParse)) {
+			require.NoError(t, err)
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
@@ -268,7 +270,8 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 
 	t.Run("view", func(t *testing.T) {
 		var builder strings.Builder
-		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeView)) {
+		for text, err := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeView)) {
+			require.NoError(t, err)
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
@@ -283,7 +286,8 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 
 	t.Run("zone", func(t *testing.T) {
 		var builder strings.Builder
-		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeZone)) {
+		for text, err := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeZone)) {
+			require.NoError(t, err)
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
@@ -298,7 +302,8 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 
 	t.Run("config options", func(t *testing.T) {
 		var builder strings.Builder
-		for text := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeConfig)) {
+		for text, err := range cfg.GetFormattedTextIterator(0, NewFilter(FilterTypeConfig)) {
+			require.NoError(t, err)
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
@@ -312,6 +317,48 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 			require.Nil(t, statement.NoParse)
 		}
 	})
+}
+
+// Test an error is return upon trying to emit too long line under the
+// no-parse directive.
+func TestConfigGetFormattedTextTooLongLine(t *testing.T) {
+	// Generate a too long line.
+	longLine := strings.Repeat("a", maxFormatterLinesBufferSize+1)
+	// Generate the configuration starting with valid configuration but ending
+	// with two consecutive too long lines.
+	configText := fmt.Sprintf(`
+		zone "example.com" {
+			type forward;
+		};
+		//@stork:no-parse:global
+		%s;
+		%s;
+	`, longLine, longLine)
+
+	// Parse the configuration.
+	cfg, err := NewParser().Parse("", strings.NewReader(configText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	var (
+		lines  []string
+		errors []error
+	)
+	// Serialize the configuration. This mechanism, when emitting the contents of the
+	// no-parse directive, will allocate a buffer. If the buffer's capacity is exceeded,
+	// it should return an error. The first lines should be emitted successfully.
+	// The process should stop after the first error.
+	for text, err := range cfg.GetFormattedTextIterator(0, nil) {
+		if err != nil {
+			errors = append(errors, err)
+		} else {
+			lines = append(lines, text)
+		}
+	}
+	// Verify that the first lines were emitted successfully.
+	require.Len(t, lines, 4)
+	// Verify that the process stopped after the first error.
+	require.Len(t, errors, 1)
 }
 
 // Test that the parser correctly handles the @stork:no-parse directive.
@@ -336,8 +383,8 @@ func TestNoParseSelectedZone(t *testing.T) {
 	require.Equal(t, "example.com", cfg.Statements[0].Zone.Name)
 	require.NotNil(t, cfg.Statements[1].NoParse)
 	require.False(t, cfg.Statements[1].NoParse.IsGlobal())
-	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(), `
-		zone "example.org" {
+	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(),
+		`zone "example.org" {
 			type forward;
 		};`)
 	require.NotNil(t, cfg.Statements[2].Zone)
@@ -456,8 +503,8 @@ func TestNoParseGlobal(t *testing.T) {
 	require.Len(t, cfg.Statements[0].Zone.Clauses, 1)
 	require.NotNil(t, cfg.Statements[1].NoParse)
 	require.True(t, cfg.Statements[1].NoParse.IsGlobal())
-	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(), `
-		zone "example.org" {
+	require.Contains(t, cfg.Statements[1].NoParse.GetContentsString(),
+		`zone "example.org" {
 			type forward;
 		};`)
 }

@@ -14,7 +14,8 @@ func requireConfigEq(t *testing.T, expected string, formattedOutput formatterOut
 	expected = strings.ReplaceAll(expected, " ;", ";")
 	expectedTokens := strings.Fields(expected)
 	builder := newFormatterStringBuilder()
-	formattedOutput.write(0, false, builder)
+	err := formattedOutput.write(0, false, builder)
+	require.NoError(t, err)
 	actual := builder.getString()
 	actualTokens := strings.Fields(actual)
 	require.Equal(t, len(expectedTokens), len(actualTokens), `different number of tokens in expected and actual:

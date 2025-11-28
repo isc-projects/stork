@@ -37,7 +37,8 @@ func TestResponsePolicyFormat(t *testing.T) {
 	output := rp.getFormattedOutput(nil)
 	require.NotNil(t, output)
 	builder := newFormatterStringBuilder()
-	output.write(0, false, builder)
+	err := output.write(0, false, builder)
+	require.NoError(t, err)
 	requireConfigEq(t, `response-policy {
 		zone "rpz.example.com" max-policy-ttl 100 min-update-interval 102;
 		zone "rpz.local";

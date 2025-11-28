@@ -858,7 +858,10 @@ func receiveBind9Config(fileType agentapi.Bind9ConfigFileType, bind9Config *bind
 	if err != nil {
 		return true, status.Error(codes.Aborted, err.Error())
 	}
-	for text := range bind9Config.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(req.Filter)) {
+	for text, err := range bind9Config.GetFormattedTextIterator(0, bind9config.NewFilterFromProto(req.Filter)) {
+		if err != nil {
+			return true, status.Error(codes.Aborted, err.Error())
+		}
 		err := server.Send(&agentapi.ReceiveBind9ConfigRsp{
 			Response: &agentapi.ReceiveBind9ConfigRsp_Line{
 				Line: text,

@@ -33,19 +33,21 @@ func (c *Config) GetSourcePath() string {
 // specifies which configuration elements should be included in the output.
 // If the filter is nil, all configuration elements are returned. The returned
 // iterator yields the serialized configuration line by line.
-func (c *Config) GetFormattedTextIterator(indentLevel int, filter *Filter) iter.Seq[string] {
+func (c *Config) GetFormattedTextIterator(indentLevel int, filter *Filter) iter.Seq2[string, error] {
 	formatter := newFormatter(indentLevel)
 	for _, statement := range c.Statements {
 		if o := statement.getFormattedOutput(filter); o != nil {
 			formatter.addClause(o)
 		}
 	}
-	return func(yield func(string) bool) {
-		formatter.getFormattedTextFunc(func(text string) {
-			if !yield(text) {
+	return func(yield func(string, error) bool) {
+		if err := formatter.getFormattedTextFunc(func(text string) {
+			if !yield(text, nil) {
 				return
 			}
-		})
+		}); err != nil {
+			yield("", err)
+		}
 	}
 }
 

@@ -15,6 +15,7 @@ var _ formatterBuilder = (*formatterStringBuilder)(nil)
 type formatterStringBuilder struct {
 	builder       strings.Builder
 	indentPattern string
+	lastNewLine   bool
 }
 
 // Instantiates a new formatter builder with the default indent pattern (single tab).
@@ -22,6 +23,7 @@ func newFormatterStringBuilder() *formatterStringBuilder {
 	return &formatterStringBuilder{
 		builder:       strings.Builder{},
 		indentPattern: "\t",
+		lastNewLine:   false,
 	}
 }
 
@@ -33,16 +35,24 @@ func (b *formatterStringBuilder) getString() string {
 // Writes the indentation to the builder. The level specifies the indentation level.
 func (b *formatterStringBuilder) writeIndent(level int) {
 	b.builder.WriteString(strings.Repeat(b.indentPattern, level))
+	b.lastNewLine = false
 }
 
 // Writes a new line to the builder.
 func (b *formatterStringBuilder) writeNewLine() {
 	b.builder.WriteString("\n")
+	b.lastNewLine = true
 }
 
 // Writes the specified string to the builder.
 func (b *formatterStringBuilder) write(s string) {
 	b.builder.WriteString(s)
+	b.lastNewLine = false
+}
+
+// Returns true if the last call was to write a new line.
+func (b *formatterStringBuilder) isLastNewLine() bool {
+	return b.lastNewLine
 }
 
 // Tests that the formatter outputs correct contents for a combination
@@ -87,8 +97,7 @@ func TestFormatterClause(t *testing.T) {
 	formattedText := builder.String()
 	require.NotEmpty(t, formattedText)
 
-	require.Contains(t, `
-	foo foo-option {
+	require.Equal(t, `foo foo-option {
 		bar bar-option {
 			bar3;
 			bar4;
@@ -96,11 +105,230 @@ func TestFormatterClause(t *testing.T) {
 	} { foo2 foo3 } cab cab-option {
 		abc;
 	} woo {
-		wook
-		wookie;
-	};
+		wook wookie;
+	};`, strings.TrimSpace(formattedText))
+}
 
-`, formattedText)
+func TestFormatterScopeNoParseBetweenTokens(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterToken("foo"))
+	scope.add(newFormatterLines("//@stork:no-parse:scope"))
+	scope.add(newFormatterToken("bar"))
+	scope.add(newFormatterLines("//@stork:no-parse:end"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+	foo
+//@stork:no-parse:scope
+	bar
+//@stork:no-parse:end
+}`,
+		strings.TrimSpace(formattedText))
+}
+
+// This test verifies that the @stork:no-parse:scope directive can be placed
+// between two clauses in the scope. The output should have proper indentation.
+func TestFormatterScopeNoParseBetweenClauses(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterClause("foo"))
+	scope.add(newFormatterLines("//@stork:no-parse:scope"))
+	scope.add(newFormatterClause("bar"))
+	scope.add(newFormatterLines("//@stork:no-parse:end"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+	foo;
+//@stork:no-parse:scope
+	bar;
+//@stork:no-parse:end
+}`, strings.TrimSpace(formattedText))
+}
+
+// This test verifies that the @stork:no-parse:scope directive can be placed
+// on all clauses in the scope. The output should have proper indentation.
+func TestFormatterScopeNoParseOnAllClauses(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterLines("//@stork:no-parse:scope"))
+	scope.add(newFormatterClause("foo"))
+	scope.add(newFormatterClause("bar"))
+	scope.add(newFormatterLines("//@stork:no-parse:end"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+//@stork:no-parse:scope
+	foo;
+	bar;
+//@stork:no-parse:end
+}`, strings.TrimSpace(formattedText))
+}
+
+// This test verifies that the @stork:no-parse:scope directive can be placed
+// between a token and a clause in the scope. The output should have proper
+// indentation.
+func TestFormatterScopeNoParseClausesAndTokens(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterToken("foo"))
+	scope.add(newFormatterLines("//@stork:no-parse:scope"))
+	scope.add(newFormatterToken("bar"))
+	scope.add(newFormatterLines("//@stork:no-parse:end"))
+	scope.add(newFormatterClause("baz"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+	foo
+//@stork:no-parse:scope
+	bar
+//@stork:no-parse:end
+	baz;
+}`, strings.TrimSpace(formattedText))
+}
+
+// This test verifies that the @stork:no-parse:scope directive can be placed
+// in the scope and when the last element is the clause it should be
+// properly indented.
+func TestFormatterScopeNoParseLastClause(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterToken("foo"))
+	scope.add(newFormatterLines("//@stork:no-parse:scope"))
+	scope.add(newFormatterClause("bar"))
+	scope.add(newFormatterLines("//@stork:no-parse:end"))
+	scope.add(newFormatterClause("baz"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+	foo
+//@stork:no-parse:scope
+	bar;
+//@stork:no-parse:end
+	baz;
+}`, strings.TrimSpace(formattedText))
+}
+
+// This test verifies that the tokens and clauses are indented and each
+// is in the new line when the last element is a clause.
+func TestFormatterScopeClausesAndTokensLastClause(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterToken("foo"))
+	scope.add(newFormatterToken("bar"))
+	scope.add(newFormatterClause("baz"))
+	scope.add(newFormatterToken("qux"))
+	scope.add(newFormatterClause("quux"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+	foo bar baz;
+	qux quux;
+}`, strings.TrimSpace(formattedText))
+}
+
+func TestFormatterScopeClausesAndTokensLastToken(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterClause("baz"))
+	scope.add(newFormatterToken("qux"))
+	scope.add(newFormatterToken("quux"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{
+	baz;
+	qux quux
+}`, strings.TrimSpace(formattedText))
+}
+
+// This test verifies that the tokens in the scope are placed inline when
+// there are no clauses in the scope.
+func TestFormatterScopeOnlyTokens(t *testing.T) {
+	formatter := newFormatter(0)
+	scope := newFormatterScope()
+	scope.add(newFormatterToken("foo"))
+	scope.add(newFormatterToken("bar"))
+	formatter.addClause(scope)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, `{ foo bar }`, strings.TrimSpace(formattedText))
+}
+
+// Test that the formatter outputs correct contents for a sequence of lines.
+func TestFormatterLines(t *testing.T) {
+	formatter := newFormatter(0)
+	lines := newFormatterLines(`
+		line1
+		line2
+		line3
+	`)
+	require.NotNil(t, lines)
+	formatter.addClause(lines)
+	var builder strings.Builder
+	formatter.getFormattedTextFunc(func(text string) {
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	})
+	formattedText := builder.String()
+	require.NotEmpty(t, formattedText)
+	require.Equal(t, "\t\tline1\n\t\tline2\n\t\tline3\n\t\n\n", formattedText)
+}
+
+// Test that an error is returned when the sequence of lines is too long.
+func TestFormatterLinesError(t *testing.T) {
+	formatter := newFormatter(0)
+	lines := newFormatterLines(strings.Repeat("a", maxFormatterLinesBufferSize+1))
+	require.NotNil(t, lines)
+	formatter.addClause(lines)
+	err := formatter.getFormattedTextFunc(func(text string) {})
+	require.ErrorContains(t, err, "encountered BIND 9 configuration line exceeding the maximum buffer size: 8192")
 }
 
 var _ formattedElement = (*testElement)(nil)

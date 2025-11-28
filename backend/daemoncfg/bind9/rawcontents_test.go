@@ -46,3 +46,18 @@ func TestRawContentsNilGetString(t *testing.T) {
 	var rawContents *RawContents
 	require.Equal(t, "", rawContents.GetString())
 }
+
+func TestRawContentsTrimEmptyLines(t *testing.T) {
+	var rawContents RawContents
+	rawContents.Capture([]string{`
+
+		line1
+		line2
+		line3
+	`})
+	require.Equal(t,
+		"\t\tline1\n"+
+			"\t\tline2\n"+
+			"\t\tline3",
+		rawContents.GetString())
+}

@@ -11,15 +11,19 @@ type RawContents string
 
 // Captures the unparsed contents between the @stork:no-parse:scope
 // and @stork:no-parse:end directives and removes the trailing
-// @stork:no-parse: suffix which is appended by the lexer.
+// @stork:no-parse: suffix which is appended by the lexer. It also
+// removes new lines at the beginning.
 func (c *RawContents) Capture(values []string) error {
 	if len(values) == 0 {
 		return nil
 	}
 	joinedValues := strings.Join(values, " ")
-	trimmedValues := strings.TrimRightFunc(
-		strings.TrimSuffix(joinedValues, "//@stork:no-parse:"),
-		unicode.IsSpace,
+	trimmedValues := strings.TrimLeft(
+		strings.TrimRightFunc(
+			strings.TrimSuffix(joinedValues, "//@stork:no-parse:"),
+			unicode.IsSpace,
+		),
+		"\r\n",
 	)
 	*c = RawContents(trimmedValues)
 	return nil
