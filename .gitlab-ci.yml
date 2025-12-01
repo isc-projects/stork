@@ -212,8 +212,9 @@ storybook_tests:
       when: always
     - when: manual
   artifacts:
-    paths:
-      - there_should_be_no_match
+    exclude:
+      - tools/
+      - webui/node_modules/
     expire_in: 1 hour
 
 build_ui:
