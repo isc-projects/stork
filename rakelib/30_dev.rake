@@ -102,11 +102,12 @@ end
 
 
 namespace :unittest do
-    desc 'Run interaction tests for UI written in Storybook Stories. It requires running Storybook.'
-    task :storybook => [NPM, NPX] + WEBUI_CODEBASE do
+    desc 'Run interaction tests for UI written in Storybook Stories.'
+    task :storybook => [NPM, NPX, "prepare:playwright_browsers", "build:storybook"] + WEBUI_CODEBASE do
+        ENV["STORYBOOK_DISABLE_TELEMETRY"] = "1"
+
         Dir.chdir("webui") do
-            sh NPX, "playwright", "install", "--with-deps"
-            sh NPM, "run", "test-storybook"
+            sh NPX, "concurrently", "-k", "-s", "first", "-n", "\"SB,TEST\"", "-c", "\"magenta,blue\"", "\"#{NPX} http-server storybook-static --port 6006 --silent\"", "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPM} run test-storybook\""
         end
     end
 
