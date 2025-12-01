@@ -202,6 +202,16 @@ unittest_ui:
     reports:
       junit: webui/junit.xml
 
+storybook_tests:
+  extends: .base_build_debian
+  stage: checks
+  script:
+    - rake unittest:storybook
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+      when: always
+    - when: manual
+
 build_ui:
   extends: .base_build_debian
   script:
