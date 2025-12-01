@@ -173,6 +173,7 @@ end
 
 CLEAN.append "webui/dist"
 CLEAN.append "webui/.angular"
+CLEAN.append "webui/storybook-static"
 
 ###############
 ### Backend ###
@@ -383,7 +384,7 @@ namespace :build do
     task :code_gen => [CODE_GEN_BINARY_FILE]
 
     desc "Build Storybook"
-    task :storybook => [NPX, WEBUI_DEBUG_DIRECTORY] do
+    task :storybook => WEBUI_CODEBASE + [NPX] do
         Dir.chdir("webui") do
             sh NPX, "ng", "run", "stork:build-storybook", "--quiet"
         end

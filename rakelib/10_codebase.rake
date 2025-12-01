@@ -433,6 +433,8 @@ WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/dist/**/*")
     .exclude("webui/src/assets/arm")
     .exclude("webui/src/assets/arm/**/*")
+    .exclude("webui/storybook-static")
+    .exclude("webui/storybook-static/**/*")
     .include(open_api_generator_webui_dir)
     .include(node_module_dir)
     .include(std_option_defs4_ts_file)
@@ -507,7 +509,7 @@ namespace :prepare do
     task :doc => [hook_doc_directory, hook_man_directory]
 
     desc 'Prepare browser binaries for Playwright testing.'
-    task :playwright_browsers => [NPX] do
+    task :playwright_browsers => [:ui_deps, NPX] do
         Dir.chdir("webui") do
             sh NPX, "playwright", "install", "--with-deps"
         end
