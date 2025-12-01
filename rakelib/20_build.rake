@@ -381,6 +381,13 @@ namespace :build do
 
     desc "Build Stork Code Gen from sources"
     task :code_gen => [CODE_GEN_BINARY_FILE]
+
+    desc "Build Storybook"
+    task :storybook => [NPX] do
+        Dir.chdir("webui") do
+            sh NPX, "ng", "run", "stork:build-storybook", "--quiet"
+        end
+    end
 end
 
 desc "Build all Stork components (Server, Agent, Tool, UI, doc)"
