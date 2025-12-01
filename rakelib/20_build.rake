@@ -383,7 +383,7 @@ namespace :build do
     task :code_gen => [CODE_GEN_BINARY_FILE]
 
     desc "Build Storybook"
-    task :storybook => [NPX] do
+    task :storybook => [NPX, WEBUI_DEBUG_DIRECTORY] do
         Dir.chdir("webui") do
             sh NPX, "ng", "run", "stork:build-storybook", "--quiet"
         end

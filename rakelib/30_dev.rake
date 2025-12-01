@@ -103,7 +103,7 @@ end
 
 namespace :unittest do
     desc 'Run interaction tests for UI written in Storybook Stories.'
-    task :storybook => [NPM, NPX, "prepare:playwright_browsers", "build:storybook"] + WEBUI_CODEBASE do
+    task :storybook => [NPM, NPX, "build:storybook", "prepare:playwright_browsers"] + WEBUI_CODEBASE do
         ENV["STORYBOOK_DISABLE_TELEMETRY"] = "1"
 
         Dir.chdir("webui") do
