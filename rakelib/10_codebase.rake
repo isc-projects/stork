@@ -505,6 +505,13 @@ namespace :prepare do
 
     desc 'Prepare files needed for documentation building'
     task :doc => [hook_doc_directory, hook_man_directory]
+
+    desc 'Prepare browser binaries for Playwright testing.'
+    task :playwright_browsers => [NPX] do
+        Dir.chdir("webui") do
+            sh NPX, "playwright", "install", "--with-deps"
+        end
+    end
 end
 
 namespace :check do
