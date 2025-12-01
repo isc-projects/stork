@@ -211,6 +211,10 @@ storybook_tests:
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
       when: always
     - when: manual
+  artifacts:
+    paths:
+      - there_should_be_no_match
+    expire_in: 1 hour
 
 build_ui:
   extends: .base_build_debian
