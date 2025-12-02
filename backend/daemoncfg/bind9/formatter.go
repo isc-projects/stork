@@ -148,7 +148,6 @@ func (t *formatterScope) write(indentLevel int, inner bool, builder formatterBui
 		switch element.(type) {
 		case *formatterClause, *formatterLines:
 			isBlock = true
-			break
 		}
 	}
 	if isBlock {
