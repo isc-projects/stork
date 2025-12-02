@@ -855,7 +855,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	require.Equal(t, machines[2].ID, services[1].Daemons[1].MachineID)
 
 	// BIND zones.
-	zones, _, err := dbmodel.GetZones(db, nil)
+	zones, _, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, zones, 120)
 

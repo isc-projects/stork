@@ -758,7 +758,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	apps := addTestApps(t, db)
+	daemons := addTestSubnetDaemons(t, db)
 
 	// Add a shared network.
 	sharedNetwork := &SharedNetwork{
@@ -766,7 +766,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 		Family: 4,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[0].Daemons[0].ID,
+				DaemonID: daemons[0].ID,
 			},
 		},
 	}
@@ -784,7 +784,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 			SharedNetworkID: sharedNetwork.ID,
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					AddressPools: []AddressPool{
 						{
 							LowerBound: "192.0.2.1",
@@ -815,7 +815,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 			Prefix: "192.0.3.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 					AddressPools: []AddressPool{
 						{
 							LowerBound: "192.0.3.1",
@@ -832,7 +832,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 					LocalSubnetID: 10,
 				},
 				{
-					DaemonID: apps[1].Daemons[0].ID,
+					DaemonID: daemons[1].ID,
 					UserContext: map[string]interface{}{
 						"subnet-name": "bar",
 					},
@@ -848,7 +848,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 			Prefix: "192.0.4.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: apps[0].Daemons[0].ID,
+					DaemonID: daemons[0].ID,
 				},
 			},
 		},

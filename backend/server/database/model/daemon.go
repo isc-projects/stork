@@ -367,7 +367,7 @@ func GetDaemonsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *stri
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr := prepareOrderExpr("daemon", sortField, sortDir)
+	ordExpr, _ := prepareOrderExpr("daemon", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

@@ -309,11 +309,11 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*Daemon, []Host) {
 	return daemons, hosts
 }
 
-// This function creates machine, app, daemons, subnets, and multiple hosts
+// This function creates machine, daemons, subnets, and multiple hosts
 // in a similar way that addTestHosts does, only that it also adds IPv6 prefix reservations to
 // Host 3 and Host 4.
-func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
-	apps := addMachineAppDaemonsAndSubnets(t, db)
+func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*Daemon, []Host) {
+	daemons := addMachineDaemonsAndSubnets(t, db)
 
 	hosts := []Host{
 		// Host 1
@@ -331,7 +331,7 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 			},
 			LocalHosts: []LocalHost{
 				{
-					DaemonID:   apps[0].Daemons[0].ID,
+					DaemonID:   daemons[0].ID,
 					DataSource: HostDataSourceConfig,
 					IPReservations: []IPReservation{
 						{
@@ -363,7 +363,19 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 			},
 			LocalHosts: []LocalHost{
 				{
-					DaemonID:   apps[1].Daemons[0].ID,
+					DaemonID:   daemons[0].ID,
+					DataSource: HostDataSourceConfig,
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.6/32",
+						},
+						{
+							Address: "192.0.2.7/32",
+						},
+					},
+				},
+				{
+					DaemonID:   daemons[1].ID,
 					DataSource: HostDataSourceAPI,
 					IPReservations: []IPReservation{
 						{
@@ -387,7 +399,7 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 			},
 			LocalHosts: []LocalHost{
 				{
-					DaemonID:   apps[0].Daemons[1].ID,
+					DaemonID:   daemons[2].ID,
 					DataSource: HostDataSourceConfig,
 					IPReservations: []IPReservation{
 						{
@@ -400,7 +412,7 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 					Hostname: "second.example.org",
 				},
 				{
-					DaemonID:   apps[0].Daemons[1].ID,
+					DaemonID:   daemons[2].ID,
 					DataSource: HostDataSourceAPI,
 					IPReservations: []IPReservation{
 						{
@@ -428,7 +440,7 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 			},
 			LocalHosts: []LocalHost{
 				{
-					DaemonID:   apps[1].Daemons[1].ID,
+					DaemonID:   daemons[3].ID,
 					DataSource: HostDataSourceAPI,
 					IPReservations: []IPReservation{
 						{
@@ -440,7 +452,7 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 					},
 				},
 				{
-					DaemonID:       apps[1].Daemons[1].ID,
+					DaemonID:       daemons[3].ID,
 					DataSource:     HostDataSourceConfig,
 					NextServer:     "conflict",
 					ServerHostname: "conflict",
@@ -462,7 +474,7 @@ func addMoreTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 		require.NotZero(t, host.ID)
 		hosts[i] = host
 	}
-	return apps, hosts
+	return daemons, hosts
 }
 
 // Test that the function returns true if the data source is config; otherwise,

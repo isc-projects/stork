@@ -373,17 +373,15 @@ func TestGetZonesWithSorting(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
-	app := &App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      AppTypeBind9,
-		Daemons: []*Daemon{
-			NewBind9Daemon(true),
+	daemon := NewDaemon(machine, daemonname.Bind9, true, []*AccessPoint{
+		{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
 		},
-	}
-	addedDaemons, err := AddApp(db, app)
+	})
+	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
 
 	// Store zones in the database and associate them with our app.
 	randomZones := testutil.GenerateRandomZones(25)
@@ -401,7 +399,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 			Name: randomZones[i].Name,
 			LocalZones: []*LocalZone{
 				{
-					DaemonID: addedDaemons[0].ID,
+					DaemonID: daemon.ID,
 					View:     "_default",
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
@@ -651,7 +649,7 @@ func TestGetZonesWithDaemonIDFilter(t *testing.T) {
 	filter := &GetZonesFilter{
 		DaemonID: storkutil.Ptr(daemons[2].ID + 1),
 	}
-	zones, total, err := GetZones(db, filter, "", SortDirAny,)
+	zones, total, err := GetZones(db, filter, "", SortDirAny)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, zones)

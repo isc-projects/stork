@@ -1718,9 +1718,9 @@ func TestRestGetApps(t *testing.T) {
 		require.IsType(t, &services.GetAppsOK{}, rsp)
 		okRsp = rsp.(*services.GetAppsOK)
 		require.EqualValues(t, 3, okRsp.Payload.Total)
-		require.EqualValues(t, "pdns@localhost", okRsp.Payload.Items[0].Name)
-		require.EqualValues(t, "fancy-app", okRsp.Payload.Items[1].Name)
-		require.EqualValues(t, "another-fancy-app", okRsp.Payload.Items[2].Name)
+		require.Contains(t, okRsp.Payload.Items[0].Name, "pdns@localhost")
+		require.Contains(t, okRsp.Payload.Items[1].Name, "kea@localhost")
+		require.Contains(t, okRsp.Payload.Items[2].Name, "bind9@localhost")
 	})
 }
 

@@ -405,7 +405,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		Family: 4,
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
-				DaemonID: apps[2].Daemons[1].ID,
+				DaemonID: daemons[2].ID,
 			},
 		},
 		Subnets: []Subnet{
