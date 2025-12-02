@@ -729,7 +729,7 @@ export const ListMachines: Story = {
 
 export const TestAllMachinesShown: Story = {
     globals: {
-        role: 'read-only',
+        role: 'super-admin',
     },
     parameters: ListMachines.parameters,
     play: async ({ canvasElement }) => {
