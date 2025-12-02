@@ -511,7 +511,7 @@ namespace :prepare do
     desc 'Prepare browser binaries for Playwright testing.'
     task :playwright_browsers => [:ui_deps, NPX] do
         Dir.chdir("webui") do
-            sh NPX, "playwright", "install", "--with-deps"
+            sh NPX, "playwright", "install", "chromium", "--with-deps"
         end
     end
 end
