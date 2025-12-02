@@ -109,6 +109,8 @@ func TestFormatterClause(t *testing.T) {
 	};`, strings.TrimSpace(formattedText))
 }
 
+// This test verifies that the @stork:no-parse:scope directive can be placed
+// between two tokens in the scope. The output should have proper indentation.
 func TestFormatterScopeNoParseBetweenTokens(t *testing.T) {
 	formatter := newFormatter(0)
 	scope := newFormatterScope()
@@ -212,7 +214,7 @@ func TestFormatterScopeNoParseClausesAndTokens(t *testing.T) {
 }
 
 // This test verifies that the @stork:no-parse:scope directive can be placed
-// in the scope and when the last element is the clause it should be
+// in the scope and when the last element is the clause. It should be
 // properly indented.
 func TestFormatterScopeNoParseLastClause(t *testing.T) {
 	formatter := newFormatter(0)
@@ -239,8 +241,8 @@ func TestFormatterScopeNoParseLastClause(t *testing.T) {
 }`, strings.TrimSpace(formattedText))
 }
 
-// This test verifies that the tokens and clauses are indented and each
-// is in the new line when the last element is a clause.
+// This test verifies that the tokens are properly indented
+// when the last element is a clause.
 func TestFormatterScopeClausesAndTokensLastClause(t *testing.T) {
 	formatter := newFormatter(0)
 	scope := newFormatterScope()
@@ -263,6 +265,8 @@ func TestFormatterScopeClausesAndTokensLastClause(t *testing.T) {
 }`, strings.TrimSpace(formattedText))
 }
 
+// This test verifies that the tokens are properly indented
+// when the last element is a token.
 func TestFormatterScopeClausesAndTokensLastToken(t *testing.T) {
 	formatter := newFormatter(0)
 	scope := newFormatterScope()
