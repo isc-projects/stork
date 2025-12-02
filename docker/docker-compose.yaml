@@ -145,6 +145,70 @@ services:
     depends_on:
       - mariadb
 
+  agent-kea-prior-3-0-0:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: kea
+      args:
+        KEA_REPO: ${KEA_PUBLIC_REPO:-public/isc/kea-2-6}
+        KEA_VERSION: ${KEA_VERSION:-2.6.4-isc20250717094354}
+        KEA_PRIOR_2_3_0: ${KEA_PRIOR_2_3_0:-false}
+        KEA_PRIOR_2_7_5: ${KEA_PRIOR_2_7_5:-true}
+        KEA_PRIOR_2_7_7: ${KEA_PRIOR_2_7_7:-true}
+    # Explicitly add entries to /etc/hosts for the hosts which are connected
+    # to more than two networks. These explicit entries should be added at the
+    # beginning of the /etc/hosts file enforcing that the connections by hostname
+    # are established with the IP addresses belonging to the storknet network.
+    # Before this change, agents sometimes listened on IP addresses dedicated for
+    # DHCP communication instead.
+    extra_hosts:
+      - "agent-kea-prior-3-0-0:172.24.0.103"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-prior-3-0-0:latest"
+    hostname: agent-kea-prior-3-0-0
+    networks:
+      # Using priority to ensure predictable assignment of interface names.
+      # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
+      storknet:
+        ipv4_address: 172.24.0.103
+        priority: 1000
+      subnet-00:
+        ipv4_address: 172.100.0.103
+        priority: 500
+      subnet-01:
+        ipv4_address: 172.101.0.103
+        priority: 400
+      subnet-02:
+        ipv4_address: 172.102.0.103
+        priority: 300
+    expose:
+      - "8881" # stork server to agent
+      - "9100" # node_exporter for prometheus
+      - "9547" # kea_exporter for prometheus
+    ports:
+      # publish ports for development purposes
+      - "8881" # port to agent
+    environment:
+      DB_TYPE: none
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
+      STORK_AGENT_HOST: agent-kea-prior-3-0-0
+      STORK_AGENT_PORT: "8881"
+    volumes:
+      - ./docker/config/agent-kea-prior-3-0-0/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ./docker/config/agent-kea-prior-3-0-0/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-prior-3-0-0/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
+      - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
+      - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
+      - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+      - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
+      - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
+      - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+    depends_on:
+      - mariadb
+
   agent-kea6:
     restart: always
     build:
