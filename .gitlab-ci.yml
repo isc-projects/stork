@@ -205,6 +205,7 @@ unittest_ui:
 storybook_tests:
   extends: .base_build_debian
   stage: checks
+  cache: []
   script:
     - rake unittest:storybook
   rules:
