@@ -17,6 +17,10 @@ const config = {
     docs: {
         autodocs: false,
     },
+
+    core: {
+        disableTelemetry: true, // Disables telemetry
+    },
 }
 
 export default config
