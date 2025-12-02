@@ -452,7 +452,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	q = q.DistinctOn(distinctOnFields)
 
 	// Join to the local host table.
-	if (filters.MachineID != nil && *filters.MachineID != 0) || (filters.DaemonID != nil && *filters.DaemonID != 0) || (filters.FilterText != nil && len(*filters.FilterText) > 0) || sortField == "local_host.hostname" {
+	if (filters.MachineID != nil && *filters.MachineID != 0) || (filters.DaemonID != nil && *filters.DaemonID != 0) || (filters.FilterText != nil && len(*filters.FilterText) > 0) {
 		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
 	}
 
