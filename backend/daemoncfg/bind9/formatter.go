@@ -204,7 +204,7 @@ func (t *formatterScope) write(indentLevel int, inner bool, builder formatterBui
 		}
 		builder.writeIndent(indentLevel)
 	} else {
-		// If it is not a block, the add a space before the closing brace.
+		// If it is not a block, add a space before the closing brace.
 		builder.write(" ")
 	}
 	// End the scope.
