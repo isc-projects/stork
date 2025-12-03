@@ -152,6 +152,11 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 		// Extract the subnet ID and pool ID if present.
 		if strings.HasPrefix(statName, "subnet[") {
 			matches := subnetStatNameRegex.FindStringSubmatch(statName)
+			if len(matches) < 3 {
+				log.WithField("statistic", statName).
+					Errorf("Problem parsing statistic with invalid subnet ID")
+				continue
+			}
 			subnetIDRaw := matches[1]
 			statName = matches[2]
 
@@ -165,6 +170,11 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 			// Extract the pool (or prefix pool) ID if present.
 			if strings.HasPrefix(statName, "pool[") {
 				matches = poolStatNameRegex.FindStringSubmatch(statName)
+				if len(matches) < 3 {
+					log.WithField("statistic", statName).
+						Errorf("Problem parsing statistic with invalid pool ID")
+					continue
+				}
 				poolIDRaw := matches[1]
 				statName = matches[2]
 
@@ -178,6 +188,11 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 				addressPoolID = &parsedAddressPoolID
 			} else if strings.HasPrefix(statName, "pd-pool[") {
 				matches = pdPoolStatNameRegex.FindStringSubmatch(statName)
+				if len(matches) < 3 {
+					log.WithField("statistic", statName).
+						Errorf("Problem parsing statistic with invalid prefix pool ID")
+					continue
+				}
 				prefixPoolIDRaw := matches[1]
 				statName = matches[2]
 

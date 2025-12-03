@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"slices"
 	"testing"
@@ -163,6 +164,111 @@ func TestPromKeaExporterStart(t *testing.T) {
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
 
 	require.False(t, gock.HasUnmatchedRequest())
+}
+
+// Test that invalid subnet ID, pool ID, prefix pool ID or invalid statistic
+// placement in the Kea statistics response does not cause the exporter to panic.
+func TestPromKeaExporterInvalidSubnetPoolIDs(t *testing.T) {
+	tests := []struct {
+		name      string
+		statistic string
+	}{
+		{
+			name: "invalid subnet ID",
+			// The subnet ID is not a valid number.
+			statistic: `"subnet[invalid].assigned-nas": [ [ 13, "2019-07-30 10:04:28.386740" ] ]`,
+		},
+		{
+			name: "invalid pool ID",
+			// The subnet ID is valid, but the pool ID is not a valid number.
+			statistic: `"subnet[7].pool[invalid].assigned-nas": [ [ 23, "2019-07-30 10:04:28.386740" ] ]`,
+		},
+		{
+			name: "invalid prefix pool ID",
+			// The subnet ID is valid, but the prefix pool ID is not a valid number.
+			statistic: `"subnet[7].pd-pool[invalid].pool-pd-assigned-pds": [ [ 23, "2019-07-30 10:04:28.386740" ] ]`,
+		},
+		{
+			// The pool-assigned-nas is a pool-level statistic, but here we simulate it
+			// being placed at the subnet level. This can result in the labels mismatch
+			// while setting the metric value (inconsistent number of labels). It could
+			// cause a panic in the exporter.
+			name:      "invalid pool level stat placement",
+			statistic: `"subnet[7].pool-assigned-nas": [ [ 13, "2019-07-30 10:04:28.386740" ] ]`,
+		},
+		{
+			// The pd-pool-assigned-pds is a prefix pool-level statistic, but here we simulate it
+			// being placed at the subnet level. This can result in the labels mismatch
+			// while setting the metric value (inconsistent number of labels). It could
+			// cause a panic in the exporter.
+			name:      "invalid prefix pool level stat placement",
+			statistic: `"subnet[7].pd-pool-assigned-pds": [ [ 23, "2019-07-30 10:04:28.386740" ] ]`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defer gock.Off()
+			gock.CleanUnmatchedRequest()
+			defer gock.CleanUnmatchedRequest()
+			gock.New("http://0.1.2.3:1234/").
+				JSON(map[string]interface{}{
+					"command": "statistic-get-all",
+					"service": []string{"dhcp6"},
+				}).
+				Post("/").
+				Persist().
+				Reply(200).
+				BodyString(fmt.Sprintf(`[{
+			"result": 0,
+			"arguments": {
+				%s,
+				"subnet[7].assigned-nas": [ [ 13, "2019-07-30 10:04:28.386740" ] ]
+			}
+		}]`, test.statistic))
+
+			gock.New("http://0.1.2.3:1234/").
+				JSON(map[string]interface{}{
+					"command": "subnet6-list",
+					"service": []string{"dhcp6"},
+				}).
+				Post("/").
+				Persist().
+				Reply(200).
+				BodyString(`[{
+			"result": 3,
+			"text": "Command not supported"
+		}]`)
+
+			fdm := newFakeMonitorWithDefaultsDHCPv6Only(gock.InterceptClient)
+
+			pke := NewPromKeaExporter(t.Context(), "foo", 1234, true, fdm)
+			defer pke.Shutdown()
+
+			// Start exporter.
+			pke.Start()
+
+			// Trigger the stats collection and ensure it doesn't panic.
+			c := make(chan prometheus.Metric)
+			require.NotPanics(t, func() {
+				pke.Collect(c)
+			})
+
+			// Check that valid stat is collected.
+			metric, err := pke.Addr6StatsMap["assigned-nas"].GetMetricWith(
+				prometheus.Labels{
+					"subnet":         "7",
+					"subnet_id":      "7",
+					"prefix":         "",
+					"shared_network": "",
+				},
+			)
+			require.NoError(t, err)
+			require.EqualValues(t, 13.0, testutil.ToFloat64(metric))
+
+			require.False(t, gock.HasUnmatchedRequest())
+		})
+	}
 }
 
 // The Kea statistic-get-all response fetched from the Kea demo containers.

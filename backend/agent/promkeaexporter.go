@@ -756,7 +756,16 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.Ga
 
 			if stat, ok := dhcpStatMap[statName]; ok {
 				value, _ := statEntry.Value.Float64()
-				stat.With(labels).Set(value)
+				metric, err := stat.GetMetricWith(labels)
+				if err != nil {
+					log.WithError(err).
+						WithFields(log.Fields{
+							"statatistic": statName,
+							"labels":      labels,
+						}).Error("Invalid labels for the specified statistic")
+					continue
+				}
+				metric.Set(value)
 			} else {
 				log.Warningf("Encountered unsupported stat: %s", statName)
 				ignoredStats[statName] = true
