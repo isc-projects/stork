@@ -212,7 +212,7 @@ func TestUnmarshalNullableArray(t *testing.T) {
 }
 
 // Test that the Kea JSON normalization works as expected.
-func TestNormalizeKeaJSON(t *testing.T) {
+func TestNormalizeJSON(t *testing.T) {
 	t.Run("standard-compliant JSON", func(t *testing.T) {
 		// Arrange
 		input := `{
@@ -227,7 +227,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		require.JSONEq(t, input, string(output))
@@ -238,7 +238,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `{"foo":`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		require.Equal(t, input, string(output))
@@ -251,7 +251,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{
@@ -267,7 +267,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{}`
@@ -281,7 +281,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ "s": "///**/#" }`
@@ -295,7 +295,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ "s": "\"" }`
@@ -307,7 +307,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `{ "a": /* 1 */ 2 }`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ "a": 2 }`
@@ -321,7 +321,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		*/ 2 }`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ "a": 2 }`
@@ -336,7 +336,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{
@@ -356,7 +356,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{
@@ -375,7 +375,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{
@@ -393,7 +393,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		# Python-style comment`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		require.Empty(t, strings.TrimSpace(string(output)))
@@ -404,7 +404,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `{ /* /* */ */ }`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{*/}`
@@ -419,7 +419,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ }`
@@ -435,7 +435,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		]`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `[ 1, 2, 3 ]`
@@ -446,7 +446,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		// Arrange
 		input := `"This is a string" # and comment`
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `"This is a string"`
@@ -458,7 +458,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `{ "a": 1, }`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ "a": 1 }`
@@ -470,7 +470,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `[1, 2, 3, ]`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `[1, 2, 3 ]`
@@ -482,7 +482,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `{ "a": 1,, }`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{"a":1,}`
@@ -500,7 +500,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `{ "a": 1, "b": { "c": 2 } }`
@@ -532,7 +532,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		]`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `[
@@ -552,7 +552,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		]`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		require.JSONEq(t, input, string(output))
@@ -563,7 +563,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		input := `[[], /**/]`
 
 		// Act
-		output := NormalizeKeaJSON([]byte(input))
+		output := NormalizeJSON([]byte(input))
 
 		// Assert
 		expected := `[[]]`
@@ -572,7 +572,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 }
 
 // Check the test cases from the jsonc library to ensure compatibility.
-func TestNormalizeKeaJSONCompatibilityWithJSONC(t *testing.T) {
+func TestNormalizeJSONCompatibilityWithJSONC(t *testing.T) {
 	validCases := []string{
 		`{"foo":"bar foo","true":false,"number":42,"object":{"test":"done"},"array":[1,2,3],"url":"https://github.com","escape":"\"wo//rking"}`,
 		`{"foo": /** this is a bloc/k comm\"ent */ "bar foo", "true": /* true */ false, "number": 42, "object": { "test": "done" }, "array" : [1, 2, 3], "url" : "https://github.com", "escape":"\"wo//rking" }`,
@@ -583,7 +583,7 @@ func TestNormalizeKeaJSONCompatibilityWithJSONC(t *testing.T) {
 	for i, c := range validCases {
 		t.Run(fmt.Sprintf("jsonc-valid-case-%d", i), func(t *testing.T) {
 			// Act
-			output := NormalizeKeaJSON([]byte(c))
+			output := NormalizeJSON([]byte(c))
 
 			// Assert
 			require.True(t, json.Valid(output))
@@ -599,7 +599,7 @@ func TestNormalizeKeaJSONCompatibilityWithJSONC(t *testing.T) {
 	for i, c := range invalidCases {
 		t.Run(fmt.Sprintf("jsonc-invalid-case-%d", i), func(t *testing.T) {
 			// Act
-			output := NormalizeKeaJSON([]byte(c))
+			output := NormalizeJSON([]byte(c))
 
 			// Assert
 			require.False(t, json.Valid(output))

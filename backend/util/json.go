@@ -153,7 +153,7 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 // The output JSON trims all whitespace except for Unix line breaks.
 //
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
-func NormalizeKeaJSON(input []byte) []byte {
+func NormalizeJSON(input []byte) []byte {
 	var buffer bytes.Buffer
 	buffer.Grow(len(input))
 	inputReader := bytes.NewReader(input)
