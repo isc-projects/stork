@@ -935,7 +935,7 @@ func (pbe *PromBind9Exporter) Shutdown() {
 
 		pbe.HTTPServer.SetKeepAlivesEnabled(false)
 		if err := pbe.HTTPServer.Shutdown(ctx); err != nil {
-			log.Warnf("Could not gracefully shut down the BIND 9 exporter: %v\n", err)
+			log.WithError(err).Warn("Could not gracefully shut down the BIND 9 exporter")
 		}
 	}
 

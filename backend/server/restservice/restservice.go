@@ -608,7 +608,7 @@ func (r *RestAPI) Shutdown() {
 
 		r.HTTPServer.SetKeepAlivesEnabled(false)
 		if err := r.HTTPServer.Shutdown(ctx); err != nil {
-			log.Warnf("Could not gracefully shut down the server: %v\n", err)
+			log.WithError(err).Warn("Could not gracefully shut down the server")
 		}
 	}
 	log.Printf("Stopped RESTful API Service")

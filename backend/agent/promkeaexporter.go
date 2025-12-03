@@ -647,7 +647,7 @@ func (pke *PromKeaExporter) Shutdown() {
 
 		pke.HTTPServer.SetKeepAlivesEnabled(false)
 		if err := pke.HTTPServer.Shutdown(ctx); err != nil {
-			log.Warnf("Could not gracefully shut down the Kea exporter: %v\n", err)
+			log.WithError(err).Warn("Could not gracefully shut down the Kea exporter")
 		}
 	}
 

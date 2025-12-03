@@ -98,13 +98,21 @@ func getOfflineVersionsJSON() (*models.AppsVersions, error) {
 	searchPaths := []string{}
 
 	// Path to the JSON file with software versions metadata is computed relative to the executable.
-	if ex, err := os.Executable(); err == nil {
-		if ex, err = filepath.EvalSymlinks(ex); err == nil {
-			exDir := filepath.Dir(ex)
+	var (
+		executable string
+		err        error
+	)
+	if executable, err = os.Executable(); err == nil {
+		if executable, err = filepath.EvalSymlinks(executable); err == nil {
+			exDir := filepath.Dir(executable)
 			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "etc", "stork", "versions.json")) // relative path when Stork was installed from package or with 'rake install' task
 			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "..", "etc", "versions.json"))    // relative path when running Stork server with 'rake run' task - typical for DEV
 		}
 	}
+	if err != nil {
+		return nil, errors.Wrapf(err, "problem determining the executable path to locate the JSON file with software versions metadata")
+	}
+
 	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSONPath, searchPaths...)
 
 	// Open JSON file.
@@ -136,17 +144,17 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (*
 
 	bind9, err := appVersionMetadataToRestAPI(*s.Bind9)
 	if err != nil {
-		err = errors.Wrapf(err, "problem converting BIND 9 data from the %s JSON file with software versions metadata", mode)
+		err = errors.WithMessagef(err, "problem converting BIND 9 data from the %s JSON file with software versions metadata", mode)
 		return nil, err
 	}
 	kea, err := appVersionMetadataToRestAPI(*s.Kea)
 	if err != nil {
-		err = errors.Wrapf(err, "problem converting Kea data from the %s JSON file with software versions metadata", mode)
+		err = errors.WithMessagef(err, "problem converting Kea data from the %s JSON file with software versions metadata", mode)
 		return nil, err
 	}
 	stork, err := appVersionMetadataToRestAPI(*s.Stork)
 	if err != nil {
-		err = errors.Wrapf(err, "problem converting Stork data from the %s JSON file with software versions metadata", mode)
+		err = errors.WithMessagef(err, "problem converting Stork data from the %s JSON file with software versions metadata", mode)
 		return nil, err
 	}
 
@@ -172,7 +180,7 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (*
 func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
 	onlineModeEnabled, err := dbmodel.GetSettingBool(r.DB, "enable_online_software_versions")
 	if err != nil {
-		log.Error(errors.Wrapf(err, "problem reading boolean setting enable_online_software_versions"))
+		log.WithError(err).Error("Problem reading boolean setting enable_online_software_versions")
 		onlineModeEnabled = false
 	}
 	if onlineModeEnabled {
@@ -180,7 +188,7 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 		if err == nil {
 			return general.NewGetSoftwareVersionsOK().WithPayload(appsVersions)
 		}
-		log.Error(errors.Wrapf(err, "problem processing online versions metadata file data; falling back to offline mode"))
+		log.WithError(err).Error("Problem processing online versions metadata file data; falling back to offline mode")
 	} else {
 		log.Warn("online mode of software version checking disabled")
 	}
@@ -189,7 +197,7 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	if err == nil {
 		return general.NewGetSoftwareVersionsOK().WithPayload(appsVersions)
 	}
-	log.Error(errors.Wrapf(err, "problem processing offline versions.json data"))
+	log.WithError(err).Error("Problem processing offline versions.json data")
 	errMsg := "Error parsing the contents of the JSON file with software versions metadata"
 	rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 		Message: &errMsg,

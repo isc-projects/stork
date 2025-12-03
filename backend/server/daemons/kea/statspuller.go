@@ -209,7 +209,10 @@ func (statsPuller *StatsPuller) storeStats(response []*keactrl.StatisticGetAllRe
 				"cannot find LocalSubnet for daemon: %d, local subnet ID: %d",
 				daemon.ID, subnetID,
 			)
-			log.Error(lastErr.Error())
+			log.WithFields(log.Fields{
+				"daemon_id":       daemon.ID,
+				"local_subnet_id": subnetID,
+			}).Error("Cannot find LocalSubnet for daemon")
 			continue
 		}
 
@@ -321,7 +324,10 @@ func (statsPuller *StatsPuller) storePoolStats(
 				"cannot find LocalSubnet for daemon: %d, local subnet ID: %d",
 				daemon.ID, subnetID,
 			)
-			log.Error(lastErr.Error())
+			log.WithFields(log.Fields{
+				"daemon_id":       daemon.ID,
+				"local_subnet_id": subnetID,
+			}).Error("Cannot find LocalSubnet for daemon")
 			continue
 		}
 

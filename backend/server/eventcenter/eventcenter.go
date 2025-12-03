@@ -170,7 +170,7 @@ func (ec *eventCenter) mainLoop() {
 		case event := <-ec.events:
 			err := dbmodel.AddEvent(ec.db, event)
 			if err != nil {
-				log.Errorf("Problem adding event to db: %+v", err)
+				log.WithError(err).Error("Problem adding event to db")
 				continue
 			}
 			ec.sseBroker.dispatchEvent(event)

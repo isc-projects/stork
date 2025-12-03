@@ -69,7 +69,7 @@ func (puller *StatePuller) pullData() error {
 		errStr := UpdateMachineAndDaemonsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter, puller.ReviewDispatcher, puller.DHCPOptionDefinitionLookup)
 		if errStr != "" {
 			lastErr = errors.New(errStr)
-			log.Errorf("Error occurred while getting info from machine %d: %s", dbM2.ID, errStr)
+			log.WithError(lastErr).Errorf("Error occurred while getting info from machine %d", dbM2.ID)
 		} else {
 			okCnt++
 		}

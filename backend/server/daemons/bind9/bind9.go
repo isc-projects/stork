@@ -101,7 +101,7 @@ func GetDaemonState(ctx context.Context, agents agentcomm.ConnectedAgents, daemo
 	command := "status"
 	out, err := agents.ForwardRndcCommand(ctx2, daemon, command)
 	if err != nil {
-		log.Warnf("Problem getting BIND 9 status: %s", err)
+		log.WithError(err).Warn("Problem getting BIND 9 status")
 		return
 	}
 
@@ -125,7 +125,7 @@ func GetDaemonState(ctx context.Context, agents agentcomm.ConnectedAgents, daemo
 	if match != nil {
 		bootTime, err := time.Parse(namedLongDateFormat, match[1])
 		if err != nil {
-			log.Warnf("Cannot get BIND 9 uptime: %s", err.Error())
+			log.WithError(err).Warn("Cannot get BIND 9 uptime")
 		}
 		now := time.Now()
 		elapsed := now.Sub(bootTime)
@@ -140,7 +140,7 @@ func GetDaemonState(ctx context.Context, agents agentcomm.ConnectedAgents, daemo
 	if match != nil {
 		reloadTime, err := time.Parse(namedLongDateFormat, match[1])
 		if err != nil {
-			log.Warnf("Cannot get BIND 9 reload time: %s", err.Error())
+			log.WithError(err).Warn("Cannot get BIND 9 reload time")
 		}
 		daemon.ReloadedAt = reloadTime
 	} else {
@@ -153,11 +153,11 @@ func GetDaemonState(ctx context.Context, agents agentcomm.ConnectedAgents, daemo
 	if match != nil {
 		count, err := strconv.Atoi(match[1])
 		if err != nil {
-			log.Warnf("Cannot get BIND 9 number of zones: %s", err.Error())
+			log.WithError(err).Warn("Cannot get BIND 9 number of zones")
 		}
 		autoCount, err := strconv.Atoi(match[2])
 		if err != nil {
-			log.Warnf("Cannot get BIND 9 number of automatic zones: %s", err.Error())
+			log.WithError(err).Warn("Cannot get BIND 9 number of automatic zones")
 		}
 		daemon.Bind9Daemon.Stats.ZoneCount = int64(count - autoCount)
 		daemon.Bind9Daemon.Stats.AutomaticZoneCount = int64(autoCount)
@@ -168,7 +168,7 @@ func GetDaemonState(ctx context.Context, agents agentcomm.ConnectedAgents, daemo
 	// Get statistics
 	err = GetDaemonStatistics(ctx, agents, daemon)
 	if err != nil {
-		log.Warnf("Problem getting BIND 9 statistics: %s", err)
+		log.WithError(err).Warn("Problem getting BIND 9 statistics")
 	}
 }
 

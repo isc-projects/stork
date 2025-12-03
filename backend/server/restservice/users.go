@@ -669,7 +669,7 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 
 	groups, err := r.getGroups(start, limit, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
-		log.Errorf("Failed to get groups from the database with error: %s", err.Error())
+		log.WithError(err).Error("Failed to get groups from the database")
 
 		msg := "Failed to get groups from the database"
 		rspErr := models.APIError{
