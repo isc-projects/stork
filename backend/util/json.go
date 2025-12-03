@@ -1,9 +1,13 @@
 package storkutil
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"unicode"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const nullLiteral = "null"
@@ -146,98 +150,99 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 // This function removes these non-standard constructs so that the resulting
 // JSON can be parsed by standard JSON parsers.
 //
-// The output JSON mostly preserves the whitespace and character positions.
-// However, there might be double spaces where comments or trailing commas were
-// removed.
+// The output JSON trims all whitespace except for Unix line breaks.
 //
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
 func NormalizeKeaJSON(input []byte) []byte {
-	buffer := make([]byte, 0, len(input))
+	var buffer bytes.Buffer
+	buffer.Grow(len(input))
+	inputReader := bytes.NewReader(input)
 
 	isSingleLineComment := false
 	isMultiLineComment := false
 	isString := false
 	remainingSlash := false
-	possibleTrailingCommaIndex := -1
+	remainingComma := false
 
-	for i, b := range input {
-		previousChar := byte(0)
-		if i > 0 {
-			previousChar = input[i-1]
+	currentChar := rune(0)
+	var err error
+
+	for {
+		previousChar := currentChar
+		currentChar, _, err = inputReader.ReadRune()
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				logrus.WithError(err).Error("Failed to read rune from input while normalizing Kea JSON")
+			}
+			break
 		}
 
 		if isSingleLineComment {
-			if b == '\n' {
+			if currentChar == '\n' {
 				isSingleLineComment = false
-				buffer = append(buffer, b)
 			}
 			continue
 		}
 		if isMultiLineComment {
-			if previousChar == '*' && b == '/' {
+			if previousChar == '*' && currentChar == '/' {
 				isMultiLineComment = false
 			}
 			continue
 		}
 		if isString {
-			if b == '"' && previousChar != '\\' {
+			if currentChar == '"' && previousChar != '\\' {
 				isString = false
 			}
-			buffer = append(buffer, b)
-			possibleTrailingCommaIndex = -1
+			buffer.WriteRune(currentChar)
 			continue
 		}
 
 		if remainingSlash {
 			remainingSlash = false
-			if b == '/' {
+			if currentChar == '/' {
 				isSingleLineComment = true
 				continue
 			}
-			if b == '*' {
+			if currentChar == '*' {
 				isMultiLineComment = true
 				continue
 			}
-			buffer = append(buffer, '/')
-			possibleTrailingCommaIndex = -1
+			buffer.WriteRune('/')
 		}
 
-		if b == '/' {
+		if unicode.IsSpace(currentChar) {
+			// Drop whitespace characters.
+			// Forget that we have seen it.
+			currentChar = previousChar
+			continue
+		}
+
+		if currentChar == '/' {
 			remainingSlash = true
 			continue
 		}
-		if b == '#' {
+		if currentChar == '#' {
 			isSingleLineComment = true
 			continue
 		}
-		if b == '"' {
+		if remainingComma {
+			remainingComma = false
+			if currentChar != '}' && currentChar != ']' {
+				buffer.WriteRune(',')
+			}
+		}
+		if currentChar == ',' {
+			remainingComma = true
+			continue
+		}
+		if currentChar == '"' {
 			isString = true
-			buffer = append(buffer, b)
-			possibleTrailingCommaIndex = -1
+			buffer.WriteRune(currentChar)
 			continue
 		}
 
-		buffer = append(buffer, b)
-
-		// Check if there is trailing comma to remove.
-		// We don't modify the buffer length. Instead, we replace the comma
-		// with a whitespace.
-		if (b == '}' || b == ']') && possibleTrailingCommaIndex != -1 {
-			// Erase the trailing comma prepending a bracket closing an object
-			// or an array.
-			buffer[possibleTrailingCommaIndex] = ' '
-		}
-
-		if b == ',' {
-			// Remember buffer position of the last seen comma.
-			possibleTrailingCommaIndex = len(buffer) - 1
-		} else if b != ' ' && b != '\t' && b != '\r' && b != '\n' {
-			// If the current character is not a whitespace then the last
-			// seen comma is not a trailing one.
-			// TODO: Handle all UTF-8 whitespaces.
-			possibleTrailingCommaIndex = -1
-		}
+		buffer.WriteRune(currentChar)
 	}
 
-	return buffer
+	return buffer.Bytes()
 }

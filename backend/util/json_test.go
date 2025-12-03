@@ -407,7 +407,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		output := NormalizeKeaJSON([]byte(input))
 
 		// Assert
-		expected := `{  */ }`
+		expected := `{*/}`
 		require.Equal(t, expected, string(output))
 	})
 
@@ -485,7 +485,7 @@ func TestNormalizeKeaJSON(t *testing.T) {
 		output := NormalizeKeaJSON([]byte(input))
 
 		// Assert
-		expected := `{ "a": 1,  }`
+		expected := `{"a":1,}`
 
 		require.Equal(t, expected, string(output))
 	})
@@ -556,6 +556,18 @@ func TestNormalizeKeaJSON(t *testing.T) {
 
 		// Assert
 		require.JSONEq(t, input, string(output))
+	})
+
+	t.Run("JSON array with comment", func(t *testing.T) {
+		// Arrange
+		input := `[[], /**/]`
+
+		// Act
+		output := NormalizeKeaJSON([]byte(input))
+
+		// Assert
+		expected := `[[]]`
+		require.JSONEq(t, expected, string(output))
 	})
 }
 
