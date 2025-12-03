@@ -1498,30 +1498,18 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		limit = *params.Limit
 	}
 
-	sortField := ""
-	if params.SortField != nil {
-		sortField = *params.SortField
-	}
-
-	sortDir := dbmodel.SortDirAny
-	if params.SortDir != nil {
-		sortDir = dbmodel.SortDirEnum(*params.SortDir)
-	}
-
 	log.WithFields(log.Fields{
-		"start":     start,
-		"limit":     limit,
-		"text":      params.Text,
-		"apps":      params.Apps,
-		"sortField": sortField,
-		"sortDir":   sortDir,
+		"start": start,
+		"limit": limit,
+		"text":  params.Text,
+		"apps":  params.Apps,
 	}).Info("query apps")
 
 	var appTypes []dbmodel.VirtualAppType
 	for _, appType := range params.Apps {
 		appTypes = append(appTypes, dbmodel.VirtualAppType(appType))
 	}
-	apps, err := r.getApps(start, limit, params.Text, sortField, sortDir, appTypes...)
+	apps, err := r.getApps(start, limit, params.Text, "", dbmodel.SortDirAny, appTypes...)
 	if err != nil {
 		msg := "Cannot get apps from db"
 		log.WithError(err).Error(msg)

@@ -4,13 +4,13 @@ import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { MessageService, MenuItem, ConfirmationService, TableState } from 'primeng/api'
 
 import { daemonStatusErred } from '../utils'
-import { AppSortField, ServicesService } from '../backend'
+import { ServicesService } from '../backend'
 import { App } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { distinctUntilChanged, finalize, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 
@@ -157,8 +157,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 event.first,
                 event.rows,
                 (event.filters['text'] as FilterMetadata)?.value || null,
-                (event.filters['apps'] as FilterMetadata)?.value ?? null,
-                ...convertSortingFields<AppSortField>(event)
+                (event.filters['apps'] as FilterMetadata)?.value ?? null
             )
         )
             .then((data) => {
@@ -300,10 +299,4 @@ export class AppsPageComponent implements OnInit, OnDestroy {
             this.rows = state.rows ?? 10
         }
     }
-
-    /**
-     * Reference to an enum so it could be used in the HTML template.
-     * @protected
-     */
-    protected readonly AppSortField = AppSortField
 }

@@ -211,13 +211,6 @@ definitions:
       - config
       - rndc-key
 
-  AppSortField:
-    type: string
-    enum: &APPSORTFIELD
-      - name
-      - meta->'Version'
-      - machine.address
-
   MachineSortField:
     type: string
     enum: &MACHINESORTFIELD
@@ -369,13 +362,6 @@ parameters:
       type: string
       enum: *BIND9CONFIGFILETYPE
     collectionFormat: multi
-
-  appSortField:
-    name: sortField
-    in: query
-    description: Field name by which returned results shall be sorted.
-    type: string
-    enum: *APPSORTFIELD
 
   machineSortField:
     name: sortField
