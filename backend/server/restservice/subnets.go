@@ -876,7 +876,7 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 		case errors.As(err, &subnetNotFound):
 			// Failed to find subnet.
 			msg := fmt.Sprintf("Unable to edit the subnet with ID %d because it cannot be found", params.SubnetID)
-			log.Error(msg)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -892,7 +892,7 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 		case errors.As(err, &hooksNotConfigured):
 			// Lack of the libdhcp_subnet_cmds hook.
 			msg := "Unable to update subnet configuration because some daemons lack libdhcp_subnet_cmds hook library"
-			log.Error(msg)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})

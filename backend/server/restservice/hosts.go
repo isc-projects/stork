@@ -338,7 +338,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	var err error
 	if cctx, err = r.ConfigManager.GetKeaModule().BeginHostAdd(cctx); err != nil {
 		msg := "Problem with initializing transaction for creating host reservation"
-		log.Error(msg)
+		log.WithError(err).Error(msg)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

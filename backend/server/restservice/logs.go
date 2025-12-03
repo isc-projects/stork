@@ -22,7 +22,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	dbLogTarget, err := dbmodel.GetLogTargetByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get information about log file with ID %d from the database", params.ID)
-		log.Error(msg)
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetLogTailDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

@@ -598,7 +598,7 @@ func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.Upda
 		case errors.As(err, &sharedNetworkNotFound):
 			// Failed to find shared network.
 			msg := fmt.Sprintf("Unable to edit the shared network with ID %d because it cannot be found", params.SharedNetworkID)
-			log.Error(msg)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSharedNetworkBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -614,7 +614,7 @@ func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.Upda
 		case errors.As(err, &hooksNotConfigured):
 			// Lack of the libdhcp_subnet_cmds hook.
 			msg := "Unable to update shared network configuration because some daemons lack libdhcp_subnet_cmds hook library"
-			log.Error(msg)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSharedNetworkBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})

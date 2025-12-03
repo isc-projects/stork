@@ -543,7 +543,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 		case errors.As(err, &someDaemonsNotFound):
 			// Failed to find some of the daemons.
 			msg := "Unable to update the Kea global parameters because some of the specified daemons do not exist"
-			log.Error(msg)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})

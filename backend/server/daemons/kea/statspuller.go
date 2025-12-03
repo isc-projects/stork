@@ -231,9 +231,9 @@ func (statsPuller *StatsPuller) storeStats(response []*keactrl.StatisticGetAllRe
 
 		err := subnet.UpdateStats(statsPuller.DB, stats)
 		if err != nil {
-			log.Errorf(
-				"Problem updating Kea stats for local subnet ID %d, daemon ID %d: %s",
-				subnet.LocalSubnetID, daemon.ID, err.Error(),
+			log.WithError(err).Errorf(
+				"Problem updating Kea stats for local subnet ID %d, daemon ID %d",
+				subnet.LocalSubnetID, daemon.ID,
 			)
 			lastErr = err
 		}

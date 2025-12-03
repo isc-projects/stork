@@ -363,8 +363,8 @@ func (d *dispatcherImpl) awaitReports() {
 				// be inserted into the database.
 				err := d.populateReports(ctx)
 				if err != nil {
-					log.Errorf("Problem populating configuration review reports to the database for daemon %d: %+v",
-						ctx.subjectDaemon.ID, err)
+					log.WithError(err).Errorf("Problem populating configuration review reports to the database for daemon %d",
+						ctx.subjectDaemon.ID)
 				} else {
 					log.WithFields(log.Fields{
 						"daemon_id":     ctx.subjectDaemon.ID,
@@ -396,8 +396,8 @@ func (d *dispatcherImpl) awaitReports() {
 						// Next outstanding review finished.
 						err := d.populateReports(ctx)
 						if err != nil {
-							log.Errorf("Problem populating configuration review reports to the database for daemon %d: %+v",
-								ctx.subjectDaemon.ID, err)
+							log.WithError(err).Errorf("Problem populating configuration review reports to the database for daemon %d",
+								ctx.subjectDaemon.ID)
 						} else {
 							log.WithFields(log.Fields{
 								"daemon_id":     ctx.subjectDaemon.ID,
@@ -462,15 +462,15 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, triggers Triggers,
 				// Execute checker.
 				report, err := checker.checkFn(ctx)
 				if err != nil {
-					log.Errorf("Malformed report created by the config review checker %s: %+v",
-						checker.name, err)
+					log.WithError(err).Errorf("Malformed report created by the config review checker %s",
+						checker.name)
 				}
 
 				if report == nil {
 					// Create a success report.
 					report, err = newEmptyReport(ctx)
 					if err != nil {
-						log.Errorf("Malformed empty report created for a successful config review")
+						log.WithError(err).Errorf("Malformed empty report created for a successful config review")
 					}
 				}
 
