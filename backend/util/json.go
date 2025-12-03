@@ -141,7 +141,8 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 	return 0, errors.Errorf("value not found in the container for key %s", key)
 }
 
-// Normalizes Kea JSON. Kea accepts JSON files that don't strictly follow the standard.
+// Normalizes Kea JSON. Kea accepts JSON files that don't strictly follow the
+// standard.
 // Specifically, it allows:
 //   - trailing commas in arrays and objects
 //   - C-style comments (both single line // and multi-line /* */)
@@ -154,95 +155,132 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 //
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
 func NormalizeJSON(input []byte) []byte {
-	var buffer bytes.Buffer
-	buffer.Grow(len(input))
+	// This function operates on a UTF-8 characters (runes). This object allows
+	// to write them to a byte buffer efficiently and handy.
+	var output bytes.Buffer
+	// Expecting that the standard JSON will be a significant part of the input.
+	output.Grow(len(input))
+	// Reader for proper handling of UTF-8 characters (runes).
 	inputReader := bytes.NewReader(input)
 
+	// True if the parser is currently inside a single-line comment
+	// (Python-style # or C-style //).
 	isSingleLineComment := false
+	// True if the parser is currently inside a C-style multi-line comment
+	// (/* ... */).
 	isMultiLineComment := false
+	// True if the parser is currently inside a string.
 	isString := false
+	// True if the previous character was a slash, indicating potential
+	// opening of a C-style comment.
 	remainingSlash := false
+	// True if the previous non-whitespace character was a comma, indicating
+	// potential trailing comma.
 	remainingComma := false
 
+	// Current character being processed.
 	currentChar := rune(0)
 	var err error
 
 	for {
+		// Read the next character and keep track of the previous character.
+		// It reads the bytes by rune to properly handle UTF-8 encoded JSONs.
 		previousChar := currentChar
 		currentChar, _, err = inputReader.ReadRune()
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
+				// The only possible error here is EOF, so it should not happen.
 				logrus.WithError(err).Error("Failed to read rune from input while normalizing Kea JSON")
 			}
 			break
 		}
 
-		if isSingleLineComment {
+		// Exiting from states in which most of the normalization rules
+		// are ignored.
+		switch {
+		case isSingleLineComment:
+			// Disable the single-line comment mode at the end of the line.
 			if currentChar == '\n' {
 				isSingleLineComment = false
 			}
 			continue
-		}
-		if isMultiLineComment {
+		case isMultiLineComment:
+			// Disable the block comment mode at the closing tag.
 			if previousChar == '*' && currentChar == '/' {
 				isMultiLineComment = false
 			}
 			continue
-		}
-		if isString {
+		case isString:
+			// Disable the string mode at the ending quote, unless it is escaped.
 			if currentChar == '"' && previousChar != '\\' {
 				isString = false
 			}
-			buffer.WriteRune(currentChar)
+			output.WriteRune(currentChar)
 			continue
 		}
 
+		// Entering into C++-style comment states.
 		if remainingSlash {
 			remainingSlash = false
-			if currentChar == '/' {
+			switch currentChar {
+			case '/':
+				// Single-line comment.
 				isSingleLineComment = true
 				continue
-			}
-			if currentChar == '*' {
+			case '*':
+				// Multi line comment.
 				isMultiLineComment = true
 				continue
 			}
-			buffer.WriteRune('/')
+			// It was not a comment, write the slash we have seen before.
+			output.WriteRune('/')
 		}
 
-		if unicode.IsSpace(currentChar) {
-			// Drop whitespace characters.
-			// Forget that we have seen it.
-			currentChar = previousChar
-			continue
-		}
-
-		if currentChar == '/' {
+		// Detecting potential comment openings.
+		switch currentChar {
+		case '/':
+			// Potential C-style comment.
 			remainingSlash = true
 			continue
-		}
-		if currentChar == '#' {
+		case '#':
+			// Python-style single line comment.
 			isSingleLineComment = true
 			continue
 		}
+
+		// Trim whitespaces outside of strings.
+		// The whitespaces outside of strings are not significant in JSON.
+		// However, it must be done after handling comments because C-style
+		// opening characters must not be separated by whitespace.
+		if unicode.IsSpace(currentChar) {
+			continue
+		}
+		// Check for trailing commas in objects and arrays.
+		// They are not standard-compliant but Kea allows them.
 		if remainingComma {
 			remainingComma = false
 			if currentChar != '}' && currentChar != ']' {
-				buffer.WriteRune(',')
+				// It wasn't a trailing comma, write it to the output.
+				output.WriteRune(',')
 			}
 		}
-		if currentChar == ',' {
+
+		// Handle other special characters.
+		switch currentChar {
+		case ',':
+			// Potential trailing comma.
 			remainingComma = true
 			continue
-		}
-		if currentChar == '"' {
+		case '"':
+			// Entering into string mode.
 			isString = true
-			buffer.WriteRune(currentChar)
+			output.WriteRune(currentChar)
 			continue
 		}
 
-		buffer.WriteRune(currentChar)
+		// Normal character, just write it to the output.
+		output.WriteRune(currentChar)
 	}
 
-	return buffer.Bytes()
+	return output.Bytes()
 }
