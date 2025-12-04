@@ -10,7 +10,7 @@ def test_review_get_dhcp_config_reports(server_service: Server, kea_service: Kea
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    daemons = state.apps[0].details.daemons
+    daemons = [d for a in state.apps for d in a.details.daemons]
 
     # DHCPv4 daemon.
     dhcp_v4_daemons = [d for d in daemons if d.name == "dhcp4"]
@@ -63,7 +63,7 @@ def test_review_get_ha_only_top_mt_config_reports(server_service: Server, ha_ser
     assert len(states) == 2
 
     for state in states:
-        daemons = state.apps[0].details.daemons
+        daemons = [d for a in state.apps for d in a.details.daemons]
         daemons = [d for d in daemons if d.name in ["dhcp4", "dhcp6"]]
         assert len(daemons) == 2
 
@@ -95,7 +95,7 @@ def test_review_get_ha_mt_config_reports(server_service: Server, ha_service):
     assert len(states) == 2
 
     for state in states:
-        daemons = state.apps[0].details.daemons
+        daemons = [d for a in state.apps for d in a.details.daemons ]
         daemons = [d for d in daemons if d.name in ["dhcp4", "dhcp6"]]
         assert len(daemons) == 2
 
