@@ -155,7 +155,7 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 //
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
 func NormalizeJSON(input []byte) []byte {
-	// This function operates on a UTF-8 characters (runes). This object allows
+	// This function operates on the UTF-8 characters (runes). This object allows
 	// to write them to a byte buffer efficiently and handy.
 	var output bytes.Buffer
 	// Expecting that the standard JSON will be a significant part of the input.
@@ -190,7 +190,7 @@ func NormalizeJSON(input []byte) []byte {
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// The only possible error here is EOF, so it should not happen.
-				logrus.WithError(err).Error("Failed to read rune from input while normalizing Kea JSON")
+				logrus.WithError(err).Error("Failed to read rune from input while normalizing JSON")
 			}
 			break
 		}
