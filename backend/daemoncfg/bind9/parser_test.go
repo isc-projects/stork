@@ -3,6 +3,7 @@ package bind9config
 import (
 	"fmt"
 	"iter"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -13,7 +14,7 @@ import (
 )
 
 // Test that the parsed configuration is the same as the original configuration
-// stored in the testdata/named.conf file.
+// stored in the testdata/dir/named.conf file.
 func testParsedConfig(t *testing.T, cfg *Config) {
 	require.Len(t, cfg.Statements, 12)
 
@@ -200,12 +201,49 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 // Test successfully parsing the named configuration file.
 func TestParseFile(t *testing.T) {
 	// Parse the named configuration file without expanding includes.
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	configPathAbs, _ := filepath.Abs("testdata/dir/named.conf")
+	require.Equal(t, configPathAbs, cfg.sourcePath)
+	require.Empty(t, cfg.rootPrefix)
+
+	// Expand included files.
+	cfg, err = cfg.Expand()
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	testParsedConfig(t, cfg)
+}
+
+// Test successfully parsing the chroot named configuration file.
+func TestParseFileChroot(t *testing.T) {
+	// Parse the named configuration file without expanding includes.
+	cfg, err := NewParser().ParseFile("dir/named.conf", "testdata")
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Equal(t, "/dir/named.conf", cfg.sourcePath)
+	testdataPathAbs, _ := filepath.Abs("testdata")
+	require.Equal(t, testdataPathAbs, cfg.rootPrefix)
+
+	// Expand included files.
+	cfg, err = cfg.Expand()
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	testParsedConfig(t, cfg)
+}
+
+// Test successfully parsing the chroot named configuration file.
+// The include files are located in the root of the chroot.
+func TestParseFileChrootNoSubdirectory(t *testing.T) {
+	// Parse the named configuration file without expanding includes.
+	cfg, err := NewParser().ParseFile("named.conf", "testdata/dir")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	// Expand included files.
-	cfg, err = cfg.Expand("testdata")
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -216,7 +254,7 @@ func TestParseFile(t *testing.T) {
 // multiple switches and the clause with generic contents. It also contains two
 // suboptions. The switches are both strings and identifiers.
 func TestParseGenericOption(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		options {
 			test-option "192.168.1.1" 2001:db8:1::1 12 bar 1.1.1.1 {
 				generic-content 1 2;
@@ -273,12 +311,12 @@ func TestParseGenericOption(t *testing.T) {
 // filter selects all types of statements.
 func TestConfigGetFormattedString(t *testing.T) {
 	// Parse the configuration file.
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	// Expand the included files.
-	cfg, err = cfg.Expand("testdata")
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -292,7 +330,7 @@ func TestConfigGetFormattedString(t *testing.T) {
 		}
 		// By parsing the output we ensure that the output configuration syntax
 		// is valid.
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
+		cfg2, err := NewParser().Parse("", "", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		// Verify that the parsed configuration is the same as the original configuration.
@@ -309,7 +347,7 @@ func TestConfigGetFormattedString(t *testing.T) {
 		}
 		// By parsing the output we ensure that the output configuration syntax
 		// is valid.
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
+		cfg2, err := NewParser().Parse("", "", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		// Verify that the parsed configuration is the same as the original
@@ -321,7 +359,7 @@ func TestConfigGetFormattedString(t *testing.T) {
 // Test that the config can be serialized when filter is set to select
 // specific types of statements.
 func TestConfigGetFormattedStringFiltering(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -332,7 +370,7 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
+		cfg2, err := NewParser().Parse("", "", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		require.Len(t, cfg2.Statements, 2)
@@ -348,7 +386,7 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
+		cfg2, err := NewParser().Parse("", "", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		require.Len(t, cfg2.Statements, 1)
@@ -364,7 +402,7 @@ func TestConfigGetFormattedStringFiltering(t *testing.T) {
 			builder.WriteString(text)
 			builder.WriteString("\n")
 		}
-		cfg2, err := NewParser().Parse(" ", strings.NewReader(builder.String()))
+		cfg2, err := NewParser().Parse("", "", strings.NewReader(builder.String()))
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 		require.Len(t, cfg2.Statements, 8)
@@ -393,7 +431,7 @@ func TestConfigGetFormattedTextTooLongLine(t *testing.T) {
 	`, longLine, longLine)
 
 	// Parse the configuration.
-	cfg, err := NewParser().Parse("", strings.NewReader(configText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(configText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -420,7 +458,7 @@ func TestConfigGetFormattedTextTooLongLine(t *testing.T) {
 
 // Test that the parser correctly handles the @stork:no-parse directive.
 func TestNoParseSelectedZone(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		zone "example.com" {
 			type forward;
 		};
@@ -450,7 +488,7 @@ func TestNoParseSelectedZone(t *testing.T) {
 
 // Test selectively skipping parsing the inner contents of a zone definition.
 func TestNoParseSelectedZoneOptions(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		zone "example.org" {
 			//@stork:no-parse:scope
 			type forward;
@@ -474,7 +512,7 @@ func TestNoParseSelectedZoneOptions(t *testing.T) {
 // Test that the parser correctly handles the @stork:no-parse directive
 // for the view options.
 func TestNoParseViewOptions(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		view "foo" {
 			zone "example.com" {
 				type primary;
@@ -506,7 +544,7 @@ func TestNoParseViewOptions(t *testing.T) {
 // Test that the parser correctly handles the @stork:no-parse directive
 // for the options.
 func TestNoParseOptions(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		options {
 			allow-transfer port 853 { any; };
 			//@stork:no-parse:scope
@@ -525,7 +563,7 @@ func TestNoParseOptions(t *testing.T) {
 // Test that an error is returned when the @stork:no-parse:scope is not
 // followed by the @stork:no-parse:end directive.
 func TestNoParseNoEnd(t *testing.T) {
-	_, err := NewParser().Parse(" ", strings.NewReader(`
+	_, err := NewParser().Parse("", "", strings.NewReader(`
 		zone "example.com" {
 			type forward;
 		};
@@ -544,7 +582,7 @@ func TestNoParseNoEnd(t *testing.T) {
 // Test that the @stork:no-parse:global directive is correctly parsed
 // and parsing the rest of the file is skipped.
 func TestNoParseGlobal(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		zone "example.com" {
 			type forward;
 		};
@@ -569,7 +607,7 @@ func TestNoParseGlobal(t *testing.T) {
 // Test that an error is returned when the @stork:no-parse:global directive
 // is used in the middle of a statement.
 func TestNoParseGlobalMidStatement(t *testing.T) {
-	_, err := NewParser().Parse(" ", strings.NewReader(`
+	_, err := NewParser().Parse("", "", strings.NewReader(`
 		zone "example.com" {
 			//@stork:no-parse:global
 			type forward;
@@ -582,7 +620,7 @@ func TestNoParseGlobalMidStatement(t *testing.T) {
 // Test that the @stork:no-parse:end is ignored for the @stork:no-parse:global
 // directive.
 func TestNoParseGlobalExtraneousEnd(t *testing.T) {
-	cfg, err := NewParser().Parse(" ", strings.NewReader(`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(`
 		zone "example.com" {
 			type forward;
 		};
@@ -608,7 +646,7 @@ func TestNoParseGlobalExtraneousEnd(t *testing.T) {
 // Test that an error is returned when the @stork:no-parse:end directive
 // is used without the @stork:no-parse:scope directive.
 func TestNoParseOnlyEnd(t *testing.T) {
-	_, err := NewParser().Parse(" ", strings.NewReader(`
+	_, err := NewParser().Parse("", "", strings.NewReader(`
 		//@stork:no-parse:end
 		zone "example.com" {
 			type forward;
@@ -620,7 +658,7 @@ func TestNoParseOnlyEnd(t *testing.T) {
 
 // Test that an attempt to parse a non-existent file returns an error.
 func TestParseFileError(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/non-existent.conf")
+	cfg, err := NewParser().ParseFile("testdata/non-existent.conf", "")
 	require.Error(t, err)
 	require.Nil(t, cfg)
 }
@@ -659,7 +697,7 @@ func TestParseIncludes(t *testing.T) {
 
 	// Parse the parent file without expanding includes. All
 	// statements must be includes.
-	cfg, err := NewParser().ParseFile(topLevelPath)
+	cfg, err := NewParser().ParseFile(topLevelPath, "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 2)
@@ -669,7 +707,70 @@ func TestParseIncludes(t *testing.T) {
 	require.Equal(t, includedPath, cfg.Statements[1].Include.Path)
 
 	// Expand the includes.
-	cfg, err = cfg.Expand(sandbox.BasePath)
+	cfg, err = cfg.Expand()
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	// The new statements must be ACLs.
+	require.Len(t, cfg.Statements, 2)
+	acl1 := cfg.GetACL("test1")
+	require.NotNil(t, acl1)
+	require.Equal(t, "test1", acl1.Name)
+	require.Len(t, acl1.AddressMatchList.Elements, 1)
+	require.Equal(t, "1.2.3.4", acl1.AddressMatchList.Elements[0].IPAddressOrACLName)
+
+	acl2 := cfg.GetACL("test2")
+	require.NotNil(t, acl2)
+	require.Equal(t, "test2", acl2.Name)
+	require.Len(t, acl2.AddressMatchList.Elements, 1)
+	require.Equal(t, "0.0.0.0", acl2.AddressMatchList.Elements[0].IPAddressOrACLName)
+}
+
+// Test that the parser correctly handles the include statements in chroot
+// environment.
+func TestParseIncludesChroot(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	chrootPath, err := sandbox.JoinDir("chroot")
+	require.NoError(t, err)
+
+	// Create the parent file with the include statements. The path
+	// to the first file is relative. The path to the second file is
+	// absolute but to the chroot.
+	sandbox.Write("chroot/etc/bind/top-level.conf", `
+		include "1.conf";
+		include "/etc/bind/2.conf";
+	`)
+	require.NoError(t, err)
+
+	// Create the first included file.
+	sandbox.Write("chroot/etc/bind/1.conf", `
+		acl test1 {
+			1.2.3.4;
+		};
+	`)
+
+	// Create the second included file.
+	sandbox.Write("chroot/etc/bind/2.conf", `
+		acl test2 {
+			0.0.0.0;
+		};
+	`)
+
+	// Parse the parent file without expanding includes. All
+	// statements must be includes.
+	cfg, err := NewParser().ParseFile("/etc/bind/top-level.conf", chrootPath)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 2)
+	require.NotNil(t, cfg.Statements[0].Include)
+	require.Equal(t, "1.conf", cfg.Statements[0].Include.Path)
+	require.NotNil(t, cfg.Statements[1].Include)
+	require.Equal(t, "/etc/bind/2.conf", cfg.Statements[1].Include.Path)
+
+	// Expand the includes.
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -704,12 +805,12 @@ func TestParseIncludeSelf(t *testing.T) {
 	`)
 
 	// Parse the configuration file without expanding includes.
-	cfg, err := NewParser().ParseFile(topLevelPath)
+	cfg, err := NewParser().ParseFile(topLevelPath, "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	// Expand the includes.
-	cfg, err = cfg.Expand(sandbox.BasePath)
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -727,7 +828,7 @@ func TestParseIncludeSelf(t *testing.T) {
 // Test that the parser doesn't fail when parsing the query-source option.
 func TestParseQuerySource(t *testing.T) {
 	t.Run("IP address only", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				query-source 1.2.3.4;
 				query-source-v6 2001:db8::1;
@@ -738,7 +839,7 @@ func TestParseQuerySource(t *testing.T) {
 	})
 
 	t.Run("address keyword", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				query-source address 1.2.3.4;
 				query-source-v6 address 2001:db8::1;
@@ -749,7 +850,7 @@ func TestParseQuerySource(t *testing.T) {
 	})
 
 	t.Run("address keyword with port", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				query-source address 1.2.3.4 port 53;
 				query-source-v6 address 2001:db8::1 port 53;
@@ -760,7 +861,7 @@ func TestParseQuerySource(t *testing.T) {
 	})
 
 	t.Run("address keyword with port asterisk", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				query-source address 1.2.3.4 port *;
 				query-source-v6 address 2001:db8::1 port *;
@@ -771,7 +872,7 @@ func TestParseQuerySource(t *testing.T) {
 	})
 
 	t.Run("address with asterisk and port with asterisk", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				query-source * port *;
 				query-source-v6 * port *;
@@ -782,7 +883,7 @@ func TestParseQuerySource(t *testing.T) {
 	})
 
 	t.Run("address none", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				query-source none;
 				query-source-v6 none;
@@ -796,7 +897,7 @@ func TestParseQuerySource(t *testing.T) {
 // Test that the parser doesn't fail when parsing the notify-source option.
 func TestParseNotifySource(t *testing.T) {
 	t.Run("IP address only", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				notify-source 1.2.3.4;
 				notify-source-v6 2001:db8::1;
@@ -807,7 +908,7 @@ func TestParseNotifySource(t *testing.T) {
 	})
 
 	t.Run("address and port", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				notify-source address 1.2.3.4 port 53;
 				notify-source-v6 address 2001:db8::1 port 53;
@@ -818,7 +919,7 @@ func TestParseNotifySource(t *testing.T) {
 	})
 
 	t.Run("address and port asterisk", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				notify-source address 1.2.3.4 port *;
 				notify-source-v6 address 2001:db8::1 port *;
@@ -829,7 +930,7 @@ func TestParseNotifySource(t *testing.T) {
 	})
 
 	t.Run("address with asterisk and port with asterisk", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				notify-source * port *;
 				notify-source-v6 * port *;
@@ -840,7 +941,7 @@ func TestParseNotifySource(t *testing.T) {
 	})
 
 	t.Run("address with asterisk", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			options {
 				notify-source *;
 				notify-source-v6 *;
@@ -854,7 +955,7 @@ func TestParseNotifySource(t *testing.T) {
 // Test that the parser correctly handles the notify-source option in the zone and view blocks.
 func TestParseNotifySourceZoneView(t *testing.T) {
 	t.Run("zone", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			zone "example.com" {
 				notify-source 1.2.3.4;
 				notify-source-v6 2001:db8::1;
@@ -864,7 +965,7 @@ func TestParseNotifySourceZoneView(t *testing.T) {
 		require.NotNil(t, cfg)
 	})
 	t.Run("view", func(t *testing.T) {
-		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+		cfg, err := NewParser().Parse("", "", strings.NewReader(`
 			view "foo" {
 				notify-source address 1.2.3.4 port 53;
 				notify-source-v6 address 2001:db8::1 port 53;
@@ -930,7 +1031,7 @@ func TestParseBasicOption(t *testing.T) {
 					foo %s;
 				}
 			`, testCase.value)
-			cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+			cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 			require.Len(t, cfg.Statements, 1)
@@ -953,7 +1054,7 @@ func TestParseOptionWithCurlyBrackets(t *testing.T) {
 			foo 123	abc { city "paris"; };
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -975,7 +1076,7 @@ func TestParseOptionWithSuboptions(t *testing.T) {
 			foo 123	{ city "paris"; } except-from { "abc"; } update 100;
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1000,7 +1101,7 @@ func TestParseACLWithNegatedKey(t *testing.T) {
 			!key guest-key;
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1019,7 +1120,7 @@ func TestParseACLWithKey(t *testing.T) {
 			key "guest-key";
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1038,7 +1139,7 @@ func TestParseACLWithUnquotedACLName(t *testing.T) {
 			localnets;
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1056,7 +1157,7 @@ func TestParseACLWithQuotedACLName(t *testing.T) {
 			"localhosts";
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1074,7 +1175,7 @@ func TestParseACLWithQuotedIPv4Address(t *testing.T) {
 			"10.0.0.1";
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1098,7 +1199,7 @@ func TestParseDynDB(t *testing.T) {
 			library "ldap.so";
 		};
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -1122,7 +1223,7 @@ func TestParseDenyAnswerAliases(t *testing.T) {
 			} except-from { "trusted.example.net"; };
 		}
 	`
-	cfg, err := NewParser().Parse(" ", strings.NewReader(cfgText))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Len(t, cfg.Statements, 1)
@@ -1171,7 +1272,7 @@ func BenchmarkNoParseZones(b *testing.B) {
 		noParseBuilder.WriteString("//@stork:no-parse:end\n")
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := parser.Parse("", strings.NewReader(noParseBuilder.String()))
+			_, err := parser.Parse("", "", strings.NewReader(noParseBuilder.String()))
 			require.NoError(b, err)
 		}
 	})
@@ -1183,7 +1284,7 @@ func BenchmarkNoParseZones(b *testing.B) {
 		noParseBuilder.WriteString(builder.String())
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := parser.Parse("", strings.NewReader(noParseBuilder.String()))
+			_, err := parser.Parse("", "", strings.NewReader(noParseBuilder.String()))
 			require.NoError(b, err)
 		}
 	})
@@ -1191,7 +1292,7 @@ func BenchmarkNoParseZones(b *testing.B) {
 	b.Run("Parse", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := parser.Parse("", strings.NewReader(builder.String()))
+			_, err := parser.Parse("", "", strings.NewReader(builder.String()))
 			require.NoError(b, err)
 		}
 	})
@@ -1278,7 +1379,7 @@ func TestParseControlsInet(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			controlsSource := fmt.Sprintf("controls { %s };", test.source)
 			parser := NewParser()
-			cfg, err := parser.Parse("", strings.NewReader(controlsSource))
+			cfg, err := parser.Parse("", "", strings.NewReader(controlsSource))
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 			require.Len(t, cfg.Statements, 1)
@@ -1359,7 +1460,7 @@ func TestParseControlsUnix(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			controlsSource := fmt.Sprintf("controls { %s };", test.source)
 			parser := NewParser()
-			cfg, err := parser.Parse("", strings.NewReader(controlsSource))
+			cfg, err := parser.Parse("", "", strings.NewReader(controlsSource))
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 			require.Len(t, cfg.Statements, 1)

@@ -139,7 +139,7 @@ func setBenchmarkGetViewsResponseOK(b *testing.B, response map[string]any) (*bin
 
 // Parse the default BIND9 config file.
 func parseDefaultBind9Config(t *testing.T) *bind9config.Config {
-	bind9Config, err := bind9config.NewParser().ParseFile("testdata/named.conf")
+	bind9Config, err := bind9config.NewParser().ParseFile("testdata/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, bind9Config)
 	return bind9Config
@@ -147,7 +147,7 @@ func parseDefaultBind9Config(t *testing.T) *bind9config.Config {
 
 // Parse the default BIND9 RNDC key config file.
 func parseDefaultBind9RNDCKeyConfig(t *testing.T) *bind9config.Config {
-	bind9Config, err := bind9config.NewParser().ParseFile("testdata/rndc.key")
+	bind9Config, err := bind9config.NewParser().ParseFile("testdata/rndc.key", "")
 	require.NoError(t, err)
 	require.NotNil(t, bind9Config)
 	return bind9Config
@@ -163,7 +163,7 @@ func parseDefaultPDNSConfig(t *testing.T) *pdnsconfig.Config {
 
 // Parse the default BIND9 config file for benchmark.
 func parseBenchmarkDefaultBind9Config(b *testing.B) *bind9config.Config {
-	bind9Config, err := bind9config.NewParser().ParseFile("testdata/named.conf")
+	bind9Config, err := bind9config.NewParser().ParseFile("testdata/named.conf", "")
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -565,8 +565,8 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			parser := NewMockBind9FileParser(ctrl)
-			parser.EXPECT().ParseFile(expectedConfigPath).DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-				return bind9config.NewParser().ParseFile(path.Join(sandbox.BasePath, "testing.conf"))
+			parser.EXPECT().ParseFile(expectedConfigPath, "").DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
+				return bind9config.NewParser().ParseFile(path.Join(sandbox.BasePath, "testing.conf"), "")
 			})
 
 			// Act
@@ -603,7 +603,7 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
-	_, err := sandbox.Write("testing.conf", config)
+	_, err := sandbox.Write("chroot/testing.conf", config)
 	require.NoError(t, err)
 
 	executor := newTestCommandExecutor()
@@ -619,8 +619,8 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			parser := NewMockBind9FileParser(ctrl)
-			parser.EXPECT().ParseFile(path.Join(chrootPath, expectedConfigPath)).DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-				return bind9config.NewParser().ParseFile(path.Join(sandbox.BasePath, "testing.conf"))
+			parser.EXPECT().ParseFile(expectedConfigPath, chrootPath).DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
+				return bind9config.NewParser().ParseFile("testing.conf", rootPath)
 			})
 
 			// Act

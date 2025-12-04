@@ -10,9 +10,9 @@ import (
 // Test getting the source path of the configuration file.
 func TestConfigGetSourcePath(t *testing.T) {
 	cfg := &Config{
-		sourcePath: "testdata/named.conf",
+		sourcePath: "testdata/dir/named.conf",
 	}
-	require.Equal(t, "testdata/named.conf", cfg.GetSourcePath())
+	require.Equal(t, "testdata/dir/named.conf", cfg.GetSourcePath())
 }
 
 // Test checking if the configuration contains no-parse directives.
@@ -78,7 +78,7 @@ func TestGetStatisticsChannelsNone(t *testing.T) {
 
 // Tests that GetView returns expected view.
 func TestGetView(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -92,7 +92,7 @@ func TestGetView(t *testing.T) {
 
 // Tests that GetKey returns expected key.
 func TestGetKey(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -110,7 +110,7 @@ func TestGetKey(t *testing.T) {
 
 // Test getting the first key in the configuration file.
 func TestGetFirstKey(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -127,11 +127,11 @@ func TestGetFirstKeyNone(t *testing.T) {
 
 // Tests that GetACL returns expected ACL.
 func TestGetACL(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	cfg, err = cfg.Expand("testdata")
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -155,11 +155,11 @@ func TestViewKeysTooMuchRecursion(t *testing.T) {
 			match-clients { acl1; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	cfg, err = cfg.Expand("testdata")
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -170,11 +170,11 @@ func TestViewKeysTooMuchRecursion(t *testing.T) {
 
 // Tests that GetViewKey returns associated keys.
 func TestGetViewKey(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	cfg, err = cfg.Expand("testdata")
+	cfg, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -216,7 +216,7 @@ func TestGetAXFRCredentialsForViewListenOnIPv4(t *testing.T) {
 			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -248,13 +248,13 @@ func TestGetAXFRCredentialsForViewListenOnMultipleClauses(t *testing.T) {
 			match-clients { key trusted-key; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials("trusted", "example.com")
 	require.NoError(t, err)
-	// The local loopback addresss from the second clause is preferred.
+	// The local loopback address from the second clause is preferred.
 	require.Equal(t, "127.0.0.1:53", address)
 	require.NotNil(t, keyName)
 	require.Equal(t, "trusted-key", keyName)
@@ -280,7 +280,7 @@ func TestGetAXFRCredentialsForViewListenOnIPv6(t *testing.T) {
 			match-clients { key trusted-key; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -310,7 +310,7 @@ func TestGetAXFRCredentialsForViewListenOnAllowTransferPreferredPort(t *testing.
 			match-clients { key trusted-key; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -340,7 +340,7 @@ func TestGetAXFRCredentialsForViewListenOnAllowTransferAny(t *testing.T) {
 			match-clients { key trusted-key; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -372,7 +372,7 @@ func TestGetAXFRCredentialsForViewListenOnAllowTransferZoneOverride(t *testing.T
 			};
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -402,7 +402,7 @@ func TestGetAXFRCredentialsForViewListenOnAllowTransferZoneOverrideNoListener(t 
 			};
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -433,7 +433,7 @@ func TestGetAXFRCredentialsForViewListenOnAllowTransferZoneOverrideListenerMisma
 			};
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -460,7 +460,7 @@ func TestGetAXFRCredentialsForViewNoAllowTransfer(t *testing.T) {
 			match-clients { key trusted-key; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -498,7 +498,7 @@ func TestGetAXFRCredentialsForView(t *testing.T) {
 			allow-transfer transport "tls" { key guest-key; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -525,7 +525,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnIPv4(t *testing.T) {
 			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -554,13 +554,13 @@ func TestGetAXFRCredentialsForDefaultViewListenOnMultipleClauses(t *testing.T) {
 			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
-	// The local loopback addresss from the second clause is preferred.
+	// The local loopback address from the second clause is preferred.
 	require.Equal(t, "127.0.0.1:53", address)
 	require.Equal(t, "trusted-key", keyName)
 	require.Equal(t, "hmac-sha256", algorithm)
@@ -582,7 +582,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnIPv6(t *testing.T) {
 			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -608,7 +608,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *t
 			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -629,7 +629,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) 
 			allow-transfer { any; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -652,7 +652,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferZoneOverride(t *te
 			allow-transfer port 853 { any; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -673,7 +673,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferZoneOverrideNoList
 			allow-transfer port 853 { any; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -691,7 +691,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferZoneOverrideListen
 			allow-transfer port 854 { any; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -712,7 +712,7 @@ func TestGetAXFRCredentialsForDefaultViewListenOnPermissiveAllowTransferNegatedL
 			allow-transfer { 192.0.2.1; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -731,7 +731,7 @@ func TestGetAXFRCredentialsForDefaultViewNoAllowTransfer(t *testing.T) {
 			listen-on-v6 port 54 { 2001:db8:1::1; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -756,7 +756,7 @@ func TestIsRPZDefaultView(t *testing.T) {
 			zone "rpz.example.org";
 		};
 	};`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -822,7 +822,7 @@ func TestGetAlgorithmSecretNoSecret(t *testing.T) {
 
 // Tests that the API key is empty.
 func TestGetAPIKey(t *testing.T) {
-	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/dir/named.conf", "")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Empty(t, cfg.GetAPIKey())
@@ -839,7 +839,7 @@ func TestGetRndcCredentials(t *testing.T) {
 			inet 192.0.2.1 port 953 allow { 192.0.2.0/24; } keys { "rndc-key"; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -866,7 +866,7 @@ func TestGetRndcCredentialsNoKey(t *testing.T) {
 			inet 192.0.2.1 port 953 allow { 192.0.2.0/24; } keys { "rndc-key"; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -886,7 +886,7 @@ func TestGetRndcCredentialsNoInetClause(t *testing.T) {
 			unix "/var/run/rndc.sock" perm 0666 owner 0 group 0 keys { "rndc-key"; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -904,7 +904,7 @@ func TestGetRndcCredentialsEmptyControls(t *testing.T) {
 	config := `
 		controls { };
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
@@ -938,7 +938,7 @@ func TestGetRndcCredentialsNoControls(t *testing.T) {
 			type master;
 			file "/etc/bind/db.127";
 		};`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	address, port, key, enabled, err := cfg.GetRndcConnParams(nil)
@@ -978,7 +978,7 @@ func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 			expectedRndcKey:       "rndc-key",
 			expectedRndcKeySecret: "iCQvHPqq43AvFK/xRHaKrUiq4GPaFyBpvt/GwKSvKwM=",
 		},
-		// The params should include the cofigured controls and the rndc-key-in-config
+		// The params should include the configured controls and the rndc-key-in-config
 		// key defined in the config file, as this key is directly referenced in the
 		// inet clause.
 		{
@@ -1022,11 +1022,11 @@ func TestGetRndcCredentialsNoControlsRndcConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			rndcCfg, err := NewParser().Parse("", strings.NewReader(rndcConfig))
+			rndcCfg, err := NewParser().Parse("", "", strings.NewReader(rndcConfig))
 			require.NoError(t, err)
 			require.NotNil(t, rndcCfg)
 
-			cfg, err := NewParser().Parse("", strings.NewReader(testCase.config))
+			cfg, err := NewParser().Parse("", "", strings.NewReader(testCase.config))
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 
@@ -1052,7 +1052,7 @@ func TestGetStatisticsChannelCredentials(t *testing.T) {
 			inet 192.0.2.1 port 80 allow { 192.0.2.0/24; };
 		};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -1070,7 +1070,7 @@ func TestGetStatisticsChannelCredentialsNoInetClause(t *testing.T) {
 	config := `
 		statistics-channels {};
 	`
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -1084,7 +1084,7 @@ func TestGetStatisticsChannelCredentialsNoInetClause(t *testing.T) {
 // Test that statistics-channels are not enabled when there is no statistics-channels statement.
 func TestGetStatisticsChannelCredentialsNoStatisticsChannels(t *testing.T) {
 	config := ``
-	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 

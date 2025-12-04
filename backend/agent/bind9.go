@@ -29,7 +29,7 @@ var (
 // An interface for parsing BIND 9 configuration files.
 // It is mocked in the tests.
 type bind9FileParser interface {
-	ParseFile(path string) (*bind9config.Config, error)
+	ParseFile(path string, rootPrefix string) (*bind9config.Config, error)
 }
 
 // It holds common and BIND 9 specific runtime information.
@@ -321,18 +321,17 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	if bind9ConfPath == "" {
 		return nil, errors.Errorf("cannot find config file for BIND 9")
 	}
-	prefixedBind9ConfPath := path.Join(rootPrefix, bind9ConfPath)
 
 	// Parse the BIND 9 config file.
-	bind9Config, err := parser.ParseFile(prefixedBind9ConfPath)
+	bind9Config, err := parser.ParseFile(bind9ConfPath, rootPrefix)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse BIND 9 config file %s", prefixedBind9ConfPath)
+		return nil, errors.Wrap(err, "failed to parse BIND 9 config file")
 	}
 
 	// Resolve include statements.
-	bind9Config, err = bind9Config.Expand(filepath.Dir(prefixedBind9ConfPath))
+	bind9Config, err = bind9Config.Expand()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve include statements in BIND 9 config file %s", prefixedBind9ConfPath)
+		return nil, errors.Wrap(err, "failed to resolve include statements in BIND 9 config file")
 	}
 
 	if bind9Config.HasNoParse() {
@@ -343,11 +342,11 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 
 	// rndc.key file typically contains keys to be used for rndc authentication.
 	var rndcConfig *bind9config.Config
-	prefixedRndcKeyPath := filepath.Join(filepath.Dir(prefixedBind9ConfPath), RndcKeyFile)
-	if executor.IsFileExist(prefixedRndcKeyPath) {
-		rndcConfig, err = parser.ParseFile(prefixedRndcKeyPath)
+	rndcKeyPath := filepath.Join(filepath.Dir(bind9ConfPath), RndcKeyFile)
+	if executor.IsFileExist(path.Join(rootPrefix, rndcKeyPath)) {
+		rndcConfig, err = parser.ParseFile(rndcKeyPath, rootPrefix)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse BIND 9 rndc key file %s", prefixedRndcKeyPath)
+			return nil, errors.Wrapf(err, "failed to parse BIND 9 rndc key file")
 		}
 	}
 
@@ -357,7 +356,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		return nil, errors.Wrapf(err, "failed to get BIND 9 rndc credentials")
 	}
 	if !enabled {
-		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", prefixedBind9ConfPath)
+		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", path.Join(rootPrefix, bind9ConfPath))
 	}
 
 	rndcKey := ""
@@ -405,7 +404,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	err = rndcClient.DetermineDetails(
 		baseNamedDir,
 		// rndc client doesn't support chroot.
-		path.Dir(prefixedBind9ConfPath),
+		path.Join(rootPrefix, path.Dir(bind9ConfPath)),
 		*ctrlAddress,
 		*ctrlPort,
 		ctrlKey,

@@ -273,8 +273,8 @@ func TestDetectDaemons(t *testing.T) {
 	processManager.lister = lister
 
 	bind9ConfigParser := NewMockBind9FileParser(ctrl)
-	bind9ConfigParser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	bind9ConfigParser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, rootPath, strings.NewReader(defaultBind9Config))
 	})
 
 	pdnsConfigParser := NewMockPDNSConfigParser(ctrl)
@@ -388,8 +388,8 @@ func TestDetectDaemonsConfigNoStatistics(t *testing.T) {
 	processManager.lister = lister
 
 	parser := NewMockBind9FileParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-		return bind9config.NewParser().Parse(configPath, strings.NewReader(bind9ConfigWithoutStatistics))
+	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(bind9ConfigWithoutStatistics))
 	})
 	monitor := &monitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 
@@ -442,8 +442,8 @@ func TestDetectDaemonsContinueOnNotAvailableCommandLine(t *testing.T) {
 	processManager.lister = lister
 
 	parser := NewMockBind9FileParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(defaultBind9Config))
 	})
 	executor := newTestCommandExecutorDefault()
 	monitor := &monitor{processManager: processManager, commander: executor, bind9FileParser: parser}
@@ -489,8 +489,8 @@ func TestDetectDaemonsSkipOnNotAvailableCwd(t *testing.T) {
 	executor := newTestCommandExecutorDefault()
 
 	parser := NewMockBind9FileParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(defaultBind9Config))
 	})
 
 	monitor := &monitor{processManager: processManager, commander: executor, bind9FileParser: parser}
@@ -574,8 +574,8 @@ func TestDetectBind9DaemonAbsPath(t *testing.T) {
 	defer ctrl.Finish()
 
 	parser := NewMockBind9FileParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(defaultBind9Config))
 	})
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/named -c /etc/named.conf", nil)
@@ -605,8 +605,8 @@ func TestDetectBind9DaemonRelativePath(t *testing.T) {
 	defer ctrl.Finish()
 
 	parser := NewMockBind9FileParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
-		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(defaultBind9Config))
 	})
 	executor := newTestCommandExecutorDefault()
 	process := NewMockSupportedProcess(ctrl)

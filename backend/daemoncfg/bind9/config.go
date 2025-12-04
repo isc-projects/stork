@@ -17,8 +17,11 @@ const DefaultViewName = "_default"
 // configuration elements.
 type Config struct {
 	// The absolute source path of the configuration file. Note that it
-	// may be not set if getting the absolute path failed.
+	// may be not set if getting the absolute path failed. If the configuration
+	// resides in a chroot, the path is relative to the chroot.
 	sourcePath string
+	// The absolut path of the chroot directory. Empty string means no chroot.
+	rootPrefix string
 	// The configuration contains a list of Statements separated by semicolons.
 	Statements []*Statement `parser:"( @@ ';'* )*"`
 }
@@ -530,9 +533,8 @@ func (c *Config) GetZoneKey(viewName string, zoneName string) (*Key, error) {
 }
 
 // Expands the configuration by including the contents of the included files.
-// The baseDir is a path prepended to the path of the included files when their
-// paths are relative.
-func (c *Config) Expand(baseDir string) (*Config, error) {
+func (c *Config) Expand() (*Config, error) {
+	baseDir := filepath.Dir(c.sourcePath)
 	expanded := &Config{
 		sourcePath: c.sourcePath,
 	}
@@ -557,7 +559,7 @@ func (c *Config) Expand(baseDir string) (*Config, error) {
 				continue
 			}
 			// Parse the included file.
-			parsedInclude, err := NewParser().ParseFile(path)
+			parsedInclude, err := NewParser().ParseFile(path, c.rootPrefix)
 			if err != nil {
 				return nil, err
 			}

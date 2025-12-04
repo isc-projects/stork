@@ -2517,7 +2517,7 @@ func TestReceiveBind9ConfigNoFiltersNorFileTypes(t *testing.T) {
 	require.NotEmpty(t, receivedFiles[1].contents)
 
 	// Make sure that the returned configuration is valid.
-	bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
+	bind9Config, err := bind9config.NewParser().Parse("", "", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
 	require.NoError(t, err)
 	require.NotNil(t, bind9Config)
 
@@ -2534,7 +2534,7 @@ func TestReceiveBind9ConfigNoFiltersNorFileTypes(t *testing.T) {
 	require.NotNil(t, zone)
 
 	// Make sure that the rndc.key file is valid.
-	rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[1].contents, "\n")))
+	rndcKeyConfig, err := bind9config.NewParser().Parse("", "", strings.NewReader(strings.Join(receivedFiles[1].contents, "\n")))
 	require.NoError(t, err)
 	require.NotNil(t, rndcKeyConfig)
 
@@ -2626,7 +2626,7 @@ func TestReceiveBind9ConfigMultipleFiltersAndFileTypes(t *testing.T) {
 	require.NotEmpty(t, receivedFiles[1].contents)
 
 	// Make sure that the returned configuration is valid.
-	bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
+	bind9Config, err := bind9config.NewParser().Parse("", "", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
 	require.NoError(t, err)
 	require.NotNil(t, bind9Config)
 
@@ -2643,7 +2643,7 @@ func TestReceiveBind9ConfigMultipleFiltersAndFileTypes(t *testing.T) {
 	require.NotNil(t, zone)
 
 	// Make sure that the rndc.key file is valid.
-	rndcKeyConfig, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[1].contents, "\n")))
+	rndcKeyConfig, err := bind9config.NewParser().Parse("", "", strings.NewReader(strings.Join(receivedFiles[1].contents, "\n")))
 	require.NoError(t, err)
 	require.NotNil(t, rndcKeyConfig)
 
@@ -2729,7 +2729,7 @@ func TestReceiveBind9ConfigSingleFilterAndFileType(t *testing.T) {
 	require.NotEmpty(t, receivedFiles[0].contents)
 
 	// Make sure that the returned configuration is valid.
-	bind9Config, err := bind9config.NewParser().Parse("", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
+	bind9Config, err := bind9config.NewParser().Parse("", "", strings.NewReader(strings.Join(receivedFiles[0].contents, "\n")))
 	require.NoError(t, err)
 	require.NotNil(t, bind9Config)
 

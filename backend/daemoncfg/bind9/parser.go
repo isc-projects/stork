@@ -3,7 +3,9 @@ package bind9config
 import (
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
@@ -102,31 +104,43 @@ func NewParser() *Parser {
 }
 
 // Parses the BIND 9 configuration from a file using a custom parser.
-func (p *Parser) parse(filename string, fileReader io.Reader, parser *participle.Parser[Config]) (*Config, error) {
+func (p *Parser) parse(filename string, rootPrefix string, fileReader io.Reader, parser *participle.Parser[Config]) (*Config, error) {
 	// Run the parser.
-	config, err := parser.Parse(filename, fileReader)
+	configPath := path.Join(rootPrefix, filename)
+	config, err := parser.Parse(configPath, fileReader)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse Bind9 config file: %s", filename)
 	}
 	// Optionally set the absolute source path. If it may be used for detecting
 	// cycles in the include statements.
-	if sourcePath, err := filepath.Abs(filename); err == nil {
+	config.sourcePath = filename
+	if sourcePath, err := filepath.Abs(configPath); err == nil {
+		// Strip the root prefix from the source path.
+		if rootPrefix != "" {
+			config.rootPrefix = rootPrefix
+			rootPrefixAbs, err := filepath.Abs(rootPrefix)
+			if err == nil {
+				config.rootPrefix = rootPrefixAbs
+				sourcePath = strings.TrimPrefix(sourcePath, rootPrefixAbs)
+			}
+		}
 		config.sourcePath = sourcePath
 	}
 	return config, nil
 }
 
-// Parses the BIND 9 configuration from a file.
-func (p *Parser) ParseFile(filename string) (*Config, error) {
-	file, err := os.Open(filename)
+// Parses the BIND 9 configuration from a file. It accepts a path to the file
+// and a root of chroot if the configuration resides in a chroot.
+func (p *Parser) ParseFile(filename string, rootPrefix string) (*Config, error) {
+	file, err := os.Open(path.Join(rootPrefix, filename))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open BIND 9 config file: %s", filename)
 	}
 	defer file.Close()
-	return p.Parse(filename, file)
+	return p.Parse(filename, rootPrefix, file)
 }
 
 // Parses the BIND 9 configuration.
-func (p *Parser) Parse(filename string, fileReader io.Reader) (*Config, error) {
-	return p.parse(filename, fileReader, bind9Parser)
+func (p *Parser) Parse(filename string, rootPrefix string, fileReader io.Reader) (*Config, error) {
+	return p.parse(filename, rootPrefix, fileReader, bind9Parser)
 }
