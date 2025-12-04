@@ -42,6 +42,12 @@ type SerializableCommand interface {
 	Marshal() ([]byte, error)
 }
 
+// Interface to a Kea command that allows overriding the daemon list.
+type OverridableCommand interface {
+	SerializableCommand
+	SetDaemonsList(daemons []daemonname.Name)
+}
+
 // Represents a command sent to Kea including command name, daemons list
 // (service list in Kea terms) and arguments.
 type Command struct {
@@ -98,15 +104,13 @@ func (c Command) GetDaemonsList() []daemonname.Name {
 	return c.Daemons
 }
 
+// Sets daemon names for the command.
+func (c *Command) SetDaemonsList(daemons []daemonname.Name) {
+	c.Daemons = daemons
+}
+
 // Marshals the command to JSON.
 func (c Command) Marshal() ([]byte, error) {
-	// Stork requires that command has exactly one target daemon.
-	// However, Kea CA expects that if the command is targeted to itself,
-	// the Daemons field must be empty.
-	if len(c.Daemons) == 1 && c.Daemons[0] == daemonname.CA {
-		c.Daemons = nil
-	}
-
 	data, err := json.Marshal(c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal Kea command: %s", c.Command)
@@ -134,15 +138,13 @@ func (c CommandWithRawArguments) GetDaemonsList() []daemonname.Name {
 	return c.Daemons
 }
 
+// Sets daemon names for the command.
+func (c *CommandWithRawArguments) SetDaemonsList(daemons []daemonname.Name) {
+	c.Daemons = daemons
+}
+
 // Marshals the command to JSON.
 func (c CommandWithRawArguments) Marshal() ([]byte, error) {
-	// Stork requires that command has exactly one target daemon.
-	// However, Kea CA expects that if the command is targeted to itself,
-	// the Daemons field must be empty.
-	if len(c.Daemons) == 1 && c.Daemons[0] == daemonname.CA {
-		c.Daemons = nil
-	}
-
 	data, err := json.Marshal(c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal Kea command: %s", c.Command)

@@ -306,9 +306,9 @@ func TestKeaCommandMarshalCommandOnly(t *testing.T) {
 		string(marshaled))
 }
 
-// Test that the service (daemon list) is not included in the commands directed
+// Test that the service (daemon list) is included in the commands directed
 // to the Kea CA daemon.
-func TestKeaCommandMarshalServicesIsMissingForCA(t *testing.T) {
+func TestKeaCommandMarshalServicesIsNotMissingForCA(t *testing.T) {
 	// Arrange
 	cmd := NewCommandBase(ListCommands, daemonname.CA)
 	// The command has non-empty daemon list before marshaling.
@@ -317,10 +317,11 @@ func TestKeaCommandMarshalServicesIsMissingForCA(t *testing.T) {
 
 	marshaled, err := cmd.Marshal()
 	require.NoError(t, err)
-	// There is no service field in the marshaled command.
+	// There is service field in the marshaled command.
 	require.JSONEq(t,
 		`{
-             "command":"list-commands"
+             "command":"list-commands",
+             "service":["ca"]
          }`,
 		string(marshaled))
 
@@ -386,6 +387,32 @@ func TestCommandUnmarshal(t *testing.T) {
 	require.Equal(t, float64(42), arguments["key2"])
 }
 
+// Test that the daemons list can be overridden.
+func TestCommandSetDaemons(t *testing.T) {
+	// Arrange
+	cmd := NewCommandBase(ListCommands, daemonname.DHCPv4)
+
+	// Act
+	cmd.SetDaemonsList([]daemonname.Name{daemonname.DHCPv6})
+
+	// Assert
+	require.Len(t, cmd.Daemons, 1)
+	require.Equal(t, daemonname.DHCPv6, cmd.Daemons[0])
+}
+
+// Test that the daemons list can be overridden to nil.
+func TestCommandSetDaemonsToNil(t *testing.T) {
+	// Arrange
+	cmd := NewCommandBase(ListCommands, daemonname.DHCPv4)
+
+	// Act
+	cmd.SetDaemonsList(nil)
+
+	// Assert
+	require.Len(t, cmd.Daemons, 0)
+	require.Nil(t, cmd.Daemons)
+}
+
 // Test that GetCommand() function returns the command name.
 func TestCommandWithRawArgumentsGetCommand(t *testing.T) {
 	command := &CommandWithRawArguments{
@@ -447,6 +474,22 @@ func TestCommandWithRawArgumentsMarshal(t *testing.T) {
 		}`,
 		string(marshaled),
 	)
+}
+
+// Test that the daemons list can be overridden.
+func TestCommandWithRawArgumentsSetDaemons(t *testing.T) {
+	// Arrange
+	cmd := &CommandWithRawArguments{
+		Command: ListCommands,
+		Daemons: []daemonname.Name{daemonname.DHCPv4},
+	}
+
+	// Act
+	cmd.SetDaemonsList([]daemonname.Name{daemonname.DHCPv6})
+
+	// Assert
+	require.Len(t, cmd.Daemons, 1)
+	require.Equal(t, daemonname.DHCPv6, cmd.Daemons[0])
 }
 
 // Test that that unmarshaling command with raw arguments doesn't unmarshal
