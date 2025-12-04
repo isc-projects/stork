@@ -227,9 +227,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		require.JSONEq(t, input, string(output))
 	})
 
@@ -238,9 +239,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `{"foo":`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		require.Equal(t, input, string(output))
 	})
 
@@ -251,9 +253,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{
 			"a": 1
 		}`
@@ -267,9 +270,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{}`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -281,9 +285,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ "s": "///**/#" }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -295,9 +300,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ "s": "\"" }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -307,9 +313,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `{ "a": /* 1 */ 2 }`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ "a": 2 }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -321,9 +328,10 @@ func TestNormalizeJSON(t *testing.T) {
 		*/ 2 }`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ "a": 2 }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -336,9 +344,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{
 			"b": 2
 		}`
@@ -356,9 +365,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{
 			"b": 2,
 			"c": 3
@@ -375,9 +385,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{
 			"a": 1,
 			"b": 2
@@ -393,9 +404,10 @@ func TestNormalizeJSON(t *testing.T) {
 		# Python-style comment`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		require.Empty(t, strings.TrimSpace(string(output)))
 	})
 
@@ -404,9 +416,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `{ /* /* */ */ }`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{*/}`
 		require.Equal(t, expected, string(output))
 	})
@@ -419,9 +432,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -435,9 +449,10 @@ func TestNormalizeJSON(t *testing.T) {
 		]`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `[ 1, 2, 3 ]`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -446,9 +461,10 @@ func TestNormalizeJSON(t *testing.T) {
 		// Arrange
 		input := `"This is a string" # and comment`
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `"This is a string"`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -458,9 +474,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `{ "a": 1, }`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ "a": 1 }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -470,9 +487,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `[1, 2, 3, ]`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `[1, 2, 3 ]`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -482,9 +500,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `{ "a": 1,, }`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{"a":1,}`
 
 		require.Equal(t, expected, string(output))
@@ -500,9 +519,10 @@ func TestNormalizeJSON(t *testing.T) {
 		}`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `{ "a": 1, "b": { "c": 2 } }`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -532,9 +552,10 @@ func TestNormalizeJSON(t *testing.T) {
 		]`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `[
 			[ 1, 2, 3 ],
 			{},
@@ -552,9 +573,10 @@ func TestNormalizeJSON(t *testing.T) {
 		]`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		require.JSONEq(t, input, string(output))
 	})
 
@@ -563,9 +585,10 @@ func TestNormalizeJSON(t *testing.T) {
 		input := `[[], /**/]`
 
 		// Act
-		output := NormalizeJSON([]byte(input))
+		output, err := NormalizeJSON([]byte(input))
 
 		// Assert
+		require.NoError(t, err)
 		expected := `[[]]`
 		require.JSONEq(t, expected, string(output))
 	})
@@ -583,9 +606,10 @@ func TestNormalizeJSONCompatibilityWithJSONC(t *testing.T) {
 	for i, c := range validCases {
 		t.Run(fmt.Sprintf("jsonc-valid-case-%d", i), func(t *testing.T) {
 			// Act
-			output := NormalizeJSON([]byte(c))
+			output, err := NormalizeJSON([]byte(c))
 
 			// Assert
+			require.NoError(t, err)
 			require.True(t, json.Valid(output))
 		})
 	}
@@ -599,9 +623,10 @@ func TestNormalizeJSONCompatibilityWithJSONC(t *testing.T) {
 	for i, c := range invalidCases {
 		t.Run(fmt.Sprintf("jsonc-invalid-case-%d", i), func(t *testing.T) {
 			// Act
-			output := NormalizeJSON([]byte(c))
+			output, err := NormalizeJSON([]byte(c))
 
 			// Assert
+			require.NoError(t, err)
 			require.False(t, json.Valid(output))
 		})
 	}
