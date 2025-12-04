@@ -688,7 +688,7 @@ system_test:
 system_test_kea_2.6:
   extends: system_test
   variables:
-    KEA_VERSION: 2.6.2-isc20250317140612
+    KEA_VERSION: 2.6.4-isc20250717094354
     ONLY_KEA_TESTS: "true"
   script:
     - rake systemtest
