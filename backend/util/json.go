@@ -159,8 +159,6 @@ func NormalizeJSON(input []byte) []byte {
 	// This function operates on the UTF-8 characters (runes). This object allows
 	// to write them to a byte buffer efficiently and handy.
 	var output bytes.Buffer
-	// Expecting that the standard JSON will be a significant part of the input.
-	output.Grow(len(input))
 	// Reader for proper handling of UTF-8 characters (runes).
 	inputReader := bytes.NewReader(input)
 
