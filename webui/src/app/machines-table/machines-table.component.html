@@ -153,17 +153,13 @@
                     appAccessType="update"
                 ></p-tableHeaderCheckbox>
             </th>
-            <th
-                class="w-8rem"
-                [pSortableColumn]="authorizedMachinesDisplayed() ? MachineSortField.StateHostname : undefined"
-            >
-                <div class="flex gap-1">
-                    Hostname
-                    @if (authorizedMachinesDisplayed()) {
-                        <p-sortIcon [field]="MachineSortField.StateHostname" />
-                    }
-                </div>
-            </th>
+            @if (authorizedMachinesDisplayed()) {
+                <th class="w-8rem" [pSortableColumn]="MachineSortField.StateHostname">
+                    <div class="flex gap-1">Hostname <p-sortIcon [field]="MachineSortField.StateHostname" /></div>
+                </th>
+            } @else {
+                <th class="w-8rem">Hostname</th>
+            }
             <th class="w-10rem" [pSortableColumn]="MachineSortField.Address">
                 <div class="flex gap-1 align-items-center">
                     Location <p-sortIcon [field]="MachineSortField.Address" />
