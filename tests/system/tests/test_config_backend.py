@@ -158,7 +158,7 @@ def test_hosts_update_reservation(kea_service: Kea, server_service: Server):
     assert identifier.id_hex_value == "06:05:04:03:02:01"
 
 
-@kea_parametrize("agent-kea-premium-host-database")
+@kea_parametrize("agent-kea-premium-host-database", min_version="2.3.8")
 def test_hosts_migrate_reservations(kea_service: Kea, server_service: Server):
     """Tests that the host reservations are migrated properly."""
     server_service.log_in_as_admin()

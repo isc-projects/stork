@@ -30,7 +30,7 @@ def test_agent_over_ipv6(server_service: Server, kea_service: Kea):
     assert len(state.apps) > 0
 
 
-@kea_parametrize("agent-kea-tls-optional-client-cert-no-verify")
+@kea_parametrize("agent-kea-tls-optional-client-cert-no-verify", min_version="3.0.0")
 def test_agent_communication_with_kea_over_secure_protocol(
     server_service: Server, kea_service: Kea
 ):
@@ -45,7 +45,7 @@ def test_agent_communication_with_kea_over_secure_protocol(
     assert leases.total == 1
 
 
-@kea_parametrize("agent-kea-tls-required-client-cert-no-verify")
+@kea_parametrize("agent-kea-tls-required-client-cert-no-verify", min_version="3.0.0")
 def test_agent_communication_with_kea_over_secure_protocol_non_trusted_client(
     server_service: Server, kea_service: Kea
 ):
@@ -62,7 +62,7 @@ def test_agent_communication_with_kea_over_secure_protocol_non_trusted_client(
     assert kea_service.has_failed_tls_handshake_log_entry()
 
 
-@kea_parametrize("agent-kea-tls-optional-client-cert-verify")
+@kea_parametrize("agent-kea-tls-optional-client-cert-verify", min_version="3.0.0")
 def test_agent_communication_with_kea_over_secure_protocol_require_trusted_cert(
     server_service: Server, kea_service: Kea
 ):
@@ -78,7 +78,7 @@ def test_agent_communication_with_kea_over_secure_protocol_require_trusted_cert(
     assert kea_service.has_failed_tls_handshake_log_entry()
 
 
-@kea_parametrize("agent-kea-hsts-header-over-insecure-protocol", min_version="2.7.5")
+@kea_parametrize("agent-kea-hsts-header-over-insecure-protocol", min_version="3.0.0")
 def test_agent_communication_with_kea_over_http_with_hsts_header_in_response(
     server_service: Server, kea_service: Kea
 ):
@@ -93,7 +93,7 @@ def test_agent_communication_with_kea_over_http_with_hsts_header_in_response(
     assert leases.total == 1
 
 
-@kea_parametrize("agent-kea-hsts-header-over-secure-protocol", min_version="2.7.5")
+@kea_parametrize("agent-kea-hsts-header-over-secure-protocol", min_version="3.0.0")
 def test_agent_communication_with_kea_over_https_with_hsts_header_in_response(
     server_service: Server, kea_service: Kea
 ):
@@ -113,7 +113,7 @@ def test_agent_communication_with_kea_over_https_with_hsts_header_in_response(
     assert leases.total == 1
 
 
-@kea_parametrize("agent-kea-basic-auth-no-credentials")
+@kea_parametrize("agent-kea-basic-auth-no-credentials", min_version="3.0.0")
 def test_agent_communication_with_kea_using_basic_auth_no_credentials(
     server_service: Server, kea_service: Kea
 ):
@@ -133,7 +133,7 @@ def test_agent_communication_with_kea_using_basic_auth_no_credentials(
         assert key == ""
 
 
-@kea_parametrize("agent-kea-basic-auth")
+@kea_parametrize("agent-kea-basic-auth", min_version="3.0.0")
 def test_agent_communication_with_kea_using_basic_auth(
     server_service: Server, kea_service: Kea
 ):
