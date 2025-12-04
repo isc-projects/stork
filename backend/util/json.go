@@ -141,8 +141,9 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 	return 0, errors.Errorf("value not found in the container for key %s", key)
 }
 
-// Normalizes Kea JSON. Kea accepts JSON files that don't strictly follow the
-// standard.
+// Normalizes JSON. One of the cases for using this function is to
+// normalize Kea JSON configuration. Kea accepts JSON files that don't
+// strictly follow the standard.
 // Specifically, it allows:
 //   - trailing commas in arrays and objects
 //   - C-style comments (both single line // and multi-line /* */)
