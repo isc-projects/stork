@@ -95,7 +95,7 @@ def test_review_get_ha_mt_config_reports(server_service: Server, ha_service):
     assert len(states) == 2
 
     for state in states:
-        daemons = [d for a in state.apps for d in a.details.daemons ]
+        daemons = [d for a in state.apps for d in a.details.daemons]
         daemons = [d for d in daemons if d.name in ["dhcp4", "dhcp6"]]
         assert len(daemons) == 2
 

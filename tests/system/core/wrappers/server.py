@@ -805,7 +805,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             if state.status == "busy":
                 # Fetching is in progress. Wait until it is finished.
                 raise NoSuccessException("zones fetching is in progress")
-            elif state.status == "erred":
+            if state.status == "erred":
                 raise Exception("zone inventory is in erred state")
         return zones_states
 
