@@ -792,8 +792,21 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     def wait_for_fetch_zones(self) -> ZoneInventoryStates:
         """Waits for finishing the zones fetch."""
         zones_states = self.get_zone_inventory_states()
-        if zones_states is None:
-            raise NoSuccessException("zones have not been fetched yet")
+        if zones_states is None or zones_states.total == 0:
+            # The zone fetching has not been started yet. Trigger fetching.
+            self.fetch_zones()
+            raise NoSuccessException("zones have not been available yet")
+        for state in zones_states.items:
+            if state.status == "uninitialized":
+                # Re-trigger fetching. Maybe this time the inventory will be
+                # ready.
+                self.fetch_zones()
+                raise NoSuccessException("zone inventory not initialized yet")
+            if state.status == "busy":
+                # Fetching is in progress. Wait until it is finished.
+                raise NoSuccessException("zones fetching is in progress")
+            elif state.status == "erred":
+                raise Exception("zone inventory is in erred state")
         return zones_states
 
     @wait_for_success(

@@ -114,7 +114,6 @@ def test_bind9_fetch_zones(server_service: Server, bind9_service: Bind9):
     assert len(app.access_points) == 2
     assert app.access_points[0].address == "127.0.0.1"
 
-    server_service.fetch_zones()
     zone_inventory_states = server_service.wait_for_fetch_zones()
 
     assert len(zone_inventory_states.items) == 1

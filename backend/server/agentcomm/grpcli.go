@@ -1048,29 +1048,8 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 			}
 		}
 		if err != nil {
-			// The zone inventory may signal errors indicating that it is
-			// unable to return the zones because it is in a wrong state.
-			// The server should interpret these errors and formulate hints
-			// to the user that some administrative actions may be required.
-			s := status.Convert(err)
-			for _, d := range s.Details() {
-				if info, ok := d.(*errdetails.ErrorInfo); ok {
-					switch info.Reason {
-					case "ZONE_INVENTORY_NOT_INITED":
-						// Zone inventory hasn't been initialized.
-						_ = yield(nil, NewZoneInventoryNotInitedError(agentAddressPort))
-						return
-					case "ZONE_INVENTORY_BUSY":
-						// Zone inventory is busy. Retrying later may help.
-						_ = yield(nil, NewZoneInventoryBusyError(agentAddressPort))
-						return
-					default:
-						_ = yield(nil, err)
-						return
-					}
-				}
-			}
-			// Other error.
+			// Cannot open the stream.
+			err = errors.Wrap(err, "failed to open zone stream")
 			_ = yield(nil, err)
 			return
 		}
@@ -1079,11 +1058,41 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 			// Start receiving zones.
 			receivedZone, err := stream.Recv()
 			if err != nil {
-				if !errors.Is(err, io.EOF) {
-					_ = yield(nil, err)
+				if errors.Is(err, io.EOF) {
+					// End of the stream.
+					return
 				}
+
+				// The zone inventory may signal errors indicating that it is
+				// unable to return the zones because it is in a wrong state.
+				// The server should interpret these errors and formulate hints
+				// to the user that some administrative actions may be required.
+				s := status.Convert(err)
+				for _, d := range s.Details() {
+					if info, ok := d.(*errdetails.ErrorInfo); ok {
+						switch info.Reason {
+						case "ZONE_INVENTORY_NOT_INITED":
+							// Zone inventory hasn't been initialized.
+							_ = yield(nil, NewZoneInventoryNotInitedError(agentAddressPort))
+							return
+						case "ZONE_INVENTORY_BUSY":
+							// Zone inventory is busy. Retrying later may help.
+							_ = yield(nil, NewZoneInventoryBusyError(agentAddressPort))
+							return
+						default:
+							err = errors.Wrap(err, "failed to receive zone from the agent")
+							_ = yield(nil, err)
+							return
+						}
+					}
+				}
+
+				// Other error.
+				err = errors.Wrap(err, "GRPC connection error occurred when receiving zone from the agent")
+				_ = yield(nil, err)
 				return
 			}
+
 			zone := &bind9stats.ExtendedZone{
 				Zone: bind9stats.Zone{
 					ZoneName: receivedZone.GetName(),

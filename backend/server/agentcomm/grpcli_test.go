@@ -1626,10 +1626,6 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
 
-	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
-	// Make sure that the gRPC client is not used.
-	mockStreamingClient.EXPECT().Recv().Times(0)
-
 	// Create an error returned over gRPC indicating that the zone inventory
 	// hasn't been initialized.
 	st := status.New(codes.FailedPrecondition, "zone inventory not initialized")
@@ -1637,7 +1633,13 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 		Reason: "ZONE_INVENTORY_NOT_INITED",
 	})
 	require.NoError(t, err)
-	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is used.
+	mockStreamingClient.EXPECT().Recv().Return(nil, ds.Err())
+
+	// Return the mocked client when ReceiveZones() called.
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Return(mockStreamingClient, nil)
 
 	// The iterator should return ZoneInventoryNotInitedError.
 	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
@@ -1667,10 +1669,6 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
 
-	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
-	// Make sure that the gRPC client is not used.
-	mockStreamingClient.EXPECT().Recv().Times(0)
-
 	// Create an error returned over gRPC indicating that the zone inventory
 	// hasn't been initialized.
 	st := status.New(codes.Unavailable, "zone inventory busy")
@@ -1678,7 +1676,12 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 		Reason: "ZONE_INVENTORY_BUSY",
 	})
 	require.NoError(t, err)
-	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is used.
+	mockStreamingClient.EXPECT().Recv().Return(nil, ds.Err())
+
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Return(mockStreamingClient, nil)
 
 	// The iterator should return ZoneInventoryBusyError.
 	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
