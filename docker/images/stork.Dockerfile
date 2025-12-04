@@ -405,7 +405,7 @@ ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 EXPOSE 8080
 # Prometheus Bind9 port
 EXPOSE 9119
-HEALTHCHECK CMD [ "supervisorctl", "-c", "/etc/supervisor/supervisord.conf", "status" ]
+HEALTHCHECK CMD [ "wget", "-O", "-", "-q", "http://localhost:9119/metrics" ]
 # Configuration files:
 # Supervisor: /etc/supervisor/supervisord.conf
 # Stork Agent: /etc/stork
