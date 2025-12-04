@@ -102,10 +102,15 @@ type Manager interface {
 	// parameters indicate the number of daemons from which the zones are fetched and
 	// the number of daemons from which the zones have been fetched already.
 	GetFetchZonesProgress() (bool, int, int)
-	// Returns the RRs for the specified zone, daemon and view name.
-	// Using the options, the caller can request to force zone transfer even when RRs
-	// are cached in the database.
-	GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse]
+	// Returns the RRs for the specified zone, daemon and view name. The optional
+	// filter allows for filtering the RRs by type and/or text matching the name or
+	// rdata. It also allows for paging the long results. If the filter is nil,
+	// all RRs are returned for the zoneID, daemonID, viewName. If the filter is
+	// specified but the RRs have not been cached yet, all RRs are fetched (and cached)
+	// from the agent using the zone transfer, and only a subset is returned to the
+	// caller. Using the options, the caller can request to force zone transfer even
+	// when RRs are cached in the database.
+	GetZoneRRs(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...GetZoneRRsOption) iter.Seq[*RRResponse]
 	// Returns the BIND 9 configuration for the specified daemon with filtering
 	// and file type selection. If the filter is nil, all configuration elements are
 	// returned. Otherwise,only the configuration elements explicitly enabled in the
@@ -122,6 +127,8 @@ type GetZoneRRsOption int
 const (
 	// Force zone transfer even when RRs are cached.
 	GetZoneRRsOptionForceZoneTransfer GetZoneRRsOption = iota
+	// Exclude the trailing SOA RR from the response.
+	GetZoneRRsOptionExcludeTrailingSOA
 )
 
 // A zones fetching state including the flag whether or not the fetch
@@ -215,8 +222,65 @@ func newRRsRequest(ctx context.Context, key uint64, daemon *dbmodel.Daemon, zone
 type RRResponse struct {
 	Cached         bool
 	ZoneTransferAt time.Time
+	Total          int
 	RRs            []*dnsconfig.RR
 	Err            error
+}
+
+// Returns a new RRResponse with the RRs filtered according to the specified filter.
+// The pos parameter tracks the position in the RRs stream, starting from 0. It is
+// increased by the number of processed RRs and returned as the second return value.
+// If the filter is nil, the response is returned unchanged.
+func (response *RRResponse) applyFilter(filter *dbmodel.GetZoneRRsFilter, pos int) (*RRResponse, int) {
+	if filter == nil {
+		// If the filter is nil, there is nothing to do. Return the response unchanged.
+		response.Total = pos + len(response.RRs)
+		return response, response.Total
+	}
+	// Filter the RRs according to the filter.
+	filteredRRs := []*dnsconfig.RR{}
+	for _, rr := range response.RRs {
+		if filter.IsTypeEnabled(rr.Type) && filter.IsTextMatches(rr) {
+			filteredRRs = append(filteredRRs, rr)
+		}
+	}
+
+	// Calculate the new position in the RRs stream. It is moved forward by the
+	// number of filtered RRs. It must be calculate before paging is applied because
+	// it will be returned as the total number of RRs.
+	newPos := pos + len(filteredRRs)
+
+	if len(filteredRRs) > 0 {
+		// Apply paging if requested.
+		start := filter.GetOffset() - pos
+		if start < 0 {
+			// Negative start means that we're passed the beginning of the
+			// desired range. Set the start to 0 to consume all RRs.
+			start = 0
+		}
+		if start >= len(filteredRRs) {
+			// If the start is passed the end of the RRs, we haven't reached the
+			// desired offset. Set the start to the end of the current RRs set to
+			// not consume any RRs.
+			start = len(filteredRRs)
+		}
+		limit := filter.GetLimit()
+		end := start + limit
+		// A limit of 0 means no limit.
+		if limit == 0 || end > len(filteredRRs) {
+			end = len(filteredRRs)
+		}
+		// It is possible that start is equal to end if we haven't reached the
+		// desired offset yet. This will result in returning an empty slice.
+		filteredRRs = filteredRRs[start:end]
+	}
+	return &RRResponse{
+		Cached:         response.Cached,
+		ZoneTransferAt: response.ZoneTransferAt,
+		Total:          newPos,
+		RRs:            filteredRRs,
+		Err:            response.Err,
+	}, newPos
 }
 
 // Creates a new RRResponse with an error.
@@ -237,11 +301,12 @@ func NewZoneTransferRRResponse(rrs []*dnsconfig.RR) *RRResponse {
 }
 
 // Creates a new cached RRResponse with RRs.
-func NewCacheRRResponse(rrs []*dnsconfig.RR, transferAt time.Time) *RRResponse {
+func NewCacheRRResponse(rrs []*dnsconfig.RR, total int, transferAt time.Time) *RRResponse {
 	return &RRResponse{
 		Cached:         true,
 		ZoneTransferAt: transferAt,
 		RRs:            rrs,
+		Total:          total,
 	}
 }
 
@@ -737,8 +802,12 @@ func (manager *managerImpl) Shutdown() {
 // Returns zone contents (RRs) for a specified view, zone and daemon.
 // Depending on the options, the function may cache transferred RRs in
 // the database. A caller may also request forcing zone transfer to
-// override the cached RRs.
-func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName string, options ...GetZoneRRsOption) iter.Seq[*RRResponse] {
+// override the cached RRs. The GetZoneRRsOptionExcludeTrailingSOA option
+// can be specified to exclude the trailing SOA RR from the response.
+// The trailing SOA marks the end of the zone transfer. However, the
+// REST API handler typically excludes this last record as it is not
+// interesting to a user viewing the zone contents.
+func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...GetZoneRRsOption) iter.Seq[*RRResponse] {
 	return func(yield func(*RRResponse) bool) {
 		// We need a daemon associated with the zone.
 		daemon, err := dbmodel.GetDNSDaemonByID(manager.db, daemonID)
@@ -777,13 +846,13 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		// from the database.
 		if !slices.Contains(options, GetZoneRRsOptionForceZoneTransfer) && localZone.ZoneTransferAt != nil {
 			// Get cached RRs from the database and return to the caller.
-			rrs, err := dbmodel.GetDNSConfigRRs(manager.db, localZone.ID)
+			rrs, total, err := dbmodel.GetDNSConfigRRs(manager.db, localZone.ID, filter)
 			if err != nil {
 				_ = yield(NewErrorRRResponse(err))
 				return
 			}
 			// This response indicates that the RRs were fetched from the database.
-			_ = yield(NewCacheRRResponse(rrs, *localZone.ZoneTransferAt))
+			_ = yield(NewCacheRRResponse(rrs, total, *localZone.ZoneTransferAt))
 			return
 		}
 		// To avoid sending multiple requests for the same zone, we should check
@@ -824,12 +893,36 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		}
 		// Batch insert RRs into the database.
 		batch := dbmodel.NewBatch(tx, 100, dbmodel.AddLocalZoneRRs)
+		// Tracks position in the RRs stream. It points to the index of the next
+		// RR to be received from the channel, starting from 0. It is required to
+		// extract a subset of RRs to be returned according to the paging filter.
+		pos := 0
+		// Check if this is the first chunk of RRs.
+		isFirst := true
 		for r := range ch {
 			if r.Err != nil {
 				// There was an error reading from the channel. The channel will be closed and
 				// the transaction will be rolled back.
 				_ = yield(r)
 				return
+			}
+			if slices.Contains(options, GetZoneRRsOptionExcludeTrailingSOA) {
+				// Check if this is not a trailing SOA RR. If this is the first
+				// chunk of RRs, the first record should be SOA and we must not
+				// remove it. Therefore, we only remove the last record from the
+				// first chunk, assuming this last record is a SOA and is not the
+				// first record (single record case). For subsequent chunks we remove
+				// the last record if it is a SOA record. Note that we have not means
+				// to check if this is truly the last record in the stream because
+				// we don't know if we have reached the end of the stream. If there
+				// are any mid-stream SOA records they may not be removed. Also,
+				// some mid-stream SOA records may be removed if they appear at the
+				// end of the chunk of data.
+				if isFirst && len(r.RRs) > 1 && r.RRs[len(r.RRs)-1].Type == "SOA" ||
+					!isFirst && len(r.RRs) > 0 && r.RRs[len(r.RRs)-1].Type == "SOA" {
+					r.RRs = r.RRs[:len(r.RRs)-1]
+				}
+				isFirst = false
 			}
 			for _, rr := range r.RRs {
 				// Insert next RR into the database.
@@ -842,7 +935,10 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 					return
 				}
 			}
-			if !yield(r) {
+			// Select only the records matching the filter.
+			var filteredResponse *RRResponse
+			filteredResponse, pos = r.applyFilter(filter, pos)
+			if !yield(filteredResponse) {
 				// Stop reading and caching the RRs if the caller is done reading.
 				return
 			}

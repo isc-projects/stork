@@ -695,7 +695,13 @@ func TestGetZoneRRs(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(int64(1), int64(2), "trusted", gomock.Any(), dnsop.GetZoneRRsOptionExcludeTrailingSOA).DoAndReturn(func(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+		// Ensure that the filter is applied.
+		require.NotNil(t, filter)
+		require.Equal(t, 1, filter.GetOffset())
+		require.Equal(t, 10, filter.GetLimit())
+		require.ElementsMatch(t, []string{"A", "AAAA", "SOA"}, filter.GetTypes())
+		require.Equal(t, "example.com", filter.GetText())
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -716,6 +722,10 @@ func TestGetZoneRRs(t *testing.T) {
 		ZoneID:   1,
 		DaemonID: 2,
 		ViewName: "trusted",
+		Start:    storkutil.Ptr(int64(1)),
+		Limit:    storkutil.Ptr(int64(10)),
+		RrType:   []string{"A", "AAAA", "SOA"},
+		Text:     storkutil.Ptr("example.com"),
 	}
 	rsp := rapi.GetZoneRRs(ctx, params)
 	require.IsType(t, &dns.GetZoneRRsOK{}, rsp)
@@ -749,7 +759,13 @@ func TestPutZoneRRsCache(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), dnsop.GetZoneRRsOptionForceZoneTransfer).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(int64(1), int64(2), "trusted", gomock.Any(), dnsop.GetZoneRRsOptionForceZoneTransfer, dnsop.GetZoneRRsOptionExcludeTrailingSOA).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+		// Ensure that the filter is applied.
+		require.NotNil(t, filter)
+		require.Equal(t, 1, filter.GetOffset())
+		require.Equal(t, 10, filter.GetLimit())
+		require.ElementsMatch(t, []string{"A", "AAAA", "SOA"}, filter.GetTypes())
+		require.Equal(t, "example.com", filter.GetText())
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
 				rr, err := dnsconfig.NewRR(rr)
@@ -770,6 +786,10 @@ func TestPutZoneRRsCache(t *testing.T) {
 		ZoneID:   1,
 		DaemonID: 2,
 		ViewName: "trusted",
+		Start:    storkutil.Ptr(int64(1)),
+		Limit:    storkutil.Ptr(int64(10)),
+		RrType:   []string{"A", "AAAA", "SOA"},
+		Text:     storkutil.Ptr("example.com"),
 	}
 	rsp := rapi.PutZoneRRsCache(ctx, params)
 	require.IsType(t, &dns.PutZoneRRsCacheOK{}, rsp)
@@ -823,7 +843,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(dnsop.NewManagerRRsAlreadyRequestedError("trusted", "example.com")))
 		}
@@ -864,7 +884,7 @@ func TestGetZoneRRsBusy(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(agentcomm.NewZoneInventoryBusyError("localhost:8080")))
 		}
@@ -910,7 +930,7 @@ func TestGetZoneRRsNotInited(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(agentcomm.NewZoneInventoryNotInitedError("localhost:8080")))
 		}
@@ -956,7 +976,7 @@ func TestGetZoneRRsUnknownError(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
+	mockManager.EXPECT().GetZoneRRs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(zoneID int64, daemonID int64, viewName string, filter *dbmodel.GetZoneRRsFilter, options ...dnsop.GetZoneRRsOption) iter.Seq[*dnsop.RRResponse] {
 		return func(yield func(*dnsop.RRResponse) bool) {
 			yield(dnsop.NewErrorRRResponse(&testError{}))
 		}

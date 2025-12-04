@@ -197,6 +197,56 @@ definitions:
       - static-stub
       - stub
 
+  DNSRRType:
+    type: string
+    enum: &DNSRRTYPE
+      - A
+      - AAAA
+      - AFSDB
+      - CAA
+      - CDNSKEY
+      - CDS
+      - CERT
+      - CNAME
+      - CSYNC
+      - DHCID
+      - DLV
+      - DNAME
+      - DNSKEY
+      - DS
+      - EUI48
+      - EUI64
+      - HINFO
+      - HIP
+      - HTTPS
+      - IPSECKEY
+      - KEY
+      - KX
+      - LOC
+      - MX
+      - NAPTR
+      - NS
+      - NSEC
+      - NSEC3
+      - NSEC3PARAM
+      - OPENPGPKEY
+      - PTR
+      - RP
+      - RRSIG
+      - SIG
+      - SMIMEA
+      - SOA
+      - SRV
+      - SSHFP
+      - SVCB
+      - TA
+      - TKEY
+      - TLSA
+      - TSIG
+      - TXT
+      - URI
+      - ZONEMD
+
   Bind9ConfigFilter:
     type: string
     enum: &BIND9CONFIGFILTER
@@ -334,6 +384,17 @@ parameters:
       Limit returned list of entities (e.g. zones) to the ones of a given class.
     type: string
     enum: *DNSCLASS
+
+  dnsRRType:
+    name: rrType
+    in: query
+    description: >-
+      Limit returned list of RRs to the ones of a given type.
+    type: array
+    items:
+      type: string
+      enum: *DNSRRTYPE
+    collectionFormat: multi
 
   dnsZoneType:
     name: zoneType

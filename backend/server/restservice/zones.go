@@ -253,20 +253,25 @@ func (r *RestAPI) PutZonesFetch(ctx context.Context, params dns.PutZonesFetchPar
 // Returns the zone contents (RRs) for a specified view, zone and daemon.
 // If the zone RRs are not present in the database, the zone transfer is
 // initiated. The transferred data is cached in the database and returned.
-// Future calls to this endpoint will return the cached data.
-
+// The returned data is filtered according to the parameters. However, all
+// RRs are cached regardless of the filtering. Future calls to this endpoint
+// will return the cached data.
 func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) middleware.Responder {
 	var (
 		restRrs               []*models.ZoneRR
 		alreadyRequestedError *dnsop.ManagerRRsAlreadyRequestedError
 		busyError             *agentcomm.ZoneInventoryBusyError
 		notInitedError        *agentcomm.ZoneInventoryNotInitedError
+		cached                bool
+		zoneTransferAt        time.Time
+		total                 int
+		filter                *dbmodel.GetZoneRRsFilter
 	)
-	var (
-		cached         bool
-		zoneTransferAt time.Time
-	)
-	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName) {
+	// Apply filtering if requested.
+	if params.Start != nil || params.Limit != nil || len(params.RrType) > 0 || params.Text != nil {
+		filter = dbmodel.NewGetZoneRRsFilterWithParams(params.Start, params.Limit, params.RrType, params.Text)
+	}
+	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, filter, dnsop.GetZoneRRsOptionExcludeTrailingSOA) {
 		if rrResponse.Err != nil {
 			msg := "Failed to get zone contents"
 			log.WithError(rrResponse.Err).Error(msg)
@@ -309,11 +314,17 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 		}
 		cached = rrResponse.Cached
 		zoneTransferAt = rrResponse.ZoneTransferAt
+		// If the records are not cached, the returned total number is increasing as the
+		// new records are returned by the agent. We don't know until the last record how many
+		// records are to be returned. Therefore, we track the total number and take the
+		// highest value.
+		total = max(total, rrResponse.Total)
 	}
 	// Return the zone contents.
 	payload := models.ZoneRRs{
 		Cached:         cached,
 		Items:          restRrs,
+		Total:          int64(total),
 		ZoneTransferAt: strfmt.DateTime(zoneTransferAt),
 	}
 	rsp := dns.NewGetZoneRRsOK().WithPayload(&payload)
@@ -321,8 +332,8 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 }
 
 // Refreshes the resource for a zone using zone transfer, and return the newly
-// cached RRs. The zone transfer is initiated regardless of whether the zone
-// RRs are present in the database or not.
+// cached RRs with filtering. The zone transfer is initiated regardless of whether
+// the zone RRs are present in the database or not.
 func (r *RestAPI) PutZoneRRsCache(ctx context.Context, params dns.PutZoneRRsCacheParams) middleware.Responder {
 	var (
 		restRrs               []*models.ZoneRR
@@ -331,8 +342,14 @@ func (r *RestAPI) PutZoneRRsCache(ctx context.Context, params dns.PutZoneRRsCach
 		notInitedError        *agentcomm.ZoneInventoryNotInitedError
 		cached                bool
 		zoneTransferAt        time.Time
+		total                 int
+		filter                *dbmodel.GetZoneRRsFilter
 	)
-	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, dnsop.GetZoneRRsOptionForceZoneTransfer) {
+	// Apply filtering if requested.
+	if params.Start != nil || params.Limit != nil || len(params.RrType) > 0 || params.Text != nil {
+		filter = dbmodel.NewGetZoneRRsFilterWithParams(params.Start, params.Limit, params.RrType, params.Text)
+	}
+	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName, filter, dnsop.GetZoneRRsOptionForceZoneTransfer, dnsop.GetZoneRRsOptionExcludeTrailingSOA) {
 		if rrResponse.Err != nil {
 			msg := "Failed to refresh zone contents using zone transfer"
 			log.WithError(rrResponse.Err).Error(msg)
@@ -375,11 +392,17 @@ func (r *RestAPI) PutZoneRRsCache(ctx context.Context, params dns.PutZoneRRsCach
 		}
 		cached = rrResponse.Cached
 		zoneTransferAt = rrResponse.ZoneTransferAt
+		// The records are not cached because we're forcing the zone transfer. The returned
+		// total number is increasing as the new records are returned by the agent. We don't
+		// know until the last record how many records are to be returned. Therefore, we
+		// track the total number and take the highest value.
+		total = max(total, rrResponse.Total)
 	}
 	// Return the zone contents.
 	payload := models.ZoneRRs{
 		Cached:         cached,
 		Items:          restRrs,
+		Total:          int64(total),
 		ZoneTransferAt: strfmt.DateTime(zoneTransferAt),
 	}
 	rsp := dns.NewPutZoneRRsCacheOK().WithPayload(&payload)

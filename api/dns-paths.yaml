@@ -133,6 +133,10 @@
       tags:
         - DNS
       parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/dnsRRType'
+        - $ref: '#/parameters/filterTextParam'
         - name: daemonId
           in: path
           type: integer
@@ -166,6 +170,10 @@
       tags:
         - DNS
       parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/dnsRRType'
+        - $ref: '#/parameters/filterTextParam'
         - name: daemonId
           in: path
           type: integer

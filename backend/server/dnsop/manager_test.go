@@ -59,9 +59,10 @@ func TestNewCacheRRRResponse(t *testing.T) {
 		rr,
 	}
 	timestamp := time.Now().UTC()
-	rrResponse := NewCacheRRResponse(rrs, timestamp)
+	rrResponse := NewCacheRRResponse(rrs, 2, timestamp)
 	require.True(t, rrResponse.Cached)
 	require.Equal(t, rrs, rrResponse.RRs)
+	require.Equal(t, 2, rrResponse.Total)
 	require.Equal(t, timestamp, rrResponse.ZoneTransferAt)
 	require.NoError(t, rrResponse.Err)
 }
@@ -75,6 +76,126 @@ func TestNewErrorRRResponse(t *testing.T) {
 	require.False(t, rrResponse.Cached)
 	require.Nil(t, rrResponse.RRs)
 	require.Zero(t, rrResponse.ZoneTransferAt)
+}
+
+// Test that filtering the RRs works properly.
+func TestRRResponseApplyFilter(t *testing.T) {
+	rrStrings := []string{
+		"example.com. 3600 IN SOA ns1.example.com. hostmaster.example.com. 123456 7200 3600 1209600 3600",
+		"example.com. 3600 IN A 192.0.2.1",
+		"ipv6.example.com. 3600 IN AAAA 2001:db8::1",
+		"ipv4.example.com. 3600 IN A 192.0.2.2",
+		"any.example.org. 3600 IN AAAA 2001:db8::2",
+		"any.example.org. 3600 IN A 192.0.2.3",
+	}
+	rrs := []*dnsconfig.RR{}
+	for _, rrString := range rrStrings {
+		rr, err := dnsconfig.NewRR(rrString)
+		require.NoError(t, err)
+		rrs = append(rrs, rr)
+	}
+	rrResponse := NewZoneTransferRRResponse(rrs)
+	t.Run("no filter", func(t *testing.T) {
+		filteredResponse, pos := rrResponse.applyFilter(nil, 0)
+		require.Equal(t, 6, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 6)
+		require.Equal(t, 6, pos)
+	})
+
+	t.Run("filter by type", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.EnableType("A")
+		filteredResponse, pos := rrResponse.applyFilter(filter, 0)
+		require.Equal(t, 3, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 3)
+		require.Equal(t, 3, pos)
+	})
+
+	t.Run("filter by name text", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetText("example.com")
+		filteredResponse, pos := rrResponse.applyFilter(filter, 0)
+		require.Equal(t, 4, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 4)
+		require.Equal(t, 4, pos)
+	})
+
+	t.Run("filter by rdata text", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetText("2001:db8:")
+		filteredResponse, pos := rrResponse.applyFilter(filter, 0)
+		require.Equal(t, 2, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 2)
+		require.Equal(t, 2, pos)
+	})
+
+	t.Run("filter by offset no limit", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetOffset(2)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 0)
+		require.Equal(t, 6, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 4)
+		require.Equal(t, 6, pos)
+	})
+
+	t.Run("filter limit no offset", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetLimit(2)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 0)
+		require.Equal(t, 6, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 2)
+		require.Equal(t, 6, pos)
+	})
+
+	t.Run("filter offset before pos", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetOffset(2)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 4)
+		require.Equal(t, 10, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 6)
+		require.Equal(t, 10, pos)
+	})
+
+	t.Run("filter offset before pos limit after new pos", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetOffset(2)
+		filter.SetLimit(10)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 4)
+		require.Equal(t, 10, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 6)
+		require.Equal(t, 10, pos)
+	})
+
+	t.Run("filter offset and limit after new pos", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetOffset(8)
+		filter.SetLimit(10)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 0)
+		require.Equal(t, 6, filteredResponse.Total)
+		require.Empty(t, filteredResponse.RRs)
+		require.Equal(t, 6, pos)
+	})
+
+	t.Run("filter offset and limit in range", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetOffset(2)
+		filter.SetLimit(2)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 2)
+		require.Equal(t, 8, filteredResponse.Total)
+		require.Len(t, filteredResponse.RRs, 2)
+		require.Equal(t, 8, pos)
+	})
+
+	t.Run("filter offset and limit empty range", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetText("non-existent.com")
+		filter.SetOffset(2)
+		filter.SetLimit(2)
+		filteredResponse, pos := rrResponse.applyFilter(filter, 4)
+		require.Equal(t, 4, filteredResponse.Total)
+		require.Empty(t, filteredResponse.RRs)
+		require.Equal(t, 4, pos)
+	})
 }
 
 // Test an error indicating that the manager is already fetching zones from the agents.
@@ -767,6 +888,151 @@ func TestFetchRepeatedZones(t *testing.T) {
 	}
 }
 
+// Test successfully receiving the zone RRs from the agents with filtering.
+func TestGetZoneRRsWithFiltering(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	// Create a machine and a daemon. The manager will determine the daemon
+	// to contact based on the daemon ID.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
+		},
+	})
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// Add a zone. We will use zone ID to fetch the RRs.
+	zone := &dbmodel.Zone{
+		ID:    1,
+		Name:  "example.com",
+		Rname: "com.example",
+		LocalZones: []*dbmodel.LocalZone{
+			{
+				ID:       1,
+				View:     "_default",
+				DaemonID: daemon.ID,
+				Class:    "IN",
+				Type:     "primary",
+				Serial:   1,
+				LoadedAt: time.Now().UTC(),
+			},
+		},
+	}
+	err = dbmodel.AddZones(db, []*dbmodel.Zone{zone}...)
+	require.NoError(t, err)
+
+	// Read the RRs to the returned by the agent from the file.
+	var rrs []string
+	err = json.Unmarshal(validZoneData, &rrs)
+	require.NoError(t, err)
+
+	var filteredRRs []string
+	for _, rr := range rrs {
+		parsedRR, err := dnsconfig.NewRR(rr)
+		require.NoError(t, err)
+		if parsedRR.Type == "A" {
+			filteredRRs = append(filteredRRs, rr)
+		}
+	}
+
+	// Return the RRs using the mock.
+	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+		return func(yield func([]*dnsconfig.RR, error) bool) {
+			for _, rr := range rrs {
+				rr, err := dnsconfig.NewRR(rr)
+				require.NoError(t, err)
+				if !yield([]*dnsconfig.RR{rr}, nil) {
+					return
+				}
+			}
+		}
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	defer manager.Shutdown()
+
+	// Collect received RRs.
+	collectedRRs := []*dnsconfig.RR{}
+	filter := dbmodel.NewGetZoneRRsFilter()
+	filter.EnableType("A")
+	filter.SetOffset(1)
+	filter.SetLimit(4)
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", filter)
+	for rrResponse := range rrResponses {
+		require.False(t, rrResponse.Cached)
+		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 4)
+		require.NoError(t, rrResponse.Err)
+		collectedRRs = append(collectedRRs, rrResponse.RRs...)
+	}
+	// Validate the returned RRs against the original ones.
+	require.Equal(t, len(filteredRRs[1:]), len(collectedRRs))
+	for i, rr := range collectedRRs {
+		// Replace tabs with spaces in the original RR.
+		original := strings.Join(strings.Fields(filteredRRs[i+1]), " ")
+		require.Equal(t, original, rr.GetString())
+	}
+	// Make sure that the timestamp was set.
+	zone, err = dbmodel.GetZoneByID(db, zone.ID, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Len(t, zone.LocalZones, 1)
+	require.NotNil(t, zone.LocalZones[0].ZoneTransferAt)
+
+	// Get RRs again without filtering. It should return all RRs.
+	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
+	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
+	for rrResponse := range rrResponses {
+		require.True(t, rrResponse.Cached)
+		require.Equal(t, *zone.LocalZones[0].ZoneTransferAt, rrResponse.ZoneTransferAt)
+		require.NoError(t, rrResponse.Err)
+		collectedRRs = append(collectedRRs, rrResponse.RRs...)
+	}
+	// Validate the returned RRs against the original ones.
+	require.Equal(t, len(rrs), len(collectedRRs))
+	for i, rr := range collectedRRs {
+		// Replace tabs with spaces in the original RR.
+		original := strings.Join(strings.Fields(rrs[i]), " ")
+		require.Equal(t, original, rr.GetString())
+	}
+	// Finally, get RRs again with filtering from the database.
+	collectedRRs = make([]*dnsconfig.RR, 0, len(filteredRRs))
+	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default", filter)
+	for rrResponse := range rrResponses {
+		require.True(t, rrResponse.Cached)
+		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
+		require.NoError(t, rrResponse.Err)
+		collectedRRs = append(collectedRRs, rrResponse.RRs...)
+	}
+	// Validate the returned RRs against the original ones.
+	require.Equal(t, len(filteredRRs[1:]), len(collectedRRs))
+	for i, rr := range collectedRRs {
+		// Replace tabs with spaces in the original RR.
+		original := strings.Join(strings.Fields(filteredRRs[i+1]), " ")
+		require.Equal(t, original, rr.GetString())
+	}
+}
+
 // Test successfully receiving the zone RRs from the agents.
 func TestGetZoneRRs(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -845,7 +1111,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Collect received RRs.
 	collectedRRs := make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
 	for rrResponse := range rrResponses {
 		require.False(t, rrResponse.Cached)
 		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
@@ -868,7 +1134,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Get RRs again. It should return cached RRs.
 	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
+	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
 	for rrResponse := range rrResponses {
 		require.True(t, rrResponse.Cached)
 		require.Equal(t, *zone.LocalZones[0].ZoneTransferAt, rrResponse.ZoneTransferAt)
@@ -890,7 +1156,7 @@ func TestGetZoneRRs(t *testing.T) {
 
 	// Finally, get RRs again with forcing zone transfer.
 	collectedRRs = make([]*dnsconfig.RR, 0, len(rrs))
-	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default", GetZoneRRsOptionForceZoneTransfer)
+	rrResponses = manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil, GetZoneRRsOptionForceZoneTransfer)
 	for rrResponse := range rrResponses {
 		require.False(t, rrResponse.Cached)
 		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
@@ -910,6 +1176,101 @@ func TestGetZoneRRs(t *testing.T) {
 	require.Len(t, zone.LocalZones, 1)
 	require.NotNil(t, zone.LocalZones[0].ZoneTransferAt)
 	require.Greater(t, *zone.LocalZones[0].ZoneTransferAt, lastRRsTransferAt)
+}
+
+// Test successfully receiving the zone RRs from the agents
+// and excluding the trailing SOA RR.
+func TestGetZoneRRsExcludeTrailingSOA(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	// Create a machine and a daemon. The manager will determine the daemon
+	// to contact based on the daemon ID.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
+		},
+	})
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// Add a zone. We will use zone ID to fetch the RRs.
+	zone := &dbmodel.Zone{
+		ID:    1,
+		Name:  "example.com",
+		Rname: "com.example",
+		LocalZones: []*dbmodel.LocalZone{
+			{
+				ID:       1,
+				View:     "_default",
+				DaemonID: daemon.ID,
+				Class:    "IN",
+				Type:     "primary",
+				Serial:   1,
+				LoadedAt: time.Now().UTC(),
+			},
+		},
+	}
+	err = dbmodel.AddZones(db, []*dbmodel.Zone{zone}...)
+	require.NoError(t, err)
+
+	// Read the RRs to the returned by the agent from the file.
+	var rrs []string
+	err = json.Unmarshal(validZoneData, &rrs)
+	require.NoError(t, err)
+
+	// Return the RRs using the mock.
+	mock.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, string, string) iter.Seq2[[]*dnsconfig.RR, error] {
+		return func(yield func([]*dnsconfig.RR, error) bool) {
+			for _, rr := range rrs {
+				rr, err := dnsconfig.NewRR(rr)
+				require.NoError(t, err)
+				if !yield([]*dnsconfig.RR{rr}, nil) {
+					return
+				}
+			}
+		}
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	defer manager.Shutdown()
+
+	// Collect received RRs.
+	collectedRRs := make([]*dnsconfig.RR, 0, len(rrs))
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil, GetZoneRRsOptionExcludeTrailingSOA)
+	for rrResponse := range rrResponses {
+		require.False(t, rrResponse.Cached)
+		//		require.InDelta(t, time.Now().UTC().Unix(), rrResponse.ZoneTransferAt.Unix(), 5)
+		require.NoError(t, rrResponse.Err)
+		collectedRRs = append(collectedRRs, rrResponse.RRs...)
+	}
+	// Validate the returned RRs against the original ones.
+	require.Equal(t, len(rrs)-1, len(collectedRRs))
+	for i, rr := range collectedRRs {
+		// Replace tabs with spaces in the original RR.
+		original := strings.Join(strings.Fields(rrs[i]), " ")
+		require.Equal(t, original, rr.GetString())
+	}
 }
 
 // Test that an error is returned if the daemon with the given ID
@@ -935,7 +1296,7 @@ func TestGetZoneRRsNoDaemon(t *testing.T) {
 	defer manager.Shutdown()
 
 	var errors []error
-	responses := manager.GetZoneRRs(12, 13, "_default")
+	responses := manager.GetZoneRRs(12, 13, "_default", nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -987,7 +1348,7 @@ func TestGetZoneRRsNoZone(t *testing.T) {
 	defer manager.Shutdown()
 
 	var errors []error
-	responses := manager.GetZoneRRs(12, daemon.ID, "_default")
+	responses := manager.GetZoneRRs(12, daemon.ID, "_default", nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -1073,7 +1434,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
+		responses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
 		for response := range responses {
 			require.NoError(t, response.Err)
 		}
@@ -1086,7 +1447,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	// Since we use the same IDs and view name, the manager should
 	// refuse it.
 	var errors []error
-	responses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
+	responses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -1248,7 +1609,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetZoneRRs(zones[0].ID, daemon1.ID, "_default")
+		responses := manager.GetZoneRRs(zones[0].ID, daemon1.ID, "_default", nil)
 		for response := range responses {
 			// Since these responses will be read in the cleanup phase, it is expected
 			// that some of them will indicate failures while communicating with the
@@ -1269,7 +1630,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 
 	t.Run("different zone ID", func(t *testing.T) {
 		var errors []error
-		responses := manager.GetZoneRRs(zones[1].ID, daemon1.ID, "_default")
+		responses := manager.GetZoneRRs(zones[1].ID, daemon1.ID, "_default", nil)
 		for response := range responses {
 			errors = append(errors, response.Err)
 		}
@@ -1279,7 +1640,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 
 	t.Run("different daemon ID", func(t *testing.T) {
 		var errors []error
-		responses := manager.GetZoneRRs(zones[0].ID, daemon2.ID, "_default")
+		responses := manager.GetZoneRRs(zones[0].ID, daemon2.ID, "_default", nil)
 		for response := range responses {
 			errors = append(errors, response.Err)
 		}
@@ -1289,7 +1650,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 
 	t.Run("different view name", func(t *testing.T) {
 		var errors []error
-		responses := manager.GetZoneRRs(zones[0].ID, daemon1.ID, "trusted")
+		responses := manager.GetZoneRRs(zones[0].ID, daemon1.ID, "trusted", nil)
 		for response := range responses {
 			errors = append(errors, response.Err)
 		}
@@ -1376,7 +1737,7 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Start reading the RRs.
-	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
 
 	// Read only the first RR and stop the iterator.
 	next, stop := iter.Pull(rrResponses)
@@ -1390,9 +1751,10 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	require.NoError(t, rrResponse.Err)
 
 	// Make sure that there are no RRs in the database.
-	localZoneRRs, err := dbmodel.GetDNSConfigRRs(db, zone.LocalZones[0].ID)
+	localZoneRRs, total, err := dbmodel.GetDNSConfigRRs(db, zone.LocalZones[0].ID, nil)
 	require.NoError(t, err)
 	require.Empty(t, localZoneRRs)
+	require.Zero(t, total)
 }
 
 // Test that a database error is propagated while iterating over the RRs.
@@ -1472,7 +1834,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Start reading the RRs.
-	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default")
+	rrResponses := manager.GetZoneRRs(zone.ID, daemon.ID, "_default", nil)
 
 	next, stop := iter.Pull(rrResponses)
 	defer stop()
@@ -1499,6 +1861,41 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	}
 	require.Error(t, capturedErr)
 	require.ErrorContains(t, capturedErr, "failed to flush the batch of RRs")
+}
+
+func TestGetFilteredResponse(t *testing.T) {
+	response := &RRResponse{
+		RRs: []*dnsconfig.RR{
+			{Name: "example.com", Type: "A", Rdata: "192.0.2.1"},
+			{Name: "ipv6.example.com", Type: "AAAA", Rdata: "2001:db8::1"},
+			{Name: "ipv4.example.com", Type: "A", Rdata: "192.0.2.2"},
+			{Name: "any.example.org", Type: "AAAA", Rdata: "2001:db8::2"},
+		},
+	}
+
+	t.Run("filter by type", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.EnableType("A")
+		filteredResponse, pos := response.applyFilter(filter, 0)
+		require.Len(t, filteredResponse.RRs, 2)
+		require.Equal(t, 2, pos)
+	})
+
+	t.Run("filter by name text", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetText("example.com")
+		filteredResponse, pos := response.applyFilter(filter, 0)
+		require.Len(t, filteredResponse.RRs, 3)
+		require.Equal(t, 3, pos)
+	})
+
+	t.Run("filter by rdata text", func(t *testing.T) {
+		filter := dbmodel.NewGetZoneRRsFilter()
+		filter.SetText("2001:db8:")
+		filteredResponse, pos := response.applyFilter(filter, 0)
+		require.Len(t, filteredResponse.RRs, 2)
+		require.Equal(t, 2, pos)
+	})
 }
 
 // Test that one BIND 9 configuration file is returned from the agent.
