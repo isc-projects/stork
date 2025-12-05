@@ -27,20 +27,20 @@ List of CI Images
 
 Currently available images:
 
-    - ``debian.Dockerfile`` - Debian-based image; a default base for CI tasks.
+    - ``ci-base.Dockerfile`` - Debian-based image; a default base for CI tasks.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``ci-base`` image.
-    - ``redhat-ubi.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile`` - RedHat-based
+    - ``pkgs-redhat-ubi.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile`` - RedHat-based
       image. Available for AMD64 and ARM64
       architectures from the ``1`` tag. Stored in the
       registry as the ``pkgs-redhat-ubi`` image (prior tag ``5``: ````pkgs-redhat-ubi8``).
-    - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines.
+    - ``pkgs-compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines.
       Available only for AMD64 architecture. Stored in the registry as the
       ``pkgs-compose`` image.
-    - ``cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for release purposes.
+    - ``pkgs-cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for release purposes.
       Available only for AMD64 architecture. Stored in the registry as the
       ``pkgs-cloudsmith`` image.
-    - ``alpine.Dockerfile`` - Alpine-based image. Available for AMD64 and ARM64
+    - ``pkgs-alpine.Dockerfile`` - Alpine-based image. Available for AMD64 and ARM64
       architectures. Stored in the registry as the ``pkgs-alpine`` image.
 
 Removed images:
@@ -144,62 +144,61 @@ Changelog
 =========
 
 Below is the list of changes of CI images for particular tags.
-The image names are the file names of their Dockerfiles.
 
 **Tag: 12**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #2148 ticket. Upgrades Golang to 1.25.5.
 
-    - ``compose.Dockerfile``:
+    - ``pkgs-compose``:
 
         Introduced in the #2148 ticket. Upgrades Docker to 29, Python to 3.12,
         OpenSSL to 3.5, NodeJS to 24.11, NPM to 11, and Protoc to 31.1.
 
 **Tag: 11**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #2035 ticket. Upgrades Golang to 1.24.9.
 
 **Tag: 10**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #2035 ticket. Upgrades Golang to 1.24.8.
 
 **Tag: 9**
 
-    - ``debian.Dockerfile``:
+    - ``ci-base``:
 
         Introduced in the #1946 ticket. Upgrades the base Debian image to
         12.11 version and Chromium to 138.0.
 
-    - ``redhat-ubi.Dockerfile``:
+    - ``pkgs-redhat-ubi``:
 
         Introduced in the #1946 ticket. Upgrades the base RedHat image to
         10.0, Python to 3.12, Java to 21 version.
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #1946 ticket. Upgrades Golang to 1.24.6.
 
 **Tag: 8**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #1827 ticket to upgrade Go to 1.24.4.
 
 **Tag: 7**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #1758 ticket to upgrade Go to 1.24.1.
 
 **Tag: 6**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #1676 ticket to upgrade Go to 1.23.5. Python has
         been upgraded to 3.12 because the 3.11 version is no longer available
@@ -207,27 +206,27 @@ The image names are the file names of their Dockerfiles.
 
 **Tag: 5**
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #1512 ticket to upgrade overall dependencies.
         Upgraded Go to 1.23.1, NodeJS 20, and Protoc to 24.4. Removed the FPM
         dependencies, i.e. tar.
 
-    - ``redhat-ubi.Dockerfile``:
+    - ``pkgs-redhat-ubi``:
 
         Introduced in the #1512 ticket to upgrade overall dependencies.
         Upgraded Universal Base Image 9.4 and Ruby 3.
 
 **Tag: 4**
 
-    - ``compose.Dockerfile``:
+    - ``pkgs-compose``:
 
         Introduced in #1328 ticket to add the missing ``protoc`` dependency.
 
         - Added: protoc 24
         - Updated: NodeJS 20 and NPM 10
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         Introduced in the #1353 ticket to provide the new Alpine 3.18 image,
         which includes the updated Go 1.22.2 package.
@@ -242,8 +241,7 @@ The image names are the file names of their Dockerfiles.
 
     Introduced in the #1178 ticket to add the missing ``ssh`` dependency.
 
-    - ``debian.Dockerfile``:
-
+    - ``ci-base``:
         - Added: ssh
 
     Other images were not changed.
@@ -256,9 +254,9 @@ The image names are the file names of their Dockerfiles.
 
     - ``ubuntu-18-04.Dockerfile``:
 
-        - Replaced with ``debian.Dockerfile``
+        - Replaced with ``ci-base.Dockerfile``
 
-    - ``debian.Dockerfile``:
+    - ``ci-base``:
 
         - Base: ``debian:12.1-slim``
         - Froze all dependency versions
@@ -266,24 +264,24 @@ The image names are the file names of their Dockerfiles.
           build essentials 12
         - Added Ruby 3.1
 
-    - ``redhat-ubi8.Dockerfile``:
+    - ``pkgs-redhat-ubi``:
 
         - Base updated: ``redhat/ubi8:8.8``
         - Updated to Python 3.11, OpenJDK 17
         - Added: GCC 8.5
         - Set /tmp to be world-writable (``chmod +t``)
 
-    - ``compose.Dockerfile``:
+    - ``pkgs-compose``:
 
         - Base: ``docker:24`` (Alpine)
         - Added Python 3.11, OpenJDK 17, Rake 13, NodeJS 18.17, NPM 9, OpenSSL 3.1
 
-    - ``cloudsmith.Dockerfile``:
+    - ``pkgs-cloudsmith``:
 
         - Base updated: ``ubuntu:22.04``
         - Updated to Cloudsmith CLI 1.1.1, Python 11 (not frozen), Rake 13
 
-    - ``alpine.Dockerfile``:
+    - ``pkgs-alpine``:
 
         - Base: ``golang:1.21-alpine3.17``
         - Added Python 3.10, OpenJDK 17, Rake 13, Ruby 3.1, NodeJS 18, GCC 12, Protoc 3.21
@@ -307,7 +305,7 @@ The image names are the file names of their Dockerfiles.
         - Base: ``redhat/ubi8:8.6``
         - Added Python 3.8, man
 
-    - ``cloudsmith.Dockerfile``:
+    - ``pkgs-cloudsmith``:
 
         - No changes
 

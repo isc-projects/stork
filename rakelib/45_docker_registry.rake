@@ -100,7 +100,7 @@ namespace :push do
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :debian do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/debian.Dockerfile",
+            "docker/images/ci/ci-base.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/ci-base",
             true
         )
@@ -112,7 +112,7 @@ namespace :push do
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :rhel do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/redhat-ubi.Dockerfile",
+            "docker/images/ci/pkgs-redhat-ubi.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi",
             true
         )
@@ -124,7 +124,7 @@ namespace :push do
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :alpine do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/alpine.Dockerfile",
+            "docker/images/ci/pkgs-alpine.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine",
             true
         )
@@ -136,7 +136,7 @@ namespace :push do
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :compose do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/compose.Dockerfile",
+            "docker/images/ci/pkgs-compose.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-compose",
             false
         )
@@ -148,7 +148,7 @@ namespace :push do
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :cloudsmith do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/cloudsmith.Dockerfile",
+            "docker/images/ci/pkgs-cloudsmith.Dockerfile",
             "registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith",
             false
         )
