@@ -567,8 +567,8 @@ openapi_generator_ver = '7.17.0'
 # Other
 bundler_ver = '2.6.9'
 shellcheck_ver = '0.11.0'
-pip_tools_ver = '7.5.0'
-pip_audit_ver = '2.9.0'
+pip_tools_ver = '7.5.2'
+pip_audit_ver = '2.10.0'
 
 # System-dependent variables
 case OS
@@ -1052,7 +1052,7 @@ end
 
 PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
-    sh PIP, "install", "pip-tools<=#{pip_tools_ver}"
+    sh PIP, "install", "--upgrade", "pip-tools<=#{pip_tools_ver}"
     sh "touch", "-c", PIP_COMPILE
     sh PIP_COMPILE, "--version"
 end
