@@ -559,10 +559,10 @@ nfpm_ver = 'v2.44.0'
 golangcilint_ver = '2.7.1'
 
 # UI-related
-node_ver = '20.19.4'
-npm_ver = '11.5.2'
+node_ver = '20.19.6'
+npm_ver = '11.6.4'
 yamlinc_ver = '0.1.10'
-openapi_generator_ver = '7.14.0'
+openapi_generator_ver = '7.17.0'
 
 # Other
 bundler_ver = '2.6.9'
