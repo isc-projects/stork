@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/datamodel/daemonname"
@@ -175,6 +176,123 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, 0, total)
 	require.NotNil(t, events)
 	require.Empty(t, events)
+}
+
+// Test that TestGetEventsByPage returns results with correct sorting.
+func TestGetEventsByPageSorting(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add test events
+	ev := &Event{
+		Text:      "text a",
+		Level:     EvError,
+		Details:   "detail a",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err := AddEvent(db, ev)
+	require.NoError(t, err)
+
+	ev = &Event{
+		Text:      "text b",
+		Level:     EvInfo,
+		Details:   "detail b",
+		CreatedAt: time.Now().UTC().Add(time.Second),
+	}
+
+	err = AddEvent(db, ev)
+	require.NoError(t, err)
+
+	ev = &Event{
+		Text:      "text a",
+		Level:     EvError,
+		Details:   "detail c",
+		CreatedAt: time.Now().UTC().Add(time.Second),
+	}
+
+	err = AddEvent(db, ev)
+	require.NoError(t, err)
+
+	// get all events sorted by created_at
+	events, total, err := GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "created_At", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	for i := range events {
+		if i > 0 {
+			require.GreaterOrEqual(t, events[i].CreatedAt, events[i-1].CreatedAt)
+		}
+	}
+
+	// get all events sorted by created_at DESC
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "created_At", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	for i := range events {
+		if i > 0 {
+			require.LessOrEqual(t, events[i].CreatedAt, events[i-1].CreatedAt)
+		}
+	}
+
+	// get all events sorted by text
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventText), SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	require.EqualValues(t, events[0].Text, events[1].Text)       // First two events have the same text.
+	require.Greater(t, events[1].CreatedAt, events[0].CreatedAt) // So after this, they should be sorted by created_at.
+	require.Greater(t, events[2].Text, events[1].Text)
+
+	// get all events sorted by text DESC
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventText), SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	require.EqualValues(t, events[1].Text, events[2].Text)       // Last two events have the same text.
+	require.Greater(t, events[1].CreatedAt, events[2].CreatedAt) // So after this, they should be sorted by created_at.
+	require.Greater(t, events[0].Text, events[1].Text)
+
+	// get all events sorted by level
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventLevel), SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	require.EqualValues(t, events[1].Level, events[2].Level)     // Last two events have the same level.
+	require.Greater(t, events[2].CreatedAt, events[1].CreatedAt) // So after this, they should be sorted by created_at.
+	require.Greater(t, events[1].Level, events[0].Level)
+
+	// get all events sorted by level DESC
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventLevel), SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	require.EqualValues(t, events[0].Level, events[1].Level)     // First two events have the same level.
+	require.Greater(t, events[0].CreatedAt, events[1].CreatedAt) // So after this, they should be sorted by created_at.
+	require.Greater(t, events[1].Level, events[2].Level)
+
+	// get all events sorted by details
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "details", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	for i := range events {
+		if i > 0 {
+			require.GreaterOrEqual(t, events[i].Details, events[i-1].Details)
+		}
+	}
+
+	// get all events sorted by details DESC
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "details", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, events, 3)
+	for i := range events {
+		if i > 0 {
+			require.LessOrEqual(t, events[i].Details, events[i-1].Details)
+		}
+	}
 }
 
 // Test that the event level is converted to the human-readable form.
