@@ -25,12 +25,14 @@ type CustomSortFieldEnum string
 
 // Valid values of the enum.
 const (
-	SortFieldTotalAddresses    CustomSortFieldEnum = "custom_total_addresses"
-	SortFieldAssignedAddresses CustomSortFieldEnum = "custom_assigned_addresses"
-	SortFieldTotalPDs          CustomSortFieldEnum = "custom_total_pds"
-	SortFieldAssignedPDs       CustomSortFieldEnum = "custom_assigned_pds"
-	SortFieldPDUtilization     CustomSortFieldEnum = "custom_pd_utilization"
-	SortFieldRName             CustomSortFieldEnum = "custom_rname"
+	SortFieldTotalAddresses    CustomSortFieldEnum = "custom_total_addresses"    // Used for sorting records in "subnet" and "shared_network" tables.
+	SortFieldAssignedAddresses CustomSortFieldEnum = "custom_assigned_addresses" // Used for sorting records in "subnet" and "shared_network" tables.
+	SortFieldTotalPDs          CustomSortFieldEnum = "custom_total_pds"          // Used for sorting records in "subnet" and "shared_network" tables.
+	SortFieldAssignedPDs       CustomSortFieldEnum = "custom_assigned_pds"       // Used for sorting records in "subnet" and "shared_network" tables.
+	SortFieldPDUtilization     CustomSortFieldEnum = "custom_pd_utilization"     // Used for sorting records in "subnet" and "shared_network" tables.
+	SortFieldRName             CustomSortFieldEnum = "custom_rname"              // Used for sorting records in "zone" table.
+	SortFieldEventText         CustomSortFieldEnum = "custom_text"               // Used for sorting records in "event" table.
+	SortFieldEventLevel        CustomSortFieldEnum = "custom_level"              // Used for sorting records in "event" table.
 )
 
 // Prepare an order expression based on table name, sortField and sortDir.
@@ -87,7 +89,13 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 					distinctOnExpr += fmt.Sprintf(", %s, %s", familyExpr, statsExpr)
 				case SortFieldRName:
 					sortField = fmt.Sprintf("%s.rname COLLATE \"C\"", escapedTableName)
-					distinctOnExpr += fmt.Sprintf("%s.rname", escapedTableName)
+					distinctOnExpr += fmt.Sprintf(", %s.rname", escapedTableName)
+				case SortFieldEventText:
+					sortField = fmt.Sprintf("%[1]s.text %[2]s, %[1]s.created_at", escapedTableName, dirExpr)
+					distinctOnExpr += fmt.Sprintf(", %s.text", escapedTableName)
+				case SortFieldEventLevel:
+					sortField = fmt.Sprintf("%[1]s.level %[2]s, %[1]s.created_at", escapedTableName, dirExpr)
+					distinctOnExpr += fmt.Sprintf(", %s.level", escapedTableName)
 				}
 			}
 		} else if strings.ToLower(sortField) != tableName+".id" && strings.ToLower(sortField) != escapedTableName+".id" {

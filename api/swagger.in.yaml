@@ -262,8 +262,8 @@ definitions:
     type: string
     enum: &EVENTSORTFIELD
       - created_at
-      - text
-      - level
+      - custom_text
+      - custom_level
       - details
 
   HostSortField:
