@@ -130,13 +130,13 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         self,
         username: str,
         password: str,
-        authentication_method_id="internal",
+        authentication_method_id: str = "internal",
         suppress_client_side_validation: bool = False,
     ) -> User:
         """
         Logs in a user. Returns the user info.
         It accepts a flag to suppress client-side validation. It is useful when
-        testing sending maliciously payloads.
+        testing malicious payloads.
         """
         api_instance = UsersApi(self._api_client)
         create_session_method = api_instance.create_session_with_http_info
