@@ -146,6 +146,17 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 12**
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #2148 ticket. Upgrades Golang to 1.25.5.
+
+    - ``compose.Dockerfile``:
+
+        Introduced in the #2148 ticket. Upgrades Docker to 29, Python to 3.12,
+        OpenSSL to 3.5, NodeJS to 24.11, NPM to 11, and Protoc to 31.1.
+
 **Tag: 11**
 
     - ``alpine.Dockerfile``:
