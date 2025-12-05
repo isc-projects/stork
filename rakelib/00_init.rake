@@ -760,7 +760,7 @@ DOCKER_BUILDX = docker_plugin("docker-buildx", "buildx")
 # "gem install" command.
 BUNDLE = File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle")
 file BUNDLE => [RUBY, GEM, ruby_tools_dir, ruby_tools_bin_dir] do
-    sh "rm", "-rf", File.join(ruby_tools_dir, "*")
+    FileUtils.rm_rf FileList[File.join(ruby_tools_dir, "*")]
 
     sh GEM, "install",
             "--minimal-deps",
@@ -1036,7 +1036,7 @@ PYTHON3_VERSION = python3_version
 
 PYTHON = File.join(python_tools_dir, "bin", "python")
 file PYTHON => [PYTHON3_SYSTEM] do
-    sh "rm", "-rf", File.join(python_tools_dir, "*")
+    FileUtils.rm_rf FileList[File.join(python_tools_dir, "*")]
     sh PYTHON3_SYSTEM, "-m", "venv", python_tools_dir
     sh PYTHON, "--version"
 end
