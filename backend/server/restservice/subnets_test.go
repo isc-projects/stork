@@ -217,7 +217,7 @@ func TestGetSubnets(t *testing.T) {
 	// get all subnets with custom sorting
 	params = dhcp.GetSubnetsParams{
 		SortField: storkutil.Ptr("prefix"),
-		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 	}
 	rsp = rapi.GetSubnets(ctx, params)
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)

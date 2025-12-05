@@ -282,6 +282,12 @@ definitions:
       - serial
       - type
 
+  SortDir:
+    type: string
+    enum: &SORTDIR
+      - asc
+      - desc
+
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: kea-config-defs.yaml
@@ -415,11 +421,6 @@ parameters:
   sortDir:
     name: sortDir
     in: query
-    description: >-
-      Sorting direction represented by
-      int number. Set to 1 to sort in Ascending order.
-      Set to 2 to sort in Descending order.
-    type: integer
-    enum:
-      - 1
-      - 2
+    description: Sorting direction - either ascending or descending
+    type: string
+    enum: *SORTDIR

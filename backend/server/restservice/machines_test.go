@@ -885,7 +885,7 @@ func TestGetMachines(t *testing.T) {
 		Start:     &start,
 		Limit:     &limit,
 		SortField: storkutil.Ptr("address"),
-		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 	}
 
 	rsp = rapi.GetMachines(ctx, params)

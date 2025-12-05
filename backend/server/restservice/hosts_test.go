@@ -242,7 +242,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("subnet"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -269,7 +269,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("subnet"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -293,7 +293,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("hostname"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -318,7 +318,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("hostname"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -342,7 +342,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("identifier"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -363,7 +363,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("identifier"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -384,7 +384,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("reservation_address"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -408,7 +408,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("reservation_address"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -432,7 +432,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("reservation_ipv6_prefix"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -458,7 +458,7 @@ func TestGetHostsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
 			SortField: storkutil.Ptr("reservation_ipv6_prefix"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
 		require.IsType(t, &dhcp.GetHostsOK{}, rsp)

@@ -1,5 +1,5 @@
-import { convertSortingFields, SortDir } from './table'
-import { UserSortField } from './backend'
+import { convertSortingFields } from './table'
+import { SortDir, UserSortField } from './backend'
 import { TableLazyLoadEvent } from 'primeng/table'
 
 describe('Table', () => {

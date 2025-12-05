@@ -1,5 +1,6 @@
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { SortDir } from './backend'
 
 /**
  * Checks if given PrimeNG table filters contain any non-blank value.
@@ -64,14 +65,6 @@ export function parseBoolean(val: string): boolean | null {
 export function tableFiltersToQueryParams(table: Table) {
     const entries = Object.entries(table.filters).map((entry) => [entry[0], (<FilterMetadata>entry[1]).value])
     return Object.fromEntries(entries)
-}
-
-/**
- * Enumeration of sorting direction options with values used in Stork server backend.
- */
-export enum SortDir {
-    Asc = 1,
-    Desc = 2,
 }
 
 /**

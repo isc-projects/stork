@@ -81,7 +81,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("text"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -96,7 +96,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("text"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -111,7 +111,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("level"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -125,7 +125,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("level"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -139,7 +139,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("details"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -154,7 +154,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("details"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -169,7 +169,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("created_at"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)
@@ -183,7 +183,7 @@ func TestGetEventsSorting(t *testing.T) {
 		ctx := context.Background()
 		params := events.GetEventsParams{
 			SortField: storkutil.Ptr("created_at"),
-			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetEvents(ctx, params)
 		require.IsType(t, &events.GetEventsOK{}, rsp)

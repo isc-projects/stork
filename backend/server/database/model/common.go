@@ -11,13 +11,13 @@ import (
 )
 
 // Defines the sorting direction.
-type SortDirEnum int
+type SortDirEnum string
 
 // Valid values of the sorting enum.
 const (
-	SortDirAny SortDirEnum = iota
-	SortDirAsc
-	SortDirDesc
+	SortDirAny  SortDirEnum = "any"
+	SortDirAsc  SortDirEnum = "asc"
+	SortDirDesc SortDirEnum = "desc"
 )
 
 // Prepare an order expression based on table name, sortField and sortDir.

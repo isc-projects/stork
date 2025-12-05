@@ -161,7 +161,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	// get all shared networks sorted by name descending
 	params = dhcp.GetSharedNetworksParams{
 		SortField: storkutil.Ptr("name"),
-		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 	}
 	rsp = rapi.GetSharedNetworks(ctx, params)
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)

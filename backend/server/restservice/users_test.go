@@ -1186,7 +1186,7 @@ func TestGetUsers(t *testing.T) {
 	// Check users sorting.
 	params = users.GetUsersParams{
 		SortField: storkutil.Ptr("login"),
-		SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
+		SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
 	}
 
 	rsp = rapi.GetUsers(ctx, params)
