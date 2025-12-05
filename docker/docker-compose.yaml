@@ -623,7 +623,7 @@ services:
 
   prometheus:
     restart: always
-    image: prom/prometheus:v2.54.1
+    image: prom/prometheus:v3.8.0
     networks:
       - storknet
     ports:
@@ -633,7 +633,7 @@ services:
 
   grafana:
     restart: always
-    image: grafana/grafana:11.2.2
+    image: grafana/grafana:12.3.0
     networks:
       - storknet
     ports:
@@ -663,7 +663,7 @@ services:
 
   postgres:
     restart: always
-    image: postgres:${POSTGRES_VERSION:-16}
+    image: postgres:${POSTGRES_VERSION:-18}
     networks:
       storknet:
         ipv4_address: 172.24.0.234
@@ -681,7 +681,7 @@ services:
 
   mariadb:
     restart: always
-    image: mariadb:10.7
+    image: mariadb:12.1
     networks:
       - storknet
     environment:
