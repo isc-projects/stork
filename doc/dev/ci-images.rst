@@ -153,8 +153,8 @@ Below is the list of changes of CI images for particular tags.
 
     - ``pkgs-compose``:
 
-        Introduced in the #2148 ticket. Upgrades Docker to 29, Python to 3.12,
-        OpenSSL to 3.5, NodeJS to 24.11, NPM to 11, and Protoc to 31.1.
+        Introduced in the #2148 ticket. Upgrades Docker to 28, Python to 3.12,
+        OpenSSL to 3.5, NodeJS to 22.16, NPM to 11, and Protoc to 29.4.
 
 **Tag: 11**
 
