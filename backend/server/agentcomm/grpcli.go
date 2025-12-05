@@ -1146,27 +1146,8 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 			}
 		}
 		if err != nil {
-			// The zone inventory may signal errors indicating that it is
-			// unable to return the RRs because it is in a wrong state.
-			s := status.Convert(err)
-			for _, d := range s.Details() {
-				if info, ok := d.(*errdetails.ErrorInfo); ok {
-					switch info.Reason {
-					case "ZONE_INVENTORY_NOT_INITED":
-						// Zone inventory hasn't been initialized.
-						_ = yield(nil, NewZoneInventoryNotInitedError(agentAddressPort))
-						return
-					case "ZONE_INVENTORY_BUSY":
-						// Zone inventory is busy. Retrying later may help.
-						_ = yield(nil, NewZoneInventoryBusyError(agentAddressPort))
-						return
-					default:
-						_ = yield(nil, err)
-						return
-					}
-				}
-			}
-			// Other error.
+			// Cannot open the stream.
+			err = errors.Wrap(err, "failed to open stream to receive zone RRs from the agent")
 			_ = yield(nil, err)
 			return
 		}
@@ -1174,10 +1155,33 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 			// Receive the zone contents from the agent.
 			receivedRRs, err := stream.Recv()
 			if err != nil {
-				if !errors.Is(err, io.EOF) {
-					// Report the error excluding the EOF which is just the end of the stream.
-					_ = yield(nil, err)
+				if errors.Is(err, io.EOF) {
+					// End of the stream.
+					return
 				}
+				// The zone inventory may signal errors indicating that it is
+				// unable to return the RRs because it is in a wrong state.
+				s := status.Convert(err)
+				for _, d := range s.Details() {
+					if info, ok := d.(*errdetails.ErrorInfo); ok {
+						switch info.Reason {
+						case "ZONE_INVENTORY_NOT_INITED":
+							// Zone inventory hasn't been initialized.
+							_ = yield(nil, NewZoneInventoryNotInitedError(agentAddressPort))
+							return
+						case "ZONE_INVENTORY_BUSY":
+							// Zone inventory is busy. Retrying later may help.
+							_ = yield(nil, NewZoneInventoryBusyError(agentAddressPort))
+							return
+						default:
+							// Other error.
+							_ = yield(nil, errors.Wrap(err, "failed to receive zone RRs from the agent"))
+							return
+						}
+					}
+				}
+				// Other error.
+				_ = yield(nil, errors.Wrap(err, "gRPC connection error occurred when receiving zone RRs from the agent"))
 				return
 			}
 			// Convert the received RRs to the format convenient for further processing
@@ -1187,7 +1191,7 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 				rrs[i], err = dnsconfig.NewRR(rr)
 				if err != nil {
 					// This is unlikely but we need to handle it.
-					_ = yield(nil, err)
+					_ = yield(nil, errors.Wrap(err, "failed to parse zone RRs received from the agent"))
 					return
 				}
 			}
@@ -1244,7 +1248,7 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 			}
 		}
 		if err != nil {
-			_ = yield(nil, err)
+			_ = yield(nil, errors.Wrap(err, "failed to open stream to receive BIND 9 configuration from the agent"))
 			return
 		}
 		for {
@@ -1253,7 +1257,7 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// Report the error excluding the EOF which is just the end of the stream.
-					_ = yield(nil, err)
+					_ = yield(nil, errors.Wrap(err, "failed to receive BIND 9 configuration from the agent"))
 				}
 				return
 			}

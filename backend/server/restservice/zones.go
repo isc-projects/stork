@@ -260,7 +260,7 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 	)
 	for rrResponse := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName) {
 		if rrResponse.Err != nil {
-			msg := "Failed to get zone contents from the database"
+			msg := "Failed to get zone contents"
 			log.WithError(rrResponse.Err).Error(msg)
 			switch {
 			case errors.As(rrResponse.Err, &alreadyRequestedError):

@@ -1952,10 +1952,6 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
 
-	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneRRsRsp](ctrl)
-	// Make sure that the gRPC client is not used.
-	mockStreamingClient.EXPECT().Recv().Times(0)
-
 	// Create an error returned over gRPC indicating that the zone inventory
 	// hasn't been initialized.
 	st := status.New(codes.FailedPrecondition, "zone inventory not initialized")
@@ -1963,7 +1959,9 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 		Reason: "ZONE_INVENTORY_NOT_INITED",
 	})
 	require.NoError(t, err)
-	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneRRsRsp](ctrl)
+	mockStreamingClient.EXPECT().Recv().Times(1).Return(nil, ds.Err())
+	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Times(1).Return(mockStreamingClient, nil)
 
 	// The iterator should return ZoneInventoryNotInitedError.
 	for rrs, err := range agents.ReceiveZoneRRs(context.Background(), daemon, "example.com", "_default") {
@@ -1993,10 +1991,6 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
 
-	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneRRsRsp](ctrl)
-	// Make sure that the gRPC client is not used.
-	mockStreamingClient.EXPECT().Recv().Times(0)
-
 	// Create an error returned over gRPC indicating that the zone inventory
 	// hasn't been initialized.
 	st := status.New(codes.Unavailable, "zone inventory busy")
@@ -2004,7 +1998,9 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 		Reason: "ZONE_INVENTORY_BUSY",
 	})
 	require.NoError(t, err)
-	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneRRsRsp](ctrl)
+	mockStreamingClient.EXPECT().Recv().Times(1).Return(nil, ds.Err())
+	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Times(1).Return(mockStreamingClient, nil)
 
 	// The iterator should return ZoneInventoryBusyError.
 	for rrs, err := range agents.ReceiveZoneRRs(context.Background(), daemon, "example.com", "_default") {
@@ -2033,17 +2029,15 @@ func TestReceiveZoneRRsOtherStatusError(t *testing.T) {
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
 
-	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneRRsRsp](ctrl)
-	// Make sure that the gRPC client is not used.
-	mockStreamingClient.EXPECT().Recv().Times(0)
-
 	// Create a generic status error returned over gRPC.
 	st := status.New(codes.Internal, "internal server error")
 	ds, err := st.WithDetails(&errdetails.ErrorInfo{
 		Reason: "SOME_OTHER_ERROR",
 	})
 	require.NoError(t, err)
-	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneRRsRsp](ctrl)
+	mockStreamingClient.EXPECT().Recv().Times(1).Return(nil, ds.Err())
+	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Times(1).Return(mockStreamingClient, nil)
 
 	// The iterator should return the original error without special handling.
 	for rrs, err := range agents.ReceiveZoneRRs(context.Background(), daemon, "example.com", "_default") {
@@ -2521,6 +2515,41 @@ func TestGetBind9FormattedConfigFiltering(t *testing.T) {
 	require.Nil(t, rsp)
 }
 
+// Test that an error is returned when trying to open the stream to receive
+// the BIND 9 configuration from the agent.
+func TestReceiveBind9FormattedConfigOpenStreamError(t *testing.T) {
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Mock the gRPC client returning an error.
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// Return an error when trying to open the stream.
+	mockAgentClient.EXPECT().ReceiveBind9Config(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, &testError{})
+
+	// Collect the chunks from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveBind9FormattedConfig(context.Background(), daemon, nil, nil))
+	defer cancel()
+
+	// The error should be propagated.
+	rsp, err, ok := next()
+	require.True(t, ok)
+	require.ErrorContains(t, err, "failed to open stream to receive BIND 9 configuration from the agent: test error")
+	require.Nil(t, rsp)
+}
+
 // Test that an error is returned when trying to receive the BIND 9 formatted config
 // when the gRPC call fails.
 func TestReceiveBind9FormattedConfigErrorResponse(t *testing.T) {
@@ -2554,7 +2583,7 @@ func TestReceiveBind9FormattedConfigErrorResponse(t *testing.T) {
 	// The error should be propagated.
 	rsp, err, ok := next()
 	require.True(t, ok)
-	require.ErrorContains(t, err, "test error")
+	require.ErrorContains(t, err, "failed to receive BIND 9 configuration from the agent: test error")
 	require.Nil(t, rsp)
 }
 
