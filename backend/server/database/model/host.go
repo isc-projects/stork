@@ -14,7 +14,6 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
-	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -433,16 +432,16 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	// Prepare sorting expression and distinct on expression to include sort field,
 	// otherwise distinct on will fail.
 	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("host", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
-		switch models.HostSortField(sortField) {
-		case models.HostSortFieldSubnet:
+		switch sortField {
+		case "subnet":
 			return fmt.Sprintf("subnet.prefix %s", dirExpr), "subnet.prefix", true
-		case models.HostSortFieldHostname:
+		case "hostname":
 			return fmt.Sprintf("distinct_lh.hostname %s", dirExpr), "distinct_lh.hostname", true
-		case models.HostSortFieldIdentifier:
+		case "identifier":
 			return fmt.Sprintf("distinct_identifier.value %s", dirExpr), "distinct_identifier.value", true
-		case models.HostSortFieldReservationAddress:
+		case "reservation_address":
 			return fmt.Sprintf("distinct_reservation.address %s", dirExpr), "distinct_reservation.address", true
-		case models.HostSortFieldReservationIPV6Prefix:
+		case "reservation_ipv6_prefix":
 			return fmt.Sprintf("distinct_reservation.ipv6_prefix %s", dirExpr), "distinct_reservation.ipv6_prefix", true
 		default:
 			return "", "", false
@@ -469,19 +468,19 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// Sort by hostname.
-	if models.HostSortField(sortField) == models.HostSortFieldHostname {
+	if sortField == "hostname" {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).Column("host_id").ColumnExpr("MIN(hostname) AS hostname").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_lh", sortSubquery).JoinOn("host.id = distinct_lh.host_id")
 	}
 
 	// Sort by host identifier value.
-	if models.HostSortField(sortField) == models.HostSortFieldIdentifier {
+	if sortField == "identifier" {
 		sortSubquery := dbi.Model((*HostIdentifier)(nil)).Column("host_id").ColumnExpr("array_agg(value ORDER BY value) AS value").Group("host_id")
 		q = q.Join("INNER JOIN (?) AS distinct_identifier", sortSubquery).JoinOn("host.id = distinct_identifier.host_id")
 	}
 
 	// Sort by host reservation address.
-	if models.HostSortField(sortField) == models.HostSortFieldReservationAddress {
+	if sortField == "reservation_address" {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).
 			Column("host_id").
 			ColumnExpr("array_agg(r.address ORDER BY r.address) AS address").
@@ -493,7 +492,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// Sort by host reservation v6 prefix.
-	if models.HostSortField(sortField) == models.HostSortFieldReservationIPV6Prefix {
+	if sortField == "reservation_ipv6_prefix" {
 		sortSubquery := dbi.Model((*LocalHost)(nil)).
 			Column("host_id").
 			ColumnExpr("array_agg(r.address ORDER BY r.address) AS ipv6_prefix").

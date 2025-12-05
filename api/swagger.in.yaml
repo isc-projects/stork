@@ -216,7 +216,7 @@ definitions:
     enum: &MACHINESORTFIELD
       - address
       - last_visited_at
-      - hostname
+      - machine_hostname
       - cpus
       - cpus_load
       - memory

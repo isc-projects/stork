@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
-	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -226,7 +225,7 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 // Helper function adding appropriate JOINs for sorting done in GetZones.
 // This code was extracted from GetZones due to gocyclo linter warning.
 func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
-	if models.ZoneSortField(sortField) == models.ZoneSortFieldSerial {
+	if sortField == "serial" {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
 			ColumnExpr("MIN(serial) AS serial").
@@ -234,7 +233,7 @@ func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
 		q = q.Join("LEFT JOIN (?) AS distinct_lz", sortSubquery).JoinOn("zone.id = distinct_lz.zone_id")
 		q = q.Group("distinct_lz.serial")
 	}
-	if models.ZoneSortField(sortField) == models.ZoneSortFieldType {
+	if sortField == "type" {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
 			ColumnExpr("MIN(type) AS type").
@@ -265,15 +264,15 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortD
 	}
 	// Order expression.
 	orderExpr, _ := prepareOrderAndDistinctExpr("zone", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
-		switch models.ZoneSortField(sortField) {
-		case models.ZoneSortFieldRname:
+		switch sortField {
+		case "rname":
 			// When sorting DNS zones by rname field, use the C collation.
 			orderExpr := fmt.Sprintf("%s.rname COLLATE \"C\" %s", escapedTableName, dirExpr)
 			distinctOnExpr := fmt.Sprintf("%s.rname", escapedTableName)
 			return orderExpr, distinctOnExpr, true
-		case models.ZoneSortFieldSerial:
+		case "serial":
 			return fmt.Sprintf("distinct_lz.serial %s", dirExpr), "distinct_lz.serial", true
-		case models.ZoneSortFieldType:
+		case "type":
 			return fmt.Sprintf("distinct_lz.type %s", dirExpr), "distinct_lz.type", true
 		default:
 			return "", "", false

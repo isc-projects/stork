@@ -16,7 +16,6 @@ import (
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
-	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -729,17 +728,17 @@ func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, d
 		orderByExpr := fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
 		distinctOnExpr := fmt.Sprintf("%s, %s", familyExpr, statsExpr)
 		return orderByExpr, distinctOnExpr, true
-	case string(models.SubnetSortFieldSharedNetwork):
+	case "shared_network":
 		if strings.Contains(escapedTableName, "subnet") {
 			return fmt.Sprintf("shared_network.name %s", dirExpr), "shared_network.name", true
 		}
 		return "", "", false
-	case string(models.SubnetSortFieldName):
+	case "name":
 		if strings.Contains(escapedTableName, "subnet") {
 			return fmt.Sprintf("distinct_ls.name %s", dirExpr), "distinct_ls.name", true
 		}
 		return "", "", false
-	case string(models.SubnetSortFieldKeaSubnetID):
+	case "kea_subnet_id":
 		if strings.Contains(escapedTableName, "subnet") {
 			return fmt.Sprintf("distinct_ls.kea_subnet_id %s", dirExpr), "distinct_ls.kea_subnet_id", true
 		}
@@ -784,7 +783,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.Join("LEFT JOIN address_pool AS ap ON ls.id = ap.local_subnet_id")
 	}
 	// Sort by subnet name.
-	if models.SubnetSortField(sortField) == models.SubnetSortFieldName {
+	if sortField == "name" {
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).
 			Column("subnet_id").
 			ColumnExpr("array_agg(user_context->'subnet-name' ORDER BY user_context->'subnet-name') AS name").
@@ -793,7 +792,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.Join("LEFT JOIN (?) AS distinct_ls", sortSubquery).JoinOn("subnet.id = distinct_ls.subnet_id")
 	}
 	// Sort by Kea subnet id.
-	if models.SubnetSortField(sortField) == models.SubnetSortFieldKeaSubnetID {
+	if sortField == "kea_subnet_id" {
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).Column("subnet_id").ColumnExpr("MIN(local_subnet_id) AS kea_subnet_id").Group("subnet_id")
 		q = q.Join("INNER JOIN (?) AS distinct_ls", sortSubquery).JoinOn("subnet.id = distinct_ls.subnet_id")
 	}
