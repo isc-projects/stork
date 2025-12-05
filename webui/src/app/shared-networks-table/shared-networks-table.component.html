@@ -180,30 +180,30 @@
             <th rowspan="2" style="width: 14rem">App Name</th>
         </tr>
         <tr>
-            <th [pSortableColumn]="NetworkSortField.CustomTotalAddresses">
+            <th [pSortableColumn]="NetworkSortField.TotalAddresses">
                 Total
-                <p-sortIcon [field]="NetworkSortField.CustomTotalAddresses" />
+                <p-sortIcon [field]="NetworkSortField.TotalAddresses" />
             </th>
-            <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.CustomAssignedAddresses">
+            <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.AssignedAddresses">
                 Assigned
-                <p-sortIcon [field]="NetworkSortField.CustomAssignedAddresses" />
+                <p-sortIcon [field]="NetworkSortField.AssignedAddresses" />
             </th>
             <th [pSortableColumn]="NetworkSortField.AddrUtilization">
                 Used %
                 <p-sortIcon [field]="NetworkSortField.AddrUtilization" />
             </th>
             <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
-                <th [pSortableColumn]="NetworkSortField.CustomTotalPds">
+                <th [pSortableColumn]="NetworkSortField.TotalPds">
                     Total
-                    <p-sortIcon [field]="NetworkSortField.CustomTotalPds" />
+                    <p-sortIcon [field]="NetworkSortField.TotalPds" />
                 </th>
-                <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.CustomAssignedPds">
+                <th style="padding: 0.571rem 0.5rem" [pSortableColumn]="NetworkSortField.AssignedPds">
                     Assigned
-                    <p-sortIcon [field]="NetworkSortField.CustomAssignedPds" />
+                    <p-sortIcon [field]="NetworkSortField.AssignedPds" />
                 </th>
-                <th [pSortableColumn]="NetworkSortField.CustomPdUtilization">
+                <th [pSortableColumn]="NetworkSortField.PdUtilization">
                     Used %
-                    <p-sortIcon [field]="NetworkSortField.CustomPdUtilization" />
+                    <p-sortIcon [field]="NetworkSortField.PdUtilization" />
                 </th>
             </ng-container>
         </tr>

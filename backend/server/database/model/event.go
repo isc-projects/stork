@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -78,7 +79,7 @@ func AddEvent(db *pg.DB, event *Event) error {
 // allows for selecting events for a given daemon (e.g. 'named' or 'dhcp4').
 // machineID and userID allows for selecting events pertaining to the specific
 // machine or user. sortField allows for selecting a sort column in database, and
-// sortDir selects the sortingorder. If the sortField is empty then id is used
+// sortDir selects the sorting order. If the sortField is empty then id is used
 // for sorting. If SortDirAny is used then ASC order is used.
 func GetEventsByPage(db *pg.DB, offset int64, limit int64, level EventLevel, daemonName *string, machineID *int64, userID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
 	if limit == 0 {
@@ -103,7 +104,22 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level EventLevel, dae
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderAndDistinctExpr("event", sortField, sortDir)
+	ordExpr, _ := prepareOrderAndDistinctExpr("event", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+		switch sortField {
+		case "level":
+			// When sorting events by level, apply the second sort by created_at field.
+			orderExpr := fmt.Sprintf("%[1]s.level %[2]s, %[1]s.created_at %[2]s", escapedTableName, dirExpr)
+			distinctOnExpr := fmt.Sprintf("%s.level", escapedTableName)
+			return orderExpr, distinctOnExpr, true
+		case "text":
+			// When sorting events by text, apply the second sort by created_at field.
+			orderExpr := fmt.Sprintf("%[1]s.text %[2]s, %[1]s.created_at %[2]s", escapedTableName, dirExpr)
+			distinctOnExpr := fmt.Sprintf("%s.text", escapedTableName)
+			return orderExpr, distinctOnExpr, true
+		default:
+			return "", "", false
+		}
+	})
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

@@ -705,6 +705,50 @@ func (f *SubnetsByPageFilters) SetIPv6Family() {
 	f.Family = &family
 }
 
+// Custom handler for preparing order by and distinct on expressions for
+// sorting subnets and shared networks by statistics.
+func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+	statsExpr := ""
+
+	switch sortField {
+	// Below cases are common for custom sorting in "subnet" and "shared_network" tables.
+	// They compute statsExpr required for sorting by IPv6 prefix delegation related fields.
+	case "total_pds":
+		statsExpr = fmt.Sprintf("(%s.stats->>'total-pds')::numeric", escapedTableName)
+	case "assigned_pds":
+		statsExpr = fmt.Sprintf("(%s.stats->>'assigned-pds')::numeric", escapedTableName)
+	case "pd_utilization":
+		statsExpr = fmt.Sprintf("%s.pd_utilization", escapedTableName)
+	default:
+		// NO-OP for other custom sort fields - statsExpr is not used.
+	}
+
+	switch sortField {
+	case "total_addresses":
+		// Sort subnets and shared networks by total addresses no matter the IP v4/v6 family.
+		distinctOnExpr := fmt.Sprintf("COALESCE(%[1]s.stats->>'total-nas', %[1]s.stats->>'total-addresses')::numeric", escapedTableName)
+		orderByExpr := fmt.Sprintf("%s %s", distinctOnExpr, dirExpr)
+		return orderByExpr, distinctOnExpr, true
+	case "assigned_addresses":
+		// Sort subnets and shared networks by assigned addresses no matter the IP v4/v6 family.
+		distinctOnExpr := fmt.Sprintf("COALESCE(%[1]s.stats->>'assigned-nas', %[1]s.stats->>'assigned-addresses')::numeric", escapedTableName)
+		orderByExpr := fmt.Sprintf("%s %s", distinctOnExpr, dirExpr)
+		return orderByExpr, distinctOnExpr, true
+	case "total_pds", "assigned_pds", "pd_utilization":
+		// When sorting subnets and shared networks by IPv6 prefix delegation related statistics, sort by the IP v4/v6 family first.
+		// This will handle IPv4 records depending on sorting order in a similar way to ASC NULLS FIRST/DESC NULLS LAST common sorting rule.
+		familyExpr := fmt.Sprintf("%s.inet_family", escapedTableName)
+		if strings.Contains(escapedTableName, "subnet") {
+			familyExpr = fmt.Sprintf("family(%s.prefix)", escapedTableName)
+		}
+		orderByExpr := fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
+		distinctOnExpr := fmt.Sprintf("%s, %s", familyExpr, statsExpr)
+		return orderByExpr, distinctOnExpr, true
+	default:
+		return "", "", false
+	}
+}
+
 // Fetches a collection of subnets from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
 // page. The filters object is used to filter subnets. The nil value disables
@@ -722,7 +766,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	q := dbi.Model(&subnets)
 
 	// prepare order by and distinct on expression to include sort field, otherwise distinct on will fail
-	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("subnet", sortField, sortDir)
+	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("subnet", sortField, sortDir, subnetAndSharedNetworkCustomOrderAndDistinct)
 	q = q.DistinctOn(distinctOnFields)
 
 	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil ||

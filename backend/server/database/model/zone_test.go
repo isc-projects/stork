@@ -300,7 +300,7 @@ func TestGetZones(t *testing.T) {
 			Limit: storkutil.Ptr(30),
 		}
 		// Let's use default sorting used by restservice.GetZones, i.e. by rname in ascending order.
-		zones1, total, err := GetZones(db, filter, string(SortFieldRName), SortDirAsc, ZoneRelationLocalZones)
+		zones1, total, err := GetZones(db, filter, "rname", SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones1, 30)
@@ -309,7 +309,7 @@ func TestGetZones(t *testing.T) {
 		filter.LowerBound = storkutil.Ptr(zones1[28].Name)
 		filter.Limit = storkutil.Ptr(20)
 		// Let's use default sorting used by restservice.GetZones, i.e. by rname in ascending order.
-		zones2, total, err := GetZones(db, filter, string(SortFieldRName), SortDirAsc, ZoneRelationLocalZones)
+		zones2, total, err := GetZones(db, filter, "rname", SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 121, total)
 		require.Len(t, zones2, 20)
@@ -346,7 +346,7 @@ func TestGetZones(t *testing.T) {
 	t.Run("default sort", func(t *testing.T) {
 		filter := &GetZonesFilter{}
 		// Let's use default sorting used by restservice.GetZones, i.e. by rname in ascending order.
-		zones, total, err := GetZones(db, filter, string(SortFieldRName), SortDirAsc, ZoneRelationLocalZones)
+		zones, total, err := GetZones(db, filter, "rname", SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)
@@ -414,7 +414,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 
 	t.Run("sort by rname desc", func(t *testing.T) {
 		filter := &GetZonesFilter{}
-		zones, total, err := GetZones(db, filter, string(SortFieldRName), SortDirDesc, ZoneRelationLocalZones)
+		zones, total, err := GetZones(db, filter, "rname", SortDirDesc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)

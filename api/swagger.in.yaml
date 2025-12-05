@@ -229,11 +229,11 @@ definitions:
       - prefix
       - shared_network.name
       - addr_utilization
-      - custom_total_addresses
-      - custom_assigned_addresses
-      - custom_total_pds
-      - custom_assigned_pds
-      - custom_pd_utilization
+      - total_addresses
+      - assigned_addresses
+      - total_pds
+      - assigned_pds
+      - pd_utilization
       - distinct_ls.name
       - distinct_ls.kea_subnet_id
 
@@ -242,11 +242,11 @@ definitions:
     enum: &NETWORKSORTFIELD
       - name
       - addr_utilization
-      - custom_total_addresses
-      - custom_assigned_addresses
-      - custom_total_pds
-      - custom_assigned_pds
-      - custom_pd_utilization
+      - total_addresses
+      - assigned_addresses
+      - total_pds
+      - assigned_pds
+      - pd_utilization
 
   UserSortField:
     type: string
@@ -262,8 +262,8 @@ definitions:
     type: string
     enum: &EVENTSORTFIELD
       - created_at
-      - custom_text
-      - custom_level
+      - text
+      - level
       - details
 
   HostSortField:
@@ -278,7 +278,7 @@ definitions:
   ZoneSortField:
     type: string
     enum: &ZONESORTFIELD
-      - custom_rname
+      - rname
       - distinct_lz.serial
       - distinct_lz.type
 

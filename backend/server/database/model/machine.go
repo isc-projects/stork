@@ -260,7 +260,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderAndDistinctExpr("machine", sortField, sortDir)
+	ordExpr, _ := prepareOrderAndDistinctExpr("machine", sortField, sortDir, nil)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

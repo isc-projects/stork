@@ -237,7 +237,7 @@ func TestGetEventsByPageSorting(t *testing.T) {
 	}
 
 	// get all events sorted by text
-	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventText), SortDirAsc)
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "text", SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)
@@ -246,7 +246,7 @@ func TestGetEventsByPageSorting(t *testing.T) {
 	require.Greater(t, events[2].Text, events[1].Text)
 
 	// get all events sorted by text DESC
-	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventText), SortDirDesc)
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "text", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)
@@ -255,7 +255,7 @@ func TestGetEventsByPageSorting(t *testing.T) {
 	require.Greater(t, events[0].Text, events[1].Text)
 
 	// get all events sorted by level
-	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventLevel), SortDirAsc)
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "level", SortDirAsc)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)
@@ -264,7 +264,7 @@ func TestGetEventsByPageSorting(t *testing.T) {
 	require.Greater(t, events[1].Level, events[0].Level)
 
 	// get all events sorted by level DESC
-	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, string(SortFieldEventLevel), SortDirDesc)
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, "level", SortDirDesc)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, events, 3)

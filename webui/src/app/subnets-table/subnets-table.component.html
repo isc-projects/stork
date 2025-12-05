@@ -221,16 +221,16 @@
             </th>
         </tr>
         <tr>
-            <th [pSortableColumn]="SubnetSortField.CustomTotalAddresses">
+            <th [pSortableColumn]="SubnetSortField.TotalAddresses">
                 <div class="flex gap-1">
                     Total
-                    <p-sortIcon [field]="SubnetSortField.CustomTotalAddresses" />
+                    <p-sortIcon [field]="SubnetSortField.TotalAddresses" />
                 </div>
             </th>
-            <th [pSortableColumn]="SubnetSortField.CustomAssignedAddresses">
+            <th [pSortableColumn]="SubnetSortField.AssignedAddresses">
                 <div class="flex gap-1">
                     Assigned
-                    <p-sortIcon [field]="SubnetSortField.CustomAssignedAddresses" />
+                    <p-sortIcon [field]="SubnetSortField.AssignedAddresses" />
                 </div>
             </th>
             <th [pSortableColumn]="SubnetSortField.AddrUtilization">
@@ -239,15 +239,15 @@
                 </div>
             </th>
             <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
-                <th [pSortableColumn]="SubnetSortField.CustomTotalPds">
-                    <div class="flex gap-1">Total <p-sortIcon [field]="SubnetSortField.CustomTotalPds" /></div>
+                <th [pSortableColumn]="SubnetSortField.TotalPds">
+                    <div class="flex gap-1">Total <p-sortIcon [field]="SubnetSortField.TotalPds" /></div>
                 </th>
-                <th [pSortableColumn]="SubnetSortField.CustomAssignedPds">
-                    <div class="flex gap-1">Assigned <p-sortIcon [field]="SubnetSortField.CustomAssignedPds" /></div>
+                <th [pSortableColumn]="SubnetSortField.AssignedPds">
+                    <div class="flex gap-1">Assigned <p-sortIcon [field]="SubnetSortField.AssignedPds" /></div>
                 </th>
-                <th [pSortableColumn]="SubnetSortField.CustomPdUtilization">
+                <th [pSortableColumn]="SubnetSortField.PdUtilization">
                     <div class="flex gap-1 white-space-nowrap">
-                        Used % <p-sortIcon [field]="SubnetSortField.CustomPdUtilization" />
+                        Used % <p-sortIcon [field]="SubnetSortField.PdUtilization" />
                     </div>
                 </th>
             </ng-container>

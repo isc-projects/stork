@@ -913,7 +913,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by total addresses", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldTotalAddresses), SortDirAsc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "total_addresses", SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -921,7 +921,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by total addresses descending", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldTotalAddresses), SortDirDesc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "total_addresses", SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -929,7 +929,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by assigned addresses", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldAssignedAddresses), SortDirAsc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_addresses", SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -937,7 +937,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by assigned addresses descending", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldAssignedAddresses), SortDirDesc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_addresses", SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -945,7 +945,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by total PDs", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldTotalPDs), SortDirAsc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "total_pds", SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -954,7 +954,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by assigned PDs", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldAssignedPDs), SortDirAsc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_pds", SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -963,7 +963,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by PD utilization", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldPDUtilization), SortDirAsc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "pd_utilization", SortDirAsc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)
@@ -971,7 +971,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	})
 
 	t.Run("sort by PD utilization descending", func(t *testing.T) {
-		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, string(SortFieldPDUtilization), SortDirDesc)
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "pd_utilization", SortDirDesc)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, total)
 		require.Len(t, returnedSubnets, 3)

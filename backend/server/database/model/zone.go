@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"context"
+	"fmt"
 	"iter"
 	"slices"
 	"strings"
@@ -278,7 +279,17 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortD
 		q = q.Relation(string(relation))
 	}
 	// Order expression.
-	orderExpr, _ := prepareOrderAndDistinctExpr("zone", sortField, sortDir)
+	orderExpr, _ := prepareOrderAndDistinctExpr("zone", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+		switch sortField {
+		case "rname":
+			// When sorting DNS zones by rname field, use the C collation.
+			orderExpr := fmt.Sprintf("%s.rname COLLATE \"C\" %s", escapedTableName, dirExpr)
+			distinctOnExpr := fmt.Sprintf("%s.rname", escapedTableName)
+			return orderExpr, distinctOnExpr, true
+		default:
+			return "", "", false
+		}
+	})
 	q = q.OrderExpr(orderExpr)
 	q = addJoinForSorting(db, q, sortField)
 
