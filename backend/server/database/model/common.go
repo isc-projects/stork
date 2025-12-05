@@ -27,9 +27,9 @@ const (
 // in the result.
 // It returns also DISTINCT ON expression that is often used in queries together with ORDER BY.
 // DISTINCT ON must contain the same fields that are used for sorting.
-// This function allows to provide a function handle some sortFields in a special way.
-// The custom handler function is called with original sortField, escapedTableName and dirExpr
-// that should be used in the order expression. It returns order expression, distinct on expression
+// It accepts a function to handle some sortFields in a special way.
+// The custom handler function is called with original sortField, escapedTableName and dirExpr.
+// It returns order expression, DISTINCT ON expression,
 // and a boolean value indicating whether the custom handler processed the sortField.
 func prepareOrderAndDistinctExpr(tableName string, sortField string, sortDir SortDirEnum, customOrderAndDistinct func(sortField, escapedTableName, dirExpr string) (string, string, bool)) (orderExpr string, distinctOnExpr string) {
 	var dirExpr string
