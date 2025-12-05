@@ -148,7 +148,7 @@ stages:
       - tools/
     fallback_keys:
       - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:11
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:12
   tags:
     - linux
     - aws
@@ -213,7 +213,7 @@ unittest_backend:
   extends: .base_build_debian
   stage: checks
   services:
-    - name: postgres:16-alpine
+    - name: postgres:18-alpine
       alias: postgres
   variables:
     # CGO is required by the race detector.
@@ -652,7 +652,7 @@ system_test:
       when: always
     - when: manual
       allow_failure: true
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:4
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
   cache:
     key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
     paths:
