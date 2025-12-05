@@ -553,9 +553,9 @@ gdlv_ver = 'v1.15.0'
 govulncheck_ver = 'v1.1.4'
 goswagger_ver = 'v0.31.0'
 protoc_ver = '31.1'
-protoc_gen_go_ver = 'v1.36.7'
-protoc_gen_go_grpc_ver = 'v1.5.1'
-nfpm_ver = 'v2.43.0'
+protoc_gen_go_ver = 'v1.36.10'
+protoc_gen_go_grpc_ver = 'v1.6.0'
+nfpm_ver = 'v2.44.0'
 golangcilint_ver = '2.3.1'
 
 # UI-related
