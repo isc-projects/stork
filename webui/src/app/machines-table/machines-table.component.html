@@ -154,8 +154,8 @@
                 ></p-tableHeaderCheckbox>
             </th>
             @if (authorizedMachinesDisplayed()) {
-                <th class="w-8rem" [pSortableColumn]="MachineSortField.StateHostname">
-                    <div class="flex gap-1">Hostname <p-sortIcon [field]="MachineSortField.StateHostname" /></div>
+                <th class="w-8rem" [pSortableColumn]="MachineSortField.Hostname">
+                    <div class="flex gap-1">Hostname <p-sortIcon [field]="MachineSortField.Hostname" /></div>
                 </th>
             } @else {
                 <th class="w-8rem">Hostname</th>
@@ -182,19 +182,19 @@
                 </app-help-tip>
             </th>
             <ng-container *ngIf="authorizedMachinesDisplayed()">
-                <th class="w-4rem" [pSortableColumn]="MachineSortField.StateAgentVersion">
+                <th class="w-4rem" [pSortableColumn]="MachineSortField.AgentVersion">
                     <div class="flex gap-1 white-space-nowrap">
-                        Agent Version <p-sortIcon [field]="MachineSortField.StateAgentVersion" />
+                        Agent Version <p-sortIcon [field]="MachineSortField.AgentVersion" />
                     </div>
                 </th>
                 <th class="w-4rem">App(s) Version</th>
                 <th class="w-7rem">Daemons</th>
-                <th class="w-4rem" [pSortableColumn]="MachineSortField.StateCpus">
-                    <div class="flex gap-1">CPUs <p-sortIcon [field]="MachineSortField.StateCpus" /></div>
+                <th class="w-4rem" [pSortableColumn]="MachineSortField.Cpus">
+                    <div class="flex gap-1">CPUs <p-sortIcon [field]="MachineSortField.Cpus" /></div>
                 </th>
-                <th class="w-8rem" [pSortableColumn]="MachineSortField.StateCpusLoad">
+                <th class="w-8rem" [pSortableColumn]="MachineSortField.CpusLoad">
                     <div class="flex gap-1 white-space-nowrap align-items-center">
-                        CPU Load <p-sortIcon [field]="MachineSortField.StateCpusLoad" />
+                        CPU Load <p-sortIcon [field]="MachineSortField.CpusLoad" />
                         <app-help-tip subject="CPU Load" id="cpu-load-help-button">
                             <p>
                                 These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15
@@ -210,14 +210,14 @@
                         </app-help-tip>
                     </div>
                 </th>
-                <th class="w-5rem" [pSortableColumn]="MachineSortField.StateMemory">
+                <th class="w-5rem" [pSortableColumn]="MachineSortField.Memory">
                     <div class="flex gap-1 white-space-nowrap">
-                        Total Memory [GB] <p-sortIcon [field]="MachineSortField.StateMemory" />
+                        Total Memory [GB] <p-sortIcon [field]="MachineSortField.Memory" />
                     </div>
                 </th>
-                <th class="w-7rem" [pSortableColumn]="MachineSortField.StateUsedMemory">
+                <th class="w-7rem" [pSortableColumn]="MachineSortField.UsedMemory">
                     <div class="flex gap-1 white-space-nowrap">
-                        Memory Usage [%] <p-sortIcon [field]="MachineSortField.StateUsedMemory" />
+                        Memory Usage [%] <p-sortIcon [field]="MachineSortField.UsedMemory" />
                     </div>
                 </th>
                 <th class="hiding-column w-6rem">Uptime</th>

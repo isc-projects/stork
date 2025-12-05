@@ -241,7 +241,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by subnet prefix asc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr("subnet.prefix"),
+			SortField: storkutil.Ptr("subnet"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -268,7 +268,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by subnet prefix desc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr("subnet.prefix"),
+			SortField: storkutil.Ptr("subnet"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -292,7 +292,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by local host hostname asc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldLocalHostHostname)),
+			SortField: storkutil.Ptr("hostname"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -317,7 +317,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by local host hostname desc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldLocalHostHostname)),
+			SortField: storkutil.Ptr("hostname"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -341,7 +341,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by identifier value asc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldHostIdentifierValue)),
+			SortField: storkutil.Ptr("identifier"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -362,7 +362,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by identifier value desc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldHostIdentifierValue)),
+			SortField: storkutil.Ptr("identifier"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -383,7 +383,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by reservation address asc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldReservationAddress)),
+			SortField: storkutil.Ptr("reservation_address"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -407,7 +407,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by reservation address desc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldReservationAddress)),
+			SortField: storkutil.Ptr("reservation_address"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -431,7 +431,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by reservation IPv6 prefix asc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldReservationIPv6Prefix)),
+			SortField: storkutil.Ptr("reservation_ipv6_prefix"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirAsc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)
@@ -457,7 +457,7 @@ func TestGetHostsSorting(t *testing.T) {
 	t.Run("sort by reservation IPv6 prefix desc", func(t *testing.T) {
 		ctx := context.Background()
 		params := dhcp.GetHostsParams{
-			SortField: storkutil.Ptr(string(dbmodel.SortFieldReservationIPv6Prefix)),
+			SortField: storkutil.Ptr("reservation_ipv6_prefix"),
 			SortDir:   storkutil.Ptr(int64(dbmodel.SortDirDesc)),
 		}
 		rsp := rapi.GetHosts(ctx, params)

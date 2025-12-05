@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -222,26 +223,10 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 	return addZones(dbi.(*pg.Tx), zones...)
 }
 
-// Sort field which may be used in GetZones.
-// If any of these fields is used, it means that the sorting must be done
-// based on a field of the related table. The "zone" table needs to be
-// JOINed first with other relation table. The relation is often of
-// "has-many" type (e.g. one zone may have many local_zones),
-// so after such JOIN the results will no longer have distinct zone IDs.
-// In order to have distinct IDs, a subquery is used in the JOIN operation, which
-// aggregates only one target relation record per zone ID.
-type ZoneSortField string
-
-// Valid sort fields.
-const (
-	SortFieldLocalZoneSerial ZoneSortField = "distinct_lz.serial"
-	SortFieldLocalZoneType   ZoneSortField = "distinct_lz.type"
-)
-
 // Helper function adding appropriate JOINs for sorting done in GetZones.
 // This code was extracted from GetZones due to gocyclo linter warning.
 func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
-	if ZoneSortField(sortField) == SortFieldLocalZoneSerial {
+	if models.ZoneSortField(sortField) == models.ZoneSortFieldSerial {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
 			ColumnExpr("MIN(serial) AS serial").
@@ -249,7 +234,7 @@ func addJoinForSorting(db pg.DBI, q *pg.Query, sortField string) *pg.Query {
 		q = q.Join("LEFT JOIN (?) AS distinct_lz", sortSubquery).JoinOn("zone.id = distinct_lz.zone_id")
 		q = q.Group("distinct_lz.serial")
 	}
-	if ZoneSortField(sortField) == SortFieldLocalZoneType {
+	if models.ZoneSortField(sortField) == models.ZoneSortFieldType {
 		sortSubquery := db.Model((*LocalZone)(nil)).
 			Column("zone_id").
 			ColumnExpr("MIN(type) AS type").
@@ -280,12 +265,16 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortD
 	}
 	// Order expression.
 	orderExpr, _ := prepareOrderAndDistinctExpr("zone", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
-		switch sortField {
-		case "rname":
+		switch models.ZoneSortField(sortField) {
+		case models.ZoneSortFieldRname:
 			// When sorting DNS zones by rname field, use the C collation.
 			orderExpr := fmt.Sprintf("%s.rname COLLATE \"C\" %s", escapedTableName, dirExpr)
 			distinctOnExpr := fmt.Sprintf("%s.rname", escapedTableName)
 			return orderExpr, distinctOnExpr, true
+		case models.ZoneSortFieldSerial:
+			return fmt.Sprintf("distinct_lz.serial %s", dirExpr), "distinct_lz.serial", true
+		case models.ZoneSortFieldType:
+			return fmt.Sprintf("distinct_lz.type %s", dirExpr), "distinct_lz.type", true
 		default:
 			return "", "", false
 		}

@@ -429,7 +429,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 
 	t.Run("sort by serial asc", func(t *testing.T) {
 		filter := &GetZonesFilter{}
-		zones, total, err := GetZones(db, filter, string(SortFieldLocalZoneSerial), SortDirAsc, ZoneRelationLocalZones)
+		zones, total, err := GetZones(db, filter, "serial", SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)
@@ -444,7 +444,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 
 	t.Run("sort by serial desc", func(t *testing.T) {
 		filter := &GetZonesFilter{}
-		zones, total, err := GetZones(db, filter, string(SortFieldLocalZoneSerial), SortDirDesc, ZoneRelationLocalZones)
+		zones, total, err := GetZones(db, filter, "serial", SortDirDesc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)
@@ -459,7 +459,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 
 	t.Run("sort by zone type asc", func(t *testing.T) {
 		filter := &GetZonesFilter{}
-		zones, total, err := GetZones(db, filter, string(SortFieldLocalZoneType), SortDirAsc, ZoneRelationLocalZones)
+		zones, total, err := GetZones(db, filter, "type", SortDirAsc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)
@@ -475,7 +475,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 
 	t.Run("sort by zone type desc", func(t *testing.T) {
 		filter := &GetZonesFilter{}
-		zones, total, err := GetZones(db, filter, string(SortFieldLocalZoneType), SortDirDesc, ZoneRelationLocalZones)
+		zones, total, err := GetZones(db, filter, "type", SortDirDesc, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 150, total)
 		require.Len(t, zones, 150)

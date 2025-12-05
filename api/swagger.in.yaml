@@ -215,27 +215,27 @@ definitions:
     type: string
     enum: &MACHINESORTFIELD
       - address
-      - state->'Hostname'
-      - state->'Cpus'
-      - state->'CpusLoad'
-      - state->'Memory'
-      - state->'UsedMemory'
-      - state->'AgentVersion'
       - last_visited_at
+      - hostname
+      - cpus
+      - cpus_load
+      - memory
+      - used_memory
+      - agent_version
 
   SubnetSortField:
     type: string
     enum: &SUBNETSORTFIELD
       - prefix
-      - shared_network.name
       - addr_utilization
       - total_addresses
       - assigned_addresses
       - total_pds
       - assigned_pds
       - pd_utilization
-      - distinct_ls.name
-      - distinct_ls.kea_subnet_id
+      - shared_network
+      - name
+      - kea_subnet_id
 
   NetworkSortField:
     type: string
@@ -269,18 +269,18 @@ definitions:
   HostSortField:
     type: string
     enum: &HOSTSORTFIELD
-      - subnet.prefix
-      - distinct_lh.hostname
-      - distinct_identifier.value
-      - distinct_reservation.address
-      - distinct_reservation.ipv6_prefix
+      - subnet
+      - hostname
+      - identifier
+      - reservation_address
+      - reservation_ipv6_prefix
 
   ZoneSortField:
     type: string
     enum: &ZONESORTFIELD
       - rname
-      - distinct_lz.serial
-      - distinct_lz.type
+      - serial
+      - type
 
   $include: users-defs.yaml
   $include: services-defs.yaml

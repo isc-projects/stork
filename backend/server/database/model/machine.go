@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -10,6 +11,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork/server/gen/models"
 )
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
@@ -260,7 +262,24 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderAndDistinctExpr("machine", sortField, sortDir, nil)
+	ordExpr, _ := prepareOrderAndDistinctExpr("machine", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+		switch models.MachineSortField(sortField) {
+		case models.MachineSortFieldHostname:
+			return fmt.Sprintf("state->'Hostname' %s", dirExpr), "state->'Hostname'", true
+		case models.MachineSortFieldCpus:
+			return fmt.Sprintf("state->'Cpus' %s", dirExpr), "state->'Cpus'", true
+		case models.MachineSortFieldCpusLoad:
+			return fmt.Sprintf("state->'CpusLoad' %s", dirExpr), "state->'CpusLoad'", true
+		case models.MachineSortFieldMemory:
+			return fmt.Sprintf("state->'Memory' %s", dirExpr), "state->'Memory'", true
+		case models.MachineSortFieldUsedMemory:
+			return fmt.Sprintf("state->'UsedMemory' %s", dirExpr), "state->'UsedMemory'", true
+		case models.MachineSortFieldAgentVersion:
+			return fmt.Sprintf("state->'AgentVersion' %s", dirExpr), "state->'AgentVersion'", true
+		default:
+			return "", "", false
+		}
+	})
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

@@ -317,26 +317,26 @@
     </ng-template>
     <ng-template #header>
         <tr>
-            <th style="width: 28%" [pSortableColumn]="HostSortField.DistinctIdentifierValue">
+            <th style="width: 28%" [pSortableColumn]="HostSortField.Identifier">
                 <div class="flex gap-1 white-space-nowrap">
-                    DHCP Identifiers<p-sortIcon [field]="HostSortField.DistinctIdentifierValue" />
+                    DHCP Identifiers<p-sortIcon [field]="HostSortField.Identifier" />
                 </div>
             </th>
-            <th style="width: 18%" [pSortableColumn]="HostSortField.DistinctReservationAddress">
+            <th style="width: 18%" [pSortableColumn]="HostSortField.ReservationAddress">
                 <div class="flex gap-1 white-space-nowrap">
-                    IP Addresses<p-sortIcon [field]="HostSortField.DistinctReservationAddress" />
+                    IP Addresses<p-sortIcon [field]="HostSortField.ReservationAddress" />
                 </div>
             </th>
-            <th style="width: 14%" [pSortableColumn]="HostSortField.DistinctReservationIpv6Prefix">
+            <th style="width: 14%" [pSortableColumn]="HostSortField.ReservationIpv6Prefix">
                 <div class="flex gap-1 white-space-nowrap">
-                    IPv6 Prefixes<p-sortIcon [field]="HostSortField.DistinctReservationIpv6Prefix" />
+                    IPv6 Prefixes<p-sortIcon [field]="HostSortField.ReservationIpv6Prefix" />
                 </div>
             </th>
-            <th style="width: 14%" [pSortableColumn]="HostSortField.DistinctLhHostname">
-                <div class="flex gap-1">Hostname<p-sortIcon [field]="HostSortField.DistinctLhHostname" /></div>
+            <th style="width: 14%" [pSortableColumn]="HostSortField.Hostname">
+                <div class="flex gap-1">Hostname<p-sortIcon [field]="HostSortField.Hostname" /></div>
             </th>
-            <th style="width: 12%" [pSortableColumn]="HostSortField.SubnetPrefix">
-                <div class="flex gap-1">Global/Subnet<p-sortIcon [field]="HostSortField.SubnetPrefix" /></div>
+            <th style="width: 12%" [pSortableColumn]="HostSortField.Subnet">
+                <div class="flex gap-1">Global/Subnet<p-sortIcon [field]="HostSortField.Subnet" /></div>
             </th>
             <th style="width: 14%">App Name</th>
         </tr>

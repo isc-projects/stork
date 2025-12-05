@@ -16,6 +16,7 @@ import (
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -667,22 +668,6 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	return subnets, nil
 }
 
-// Sort field which may be used in GetSubnetsByPage.
-// If any of these fields is used, it means that the sorting must be done
-// based on a field of the related table. The "subnet" table needs to be
-// JOINed first with other relation table. The relation is often of
-// "has-many" type (e.g. one subnet may have many local_subnets),
-// so after such JOIN the results will no longer have distinct subnet IDs.
-// In order to have distinct IDs, a subquery is used in the JOIN operation, which
-// aggregates only one target relation record per subnet ID.
-type SubnetSortField string
-
-// Valid sort fields.
-const (
-	SortFieldLocalSubnetName        SubnetSortField = "distinct_ls.name"
-	SortFieldLocalSubnetKeaSubnetID SubnetSortField = "distinct_ls.kea_subnet_id"
-)
-
 // Container for values filtering subnets fetched by page.
 type SubnetsByPageFilters struct {
 	// TODO: Code implemented in below line is a temporary solution for virtual applications.
@@ -744,6 +729,21 @@ func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, d
 		orderByExpr := fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
 		distinctOnExpr := fmt.Sprintf("%s, %s", familyExpr, statsExpr)
 		return orderByExpr, distinctOnExpr, true
+	case string(models.SubnetSortFieldSharedNetwork):
+		if strings.Contains(escapedTableName, "subnet") {
+			return fmt.Sprintf("shared_network.name %s", dirExpr), "shared_network.name", true
+		}
+		return "", "", false
+	case string(models.SubnetSortFieldName):
+		if strings.Contains(escapedTableName, "subnet") {
+			return fmt.Sprintf("distinct_ls.name %s", dirExpr), "distinct_ls.name", true
+		}
+		return "", "", false
+	case string(models.SubnetSortFieldKeaSubnetID):
+		if strings.Contains(escapedTableName, "subnet") {
+			return fmt.Sprintf("distinct_ls.kea_subnet_id %s", dirExpr), "distinct_ls.kea_subnet_id", true
+		}
+		return "", "", false
 	default:
 		return "", "", false
 	}
@@ -784,7 +784,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.Join("LEFT JOIN address_pool AS ap ON ls.id = ap.local_subnet_id")
 	}
 	// Sort by subnet name.
-	if SubnetSortField(sortField) == SortFieldLocalSubnetName {
+	if models.SubnetSortField(sortField) == models.SubnetSortFieldName {
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).
 			Column("subnet_id").
 			ColumnExpr("array_agg(user_context->'subnet-name' ORDER BY user_context->'subnet-name') AS name").
@@ -793,7 +793,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.Join("LEFT JOIN (?) AS distinct_ls", sortSubquery).JoinOn("subnet.id = distinct_ls.subnet_id")
 	}
 	// Sort by Kea subnet id.
-	if SubnetSortField(sortField) == SortFieldLocalSubnetKeaSubnetID {
+	if models.SubnetSortField(sortField) == models.SubnetSortFieldKeaSubnetID {
 		sortSubquery := dbi.Model((*LocalSubnet)(nil)).Column("subnet_id").ColumnExpr("MIN(local_subnet_id) AS kea_subnet_id").Group("subnet_id")
 		q = q.Join("INNER JOIN (?) AS distinct_ls", sortSubquery).JoinOn("subnet.id = distinct_ls.subnet_id")
 	}
