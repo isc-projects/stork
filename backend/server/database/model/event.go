@@ -103,7 +103,7 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level EventLevel, dae
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderExpr("event", sortField, sortDir)
+	ordExpr, _ := prepareOrderAndDistinctExpr("event", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

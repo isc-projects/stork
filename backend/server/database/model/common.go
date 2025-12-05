@@ -21,6 +21,8 @@ const (
 )
 
 // Defines custom sort field values.
+// Sorting by any of these custom sort fields requires more complex syntax of the ORDER BY and DISTINCT ON expressions.
+// E.g., sorting by more than one column is required, or Postgresql function must be used in these expressions.
 type CustomSortFieldEnum string
 
 // Valid values of the enum.
@@ -42,7 +44,9 @@ const (
 // in the result.
 // It returns also DISTINCT ON expression that is often used in queries together with ORDER BY.
 // DISTINCT ON must contain the same fields that are used for sorting.
-func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (orderExpr string, distinctOnExpr string) {
+// This function handles CustomSortFieldEnum sortFields (all of them have "custom_" prefix) in a special way.
+// Sorting by any of these custom sort fields requires more complex syntax of the ORDER BY and DISTINCT ON expressions.
+func prepareOrderAndDistinctExpr(tableName string, sortField string, sortDir SortDirEnum) (orderExpr string, distinctOnExpr string) {
 	orderExpr = ""
 	var dirExpr string
 	switch sortDir {
@@ -64,6 +68,8 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 				// This sort field requires custom handling.
 				statsExpr := ""
 				switch CustomSortFieldEnum(sortField) {
+				// Below cases are common for custom sorting in "subnet" and "shared_network" tables.
+				// They compute statsExpr required for sorting by IPv6 prefix delegation related fields.
 				case SortFieldTotalPDs:
 					statsExpr = fmt.Sprintf("(%s.stats->>'total-pds')::numeric", escapedTableName)
 				case SortFieldAssignedPDs:
@@ -71,16 +77,20 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 				case SortFieldPDUtilization:
 					statsExpr = fmt.Sprintf("%s.pd_utilization", escapedTableName)
 				default:
-					// NO-OP
+					// NO-OP for other custom sort fields - statsExpr is not used.
 				}
 				switch CustomSortFieldEnum(sortField) {
 				case SortFieldTotalAddresses:
+					// Sort subnets and shared networks by total addresses no matter the IP v4/v6 family.
 					sortField = fmt.Sprintf("COALESCE(%[1]s.stats->>'total-nas', %[1]s.stats->>'total-addresses')::numeric", escapedTableName)
 					distinctOnExpr += ", " + sortField
 				case SortFieldAssignedAddresses:
+					// Sort subnets and shared networks by assigned addresses no matter the IP v4/v6 family.
 					sortField = fmt.Sprintf("COALESCE(%[1]s.stats->>'assigned-nas', %[1]s.stats->>'assigned-addresses')::numeric", escapedTableName)
 					distinctOnExpr += ", " + sortField
 				case SortFieldTotalPDs, SortFieldAssignedPDs, SortFieldPDUtilization:
+					// When sorting subnets and shared networks by IPv6 prefix delegation related statistics, sort by the IP v4/v6 family first.
+					// This will handle IPv4 records depending on sorting order in a similar way to ASC NULLS FIRST/DESC NULLS LAST common sorting rule.
 					familyExpr := fmt.Sprintf("%s.inet_family", escapedTableName)
 					if tableName == "subnet" {
 						familyExpr = fmt.Sprintf("family(%s.prefix)", escapedTableName)
@@ -88,12 +98,15 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 					sortField = fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
 					distinctOnExpr += fmt.Sprintf(", %s, %s", familyExpr, statsExpr)
 				case SortFieldRName:
+					// When sorting DNS zones by rname field, use the C collation.
 					sortField = fmt.Sprintf("%s.rname COLLATE \"C\"", escapedTableName)
 					distinctOnExpr += fmt.Sprintf(", %s.rname", escapedTableName)
 				case SortFieldEventText:
+					// When sorting events by text, apply the second sort by created_at field.
 					sortField = fmt.Sprintf("%[1]s.text %[2]s, %[1]s.created_at", escapedTableName, dirExpr)
 					distinctOnExpr += fmt.Sprintf(", %s.text", escapedTableName)
 				case SortFieldEventLevel:
+					// When sorting events by level, apply the second sort by created_at field.
 					sortField = fmt.Sprintf("%[1]s.level %[2]s, %[1]s.created_at", escapedTableName, dirExpr)
 					distinctOnExpr += fmt.Sprintf(", %s.level", escapedTableName)
 				}
@@ -106,7 +119,7 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) (
 		orderExpr = escapedTableName + ".id "
 	}
 	orderExpr += dirExpr
-	return
+	return orderExpr, distinctOnExpr
 }
 
 // Convenience function which inserts new entry into a database or updates an

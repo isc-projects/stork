@@ -278,7 +278,7 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortD
 		q = q.Relation(string(relation))
 	}
 	// Order expression.
-	orderExpr, _ := prepareOrderExpr("zone", sortField, sortDir)
+	orderExpr, _ := prepareOrderAndDistinctExpr("zone", sortField, sortDir)
 	q = q.OrderExpr(orderExpr)
 	q = addJoinForSorting(db, q, sortField)
 

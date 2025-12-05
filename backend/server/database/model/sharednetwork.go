@@ -358,7 +358,7 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, daemonID, family int6
 	q := dbi.Model(&networks)
 
 	// prepare sorting expression and distinct on expression to include sort field, otherwise distinct on will fail
-	orderExpr, distinctOnFields := prepareOrderExpr("shared_network", sortField, sortDir)
+	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("shared_network", sortField, sortDir)
 	q = q.DistinctOn(distinctOnFields)
 
 	q = q.Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints)).

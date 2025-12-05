@@ -448,7 +448,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 
 	// Prepare sorting expression and distinct on expression to include sort field,
 	// otherwise distinct on will fail.
-	orderExpr, distinctOnFields := prepareOrderExpr("host", sortField, sortDir)
+	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("host", sortField, sortDir)
 	q = q.DistinctOn(distinctOnFields)
 
 	// Join to the local host table.
