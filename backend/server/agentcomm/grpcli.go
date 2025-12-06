@@ -1043,13 +1043,15 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.Zone]
 		if stream, err = agent.connector.createClient().ReceiveZones(ctx, request); err != nil {
+			err = errors.WithStack(err)
 			if err = agent.connector.connect(); err == nil {
 				stream, err = agent.connector.createClient().ReceiveZones(ctx, request)
+				err = errors.WithStack(err)
 			}
 		}
 		if err != nil {
 			// Cannot open the stream.
-			err = errors.Wrap(err, "failed to open a gRPC connection for receiving zones from the agent")
+			err = errors.WithMessage(err, "failed to open a gRPC connection for receiving zones from the agent")
 			_ = yield(nil, err)
 			return
 		}
