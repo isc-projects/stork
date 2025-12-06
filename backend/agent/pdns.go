@@ -99,7 +99,7 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 	// STEP 1: Let's try to parse --chroot, --config-dir and --config-name parameters passed to pdns_server.
 	log.Debug("Looking for PowerDNS config file in --config-dir and --config-name parameters of a running process.")
 
-	var configDir, configName, configPath, rootPrefix string
+	var configDir, configName, configPath, chrootDir string
 	if len(match) >= 3 {
 		// The command line contains parameters. Check if they specify config
 		// directory or config name.
@@ -112,7 +112,7 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 			}
 			switch key {
 			case "--chroot":
-				rootPrefix = strings.TrimRight(value, "/")
+				chrootDir = strings.TrimRight(value, "/")
 			case "--config-dir":
 				configDir = strings.TrimRight(value, "/")
 			case "--config-name":
@@ -123,10 +123,10 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 	log.WithFields(log.Fields{
 		"config-dir":  configDir,
 		"config-name": configName,
-		"chroot":      rootPrefix,
+		"chroot":      chrootDir,
 	}).Debug("PowerDNS was started with the following command line arguments")
 
-	if rootPrefix != "" && !filepath.IsAbs(rootPrefix) {
+	if chrootDir != "" && !filepath.IsAbs(chrootDir) {
 		// If the chroot directory is relative, we can use cwd as chroot because
 		// cwd is absolute and points to the chroot directory.
 		cwd, err := p.getCwd()
@@ -135,8 +135,8 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 			// We can't reliably proceed.
 			return nil, errors.Wrapf(err, "failed to get PowerDNS current working directory to determine absolute chroot path")
 		}
-		log.Debugf("The PowerDNS chroot directory (%s) is relative. Using current working directory (%s) as chroot", rootPrefix, cwd)
-		rootPrefix = cwd
+		log.Debugf("The PowerDNS chroot directory (%s) is relative. Using current working directory (%s) as chroot", chrootDir, cwd)
+		chrootDir = cwd
 	}
 
 	// The default config file name is pdns.conf. The name can be overridden
@@ -153,7 +153,7 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 	if configDir != "" {
 		if !filepath.IsAbs(configDir) {
 			// The config directory location is relative.
-			if rootPrefix != "" {
+			if chrootDir != "" {
 				// Using a relative config directory with chroot is not supported. Suppose
 				// we start the server like this:
 				// pdns_server --chroot=/home/frank/chroot --config-dir=frank/chroot/etc.
@@ -163,7 +163,7 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 				// rather point me to the chroot directory, not the directory from which the
 				// process was started. We still can use other methods to detect the config file
 				// but let's log the issue.
-				log.Warnf("Config directory (%s) is relative while chroot is set (%s)", configDir, rootPrefix)
+				log.Warnf("Config directory (%s) is relative while chroot is set (%s)", configDir, chrootDir)
 				log.Warn("Unable to match relative config directory against chroot directory. Falling back to other possible locations")
 			} else {
 				// The config directory location is relative but the chroot is not set.
@@ -193,14 +193,14 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 	if explicitConfigPath != "" {
 		var candidatePath string
 		log.Debugf("Looking for PowerDNS config in the location explicitly specified in settings: %s", explicitConfigPath)
-		if rootPrefix != "" {
-			rel, err := filepath.Rel(rootPrefix, explicitConfigPath)
+		if chrootDir != "" {
+			rel, err := filepath.Rel(chrootDir, explicitConfigPath)
 			if err != nil || strings.HasPrefix(rel, "..") {
 				// The explicit config path does not belong to the chroot directory when
 				// it is impossible to build a relative path between the two (error case).
 				// If the explicit path is a parent of the chroot directory, it is also
 				// wrong (the double dot case).
-				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", rootPrefix, explicitConfigPath)
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, explicitConfigPath)
 			} else {
 				candidatePath = explicitConfigPath
 			}
@@ -226,7 +226,7 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 	log.Debugf("Looking for PowerDNS config file in typical locations")
 	for _, location := range getPotentialPDNSConfLocations() {
 		// Concat with root or chroot.
-		path := filepath.Join(rootPrefix, location, configFileName)
+		path := filepath.Join(chrootDir, location, configFileName)
 		log.Debugf("Checking if config file exists: %s", path)
 		if executor.IsFileExist(path) {
 			return &path, nil

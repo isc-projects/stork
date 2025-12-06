@@ -104,9 +104,9 @@ func NewParser() *Parser {
 }
 
 // Parses the BIND 9 configuration from a file using a custom parser.
-func (p *Parser) parse(filename string, rootPrefix string, fileReader io.Reader, parser *participle.Parser[Config]) (*Config, error) {
+func (p *Parser) parse(filename string, chrootDir string, fileReader io.Reader, parser *participle.Parser[Config]) (*Config, error) {
 	// Run the parser.
-	configPath := filepath.Join(rootPrefix, filename)
+	configPath := filepath.Join(chrootDir, filename)
 	config, err := parser.Parse(configPath, fileReader)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse Bind9 config file: %s", filename)
@@ -115,13 +115,13 @@ func (p *Parser) parse(filename string, rootPrefix string, fileReader io.Reader,
 	// cycles in the include statements.
 	config.sourcePath = filepath.Clean(filename)
 	if sourcePath, err := filepath.Abs(configPath); err == nil {
-		// Strip the root prefix from the source path.
-		if rootPrefix != "" {
-			config.rootPrefix = rootPrefix
-			rootPrefixAbs, err := filepath.Abs(rootPrefix)
+		// Strip the chroot directory from the source path.
+		if chrootDir != "" {
+			config.chrootDir = chrootDir
+			chrootDirAbs, err := filepath.Abs(chrootDir)
 			if err == nil {
-				config.rootPrefix = rootPrefixAbs
-				sourcePath = strings.TrimPrefix(sourcePath, rootPrefixAbs)
+				config.chrootDir = chrootDirAbs
+				sourcePath = strings.TrimPrefix(sourcePath, chrootDirAbs)
 			}
 		}
 		config.sourcePath = sourcePath
@@ -131,16 +131,16 @@ func (p *Parser) parse(filename string, rootPrefix string, fileReader io.Reader,
 
 // Parses the BIND 9 configuration from a file. It accepts a path to the file
 // and a root of chroot if the configuration resides in a chroot.
-func (p *Parser) ParseFile(filename string, rootPrefix string) (*Config, error) {
-	file, err := os.Open(path.Join(rootPrefix, filename))
+func (p *Parser) ParseFile(filename string, chrootDir string) (*Config, error) {
+	file, err := os.Open(path.Join(chrootDir, filename))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open BIND 9 config file: %s", filename)
 	}
 	defer file.Close()
-	return p.Parse(filename, rootPrefix, file)
+	return p.Parse(filename, chrootDir, file)
 }
 
 // Parses the BIND 9 configuration.
-func (p *Parser) Parse(filename string, rootPrefix string, fileReader io.Reader) (*Config, error) {
-	return p.parse(filename, rootPrefix, fileReader, bind9Parser)
+func (p *Parser) Parse(filename string, chrootDir string, fileReader io.Reader) (*Config, error) {
+	return p.parse(filename, chrootDir, fileReader, bind9Parser)
 }

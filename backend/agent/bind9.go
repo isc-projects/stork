@@ -29,7 +29,7 @@ var (
 // An interface for parsing BIND 9 configuration files.
 // It is mocked in the tests.
 type bind9FileParser interface {
-	ParseFile(path string, rootPrefix string) (*bind9config.Config, error)
+	ParseFile(path string, chrootDir string) (*bind9config.Config, error)
 }
 
 // It holds common and BIND 9 specific runtime information.
@@ -232,18 +232,18 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	namedDir := match[1]
 	bind9Params := match[2]
 	// Path to actual chroot (empty if not used).
-	rootPrefix := ""
+	chrootDir := ""
 	// Absolute path from the actual root or chroot.
 	bind9ConfPath := ""
 
 	// Look for the chroot directory.
 	m := bind9ChrootPattern.FindStringSubmatch(bind9Params)
 	if m != nil {
-		rootPrefix = strings.TrimRight(m[1], "/")
+		chrootDir = strings.TrimRight(m[1], "/")
 
 		// The cwd path is already prefixed with the chroot directory
 		// because the /proc/(pid)/cwd is absolute.
-		cwd = strings.TrimPrefix(cwd, rootPrefix)
+		cwd = strings.TrimPrefix(cwd, chrootDir)
 	}
 
 	// Look for config file in cmd params.
@@ -268,11 +268,11 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		if explicitConfigPath != "" {
 			log.Debugf("Looking for BIND 9 config in %s as explicitly specified in settings.", explicitConfigPath)
 			switch {
-			case !strings.HasPrefix(explicitConfigPath, rootPrefix):
-				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", rootPrefix, explicitConfigPath)
+			case !strings.HasPrefix(explicitConfigPath, chrootDir):
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, explicitConfigPath)
 			case executor.IsFileExist(explicitConfigPath):
-				// Trim the root prefix.
-				bind9ConfPath = explicitConfigPath[len(rootPrefix):]
+				// Trim the chroot directory.
+				bind9ConfPath = explicitConfigPath[len(chrootDir):]
 			default:
 				log.Errorf("File explicitly specified in settings (%s) not found or unreadable.", explicitConfigPath)
 			}
@@ -308,7 +308,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		// config path not found in cmdline params so try to guess its location
 		for _, f := range getPotentialNamedConfLocations() {
 			// Concat with root or chroot.
-			fullPath := path.Join(rootPrefix, f, "named.conf")
+			fullPath := path.Join(chrootDir, f, "named.conf")
 			log.Debugf("Looking for BIND 9 config file in %s", fullPath)
 			if executor.IsFileExist(fullPath) {
 				bind9ConfPath = f
@@ -323,7 +323,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	}
 
 	// Parse the BIND 9 config file.
-	bind9Config, err := parser.ParseFile(bind9ConfPath, rootPrefix)
+	bind9Config, err := parser.ParseFile(bind9ConfPath, chrootDir)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to parse BIND 9 config file")
 	}
@@ -343,8 +343,8 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	// rndc.key file typically contains keys to be used for rndc authentication.
 	var rndcConfig *bind9config.Config
 	rndcKeyPath := filepath.Join(filepath.Dir(bind9ConfPath), RndcKeyFile)
-	if executor.IsFileExist(path.Join(rootPrefix, rndcKeyPath)) {
-		rndcConfig, err = parser.ParseFile(rndcKeyPath, rootPrefix)
+	if executor.IsFileExist(path.Join(chrootDir, rndcKeyPath)) {
+		rndcConfig, err = parser.ParseFile(rndcKeyPath, chrootDir)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to parse BIND 9 rndc key file")
 		}
@@ -356,7 +356,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		return nil, errors.WithMessage(err, "failed to get BIND 9 rndc credentials")
 	}
 	if !enabled {
-		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", path.Join(rootPrefix, bind9ConfPath))
+		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", path.Join(chrootDir, bind9ConfPath))
 	}
 
 	rndcKey := ""
@@ -404,7 +404,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	err = rndcClient.DetermineDetails(
 		baseNamedDir,
 		// rndc client doesn't support chroot.
-		path.Join(rootPrefix, path.Dir(bind9ConfPath)),
+		path.Join(chrootDir, path.Dir(bind9ConfPath)),
 		*ctrlAddress,
 		*ctrlPort,
 		ctrlKey,

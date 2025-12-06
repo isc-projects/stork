@@ -22,7 +22,7 @@ type Config struct {
 	// If the configuration resides in a chroot, the path is relative to the chroot.
 	sourcePath string
 	// The absolute path of the chroot directory. Empty string means no chroot.
-	rootPrefix string
+	chrootDir string
 	// The configuration contains a list of Statements separated by semicolons.
 	Statements []*Statement `parser:"( @@ ';'* )*"`
 }
@@ -562,7 +562,7 @@ func (c *Config) Expand() (*Config, error) {
 				continue
 			}
 			// Parse the included file.
-			parsedInclude, err := NewParser().ParseFile(path, c.rootPrefix)
+			parsedInclude, err := NewParser().ParseFile(path, c.chrootDir)
 			if err != nil {
 				return nil, err
 			}

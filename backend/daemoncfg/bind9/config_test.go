@@ -1153,7 +1153,7 @@ func TestConfigExpand(t *testing.T) {
 			}}
 
 			if tc.isChroot {
-				config.rootPrefix = sb.BasePath
+				config.chrootDir = sb.BasePath
 				sourcePathAbs = "/dir/source.file"
 				includePathAbs = "/dir/include.file"
 			}

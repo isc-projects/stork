@@ -206,7 +206,7 @@ func TestParseFile(t *testing.T) {
 	require.NotNil(t, cfg)
 	configPathAbs, _ := filepath.Abs("testdata/dir/named.conf")
 	require.Equal(t, configPathAbs, cfg.sourcePath)
-	require.Empty(t, cfg.rootPrefix)
+	require.Empty(t, cfg.chrootDir)
 
 	// Expand included files.
 	cfg, err = cfg.Expand()
@@ -224,7 +224,7 @@ func TestParseFileChroot(t *testing.T) {
 	require.NotNil(t, cfg)
 	require.Equal(t, "/dir/named.conf", cfg.sourcePath)
 	testdataPathAbs, _ := filepath.Abs("testdata")
-	require.Equal(t, testdataPathAbs, cfg.rootPrefix)
+	require.Equal(t, testdataPathAbs, cfg.chrootDir)
 
 	// Expand included files.
 	cfg, err = cfg.Expand()
