@@ -16,9 +16,10 @@ const DefaultViewName = "_default"
 // top-level statements. The statements typically contain clauses with
 // configuration elements.
 type Config struct {
-	// The absolute source path of the configuration file. Note that it
-	// may be not set if getting the absolute path failed. If the configuration
-	// resides in a chroot, the path is relative to the chroot.
+	// The source path of the configuration file. It is absolute if possible
+	// (i.e. current working directory is available). Otherwise, it may be
+	// relative.
+	// If the configuration resides in a chroot, the path is relative to the chroot.
 	sourcePath string
 	// The absolute path of the chroot directory. Empty string means no chroot.
 	rootPrefix string

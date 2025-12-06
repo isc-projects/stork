@@ -113,7 +113,7 @@ func (p *Parser) parse(filename string, rootPrefix string, fileReader io.Reader,
 	}
 	// Optionally set the absolute source path. If it may be used for detecting
 	// cycles in the include statements.
-	config.sourcePath = filename
+	config.sourcePath = filepath.Clean(filename)
 	if sourcePath, err := filepath.Abs(configPath); err == nil {
 		// Strip the root prefix from the source path.
 		if rootPrefix != "" {
