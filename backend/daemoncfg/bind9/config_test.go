@@ -1,10 +1,13 @@
 package bind9config
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 )
 
 // Test getting the source path of the configuration file.
@@ -1093,4 +1096,108 @@ func TestGetStatisticsChannelCredentialsNoStatisticsChannels(t *testing.T) {
 	require.Nil(t, address)
 	require.Nil(t, port)
 	require.NoError(t, err)
+}
+
+// Test various combinations of absolute and relative paths for source config file,
+// included file, and cyclic include file, both in chroot and non-chroot
+// environments. The config should be expanded correctly in all cases without
+// errors.
+func TestConfigExpand(t *testing.T) {
+	type testCase struct {
+		isSourcePathAbs  bool
+		isIncludePathAbs bool
+		isCyclePathAbs   bool
+		isChroot         bool
+	}
+
+	// String representation of the test case for easier identification in case
+	// of failure.
+	stringifyTestCase := func(tc testCase) string {
+		return fmt.Sprintf("SourcePathAbs=%t, IncludePathAbs=%t, CyclePathAbs=%t, IsChroot=%t",
+			tc.isSourcePathAbs, tc.isIncludePathAbs, tc.isCyclePathAbs, tc.isChroot)
+	}
+
+	// Generate test case based on the integer. There are 4 boolean parameters,
+	// so we can represent each combination as a number from 0 to 15, where each
+	// bit represents one of the boolean parameters.
+	newTestCase := func(seed int) testCase {
+		return testCase{
+			isSourcePathAbs:  seed&1 == 0,
+			isIncludePathAbs: seed&2 == 0,
+			isCyclePathAbs:   seed&4 == 0,
+			isChroot:         seed&8 == 0,
+		}
+	}
+
+	for i := range 16 {
+		tc := newTestCase(i)
+
+		t.Run(stringifyTestCase(tc), func(t *testing.T) {
+			// Arrange
+			sb := testutil.NewSandbox()
+			defer sb.Close()
+
+			sourcePathInSandbox, _ := sb.Join("dir/source.file")
+			sourcePathAbs := sourcePathInSandbox
+			sourcePathRel := "dir/source.file"
+			sourcePathRelToItsDir := "source.file"
+
+			includePathAbs, _ := sb.Write("dir/include.file", "controls { };")
+			includePathRel := "include.file"
+
+			config := Config{Statements: []*Statement{
+				// Standard include statement to be expanded.
+				{Include: &Include{}},
+				// Cyclic include to test that cycles are detected.
+				{Include: &Include{}},
+			}}
+
+			if tc.isChroot {
+				config.rootPrefix = sb.BasePath
+				sourcePathAbs = "/dir/source.file"
+				includePathAbs = "/dir/include.file"
+			}
+
+			if tc.isSourcePathAbs {
+				config.sourcePath = sourcePathAbs
+			} else {
+				config.sourcePath = sourcePathRel
+				// We were able to read the config file by a relative path, it
+				// means that the parser is running in the directory where
+				// the source file is located. Change the current working
+				// directory to the sandbox base path to simulate this.
+				cwd, _ := os.Getwd()
+				defer os.Chdir(cwd)
+				os.Chdir(sb.BasePath)
+			}
+
+			if tc.isIncludePathAbs {
+				config.Statements[0].Include = &Include{Path: includePathAbs}
+			} else {
+				config.Statements[0].Include = &Include{Path: includePathRel}
+			}
+
+			if tc.isCyclePathAbs {
+				config.Statements[1].Include = &Include{Path: sourcePathAbs}
+			} else {
+				config.Statements[1].Include = &Include{Path: sourcePathRelToItsDir}
+			}
+			os.WriteFile(
+				sourcePathInSandbox,
+				[]byte(fmt.Sprintf(`include "%s";`, config.Statements[1].Include.Path)),
+				0644,
+			)
+
+			// Act
+			expanded, err := config.Expand()
+
+			// Assert
+			require.NoError(t, err)
+			require.Len(t, expanded.Statements, 2)
+			require.NotNil(t, expanded.Statements[0].Controls)
+			require.NotNil(t, expanded.Statements[1].Include)
+			// The include path should remain unchanged.
+			require.Equal(t, config.Statements[1].Include, expanded.Statements[1].Include)
+		})
+	}
 }

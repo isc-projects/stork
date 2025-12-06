@@ -544,7 +544,7 @@ func (c *Config) Expand() (*Config, error) {
 			// Found an include statement.
 			path := statement.Include.Path
 			if !filepath.IsAbs(path) {
-				// Use the absolute path to the config file.
+				// The path is relative to the base directory.
 				path = filepath.Join(baseDir, path)
 			}
 			// Clean the path so it may be compared with the source file path to
@@ -555,6 +555,8 @@ func (c *Config) Expand() (*Config, error) {
 				// One could consider returning an error but we want the parser to be
 				// liberal. Stork wants to be able to look into the file contents rather
 				// than validate it.
+				// Note that this check is not necessary because the expand
+				// function is not called recursively.
 				expanded.Statements = append(expanded.Statements, statement)
 				continue
 			}
