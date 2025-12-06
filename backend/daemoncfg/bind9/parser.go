@@ -106,7 +106,7 @@ func NewParser() *Parser {
 // Parses the BIND 9 configuration from a file using a custom parser.
 func (p *Parser) parse(filename string, rootPrefix string, fileReader io.Reader, parser *participle.Parser[Config]) (*Config, error) {
 	// Run the parser.
-	configPath := path.Join(rootPrefix, filename)
+	configPath := filepath.Join(rootPrefix, filename)
 	config, err := parser.Parse(configPath, fileReader)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse Bind9 config file: %s", filename)
