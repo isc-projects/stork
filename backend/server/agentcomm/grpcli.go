@@ -1049,7 +1049,7 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 		}
 		if err != nil {
 			// Cannot open the stream.
-			err = errors.Wrap(err, "failed to open zone stream")
+			err = errors.Wrap(err, "failed to open a gRPC connection for receiving zones from the agent")
 			_ = yield(nil, err)
 			return
 		}
