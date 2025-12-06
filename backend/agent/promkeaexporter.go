@@ -66,7 +66,7 @@ type subnetLookup interface {
 
 // An object that implements this interface can send requests to the Kea CA.
 type keaCommandSender interface {
-	sendCommand(ctx context.Context, command keactrl.OverridableCommand, response any) error
+	sendCommand(ctx context.Context, command command, response any) error
 }
 
 // Subnet lookup that fetches the subnet data only if necessary.

@@ -31,8 +31,14 @@ type keaDaemon struct {
 	connector keaConnector // to communicate with Kea daemon
 }
 
+// Interface to a Kea command that allows overriding the daemon list.
+type command interface {
+	keactrl.SerializableCommand
+	SetDaemonsList(daemons []daemonname.Name)
+}
+
 // Sends a command to Kea and returns a response.
-func (d *keaDaemon) sendCommand(ctx context.Context, command keactrl.OverridableCommand, response any) error {
+func (d *keaDaemon) sendCommand(ctx context.Context, command command, response any) error {
 	if d.connector == nil {
 		return errors.New("cannot send command to Kea because no control access point is configured")
 	}

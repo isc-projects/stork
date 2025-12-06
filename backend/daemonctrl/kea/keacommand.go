@@ -42,11 +42,7 @@ type SerializableCommand interface {
 	Marshal() ([]byte, error)
 }
 
-// Interface to a Kea command that allows overriding the daemon list.
-type OverridableCommand interface {
-	SerializableCommand
-	SetDaemonsList(daemons []daemonname.Name)
-}
+
 
 // Represents a command sent to Kea including command name, daemons list
 // (service list in Kea terms) and arguments.
