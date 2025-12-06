@@ -1185,7 +1185,7 @@ func TestConfigExpand(t *testing.T) {
 			os.WriteFile(
 				sourcePathInSandbox,
 				[]byte(fmt.Sprintf(`include "%s";`, config.Statements[1].Include.Path)),
-				0644,
+				0o644,
 			)
 
 			// Act

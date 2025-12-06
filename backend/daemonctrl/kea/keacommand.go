@@ -42,8 +42,6 @@ type SerializableCommand interface {
 	Marshal() ([]byte, error)
 }
 
-
-
 // Represents a command sent to Kea including command name, daemons list
 // (service list in Kea terms) and arguments.
 type Command struct {
