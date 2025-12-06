@@ -1090,7 +1090,7 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 				}
 
 				// Other error.
-				err = errors.Wrap(err, "GRPC connection error occurred when receiving zone from the agent")
+				err = errors.Wrap(err, "gRPC connection error occurred when receiving zone from the agent")
 				_ = yield(nil, err)
 				return
 			}
