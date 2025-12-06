@@ -20,7 +20,7 @@ type Config struct {
 	// may be not set if getting the absolute path failed. If the configuration
 	// resides in a chroot, the path is relative to the chroot.
 	sourcePath string
-	// The absolut path of the chroot directory. Empty string means no chroot.
+	// The absolute path of the chroot directory. Empty string means no chroot.
 	rootPrefix string
 	// The configuration contains a list of Statements separated by semicolons.
 	Statements []*Statement `parser:"( @@ ';'* )*"`
