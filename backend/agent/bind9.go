@@ -325,13 +325,13 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	// Parse the BIND 9 config file.
 	bind9Config, err := parser.ParseFile(bind9ConfPath, rootPrefix)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse BIND 9 config file")
+		return nil, errors.WithMessage(err, "failed to parse BIND 9 config file")
 	}
 
 	// Resolve include statements.
 	bind9Config, err = bind9Config.Expand()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to resolve include statements in BIND 9 config file")
+		return nil, errors.WithMessage(err, "failed to resolve include statements in BIND 9 config file")
 	}
 
 	if bind9Config.HasNoParse() {
@@ -346,14 +346,14 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	if executor.IsFileExist(path.Join(rootPrefix, rndcKeyPath)) {
 		rndcConfig, err = parser.ParseFile(rndcKeyPath, rootPrefix)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse BIND 9 rndc key file")
+			return nil, errors.WithMessage(err, "failed to parse BIND 9 rndc key file")
 		}
 	}
 
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey, enabled, err := bind9Config.GetRndcConnParams(rndcConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get BIND 9 rndc credentials")
+		return nil, errors.WithMessage(err, "failed to get BIND 9 rndc credentials")
 	}
 	if !enabled {
 		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", path.Join(rootPrefix, bind9ConfPath))
