@@ -3,6 +3,7 @@ package bind9config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -1203,4 +1204,48 @@ func TestConfigExpand(t *testing.T) {
 			require.Equal(t, config.Statements[1].Include, expanded.Statements[1].Include)
 		})
 	}
+}
+
+// Test that the config can detect that two files are same in any case.
+func TestConfigAreSameFileForSameFiles(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	pathAbs, _ := sb.Join("dir/file")
+	pathRel := "dir/file"
+	pathNotExist := filepath.Join(sb.BasePath, "dir/non-exist-file")
+	pathOtherAbs, _ := sb.Join("dir/other-file")
+	pathOtherRel := "dir/other-file"
+
+	// Set cwd to the sandbox base path.
+	cwd, _ := os.Getwd()
+	defer os.Chdir(cwd)
+	os.Chdir(sb.BasePath)
+
+	config := Config{}
+
+	require.True(t, config.areSameFile(pathAbs, pathAbs))
+	require.True(t, config.areSameFile(pathAbs, pathRel))
+	require.True(t, config.areSameFile(pathRel, pathAbs))
+	require.True(t, config.areSameFile(pathRel, pathRel))
+	require.False(t, config.areSameFile(pathAbs, pathNotExist))
+	require.False(t, config.areSameFile(pathRel, pathNotExist))
+	require.False(t, config.areSameFile(pathAbs, pathOtherAbs))
+	require.False(t, config.areSameFile(pathRel, pathOtherAbs))
+	require.False(t, config.areSameFile(pathAbs, pathOtherRel))
+	require.False(t, config.areSameFile(pathRel, pathOtherRel))
+
+	chrootDir, _ := sb.JoinDir("dir")
+	pathAbs = "/file"
+	pathRel = "file"
+	pathNotExist = "/non-exist-file"
+
+	config = Config{chrootDir: chrootDir}
+
+	require.True(t, config.areSameFile(pathAbs, pathAbs))
+	require.True(t, config.areSameFile(pathAbs, pathRel))
+	require.True(t, config.areSameFile(pathRel, pathAbs))
+	require.True(t, config.areSameFile(pathRel, pathRel))
+	require.False(t, config.areSameFile(pathAbs, pathNotExist))
+	require.False(t, config.areSameFile(pathRel, pathNotExist))
 }
