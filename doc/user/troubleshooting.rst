@@ -22,7 +22,7 @@ This section describes the solutions for some common issues with the Stork agent
               - BIND 9
 
               Stork looks for the processes named ``kea-ctrl-agent`` (for Kea CA), ``kea-dhcp4`` or ``kea-dhcp6``
-              (for Kea DHCP servers), ``kea-d2`` (for Kea DDNS) or ``named`` (for BIND 9). Make sure
+              (for Kea DHCP servers), ``kea-d2`` (for Kea DDNS), or ``named`` (for BIND 9). Make sure
               those processes are running and are named appropriately. Use the ``ps aux`` (or similar) command
               to determine whether the processes are running. Currently, Stork does not support detecting off-line services. If
               BIND 9 is located in an uncommon location and the Stork agent is unable to detect it, there are several steps that
@@ -115,7 +115,7 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       ``stork-agent`` receives a ``remote error: tls: certificate required`` message from the Kea.
+:Issue:       ``stork-agent`` receives a ``remote error: tls: certificate required`` message from Kea.
 :Description: The Stork agent and Kea are running, but they cannot establish a connection.
               The ``stork-agent`` log contains the error message mentioned above.
 :Solution:    Install valid TLS certificates in ``stork-agent`` or set the ``cert-required`` value in ``/etc/kea/kea-ctrl-agent.conf`` to ``false``.
@@ -133,8 +133,8 @@ This section describes the solutions for some common issues with the Stork agent
               { "result": 401, "text": "Unauthorized" }`` or ``Kea error response - status: 401, message: Unauthorized``.
 :Solution:    Check if there are any clients specified in the Kea configuration file in the
               ``authentication`` node.
-:Explanation: Kea can be configured to use Basic Authentication. If it is enabled, Stork agent will
-              read the credentials from the Kea CA configuration file and use them to authenticate. The Stork agent
+:Explanation: Kea can be configured to use HTTP Basic Authentication. If it is enabled, the Stork agent will
+              read credentials from the Kea daemon configuration files and use them to authenticate itself. The Stork agent
               chooses credentials with user name beginning with ``stork``. If there is no such user, the agent will use
               the first user from the list.
 

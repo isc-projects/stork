@@ -7,29 +7,27 @@ DHCP
 Kea DHCP Integration with Stork
 ===============================
 
-Earlier Kea versions than 3.0.0 exposed the control API via the Kea Control
-Agent daemon. Communication with the other Kea daemons was routed through that
-daemon. Later Kea versions introduced a direct control channel to the Kea
-daemons (i.e., DHCP, D2, and NETCONF). The use of the Kea Control Agent is now
-deprecated.
+Prior to version 3.0.0, Kea exposed the control API via the Kea Control Agent
+daemon. Communication with the other Kea daemons was routed through that daemon.
+From version 3.0.0 onward, each Kea daemon (DHCP4, DHCP6, D2, and NETCONF)
+provides a direct control channel which works without the Kea Control Agent. As
+a result, the Kea Control Agent is deprecated as of Kea 3.0.0
 
-For Kea prior to version 3.0.0, Stork communicates with the Kea Control Agent
-to gather information about the DHCP servers it monitors. For Kea version 3.0.0
-and later, Stork connects directly to the Kea DHCP and D2 daemons to collect
-information.
+The Stork agent can use that direct channel to communicate with each Kea daemon.
+Stork will continue to support communication with pre-3.0.0 Kea daemons using
+the Kea Control Agent until those Kea versions have reached the end of support.
 
 Kea instance detection begins by looking for the ``kea-ctrl-agent``,
-``kea-dhcp4``, ``kea-dhcp6``, and ``kea-d2```` processes, which are expected to
-run with the ``-c`` parameter specifying the path to the configuration file.
-Stork agent then reads the following configuration parameters from this file:
+``kea-dhcp4``, ``kea-dhcp6``, and ``kea-d2`` processes, which are expected to
+run with the ``-c`` parameter specifying the path to their configuration files.
+The Stork agent then reads the following configuration parameters from each file:
 
 - The listening control socket (``http-host`` and ``http-port`` for CA, and
   ``control-socket`` or ``control-sockets`` for other daemons)
 - The list of controlled daemons (for CA only -  ``control-sockets``)
 - The HTTP socket authorization credentials (``authentication``)
 
-Stork uses the first listening control socket. It supports both UNIX and HTTP
-sockets.
+Stork uses the first listening control socket. It supports both UNIX domain and network sockets.
 
 Subnets and Networks
 ====================

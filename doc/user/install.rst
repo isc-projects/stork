@@ -756,9 +756,9 @@ Securing Connections Between ``stork-agent`` and the Kea daemons
 
 The Kea Control Agent (CA) and other Kea daemons (since Kea 3.0.0) may be
 configured to accept connections only over TLS. This requires specifying
-``trust-anchor``, ``cert-file``, and ``key-file`` values in the configuration file.
-For details, see the
-`Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/index.html>`_.
+``trust-anchor``, ``cert-file``, and ``key-file`` values in the Kea daemon
+configuration files. For details, see the `Kea Administrator Reference Manual
+<https://kea.readthedocs.io/en/latest/arm/security.html#tls-https-configuration>`_.
 
 The Stork agent can communicate with Kea over TLS, via the same certificates
 that the agent uses in communication with the Stork server.
@@ -772,9 +772,10 @@ Kea accepts only requests signed with a trusted certificate, when the ``cert-req
 is set to ``true`` in the Kea CA configuration file. In this case, the Stork agent must use valid
 certificates; it cannot use self-signed certificates created during Stork agent registration.
 
-If Kea is configured to use Basic Auth, the Stork agent will read the credentials from the Kea CA configuration
-file. The Stork agent chooses credentials with user name beginning with ``stork``. If there is no such user, the agent
-will use the first user from the list.
+If Kea is configured to require Basic Auth, the Stork agent will read each
+daemon's credentials from that daemon's configuration file. The Stork agent
+chooses credentials with user name beginning with ``stork``. If there is no such
+user, the agent will use the first user from the list.
 
 For example, set the following in the Kea CA configuration file, and save the
 password in the ``/etc/kea/stork-api-password`` file:
@@ -1455,19 +1456,14 @@ If the Stork agent acts as a Prometheus exporter:
 Monitoring Kea
 ~~~~~~~~~~~~~~
 
-For more details on monitoring Kea with Stork, refer to the
-:ref:`securing-connections-between-agent-and-kea` section of this document.
+In addition to the file permission and configuration changes below, it is recommended to follow the guidance in the :ref:`securing-connections-between-agent-and-kea` section of this document.
 
 - The Stork agent must have rights to read:
 
    - all of the Kea daemon configuration files (e.g., ``/etc/kea/kea-ctrl-agent.conf``, ``/etc/kea/kea-dhcp4.conf``)
    - the Kea logs (e.g., ``/var/log/kea/kea-dhcp4.log``)
 
-- Each monitored Kea daemon must have a control socket configured (the ``http-host`` and ``http-port`` for Kea CA and
-   the ``control-sockets`` property for other daemons).
-   See the `Configuration section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_
-   and `Management API section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_
-   for a sample configuration.
+- Each monitored Kea daemon must have a control socket configured (the ``http-host`` and ``http-port`` for Kea CA or the ``control-sockets`` property for other daemons). See the `Configuration section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for a sample Kea Control Agent configuration and `Management API section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the- dhcpv4-server>`_ for a sample DHCP4 daemon configuration.
 
 If the Kea daemons or the Control Agent listen on non-localhost interfaces, it is recommended to:
 
