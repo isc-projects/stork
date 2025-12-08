@@ -749,14 +749,15 @@ The applicability of the two methods is described in
 The installation and registration processes using each method are described
 in the following sections.
 
-.. _securing-connections-between-agent-and-kea-ca:
+.. _securing-connections-between-agent-and-kea:
 
-Securing Connections Between ``stork-agent`` and the Kea Control Agent
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Securing Connections Between ``stork-agent`` and the Kea daemons
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Kea Control Agent (CA) may be configured to accept connections only over TLS.
-This requires specifying ``trust-anchor``, ``cert-file``, and ``key-file`` values in
-the ``kea-ctrl-agent.conf`` file. For details, see the
+The Kea Control Agent (CA) and other Kea daemons (since 3.0.0 version) may be
+configured to accept connections only over TLS. This requires specifying
+``trust-anchor``, ``cert-file``, and ``key-file`` values in the configuration file.
+For details, see the
 `Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/index.html>`_.
 
 The Stork agent can communicate with Kea over TLS, via the same certificates
@@ -767,11 +768,11 @@ If Kea uses a self-signed certificate, the Stork agent can be launched with the
 ``--skip-tls-cert-verification`` flag or ``STORK_AGENT_SKIP_TLS_CERT_VERIFICATION`` environment
 variable set to 1, to disable Kea certificate verification.
 
-The Kea CA accepts only requests signed with a trusted certificate, when the ``cert-required`` parameter
+The Kea accepts only requests signed with a trusted certificate, when the ``cert-required`` parameter
 is set to ``true`` in the Kea CA configuration file. In this case, the Stork agent must use valid
 certificates; it cannot use self-signed certificates created during Stork agent registration.
 
-If the Kea CA is configured to use Basic Auth, the Stork agent will read the credentials from the Kea CA configuration
+If the Kea is configured to use Basic Auth, the Stork agent will read the credentials from the Kea CA configuration
 file. The Stork agent chooses credentials with user name beginning with ``stork``. If there is no such user, the agent
 will use the first user from the list.
 
@@ -1455,20 +1456,20 @@ Monitoring Kea
 ~~~~~~~~~~~~~~
 
 For more details on monitoring Kea with Stork, refer to the
-:ref:`securing-connections-between-agent-and-kea-ca` section of this document.
+:ref:`securing-connections-between-agent-and-kea` section of this document.
 
 - The Stork agent must have rights to read:
 
-   - the Kea configuration files (e.g., ``/etc/kea/kea-ctrl-agent.conf``)
+   - the Kea configuration files (e.g., ``/etc/kea/kea-ctrl-agent.conf``, ``/etc/kea/kea-dhcp4.conf``)
    - the Kea logs (e.g., ``/var/log/kea/kea-dhcp4.log``)
 
-- The Kea Control Agent must have configured control sockets for each monitored Kea daemon (the ``control-sockets`` property).
-   See the `Configuration section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for
-   a sample configuration.
-- All monitored Kea daemons must have the ``control-socket`` property set in the configuration file. Please refer to
-  the `Management API section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_ for more details.
+- Each monitored Kea daemon must have a control socket configured (the ``http-host`` and ``http-port`` for Kea CA and
+   the ``control-sockets`` property for other daemons).
+   See the `Configuration section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_
+   and `Management API section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_
+   for a sample configuration.
 
-If the Kea Control Agent listens on non-localhost interfaces, it is recommended to:
+If the Kea listens on non-localhost interfaces, it is recommended to:
 
 - Configure the Basic Auth in Kea CA.
 - Configure the Kea REST API to be served over TLS by setting the ``trust-anchor``, ``cert-file``, and ``key-file`` properties.

@@ -21,7 +21,8 @@ This section describes the solutions for some common issues with the Stork agent
               - Kea Control Agent, Kea DHCPv4 server, and/or Kea DHCPv6 server
               - BIND 9
 
-              Stork looks for the processes named ``kea-ctrl-agent`` (for Kea) or ``named`` (for BIND 9). Make sure
+              Stork looks for the processes named ``kea-ctrl-agent`` (for Kea CA), ``kea-dhcp4`` or ``kea-dhcp6``
+              (for Kea DHCP servers), ``kea-d2`` (for Kea DDNS) or ``named`` (for BIND 9). Make sure
               those processes are running and are named appropriately. Use the ``ps aux`` (or similar) command
               to determine whether the processes are running. Currently, Stork does not support detecting off-line services. If
               BIND 9 is located in an uncommon location and the Stork agent is unable to detect it, there are several steps that
@@ -61,10 +62,10 @@ This section describes the solutions for some common issues with the Stork agent
 :Explanation: If the "Last Refreshed" column has a value, and the "Error" column value has no errors,
               the communication between ``stork-server`` and ``stork-agent`` works correctly, which implies that
               the cause of the problem is between the Stork agent and the daemons. The most likely issue is that none of
-              the Kea/BIND 9 daemons are running. ``stork-agent`` communicates with the BIND 9 daemon
-              directly; however, it communicates with the Kea DHCPv4 and Kea DHCPv6 servers via the
-              Kea Control Agent. If only the "CA" daemon is displayed in the Stork interface, the Kea Control Agent
-              is running, but the DHCP daemons are not.
+              the Kea/BIND 9 daemons are running. ``stork-agent`` communicates with the BIND 9 and Kea since 3.0.0
+              version daemons directly; however, for Kea prior to 3.0.0 version, it communicates with the Kea DHCPv4 and
+              Kea DHCPv6 servers via the Kea Control Agent. If only the "CA" daemon is displayed in the Stork interface,
+              the Kea Control Agent is running, but the DHCP daemons are not.
 
 --------------
 
@@ -114,11 +115,11 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       ``stork-agent`` receives a ``remote error: tls: certificate required`` message from the Kea Control Agent.
-:Description: The Stork agent and the Kea Control Agent are running, but they cannot establish a connection.
+:Issue:       ``stork-agent`` receives a ``remote error: tls: certificate required`` message from the Kea.
+:Description: The Stork agent and the Kea are running, but they cannot establish a connection.
               The ``stork-agent`` log contains the error message mentioned above.
 :Solution:    Install valid TLS certificates in ``stork-agent`` or set the ``cert-required`` value in ``/etc/kea/kea-ctrl-agent.conf`` to ``false``.
-:Explanation: By default, ``stork-agent`` does not use TLS when it connects to Kea. If the Kea Control Agent configuration
+:Explanation: By default, ``stork-agent`` does not use TLS when it connects to Kea. If Kea configuration
               includes the ``cert-required`` value set to ``true``, it requires the Stork agent to use secure connections
               with valid, trusted TLS certificates. It can be turned off by setting the ``cert-required`` value to
               ``false`` when using self-signed certificates, or the Stork agent TLS credentials
@@ -126,13 +127,13 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       The Kea Control Agent returns a ``Kea error response - status: 401, message: Unauthorized`` message.
-:Description: The Stork agent and the Kea Control Agent are running, but they cannot connect.
+:Issue:       Kea returns a ``Kea error response - status: 401, message: Unauthorized`` message.
+:Description: The Stork agent and Kea are running, but they cannot connect.
               The ``stork-agent`` logs contain similar messages: ``failed to parse responses from Kea:
               { "result": 401, "text": "Unauthorized" }`` or ``Kea error response - status: 401, message: Unauthorized``.
-:Solution:    Check if there are any clients specified in the Kea Control Agent configuration file in the
+:Solution:    Check if there are any clients specified in Kea configuration file in the
               ``authentication`` node.
-:Explanation: The Kea Control Agent can be configured to use Basic Authentication. If it is enabled, Stork agent will
+:Explanation: Kea can be configured to use Basic Authentication. If it is enabled, Stork agent will
               read the credentials from the Kea CA configuration file and use them to authenticate. The Stork agent
               chooses credentials with user name beginning with ``stork``. If there is no such user, the agent will use
               the first user from the list.
@@ -180,8 +181,8 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       Stork shows only the Kea Control Agent tab on the Apps page. It detects no Kea DHCP servers,
-              although the DHCP daemons are running and allocating leases.
+:Issue:       Stork shows only the Kea Control Agent tab on the Apps page. Kea is in a version prior to 3.0.0. Stork
+              detects no Kea DHCP servers, although the DHCP daemons are running and allocating leases.
 :Description: There is only a single tab titled "CA" on the Kea Apps page, but no data about any DHCP daemon or
               DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases. The Stork
               agent log includes the ``The Kea application has no DHCP daemons configured`` message.

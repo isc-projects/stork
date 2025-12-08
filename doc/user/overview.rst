@@ -89,16 +89,16 @@ The Stork agent is responsible for exchanging data between the Stork server and 
 diagram) and DNS (connections no. 7 and 9 on the diagram) daemons. The agent and the daemons are running on the same
 machine, so the communication is local; however, it can still be secured.
 
-The Kea Control Agent (Kea CA) supports Basic Auth to authenticate the clients of its REST API, via the control channel used by the
-Stork agent. This solution may be enabled to protect the Kea CA from unauthorized access. If it is enabled, the Stork
-agent must be configured with the username and password to authenticate itself to the Kea CA. It is recommended to limit
-access to this file only to the ``stork-agent`` user. The Kea CA may be configured to serve the REST API over the
-HTTPS protocol; enabling this is strongly recommended if the Basic Auth is configured or if the Kea CA listens on
-non-localhost interfaces. Additionally, the Kea CA may be configured to require the client certificate to authenticate
-clients. The Stork agent offers partial support for mutual TLS authentication. If it recognizes that the Kea CA requires a
-client certificate, the Stork agent attaches its GRPC client certificate (the certificate that was obtained during the agent
-registration) to the request. This certificate does not pass client-certificate verification by the Kea CA, which means
-that the Kea CA must be configured not to verify the client certificate.
+The Kea Control Agent (Kea CA) and other Kea daemons (since 3.0.0 version) supports Basic Auth to authenticate the
+clients of its REST API, via the control channel used by the Stork agent. This solution may be enabled to protect the
+Kea from unauthorized access. If it is enabled, the Stork agent must be configured with the username and password to
+authenticate itself to Kea. It is recommended to limit access to this file only to the ``stork-agent`` user. The Kea
+may be configured to serve the REST API over the HTTPS protocol; enabling this is strongly recommended if the Basic Auth
+is configured or if Kea listens on non-localhost interfaces. Additionally, Kea may be configured to require the
+client certificate to authenticate clients. The Stork agent offers partial support for mutual TLS authentication. If it
+recognizes that Kea requires a client certificate, the Stork agent attaches its GRPC client certificate (the certificate
+that was obtained during the agent registration) to the request. This certificate does not pass client-certificate
+verification by Kea, which means that Kea must be configured not to verify the client certificate.
 
 Stork's connection to BIND 9 utilizes two protocols: RNDC (control channel, connection no. 9 on the diagram) and HTTP (
 statistics channel, connection no. 7 on the diagram). The RNDC protocol may be secured by using RNDC keys; this is
