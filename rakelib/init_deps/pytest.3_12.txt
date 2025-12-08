@@ -30,7 +30,7 @@ plotly==6.5.0
     # via -r rakelib/init_deps/pytest.in
 pluggy==1.6.0
     # via pytest
-protobuf==6.33.1
+protobuf==6.33.2
     # via -r rakelib/init_deps/pytest.in
 pydantic==2.12.5
     # via -r rakelib/init_deps/pytest.in
@@ -38,7 +38,7 @@ pydantic-core==2.41.5
     # via pydantic
 pygments==2.19.2
     # via pytest
-pytest==9.0.1
+pytest==9.0.2
     # via
     #   -r rakelib/init_deps/pytest.in
     #   pytest-timeout

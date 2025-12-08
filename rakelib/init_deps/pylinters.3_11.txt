@@ -6,7 +6,7 @@
 #
 astroid==4.0.2
     # via pylint
-black==25.11.0
+black==25.12.0
     # via -r rakelib/init_deps/pylinters.in
 click==8.3.1
     # via black
