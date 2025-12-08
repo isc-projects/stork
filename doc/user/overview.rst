@@ -89,10 +89,10 @@ The Stork agent is responsible for exchanging data between the Stork server and 
 diagram) and DNS (connections no. 7 and 9 on the diagram) daemons. The agent and the daemons are running on the same
 machine, so the communication is local; however, it can still be secured.
 
-The Kea Control Agent (Kea CA) and other Kea daemons (since 3.0.0 version) supports Basic Auth to authenticate the
+The Kea Control Agent (Kea CA) and other Kea daemons (since Kea 3.0.0) supports Basic Auth to authenticate the
 clients of its REST API, via the control channel used by the Stork agent. This solution may be enabled to protect the
 Kea from unauthorized access. If it is enabled, the Stork agent must be configured with the username and password to
-authenticate itself to Kea. It is recommended to limit access to this file only to the ``stork-agent`` user. The Kea
+authenticate itself to Kea. It is recommended to limit access to this file only to the ``stork-agent`` user. Kea
 may be configured to serve the REST API over the HTTPS protocol; enabling this is strongly recommended if the Basic Auth
 is configured or if Kea listens on non-localhost interfaces. Additionally, Kea may be configured to require the
 client certificate to authenticate clients. The Stork agent offers partial support for mutual TLS authentication. If it
