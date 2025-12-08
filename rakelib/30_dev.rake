@@ -18,6 +18,9 @@ python_requirement_files = [
     "tests/sim/requirements.in",
 ] + FileList["rakelib/init_deps/*.in"].exclude("rakelib/init_deps/all.in")
 
+# Their targets are specified by a rule defined in rakelib/00_init.rake.
+python_requirement_txt_files = python_requirement_files.map { |r| r.ext(PYTHON3_VERSION + '.txt') }
+
 #################
 ### Functions ###
 #################
@@ -878,10 +881,10 @@ namespace :audit do
     end
 
     desc 'Check the Python security issues'
-    task :python => [PIP_AUDIT] do
+    task :python => [PIP_AUDIT] + python_requirement_txt_files do
         opts = []
-        python_requirement_files.each do |r|
-            opts.append "-r", r.ext(PYTHON3_VERSION + '.txt')
+        python_requirement_txt_files.each do |r|
+            opts.append "-r", r
         end
 
         sh PIP_AUDIT, *opts
@@ -1071,11 +1074,7 @@ namespace :gen do
     end
 
     desc 'Regenerate Python requirements file'
-    task :python_requirements => [PIP_COMPILE] do
-        python_requirement_files.each do |r|
-            sh PIP_COMPILE, "--strip-extras", "--output-file", r.ext(PYTHON3_VERSION + '.txt'), r
-        end
-    end
+    task :python_requirements => [python_requirement_txt_files]
 
     desc 'Regenerate Ruby lock file'
     task :ruby_gemlocks => [BUNDLE] do
@@ -1180,7 +1179,7 @@ namespace :update do
         end
         # We expect that the requirements file generated for the above version
         # will be compatible with the below versions.
-        copy_versions = ['3_12', '3_13']
+        copy_versions = ['3_12', '3_13', '3_14']
 
         require 'pathname'
 
@@ -1222,18 +1221,17 @@ namespace :update do
             FileUtils.rm_f output_file
             sh PIP_COMPILE, *opts, '--output-file', output_file, r
 
-            # For requirements outside the init_deps directory, trim the
-            # version suffix for compatibility with third-party tools that
-            # install dependencies out of the build system.
+            # For requirements outside the init_deps directory, add a copy
+            # without the version suffix for use by third-party tools.
             if !r.start_with? all_requirements_dir
                 target = r.ext('txt')
-                FileUtils.mv output_file, target
-            else
-                # Make copies to other compatible Python versions.
-                copy_versions.each do |v|
-                    link_target = r.ext(v + '.txt')
-                    FileUtils.cp output_file, link_target
-                end
+                FileUtils.cp output_file, target
+            end
+
+            # Make copies to other compatible Python versions.
+            copy_versions.each do |v|
+                target = r.ext(v + '.txt')
+                FileUtils.cp output_file, target
             end
         end
 

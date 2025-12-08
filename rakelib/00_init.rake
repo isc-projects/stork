@@ -1061,7 +1061,7 @@ add_version_guard(PIP_COMPILE, pip_tools_ver)
 PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
 file PIP_SYNC => [PIP_COMPILE]
 
-rule Regexp.new("init_deps/.*\.#{PYTHON3_VERSION}\.txt") => [PIP_COMPILE] do |t|
+rule Regexp.new("(init_deps/.*\.#{PYTHON3_VERSION}\.txt|/requirements\.#{PYTHON3_VERSION}\.txt)") => [PIP_COMPILE] do |t|
     # Trim the extension and the Python version from the filename.
     # E.g. "init_deps/pytest.3_11.txt" -> "init_deps/pytest"
     base = t.name[0..-('.'.length + PYTHON3_VERSION.length + '.txt'.length + 1)]
