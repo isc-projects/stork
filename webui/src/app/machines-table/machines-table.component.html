@@ -154,8 +154,8 @@
                 ></p-tableHeaderCheckbox>
             </th>
             @if (authorizedMachinesDisplayed()) {
-                <th class="w-8rem" [pSortableColumn]="MachineSortField.MachineHostname">
-                    <div class="flex gap-1">Hostname <p-sortIcon [field]="MachineSortField.MachineHostname" /></div>
+                <th class="w-8rem" [pSortableColumn]="MachineSortField.Hostname">
+                    <div class="flex gap-1">Hostname <p-sortIcon [field]="MachineSortField.Hostname" /></div>
                 </th>
             } @else {
                 <th class="w-8rem">Hostname</th>

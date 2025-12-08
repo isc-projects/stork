@@ -691,7 +691,7 @@ func (f *SubnetsByPageFilters) SetIPv6Family() {
 
 // Custom handler for preparing order by and distinct on expressions for
 // sorting subnets and shared networks by statistics.
-func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, dirExpr string) (orderByExpr, distinctOnExpr string, useCustom bool) {
 	statsExpr := ""
 
 	switch sortField {
@@ -710,14 +710,12 @@ func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, d
 	switch sortField {
 	case "total_addresses":
 		// Sort subnets and shared networks by total addresses no matter the IP v4/v6 family.
-		distinctOnExpr := fmt.Sprintf("COALESCE(%[1]s.stats->>'total-nas', %[1]s.stats->>'total-addresses')::numeric", escapedTableName)
-		orderByExpr := fmt.Sprintf("%s %s", distinctOnExpr, dirExpr)
-		return orderByExpr, distinctOnExpr, true
+		distinctOnExpr = fmt.Sprintf("COALESCE(%[1]s.stats->>'total-nas', %[1]s.stats->>'total-addresses')::numeric", escapedTableName)
+		orderByExpr = distinctOnExpr
 	case "assigned_addresses":
 		// Sort subnets and shared networks by assigned addresses no matter the IP v4/v6 family.
-		distinctOnExpr := fmt.Sprintf("COALESCE(%[1]s.stats->>'assigned-nas', %[1]s.stats->>'assigned-addresses')::numeric", escapedTableName)
-		orderByExpr := fmt.Sprintf("%s %s", distinctOnExpr, dirExpr)
-		return orderByExpr, distinctOnExpr, true
+		distinctOnExpr = fmt.Sprintf("COALESCE(%[1]s.stats->>'assigned-nas', %[1]s.stats->>'assigned-addresses')::numeric", escapedTableName)
+		orderByExpr = distinctOnExpr
 	case "total_pds", "assigned_pds", "pd_utilization":
 		// When sorting subnets and shared networks by IPv6 prefix delegation related statistics, sort by the IP v4/v6 family first.
 		// This will handle IPv4 records depending on sorting order in a similar way to ASC NULLS FIRST/DESC NULLS LAST common sorting rule.
@@ -725,27 +723,14 @@ func subnetAndSharedNetworkCustomOrderAndDistinct(sortField, escapedTableName, d
 		if strings.Contains(escapedTableName, "subnet") {
 			familyExpr = fmt.Sprintf("family(%s.prefix)", escapedTableName)
 		}
-		orderByExpr := fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
-		distinctOnExpr := fmt.Sprintf("%s, %s", familyExpr, statsExpr)
-		return orderByExpr, distinctOnExpr, true
-	case "shared_network":
-		if strings.Contains(escapedTableName, "subnet") {
-			return fmt.Sprintf("shared_network.name %s", dirExpr), "shared_network.name", true
-		}
-		return "", "", false
-	case "name":
-		if strings.Contains(escapedTableName, "subnet") {
-			return fmt.Sprintf("distinct_ls.name %s", dirExpr), "distinct_ls.name", true
-		}
-		return "", "", false
-	case "kea_subnet_id":
-		if strings.Contains(escapedTableName, "subnet") {
-			return fmt.Sprintf("distinct_ls.kea_subnet_id %s", dirExpr), "distinct_ls.kea_subnet_id", true
-		}
-		return "", "", false
+		orderByExpr = fmt.Sprintf("%s %s, %s", familyExpr, dirExpr, statsExpr)
+		distinctOnExpr = fmt.Sprintf("%s, %s", familyExpr, statsExpr)
 	default:
 		return "", "", false
 	}
+	useCustom = true
+	orderByExpr += " " + dirExpr
+	return
 }
 
 // Fetches a collection of subnets from the database. The offset and
@@ -764,8 +749,21 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets)
 
+	// REST API is accepting simplified sortField names. Convert it to appropriate field names accepted by DB.
+	var dbSortField string
+	switch sortField {
+	case "shared_network":
+		dbSortField = "shared_network.name"
+	case "name":
+		dbSortField = "distinct_ls.name"
+	case "kea_subnet_id":
+		dbSortField = "distinct_ls.kea_subnet_id"
+	default:
+		dbSortField = sortField
+	}
+
 	// prepare order by and distinct on expression to include sort field, otherwise distinct on will fail
-	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("subnet", sortField, sortDir, subnetAndSharedNetworkCustomOrderAndDistinct)
+	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("subnet", dbSortField, sortDir, subnetAndSharedNetworkCustomOrderAndDistinct)
 	q = q.DistinctOn(distinctOnFields)
 
 	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil ||

@@ -3,7 +3,6 @@ package dbmodel
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -260,25 +259,27 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 		q = q.Where("authorized = ?", *authorized)
 	}
 
+	// REST API is accepting simplified sortField names. Convert it to appropriate field names accepted by DB.
+	var dbSortField string
+	switch sortField {
+	case "hostname":
+		dbSortField = "state->'Hostname'"
+	case "cpus":
+		dbSortField = "state->'Cpus'"
+	case "cpus_load":
+		dbSortField = "state->'CpusLoad'"
+	case "memory":
+		dbSortField = "state->'Memory'"
+	case "used_memory":
+		dbSortField = "state->'UsedMemory'"
+	case "agent_version":
+		dbSortField = "state->'AgentVersion'"
+	default:
+		dbSortField = sortField
+	}
+
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderAndDistinctExpr("machine", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
-		switch sortField {
-		case "machine_hostname":
-			return fmt.Sprintf("state->'Hostname' %s", dirExpr), "state->'Hostname'", true
-		case "cpus":
-			return fmt.Sprintf("state->'Cpus' %s", dirExpr), "state->'Cpus'", true
-		case "cpus_load":
-			return fmt.Sprintf("state->'CpusLoad' %s", dirExpr), "state->'CpusLoad'", true
-		case "memory":
-			return fmt.Sprintf("state->'Memory' %s", dirExpr), "state->'Memory'", true
-		case "used_memory":
-			return fmt.Sprintf("state->'UsedMemory' %s", dirExpr), "state->'UsedMemory'", true
-		case "agent_version":
-			return fmt.Sprintf("state->'AgentVersion' %s", dirExpr), "state->'AgentVersion'", true
-		default:
-			return "", "", false
-		}
-	})
+	ordExpr, _ := prepareOrderAndDistinctExpr("machine", dbSortField, sortDir, nil)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

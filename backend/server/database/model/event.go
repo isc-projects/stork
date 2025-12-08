@@ -104,21 +104,21 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level EventLevel, dae
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderAndDistinctExpr("event", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+	ordExpr, _ := prepareOrderAndDistinctExpr("event", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (orderExpr, distinctOnExpr string, useCustom bool) {
 		switch sortField {
 		case "level":
 			// When sorting events by level, apply the second sort by created_at field.
-			orderExpr := fmt.Sprintf("%[1]s.level %[2]s, %[1]s.created_at %[2]s", escapedTableName, dirExpr)
-			distinctOnExpr := fmt.Sprintf("%s.level", escapedTableName)
-			return orderExpr, distinctOnExpr, true
+			orderExpr = fmt.Sprintf("%[1]s.level %[2]s, %[1]s.created_at %[2]s", escapedTableName, dirExpr)
+			distinctOnExpr = fmt.Sprintf("%s.level", escapedTableName)
 		case "text":
 			// When sorting events by text, apply the second sort by created_at field.
-			orderExpr := fmt.Sprintf("%[1]s.text %[2]s, %[1]s.created_at %[2]s", escapedTableName, dirExpr)
-			distinctOnExpr := fmt.Sprintf("%s.text", escapedTableName)
-			return orderExpr, distinctOnExpr, true
+			orderExpr = fmt.Sprintf("%[1]s.text %[2]s, %[1]s.created_at %[2]s", escapedTableName, dirExpr)
+			distinctOnExpr = fmt.Sprintf("%s.text", escapedTableName)
 		default:
 			return "", "", false
 		}
+		useCustom = true
+		return
 	})
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

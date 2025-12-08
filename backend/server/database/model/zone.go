@@ -262,18 +262,24 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, sortField string, sortDir SortD
 	for _, relation := range relations {
 		q = q.Relation(string(relation))
 	}
+	// REST API is accepting simplified sortField names. Convert it to appropriate field names accepted by DB.
+	var dbSortField string
+	switch sortField {
+	case "serial":
+		dbSortField = "distinct_lz.serial"
+	case "type":
+		dbSortField = "distinct_lz.type"
+	default:
+		dbSortField = sortField
+	}
 	// Order expression.
-	orderExpr, _ := prepareOrderAndDistinctExpr("zone", sortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
+	orderExpr, _ := prepareOrderAndDistinctExpr("zone", dbSortField, sortDir, func(sortField, escapedTableName, dirExpr string) (string, string, bool) {
 		switch sortField {
 		case "rname":
 			// When sorting DNS zones by rname field, use the C collation.
 			orderExpr := fmt.Sprintf("%s.rname COLLATE \"C\" %s", escapedTableName, dirExpr)
 			distinctOnExpr := fmt.Sprintf("%s.rname", escapedTableName)
 			return orderExpr, distinctOnExpr, true
-		case "serial":
-			return fmt.Sprintf("distinct_lz.serial %s", dirExpr), "distinct_lz.serial", true
-		case "type":
-			return fmt.Sprintf("distinct_lz.type %s", dirExpr), "distinct_lz.type", true
 		default:
 			return "", "", false
 		}

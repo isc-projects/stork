@@ -852,6 +852,54 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 				},
 			},
 		},
+		{
+			Prefix: "2001:db8::/32",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID: daemons[1].ID,
+					AddressPools: []AddressPool{{
+						LowerBound: "2001:db8::1",
+						UpperBound: "2001:db8::16",
+					}},
+					PrefixPools: []PrefixPool{{
+						Prefix:       "2001:db8:1::/64",
+						DelegatedLen: 80,
+					}},
+				},
+			},
+			Stats: Stats{
+				StatNameTotalAddresses:    16,
+				StatNameAssignedAddresses: 2,
+				StatNameTotalPDs:          65536,
+				StatNameAssignedPDs:       6553,
+			},
+			AddrUtilization: Utilization(0.125),
+			PdUtilization:   Utilization(0.1),
+		},
+		{
+			Prefix: "2002:db8::/32",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID: daemons[1].ID,
+					AddressPools: []AddressPool{{
+						LowerBound: "2002:db8::1",
+						UpperBound: "2002:db8::32",
+					}},
+					PrefixPools: []PrefixPool{{
+						Prefix:       "2002:db8:1::/80",
+						DelegatedLen: 80,
+					}},
+				},
+			},
+			Stats: Stats{
+				StatNameTotalAddresses:    32,
+				StatNameAssignedAddresses: 24,
+				StatNameTotalPDs:          1,
+				StatNameAssignedPDs:       1,
+			},
+			AddrUtilization: Utilization(0.75),
+			PdUtilization:   Utilization(1.0),
+		},
 	}
 	for i := range subnets {
 		err := AddSubnet(db, &subnets[i])
@@ -865,33 +913,36 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	t.Run("sort by prefix", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "prefix", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[1].Prefix, returnedSubnets[0].Prefix)
+		require.Contains(t, returnedSubnets[4].Prefix, ":")
 	})
 
 	t.Run("sort by prefix descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "prefix", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[0].Prefix, returnedSubnets[1].Prefix)
+		require.Contains(t, returnedSubnets[0].Prefix, ":")
 	})
 
 	t.Run("sort by shared network name", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "shared_network", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
-		require.EqualValues(t, "test", returnedSubnets[2].SharedNetwork.Name)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
+		require.Nil(t, returnedSubnets[2].SharedNetwork)
+		require.EqualValues(t, "test", returnedSubnets[4].SharedNetwork.Name)
 		require.Nil(t, returnedSubnets[1].SharedNetwork)
 	})
 
 	t.Run("sort by shared network name descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "shared_network", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.EqualValues(t, "test", returnedSubnets[0].SharedNetwork.Name)
 		require.Nil(t, returnedSubnets[1].SharedNetwork)
 	})
@@ -899,56 +950,56 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	t.Run("sort by addr utilization", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "addr_utilization", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[1].AddrUtilization, returnedSubnets[0].AddrUtilization)
 	})
 
 	t.Run("sort by addr utilization descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "addr_utilization", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Less(t, returnedSubnets[1].AddrUtilization, returnedSubnets[0].AddrUtilization)
 	})
 
 	t.Run("sort by total addresses", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "total_addresses", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[2].Stats[StatNameTotalAddresses], returnedSubnets[1].Stats[StatNameTotalAddresses])
 	})
 
 	t.Run("sort by total addresses descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "total_addresses", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[0].Stats[StatNameTotalAddresses], returnedSubnets[1].Stats[StatNameTotalAddresses])
 	})
 
 	t.Run("sort by assigned addresses", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_addresses", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[2].Stats[StatNameAssignedAddresses], returnedSubnets[1].Stats[StatNameAssignedAddresses])
 	})
 
 	t.Run("sort by assigned addresses descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_addresses", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[0].Stats[StatNameAssignedAddresses], returnedSubnets[1].Stats[StatNameAssignedAddresses])
 	})
 
 	t.Run("sort by total PDs", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "total_pds", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Nil(t, returnedSubnets[0].Stats[StatNameTotalPDs])
 		require.Nil(t, returnedSubnets[2].Stats[StatNameTotalPDs])
 	})
@@ -956,57 +1007,74 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 	t.Run("sort by assigned PDs", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_pds", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Nil(t, returnedSubnets[0].Stats[StatNameAssignedPDs])
 		require.Nil(t, returnedSubnets[2].Stats[StatNameAssignedPDs])
+		require.Less(t, returnedSubnets[3].Stats[StatNameAssignedPDs], returnedSubnets[4].Stats[StatNameAssignedPDs])
+	})
+
+	t.Run("sort by assigned PDs descending", func(t *testing.T) {
+		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "assigned_pds", SortDirDesc)
+		require.NoError(t, err)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
+		require.Nil(t, returnedSubnets[4].Stats[StatNameAssignedPDs])
+		require.Nil(t, returnedSubnets[3].Stats[StatNameAssignedPDs])
+		require.Greater(t, returnedSubnets[0].Stats[StatNameAssignedPDs], returnedSubnets[1].Stats[StatNameAssignedPDs])
 	})
 
 	t.Run("sort by PD utilization", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "pd_utilization", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
-		require.GreaterOrEqual(t, returnedSubnets[1].PdUtilization, returnedSubnets[0].PdUtilization)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
+		require.Zero(t, returnedSubnets[0].PdUtilization)
+		require.Zero(t, returnedSubnets[1].PdUtilization)
+		require.Less(t, returnedSubnets[3].PdUtilization, returnedSubnets[4].PdUtilization)
 	})
 
 	t.Run("sort by PD utilization descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "pd_utilization", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
-		require.GreaterOrEqual(t, returnedSubnets[0].PdUtilization, returnedSubnets[1].PdUtilization)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
+		require.Greater(t, returnedSubnets[0].PdUtilization, returnedSubnets[1].PdUtilization)
+		require.Zero(t, returnedSubnets[4].PdUtilization)
 	})
 
 	t.Run("sort by subnet name", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "name", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
-		require.Greater(t, returnedSubnets[2].LocalSubnets[0].UserContext["subnet-name"], returnedSubnets[1].LocalSubnets[0].UserContext["subnet-name"])
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
+		require.Nil(t, returnedSubnets[1].LocalSubnets[0].UserContext["subnet-name"])
+		require.Nil(t, returnedSubnets[2].LocalSubnets[0].UserContext["subnet-name"])
+		require.Less(t, returnedSubnets[3].LocalSubnets[0].UserContext["subnet-name"], returnedSubnets[4].LocalSubnets[0].UserContext["subnet-name"])
 	})
 
 	t.Run("sort by subnet name descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "name", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[0].LocalSubnets[0].UserContext["subnet-name"], returnedSubnets[1].LocalSubnets[0].UserContext["subnet-name"])
+		require.Nil(t, returnedSubnets[4].LocalSubnets[0].UserContext["subnet-name"])
 	})
 
 	t.Run("sort by kea subnet id", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "kea_subnet_id", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
-		require.Greater(t, returnedSubnets[1].LocalSubnets[0].LocalSubnetID, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
+		require.Less(t, returnedSubnets[3].LocalSubnets[0].LocalSubnetID, returnedSubnets[4].LocalSubnets[0].LocalSubnetID)
 	})
 
 	t.Run("sort by kea subnet id descending", func(t *testing.T) {
 		returnedSubnets, total, err := GetSubnetsByPage(db, 0, 10, nil, "kea_subnet_id", SortDirDesc)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, returnedSubnets, 3)
+		require.EqualValues(t, 5, total)
+		require.Len(t, returnedSubnets, 5)
 		require.Greater(t, returnedSubnets[0].LocalSubnets[0].LocalSubnetID, returnedSubnets[1].LocalSubnets[0].LocalSubnetID)
 	})
 }
