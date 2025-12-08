@@ -421,6 +421,6 @@ parameters:
   sortDir:
     name: sortDir
     in: query
-    description: Sorting direction - either ascending or descending
+    description: Sorting direction - either ascending or descending.
     type: string
     enum: *SORTDIR
