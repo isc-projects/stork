@@ -552,7 +552,7 @@ func (c *Config) Expand() (*Config, error) {
 			// Clean the path so it may be compared with the source file path to
 			// avoid the cycles.
 			path = filepath.Clean(path)
-			if c.areSameFile(path, c.sourcePath) {
+			if c.areSameFiles(path, c.sourcePath) {
 				// If the included file points to the including file, skip expanding it.
 				// One could consider returning an error but we want the parser to be
 				// liberal. Stork wants to be able to look into the file contents rather
@@ -578,7 +578,7 @@ func (c *Config) Expand() (*Config, error) {
 // Accepts paths to two files and checks if they point to the same file.
 // Returns true if they point to the same file, returns false otherwise or
 // if the files are not accessible.
-func (c *Config) areSameFile(first, second string) bool {
+func (c *Config) areSameFiles(first, second string) bool {
 	firstInfo, err := os.Stat(filepath.Join(c.chrootDir, first))
 	if err != nil {
 		return false

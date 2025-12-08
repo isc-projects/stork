@@ -1207,7 +1207,7 @@ func TestConfigExpand(t *testing.T) {
 }
 
 // Test that the config can detect that two files are same in any case.
-func TestConfigAreSameFileForSameFiles(t *testing.T) {
+func TestConfigAreSameFilesForSameFiles(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
@@ -1224,16 +1224,16 @@ func TestConfigAreSameFileForSameFiles(t *testing.T) {
 
 	config := Config{}
 
-	require.True(t, config.areSameFile(pathAbs, pathAbs))
-	require.True(t, config.areSameFile(pathAbs, pathRel))
-	require.True(t, config.areSameFile(pathRel, pathAbs))
-	require.True(t, config.areSameFile(pathRel, pathRel))
-	require.False(t, config.areSameFile(pathAbs, pathNotExist))
-	require.False(t, config.areSameFile(pathRel, pathNotExist))
-	require.False(t, config.areSameFile(pathAbs, pathOtherAbs))
-	require.False(t, config.areSameFile(pathRel, pathOtherAbs))
-	require.False(t, config.areSameFile(pathAbs, pathOtherRel))
-	require.False(t, config.areSameFile(pathRel, pathOtherRel))
+	require.True(t, config.areSameFiles(pathAbs, pathAbs))
+	require.True(t, config.areSameFiles(pathAbs, pathRel))
+	require.True(t, config.areSameFiles(pathRel, pathAbs))
+	require.True(t, config.areSameFiles(pathRel, pathRel))
+	require.False(t, config.areSameFiles(pathAbs, pathNotExist))
+	require.False(t, config.areSameFiles(pathRel, pathNotExist))
+	require.False(t, config.areSameFiles(pathAbs, pathOtherAbs))
+	require.False(t, config.areSameFiles(pathRel, pathOtherAbs))
+	require.False(t, config.areSameFiles(pathAbs, pathOtherRel))
+	require.False(t, config.areSameFiles(pathRel, pathOtherRel))
 
 	chrootDir, _ := sb.JoinDir("dir")
 	pathAbs = "/file"
@@ -1242,10 +1242,10 @@ func TestConfigAreSameFileForSameFiles(t *testing.T) {
 
 	config = Config{chrootDir: chrootDir}
 
-	require.True(t, config.areSameFile(pathAbs, pathAbs))
-	require.True(t, config.areSameFile(pathAbs, pathRel))
-	require.True(t, config.areSameFile(pathRel, pathAbs))
-	require.True(t, config.areSameFile(pathRel, pathRel))
-	require.False(t, config.areSameFile(pathAbs, pathNotExist))
-	require.False(t, config.areSameFile(pathRel, pathNotExist))
+	require.True(t, config.areSameFiles(pathAbs, pathAbs))
+	require.True(t, config.areSameFiles(pathAbs, pathRel))
+	require.True(t, config.areSameFiles(pathRel, pathAbs))
+	require.True(t, config.areSameFiles(pathRel, pathRel))
+	require.False(t, config.areSameFiles(pathAbs, pathNotExist))
+	require.False(t, config.areSameFiles(pathRel, pathNotExist))
 }
