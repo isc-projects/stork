@@ -2546,7 +2546,7 @@ func TestReceiveBind9FormattedConfigOpenStreamError(t *testing.T) {
 	// The error should be propagated.
 	rsp, err, ok := next()
 	require.True(t, ok)
-	require.ErrorContains(t, err, "failed to open stream to receive BIND 9 configuration from the agent: test error")
+	require.ErrorContains(t, err, "failed to open gRPC connection for receiving BIND 9 configuration from the agent: test error")
 	require.Nil(t, rsp)
 }
 

@@ -1143,11 +1143,12 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 		if stream, err = agent.connector.createClient().ReceiveZoneRRs(ctx, request); err != nil {
 			if err = agent.connector.connect(); err == nil {
 				stream, err = agent.connector.createClient().ReceiveZoneRRs(ctx, request)
+				err = errors.WithStack(err)
 			}
 		}
 		if err != nil {
 			// Cannot open the stream.
-			err = errors.Wrap(err, "failed to open stream to receive zone RRs from the agent")
+			err = errors.WithMessage(err, "failed to open gRPC connection for receiving zone RRs from the agent")
 			_ = yield(nil, err)
 			return
 		}
@@ -1245,10 +1246,11 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 		if stream, err = agent.connector.createClient().ReceiveBind9Config(ctx, request); err != nil {
 			if err = agent.connector.connect(); err == nil {
 				stream, err = agent.connector.createClient().ReceiveBind9Config(ctx, request)
+				err = errors.WithStack(err)
 			}
 		}
 		if err != nil {
-			_ = yield(nil, errors.Wrap(err, "failed to open stream to receive BIND 9 configuration from the agent"))
+			_ = yield(nil, errors.WithMessage(err, "failed to open gRPC connection for receiving BIND 9 configuration from the agent"))
 			return
 		}
 		for {
