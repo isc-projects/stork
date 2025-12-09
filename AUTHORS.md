@@ -20,7 +20,6 @@ Active developers:
 - Marcin Godzina (QA, release engineering)
 - Suzanne Goldlust (documentation)
 - William Leuschner
-- Yavor Peev (QA)
 
 Primary area of work mentioned in parentheses. The list is in
 roughly chronological order.
@@ -31,6 +30,7 @@ Former developers:
 - Thomas Markwalder (Kea)
 - Matthijs Mekking (BIND 9, Prometheus)
 - Michał Nowikowski (maintainer, server, agent, UI, Prometheus, release engineering)
+- Yavor Peev (QA)
 
 We have received the following contributions:
 

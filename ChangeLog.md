@@ -402,7 +402,7 @@ Stork 2.2.0 released on 2025-06-11.
 
 * 529 [doc] bscott
 
-    Clarify compatability with the Kea CB (Configuration Backend).
+    Clarify compatibility with the Kea CB (Configuration Backend).
     (Gitlab #1813)
 
 * 528 [doc] bscott, slawek
@@ -1477,7 +1477,7 @@ Stork 1.15.0 released on 2024-02-07.
 
 * 367 [func] piotrek
 
-    Added a possibilty to authorize more than one machine at once.
+    Added a possibility to authorize more than one machine at once.
     User can select some machines and then authorize them with one click.
     Selection of all visible machines on the page is also possible.
     (Gitlab #1270)

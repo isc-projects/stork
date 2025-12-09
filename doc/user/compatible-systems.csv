@@ -7,7 +7,6 @@ System Family,System Version,Architecture,Unit Tests,System Tests,Build Binaries
        Debian,            13,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Debian,     12.1-slim,       amd64,         X,           X,             X,             X,                             X,
        Debian,     12.1-slim,     aarch64,          ,            ,             X,             X,                             X,
-       Ubuntu,         20.04,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Ubuntu,         22.04,       amd64,         X,           D,             D,             D,                              ,                                                    X
        Ubuntu,         22.04,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Ubuntu,         24.04,       amd64,         X,            ,              ,              ,                              ,                                                    X
@@ -19,7 +18,6 @@ System Family,System Version,Architecture,Unit Tests,System Tests,Build Binaries
          RHEL,             9,     aarch64,         X,            ,              ,              ,                              ,                                                    X
          RHEL,            10,       amd64,         X,            ,              ,              ,                              ,                                                    X
          RHEL,            10,     aarch64,         X,            ,              ,              ,                              ,                                                    X
-       Fedora,            40,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Fedora,            41,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Fedora,            42,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Fedora,            42,     aarch64,         X,            ,              ,              ,                              ,                                                    X
