@@ -1,3 +1,172 @@
+Stork 2.3.2 released on 2025-12-10.
+
+* 587 [func] piotrek
+
+    Enabled tables sorting in Stork UI. Now most of the table views can
+    be sorted by clicking on a column header.
+    (Gitlab #1893)
+
+* 586 [build] slawek
+
+    Updated dependencies including the Go 1.25.5, Angular,
+    Grafana (in demo) and several JavaScript, Python, Ruby and Go
+    packages.
+    (Gitlab #2148)
+
+* 585 [bug] marcin
+
+    Fixed error handling in two gRPC streaming calls, one for
+    receiving zone contents from the agent, and another one
+    for receiving BIND 9 configuration. The errors are now
+    correctly interpreted in the Stork server.
+    (Gitlab #2157)
+
+* 584 [func] marcin
+
+    Builtin DNS zones are no longer listed by default.
+    (Gitlab #2118)
+
+* 583 [bug] slawek
+
+    Fixed a bug preventing Stork from reading Kea configuration with
+    comments that included quotes. Added support for trailing commas
+    in the Kea configuration files.
+    (Gitlab #2134)
+
+* 582 [bug] marcin
+
+    Address a potential remote denial of monitoring in the Kea
+    Prometheus exporter. The exporter could stop working after
+    receiving statistics from Kea with malformed subnet, pool
+    or prefix pool ID. In addition, the exporter could stop
+    working after receiving pool-level statistic at the subnet
+    level.
+    (Gitlab #2155)
+
+* 581 [func] slawek
+
+    Refactored error logging to log error message and error stack trace
+    in separate fields and ensure the error log entry is single-line.
+    (Gitlab #1622)
+
+* 580 [bug] lucaspetrino, slawek
+
+    Fixed a problem that the Stork agent was not able to detect kea when
+    the control agent binds to an IPv6 address.
+    (Gitlab #2092)
+
+* 579 [sec] piotrek
+
+    Added HTTP security headers to all Stork server HTTP responses.
+    The same headers were enabled in the demo and example nginx and
+    Apache reverse proxy configurations.
+    (Gitlab #2153)
+
+* 578 [sec] piotrek
+
+    Changed the way the Kea daemon version information is displayed
+    in the UI. This prevents the possibility of an HTTP injection
+    attack.
+    (Gitlab #2152)
+
+* 577 [func] marcin
+
+    Implemented BIND 9 server configuration and rndc key files preview
+    in the dialog boxes.
+    (Gitlab #1634)
+
+* 576 [func] ! slawek
+
+    Support for monitoring Kea daemons directly without an intermediate
+    Kea Control Agent (direct Kea API). Implemented communication via
+    HTTP endpoint and sockets.
+    (Gitlab #1835)
+
+* 575 [bug] slawek
+
+    Fixed non-exploitable SQL injection in the Stork tool command
+    creating a database.
+    (Gitlab #2137)
+
+* 574 [bug] marcin
+
+    Fix an issue with slow loading of the dialog box displaying
+    the zone RRs. The issue was initially observed on Safari, with
+    loading times reaching tens of seconds. However, it could also
+    take several seconds on other browsers. The new solution uses
+    a virtual scroller. It significantly improves the dialog box
+    loading time on all browsers.
+    (Gitlab #2096)
+
+* 573 [func] piotrek
+
+    Shared networks table will no longer display zero values in
+    columns with Prefix Delegation statistics for IPv4 networks.
+    (Gitlab #2104)
+
+* 572 [func] marcin
+
+    Limit the number of tokens in a single line of the PowerDNS
+    configuration to 500. It prevents attempts to parse malformed
+    configurations and excessive use of memory during parsing.
+    (Gitlab #2131)
+
+* 571 [bug] marcin
+
+    Maximum size of the PowerDNS parser buffer is 16kB. The initial
+    buffer size is 512B. It is aimed at reducing the memory usage
+    during PowerDNS configuration parsing.
+    (Gitlab #2132)
+
+* 570 [bug] marcin
+
+    Prevent potential panic while merging Kea configurations when
+    saving updated configuration.
+    (Gitlab #2130)
+
+* 569 [bug] marcin
+
+    Addressed an issue in the Stork server whereby the server could
+    panic as a result of receiving and parsing an empty DNS RR
+    from the monitored DNS server over AXFR.
+    (Gitlab #2129)
+
+* 568 [bug] slawek
+
+    The host migrator verifies the Kea version now and produces a
+    descriptive error if it is unsupported.
+    (Gitlab #2034)
+
+* 567 [bug] besole, slawek
+
+    Fixed a bug preventing users from opening an edit form for a host
+    reservation if it included any delegated prefix.
+    (Gitlab #2038)
+
+* 566 [bug] marcin
+
+    Prevent ignoring errors while getting server and traffic statistics
+    from the BIND 9 server.
+    (Gitlab #2065)
+
+* 565 [bug] marcin
+
+    Improved error reporting when closing some files fails.
+    (Gitlab #2064)
+
+* 564 [func] marcin
+
+    Enable showing mirror zones in the UI.
+    (Gitlab #2072)
+
+* 563 [bug] marcin
+
+    Fix listing DNS servers in the traffic simulator. Previously,
+    BIND 9 servers were not listed when other apps were authorized.
+    Now, both BIND 9 and PowerDNS servers are correctly listed in
+    the simulator.
+    (Gitlab #2081)
+
 Stork 2.3.1 released on 2025-10-15.
 
 * 562 [func] piotrek
