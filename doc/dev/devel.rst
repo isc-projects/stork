@@ -858,25 +858,30 @@ enough for most test cases. To generate some DHCP traffic, use the
         )
 
 Please note above that an IPv4 address is used to send DHCPv4 traffic and an
-interface name for the DHCPv6 traffic. There is no easy way to recognize
-which Docker network is connected to which container interface.
-The system tests use the ``priority`` property to ensure that the networks
-are assigned to the consecutive interfaces.
+interface name for the DHCPv6 traffic. Docker allows assigning specific
+interface to a network by the ``interface_name`` property. It must be set
+explicitly when multiple networks are used in the service.
 
 .. code-block:: yaml
 
     networks:
       storknet:
         ipv4_address: 172.42.42.200
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.200
-        priority: 500
+        interface_name: eth1
 
 In the configuration above, the ``storknet`` network should be assigned
 to the ``eth0`` (the first) interface, and the ``subnet_00`` network to the
 ``eth1`` interface. Our experiments show that this assumption works
 reliably.
+
+.. warning::
+
+    Don't use the ``priority`` property to order the networks. This solution
+    is not reliable and may lead to unexpected, subtle, and randomly occurring
+    bugs.
 
 Debugging System Tests
 ----------------------

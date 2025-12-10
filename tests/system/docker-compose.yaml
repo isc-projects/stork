@@ -101,22 +101,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.42.42.100
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.100
-        priority: 500
+        interface_name: eth1
       subnet_01:
         ipv4_address: 172.101.42.100
-        priority: 400
+        interface_name: eth2
       subnet_02:
         ipv4_address: 172.102.42.100
-        priority: 300
+        interface_name: eth3
       subnet6_00:
         ipv6_address: 3000:db8:1:42::100
-        priority: 500
+        interface_name: eth4
       subnet6_01:
         ipv6_address: 3001:db8:1:42::100
-        priority: 400
+        interface_name: eth5
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
@@ -273,22 +273,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.42.42.101
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.101
-        priority: 500
+        interface_name: eth1
       subnet_01:
         ipv4_address: 172.101.42.101
-        priority: 400
+        interface_name: eth2
       subnet_02:
         ipv4_address: 172.102.42.101
-        priority: 300
+        interface_name: eth3
       subnet6_00:
         ipv6_address: 3000:db8:1:42::101
-        priority: 500
+        interface_name: eth4
       subnet6_01:
         ipv6_address: 3001:db8:1:42::101
-        priority: 400
+        interface_name: eth5
     volumes:
       - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-2.conf:/etc/kea/kea-dhcp4.conf
       - $PWD/tests/system/config/kea-premium-host-database/kea-host-database-2.json:/etc/kea/kea-host-database.json
@@ -319,22 +319,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.42.42.101
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.101
-        priority: 500
+        interface_name: eth1
       subnet_01:
         ipv4_address: 172.101.42.101
-        priority: 400
+        interface_name: eth2
       subnet_02:
         ipv4_address: 172.102.42.101
-        priority: 300
+        interface_name: eth3
       subnet6_00:
         ipv6_address: 3000:db8:1:42::101
-        priority: 500
+        interface_name: eth4
       subnet6_01:
         ipv6_address: 3001:db8:1:42::101
-        priority: 400
+        interface_name: eth5
 
   agent-kea-ha1:
     extends: agent-kea
@@ -362,22 +362,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.42.42.101
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.101
-        priority: 500
+        interface_name: eth1
       subnet_01:
         ipv4_address: 172.101.42.101
-        priority: 400
+        interface_name: eth2
       subnet_02:
         ipv4_address: 172.102.42.101
-        priority: 300
+        interface_name: eth3
       subnet6_00:
         ipv6_address: 3000:db8:1:42::101
-        priority: 500
+        interface_name: eth4
       subnet6_01:
         ipv6_address: 3001:db8:1:42::101
-        priority: 400
+        interface_name: eth5
     volumes:
       - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
       - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
@@ -393,22 +393,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.42.42.102
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.102
-        priority: 500
+        interface_name: eth1
       subnet_01:
         ipv4_address: 172.101.42.102
-        priority: 400
+        interface_name: eth2
       subnet_02:
         ipv4_address: 172.102.42.102
-        priority: 300
+        interface_name: eth3
       subnet6_00:
         ipv6_address: 3000:db8:1:42::102
-        priority: 500
+        interface_name: eth4
       subnet6_01:
         ipv6_address: 3001:db8:1:42::102
-        priority: 400
+        interface_name: eth5
     volumes:
       - $PWD/tests/system/config/kea-ha3/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
       - $PWD/tests/system/config/kea-ha3/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
@@ -502,22 +502,22 @@ services:
     networks:
       storknet:
         ipv4_address: 172.42.42.200
-        priority: 1000
+        interface_name: eth0
       subnet_00:
         ipv4_address: 172.100.42.200
-        priority: 500
+        interface_name: eth1
       subnet_01:
         ipv4_address: 172.101.42.200
-        priority: 400
+        interface_name: eth2
       subnet_02:
         ipv4_address: 172.102.42.200
-        priority: 300
+        interface_name: eth3
       subnet6_00:
         ipv6_address: 3000:db8:1:42::200
-        priority: 500
+        interface_name: eth4
       subnet6_01:
         ipv6_address: 3001:db8:1:42::200
-        priority: 400
+        interface_name: eth5
     healthcheck:
       disable: true
 

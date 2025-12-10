@@ -16,6 +16,9 @@ services:
     extra_hosts:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
+      - "agent-kea-ha1:172.24.0.101"
+      - "agent-kea-ha2:172.24.0.110"
+      - "agent-kea-ha3:172.24.0.121"
       - "agent-pdns:172.24.0.55"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
@@ -99,20 +102,18 @@ services:
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
     hostname: agent-kea
     networks:
-      # Using priority to ensure predictable assignment of interface names.
-      # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.100
-        priority: 1000
+        interface_name: eth0
       subnet-00:
         ipv4_address: 172.100.0.100
-        priority: 500
+        interface_name: eth1
       subnet-01:
         ipv4_address: 172.101.0.100
-        priority: 400
+        interface_name: eth2
       subnet-02:
         ipv4_address: 172.102.0.100
-        priority: 300
+        interface_name: eth3
     expose:
       - "8888" # stork server to agent
       - "9100" # node_exporter for prometheus
@@ -157,14 +158,6 @@ services:
         KEA_PRIOR_2_3_0: ${KEA_PRIOR_2_3_0:-false}
         KEA_PRIOR_2_7_5: ${KEA_PRIOR_2_7_5:-true}
         KEA_PRIOR_2_7_7: ${KEA_PRIOR_2_7_7:-true}
-    # Explicitly add entries to /etc/hosts for the hosts which are connected
-    # to more than two networks. These explicit entries should be added at the
-    # beginning of the /etc/hosts file enforcing that the connections by hostname
-    # are established with the IP addresses belonging to the storknet network.
-    # Before this change, agents sometimes listened on IP addresses dedicated for
-    # DHCP communication instead.
-    extra_hosts:
-      - "agent-kea-prior-3-0-0:172.24.0.103"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-prior-3-0-0:latest"
     hostname: agent-kea-prior-3-0-0
     networks:
@@ -172,23 +165,12 @@ services:
       # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.103
-        priority: 1000
-      subnet-00:
-        ipv4_address: 172.100.0.103
-        priority: 500
-      subnet-01:
-        ipv4_address: 172.101.0.103
-        priority: 400
-      subnet-02:
-        ipv4_address: 172.102.0.103
-        priority: 300
     expose:
       - "8881" # stork server to agent
-      - "9100" # node_exporter for prometheus
       - "9547" # kea_exporter for prometheus
     ports:
       # publish ports for development purposes
-      - "8881" # port to agent
+      - "8881:8881" # port to agent
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
@@ -197,11 +179,9 @@ services:
     volumes:
       - ./docker/config/agent-kea-prior-3-0-0/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-prior-3-0-0/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - ./docker/config/agent-kea-prior-3-0-0/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
-      - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
@@ -230,13 +210,13 @@ services:
       # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.106
-        priority: 1000
+        interface_name: eth0
       subnet6-00:
         ipv6_address: 3000:db8:1::100
-        priority: 500
+        interface_name: eth1
       subnet6-01:
         ipv6_address: 3001:db8:1::100
-        priority: 400
+        interface_name: eth2
     expose:
       - "8887" # stork server to agent
       - "9547" # kea_exporter for prometheus
@@ -274,12 +254,15 @@ services:
       target: kea
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha1:latest"
     hostname: agent-kea-ha1
+    extra_hosts:
+      - "agent-kea-ha1:172.24.0.101"
     networks:
       storknet:
         ipv4_address: 172.24.0.101
+        interface_name: eth0
       subnet-03:
         ipv4_address: 172.103.0.100
-        priority: 200
+        interface_name: eth1
     expose:
       - "8886"
       - "9547" # kea_exporter for prometheus
@@ -296,6 +279,8 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha1
       STORK_AGENT_PORT: "8886"
+      GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
+      GRPC_GO_LOG_SEVERITY_LEVEL: info
     volumes:
       - ./docker/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -318,15 +303,18 @@ services:
       target: kea
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha2:latest"
     hostname: agent-kea-ha2
+    extra_hosts:
+      - "agent-kea-ha2:172.24.0.110"
     networks:
       storknet:
         ipv4_address: 172.24.0.110
+        interface_name: eth0
       subnet-03:
         ipv4_address: 172.103.0.102
-        priority: 200
+        interface_name: eth1
       subnet6-02:
         ipv6_address: 3002:db8:1::200
-        priority: 400
+        interface_name: eth2
     expose:
       - "8885"
     ports:
@@ -342,6 +330,8 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha2
       STORK_AGENT_PORT: "8885"
+      GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
+      GRPC_GO_LOG_SEVERITY_LEVEL: info
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -369,12 +359,13 @@ services:
     networks:
       storknet:
         ipv4_address: 172.24.0.121
+        interface_name: eth0
       subnet-03:
         ipv4_address: 172.103.0.103
-        priority: 200
+        interface_name: eth1
       subnet6-02:
         ipv6_address: 3002:db8:1::300
-        priority: 400
+        interface_name: eth2
     expose:
       - "8890"
       - "9547" # kea_exporter for prometheus
@@ -391,6 +382,8 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha3
       STORK_AGENT_PORT: "8890"
+      GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
+      GRPC_GO_LOG_SEVERITY_LEVEL: info
     volumes:
       - ./docker/config/agent-kea-ha3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -485,7 +478,7 @@ services:
       context: .
       dockerfile: docker/images/stork.Dockerfile
       target: bind
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9-2:latest"
     hostname: agent-bind9-2
     networks:
       storknet:
@@ -583,6 +576,9 @@ services:
     extra_hosts:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
+      - "agent-kea-ha1:172.24.0.101"
+      - "agent-kea-ha2:172.24.0.110"
+      - "agent-kea-ha3:172.24.0.121"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
@@ -590,28 +586,28 @@ services:
       # See the "Using perfdhcp to Generate Traffic" section in the devel docs.
       storknet:
         ipv4_address: 172.24.0.200
-        priority: 1000
+        interface_name: eth0
       subnet-00:
         ipv4_address: 172.100.0.200
-        priority: 500
+        interface_name: eth1
       subnet-01:
         ipv4_address: 172.101.0.200
-        priority: 400
+        interface_name: eth2
       subnet-02:
         ipv4_address: 172.102.0.200
-        priority: 300
+        interface_name: eth3
       subnet-03:
         ipv4_address: 172.103.0.200
-        priority: 200
-      subnet6-02:
-        ipv6_address: 3002:db8:1::010
-        priority: 600
+        interface_name: eth4
       subnet6-00:
         ipv6_address: 3000:db8:1::200
-        priority: 500
+        interface_name: eth5
       subnet6-01:
         ipv6_address: 3001:db8:1::200
-        priority: 400
+        interface_name: eth6
+      subnet6-02:
+        ipv6_address: 3002:db8:1::10
+        interface_name: eth7
     ports:
       # We used to use port 5000 externally but that doesn't work
       # on macOS that has its own service on that port.
