@@ -21,3 +21,4 @@ src/app/*.ts.template
 .npmrc
 .browserlistrc
 junit.xml
+storybook-static
