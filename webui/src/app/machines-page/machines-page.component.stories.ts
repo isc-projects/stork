@@ -24,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext'
 import { BadgeModule } from 'primeng/badge'
 import { TagModule } from 'primeng/tag'
 import { FormsModule } from '@angular/forms'
-import { MessageServiceMock, toastDecorator } from '../utils-stories'
+import { MessageServiceMock, mockedFilterByText, toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { ProgressBarModule } from 'primeng/progressbar'
@@ -660,23 +660,6 @@ export const EmptyList: Story = {
     },
 }
 
-type Response = {items: any[], total: number}
-/**
- * Mocks filtering by text done on backend.
- * @param response
- * @param request
- */
-function mockFilterByText(response: Response, request: any): Response {
-    if (request.searchParams?.text && response.items?.length) {
-        const filteredItems = response.items.filter((item) => {
-            return (<string>item.address).includes(request.searchParams.text)
-        })
-        return { items: filteredItems, total: filteredItems.length }
-    }
-
-    return response
-}
-
 export const ListMachines: Story = {
     parameters: {
         mockData: [
@@ -690,7 +673,7 @@ export const ListMachines: Story = {
                 url: 'http://localhost/api/machines?start=:start&limit=:limit&text=:text',
                 method: 'GET',
                 status: 200,
-                response: (req) => mockFilterByText(mockedAllRespData, req),
+                response: (req) => mockedFilterByText(mockedAllRespData, req, 'address'),
             },
             {
                 url: 'http://localhost/api/machines?start=:start&limit=:limit&text=:text&authorized=:authorized',
@@ -698,10 +681,9 @@ export const ListMachines: Story = {
                 status: 200,
                 response: (req) => {
                     if (req.searchParams?.authorized == 'true') {
-                        return mockFilterByText(mockedAuthorizedRespData, req)
-                    } else {
-                        return mockFilterByText(mockedUnauthorizedRespData, req)
+                        return mockedFilterByText(mockedAuthorizedRespData, req, 'address')
                     }
+                    return mockedFilterByText(mockedUnauthorizedRespData, req, 'address')
                 },
             },
             {
@@ -711,9 +693,8 @@ export const ListMachines: Story = {
                 response: (req) => {
                     if (req.searchParams?.authorized == 'true') {
                         return mockedAuthorizedRespData
-                    } else {
-                        return mockedUnauthorizedRespData
                     }
+                    return mockedUnauthorizedRespData
                 },
             },
             {
