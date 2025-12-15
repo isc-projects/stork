@@ -796,14 +796,10 @@ to the number of configured zones.
                                                 </span>
                                             </div>
                                         </ng-template>
-                                        <app-zone-viewer-feeder
+                                        <app-zone-viewer
                                             [daemonId]="localZone.daemonId"
                                             [viewName]="localZone.view"
                                             [zoneId]="zone.id"
-                                            [active]="
-                                                getZoneViewerDialogVisible(localZone.daemonId, localZone.view, zone.id)
-                                            "
-                                            class="block h-full"
                                             (viewerError)="
                                                 setZoneViewerDialogVisible(
                                                     localZone.daemonId,
@@ -812,7 +808,7 @@ to the number of configured zones.
                                                     false
                                                 )
                                             "
-                                        ></app-zone-viewer-feeder>
+                                        ></app-zone-viewer>
                                     </p-dialog>
                                 </td>
                             </tr>

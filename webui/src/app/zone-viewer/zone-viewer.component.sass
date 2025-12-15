@@ -1,37 +1,64 @@
 @layer high
-    :host ::ng-deep .p-datatable
-        .p-datatable-tbody > tr
-            background: none !important
+    :host ::ng-deep
+        .p-paginator
+            color: var(--p-paginator-current-page-report-color)
 
-        .p-datatable-tbody > tr > td
-            font-family: monospace
-            padding: 0.5rem 1rem
-            border: none
-            vertical-align: top
+        .p-datatable
+            .col-name
+                width: 20%
+            .col-ttl
+                width: 10%
+            .col-rrClass
+                width: 10%
+            .col-rrType
+                width: 10%
+            .col-data
+                width: 50%
+            .col-data
+                width: 50%
 
-            &.rr-type-soa
-                color: var(--p-red-600)
+            .p-datatable-header
+                border: none
 
-            &.rr-type-a
-                color: var(--p-green-600)
+            .p-datatable-tbody > tr
+                background: none !important
 
-            &.rr-type-aaaa
-                color: var(--p-green-700)
+            .p-datatable-tbody > tr > td
+                font-family: monospace
+                padding: 0.5rem 1rem
+                border: none
+                vertical-align: top
 
-            &.rr-type-ns
-                color: var(--p-blue-600)
+                &.cell-name
+                    font-weight: bold
+                    word-wrap: break-word
 
-            &.rr-type-mx
-                color: var(--p-orange-600)
+                &.cell-data
+                    word-wrap: break-word
 
-            &.rr-type-cname
-                color: var(--p-purple-600)
+                &.rr-type-soa
+                    color: var(--p-red-600)
 
-            &.rr-type-txt
-                color: var(--p-cyan-700)
+                &.rr-type-a
+                    color: var(--p-green-600)
 
-            &.rr-type-ptr
-                color: var(--p-indigo-600)
+                &.rr-type-aaaa
+                    color: var(--p-green-700)
 
-        .p-datatable-tbody > tr:hover
-            background-color: var(--surface-hover)
+                &.rr-type-ns
+                    color: var(--p-blue-600)
+
+                &.rr-type-mx
+                    color: var(--p-orange-600)
+
+                &.rr-type-cname
+                    color: var(--p-purple-600)
+
+                &.rr-type-txt
+                    color: var(--p-cyan-700)
+
+                &.rr-type-ptr
+                    color: var(--p-indigo-600)
+
+            .p-datatable-tbody > tr:hover
+                background-color: var(--surface-hover)

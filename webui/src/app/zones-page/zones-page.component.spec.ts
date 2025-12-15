@@ -55,7 +55,6 @@ import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { ZoneViewerFeederComponent } from '../zone-viewer-feeder/zone-viewer-feeder.component'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { UnrootPipe } from '../pipes/unroot.pipe'
@@ -348,7 +347,6 @@ describe('ZonesPageComponent', () => {
             ],
             declarations: [
                 ZoneViewerComponent,
-                ZoneViewerFeederComponent,
                 ZonesPageComponent,
                 BreadcrumbsComponent,
                 HelpTipComponent,

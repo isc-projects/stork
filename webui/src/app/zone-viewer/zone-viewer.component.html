@@ -1,4 +1,4 @@
-<div class="text-base h-full flex flex-column">
+<div class="text-base flex flex-column">
     <div class="flex align-items-center justify-content-between">
         <div class="text-base text-gray-500">
             Cached from DNS server on
@@ -14,42 +14,55 @@
         <p-button
             label="Refresh from DNS"
             pTooltip="Refresh the zone contents from the DNS server using zone transfer (AXFR). The received data will be cached in Stork."
-            (click)="refreshFromDNSClicked.emit()"
+            (click)="refreshRRsFromDNS()"
             [disabled]="loading"
         />
     </div>
-    <p-divider />
-    @if (loading) {
-        <p-progressSpinner styleClass="w-2rem h-2rem gray-spinner" strokeWidth="6" />
-    } @else {
-        <div class="flex-auto">
-            <!-- The table uses a virtual scroller. Otherwise, loading the table with
-             a large number of rows can be very slow. How slow depends on the browser.
-             For a larger number of rows, loading could take 40 seconds on Safari.
-             It took considerable time on other browsers too. Using virtual scroller
-             mitigates this problem. -->
-            <p-table
-                [value]="data?.items ?? []"
-                [scrollable]="true"
-                [scrollHeight]="scrollHeight"
-                [virtualScroll]="true"
-                [virtualScrollItemSize]="46"
-            >
-                <ng-template #body let-rr>
-                    <tr style="height: 46px">
-                        <td class="font-bold">{{ rr.name }}</td>
-                        <td>{{ rr.ttl }}</td>
-                        <td>{{ rr.rrClass }}</td>
-                        <td [ngClass]="'rr-type-' + rr.rrType.toLowerCase()">{{ rr.rrType }}</td>
-                        <td>{{ rr.data }}</td>
-                    </tr>
-                </ng-template>
-                <ng-template #emptymessage>
-                    <tr>
-                        <td colspan="5">No data received</td>
-                    </tr>
-                </ng-template>
-            </p-table>
-        </div>
-    }
+    <p-table
+        #table
+        [columns]="cols"
+        [value]="zoneData"
+        [totalRecords]="totalRecords"
+        [lazy]="true"
+        [lazyLoadOnInit]="true"
+        [scrollable]="true"
+        responsiveLayout="stack"
+        [paginator]="true"
+        paginatorPosition="bottom"
+        [tableStyle]="{ tableLayout: 'fixed' }"
+        [rows]="rows"
+        [rowsPerPageOptions]="[10, 100, 1000]"
+        currentPageReportTemplate="{currentPage} of {totalPages} pages"
+        [showCurrentPageReport]="true"
+        [loading]="loading"
+        (onLazyLoad)="loadRRs($event)"
+    >
+        <ng-template #header let-columns>
+            <tr>
+                <th *ngFor="let column of columns" [ngClass]="'col-' + column.name">{{ column.label }}</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-rr let-columns="columns">
+            <tr>
+                <td
+                    *ngFor="let column of columns"
+                    [ngClass]="[
+                        column.name === 'rrType' ? 'rr-type-' + rr.rrType.toLowerCase() : '',
+                        'cell-' + column.name,
+                    ]"
+                >
+                    {{ rr[column.name] }}
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+            <tr>
+                <td colspan="5">No data received</td>
+            </tr>
+        </ng-template>
+        <ng-template #paginatorright let-state>
+            Total: {{ totalRecords > 0 ? totalRecords : '0' }}
+            {{ totalRecords === 1 ? 'record' : 'records' }}
+        </ng-template>
+    </p-table>
 </div>

@@ -1,9 +1,21 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core'
-import { ZoneRRs } from '../backend/model/zoneRRs'
+import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core'
 import { ZoneRR } from '../backend/model/zoneRR'
+import { lastValueFrom, map, tap } from 'rxjs'
+import { getErrorMessage } from '../utils'
+import { DNSService } from '../backend'
+import { LazyLoadEvent, MessageService } from 'primeng/api'
+import { Table } from 'primeng/table'
 
 /**
- * Component that displays zone contents (resource records) in a table.
+ * Interface describing the columns of the table.
+ */
+interface Column {
+    name: string
+    label: string
+}
+
+/**
+ * Component fetching and displaying zone contents (resource records) in a table.
  *
  * It compacts presented data by removing the zone name (gathered from the SOA record)
  * from the resource records. It also omits the name from the resource record when
@@ -17,14 +29,76 @@ import { ZoneRR } from '../backend/model/zoneRR'
 })
 export class ZoneViewerComponent {
     /**
-     * Holds presented zone resource records.
+     * Provides direct access to the the PrimeNG table component.
      */
-    private _data: ZoneRRs = {
-        items: [],
-    }
+    @ViewChild('table') table: Table
+
+    /**
+     * Holds the daemon ID.
+     */
+    @Input({ required: true }) daemonId: number
+
+    /**
+     * Holds the DNS view name.
+     */
+    @Input({ required: true }) viewName: string
+
+    /**
+     * Holds the zone ID.
+     */
+    @Input({ required: true }) zoneId: number
+
+    /**
+     * Emits the event indicating that fetching the zone resource records
+     * has failed.
+     *
+     * The parent component can use this event to take specific actions
+     * like hiding the zone viewer dialog.
+     */
+    @Output() viewerError = new EventEmitter<void>()
+
+    /**
+     * Holds the names of the columns to display in the table.
+     */
+    cols: Column[] = [
+        { name: 'name', label: 'Name' },
+        { name: 'ttl', label: 'TTL' },
+        { name: 'rrClass', label: 'Class' },
+        { name: 'rrType', label: 'Type' },
+        { name: 'data', label: 'Data' },
+    ]
+
+    /**
+     * Holds zone resource records fetched from the server.
+     */
+    zoneData: ZoneRR[] = []
+
+    /**
+     * Holds the timestamp of the last zone transfer.
+     */
+    zoneTransferAt: string = null
+
+    /**
+     * Holds the total number of zone resource records.
+     */
+    totalRecords: number = 2000
+
+    /**
+     * Holds the flag indicating that the zone resource records are being loaded.
+     *
+     * It is used to display the loading spinner.
+     */
+    loading: boolean = false
+
+    /**
+     * Holds the default number of rows to display in the table.
+     */
+    rows: number = 10
 
     /**
      * Holds the name of the zone gathered from the SOA record.
+     *
+     * It is used in the _transformZoneRR function.
      */
     private _zoneName: string | null = null
 
@@ -32,62 +106,130 @@ export class ZoneViewerComponent {
      * Holds the name of the last processed resource record.
      *
      * It is used to omit repeated names in subsequent resource records.
+     * It is used in the _transformZoneRR function.
      */
     private _lastName: string | null = null
 
     /**
-     * Sets the zone resource records to be presented.
+     * Constructor.
      *
-     * This function compacts the received information by removing the zone name
-     * from the resource record names and omitting the name from the resource record
-     * when the previous resource record has the same name.
-     *
-     * @param rrs zone resource records before transformation.
+     * @param _dnsApi DNS API service.
+     * @param _messageService message service.
      */
-    @Input({ required: true })
-    set data(rrs: ZoneRRs) {
-        // Reset the internal state.
+    constructor(
+        private _dnsApi: DNSService,
+        private _messageService: MessageService
+    ) {}
+
+    /**
+     * Loads the zone resource records from the server.
+     *
+     * @param event lazy load event containing pagination information.
+     */
+    public loadRRs(event?: LazyLoadEvent): void {
+        // Show the loading spinner.
+        this.loading = true
+        lastValueFrom(
+            this._dnsApi
+                .getZoneRRs(this.daemonId, this.viewName, this.zoneId, event?.first ?? 0, event?.rows || this.rows)
+                .pipe(
+                    tap(() => this._beginTransformZoneRR()),
+                    map((data) => {
+                        return {
+                            items: data.items.map((rr) => this._transformZoneRR(rr)),
+                            zoneTransferAt: data.zoneTransferAt,
+                            total: data.total,
+                        }
+                    })
+                )
+        )
+            .then((data) => {
+                // The data have been successfully loaded.
+                this.zoneData = data.items ?? []
+                this.zoneTransferAt = data.zoneTransferAt
+                this.totalRecords = data.total
+            })
+            .catch((error) => {
+                // Show the error message.
+                const errorMsg = getErrorMessage(error)
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Error getting zone contents',
+                    detail: errorMsg,
+                    life: 10000,
+                })
+                // Notify the parent.
+                this.viewerError.emit()
+            })
+            .finally(() => {
+                // Hide the loading spinner, regardless of the result.
+                this.loading = false
+            })
+    }
+
+    /**
+     * Refreshes the zone contents from the DNS server.
+     *
+     * @param event lazy load event containing pagination information.
+     */
+    private _refreshRRs(event?: LazyLoadEvent): void {
+        // Show the loading spinner.
+        this.loading = true
+        lastValueFrom(
+            this._dnsApi
+                .putZoneRRsCache(this.daemonId, this.viewName, this.zoneId, event?.first ?? 0, event?.rows || this.rows)
+                .pipe(
+                    tap(() => this._beginTransformZoneRR()),
+                    map((data) => {
+                        return {
+                            items: data.items.map((rr) => this._transformZoneRR(rr)),
+                            zoneTransferAt: data.zoneTransferAt,
+                            total: data.total,
+                        }
+                    })
+                )
+        )
+            .then((data) => {
+                // The data have been successfully loaded.
+                this.zoneData = data.items.map((rr) => this._transformZoneRR(rr))
+                this.zoneTransferAt = data.zoneTransferAt
+                this.totalRecords = data.total
+            })
+            .catch((error) => {
+                // Show the error message.
+                const errorMsg = getErrorMessage(error)
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Error refreshing zone contents from DNS server',
+                    detail: errorMsg,
+                    life: 10000,
+                })
+                // Notify the parent.
+                this.viewerError.emit()
+            })
+            .finally(() => {
+                // Hide the loading spinner, regardless of the result.
+                this.loading = false
+            })
+    }
+
+    /**
+     * Refreshes the zone contents from the DNS server.
+     */
+    public refreshRRsFromDNS() {
+        this._refreshRRs(this.table?.createLazyLoadMetadata())
+    }
+
+    /**
+     * Resets the zone name and the last name.
+     *
+     * This function must be called before transforming the resource records
+     * using the _transformZoneRR function.
+     */
+    private _beginTransformZoneRR(): void {
         this._zoneName = null
         this._lastName = null
-        if (rrs?.items) {
-            // Compact and assign the resource records.
-            this._data.items = rrs.items.map((rr, index) => this._transformZoneRR(rr, index === 0)).filter((rr) => rr)
-        } else {
-            this._data.items = []
-        }
     }
-
-    /**
-     * Holds the flag indicating if the zone contents are being loaded.
-     */
-    @Input() loading = false
-
-    /**
-     * The scroll height of the virtual scroller in the zone viewer.
-     *
-     * By default, the flex layout of the zone viewer is used. In this case, the
-     * scroller extends to the full height of the parent. To disable the flex
-     * layout and use specific height, set the value to a specific (e.g., '400px').
-     */
-    @Input() scrollHeight = 'flex'
-
-    /**
-     * Emits the event indicating that the zone contents should be refreshed from the DNS server.
-     */
-    @Output() refreshFromDNSClicked = new EventEmitter<void>()
-
-    /**
-     * Returns the transformed resource records.
-     */
-    get data(): ZoneRRs {
-        return this._data
-    }
-
-    /**
-     * Holds the timestamp of the last zone transfer.
-     */
-    @Input({ required: true })
-    zoneTransferAt: string = null
 
     /**
      * Transforms the resource record to an abbreviated form.
@@ -103,24 +245,14 @@ export class ZoneViewerComponent {
      *   instead of the fully qualified name).
      * - Omit the name of the resource record if the previous resource record has the
      *   same name.
-     * - Remove the trailing SOA record.
      *
      * @param rr resource record to transform.
-     * @param isFirst flag indicating if the resource record is the first one.
-     * @returns transformed resource record or null if the resource record should be omitted.
+     * @returns transformed resource record.
      */
-    private _transformZoneRR(rr: ZoneRR, isFirst: boolean): ZoneRR | null {
+    private _transformZoneRR(rr: ZoneRR): ZoneRR {
         let name: string = ''
         switch (true) {
             case rr.rrType === 'SOA':
-                if (!isFirst) {
-                    // Zone transfer returns a duplicate SOA record at the end.
-                    // It can be used for data integrity verification. However, we
-                    // don't need to display it in the zone viewer. We want the viewer
-                    // to display the data in the similar manner as in the zone file.
-                    // The zone file lacks the duplicate SOA record.
-                    return null
-                }
                 // The 'at' symbol is used in the zone file to represent the zone name.
                 name = '@'
                 this._zoneName = rr.name

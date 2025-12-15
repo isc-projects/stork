@@ -150,7 +150,6 @@ import { MachinesTableComponent } from './machines-table/machines-table.componen
 import { ZonesPageComponent } from './zones-page/zones-page.component'
 import { ByteCharacterComponent } from './byte-character/byte-character.component'
 import { ZoneViewerComponent } from './zone-viewer/zone-viewer.component'
-import { ZoneViewerFeederComponent } from './zone-viewer-feeder/zone-viewer-feeder.component'
 import { ConfigMigrationPageComponent } from './config-migration-page/config-migration-page.component'
 import { ConfigMigrationTableComponent } from './config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from './config-migration-tab/config-migration-tab.component'
@@ -395,7 +394,6 @@ const AuraBluePreset = definePreset(Aura, {
         ZonesPageComponent,
         ByteCharacterComponent,
         ZoneViewerComponent,
-        ZoneViewerFeederComponent,
         ConfigMigrationPageComponent,
         ConfigMigrationTableComponent,
         ConfigMigrationTabComponent,
