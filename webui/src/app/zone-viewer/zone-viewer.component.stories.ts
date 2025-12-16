@@ -15,6 +15,13 @@ import { DividerModule } from 'primeng/divider'
 import { ButtonModule } from 'primeng/button'
 import { PopoverModule } from 'primeng/popover'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { PanelModule } from 'primeng/panel'
+import { FloatLabelModule } from 'primeng/floatlabel'
+import { FormsModule } from '@angular/forms'
+import { IconFieldModule } from 'primeng/iconfield'
+import { InputIconModule } from 'primeng/inputicon'
+import { MultiSelectModule } from 'primeng/multiselect'
+import { TagModule } from 'primeng/tag'
 
 let mockGetZoneRRs: ZoneRRs = {
     zoneTransferAt: '2024-03-15T01:00:00Z',
@@ -97,9 +104,16 @@ export default {
             imports: [
                 ButtonModule,
                 DividerModule,
+                FloatLabelModule,
+                FormsModule,
+                IconFieldModule,
+                InputIconModule,
+                MultiSelectModule,
+                PanelModule,
                 PopoverModule,
                 ProgressSpinnerModule,
                 TableModule,
+                TagModule,
                 ToastModule,
                 TooltipModule,
             ],

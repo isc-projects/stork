@@ -1,10 +1,12 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core'
+import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { ZoneRR } from '../backend/model/zoneRR'
-import { lastValueFrom, map, tap } from 'rxjs'
+import { debounceTime, distinctUntilChanged, lastValueFrom, map, Observable, Subject, tap } from 'rxjs'
 import { getErrorMessage } from '../utils'
-import { DNSService } from '../backend'
-import { LazyLoadEvent, MessageService } from 'primeng/api'
+import { DNSRRType, DNSService, ZoneRRs } from '../backend'
+import { FilterMetadata, LazyLoadEvent, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
+import { tableHasFilter } from '../table'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 
 /**
  * Interface describing the columns of the table.
@@ -27,7 +29,7 @@ interface Column {
     templateUrl: './zone-viewer.component.html',
     styleUrl: './zone-viewer.component.sass',
 })
-export class ZoneViewerComponent {
+export class ZoneViewerComponent implements OnInit {
     /**
      * Provides direct access to the the PrimeNG table component.
      */
@@ -69,6 +71,11 @@ export class ZoneViewerComponent {
     ]
 
     /**
+     * RR types that can be selected to filter the zone contents.
+     */
+    rrTypes: string[] = []
+
+    /**
      * Holds zone resource records fetched from the server.
      */
     zoneData: ZoneRR[] = []
@@ -81,12 +88,10 @@ export class ZoneViewerComponent {
     /**
      * Holds the total number of zone resource records.
      */
-    totalRecords: number = 2000
+    totalRecords: number = 0
 
     /**
      * Holds the flag indicating that the zone resource records are being loaded.
-     *
-     * It is used to display the loading spinner.
      */
     loading: boolean = false
 
@@ -111,6 +116,12 @@ export class ZoneViewerComponent {
     private _lastName: string | null = null
 
     /**
+     * RxJS Subject used for filtering RRs based on UI filtering form inputs.
+     * @private
+     */
+    private _rrsTableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
      * Constructor.
      *
      * @param _dnsApi DNS API service.
@@ -118,30 +129,55 @@ export class ZoneViewerComponent {
      */
     constructor(
         private _dnsApi: DNSService,
-        private _messageService: MessageService
+        private _messageService: MessageService,
+        private destroyRef: DestroyRef
     ) {}
 
     /**
-     * Loads the zone resource records from the server.
+     * Component lifecycle hook which inits the component.
      *
-     * @param event lazy load event containing pagination information.
+     * It initializes the RR types that can be selected to filter the zone contents.
      */
-    public loadRRs(event?: LazyLoadEvent): void {
-        // Show the loading spinner.
+    ngOnInit(): void {
+        this.rrTypes = Object.values(DNSRRType).map((type) => type.toString())
+        this._rrsTableFilter$
+            .pipe(
+                map((f) => ({ ...f, value: f.value === '' ? null : f.value })), // replace empty string filter value with null
+                debounceTime(300),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((f) => {
+                // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                // so it's value must be set according to UI columnFilter value.
+                f.filterConstraint.value = f.value
+                this.table.first = 0
+                this.loadRRs(this.table.createLazyLoadMetadata())
+            })
+    }
+
+    /**
+     * Fetches the zone resource records from the server.
+     *
+     * It is called internally by loadRRs() and refreshRRsFromDNS() functions.
+     *
+     * @param req$ observable of the request.
+     * @param refresh flag indicating if the request is a refresh.
+     * @private
+     */
+    private _fetchRRs(req$: Observable<ZoneRRs>, refresh: boolean): void {
         this.loading = true
         lastValueFrom(
-            this._dnsApi
-                .getZoneRRs(this.daemonId, this.viewName, this.zoneId, event?.first ?? 0, event?.rows || this.rows)
-                .pipe(
-                    tap(() => this._beginTransformZoneRR()),
-                    map((data) => {
-                        return {
-                            items: data.items.map((rr) => this._transformZoneRR(rr)),
-                            zoneTransferAt: data.zoneTransferAt,
-                            total: data.total,
-                        }
-                    })
-                )
+            req$.pipe(
+                tap(() => this._beginTransformZoneRR()),
+                map((data) => {
+                    return {
+                        items: data.items?.map((rr) => this._transformZoneRR(rr)) ?? [],
+                        zoneTransferAt: data.zoneTransferAt,
+                        total: data.total,
+                    }
+                })
+            )
         )
             .then((data) => {
                 // The data have been successfully loaded.
@@ -154,7 +190,7 @@ export class ZoneViewerComponent {
                 const errorMsg = getErrorMessage(error)
                 this._messageService.add({
                     severity: 'error',
-                    summary: 'Error getting zone contents',
+                    summary: refresh ? 'Error refreshing zone contents from DNS server' : 'Error getting zone contents',
                     detail: errorMsg,
                     life: 10000,
                 })
@@ -162,61 +198,52 @@ export class ZoneViewerComponent {
                 this.viewerError.emit()
             })
             .finally(() => {
-                // Hide the loading spinner, regardless of the result.
                 this.loading = false
             })
+    }
+
+    /**
+     * Loads the zone resource records from the server.
+     *
+     * @param event lazy load event containing pagination information.
+     */
+    loadRRs(event?: LazyLoadEvent): void {
+        const req$ = this._dnsApi.getZoneRRs(
+            this.daemonId,
+            this.viewName,
+            this.zoneId,
+            event?.first ?? 0,
+            event?.rows ?? this.rows,
+            (event?.filters?.rrType as FilterMetadata)?.value ?? null,
+            (event?.filters?.text as FilterMetadata)?.value ?? null
+        )
+        this._fetchRRs(req$, false)
     }
 
     /**
      * Refreshes the zone contents from the DNS server.
      *
      * @param event lazy load event containing pagination information.
+     * @private
      */
     private _refreshRRs(event?: LazyLoadEvent): void {
-        // Show the loading spinner.
-        this.loading = true
-        lastValueFrom(
-            this._dnsApi
-                .putZoneRRsCache(this.daemonId, this.viewName, this.zoneId, event?.first ?? 0, event?.rows || this.rows)
-                .pipe(
-                    tap(() => this._beginTransformZoneRR()),
-                    map((data) => {
-                        return {
-                            items: data.items.map((rr) => this._transformZoneRR(rr)),
-                            zoneTransferAt: data.zoneTransferAt,
-                            total: data.total,
-                        }
-                    })
-                )
+        const req$ = this._dnsApi.putZoneRRsCache(
+            this.daemonId,
+            this.viewName,
+            this.zoneId,
+            event?.first ?? 0,
+            event?.rows ?? this.rows,
+            (event?.filters?.rrType as FilterMetadata)?.value ?? null,
+            (event?.filters?.text as FilterMetadata)?.value ?? null
         )
-            .then((data) => {
-                // The data have been successfully loaded.
-                this.zoneData = data.items.map((rr) => this._transformZoneRR(rr))
-                this.zoneTransferAt = data.zoneTransferAt
-                this.totalRecords = data.total
-            })
-            .catch((error) => {
-                // Show the error message.
-                const errorMsg = getErrorMessage(error)
-                this._messageService.add({
-                    severity: 'error',
-                    summary: 'Error refreshing zone contents from DNS server',
-                    detail: errorMsg,
-                    life: 10000,
-                })
-                // Notify the parent.
-                this.viewerError.emit()
-            })
-            .finally(() => {
-                // Hide the loading spinner, regardless of the result.
-                this.loading = false
-            })
+        this._fetchRRs(req$, true)
     }
 
     /**
      * Refreshes the zone contents from the DNS server.
      */
-    public refreshRRsFromDNS() {
+    refreshRRsFromDNS() {
+        this.table.first = 0
         this._refreshRRs(this.table?.createLazyLoadMetadata())
     }
 
@@ -225,6 +252,7 @@ export class ZoneViewerComponent {
      *
      * This function must be called before transforming the resource records
      * using the _transformZoneRR function.
+     * @private
      */
     private _beginTransformZoneRR(): void {
         this._zoneName = null
@@ -248,6 +276,7 @@ export class ZoneViewerComponent {
      *
      * @param rr resource record to transform.
      * @returns transformed resource record.
+     * @private
      */
     private _transformZoneRR(rr: ZoneRR): ZoneRR {
         let name: string = ''
@@ -278,5 +307,38 @@ export class ZoneViewerComponent {
             ...rr,
             name,
         }
+    }
+
+    /**
+     * Reference to hasFilter() utility function so it can be used in the html template.
+     * @protected
+     */
+    protected readonly tableHasFilter = tableHasFilter
+
+    /**
+     * Filters the zone resource records table by RR type or text.
+     *
+     * @param value value of the filter.
+     * @param filterConstraint filter constraint.
+     */
+    filterRRsTable(value: any, filterConstraint: FilterMetadata): void {
+        this._rrsTableFilter$.next({ value, filterConstraint })
+    }
+
+    /**
+     * Clears a value for given zone table filter constraint and reloads the table with the new filtering.
+     * @param filterConstraint
+     */
+    clearFilter(filterConstraint: FilterMetadata) {
+        filterConstraint.value = null
+        this.table.first = 0
+        this.loadRRs(this.table.createLazyLoadMetadata())
+    }
+
+    /**
+     * Clears the PrimeNG table state (filtering, pagination are reset).
+     */
+    clearTableState() {
+        this.table?.clear()
     }
 }

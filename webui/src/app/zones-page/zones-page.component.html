@@ -753,7 +753,9 @@ to the number of configured zones.
                                         *ngIf="!localZone.disableShowZone"
                                         [modal]="true"
                                         [visible]="
-                                            getZoneViewerDialogVisible(localZone.daemonId, localZone.view, zone.id)
+                                            zoneViewerDialogVisible()[
+                                                `${localZone.daemonId}:${localZone.view}:${zone.id}`
+                                            ]
                                         "
                                         [maximizable]="true"
                                         [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
@@ -796,19 +798,25 @@ to the number of configured zones.
                                                 </span>
                                             </div>
                                         </ng-template>
-                                        <app-zone-viewer
-                                            [daemonId]="localZone.daemonId"
-                                            [viewName]="localZone.view"
-                                            [zoneId]="zone.id"
-                                            (viewerError)="
-                                                setZoneViewerDialogVisible(
-                                                    localZone.daemonId,
-                                                    localZone.view,
-                                                    zone.id,
-                                                    false
-                                                )
-                                            "
-                                        ></app-zone-viewer>
+                                        @if (
+                                            zoneViewerDialogVisible()[
+                                                `${localZone.daemonId}:${localZone.view}:${zone.id}`
+                                            ]
+                                        ) {
+                                            <app-zone-viewer
+                                                [daemonId]="localZone.daemonId"
+                                                [viewName]="localZone.view"
+                                                [zoneId]="zone.id"
+                                                (viewerError)="
+                                                    setZoneViewerDialogVisible(
+                                                        localZone.daemonId,
+                                                        localZone.view,
+                                                        zone.id,
+                                                        false
+                                                    )
+                                                "
+                                            ></app-zone-viewer>
+                                        }
                                     </p-dialog>
                                 </td>
                             </tr>

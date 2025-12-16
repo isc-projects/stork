@@ -10,8 +10,16 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { PopoverModule } from 'primeng/popover'
 import { DNSService, ZoneRRs } from '../backend'
-import { MessageService } from 'primeng/api'
+import { FilterMetadata, MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
+import { PanelModule } from 'primeng/panel'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { FloatLabelModule } from 'primeng/floatlabel'
+import { MultiSelectModule } from 'primeng/multiselect'
+import { FormsModule } from '@angular/forms'
+import { IconFieldModule } from 'primeng/iconfield'
+import { InputIconModule } from 'primeng/inputicon'
+import { TagModule } from 'primeng/tag'
 
 describe('ZoneViewerComponent', () => {
     let component: ZoneViewerComponent
@@ -62,11 +70,24 @@ describe('ZoneViewerComponent', () => {
         const messageSpy = jasmine.createSpyObj('MessageService', ['add'])
 
         await TestBed.configureTestingModule({
-            imports: [ButtonModule, PopoverModule, TableModule, TooltipModule],
+            imports: [
+                ButtonModule,
+                FloatLabelModule,
+                FormsModule,
+                IconFieldModule,
+                InputIconModule,
+                MultiSelectModule,
+                PanelModule,
+                PopoverModule,
+                TableModule,
+                TagModule,
+                TooltipModule,
+            ],
             declarations: [HelpTipComponent, LocaltimePipe, PlaceholderPipe, ZoneViewerComponent],
             providers: [
                 { provide: DNSService, useValue: dnsSpy },
                 { provide: MessageService, useValue: messageSpy },
+                provideNoopAnimations(),
             ],
         }).compileComponents()
 
@@ -99,39 +120,59 @@ describe('ZoneViewerComponent', () => {
             component.viewName,
             component.zoneId,
             10,
-            100
+            100,
+            null,
+            null
         )
     }))
 
     it('should refresh zone data', fakeAsync(() => {
-        component.loadRRs({ first: 1, rows: 11 })
+        // Set custom pagination values.
+        component.table.first = 1
+        component.table.rows = 11
+        component.loadRRs(component.table.createLazyLoadMetadata())
         tick()
+        fixture.detectChanges()
 
+        // Make sure that the correct parameters are passed to the API.
         expect(dnsServiceSpy.getZoneRRs).toHaveBeenCalledWith(
             component.daemonId,
             component.viewName,
             component.zoneId,
             1,
-            11
+            11,
+            null,
+            null
         )
 
+        // Make sure that the pagination values are preserved.
+        expect(component.table.first).toBe(1)
+        expect(component.table.rows).toBe(11)
+
+        // Make sure that the data is loaded correctly.
         expect(component.zoneData.length).toBe(2)
         expect(component.zoneData[0].name).toBe('@')
         expect(component.zoneData[0].data).toBe('ns1.example.com. admin.example.com. 2024031501 3600 900 1209600 300')
         expect(component.zoneData[1].name).toBe('www')
         expect(component.zoneData[1].data).toBe('192.0.2.1')
 
-        // Refresh the data.
+        // Refresh the data. Make sure that the offset was reset to 0.
         component.refreshRRsFromDNS()
         tick()
+        fixture.detectChanges()
+
+        // Make sure that the correct parameters are passed to the API.
         expect(dnsServiceSpy.putZoneRRsCache).toHaveBeenCalledWith(
             component.daemonId,
             component.viewName,
             component.zoneId,
             0,
-            10
+            11,
+            null,
+            null
         )
 
+        // Make sure that the data was refreshed correctly.
         expect(component.zoneData.length).toBe(2)
         expect(component.zoneData[0].name).toBe('@')
         expect(component.zoneData[0].data).toBe('ns2.example.com. admin.example.com. 2024031501 1800 900 1209600 300')
@@ -139,19 +180,135 @@ describe('ZoneViewerComponent', () => {
         expect(component.zoneData[1].data).toBe('192.0.2.2')
     }))
 
-    it('should handle API errors', fakeAsync(() => {
+    it('should filter zone data by type', fakeAsync(() => {
+        component.table.filters['rrType'] = {
+            value: ['SOA', 'A'],
+            matchMode: 'contains',
+        } as FilterMetadata
+        component.filterRRsTable(['SOA', 'A'] as any, component.table.filters['rrType'])
+        tick(300)
+        fixture.detectChanges()
+
+        // Make sure that the correct parameters are passed to the API.
+        expect(dnsServiceSpy.getZoneRRs).toHaveBeenCalledWith(
+            component.daemonId,
+            component.viewName,
+            component.zoneId,
+            0,
+            10,
+            ['SOA', 'A'],
+            null
+        )
+    }))
+
+    it('should filter zone data by text', fakeAsync(() => {
+        component.table.filters['text'] = {
+            value: 'example.com',
+            matchMode: 'contains',
+        } as FilterMetadata
+        component.filterRRsTable('example.com', component.table.filters['text'])
+        tick(300)
+        fixture.detectChanges()
+
+        // Make sure that the correct parameters are passed to the API.
+        expect(dnsServiceSpy.getZoneRRs).toHaveBeenCalledWith(
+            component.daemonId,
+            component.viewName,
+            component.zoneId,
+            0,
+            10,
+            null,
+            'example.com'
+        )
+    }))
+
+    it('should filter zone data by type when refreshing zone data', fakeAsync(() => {
+        component.table.filters['rrType'] = {
+            value: ['A', 'AAAA'],
+            matchMode: 'contains',
+        } as FilterMetadata
+        component.refreshRRsFromDNS()
+        tick()
+        fixture.detectChanges()
+
+        // Make sure that the correct parameters are passed to the API.
+        expect(dnsServiceSpy.putZoneRRsCache).toHaveBeenCalledWith(
+            component.daemonId,
+            component.viewName,
+            component.zoneId,
+            0,
+            10,
+            ['A', 'AAAA'],
+            null
+        )
+    }))
+
+    it('should filter zone data by text when refreshing zone data', fakeAsync(() => {
+        component.table.first = 1
+        component.table.filters['text'] = {
+            value: 'example.com',
+            matchMode: 'contains',
+        } as FilterMetadata
+        component.refreshRRsFromDNS()
+        tick()
+        fixture.detectChanges()
+
+        // Make sure that the correct parameters are passed to the API.
+        expect(dnsServiceSpy.putZoneRRsCache).toHaveBeenCalledWith(
+            component.daemonId,
+            component.viewName,
+            component.zoneId,
+            0,
+            10,
+            null,
+            'example.com'
+        )
+    }))
+
+    it('should handle API errors while getting zone data', fakeAsync(() => {
+        // Set up the error message.
         const errorMessage = 'Failed to load zone data'
         dnsServiceSpy.getZoneRRs.and.returnValue(throwError(() => new Error(errorMessage)))
+        // Make sure that the viewer error event is emitted.
+        spyOn(component.viewerError, 'emit')
 
+        // Load the data.
         component.loadRRs()
         tick()
+        fixture.detectChanges()
 
+        // Make sure that the error message is displayed.
         expect(messageServiceSpy.add).toHaveBeenCalledWith({
             severity: 'error',
             summary: 'Error getting zone contents',
             detail: errorMessage,
             life: 10000,
         })
+        // Make sure that the viewer error event is emitted.
+        expect(component.viewerError.emit).toHaveBeenCalled()
+    }))
+
+    it('should handle API errors while refreshing zone data', fakeAsync(() => {
+        // Set up the error message.
+        const errorMessage = 'Failed to refresh zone data'
+        dnsServiceSpy.putZoneRRsCache.and.returnValue(throwError(() => new Error(errorMessage)))
+        // Make sure that the viewer error event is emitted.
+        spyOn(component.viewerError, 'emit')
+
+        // Refresh the data.
+        component.refreshRRsFromDNS()
+        tick()
+        fixture.detectChanges()
+
+        // Make sure that the error message is displayed.
+        expect(messageServiceSpy.add).toHaveBeenCalledWith({
+            severity: 'error',
+            summary: 'Error refreshing zone contents from DNS server',
+            detail: errorMessage,
+            life: 10000,
+        })
+        // Make sure that the viewer error event is emitted.
+        expect(component.viewerError.emit).toHaveBeenCalled()
     }))
 
     it('should transform SOA record correctly', () => {

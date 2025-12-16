@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
 import {
     DNSAppType,
@@ -249,9 +249,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private _zonesTableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
-     * Map keeping zone viewer dialog visibility state for each zone viewer dialog.
+     * A record keeping zone viewer dialog visibility state for each zone viewer dialog.
      */
-    zoneViewerDialogVisible: Map<string, boolean> = new Map()
+    zoneViewerDialogVisible = signal<Record<string, boolean>>({})
 
     /**
      * Class constructor.
@@ -788,18 +788,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Creates a unique key for the zone viewer dialog visibility map.
-     *
-     * @param daemonId daemon ID.
-     * @param viewName view name.
-     * @param zoneId zone ID.
-     * @returns unique key.
-     */
-    private _getZoneViewerKey(daemonId: number, viewName: string, zoneId: number): string {
-        return `${daemonId}:${viewName}:${zoneId}`
-    }
-
-    /**
      * Sets the visibility state of the zone viewer dialog.
      *
      * @param daemonId daemon ID.
@@ -808,21 +796,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @param visible visibility state.
      */
     setZoneViewerDialogVisible(daemonId: number, viewName: string, zoneId: number, visible: boolean) {
-        const key = this._getZoneViewerKey(daemonId, viewName, zoneId)
-        this.zoneViewerDialogVisible.set(key, visible)
-    }
-
-    /**
-     * Returns the visibility state of the zone viewer dialog.
-     *
-     * @param daemonId daemon ID.
-     * @param viewName view name.
-     * @param zoneId zone ID.
-     * @returns visibility state.
-     */
-    getZoneViewerDialogVisible(daemonId: number, viewName: string, zoneId: number): boolean {
-        const key = this._getZoneViewerKey(daemonId, viewName, zoneId)
-        return this.zoneViewerDialogVisible.get(key) ?? false
+        this.zoneViewerDialogVisible.update((state) => ({ ...state, [`${daemonId}:${viewName}:${zoneId}`]: visible }))
     }
 
     /**

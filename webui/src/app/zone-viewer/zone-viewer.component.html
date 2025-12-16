@@ -1,3 +1,14 @@
+<ng-template #clearFilterBtn let-value let-filterConstraint="filterConstraint">
+    <p-button
+        icon="pi pi-filter-slash"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        [styleClass]="value ? '' : 'hidden-space'"
+        (onClick)="clearFilter(filterConstraint)"
+    />
+</ng-template>
+
 <div class="text-base flex flex-column">
     <div class="flex align-items-center justify-content-between">
         <div class="text-base text-gray-500">
@@ -37,6 +48,101 @@
         [loading]="loading"
         (onLazyLoad)="loadRRs($event)"
     >
+        <ng-template #caption>
+            <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
+                <ng-template #header>
+                    <div class="flex align-items-center gap-2">
+                        <p-button
+                            [text]="true"
+                            [rounded]="true"
+                            severity="secondary"
+                            [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                            (click)="filtersPanel.toggle($event)"
+                        />
+                        <i class="pi pi-filter"></i>
+                        <span class="font-bold">Filters</span>
+                        <p-tag
+                            icon="pi pi-check"
+                            value="Filter applied"
+                            severity="success"
+                            *ngIf="tableHasFilter(table)"
+                        ></p-tag>
+                        <app-help-tip subject="Filtering" id="filtering-help-button">
+                            <p>
+                                Resource records in the table below can be filtered by explicitly selected RR types
+                                and/or using a text matching the RR names or data. Searching by text is case
+                                insensitive. If RR type and text filter are used together, they are combined using the
+                                logical AND operator.
+                            </p>
+                        </app-help-tip>
+                    </div>
+                </ng-template>
+                <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
+                    <p-button
+                        label="Clear"
+                        [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
+                        icon="pi pi-filter-slash"
+                        (click)="clearTableState()"
+                        [disabled]="!tableHasFilter(table)"
+                    />
+                    <div class="flex-auto"></div>
+                    <p-columnFilter field="rrType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                        <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <div class="flex align-items-center">
+                                <p-floatlabel variant="on">
+                                    <p-multiSelect
+                                        inputId="rr-type"
+                                        [options]="rrTypes"
+                                        [ngModel]="value"
+                                        styleClass="w-12rem"
+                                        (onChange)="filterRRsTable($event.value, filterConstraint)"
+                                    />
+                                    <label for="zone-type">Zone Type</label>
+                                </p-floatlabel>
+                                <ng-container
+                                    *ngTemplateOutlet="
+                                        clearFilterBtn;
+                                        context: {
+                                            $implicit: value,
+                                            filterConstraint: filterConstraint,
+                                        }
+                                    "
+                                ></ng-container>
+                            </div>
+                        </ng-template>
+                    </p-columnFilter>
+                    <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                        <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                            <div class="flex align-items-center">
+                                <p-iconfield iconPosition="left">
+                                    <p-inputicon>
+                                        <i class="pi pi-search"></i>
+                                    </p-inputicon>
+                                    <input
+                                        id="rr-text"
+                                        pInputText
+                                        type="text"
+                                        (input)="filterRRsTable($event.target.value, filterConstraint)"
+                                        [ngModel]="value"
+                                        placeholder="Name or Data"
+                                        class="max-w-13rem sm:w-18rem sm:max-w-18rem"
+                                    />
+                                </p-iconfield>
+                                <ng-container
+                                    *ngTemplateOutlet="
+                                        clearFilterBtn;
+                                        context: {
+                                            $implicit: value,
+                                            filterConstraint: filterConstraint,
+                                        }
+                                    "
+                                ></ng-container>
+                            </div>
+                        </ng-template>
+                    </p-columnFilter>
+                </div>
+            </p-panel>
+        </ng-template>
         <ng-template #header let-columns>
             <tr>
                 <th *ngFor="let column of columns" [ngClass]="'col-' + column.name">{{ column.label }}</th>

@@ -1303,11 +1303,9 @@ describe('ZonesPageComponent', () => {
 
         // Wait for the zone viewer dialog to be displayed.
         expect(
-            component.getZoneViewerDialogVisible(
-                fakeZones.items[0].localZones[1].daemonId,
-                fakeZones.items[0].localZones[1].view,
-                fakeZones.items[0].id
-            )
+            component.zoneViewerDialogVisible()[
+                `${fakeZones.items[0].localZones[1].daemonId}:${fakeZones.items[0].localZones[1].view}:${fakeZones.items[0].id}`
+            ]
         ).toBeTrue()
         await fixture.whenStable()
         fixture.detectChanges()
