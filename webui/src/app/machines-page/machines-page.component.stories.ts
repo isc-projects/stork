@@ -928,7 +928,7 @@ export const TestTableFiltering: Story = {
         // Filter unauthorized machines.
         await userEvent.click(authorizedCheckbox)
         await expect(canvas.getAllByRole('row')).toHaveLength(mockedUnauthorizedMachines.length + 1) // All rows in tbody + one row in the thead.
-        await expect(canvas.getAllByRole('cell')).toHaveLength(5 * mockedUnauthorizedMachines.length) // One row in the tbody has specific number of cells (5).
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(5 * mockedUnauthorizedMachines.length) // One row in the tbody has specific number of cells (5).
         await expect(canvas.getByText(mockedUnauthorizedMachines[0].address)).toBeInTheDocument()
         await expect(canvas.getByText(mockedUnauthorizedMachines[1].address)).toBeInTheDocument()
         await expect(canvas.queryByText(mockedAuthorizedMachines[0].address)).toBeNull()
@@ -938,12 +938,12 @@ export const TestTableFiltering: Story = {
         await userEvent.type(searchBox, 'kea')
         // One unauthorized kea machine is expected.
         await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
-        await expect(canvas.getAllByRole('cell')).toHaveLength(5) // One row in the tbody has specific number of cells (5).
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(5) // One row in the tbody has specific number of cells (5).
 
         // Show authorized + unauthorized machines.
         await userEvent.click(authorizedCheckbox)
         // Six kea machines (authorized + unauthorized) are expected.
         await expect(canvas.getAllByRole('row')).toHaveLength(7) // All rows in tbody + one row in the thead.
-        await expect(canvas.getAllByRole('cell')).toHaveLength(15 * 6) // One row in the tbody has specific number of cells (15).
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(15 * 6) // One row in the tbody has specific number of cells (15).
     },
 }
