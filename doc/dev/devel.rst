@@ -872,11 +872,6 @@ explicitly when multiple networks are used in the service.
         ipv4_address: 172.100.42.200
         interface_name: eth1
 
-In the configuration above, the ``storknet`` network should be assigned
-to the ``eth0`` (the first) interface, and the ``subnet_00`` network to the
-``eth1`` interface. Our experiments show that this assumption works
-reliably.
-
 .. warning::
 
     Don't use the ``priority`` property to order the networks. This solution
