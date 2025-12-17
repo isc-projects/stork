@@ -279,8 +279,6 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha1
       STORK_AGENT_PORT: "8886"
-      GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
-      GRPC_GO_LOG_SEVERITY_LEVEL: info
     volumes:
       - ./docker/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -330,8 +328,6 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha2
       STORK_AGENT_PORT: "8885"
-      GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
-      GRPC_GO_LOG_SEVERITY_LEVEL: info
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -384,8 +380,6 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha3
       STORK_AGENT_PORT: "8890"
-      GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
-      GRPC_GO_LOG_SEVERITY_LEVEL: info
     volumes:
       - ./docker/config/agent-kea-ha3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
