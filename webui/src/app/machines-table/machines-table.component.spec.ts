@@ -16,7 +16,6 @@ import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AuthService } from '../auth.service'
-import { tableHasFilter } from '../table'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
