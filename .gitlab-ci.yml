@@ -63,15 +63,6 @@ stages:
     - runner-manager
     - amd64
   needs: []
-  cache:
-    key: $CI_PROJECT_NAME-debian-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/
-      - webui/node_modules/
-      - /root/.cache/go-build
-      - /var/lib/dpkg/info
-    fallback_keys:
-      - $CI_PROJECT_NAME-debian-$CI_DEFAULT_BRANCH
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -80,15 +71,6 @@ stages:
 
 .base_build_debian_arm:
   extends: .base_build_debian
-  cache:
-    key: $CI_PROJECT_NAME-debian-arm-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/
-      - webui/node_modules/
-      - /root/.cache/go-build
-      - /var/lib/dpkg/info
-    fallback_keys:
-      - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -100,14 +82,6 @@ stages:
   needs: []
   rules:
     - when: always
-  cache:
-    key: $CI_PROJECT_NAME-ubi-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/
-      - webui/node_modules/
-      - /root/.cache/go-build
-    fallback_keys:
-      - $CI_PROJECT_NAME-ubi-$CI_DEFAULT_BRANCH
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
   tags:
     - linux
@@ -122,14 +96,6 @@ stages:
 
 .base_build_ubi_arm:
   extends: .base_build_ubi
-  cache:
-    key: $CI_PROJECT_NAME-ubi-arm-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/
-      - webui/node_modules/
-      - /root/.cache/go-build
-    fallback_keys:
-      - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -141,13 +107,6 @@ stages:
   needs: []
   rules:
     - when: always
-  cache:
-    key: $CI_PROJECT_NAME-alpine-$CI_COMMIT_REF_SLUG
-    paths:
-      - webui/node_modules/
-      - tools/
-    fallback_keys:
-      - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:12
   tags:
     - linux
@@ -165,14 +124,6 @@ stages:
 
 .base_build_alpine_arm:
   extends: .base_build_alpine
-  cache:
-    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/
-      - webui/node_modules/
-      - /root/.cache/go-build
-    fallback_keys:
-      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -653,12 +604,6 @@ system_test:
     - when: manual
       allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
-  cache:
-    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/
-    fallback_keys:
-      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
   before_script:
     - ip -6 route del default
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
