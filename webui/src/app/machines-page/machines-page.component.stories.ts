@@ -721,6 +721,12 @@ export const ListMachines: Story = {
                 status: 200,
                 response: () => ({ token: 'regeneratedRandomMachineToken' }),
             },
+            {
+                url: 'http://localhost/api/machines/:id',
+                method: 'DELETE',
+                status: 200,
+                response: (_) => {},
+            },
         ],
     },
 }
@@ -795,8 +801,10 @@ export const TestUnauthorizedShown: Story = {
     play: async ({ canvas }) => {
         // Arrange
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
 
         // Act
+        await userEvent.click(clearFiltersBtn)
         await userEvent.click(await within(selectButtonGroup).findByText('Unauthorized'))
 
         // Assert
@@ -810,7 +818,6 @@ export const TestUnauthorizedShown: Story = {
 
         // Check filtering panel content
         await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', false)
-        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         await expect(clearFiltersBtn).toBeEnabled()
 
         // Check bulk authorize button state
@@ -847,10 +854,13 @@ export const TestAuthorizedShown: Story = {
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
         const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
 
         // Act
+        await userEvent.click(clearFiltersBtn)
         await userEvent.click(authorizedButton)
 
         // Assert
@@ -864,7 +874,6 @@ export const TestAuthorizedShown: Story = {
 
         // Check filtering panel content
         await expect(canvas.getByLabelText('Authorized')).toHaveProperty('checked', true) // Checkbox in the filtering panel.
-        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         await expect(clearFiltersBtn).toBeEnabled()
 
         // Check there is no bulk authorize button
@@ -888,6 +897,18 @@ export const TestAuthorizedShown: Story = {
             'aria-disabled',
             'true'
         )
+
+        // Test deleting a machine.
+        const menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
+        await userEvent.click(menuCommandDeleteMachine)
+        const dialog = await body.findByRole('alertdialog', { name: 'Confirm' })
+        const confirmButton = await within(dialog).findByRole('button', { name: 'Yes' })
+        await userEvent.click(confirmButton)
+
+        await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length) // There should be one less machine.
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(
+            13 * (mockedAuthorizedMachines.length - 1)
+        ) // One row in the tbody has specific number of cells (13).
     },
 }
 
