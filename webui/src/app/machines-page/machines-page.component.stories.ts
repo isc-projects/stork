@@ -36,7 +36,7 @@ import { of } from 'rxjs'
 import { AppsVersions } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { userEvent, within, expect } from '@storybook/test'
+import { userEvent, within, expect, waitFor } from '@storybook/test'
 
 const meta: Meta<MachinesPageComponent> = {
     title: 'App/MachinesPage',
@@ -888,5 +888,62 @@ export const TestAuthorizedShown: Story = {
             'aria-disabled',
             'true'
         )
+    },
+}
+
+export const TestTableFiltering: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListMachines.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        const authorizedCheckbox = await canvas.findByRole('checkbox', { name: 'Authorized' })
+        const searchBox = await canvas.findByRole('textbox')
+
+        // Act
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(authorizedCheckbox) // At first, check filtering authorized machines.
+
+        // Assert
+        await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length + 1) // All rows in tbody + one row in the thead.
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(13 * mockedAuthorizedMachines.length) // One row in the tbody has specific number of cells (13).
+        await expect(canvas.queryByText(mockedUnauthorizedMachines[0].address)).toBeNull()
+        await expect(canvas.queryByText(mockedUnauthorizedMachines[1].address)).toBeNull()
+        await expect(canvas.getByText(mockedAuthorizedMachines[0].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedAuthorizedMachines[1].address)).toBeInTheDocument()
+
+        // Apply text filter.
+        await userEvent.type(searchBox, 'ha')
+        // Three authorized kea-ha machines are expected.
+        await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(4)) // All rows in tbody (3) + one row in the thead.
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(13 * 3) // One row in the tbody has specific number of cells (13).
+
+        // Clear text filter.
+        await userEvent.clear(searchBox)
+        await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length + 1)) // All rows in tbody + one row in the thead.
+
+        // Filter unauthorized machines.
+        await userEvent.click(authorizedCheckbox)
+        await expect(canvas.getAllByRole('row')).toHaveLength(mockedUnauthorizedMachines.length + 1) // All rows in tbody + one row in the thead.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(5 * mockedUnauthorizedMachines.length) // One row in the tbody has specific number of cells (5).
+        await expect(canvas.getByText(mockedUnauthorizedMachines[0].address)).toBeInTheDocument()
+        await expect(canvas.getByText(mockedUnauthorizedMachines[1].address)).toBeInTheDocument()
+        await expect(canvas.queryByText(mockedAuthorizedMachines[0].address)).toBeNull()
+        await expect(canvas.queryByText(mockedAuthorizedMachines[1].address)).toBeNull()
+
+        // Apply text filter.
+        await userEvent.type(searchBox, 'kea')
+        // One unauthorized kea machine is expected.
+        await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(5) // One row in the tbody has specific number of cells (5).
+
+        // Show authorized + unauthorized machines.
+        await userEvent.click(authorizedCheckbox)
+        // Six kea machines (authorized + unauthorized) are expected.
+        await expect(canvas.getAllByRole('row')).toHaveLength(7) // All rows in tbody + one row in the thead.
+        await expect(canvas.getAllByRole('cell')).toHaveLength(15 * 6) // One row in the tbody has specific number of cells (15).
     },
 }
