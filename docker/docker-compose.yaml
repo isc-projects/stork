@@ -356,6 +356,8 @@ services:
       target: kea
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha3:latest"
     hostname: agent-kea-ha3
+    extra_hosts:
+      - "agent-kea-ha3:172.24.0.121"
     networks:
       storknet:
         ipv4_address: 172.24.0.121
