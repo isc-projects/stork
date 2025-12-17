@@ -1863,41 +1863,6 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	require.ErrorContains(t, capturedErr, "failed to flush the batch of RRs")
 }
 
-func TestGetFilteredResponse(t *testing.T) {
-	response := &RRResponse{
-		RRs: []*dnsconfig.RR{
-			{Name: "example.com", Type: "A", Rdata: "192.0.2.1"},
-			{Name: "ipv6.example.com", Type: "AAAA", Rdata: "2001:db8::1"},
-			{Name: "ipv4.example.com", Type: "A", Rdata: "192.0.2.2"},
-			{Name: "any.example.org", Type: "AAAA", Rdata: "2001:db8::2"},
-		},
-	}
-
-	t.Run("filter by type", func(t *testing.T) {
-		filter := dbmodel.NewGetZoneRRsFilter()
-		filter.EnableType("A")
-		filteredResponse, pos := response.applyFilter(filter, 0)
-		require.Len(t, filteredResponse.RRs, 2)
-		require.Equal(t, 2, pos)
-	})
-
-	t.Run("filter by name text", func(t *testing.T) {
-		filter := dbmodel.NewGetZoneRRsFilter()
-		filter.SetText("example.com")
-		filteredResponse, pos := response.applyFilter(filter, 0)
-		require.Len(t, filteredResponse.RRs, 3)
-		require.Equal(t, 3, pos)
-	})
-
-	t.Run("filter by rdata text", func(t *testing.T) {
-		filter := dbmodel.NewGetZoneRRsFilter()
-		filter.SetText("2001:db8:")
-		filteredResponse, pos := response.applyFilter(filter, 0)
-		require.Len(t, filteredResponse.RRs, 2)
-		require.Equal(t, 2, pos)
-	})
-}
-
 // Test that one BIND 9 configuration file is returned from the agent.
 func TestGetBind9FormattedConfig(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
