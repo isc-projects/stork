@@ -858,8 +858,8 @@ enough for most test cases. To generate some DHCP traffic, use the
         )
 
 Please note above that an IPv4 address is used to send DHCPv4 traffic and an
-interface name for the DHCPv6 traffic. Docker allows assigning specific
-interface to a network by the ``interface_name`` property. It must be set
+interface name for the DHCPv6 traffic. Docker allows for creating a specific
+network interface using the ``interface_name`` property. It must be set
 explicitly when multiple networks are used in the service.
 
 .. code-block:: yaml
