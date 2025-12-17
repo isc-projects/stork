@@ -877,7 +877,7 @@ func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName st
 		}
 		defer func() {
 			err := tx.Rollback()
-			if err != nil {
+			if err != nil && !errors.Is(err, pg.ErrTxDone) {
 				log.WithError(err).Error("Failed to rollback the transaction for caching RRs")
 			}
 		}()
