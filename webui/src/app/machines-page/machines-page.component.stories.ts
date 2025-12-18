@@ -899,13 +899,26 @@ export const TestAuthorizedShown: Story = {
         )
 
         // Test deleting a machine.
-        const menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
+        let menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
         await userEvent.click(menuCommandDeleteMachine)
-        const dialog = await body.findByRole('alertdialog', { name: 'Confirm' })
+        let dialog = await body.findByRole('alertdialog', { name: 'Confirm' })
         const confirmButton = await within(dialog).findByRole('button', { name: 'Yes' })
         await userEvent.click(confirmButton)
 
         await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length) // There should be one less machine.
+        await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(
+            13 * (mockedAuthorizedMachines.length - 1)
+        ) // One row in the tbody has specific number of cells (13).
+
+        await userEvent.click(menuButtons[1])
+        await canvas.findByRole('menu')
+        menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
+        await userEvent.click(menuCommandDeleteMachine)
+        dialog = await body.findByRole('alertdialog', { name: 'Confirm' })
+        const cancelButton = await within(dialog).findByRole('button', { name: 'No' })
+        await userEvent.click(cancelButton)
+
+        await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length) // There should be no change.
         await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(
             13 * (mockedAuthorizedMachines.length - 1)
         ) // One row in the tbody has specific number of cells (13).
