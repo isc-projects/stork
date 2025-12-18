@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -283,18 +284,17 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, "", bind9config.NewParser())
+
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, daemon)
-	require.Equal(t, daemonname.Bind9, daemon.GetName())
-	require.Len(t, daemon.GetAccessPoints(), 1)
-	point := daemon.GetAccessPoints()[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "1.1.1.1", point.Address)
-	require.EqualValues(t, 1111, point.Port)
-	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
-	require.EqualValues(t, 1234, daemon.(*Bind9Daemon).pid)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Empty(t, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 1: if BIND9 detection takes -c parameter
@@ -321,17 +321,17 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, "", bind9config.NewParser())
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, daemon)
-	require.Equal(t, daemonname.Bind9, daemon.GetName())
-	require.Len(t, daemon.GetAccessPoints(), 1)
-	point := daemon.GetAccessPoints()[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "1.1.1.1", point.Address)
-	require.EqualValues(t, 1111, point.Port)
-	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+	require.Equal(t, config1Path, path)
+	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
+	require.Empty(t, rndcKeyPath)
+	require.Equal(t, chrootPath, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 }
 
 // Checks detection STEP 2: if BIND9 detection takes the explicit config path
@@ -361,17 +361,16 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "usr", "sbin", "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, confPath, bind9config.NewParser())
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, confPath)
 	require.NoError(t, err)
-	require.NotNil(t, daemon)
-	require.Equal(t, daemonname.Bind9, daemon.GetName())
-	require.Len(t, daemon.GetAccessPoints(), 1)
-	point := daemon.GetAccessPoints()[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "192.0.2.1", point.Address)
-	require.EqualValues(t, 1234, point.Port)
-	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+	require.Equal(t, confPath, path)
+	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
+	require.Empty(t, rndcKeyPath)
+	require.Empty(t, detectedFiles.chrootDir)
+	require.Equal(t, sandbox.BasePath+"/usr/", detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 2: if BIND9 detection takes
@@ -403,17 +402,17 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, fullConfPath, bind9config.NewParser())
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, fullConfPath)
 	require.NoError(t, err)
-	require.NotNil(t, daemon)
-	require.Equal(t, daemonname.Bind9, daemon.GetName())
-	require.Len(t, daemon.GetAccessPoints(), 1)
-	point := daemon.GetAccessPoints()[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "192.0.2.1", point.Address)
-	require.EqualValues(t, 1234, point.Port)
-	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+	require.Equal(t, confPath, path)
+	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
+	require.Empty(t, rndcKeyPath)
+	require.Equal(t, chrootPath, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 2: the explicit config path must be
@@ -445,9 +444,9 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	daemon, err := detectBind9Daemon(process, executor, confPath, bind9config.NewParser())
-	require.ErrorContains(t, err, "cannot find config file for BIND 9")
-	require.Nil(t, daemon)
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, confPath)
+	require.ErrorContains(t, err, "BIND 9 config file not found")
+	require.Nil(t, detectedFiles)
 }
 
 // Checks detection STEP 3: parse output of the named -V command.
@@ -478,17 +477,17 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, "", bind9config.NewParser())
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, daemon)
-	require.Equal(t, daemonname.Bind9, daemon.GetName())
-	require.Len(t, daemon.GetAccessPoints(), 1)
-	point := daemon.GetAccessPoints()[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "192.0.2.1", point.Address)
-	require.EqualValues(t, 1234, point.Port)
-	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+	require.Equal(t, varPath, path)
+	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
+	require.Empty(t, rndcKeyPath)
+	require.Empty(t, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 3: parse output of the named -V command.
@@ -521,17 +520,16 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, "", bind9config.NewParser())
+
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
 	require.NoError(t, err)
-	require.NotNil(t, daemon)
-	require.Equal(t, daemonname.Bind9, daemon.GetName())
-	require.Len(t, daemon.GetAccessPoints(), 1)
-	point := daemon.GetAccessPoints()[0]
-	require.Equal(t, AccessPointControl, point.Type)
-	require.Equal(t, "192.0.2.1", point.Address)
-	require.EqualValues(t, 1234, point.Port)
-	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	require.Equal(t, varPath, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Equal(t, chrootPath, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 }
 
 // Checks detection STEP 4: look at the typical locations.
@@ -564,29 +562,25 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 		t.Run(expectedConfigPath, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			parser := NewMockBind9FileParser(ctrl)
-			parser.EXPECT().ParseFile(expectedConfigPath, "").DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
-				return bind9config.NewParser().ParseFile(path.Join(sandbox.BasePath, "testing.conf"), "")
-			})
 
 			// Act
 			process := NewMockSupportedProcess(ctrl)
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
 			process.EXPECT().getCwd().Return("", nil)
-			process.EXPECT().getPid().Return(int32(1234))
-			daemon, err := detectBind9Daemon(process, executor, "", parser)
+			detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
 
 			// Assert
 			require.NoError(t, err)
-			require.NotNil(t, daemon)
-			require.Equal(t, daemonname.Bind9, daemon.GetName())
-			require.Len(t, daemon.GetAccessPoints(), 1)
-			point := daemon.GetAccessPoints()[0]
-			require.Equal(t, AccessPointControl, point.Type)
-			require.Equal(t, "192.0.2.1", point.Address)
-			require.EqualValues(t, 1234, point.Port)
-			require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+			require.NotNil(t, detectedFiles)
+			require.Len(t, detectedFiles.files, 1)
+			path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+			require.Equal(t, expectedConfigPath, path)
+			rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
+			require.Empty(t, rndcKeyPath)
+			require.Empty(t, detectedFiles.chrootDir)
+			expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+			require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 		})
 	}
 }
@@ -618,31 +612,221 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 		t.Run(expectedPath, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			parser := NewMockBind9FileParser(ctrl)
-			parser.EXPECT().ParseFile(expectedConfigPath, chrootPath).DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
-				return bind9config.NewParser().ParseFile("testing.conf", rootPath)
-			})
 
 			// Act
 			process := NewMockSupportedProcess(ctrl)
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 			process.EXPECT().getCwd().Return("", nil)
-			process.EXPECT().getPid().Return(int32(1234))
-			daemon, err := detectBind9Daemon(process, executor, "", parser)
+			detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
 
 			// Assert
 			require.NoError(t, err)
-			require.NotNil(t, daemon)
-			require.Equal(t, daemonname.Bind9, daemon.GetName())
-			require.Len(t, daemon.GetAccessPoints(), 1)
-			point := daemon.GetAccessPoints()[0]
-			require.Equal(t, AccessPointControl, point.Type)
-			require.Equal(t, "192.0.2.1", point.Address)
-			require.EqualValues(t, 1234, point.Port)
-			require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
+			require.NotNil(t, detectedFiles)
+			require.Len(t, detectedFiles.files, 1)
+			path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+			require.Equal(t, expectedConfigPath, path)
+			rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
+			require.Empty(t, rndcKeyPath)
+			require.Equal(t, chrootPath, detectedFiles.chrootDir)
+			expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+			require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
 		})
 	}
+}
+
+// Check that the detected BIND 9 daemon is instantiated and configured
+// when both config and rndc key files are present.
+func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		statistics-channels {
+			inet 1.1.1.1 port 1112 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// Create rndc.key file.
+	rndcKeyPath := path.Join(sandbox.BasePath, "rndc.key")
+	rndcKeyConfig := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+	`
+	_, err = sandbox.Write("rndc.key", rndcKeyConfig)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addCheckConfOutput(rndcKeyPath, rndcKeyConfig)
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+
+	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files.addFile(detectedFileTypeConfig, configPath)
+
+	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+	require.Equal(t, daemonname.Bind9, daemon.GetName())
+	require.Len(t, daemon.GetAccessPoints(), 2)
+
+	// Check control access point.
+	controlPoint := daemon.GetAccessPoints()[0]
+	require.Equal(t, AccessPointControl, controlPoint.Type)
+	require.Equal(t, "1.1.1.1", controlPoint.Address)
+	require.EqualValues(t, 1111, controlPoint.Port)
+
+	// Check statistics access point.
+	statisticsPoint := daemon.GetAccessPoints()[1]
+	require.Equal(t, AccessPointStatistics, statisticsPoint.Type)
+	require.Equal(t, "1.1.1.1", statisticsPoint.Address)
+	require.EqualValues(t, 1112, statisticsPoint.Port)
+	require.Empty(t, statisticsPoint.Key)
+}
+
+// Check that the detected BIND 9 daemon is instantiated and configured
+// when rndc key file is absent.
+func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		statistics-channels {
+			inet 1.1.1.1 port 1112 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(configPath, config)
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+
+	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files.addFile(detectedFileTypeConfig, configPath)
+
+	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+	require.Equal(t, daemonname.Bind9, daemon.GetName())
+	require.Len(t, daemon.GetAccessPoints(), 2)
+
+	// Check control access point.
+	controlPoint := daemon.GetAccessPoints()[0]
+	require.Equal(t, AccessPointControl, controlPoint.Type)
+	require.Equal(t, "1.1.1.1", controlPoint.Address)
+	require.EqualValues(t, 1111, controlPoint.Port)
+
+	// Check statistics access point.
+	statisticsPoint := daemon.GetAccessPoints()[1]
+	require.Equal(t, AccessPointStatistics, statisticsPoint.Type)
+	require.Equal(t, "1.1.1.1", statisticsPoint.Address)
+	require.EqualValues(t, 1112, statisticsPoint.Port)
+	require.Empty(t, statisticsPoint.Key)
+}
+
+// Check that the detected BIND 9 daemon is instantiated and configured
+// when the statistics channels are not configured.
+func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(configPath, config)
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+
+	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files.addFile(detectedFileTypeConfig, configPath)
+
+	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+	require.Equal(t, daemonname.Bind9, daemon.GetName())
+	require.Len(t, daemon.GetAccessPoints(), 1)
+
+	// Check control access point.
+	controlPoint := daemon.GetAccessPoints()[0]
+	require.Equal(t, AccessPointControl, controlPoint.Type)
+	require.Equal(t, "1.1.1.1", controlPoint.Address)
+	require.EqualValues(t, 1111, controlPoint.Port)
+	require.EqualValues(t, "foo:hmac-sha256:abcd", controlPoint.Key)
+
+	// Check other daemon fields.
+	require.Equal(t, daemon.Name, daemonname.Bind9)
+	require.Nil(t, daemon.zoneInventory)
+	require.NotNil(t, daemon.rndcClient)
+	require.EqualValues(t, 1234, daemon.pid)
+	require.NotNil(t, daemon.bind9Config)
+	require.Nil(t, daemon.rndcKeyConfig)
+}
+
+// Check that an error is returned when parsing the BIND 9 config file fails.
+func TestConfigureBind9DaemonParseError(t *testing.T) {
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/bind/named.conf", "/chroot").Return(nil, errors.New("test error"))
+
+	files := newDetectedDaemonFiles("/chroot", "")
+	files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf")
+
+	daemon, err := configureBind9Daemon(process, files, parser, newTestCommandExecutor())
+	require.Error(t, err)
+	require.Nil(t, daemon)
+	require.ErrorContains(t, err, "failed to parse BIND 9 config file")
 }
 
 // There is no reliable way to test step 4 (checking typical locations). The

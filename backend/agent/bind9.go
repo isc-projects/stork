@@ -22,8 +22,9 @@ var (
 	_ bind9FileParser = (*bind9config.Parser)(nil)
 
 	// Patterns for detecting named process.
-	bind9Pattern       = regexp.MustCompile(`(.*?)named\s+(.*)`)
-	bind9ChrootPattern = regexp.MustCompile(`-t\s+(\S+)`)
+	bind9Pattern           = regexp.MustCompile(`(.*?)named(\s+.*)?`)
+	bind9ChrootPattern     = regexp.MustCompile(`-t\s+(\S+)`)
+	bind9ConfigPathPattern = regexp.MustCompile(`-c\s+(\S+)`)
 )
 
 // An interface for parsing BIND 9 configuration files.
@@ -76,8 +77,8 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 	if err != nil {
 		return err
 	}
-	rndcKeyPath := path.Join(bind9ConfDir, RndcKeyFile)
-	rndcConfPath := path.Join(bind9ConfDir, RndcConfigurationFile)
+	rndcKeyPath := filepath.Join(bind9ConfDir, RndcKeyFile)
+	rndcConfPath := filepath.Join(bind9ConfDir, RndcConfigurationFile)
 
 	cmd := []string{rndcPath, "-s", ctrlAddress, "-p", fmt.Sprintf("%d", ctrlPort)}
 
@@ -125,7 +126,7 @@ func determineBinPath(baseNamedDir, executable string, executor storkutil.Comman
 	// look for executable in base named directory and sbin or bin subdirectory
 	if baseNamedDir != "" {
 		for _, binDir := range []string{"sbin", "bin"} {
-			fullPath := path.Join(baseNamedDir, binDir, executable)
+			fullPath := filepath.Join(baseNamedDir, binDir, executable)
 			if executor.IsFileExist(fullPath) {
 				return fullPath, nil
 			}
@@ -183,7 +184,8 @@ func parseNamedDefaultPath(output []byte) string {
 	return namedConfMatch[1]
 }
 
-// Detect the BIND 9 daemon by parsing the named process command line.
+// Detect the BIND 9 config and rndc key files
+//
 // If the path to the configuration file is relative and chroot directory is
 // not specified, the path is resolved against the current working directory of
 // the process. If the chroot directory is specified, the path is resolved
@@ -200,63 +202,50 @@ func parseNamedDefaultPath(output []byte) string {
 // Step 2: Checks if the explicit config path is defined and exists. If it is, uses that.
 // Step 3: Try to parse output of the named -V command.
 // Step 4: Try to find named.conf in the default locations.
-
-// The function reads the configuration file and extracts its control address,
-// port, and secret key (if configured). The returned instance lacks information
-// about the active daemons. It must be detected separately.
 //
-// It returns the BIND 9 daemon instance or an error if the BIND 9 is not
-// recognized or any error occurs.
-//
-// ToDo: Enable the linter check after splitting this function in #1991.
-//
-//nolint:gocyclo
-func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (Daemon, error) {
+// It returns a structure containing the information about the detected files, the
+// chroot directory and the base named directory.
+func detectBind9ConfigPaths(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string) (*detectedDaemonFiles, error) {
+	// We can't proceed without the command line.
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil, err
 	}
+
+	// The command line must contain named.
+	match := bind9Pattern.FindStringSubmatch(cmdline)
+	if len(match) < 3 {
+		return nil, errors.Errorf("failed to find named in cmdline: %s", cmdline)
+	}
+
 	cwd, err := p.getCwd()
 	if err != nil {
 		log.WithError(err).Warn("Cannot get named process current working directory")
 	}
-	match := bind9Pattern.FindStringSubmatch(cmdline)
-	if match == nil {
-		return nil, errors.Wrapf(err, "failed to find named cmdline: %s", cmdline)
-	}
-	if len(match) < 3 {
-		return nil, errors.Errorf("failed to parse named cmdline: %s", cmdline)
-	}
 
-	// Try to find bind9 config file(s).
-	namedDir := match[1]
+	var (
+		baseNamedDir  string
+		bind9ConfPath string
+		chrootDir     string
+	)
+
+	// Check if the chroot directory is specified in the command line.
 	bind9Params := match[2]
-	// Path to actual chroot (empty if not used).
-	chrootDir := ""
-	// Absolute path from the actual root or chroot.
-	bind9ConfPath := ""
-
-	// Look for the chroot directory.
-	m := bind9ChrootPattern.FindStringSubmatch(bind9Params)
-	if m != nil {
-		chrootDir = strings.TrimRight(m[1], "/")
-
-		// The cwd path is already prefixed with the chroot directory
-		// because the /proc/(pid)/cwd is absolute.
+	if m := bind9ChrootPattern.FindStringSubmatch(bind9Params); m != nil {
+		// Remove extraneous trailing slashes.
+		chrootDir = filepath.Clean(m[1])
+		// Remove the chroot directory from the current working directory.
+		// It leaves us with a path within the chroot directory.
 		cwd = strings.TrimPrefix(cwd, chrootDir)
 	}
 
-	// Look for config file in cmd params.
-	configPathPattern := regexp.MustCompile(`-c\s+(\S+)`)
-	m = configPathPattern.FindStringSubmatch(bind9Params)
-
 	// STEP 1: Let's try to parse -c parameter passed to named.
 	log.Debug("Looking for BIND 9 config file in -c parameter of a running process.")
-	if m != nil {
-		bind9ConfPath = m[1]
+	if m := bind9ConfigPathPattern.FindStringSubmatch(bind9Params); m != nil {
+		bind9ConfPath = filepath.Clean(m[1])
 		// If path to config is not absolute then join it with CWD of named.
-		if !path.IsAbs(bind9ConfPath) {
-			bind9ConfPath = path.Join(cwd, bind9ConfPath)
+		if !filepath.IsAbs(bind9ConfPath) {
+			bind9ConfPath = filepath.Join(cwd, bind9ConfPath)
 		}
 	}
 
@@ -283,8 +272,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	// parse its output.
 
 	// determine base named directory
-	baseNamedDir := ""
-	if namedDir != "" {
+	if namedDir := match[1]; namedDir != "" {
 		// remove sbin or bin at the end
 		baseNamedDir, _ = filepath.Split(strings.TrimRight(namedDir, "/"))
 	}
@@ -308,7 +296,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		// config path not found in cmdline params so try to guess its location
 		for _, f := range getPotentialNamedConfLocations() {
 			// Concat with root or chroot.
-			fullPath := path.Join(chrootDir, f, "named.conf")
+			fullPath := filepath.Join(chrootDir, f, "named.conf")
 			log.Debugf("Looking for BIND 9 config file in %s", fullPath)
 			if executor.IsFileExist(fullPath) {
 				bind9ConfPath = f
@@ -316,14 +304,31 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 			}
 		}
 	}
-
-	// no config file so nothing to do
 	if bind9ConfPath == "" {
-		return nil, errors.Errorf("cannot find config file for BIND 9")
+		return nil, errors.Errorf("BIND 9 config file not found")
 	}
 
+	// Create a structure to store the detected files.
+	detectedFiles := newDetectedDaemonFiles(chrootDir, baseNamedDir)
+	detectedFiles.addFile(detectedFileTypeConfig, bind9ConfPath)
+
+	// The rndc key file is optional.
+	rndcKeyPath := filepath.Join(filepath.Dir(bind9ConfPath), RndcKeyFile)
+	if executor.IsFileExist(filepath.Join(chrootDir, rndcKeyPath)) {
+		detectedFiles.addFile(detectedFileTypeRndcKey, rndcKeyPath)
+	}
+	return detectedFiles, nil
+}
+
+// Parses the BIND 9 config and rndc key files. It extracts the RNDC and statistics
+// channel connection parameters.
+func configureBind9Daemon(p supportedProcess, files *detectedDaemonFiles, parser bind9FileParser, executor storkutil.CommandExecutor) (*Bind9Daemon, error) {
+	configPath := files.getFirstFilePathByType(detectedFileTypeConfig)
+	rndcKeyPath := files.getFirstFilePathByType(detectedFileTypeRndcKey)
+	chrootDir := files.chrootDir
+
 	// Parse the BIND 9 config file.
-	bind9Config, err := parser.ParseFile(bind9ConfPath, chrootDir)
+	bind9Config, err := parser.ParseFile(configPath, chrootDir)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to parse BIND 9 config file")
 	}
@@ -342,8 +347,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 
 	// rndc.key file typically contains keys to be used for rndc authentication.
 	var rndcConfig *bind9config.Config
-	rndcKeyPath := filepath.Join(filepath.Dir(bind9ConfPath), RndcKeyFile)
-	if executor.IsFileExist(path.Join(chrootDir, rndcKeyPath)) {
+	if rndcKeyPath != "" {
 		rndcConfig, err = parser.ParseFile(rndcKeyPath, chrootDir)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to parse BIND 9 rndc key file")
@@ -356,7 +360,7 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		return nil, errors.WithMessage(err, "failed to get BIND 9 rndc credentials")
 	}
 	if !enabled {
-		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", path.Join(chrootDir, bind9ConfPath))
+		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", path.Join(chrootDir, configPath))
 	}
 
 	rndcKey := ""
@@ -402,9 +406,9 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 	// determine rndc details
 	rndcClient := NewRndcClient(executor)
 	err = rndcClient.DetermineDetails(
-		baseNamedDir,
+		files.baseDir,
 		// rndc client doesn't support chroot.
-		path.Join(chrootDir, path.Dir(bind9ConfPath)),
+		filepath.Join(chrootDir, filepath.Dir(configPath)),
 		*ctrlAddress,
 		*ctrlPort,
 		ctrlKey,
@@ -428,6 +432,26 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 		rndcKeyConfig: rndcConfig,
 	}
 
+	return daemon, nil
+}
+
+// Detects the BIND 9 process, parses its configuration and returns its
+// instance with all its access points.
+func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (Daemon, error) {
+	detectedFiles, err := detectBind9ConfigPaths(p, executor, explicitConfigPath)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to detect BIND 9 config path")
+		return nil, err
+	}
+	log.WithFields(log.Fields{
+		"path": detectedFiles.files[0].path,
+	}).Debug("BIND 9 config path detected")
+
+	daemon, err := configureBind9Daemon(p, detectedFiles, parser, executor)
+	if err != nil {
+		err = errors.WithMessage(err, "failed to configure BIND 9 daemon")
+		return nil, err
+	}
 	return daemon, nil
 }
 
