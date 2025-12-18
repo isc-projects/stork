@@ -59,19 +59,16 @@ func (d *LogsDump) Execute() error {
 				errStr = err.Error()
 			}
 
-			// TODO: Code implemented in below line is a temporary solution for virtual applications.
-			daemon.Machine = d.machine
-			app := daemon.GetVirtualApp()
-
 			tail := &models.LogTail{
-				Machine: &models.AppMachine{
-					ID:       d.machine.ID,
-					Address:  d.machine.Address,
-					Hostname: d.machine.State.Hostname,
+				Machine: &models.SimpleMachine{
+					ID:           d.machine.ID,
+					Address:      d.machine.Address,
+					Hostname:     d.machine.State.Hostname,
+					AgentPort:    d.machine.AgentPort,
+					AgentVersion: d.machine.State.AgentVersion,
 				},
-				AppID:           storkutil.Ptr(app.ID),
-				AppName:         storkutil.Ptr(app.Name),
-				AppType:         storkutil.Ptr(string(app.Type)),
+				DaemonID:        storkutil.Ptr(daemon.ID),
+				DaemonName:      storkutil.Ptr(string(daemon.Name)),
 				LogTargetOutput: storkutil.Ptr(logTarget.Output),
 				Contents:        contents,
 				Error:           errStr,
