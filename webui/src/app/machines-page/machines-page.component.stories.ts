@@ -37,6 +37,7 @@ import { AppsVersions } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { userEvent, within, expect, waitFor } from '@storybook/test'
+import { deepCopy } from '../utils'
 
 const meta: Meta<MachinesPageComponent> = {
     title: 'App/MachinesPage',
@@ -727,6 +728,25 @@ export const ListMachines: Story = {
                 status: 200,
                 response: (_) => {},
             },
+            {
+                url: 'http://localhost/api/machines/:id/state',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    if (req?.url) {
+                        const id = req.url.match(/\d+/)?.[0] ?? 0
+                        const m = mockedAuthorizedMachines.find((m) => m.id == id)
+                        if (m) {
+                            const updated = deepCopy(m)
+                            updated.hostname += ' refreshed'
+                            updated.lastVisitedAt = new Date().toISOString()
+                            return updated
+                        }
+                    }
+
+                    return { error: 'Could not refresh state of the machine' }
+                },
+            },
         ],
     },
 }
@@ -922,6 +942,13 @@ export const TestAuthorizedShown: Story = {
         await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(
             13 * (mockedAuthorizedMachines.length - 1)
         ) // One row in the tbody has specific number of cells (13).
+
+        // Test refreshing machine state
+        await userEvent.click(menuButtons[1])
+        await canvas.findByRole('menu')
+        const menuCommandRefreshState = await canvas.findByTitle('Refresh machine state information')
+        await userEvent.click(menuCommandRefreshState)
+        await waitFor(() => expect(body.getByText('Machine refreshed')).toBeInTheDocument())
     },
 }
 

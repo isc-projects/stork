@@ -257,6 +257,48 @@ describe('TabViewComponent', () => {
         expect(component.openTabs[1].entity.name).toEqual('test4')
         expect(component.activeTabEntityID).toBe(7)
     })
+
+    it('should not delete entity that does not exist', () => {
+        const entities = [
+            { id: 2, name: 'test' },
+            { id: 3, name: 'test2' },
+        ]
+        fixture.componentRef.setInput('entities', entities)
+        fixture.detectChanges()
+
+        component.onDeleteEntity(4)
+        fixture.detectChanges()
+
+        expect(component.entitiesCollection()).toBeTruthy()
+        expect(component.entitiesCollection().length).toBe(2)
+    })
+
+    it('should not fail when trying to delete entity when entities collection is undefined', () => {
+        component.onDeleteEntity(4)
+        expect(component.entitiesCollection()).toBeFalsy()
+    })
+
+    it('should not update entity that does not exist', () => {
+        const entities = [
+            { id: 2, name: 'test' },
+            { id: 3, name: 'test2' },
+        ]
+        fixture.componentRef.setInput('entities', entities)
+        fixture.detectChanges()
+
+        component.onUpdateTabEntity(4, { id: 4, name: 'updated' })
+        fixture.detectChanges()
+
+        expect(component.entitiesCollection()).toBeTruthy()
+        expect(component.entitiesCollection().length).toBe(2)
+        const updated = component.entitiesCollection().find((e) => e.id == 4)
+        expect(updated).toBeFalsy()
+    })
+
+    it('should not fail when trying to update entity when entities collection is undefined', () => {
+        component.onUpdateTabEntity(4)
+        expect(component.entitiesCollection()).toBeFalsy()
+    })
 })
 
 @Component({

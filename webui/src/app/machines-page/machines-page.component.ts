@@ -90,6 +90,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             label: 'Refresh machine state information',
             id: 'refresh-single-machine',
             icon: 'pi pi-refresh',
+            title: 'Refresh machine state information',
         },
         {
             label: 'Dump troubleshooting data',
