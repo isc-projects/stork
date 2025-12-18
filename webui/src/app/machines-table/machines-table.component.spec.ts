@@ -7,11 +7,10 @@ import { MessageService } from 'primeng/api'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'
-import { AppsVersions, Machine, ServicesService } from '../backend'
+import { AppsVersions, ServicesService } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { deepCopy } from '../utils'
 import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -46,50 +45,6 @@ describe('MachinesTableComponent', () => {
     const getAllMachinesResp = {
         items: [...getUnauthorizedMachinesResp.items, ...getAuthorizedMachinesResp.items],
         total: 5,
-    }
-    const refreshed: Machine = {
-        id: 4,
-        address: 'addr zzz',
-        authorized: true,
-        hostname: 'new zzz',
-        apps: [
-            {
-                id: 1,
-                name: 'kea@localhost',
-                type: 'kea',
-                details: {
-                    daemons: [
-                        {
-                            active: true,
-                            extendedVersion: '2.2.0',
-                            id: 1,
-                            name: 'dhcp4',
-                        },
-                        {
-                            active: false,
-                            extendedVersion: '2.3.0',
-                            id: 2,
-                            name: 'ca',
-                        },
-                    ],
-                },
-                version: '2.2.0',
-            },
-            {
-                id: 2,
-                name: 'bind9@localhost',
-                type: 'bind9',
-                details: {
-                    daemon: {
-                        active: true,
-                        id: 3,
-                        name: 'named',
-                    },
-                },
-                version: '9.18.30',
-            },
-        ],
-        agentVersion: '1.19.0',
     }
 
     beforeEach(async () => {
