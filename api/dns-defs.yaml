@@ -13,10 +13,6 @@
   ZoneInventoryState:
     type: object
     properties:
-      appId:
-        type: integer
-      appName:
-        type: string
       createdAt:
         type: string
         format: date-time
@@ -53,10 +49,6 @@
   LocalZone:
     type: object
     properties:
-      appId:
-        type: integer
-      appName:
-        type: string
       class:
         type: string
       daemonId:

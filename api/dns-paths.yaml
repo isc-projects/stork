@@ -67,19 +67,19 @@
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
-        - $ref: '#/parameters/dnsAppType'
+        - $ref: '#/parameters/dnsDaemonName'
         - $ref: '#/parameters/dnsZoneType'
         - $ref: '#/parameters/dnsClass'
         - name: text
           in: query
           description: >-
             Limit the returned list of zones to the ones matching the specified text.
-            The text is matched against the zone name, app name, and zone view.
+            The text is matched against the zone name and zone view.
           type: string
-        - name: appId
+        - name: daemonId
           in: query
           description: >-
-            Limit the returned list of zones to the ones served by the app with the given ID.
+            Limit the returned list of zones to the ones served by the daemon with the given ID.
           type: integer
         - name: serial
           in: query

@@ -3,8 +3,8 @@
     properties:
       machines:
         $ref: '#/definitions/Machines'
-      apps:
-        $ref: '#/definitions/Apps'
+      daemons:
+        $ref: '#/definitions/Daemons'
       subnets:
         $ref: '#/definitions/Subnets'
       sharedNetworks:

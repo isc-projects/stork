@@ -14,10 +14,6 @@
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
         - $ref: '#/parameters/filterTextParam'
-        - name: app
-          in: query
-          description: Limit returned list of machines to these which provide given app, possible values 'bind' or 'kea'.
-          type: string
         - name: authorized
           in: query
           description: Indicate if authorized or unauthorized machines should be returned.
@@ -107,22 +103,22 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /machines/apps/versions:
+  /machines/versions:
     get:
-      summary: Returns authorized machines with ISC apps software versions.
+      summary: Returns authorized machines with ISC software versions.
       description: >-
-        Returns a list of all machines' ids and ISC apps versions. It excludes detailed
+        Returns a list of all machines' ids and ISC versions. It excludes detailed
         information about the machines to return reasonably compact information. Having
-        the machines' names and/or apps versions is useful for assessment of ISC software
+        the machines' names and/or daemon versions is useful for assessment of ISC software
         versions being used on machines that are monitored by Stork.
-      operationId: getMachinesAppsVersions
+      operationId: getMachinesVersions
       tags:
         - Services
       responses:
         200:
-          description: List of machine ids and apps versions.
+          description: List of machine ids and software versions.
           schema:
-            $ref: '#/definitions/Machines'
+            $ref: '#/definitions/SimpleMachines'
         default:
           description: 'generic error response'
           schema:
@@ -292,6 +288,32 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /daemons/{id}/services/status:
+    get:
+      summary: Get services status for a given daemon.
+      description: >-
+        Services status comprises runtime information about the services.
+        In particular, a Kea status comprises information about
+        the High Availability service, such as HA state, partner's state etc.
+      operationId: getDaemonServicesStatus
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID.
+      responses:
+        200:
+          description: Services with their status.
+          schema:
+            $ref: '#/definitions/ServicesStatus'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /machines-server-token:
     get:
       summary: Get server token for registering machines.
@@ -335,243 +357,103 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /apps:
+  /daemons:
     get:
-      summary: Get list of apps.
+      summary: Get list of daemons.
       description: >-
-        It is possible to filter the list of apps by several fields. It is also always paged.
+        It is possible to filter the list of daemons by several fields. It is also always paged.
         Default page size is 10.
-        A list of apps is returned in items field accompanied by total count
+        A list of daemons is returned in items field accompanied by total count
         which indicates total available number of records for given filtering
         parameters.
-      operationId: getApps
+      operationId: getDaemons
       tags:
         - Services
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
         - $ref: '#/parameters/filterTextParam'
-        - name: apps
+        - name: daemons
           in: query
-          description: Limit returned list of apps, possible values 'bind9', 'kea' or 'pdns'.
+          description: Limit returned list of daemons, possible values 'bind9', 'dhcp4', 'dhcp6', 'ca', 'netconf' or 'pdns'.
           type: array
           items:
             type: string
       responses:
         200:
-          description: List of apps
+          description: List of daemons
           schema:
-            $ref: "#/definitions/Apps"
+            $ref: "#/definitions/Daemons"
         default:
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
 
-  /apps/directory:
+  /daemons/directory:
     get:
-      summary: Get a list of all apps' ids and names.
+      summary: Get a list of all daemons' ids and names.
       description: >-
-        Returns a list of all apps' ids and names. It excludes detailed information
-        about the apps to return reasonably compact information. Having the apps'
+        Returns a list of all daemons' ids and names. It excludes detailed information
+        about the daemons to return reasonably compact information. Having the daemons'
         names is useful in the forms which require validating user's input against
-        the list of apps present in the system. It may be also useful to create
-        drop down lists holding the apps' names. Each returned name is accompanied
+        the list of daemons present in the system. It may be also useful to create
+        drop down lists holding the daemons' names. Each returned name is accompanied
         by its id.
-      operationId: getAppsDirectory
+      operationId: getDaemonsDirectory
       tags:
         - Services
       responses:
         200:
-          description: List of app ids and names.
+          description: List of daemon ids and names.
           schema:
-            $ref: '#/definitions/Apps'
+            $ref: '#/definitions/SimpleDaemons'
         default:
           description: 'generic error response'
           schema:
             $ref: '#/definitions/ApiError'
 
-  /apps/communication-issues:
+  /daemons/communication-issues:
     get:
-      summary: Get a list of apps for which the server found communication issues.
+      summary: Get a list of daemons for which the server found communication issues.
       description: >-
-        The returned list excludes the detailed information about the apps and
-        the daemons. The returned data primarily contains statistics about the
-        communication failures.
-      operationId: getAppsWithCommunicationIssues
+        The returned list excludes the detailed information about the daemons.
+        The returned data primarily contains statistics about the communication
+        failures.
+      operationId: getDaemonsWithCommunicationIssues
       tags:
         - Services
       responses:
         200:
-          description: List of apps and daemons with communication statistics.
+          description: List of daemons with communication statistics.
           schema:
-            $ref: '#/definitions/Apps'
+            $ref: '#/definitions/Daemons'
         default:
           description: 'generic error response'
-          schema:
-            $ref: '#/definitions/ApiError'
-
-  /apps/{id}:
-    get:
-      summary: Get app by ID.
-      description: Get app by the database specific ID.
-      operationId: getApp
-      tags:
-        - Services
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-          description: App ID.
-      responses:
-        200:
-          description: A app
-          schema:
-            $ref: "#/definitions/App"
-        default:
-          description: generic error response
-          schema:
-            $ref: "#/definitions/ApiError"
-
-  /apps-stats:
-    get:
-      summary: Get applications statistics.
-      description: It returns a number of apps of a given type, a number of apps with some inactive daemons, etc.
-      operationId: getAppsStats
-      tags:
-        - Services
-      responses:
-        200:
-          description: Application statistics
-          schema:
-            $ref: "#/definitions/AppsStats"
-        default:
-          description: generic error response
-          schema:
-            $ref: "#/definitions/ApiError"
-
-  /apps/{id}/services/status:
-    get:
-      summary: Get services status for a given application.
-      description: >-
-        Services status comprises runtime information about the services.
-        In particular, a Kea application status comprises information about
-        the High Availability service, such as HA state, partner's state etc.
-      operationId: getAppServicesStatus
-      tags:
-        - Services
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-          description: App ID.
-      responses:
-        200:
-          description: Services with their status.
-          schema:
-            $ref: '#/definitions/ServicesStatus'
-        default:
-          description: generic error response
-          schema:
-            $ref: '#/definitions/ApiError'
-
-  /apps/{id}/name:
-    put:
-      summary: Rename the specified app.
-      description: >-
-        Sets new name for the app identified by specified identifier.
-        This operation may fail if the new name is invalid or if the
-        given app does not exist.
-      operationId: renameApp
-      tags:
-        - Services
-      parameters:
-        - name: id
-          in: path
-          type: integer
-          required: true
-          description: App ID.
-        - name: newAppName
-          in: body
-          required: true
-          description: New app name.
-          schema:
-            type: object
-            required:
-              - name
-            properties:
-              name:
-                type: string
-      responses:
-        200:
-          description: App successfully renamed.
-        default:
-          description: generic error response
-          schema:
-            $ref: '#/definitions/ApiError'
-
-  /app/{appId}/access-points/{type}/key:
-    get:
-      summary: Get the access point key.
-      description: >-
-        It returns the authentication key assigned to a given access point.
-        This endpoint is allowed only for super-administrators.
-      operationId: getAccessPointKey
-      tags:
-        - Services
-      parameters:
-        - name: appId
-          in: path
-          type: integer
-          required: true
-          description: App ID
-        - name: type
-          in: path
-          type: string
-          required: true
-          description: Access point type
-      responses:
-        200:
-          description: The authentication key.
-          schema:
-            type: string
-        default:
-          description: generic error response
-          schema:
-            $ref: '#/definitions/ApiError'
-
-  /logs/{id}:
-    get:
-      summary: Gets the tail of the given log file.
-      description: >-
-        Returns the tail of the specified log file. It is possible to specify the offset
-        from which the log should be returned.
-      operationId: getLogTail
-      tags:
-        - Services
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-          description: Log file identifier in the database.
-        - in: query
-          name: maxLength
-          type: integer
-          required: false
-          description: Maximum length of the data fetched.
-      responses:
-        200:
-          description: Tail of the log file returned successfully.
-          schema:
-            $ref: '#/definitions/LogTail'
-        default:
-          description: generic error response
           schema:
             $ref: '#/definitions/ApiError'
 
   /daemons/{id}:
+    get:
+      summary: Get a daemon by ID.
+      description: Get daemon by the database specific ID.
+      operationId: getDaemon
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID.
+      responses:
+        200:
+          description: A daemon
+          schema:
+            $ref: "#/definitions/AnyDaemon"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
     put:
       summary: Update daemon.
       description: Update daemon.
@@ -599,6 +481,53 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /machine-stats:
+    get:
+      summary: Get daemon statistics.
+      description: It returns a number of daemons of a given type, a number of inactive daemons, etc.
+      operationId: getDaemonsStats
+      tags:
+        - Services
+      responses:
+        200:
+          description: Daemon statistics
+          schema:
+            $ref: "#/definitions/DaemonsStats"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /daemons/{daemonId}/access-points/{type}/key:
+    get:
+      summary: Get the access point key.
+      description: >-
+        It returns the authentication key assigned to a given access point.
+        This endpoint is allowed only for super-administrators.
+      operationId: getAccessPointKey
+      tags:
+        - Services
+      parameters:
+        - name: daemonId
+          in: path
+          type: integer
+          required: true
+          description: Daemon ID
+        - name: type
+          in: path
+          type: string
+          required: true
+          description: Access point type
+      responses:
+        200:
+          description: The authentication key.
+          schema:
+            type: string
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
 
   /daemons/{id}/config:
     get:
@@ -826,6 +755,36 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /logs/{id}:
+    get:
+      summary: Gets the tail of the given log file.
+      description: >-
+        Returns the tail of the specified log file. It is possible to specify the offset
+        from which the log should be returned.
+      operationId: getLogTail
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Log file identifier in the database.
+        - in: query
+          name: maxLength
+          type: integer
+          required: false
+          description: Maximum length of the data fetched.
+      responses:
+        200:
+          description: Tail of the log file returned successfully.
+          schema:
+            $ref: '#/definitions/LogTail'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /migrations:
     get:
       summary: Get list of migrations.
@@ -925,9 +884,9 @@
       tags:
         - DHCP
       parameters:
-        - name: appId
+        - name: machineId
           in: query
-          description: Limit migrated hosts to these which are served by given app ID.
+          description: Limit migrated hosts to these which are served by given machine ID.
           type: integer
         - name: subnetId
           in: query

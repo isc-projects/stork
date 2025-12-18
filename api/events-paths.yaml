@@ -18,10 +18,6 @@
           in: query
           description: Machine ID.
           type: integer
-        - name: appType
-          in: query
-          description: App type, e.g. 'kea' or 'bind9'.
-          type: string
         - name: daemonType
           in: query
           description: Daemon types, e.g. 'named', 'dhcp4', 'dhcp6', 'ca'.

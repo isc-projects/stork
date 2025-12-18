@@ -15,7 +15,7 @@
         type: integer
       keaStatusPullerInterval:
         type: integer
-      appsStatePullerInterval:
+      statePullerInterval:
         type: integer
       enableMachineRegistration:
         type: boolean
