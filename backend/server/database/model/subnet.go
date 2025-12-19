@@ -794,9 +794,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		Relation(string(SubnetRelationLocalSubnetsPrefixPools), func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation(string(SubnetRelationAccessPoints)).
-		// TODO: Code implemented in below line is a temporary solution for virtual applications.
-		Relation(string(SubnetRelationMachines))
+		Relation(string(SubnetRelationAccessPoints))
 
 	// Applicable family values are 4 and 6.
 	if filters.Family != nil {

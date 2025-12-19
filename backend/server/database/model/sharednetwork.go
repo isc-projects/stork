@@ -274,9 +274,7 @@ func DeleteDaemonsFromSharedNetwork(dbi dbops.DBI, sharedNetworkID int64) error 
 func GetAllSharedNetworks(dbi dbops.DBI, family int) ([]SharedNetwork, error) {
 	networks := []SharedNetwork{}
 	q := dbi.Model(&networks).
-		Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints)).
-		// TODO: Code implemented in below line is a temporary solution for virtual applications.
-		Relation(string(SharedNetworkRelationLocalSharedNetworksMachine))
+		Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints))
 
 	if family == 4 || family == 6 {
 		q = q.Where("inet_family = ?", family)
@@ -361,9 +359,7 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, daemonID, family int6
 	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("shared_network", sortField, sortDir, subnetAndSharedNetworkCustomOrderAndDistinct)
 	q = q.DistinctOn(distinctOnFields)
 
-	q = q.Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints)).
-		// TODO: Code implemented in below line is a temporary solution for virtual applications.
-		Relation(string(SharedNetworkRelationLocalSharedNetworksMachine))
+	q = q.Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints))
 
 	// If any of the filtering parameters are specified we need to explicitly join
 	// the subnets table so as we can access its columns in the Where clause.

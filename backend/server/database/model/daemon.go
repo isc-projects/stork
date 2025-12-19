@@ -444,8 +444,6 @@ func GetKeaDHCPDaemons(dbi pg.DBI) (daemons []Daemon, err error) {
 		Relation(DaemonRelationLogTargets).
 		Relation(DaemonRelationMachine).
 		Relation(DaemonRelationKeaDHCPDaemon).
-		// TODO: Code implemented in below line is a temporary solution for virtual applications.
-		Relation(DaemonRelationAccessPoints).
 		Where("daemon.name ILIKE 'dhcp%'").
 		OrderExpr("daemon.id ASC").
 		Select()
