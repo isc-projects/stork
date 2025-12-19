@@ -113,10 +113,6 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	if f.MachineID, err = getQueryValueAsInt64("machine", queryValues); err != nil {
 		return err
 	}
-	var appID int64
-	if appID, err = getQueryValueAsInt64("app", queryValues); err != nil {
-		return err
-	}
 	if f.SubnetID, err = getQueryValueAsInt64("subnet", queryValues); err != nil {
 		return err
 	}
@@ -134,25 +130,6 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	// Daemon ID must not be specified with daemonName.
 	if len(daemonName) > 0 && f.DaemonID != 0 {
 		return errors.Errorf("daemonName and daemon query parameters are mutually exclusive: %s", s.serverURL)
-	}
-
-	if appID != 0 {
-		daemons, err := dbmodel.GetDaemonsByVirtualAppID(db, appID)
-		if err != nil {
-			return errors.WithMessagef(err, "problem getting daemons by app ID %d while applying sse filters: %s",
-				appID, s.serverURL)
-		}
-		switch {
-		case len(daemons) > 1:
-			daemon := daemons[0]
-			f.MachineID = daemon.MachineID
-		case len(daemons) == 1:
-			daemon := daemons[0]
-			f.DaemonID = daemon.ID
-			f.MachineID = daemon.MachineID
-		default:
-			return errors.Errorf("app with ID %d does not have any daemons", appID)
-		}
 	}
 
 	if len(daemonName) > 0 {

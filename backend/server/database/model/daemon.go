@@ -157,7 +157,6 @@ type DaemonTag interface {
 	GetID() int64
 	GetName() daemonname.Name
 	GetMachineID() int64
-	GetVirtualApp() *VirtualApp
 }
 
 // Creates an instance of a daemon with its references initialized to empty

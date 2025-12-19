@@ -185,12 +185,11 @@ func (ec *eventCenter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // Prepare a tag describing a daemon.
 func daemonTag(daemon dbmodel.DaemonTag) string {
-	app := daemon.GetVirtualApp()
 	tag := fmt.Sprintf(
-		"<daemon id=\"%d\" name=\"%s\" machineId=\"%d\" appId=\"%d\" appType=\"%s\">",
+		"<daemon id=\"%d\" name=\"%s\" machineId=\"%d\">",
 		daemon.GetID(), daemon.GetName(),
 		daemon.GetMachineID(),
-		app.ID, app.Type)
+	)
 	return tag
 }
 
