@@ -24,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext'
 import { BadgeModule } from 'primeng/badge'
 import { TagModule } from 'primeng/tag'
 import { FormsModule } from '@angular/forms'
-import { MessageServiceMock, mockedFilterByText, toastDecorator } from '../utils-stories'
+import { EntitiesResponse, MessageServiceMock, mockedFilterByText, toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { ProgressBarModule } from 'primeng/progressbar'
@@ -33,92 +33,15 @@ import { TooltipModule } from 'primeng/tooltip'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { Severity, VersionService } from '../version.service'
 import { of } from 'rxjs'
-import { AppsVersions } from '../backend'
+import { AppsVersions, Machine } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { userEvent, within, expect, waitFor } from '@storybook/test'
 import { deepCopy } from '../utils'
 
-const meta: Meta<MachinesPageComponent> = {
-    title: 'App/MachinesPage',
-    component: MachinesPageComponent,
-    subcomponents: MachinesTableComponent,
-    decorators: [
-        applicationConfig({
-            providers: [
-                provideHttpClient(withInterceptorsFromDi()),
-                { provide: MessageService, useClass: MessageServiceMock },
-                ConfirmationService,
-                provideRouter([
-                    {
-                        path: 'machines',
-                        pathMatch: 'full',
-                        redirectTo: 'machines/all',
-                    },
-                    {
-                        path: 'machines/:id',
-                        component: MachinesPageComponent,
-                    },
-                    {
-                        path: 'iframe.html',
-                        component: MachinesPageComponent,
-                    },
-                ]),
-                {
-                    provide: VersionService,
-                    useValue: {
-                        sanitizeSemver: () => '3.2.1',
-                        getCurrentData: () => of({} as AppsVersions),
-                        getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
-                    },
-                },
-            ],
-        }),
-        moduleMetadata({
-            declarations: [
-                BreadcrumbsComponent,
-                MachinesTableComponent,
-                PluralizePipe,
-                HelpTipComponent,
-                VersionStatusComponent,
-                AppDaemonsStatusComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-            ],
-            imports: [
-                DialogModule,
-                ButtonModule,
-                TabViewComponent,
-                ConfirmDialogModule,
-                BreadcrumbModule,
-                TableModule,
-                PanelModule,
-                IconFieldModule,
-                InputIconModule,
-                TriStateCheckboxComponent,
-                PopoverModule,
-                SelectButtonModule,
-                MenuModule,
-                InputTextModule,
-                BadgeModule,
-                TagModule,
-                FormsModule,
-                ToastModule,
-                ProgressBarModule,
-                MessageModule,
-                TooltipModule,
-                RouterModule,
-            ],
-        }),
-        toastDecorator,
-    ],
-    args: {
-        registrationDisabled: false,
-    },
-}
-
-export default meta
-type Story = StoryObj<MachinesPageComponent>
+let mockedAuthorizedMachines: Machine[]
+let mockedAllMachines: Machine[]
+let mockedAllRespData: EntitiesResponse
 const mockedUnauthorizedMachines = [
     {
         address: 'agent-kea-large',
@@ -143,7 +66,52 @@ const mockedUnauthorizedMachines = [
         id: 2,
     },
 ]
-const mockedAuthorizedMachines = [
+const allAuthorizedMachines = [
+    {
+        address: 'agent-kea-large',
+        agentPort: 8884,
+        agentToken: 'random-agent-kea-large',
+        agentVersion: '2.3.0',
+        apps: [],
+        id: 4,
+        authorized: true,
+        usedMemory: 88,
+        lastVisitedAt: '2025-10-14T20:38:29.228Z',
+        cpus: 12,
+        cpusLoad: '0.89 0.84 0.86',
+        memory: 7,
+        hostname: 'agent-kea-large',
+    },
+    {
+        address: 'agent-pdns',
+        agentPort: 8891,
+        agentToken: 'random-agent-pdns-token',
+        agentVersion: '2.3.0',
+        apps: [],
+        id: 1,
+        authorized: true,
+        usedMemory: 87,
+        lastVisitedAt: '2025-10-14T20:38:29.228Z',
+        cpus: 12,
+        cpusLoad: '0.89 0.84 0.86',
+        memory: 7,
+        hostname: 'agent-pdns',
+    },
+    {
+        address: 'agent-bind9',
+        agentPort: 8883,
+        agentToken: 'random-agent-bind9',
+        agentVersion: '2.3.0',
+        apps: [],
+        id: 2,
+        authorized: true,
+        usedMemory: 85,
+        lastVisitedAt: '2025-10-14T20:38:29.228Z',
+        cpus: 12,
+        cpusLoad: '0.89 0.84 0.86',
+        memory: 7,
+        hostname: 'agent-bind9',
+    },
     {
         address: 'agent-bind9-2',
         agentPort: 8882,
@@ -593,18 +561,94 @@ const mockedAuthorizedMachines = [
         virtualizationSystem: 'docker',
     },
 ]
-const mockedAllRespData = {
-    items: [...mockedAuthorizedMachines, ...mockedUnauthorizedMachines],
-    total: mockedAuthorizedMachines.length + mockedUnauthorizedMachines.length,
+const meta: Meta<MachinesPageComponent> = {
+    title: 'App/MachinesPage',
+    component: MachinesPageComponent,
+    subcomponents: MachinesTableComponent,
+    decorators: [
+        applicationConfig({
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                { provide: MessageService, useClass: MessageServiceMock },
+                ConfirmationService,
+                provideRouter([
+                    {
+                        path: 'machines',
+                        pathMatch: 'full',
+                        redirectTo: 'machines/all',
+                    },
+                    {
+                        path: 'machines/:id',
+                        component: MachinesPageComponent,
+                    },
+                    {
+                        path: 'iframe.html',
+                        component: MachinesPageComponent,
+                    },
+                ]),
+                {
+                    provide: VersionService,
+                    useValue: {
+                        sanitizeSemver: () => '3.2.1',
+                        getCurrentData: () => of({} as AppsVersions),
+                        getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
+                    },
+                },
+            ],
+        }),
+        moduleMetadata({
+            declarations: [
+                BreadcrumbsComponent,
+                MachinesTableComponent,
+                PluralizePipe,
+                HelpTipComponent,
+                VersionStatusComponent,
+                AppDaemonsStatusComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+            ],
+            imports: [
+                DialogModule,
+                ButtonModule,
+                TabViewComponent,
+                ConfirmDialogModule,
+                BreadcrumbModule,
+                TableModule,
+                PanelModule,
+                IconFieldModule,
+                InputIconModule,
+                TriStateCheckboxComponent,
+                PopoverModule,
+                SelectButtonModule,
+                MenuModule,
+                InputTextModule,
+                BadgeModule,
+                TagModule,
+                FormsModule,
+                ToastModule,
+                ProgressBarModule,
+                MessageModule,
+                TooltipModule,
+                RouterModule,
+            ],
+        }),
+        toastDecorator,
+    ],
+    args: {
+        registrationDisabled: false,
+    },
+    async beforeEach() {
+        mockedAuthorizedMachines = allAuthorizedMachines.filter((m) => m.id > 2 && m.id != 4)
+        mockedAllMachines = [...mockedAuthorizedMachines, ...mockedUnauthorizedMachines]
+        mockedAllRespData = {
+            items: mockedAllMachines,
+            total: mockedAllMachines.length,
+        }
+    },
 }
-const mockedAuthorizedRespData = {
-    items: mockedAuthorizedMachines,
-    total: mockedAuthorizedMachines.length,
-}
-const mockedUnauthorizedRespData = {
-    items: mockedUnauthorizedMachines,
-    total: mockedUnauthorizedMachines.length,
-}
+
+export default meta
+type Story = StoryObj<MachinesPageComponent>
 
 export const EmptyList: Story = {
     parameters: {
@@ -682,9 +726,11 @@ export const ListMachines: Story = {
                 status: 200,
                 response: (req) => {
                     if (req.searchParams?.authorized == 'true') {
-                        return mockedFilterByText(mockedAuthorizedRespData, req, 'address')
+                        const machines = mockedAllMachines.filter((m) => m['authorized'])
+                        return mockedFilterByText({ items: machines, total: machines.length }, req, 'address')
                     }
-                    return mockedFilterByText(mockedUnauthorizedRespData, req, 'address')
+                    const machines = mockedAllMachines.filter((m) => !m['authorized'])
+                    return mockedFilterByText({ items: machines, total: machines.length }, req, 'address')
                 },
             },
             {
@@ -693,16 +739,18 @@ export const ListMachines: Story = {
                 status: 200,
                 response: (req) => {
                     if (req.searchParams?.authorized == 'true') {
-                        return mockedAuthorizedRespData
+                        const machines = mockedAllMachines.filter((m) => m['authorized'])
+                        return { items: machines, total: machines.length }
                     }
-                    return mockedUnauthorizedRespData
+                    const machines = mockedAllMachines.filter((m) => !m['authorized'])
+                    return { items: machines, total: machines.length }
                 },
             },
             {
                 url: 'http://localhost/api/machines/unauthorized/count',
                 method: 'GET',
                 status: 200,
-                response: () => mockedUnauthorizedMachines.length,
+                response: () => mockedAllMachines.filter((m) => !m['authorized']).length,
             },
             {
                 url: 'http://localhost/api/settings',
@@ -735,16 +783,49 @@ export const ListMachines: Story = {
                 response: (req) => {
                     if (req?.url) {
                         const id = req.url.match(/\d+/)?.[0] ?? 0
-                        const m = mockedAuthorizedMachines.find((m) => m.id == id)
+                        const m = mockedAllMachines.find((m) => m.id == id)
                         if (m) {
                             const updated = deepCopy(m)
-                            updated.hostname += ' refreshed'
-                            updated.lastVisitedAt = new Date().toISOString()
+                            updated['hostname'] += ' refreshed'
+                            updated['lastVisitedAt'] = new Date().toISOString()
                             return updated
                         }
                     }
 
                     return { error: 'Could not refresh state of the machine' }
+                },
+            },
+            {
+                // machine authorize FAIL CASE
+                url: 'http://localhost/api/machines/1',
+                method: 'PUT',
+                status: 502,
+                response: (_) => _,
+            },
+            {
+                url: 'http://localhost/api/machines/2',
+                method: 'PUT',
+                status: 200,
+                response: () => {
+                    const authorized = allAuthorizedMachines.find((m) => m.id == 2)
+                    const idx = mockedAllMachines.findIndex((m) => m.id == 2)
+                    mockedAllMachines[idx] = authorized
+                    return {
+                        address: 'foobar',
+                    }
+                },
+            },
+            {
+                url: 'http://localhost/api/machines/4',
+                method: 'PUT',
+                status: 200,
+                response: () => {
+                    const authorized = allAuthorizedMachines.find((m) => m.id == 4)
+                    const idx = mockedAllMachines.findIndex((m) => m.id == 4)
+                    mockedAllMachines[idx] = authorized
+                    return {
+                        address: 'foobar',
+                    }
                 },
             },
         ],
@@ -1006,5 +1087,41 @@ export const TestTableFiltering: Story = {
         // Six kea machines (authorized + unauthorized) are expected.
         await expect(canvas.getAllByRole('row')).toHaveLength(7) // All rows in tbody + one row in the thead.
         await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(15 * 6) // One row in the tbody has specific number of cells (15).
+
+        await userEvent.click(clearFiltersBtn)
+    },
+}
+
+export const TestAuthorizeMachines: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListMachines.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        const bulkAuthorizeBtn = await canvas.findByRole('button', { name: 'Authorize selected' })
+        const checkboxes = await within(canvas.getByRole('table')).findAllByRole('checkbox')
+        const authorizedCheckbox = await canvas.findByRole('checkbox', { name: 'Authorized' })
+
+        // Act
+        await userEvent.click(clearFiltersBtn)
+        // Try to authorize all remaining unauthorized machines.
+        await userEvent.click(checkboxes[0])
+        await userEvent.click(bulkAuthorizeBtn)
+
+        // Assert
+        // Only first machine should be authorized and after that error is expected and the whole process interrupted.
+        await waitFor(() => expect(body.getByText('Machine authorized')).toBeInTheDocument())
+        await waitFor(() => expect(body.getByText('Machine authorization failed')).toBeInTheDocument())
+
+        // Check if authorized/unauthorized machines count is as expected.
+        await userEvent.click(authorizedCheckbox)
+        await expect(canvas.getAllByRole('row')).toHaveLength(8) // All rows in tbody + one row in the thead.
+
+        await userEvent.click(authorizedCheckbox)
+        await expect(canvas.getAllByRole('row')).toHaveLength(3) // All rows in tbody + one row in the thead.
     },
 }

@@ -124,6 +124,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             label: 'Authorize',
             id: 'authorize-single-machine',
             icon: 'pi pi-check',
+            title: 'Authorize machine',
         },
         {
             label: 'Remove',
