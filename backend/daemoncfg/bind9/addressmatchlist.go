@@ -13,10 +13,10 @@ type AddressMatchList struct {
 	Elements []*AddressMatchListElement `parser:"( @@ ';'* )*"`
 }
 
-// Checks if the address match list excludes the specified IP address.
-func (aml *AddressMatchList) ExcludesIPAddress(ipAddress string) bool {
+// Checks if the address match list excludes the specified IP address or ACL name.
+func (aml *AddressMatchList) Excludes(ipAddressOrACLName string) bool {
 	for _, element := range aml.Elements {
-		if (element.IPAddressOrACLName == ipAddress && element.Negation) ||
+		if (element.IPAddressOrACLName == ipAddressOrACLName && element.Negation) ||
 			(element.IPAddressOrACLName == "none" && !element.Negation) ||
 			(element.IPAddressOrACLName == "any" && element.Negation) {
 			return true

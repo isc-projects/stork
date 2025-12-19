@@ -276,3 +276,8 @@ func (parsed *ParsedIP) GetNetworkPrefixWithLength() string {
 func FormatCIDRNotation(ip string, mask int) string {
 	return fmt.Sprintf("%s/%d", ip, mask)
 }
+
+// Convenience function checking if the string is an IP address.
+func IsIPAddress(ipAddress string) bool {
+	return net.ParseIP(ipAddress) != nil
+}

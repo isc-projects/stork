@@ -247,7 +247,7 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address stri
 	// The listenOnSet may contain multiple listen-on clauses. We need to find the
 	// clause matching our desired port. Also, preferably it should be a local
 	// loopback address.
-	listenOn := listenOnSet.GetMatchingListenOn(port)
+	listenOn := listenOnSet.GetMatchingListenOnClause(port)
 	if listenOn == nil {
 		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
@@ -361,7 +361,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	// The listenOnSet may contain multiple listen-on clauses. We need to find the
 	// clause matching our desired port. Also, preferably it should be a local
 	// loopback address.
-	listenOn := listenOnSet.GetMatchingListenOn(port)
+	listenOn := listenOnSet.GetMatchingListenOnClause(port)
 	if listenOn == nil {
 		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}

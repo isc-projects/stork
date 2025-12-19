@@ -48,7 +48,7 @@ func GetDefaultListenOnClauses() *ListenOnClauses {
 // typically extracted from the allow-transfer clause. This search
 // prefers listen-on clauses enabling listening on local loopback
 // addresses.
-func (l ListenOnClauses) GetMatchingListenOn(port int64) *ListenOn {
+func (l ListenOnClauses) GetMatchingListenOnClause(port int64) *ListenOn {
 	// For default port and no listen-on clauses, return the default
 	// listen-on clause.
 	if len(l) == 0 && port == 53 {
@@ -56,19 +56,25 @@ func (l ListenOnClauses) GetMatchingListenOn(port int64) *ListenOn {
 	}
 	// Check listen-on clauses that include 127.0.0.1 or 0.0.0.0.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port && (listenOn.IncludesIPAddress("127.0.0.1") || listenOn.IncludesIPAddress("0.0.0.0")) {
+		if listenOn.GetPort() == port && !listenOn.Includes("none") && (listenOn.Includes("127.0.0.1") || listenOn.Includes("0.0.0.0")) {
 			return listenOn
 		}
 	}
 	// Check listen-on-v6 clauses that include ::1 or ::.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port && (listenOn.IncludesIPAddress("::1") || listenOn.IncludesIPAddress("::")) {
+		if listenOn.GetPort() == port && !listenOn.Includes("none") && (listenOn.Includes("::1") || listenOn.Includes("::")) {
+			return listenOn
+		}
+	}
+	// Check listen-on clauses that include any.
+	for _, listenOn := range l {
+		if listenOn.GetPort() == port && !listenOn.Includes("none") && listenOn.Includes("any") {
 			return listenOn
 		}
 	}
 	// Check listen-on clauses that include the specified port.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port {
+		if listenOn.GetPort() == port && !listenOn.Includes("none") {
 			return listenOn
 		}
 	}
@@ -79,14 +85,18 @@ func (l ListenOnClauses) GetMatchingListenOn(port int64) *ListenOn {
 // Gets the preferred IP address from the listen-on clause.
 // The function prefers loopback and zero addresses.
 func (l *ListenOn) GetPreferredIPAddress(allowTransferMatchList *AddressMatchList) string {
-	if (l.IncludesIPAddress("127.0.0.1") || l.IncludesIPAddress("0.0.0.0")) && !allowTransferMatchList.ExcludesIPAddress("127.0.0.1") {
-		return "127.0.0.1"
-	}
-	if (l.IncludesIPAddress("::1") || l.IncludesIPAddress("::")) && !allowTransferMatchList.ExcludesIPAddress("::1") {
-		return "::1"
+	switch l.Variant {
+	case "listen-on":
+		if (l.Includes("127.0.0.1") || l.Includes("0.0.0.0")) || l.Includes("any") && !allowTransferMatchList.Excludes("127.0.0.1") {
+			return "127.0.0.1"
+		}
+	case "listen-on-v6":
+		if (l.Includes("::1") || l.Includes("::")) || l.Includes("any") && !allowTransferMatchList.Excludes("::1") {
+			return "::1"
+		}
 	}
 	for _, element := range l.AddressMatchList.Elements {
-		if element.IPAddressOrACLName != "" && !element.Negation && !allowTransferMatchList.ExcludesIPAddress(element.IPAddressOrACLName) {
+		if element.IPAddressOrACLName != "" && storkutil.IsIPAddress(element.IPAddressOrACLName) && !element.Negation && !allowTransferMatchList.Excludes(element.IPAddressOrACLName) {
 			return element.IPAddressOrACLName
 		}
 	}
@@ -102,10 +112,10 @@ func (l *ListenOn) GetPort() int64 {
 	return 53
 }
 
-// Checks if the listen-on clause includes the specified IP address.
-func (l *ListenOn) IncludesIPAddress(ipAddress string) bool {
+// Checks if the listen-on clause includes the specified IP address or ACL name.
+func (l *ListenOn) Includes(ipAddressOrACLName string) bool {
 	for _, element := range l.AddressMatchList.Elements {
-		if element.IPAddressOrACLName == ipAddress && !element.Negation {
+		if element.IPAddressOrACLName == ipAddressOrACLName && !element.Negation {
 			return true
 		}
 	}

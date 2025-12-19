@@ -493,3 +493,13 @@ func TestCalculateDelegatedPrefixRangeSize(t *testing.T) {
 		)
 	})
 }
+
+// Test that the function checking if the string is an IP address works properly.
+func TestIsIPAddress(t *testing.T) {
+	require.True(t, IsIPAddress("192.0.2.1"))
+	require.True(t, IsIPAddress("2001:db8:1::1"))
+	require.False(t, IsIPAddress("foobar"))
+	require.False(t, IsIPAddress(""))
+	require.False(t, IsIPAddress("192.0.2.1/24"))
+	require.False(t, IsIPAddress("2001:db8:1::1/64"))
+}
