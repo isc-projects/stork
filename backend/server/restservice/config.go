@@ -96,13 +96,9 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		return rsp
 	}
 
-	app := dbDaemon.GetVirtualApp()
-
 	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
 		DaemonID:   dbDaemon.GetID(),
-		AppID:      app.ID,
-		AppName:    app.Name,
-		AppType:    string(app.Type),
+		DaemonVersion: dbDaemon.Version,
 		DaemonName: string(dbDaemon.Name),
 		Editable:   dbDaemon.Monitored && dbDaemon.Active,
 		Config:     rawConfig,
@@ -613,11 +609,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 			}
 		}
 
-		app := daemon.GetVirtualApp()
 		configs = append(configs, &models.KeaDaemonConfig{
-			AppID:         app.ID,
-			AppName:       app.Name,
-			AppType:       string(app.Type),
 			DaemonID:      daemon.ID,
 			DaemonName:    string(daemon.Name),
 			DaemonVersion: daemon.Version,

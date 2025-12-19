@@ -71,11 +71,7 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 			})
 		}
 
-		app := dbLocalHost.Daemon.GetVirtualApp()
-
 		localHost := models.LocalHost{
-			AppID:          app.ID,
-			AppName:        app.Name,
 			DaemonID:       dbLocalHost.Daemon.ID,
 			DataSource:     dbLocalHost.DataSource.String(),
 			NextServer:     dbLocalHost.NextServer,
@@ -197,25 +193,10 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}
 
-	var machineIDPtr *int64
-	if params.AppID != nil {
-		machineID, err := dbmodel.GetMachineIDByVirtualAppID(r.DB, *params.AppID)
-		if err != nil {
-			msg := fmt.Sprintf("Problem fetching machine ID for app ID %d from the database", *params.AppID)
-			log.WithError(err).Error(msg)
-			rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		if machineID != 0 {
-			machineIDPtr = &machineID
-		}
-	}
-
 	// Get hosts from DB.
 	filters := dbmodel.HostsByPageFilters{
-		MachineID:        machineIDPtr,
+		MachineID:        params.MachineID,
+		DaemonID:         params.DaemonID,
 		SubnetID:         params.SubnetID,
 		LocalSubnetID:    params.LocalSubnetID,
 		FilterText:       params.Text,
@@ -286,7 +267,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Filter the daemons with host_cmds hook library.
 			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_host_cmds"); exists {
-				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
+				respDaemons = append(respDaemons, r.keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
 			for _, c := range clientClasses {
@@ -663,26 +644,11 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 // configuration to the database. It works in the background. The handler is
 // non-blocking. Returns an initial status of the migration.
 func (r *RestAPI) StartHostsMigration(ctx context.Context, params dhcp.StartHostsMigrationParams) middleware.Responder {
-	var machineIDPtr *int64
-	if params.AppID != nil {
-		machineID, err := dbmodel.GetMachineIDByVirtualAppID(r.DB, *params.AppID)
-		if err != nil {
-			msg := fmt.Sprintf("Problem fetching machine ID for app ID %d from the database", *params.AppID)
-			log.WithError(err).Error(msg)
-			rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		if machineID != 0 {
-			machineIDPtr = &machineID
-		}
-	}
-
 	// Create a new host migrator.
 	migrator := entitymigrator.NewHostMigrator(
 		dbmodel.HostsByPageFilters{
-			MachineID:        machineIDPtr,
+			MachineID:        params.MachineID,
+			DaemonID:         params.DaemonID,
 			SubnetID:         params.SubnetID,
 			LocalSubnetID:    params.LocalSubnetID,
 			FilterText:       params.Text,

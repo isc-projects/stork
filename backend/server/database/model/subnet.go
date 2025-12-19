@@ -669,8 +669,6 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 
 // Container for values filtering subnets fetched by page.
 type SubnetsByPageFilters struct {
-	// TODO: Code implemented in below line is a temporary solution for virtual applications.
-	MachineID     *int64
 	DaemonID      *int64
 	LocalSubnetID *int64
 	Family        *int64
@@ -766,15 +764,8 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("subnet", dbSortField, sortDir, subnetAndSharedNetworkCustomOrderAndDistinct)
 	q = q.DistinctOn(distinctOnFields)
 
-	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil ||
-		// TODO: Code implemented in below line is a temporary solution for virtual applications.
-		filters.MachineID != nil {
+	if filters.DaemonID != nil || filters.LocalSubnetID != nil || filters.Text != nil {
 		q = q.Join("INNER JOIN local_subnet AS ls ON subnet.id = ls.subnet_id")
-		// TODO: Code implemented in below block is a temporary solution for virtual applications.
-		if filters.MachineID != nil {
-			q = q.Join("INNER JOIN daemon AS d ON ls.daemon_id = d.id")
-			q = q.Where("d.machine_id = ?", *filters.MachineID)
-		}
 	}
 	// Pools are also required when trying to filter by text.
 	if filters.Text != nil {

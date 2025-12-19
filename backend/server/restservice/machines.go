@@ -1251,6 +1251,15 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 	return daemon
 }
 
+// Converts the Kea daemon to REST API format.
+func (r *RestAPI) keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
+	daemon := r.daemonToRestAPI(dbDaemon)
+	return &models.KeaDaemon{
+		Daemon:           daemon.Daemon,
+		KeaDaemonDetails: daemon.KeaDaemonDetails,
+	}
+}
+
 // Converts database daemon structure to minimalistic REST API format.
 func (r *RestAPI) simpleDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.SimpleDaemon {
 	daemon := &models.SimpleDaemon{

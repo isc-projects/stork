@@ -50,6 +50,10 @@
           in: query
           description: Limit returned list of hosts to these which are served by given machine ID.
           type: integer
+        - name: daemonId
+          in: query
+          description: Limit returned list of hosts to these which are served by given daemon ID.
+          type: integer
         - name: subnetId
           in: query
           description: Limit returned list of hosts to these which belong to a given subnet.

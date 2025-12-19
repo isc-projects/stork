@@ -43,10 +43,7 @@ func (r *RestAPI) GetZone(ctx context.Context, params dns.GetZoneParams) middlew
 	// Zone found. Convert it to the format used in REST API.
 	var restLocalZones []*models.LocalZone
 	for _, localZone := range dbZone.LocalZones {
-		virtualApp := localZone.Daemon.GetVirtualApp()
 		restLocalZones = append(restLocalZones, &models.LocalZone{
-			AppID:    virtualApp.ID,
-			AppName:  virtualApp.Name,
 			Class:    localZone.Class,
 			DaemonID: localZone.DaemonID,
 			LoadedAt: strfmt.DateTime(localZone.LoadedAt),
@@ -85,52 +82,23 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 	if params.SortDir != nil {
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}
-
-	var daemonName *daemonname.Name
-	if params.AppType != nil {
-		switch *params.AppType {
-		case "bind9":
-			daemonName = storkutil.Ptr(daemonname.Bind9)
-		case "pdns":
-			daemonName = storkutil.Ptr(daemonname.PDNS)
-		default:
-			// Unknown app type, return empty result.
-			payload := models.Zones{
-				Items: []*models.Zone{},
-				Total: 0,
-			}
-			rsp := dns.NewGetZonesOK().WithPayload(&payload)
-			return rsp
-		}
-	}
-
-	var machineIDPtr *int64
-	if params.AppID != nil {
-		machineID, err := dbmodel.GetMachineIDByVirtualAppID(r.DB, *params.AppID)
-		if err != nil {
-			msg := "Failed to get machine ID by virtual app ID"
-			log.WithError(err).Error(msg)
-			rsp := dns.NewGetZonesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+	var daemonNamePtr *daemonname.Name
+	if params.DaemonName != nil {
+		daemonName, ok := daemonname.Parse(*params.DaemonName)
+		if !ok {
+			msg := fmt.Sprintf("Invalid daemon name: %s", *params.DaemonName)
+			log.Error(msg)
+			rsp := dns.NewGetZonesDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		}
-		if machineID == 0 {
-			// No machine with the specified virtual app ID exist, return empty result.
-			payload := models.Zones{
-				Items: []*models.Zone{},
-				Total: 0,
-			}
-			rsp := dns.NewGetZonesOK().WithPayload(&payload)
-			return rsp
-		}
-		machineIDPtr = &machineID
+		daemonNamePtr = &daemonName
 	}
 
 	// Apply paging parameters and zone-specific filters.
 	filter := &dbmodel.GetZonesFilter{
-		MachineID:  machineIDPtr,
-		DaemonName: daemonName,
+		DaemonName: daemonNamePtr,
 		Class:      params.Class,
 		RPZ:        params.Rpz,
 		Serial:     params.Serial,
@@ -157,10 +125,7 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 	for _, zone := range zones {
 		var restLocalZones []*models.LocalZone
 		for _, localZone := range zone.LocalZones {
-			app := localZone.Daemon.GetVirtualApp()
 			restLocalZones = append(restLocalZones, &models.LocalZone{
-				AppID:    app.ID,
-				AppName:  app.Name,
 				Class:    localZone.Class,
 				DaemonID: localZone.DaemonID,
 				LoadedAt: strfmt.DateTime(localZone.LoadedAt),
@@ -212,10 +177,7 @@ func (r *RestAPI) GetZonesFetch(ctx context.Context, params dns.GetZonesFetchPar
 	}
 	var restStates []*models.ZoneInventoryState
 	for _, state := range states {
-		app := state.Daemon.GetVirtualApp()
 		restStates = append(restStates, &models.ZoneInventoryState{
-			AppID:              app.ID,
-			AppName:            app.Name,
 			CreatedAt:          strfmt.DateTime(state.CreatedAt),
 			DaemonID:           state.DaemonID,
 			Error:              state.State.Error,

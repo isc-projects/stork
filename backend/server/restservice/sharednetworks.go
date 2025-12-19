@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	keaconfig "isc.org/stork/daemoncfg/kea"
-	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/daemons/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -119,11 +118,8 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 	}
 
 	for _, lsn := range sn.LocalSharedNetworks {
-		app := lsn.Daemon.GetVirtualApp()
 		localSharedNetwork := &models.LocalSharedNetwork{
-			AppID:    app.ID,
 			DaemonID: lsn.Daemon.ID,
-			AppName:  app.Name,
 		}
 		keaParameters := lsn.KeaParameters
 		if keaParameters != nil {
@@ -269,41 +265,7 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 }
 
 // Get the list of shared networks for the given set of parameters.
-func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.SharedNetworks, error) {
-	var daemonID int64
-	if appID != 0 {
-		// Fetch daemons.
-		daemons, err := dbmodel.GetDaemonsByVirtualAppID(r.DB, appID)
-		if err != nil {
-			return nil, errors.WithMessage(err, "cannot get daemons from db")
-		}
-		// Select daemon matching the specified family.
-		var daemon *dbmodel.Daemon
-	DAEMON_LOOP:
-		for _, d := range daemons {
-			switch family {
-			case 0:
-				if d.Name == daemonname.DHCPv4 || d.Name == daemonname.DHCPv6 {
-					daemon = d
-				}
-			case 4:
-				if d.Name == daemonname.DHCPv4 {
-					daemon = d
-					break DAEMON_LOOP
-				}
-			case 6:
-				if d.Name == daemonname.DHCPv6 {
-					daemon = d
-					break DAEMON_LOOP
-				}
-			}
-		}
-		if daemon == nil {
-			return &models.SharedNetworks{}, nil
-		}
-		daemonID = daemon.ID
-	}
-
+func (r *RestAPI) getSharedNetworks(offset, limit, daemonID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.SharedNetworks, error) {
 	// get shared networks from db
 	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.DB, offset, limit, daemonID, family, filterText, sortField, sortDir)
 	if err != nil {
@@ -345,9 +307,9 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 		sortDir = dbmodel.SortDirEnum(*params.SortDir)
 	}
 
-	var appID int64
-	if params.AppID != nil {
-		appID = *params.AppID
+	var daemonID int64
+	if params.DaemonID != nil {
+		daemonID = *params.DaemonID
 	}
 
 	var dhcpVer int64
@@ -356,7 +318,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	}
 
 	// get shared networks from db
-	sharedNetworks, err := r.getSharedNetworks(start, limit, appID, dhcpVer, params.Text, sortField, sortDir)
+	sharedNetworks, err := r.getSharedNetworks(start, limit, daemonID, dhcpVer, params.Text, sortField, sortDir)
 	if err != nil {
 		msg := "Cannot get shared network from db"
 		log.WithError(err).Error(msg)

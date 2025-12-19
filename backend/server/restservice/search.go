@@ -32,7 +32,7 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 			SharedNetworks: &models.SharedNetworks{},
 			Hosts:          &models.Hosts{},
 			Machines:       &models.Machines{},
-			Apps:           &models.Apps{},
+			Daemons:        &models.Daemons{},
 			Users:          &models.Users{},
 			Groups:         &models.Groups{},
 		}
@@ -66,10 +66,10 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 		return handleSearchError(err, "Cannot get machines from the db")
 	}
 
-	// get list of apps
-	apps, err := r.getApps(0, 5, &text, "", dbmodel.SortDirAny)
+	// get list of daemons
+	daemons, err := r.getDaemons(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
-		return handleSearchError(err, "Cannot get apps from the db")
+		return handleSearchError(err, "Cannot get daemons from the db")
 	}
 
 	// get list of users
@@ -90,7 +90,7 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 		SharedNetworks: sharedNetworks,
 		Hosts:          hosts,
 		Machines:       machines,
-		Apps:           apps,
+		Daemons:        daemons,
 		Users:          users,
 		Groups:         groups,
 	}

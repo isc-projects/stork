@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	keaconfig "isc.org/stork/daemoncfg/kea"
-	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/daemons/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -102,12 +101,8 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	}
 
 	for _, lsn := range sn.LocalSubnets {
-		app := lsn.Daemon.GetVirtualApp()
-
 		localSubnet := &models.LocalSubnet{
-			AppID:            app.ID,
 			DaemonID:         lsn.Daemon.ID,
-			AppName:          app.Name,
 			ID:               lsn.LocalSubnetID,
 			MachineAddress:   lsn.Daemon.Machine.Address,
 			MachineHostname:  lsn.Daemon.Machine.State.Hostname,
@@ -504,56 +499,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		Family:        params.DhcpVersion,
 		Text:          params.Text,
 		LocalSubnetID: params.LocalSubnetID,
-	}
-
-	if params.AppID != nil {
-		daemons, err := dbmodel.GetDaemonsByVirtualAppID(r.DB, *params.AppID)
-		if err != nil {
-			msg := fmt.Sprintf("Cannot get daemons for app ID %d", *params.AppID)
-			log.WithError(err).Error(msg)
-			rsp := dhcp.NewGetSubnetsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		if len(daemons) == 0 {
-			// There are no daemons for the given app ID. Return empty result.
-			rsp := dhcp.NewGetSubnetsOK().WithPayload(&models.Subnets{
-				Total: 0,
-				Items: []*models.Subnet{},
-			})
-			return rsp
-		}
-		if params.DhcpVersion != nil {
-			var daemon *dbmodel.Daemon
-		DAEMON_LOOP:
-			for _, d := range daemons {
-				switch *params.DhcpVersion {
-				case 4:
-					if d.Name == daemonname.DHCPv4 {
-						daemon = d
-						break DAEMON_LOOP
-					}
-				case 6:
-					if d.Name == daemonname.DHCPv6 {
-						daemon = d
-						break DAEMON_LOOP
-					}
-				}
-			}
-			if daemon == nil {
-				// There are no daemon for the given app ID and DHCP version.
-				// Return empty result.
-				rsp := dhcp.NewGetSubnetsOK().WithPayload(&models.Subnets{
-					Total: 0,
-					Items: []*models.Subnet{},
-				})
-				return rsp
-			}
-			filters.DaemonID = &daemon.ID
-		} else {
-			filters.MachineID = &daemons[0].MachineID
-		}
+		DaemonID:      params.DaemonID,
 	}
 
 	subnets, err := r.getSubnets(start, limit, filters, sortField, sortDir)
@@ -627,7 +573,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Filter the daemons with subnet_cmds hook library.
 			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); exists {
-				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
+				respDaemons = append(respDaemons, r.keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
 			for _, c := range clientClasses {
