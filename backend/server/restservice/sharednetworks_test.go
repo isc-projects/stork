@@ -79,8 +79,6 @@ func TestGetSharedNetworks(t *testing.T) {
 	daemon4, err := dhcp4.GetDaemon()
 	require.NoError(t, err)
 
-	a4 := daemon4.GetVirtualApp()
-
 	dhcp6, err := dbmodeltest.NewKeaDHCPv6Server(db)
 	require.NoError(t, err)
 
@@ -174,21 +172,17 @@ func TestGetSharedNetworks(t *testing.T) {
 		}
 	}
 
-	// get shared networks from app a4
+	// get shared networks from daemon 4
 	params = dhcp.GetSharedNetworksParams{
-		AppID: &a4.ID,
+		DaemonID: &daemon4.ID,
 	}
 	rsp = rapi.GetSharedNetworks(ctx, params)
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppID)
 	require.Equal(t, daemon4.ID, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].DaemonID)
-	require.Equal(t, a4.Name, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppName)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppID)
 	require.Equal(t, daemon4.ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].DaemonID)
-	require.Equal(t, a4.Name, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppName)
 	require.Nil(t, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].Stats)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})
 }
@@ -839,7 +833,7 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
 	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.App.ID)
+		require.NotZero(t, daemon.Machine.ID)
 	}
 
 	keaConfigSharedNetworkParameters := &models.KeaConfigSharedNetworkParameters{
@@ -1587,7 +1581,7 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
 	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.App.ID)
+		require.NotZero(t, daemon.Machine.ID)
 	}
 
 	keaConfigSharedNetworkParameters := &models.KeaConfigSharedNetworkParameters{

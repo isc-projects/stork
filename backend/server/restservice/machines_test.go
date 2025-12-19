@@ -112,8 +112,8 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
-	require.NotNil(t, okRsp.Payload.Apps)
-	require.Len(t, okRsp.Payload.Apps, 0)
+	require.NotNil(t, okRsp.Payload.Daemons)
+	require.Empty(t, okRsp.Payload.Daemons)
 }
 
 func mockGetAppsState(callNo int, cmdResponses []interface{}) {
@@ -280,9 +280,9 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 	rsp := rapi.GetMachineState(ctx, params)
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
-	require.Len(t, okRsp.Payload.Apps, 2)
-	require.Equal(t, string(dbmodel.VirtualAppTypeKea), okRsp.Payload.Apps[0].Type)
-	require.Equal(t, string(dbmodel.VirtualAppTypeBind9), okRsp.Payload.Apps[1].Type)
+	require.Len(t, okRsp.Payload.Daemons, 2)
+	require.EqualValues(t, daemonname.CA, okRsp.Payload.Daemons[0].Name)
+	require.EqualValues(t, daemonname.Bind9, okRsp.Payload.Daemons[1].Name)
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
@@ -372,31 +372,27 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	})
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
-	require.Len(t, okRsp.Payload.Apps, 1)
+	require.Len(t, okRsp.Payload.Daemons, 1)
 
-	returnedApp := okRsp.Payload.Apps[0]
-	virtualApp := pdnsDaemon.GetVirtualApp()
+	returnedDaemon := okRsp.Payload.Daemons[0]
 
-	require.EqualValues(t, virtualApp.ID, returnedApp.ID)
-	require.Equal(t, virtualApp.Name, returnedApp.Name)
-	require.EqualValues(t, virtualApp.Type, returnedApp.Type)
-	require.Equal(t, "1.2.3.4", returnedApp.AccessPoints[0].Address)
-	require.Len(t, returnedApp.AccessPoints, 1)
-	require.EqualValues(t, 124, returnedApp.AccessPoints[0].Port)
+	require.EqualValues(t, pdnsDaemon.ID, returnedDaemon.ID)
+	require.EqualValues(t, pdnsDaemon.Name, returnedDaemon.Name)
+	require.Equal(t, "1.2.3.4", returnedDaemon.AccessPoints[0].Address)
+	require.Len(t, returnedDaemon.AccessPoints, 1)
+	require.EqualValues(t, 124, returnedDaemon.AccessPoints[0].Port)
 
-	apiDaemon := returnedApp.Details.PdnsDaemon
-	require.NotNil(t, apiDaemon)
-	require.Equal(t, string(pdnsDaemon.Name), apiDaemon.Name)
-	require.Equal(t, "4.7.0", apiDaemon.Version)
-	require.EqualValues(t, 1234, apiDaemon.Uptime)
-	require.Equal(t, "http://127.0.0.1:8081", apiDaemon.URL)
-	require.Equal(t, "http://127.0.0.1:8081/config", apiDaemon.ConfigURL)
-	require.Equal(t, "http://127.0.0.1:8081/zones", apiDaemon.ZonesURL)
-	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", apiDaemon.AutoprimariesURL)
+	require.EqualValues(t, pdnsDaemon.Name, returnedDaemon.Name)
+	require.Equal(t, "4.7.0", returnedDaemon.Version)
+	require.EqualValues(t, 1234, returnedDaemon.Uptime)
+	require.Equal(t, "http://127.0.0.1:8081", returnedDaemon.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", returnedDaemon.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", returnedDaemon.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", returnedDaemon.AutoprimariesURL)
 
 	updatedDaemon, err := dbmodel.GetDaemonByID(db, pdnsDaemon.ID)
 	require.NoError(t, err)
-	require.EqualValues(t, apiDaemon.Name, updatedDaemon.Name)
+	require.EqualValues(t, returnedDaemon.Name, updatedDaemon.Name)
 	require.Equal(t, "4.7.0", updatedDaemon.Version)
 	require.Equal(t, "4.7.0", updatedDaemon.ExtendedVersion)
 	require.EqualValues(t, 1234, updatedDaemon.Uptime)
@@ -1100,9 +1096,9 @@ func TestGetMachine(t *testing.T) {
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp = rsp.(*services.GetMachineOK)
 	require.Equal(t, m2.ID, okRsp.Payload.ID)
-	require.Len(t, okRsp.Payload.Apps, 1)
-	require.Equal(t, daemon.GetVirtualApp().ID, okRsp.Payload.Apps[0].ID)
-	require.Len(t, okRsp.Payload.Apps[0].AccessPoints, 1)
+	require.Len(t, okRsp.Payload.Daemons, 1)
+	require.Equal(t, daemon.ID, okRsp.Payload.Daemons[0].ID)
+	require.Len(t, okRsp.Payload.Daemons[0].AccessPoints, 1)
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
@@ -1335,7 +1331,7 @@ func TestDeleteMachine(t *testing.T) {
 	require.Empty(t, zones)
 }
 
-func TestGetApp(t *testing.T) {
+func TestGetDaemon(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1348,14 +1344,14 @@ func TestGetApp(t *testing.T) {
 	ctx := context.Background()
 
 	// get non-existing app
-	params := services.GetAppParams{
+	params := services.GetDaemonParams{
 		ID: 123,
 	}
-	rsp := rapi.GetApp(ctx, params)
-	require.IsType(t, &services.GetAppDefault{}, rsp)
-	defaultRsp := rsp.(*services.GetAppDefault)
+	rsp := rapi.GetDaemon(ctx, params)
+	require.IsType(t, &services.GetDaemonDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "App with ID 123 not found", *defaultRsp.Payload.Message)
+	require.Equal(t, "Daemon with ID 123 not found", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1376,17 +1372,17 @@ func TestGetApp(t *testing.T) {
 	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
-	// get added app
-	params = services.GetAppParams{
-		ID: keaDaemon.GetVirtualApp().ID,
+	// get added daemon
+	params = services.GetDaemonParams{
+		ID: keaDaemon.ID,
 	}
-	rsp = rapi.GetApp(ctx, params)
-	require.IsType(t, &services.GetAppOK{}, rsp)
-	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, keaDaemon.GetVirtualApp().ID, okRsp.Payload.ID)
+	rsp = rapi.GetDaemon(ctx, params)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonOK)
+	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
 }
 
-func TestRestGetApp(t *testing.T) {
+func TestRestGetDaemon(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1398,15 +1394,15 @@ func TestRestGetApp(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get non-existing app
-	params := services.GetAppParams{
+	// get non-existing daemon
+	params := services.GetDaemonParams{
 		ID: 123,
 	}
-	rsp := rapi.GetApp(ctx, params)
-	require.IsType(t, &services.GetAppDefault{}, rsp)
-	defaultRsp := rsp.(*services.GetAppDefault)
+	rsp := rapi.GetDaemon(ctx, params)
+	require.IsType(t, &services.GetDaemonDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "App with ID 123 not found", *defaultRsp.Payload.Message)
+	require.Equal(t, "Daemon with ID 123 not found", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1427,16 +1423,15 @@ func TestRestGetApp(t *testing.T) {
 	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
-	// get added kea app
-	app := keaDaemon.GetVirtualApp()
-	params = services.GetAppParams{
-		ID: app.ID,
+	// get added kea daemon
+	params = services.GetDaemonParams{
+		ID: keaDaemon.ID,
 	}
-	rsp = rapi.GetApp(ctx, params)
-	require.IsType(t, &services.GetAppOK{}, rsp)
-	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, app.ID, okRsp.Payload.ID)
-	require.Equal(t, app.Name, okRsp.Payload.Name)
+	rsp = rapi.GetDaemon(ctx, params)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonOK)
+	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
+	require.EqualValues(t, keaDaemon.Name, okRsp.Payload.Name)
 
 	// add BIND 9 daemon to machine
 	bind9AccessPoint := &dbmodel.AccessPoint{
@@ -1452,15 +1447,14 @@ func TestRestGetApp(t *testing.T) {
 	require.NoError(t, err)
 
 	// get added BIND 9 daemon
-	app = bind9Daemon.GetVirtualApp()
-	params = services.GetAppParams{
-		ID: app.ID,
+	params = services.GetDaemonParams{
+		ID: bind9Daemon.ID,
 	}
-	rsp = rapi.GetApp(ctx, params)
-	require.IsType(t, &services.GetAppOK{}, rsp)
-	okRsp = rsp.(*services.GetAppOK)
-	require.Equal(t, app.ID, okRsp.Payload.ID)
-	require.Equal(t, app.Name, okRsp.Payload.Name)
+	rsp = rapi.GetDaemon(ctx, params)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonOK)
+	require.Equal(t, bind9Daemon.ID, okRsp.Payload.ID)
+	require.EqualValues(t, bind9Daemon.Name, okRsp.Payload.Name)
 }
 
 // Test getting PowerDNS app by ID.
@@ -1503,23 +1497,22 @@ func TestGetPowerDNSApp(t *testing.T) {
 	err = dbmodel.AddDaemon(db, pdnsDaemon)
 	require.NoError(t, err)
 
-	// get added kea app
-	app := pdnsDaemon.GetVirtualApp()
-	params := services.GetAppParams{
-		ID: app.ID,
+	// get added kea daemon
+	params := services.GetDaemonParams{
+		ID: pdnsDaemon.ID,
 	}
-	rsp := rapi.GetApp(ctx, params)
-	require.IsType(t, &services.GetAppOK{}, rsp)
-	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, app.ID, okRsp.Payload.ID)
-	require.Equal(t, app.Name, okRsp.Payload.Name)
-	require.Equal(t, "https://pdns.example.com", okRsp.Payload.Details.PdnsDaemon.URL)
-	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.Details.PdnsDaemon.ConfigURL)
-	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.Details.PdnsDaemon.ZonesURL)
-	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.Details.PdnsDaemon.AutoprimariesURL)
+	rsp := rapi.GetDaemon(ctx, params)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonOK)
+	require.Equal(t, pdnsDaemon.ID, okRsp.Payload.ID)
+	require.EqualValues(t, pdnsDaemon.Name, okRsp.Payload.Name)
+	require.Equal(t, "https://pdns.example.com", okRsp.Payload.PdnsDaemonDetails.URL)
+	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.PdnsDaemonDetails.ConfigURL)
+	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.PdnsDaemonDetails.ZonesURL)
+	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.PdnsDaemonDetails.AutoprimariesURL)
 }
 
-func TestRestGetApps(t *testing.T) {
+func TestRestGetDaemons(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1533,11 +1526,11 @@ func TestRestGetApps(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get empty list of app
-	params := services.GetAppsParams{}
-	rsp := rapi.GetApps(ctx, params)
-	require.IsType(t, &services.GetAppsOK{}, rsp)
-	okRsp := rsp.(*services.GetAppsOK)
+	// get empty list of daemon
+	params := services.GetDaemonsParams{}
+	rsp := rapi.GetDaemons(ctx, params)
+	require.IsType(t, &services.GetDaemonsOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonsOK)
 	require.Zero(t, okRsp.Payload.Total)
 
 	// add machine
@@ -1556,6 +1549,7 @@ func TestRestGetApps(t *testing.T) {
 		Protocol: protocoltype.HTTP,
 	}
 	s1 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	s1.Version = "2.6.0"
 	s1.KeaDaemon = &dbmodel.KeaDaemon{}
 	s1.LogTargets = []*dbmodel.LogTarget{
 		{
@@ -1613,23 +1607,20 @@ func TestRestGetApps(t *testing.T) {
 
 	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).DoAndReturn(wrap(stats)).AnyTimes()
 
-	t.Run("get all apps", func(t *testing.T) {
-		// get added apps
-		params = services.GetAppsParams{}
-		rsp = rapi.GetApps(ctx, params)
-		require.IsType(t, &services.GetAppsOK{}, rsp)
-		okRsp = rsp.(*services.GetAppsOK)
+	t.Run("get all daemons", func(t *testing.T) {
+		// get added daemons
+		params = services.GetDaemonsParams{}
+		rsp = rapi.GetDaemons(ctx, params)
+		require.IsType(t, &services.GetDaemonsOK{}, rsp)
+		okRsp = rsp.(*services.GetDaemonsOK)
 		require.EqualValues(t, 3, okRsp.Payload.Total)
 
 		// Verify that the communication error counters are returned.
 		require.Len(t, okRsp.Payload.Items, 3)
-		for _, app := range okRsp.Payload.Items {
-			switch app.Type {
-			case string(dbmodel.VirtualAppTypeKea):
-				require.Equal(t, "kea@localhost%791348537", app.Name)
-				appKea := app.Details.AppKea
-				require.Len(t, appKea.Daemons, 1)
-				daemon := appKea.Daemons[0]
+		for _, daemon := range okRsp.Payload.Items {
+			daemonName, _ := daemonname.Parse(daemon.Name)
+			switch daemonName {
+			case daemonname.DHCPv4:
 				require.EqualValues(t, 1, daemon.AgentCommErrors)
 				require.EqualValues(t, 2, daemon.CaCommErrors)
 				require.EqualValues(t, 5, daemon.DaemonCommErrors)
@@ -1637,81 +1628,73 @@ func TestRestGetApps(t *testing.T) {
 				require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
 				require.Equal(t, "debug", daemon.LogTargets[0].Severity)
 				require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
-			case string(dbmodel.VirtualAppTypeBind9):
-				require.Equal(t, "bind9@localhost%792003897", app.Name)
-				appBind9 := app.Details.AppBind9
-				daemon := appBind9.Daemon
+			case daemonname.Bind9:
 				require.EqualValues(t, 1, daemon.AgentCommErrors)
-				require.EqualValues(t, 2, daemon.RndcCommErrors)
+				require.EqualValues(t, 2, daemon.DaemonCommErrors)
 				require.EqualValues(t, 3, daemon.StatsCommErrors)
-			case string(dbmodel.VirtualAppTypePDNS):
-				require.Equal(t, "pdns@localhost%791938359", app.Name)
-				appPdns := app.Details.AppPdns
-				require.Equal(t, "https://pdns.example.com", appPdns.PdnsDaemon.URL)
-				require.Equal(t, "https://pdns.example.com/config", appPdns.PdnsDaemon.ConfigURL)
-				require.Equal(t, "https://pdns.example.com/zones", appPdns.PdnsDaemon.ZonesURL)
-				require.Equal(t, "https://pdns.example.com/autoprimaries", appPdns.PdnsDaemon.AutoprimariesURL)
+			case daemonname.PDNS:
+				require.Equal(t, "https://pdns.example.com", daemon.PdnsDaemonDetails.URL)
+				require.Equal(t, "https://pdns.example.com/config", daemon.PdnsDaemonDetails.ConfigURL)
+				require.Equal(t, "https://pdns.example.com/zones", daemon.PdnsDaemonDetails.ZonesURL)
+				require.Equal(t, "https://pdns.example.com/autoprimaries", daemon.PdnsDaemonDetails.AutoprimariesURL)
 			}
 		}
 	})
 
-	t.Run("get kea apps", func(t *testing.T) {
-		params = services.GetAppsParams{
-			Apps: []string{string(dbmodel.VirtualAppTypeKea)},
+	t.Run("get kea daemons", func(t *testing.T) {
+		params = services.GetDaemonsParams{
+			Daemons: []string{string(daemonname.DHCPv4), string(daemonname.DHCPv6), string(daemonname.CA)},
 		}
-		rsp = rapi.GetApps(ctx, params)
-		require.IsType(t, &services.GetAppsOK{}, rsp)
-		okRsp = rsp.(*services.GetAppsOK)
+		rsp = rapi.GetDaemons(ctx, params)
+		require.IsType(t, &services.GetDaemonsOK{}, rsp)
+		okRsp = rsp.(*services.GetDaemonsOK)
 		require.EqualValues(t, 1, okRsp.Payload.Total)
-		require.EqualValues(t, string(dbmodel.VirtualAppTypeKea), okRsp.Payload.Items[0].Type)
-		require.EqualValues(t, "kea@localhost%791348537", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, string(daemonname.DHCPv4), okRsp.Payload.Items[0].Name)
 	})
 
-	t.Run("get bind9 apps", func(t *testing.T) {
-		params = services.GetAppsParams{
-			Apps: []string{string(dbmodel.VirtualAppTypeBind9)},
+	t.Run("get bind9 daemons", func(t *testing.T) {
+		params = services.GetDaemonsParams{
+			Daemons: []string{string(daemonname.Bind9)},
 		}
-		rsp = rapi.GetApps(ctx, params)
-		require.IsType(t, &services.GetAppsOK{}, rsp)
-		okRsp = rsp.(*services.GetAppsOK)
+		rsp = rapi.GetDaemons(ctx, params)
+		require.IsType(t, &services.GetDaemonsOK{}, rsp)
+		okRsp = rsp.(*services.GetDaemonsOK)
 		require.EqualValues(t, 1, okRsp.Payload.Total)
-		require.EqualValues(t, string(dbmodel.VirtualAppTypeBind9), okRsp.Payload.Items[0].Type)
-		require.EqualValues(t, "bind9@localhost%792003897", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, string(daemonname.Bind9), okRsp.Payload.Items[0].Name)
 	})
 
-	t.Run("get pdns apps", func(t *testing.T) {
-		params = services.GetAppsParams{
-			Apps: []string{string(dbmodel.VirtualAppTypePDNS)},
+	t.Run("get pdns daemons", func(t *testing.T) {
+		params = services.GetDaemonsParams{
+			Daemons: []string{string(daemonname.PDNS)},
 		}
-		rsp = rapi.GetApps(ctx, params)
-		require.IsType(t, &services.GetAppsOK{}, rsp)
-		okRsp = rsp.(*services.GetAppsOK)
+		rsp = rapi.GetDaemons(ctx, params)
+		require.IsType(t, &services.GetDaemonsOK{}, rsp)
+		okRsp = rsp.(*services.GetDaemonsOK)
 		require.EqualValues(t, 1, okRsp.Payload.Total)
-		require.EqualValues(t, string(dbmodel.VirtualAppTypePDNS), okRsp.Payload.Items[0].Type)
-		require.EqualValues(t, "pdns@localhost%791938359", okRsp.Payload.Items[0].Name)
+		require.EqualValues(t, string(daemonname.PDNS), okRsp.Payload.Items[0].Name)
 	})
 
-	t.Run("get apps with multiple types", func(t *testing.T) {
-		params = services.GetAppsParams{
-			Apps: []string{string(dbmodel.VirtualAppTypeKea), string(dbmodel.VirtualAppTypeBind9)},
+	t.Run("get daemons with multiple names", func(t *testing.T) {
+		params = services.GetDaemonsParams{
+			Daemons: []string{string(daemonname.DHCPv4), string(daemonname.Bind9)},
 		}
-		rsp = rapi.GetApps(ctx, params)
-		require.IsType(t, &services.GetAppsOK{}, rsp)
-		okRsp = rsp.(*services.GetAppsOK)
+		rsp = rapi.GetDaemons(ctx, params)
+		require.IsType(t, &services.GetDaemonsOK{}, rsp)
+		okRsp = rsp.(*services.GetDaemonsOK)
 		require.EqualValues(t, 2, okRsp.Payload.Total)
-		for _, app := range okRsp.Payload.Items {
-			switch app.Type {
-			case string(dbmodel.VirtualAppTypeKea):
-				require.Equal(t, "kea@localhost%791348537", app.Name)
-			case string(dbmodel.VirtualAppTypeBind9):
-				require.Equal(t, "bind9@localhost%792003897", app.Name)
+		for _, daemon := range okRsp.Payload.Items {
+			switch daemon.Name {
+			case string(daemonname.DHCPv4):
+				require.Equal(t, s1.ID, daemon.ID)
+			case string(daemonname.Bind9):
+				require.Equal(t, s2.ID, daemon.ID)
 			}
 		}
 	})
 }
 
-// Test converting BIND9 app to REST API format with DNS query stats.
-func TestRestGetBind9AppWithQueryStats(t *testing.T) {
+// Test converting BIND9 daemon to REST API format with DNS query stats.
+func TestRestGetBind9DaemonWithQueryStats(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1725,11 +1708,11 @@ func TestRestGetBind9AppWithQueryStats(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get empty list of app
-	params := services.GetAppsParams{}
-	rsp := rapi.GetApps(ctx, params)
-	require.IsType(t, &services.GetAppsOK{}, rsp)
-	okRsp := rsp.(*services.GetAppsOK)
+	// get empty list of daemons
+	params := services.GetDaemonsParams{}
+	rsp := rapi.GetDaemons(ctx, params)
+	require.IsType(t, &services.GetDaemonsOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonsOK)
 	require.Zero(t, okRsp.Payload.Total)
 
 	// Add machine.
@@ -1775,41 +1758,41 @@ func TestRestGetBind9AppWithQueryStats(t *testing.T) {
 	stats := agentcomm.NewAgentStats()
 	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).DoAndReturn(wrap(stats)).AnyTimes()
 
-	// Get apps.
-	params = services.GetAppsParams{}
-	rsp = rapi.GetApps(ctx, params)
-	require.IsType(t, &services.GetAppsOK{}, rsp)
-	okRsp = rsp.(*services.GetAppsOK)
+	// Get daemons.
+	params = services.GetDaemonsParams{}
+	rsp = rapi.GetDaemons(ctx, params)
+	require.IsType(t, &services.GetDaemonsOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonsOK)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 
 	// Verify BIND9 views
 	require.Len(t, okRsp.Payload.Items, 1)
-	bind9App := okRsp.Payload.Items[0].Details.AppBind9
-	require.NotNil(t, bind9App)
-	require.NotNil(t, bind9App.Daemon)
-	require.NotNil(t, bind9App.Daemon.Views)
+	bind9Daemon := okRsp.Payload.Items[0]
+	require.NotNil(t, bind9Daemon)
+	require.NotNil(t, bind9Daemon.Daemon)
+	require.NotNil(t, bind9Daemon.Bind9DaemonDetails.Views)
 
 	// Zone counts.
-	require.EqualValues(t, 100, bind9App.Daemon.ZoneCount)
-	require.EqualValues(t, 50, bind9App.Daemon.AutoZoneCount)
+	require.EqualValues(t, 100, bind9Daemon.Bind9DaemonDetails.ZoneCount)
+	require.EqualValues(t, 50, bind9Daemon.Bind9DaemonDetails.AutoZoneCount)
 
 	// Test "trusted" view. It is at index 1 because the views are sorted by name.
-	trustedView := bind9App.Daemon.Views[1]
+	trustedView := bind9Daemon.Bind9DaemonDetails.Views[1]
 	require.NotNil(t, trustedView)
 	require.EqualValues(t, 150, trustedView.QueryHits)
 	require.EqualValues(t, 50, trustedView.QueryMisses)
 	require.EqualValues(t, 0.75, trustedView.QueryHitRatio)
 
 	// Test "guest" view. It is at index 0 because the views are sorted by name.
-	guestView := bind9App.Daemon.Views[0]
+	guestView := bind9Daemon.Bind9DaemonDetails.Views[0]
 	require.NotNil(t, guestView)
 	require.EqualValues(t, 75, guestView.QueryHits)
 	require.EqualValues(t, 50, guestView.QueryMisses)
 	require.EqualValues(t, 0.6, guestView.QueryHitRatio)
 }
 
-// Test that a list of apps' ids and names is returned via the API.
-func TestGetAppsDirectory(t *testing.T) {
+// Test that a list of daemons' ids and names is returned via the API.
+func TestGetDaemonsDirectory(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1853,10 +1836,10 @@ func TestGetAppsDirectory(t *testing.T) {
 	err = dbmodel.AddDaemon(db, bind9Daemon)
 	require.NoError(t, err)
 
-	params := services.GetAppsDirectoryParams{}
-	rsp := rapi.GetAppsDirectory(ctx, params)
-	require.IsType(t, &services.GetAppsDirectoryOK{}, rsp)
-	apps := rsp.(*services.GetAppsDirectoryOK).Payload
+	params := services.GetDaemonsDirectoryParams{}
+	rsp := rapi.GetDaemonsDirectory(ctx, params)
+	require.IsType(t, &services.GetDaemonsDirectoryOK{}, rsp)
+	apps := rsp.(*services.GetDaemonsDirectoryOK).Payload
 	require.EqualValues(t, 2, apps.Total)
 
 	// Ensure that the returned apps are in a coherent order.
@@ -1865,18 +1848,16 @@ func TestGetAppsDirectory(t *testing.T) {
 	})
 
 	// Validate the returned data.
-	keaApp := keaDaemon.GetVirtualApp()
-	bind9App := bind9Daemon.GetVirtualApp()
-	require.Equal(t, keaApp.ID, apps.Items[0].ID)
+	require.Equal(t, keaDaemon.ID, apps.Items[0].ID)
 	require.NotNil(t, apps.Items[0].Name)
-	require.Equal(t, keaApp.Name, apps.Items[0].Name)
-	require.Equal(t, bind9App.ID, apps.Items[1].ID)
+	require.EqualValues(t, keaDaemon.Name, apps.Items[0].Name)
+	require.Equal(t, bind9Daemon.ID, apps.Items[1].ID)
 	require.NotNil(t, apps.Items[1].Name)
-	require.Equal(t, bind9App.Name, apps.Items[1].Name)
+	require.EqualValues(t, bind9Daemon.Name, apps.Items[1].Name)
 }
 
-// Test that a list of apps with communication issues is returned.
-func TestGetAppsCommunicationIssues(t *testing.T) {
+// Test that a list of daemons with communication issues is returned.
+func TestGetDaemonsCommunicationIssues(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1917,6 +1898,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		Protocol: protocoltype.HTTP,
 	}
 	keaDaemon1 := dbmodel.NewDaemon(m1, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint1})
+	keaDaemon1.Version = "2.6.0"
 	keaDaemon1.Monitored = true
 	keaDaemon1.KeaDaemon = &dbmodel.KeaDaemon{}
 	err = dbmodel.AddDaemon(db, keaDaemon1)
@@ -1930,6 +1912,7 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		Protocol: protocoltype.HTTP,
 	}
 	keaDaemon2 := dbmodel.NewDaemon(m2, daemonname.CA, true, []*dbmodel.AccessPoint{keaAccessPoint2})
+	keaDaemon2.Version = "2.6.0"
 	keaDaemon2.Monitored = true
 	keaDaemon2.KeaDaemon = &dbmodel.KeaDaemon{}
 	err = dbmodel.AddDaemon(db, keaDaemon2)
@@ -1965,12 +1948,12 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		stats3 := agentcomm.NewAgentStats()
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
-		params := services.GetAppsWithCommunicationIssuesParams{}
-		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
-		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "kea@localhost%791348537", apps.Items[0].Name)
+		params := services.GetDaemonsWithCommunicationIssuesParams{}
+		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+		daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, daemons.Total)
+		require.Equal(t, string(daemonname.DHCPv4), daemons.Items[0].Name)
 	})
 
 	t.Run("ca errors", func(t *testing.T) {
@@ -1985,12 +1968,12 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		stats3 := agentcomm.NewAgentStats()
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
-		params := services.GetAppsWithCommunicationIssuesParams{}
-		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
-		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "kea@localhost%791348537", apps.Items[0].Name)
+		params := services.GetDaemonsWithCommunicationIssuesParams{}
+		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+		daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, daemons.Total)
+		require.Equal(t, string(daemonname.DHCPv4), daemons.Items[0].Name)
 	})
 
 	t.Run("kea daemon errors", func(t *testing.T) {
@@ -2005,12 +1988,12 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		stats3 := agentcomm.NewAgentStats()
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
-		params := services.GetAppsWithCommunicationIssuesParams{}
-		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
-		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "kea@localhost%791348537", apps.Items[0].Name)
+		params := services.GetDaemonsWithCommunicationIssuesParams{}
+		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+		daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, daemons.Total)
+		require.Equal(t, string(daemonname.DHCPv4), daemons.Items[0].Name)
 	})
 
 	t.Run("bind9 current errors", func(t *testing.T) {
@@ -2024,12 +2007,12 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		stats3.IncreaseAgentErrorCount("foo")
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
-		params := services.GetAppsWithCommunicationIssuesParams{}
-		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
+		params := services.GetDaemonsWithCommunicationIssuesParams{}
+		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "bind9@localhost%794756419", apps.Items[0].Name)
+		require.Equal(t, string(daemonname.Bind9), apps.Items[0].Name)
 	})
 
 	t.Run("rndc errors", func(t *testing.T) {
@@ -2044,12 +2027,12 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		bind9Stats.IncreaseErrorCountBy(dbmodel.AccessPointControl, 10)
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
-		params := services.GetAppsWithCommunicationIssuesParams{}
-		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
-		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "bind9@localhost%794756419", apps.Items[0].Name)
+		params := services.GetDaemonsWithCommunicationIssuesParams{}
+		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+		daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, daemons.Total)
+		require.Equal(t, string(daemonname.Bind9), daemons.Items[0].Name)
 	})
 
 	t.Run("stats errors", func(t *testing.T) {
@@ -2064,18 +2047,18 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 		bind9Stats.IncreaseErrorCountBy(dbmodel.AccessPointStatistics, 10)
 		mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8082)).DoAndReturn(wrap(stats3))
 
-		params := services.GetAppsWithCommunicationIssuesParams{}
-		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
+		params := services.GetDaemonsWithCommunicationIssuesParams{}
+		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, "bind9@localhost%794756419", apps.Items[0].Name)
+		require.Equal(t, string(daemonname.Bind9), apps.Items[0].Name)
 	})
 }
 
-// Test that non-monitored apps are not returned even when they
+// Test that non-monitored daemons are not returned even when they
 // report communication issues.
-func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
+func TestGetDaemonsCommunicationIssuesNotMonitored(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -2104,26 +2087,19 @@ func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
 	err = dbmodel.AddDaemon(db, keaDaemon)
 	require.NoError(t, err)
 
-	controller := gomock.NewController(t)
-	mock := NewMockConnectedAgents(controller)
-
-	rapi, err := NewRestAPI(&settings, dbSettings, db, mock, fec, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fec, fd)
 	require.NoError(t, err)
 
-	stats := agentcomm.NewAgentStats()
-	stats.IncreaseAgentErrorCount("foo")
-	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), int64(8080)).DoAndReturn(wrap(stats))
-
-	params := services.GetAppsWithCommunicationIssuesParams{}
-	rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
-	require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
-	apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
+	params := services.GetDaemonsWithCommunicationIssuesParams{}
+	rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
+	require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
+	apps := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
 	require.EqualValues(t, 0, apps.Total)
 }
 
-// Test that status of three HA services for a Kea application is parsed
+// Test that status of three HA services for a Kea daemon is parsed
 // correctly.
-func TestRestGetAppServicesStatus(t *testing.T) {
+func TestRestGetDaemonServicesStatus(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -2251,14 +2227,14 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	params := services.GetAppServicesStatusParams{
-		ID: keaDaemon.GetVirtualApp().ID,
+	params := services.GetDaemonServicesStatusParams{
+		ID: keaDaemon.ID,
 	}
-	rsp := rapi.GetAppServicesStatus(ctx, params)
+	rsp := rapi.GetDaemonServicesStatus(ctx, params)
 
 	// Make sure that the response is ok.
-	require.IsType(t, &services.GetAppServicesStatusOK{}, rsp)
-	okRsp := rsp.(*services.GetAppServicesStatusOK)
+	require.IsType(t, &services.GetDaemonServicesStatusOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonServicesStatusOK)
 	require.NotNil(t, okRsp.Payload.Items)
 
 	// There should be three structures returned, two with the status of
@@ -2285,7 +2261,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.EqualValues(t, keaDaemon.GetVirtualApp().ID, haStatus.PrimaryServer.AppID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 7, haStatus.PrimaryServer.ConnectingClients)
@@ -2324,7 +2300,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.EqualValues(t, keaDaemon.GetVirtualApp().ID, haStatus.PrimaryServer.AppID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 1, haStatus.PrimaryServer.ConnectingClients)
@@ -2442,14 +2418,14 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	params := services.GetAppServicesStatusParams{
-		ID: keaDaemon.GetVirtualApp().ID,
+	params := services.GetDaemonServicesStatusParams{
+		ID: keaDaemon.ID,
 	}
-	rsp := rapi.GetAppServicesStatus(ctx, params)
+	rsp := rapi.GetDaemonServicesStatus(ctx, params)
 
 	// Make sure that the response is ok.
-	require.IsType(t, &services.GetAppServicesStatusOK{}, rsp)
-	okRsp := rsp.(*services.GetAppServicesStatusOK)
+	require.IsType(t, &services.GetDaemonServicesStatusOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonServicesStatusOK)
 	require.NotNil(t, okRsp.Payload.Items)
 
 	// There should be one structure returned with a status of the
@@ -2473,7 +2449,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	require.Equal(t, "passive-backup", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.EqualValues(t, keaDaemon.GetVirtualApp().ID, haStatus.PrimaryServer.AppID)
+	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, -1, haStatus.PrimaryServer.CommInterrupted)
 	require.Zero(t, haStatus.PrimaryServer.ConnectingClients)
@@ -2482,7 +2458,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	require.Zero(t, haStatus.PrimaryServer.AnalyzedPackets)
 }
 
-func TestRestGetAppsStats(t *testing.T) {
+func TestRestGetDaemonsStats(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -2494,14 +2470,13 @@ func TestRestGetAppsStats(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get empty list of app
-	params := services.GetAppsStatsParams{}
-	rsp := rapi.GetAppsStats(ctx, params)
-	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
-	okRsp := rsp.(*services.GetAppsStatsOK)
-	require.Zero(t, okRsp.Payload.KeaAppsTotal)
-	require.Zero(t, okRsp.Payload.KeaAppsNotOk)
-
+	// get empty list of daemons
+	params := services.GetDaemonsStatsParams{}
+	rsp := rapi.GetDaemonsStats(ctx, params)
+	require.IsType(t, &services.GetDaemonsStatsOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonsStatsOK)
+	require.Zero(t, okRsp.Payload.DhcpDaemonsTotal)
+	require.Zero(t, okRsp.Payload.DhcpDaemonsNotOk)
 	// add machine
 	m := &dbmodel.Machine{
 		Address:   "localhost",
@@ -2549,14 +2524,14 @@ func TestRestGetAppsStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// get added app
-	params = services.GetAppsStatsParams{}
-	rsp = rapi.GetAppsStats(ctx, params)
-	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
-	okRsp = rsp.(*services.GetAppsStatsOK)
-	require.EqualValues(t, 1, okRsp.Payload.KeaAppsTotal)
-	require.Zero(t, okRsp.Payload.KeaAppsNotOk)
-	require.EqualValues(t, 2, okRsp.Payload.DNSAppsTotal)
-	require.EqualValues(t, 2, okRsp.Payload.DNSAppsNotOk)
+	params = services.GetDaemonsStatsParams{}
+	rsp = rapi.GetDaemonsStats(ctx, params)
+	require.IsType(t, &services.GetDaemonsStatsOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonsStatsOK)
+	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemonsTotal)
+	require.Zero(t, okRsp.Payload.DhcpDaemonsNotOk)
+	require.EqualValues(t, 2, okRsp.Payload.DNSDaemonsTotal)
+	require.EqualValues(t, 2, okRsp.Payload.DNSDaemonsNotOk)
 }
 
 func TestGetDhcpOverview(t *testing.T) {
@@ -2578,12 +2553,13 @@ func TestGetDhcpOverview(t *testing.T) {
 		Protocol: protocoltype.HTTP,
 	}
 	dhcp4Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	dhcp4Daemon.Version = "2.6.9"
 	dhcp4Daemon.Monitored = true
 	err = dbmodel.AddDaemon(db, dhcp4Daemon)
 	require.NoError(t, err)
 
 	dhcp6Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{keaAccessPoint})
-	dhcp6Daemon.KeaDaemon = &dbmodel.KeaDaemon{}
+	dhcp6Daemon.Version = "2.6.9"
 	dhcp6Daemon.Monitored = false
 	err = dbmodel.AddDaemon(db, dhcp6Daemon)
 	require.NoError(t, err)
@@ -2634,7 +2610,6 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	// only dhcp4 is present
 	require.EqualValues(t, "dhcp4", okRsp.Payload.DhcpDaemons[0].Name)
-	require.EqualValues(t, "kea@localhost%791348537", okRsp.Payload.DhcpDaemons[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
 	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
 	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)
@@ -2776,16 +2751,15 @@ func TestUpdateDaemon(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, keaDaemon.ID)
 
-	// get added app
-	keaApp := keaDaemon.GetVirtualApp()
-	getAppParams := services.GetAppParams{
-		ID: keaApp.ID,
+	// get added daemon
+	getDaemonParams := services.GetDaemonParams{
+		ID: keaDaemon.ID,
 	}
-	rsp := rapi.GetApp(ctx, getAppParams)
-	require.IsType(t, &services.GetAppOK{}, rsp)
-	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
-	require.True(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is true
+	rsp := rapi.GetDaemon(ctx, getDaemonParams)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonOK)
+	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
+	require.True(t, okRsp.Payload.Daemon.Monitored) // now it is true
 
 	// setup a user session (UpdateDaemon needs user db object)
 	user, err := dbmodel.GetUserByID(rapi.DB, 1)
@@ -2805,12 +2779,12 @@ func TestUpdateDaemon(t *testing.T) {
 	rsp = rapi.UpdateDaemon(ctx2, params)
 	require.IsType(t, &services.UpdateDaemonOK{}, rsp)
 
-	// get app with modified daemon
-	rsp = rapi.GetApp(ctx2, getAppParams)
-	require.IsType(t, &services.GetAppOK{}, rsp)
-	okRsp = rsp.(*services.GetAppOK)
-	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
-	require.False(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is false
+	// get daemon with modified daemon
+	rsp = rapi.GetDaemon(ctx2, getDaemonParams)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonOK)
+	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
+	require.False(t, okRsp.Payload.Daemon.Monitored) // now it is false
 }
 
 // Check if generating and getting server token works.
@@ -2859,52 +2833,6 @@ func TestServerToken(t *testing.T) {
 	require.IsType(t, &services.RegenerateMachinesServerTokenOK{}, rsp)
 	okRegenRsp := rsp.(*services.RegenerateMachinesServerTokenOK)
 	require.NotEmpty(t, okRegenRsp.Payload.Token)
-}
-
-// Test that a PUT request to rename an app will cause the app to be successfully renamed.
-// Also, test that invalid app name will cause an error.
-func TestRenameApp(t *testing.T) {
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Add a machine.
-	machine := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, machine)
-	require.NoError(t, err)
-
-	// Add Kea daemon to the machine
-	keaDaemon := dbmodel.NewDaemon(machine, daemonname.CA, true, []*dbmodel.AccessPoint{})
-	err = dbmodel.AddDaemon(db, keaDaemon)
-	require.NoError(t, err)
-	require.NotZero(t, keaDaemon.ID)
-
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
-	require.NoError(t, err)
-	ctx := context.Background()
-
-	// Use correct parameters.
-	newName := "dhcp-server2"
-	app := keaDaemon.GetVirtualApp()
-	params := services.RenameAppParams{
-		ID: app.ID,
-		NewAppName: services.RenameAppBody{
-			Name: &newName,
-		},
-	}
-	rsp := rapi.RenameApp(ctx, params)
-	require.IsType(t, &services.RenameAppDefault{}, rsp)
-
-	// Check the error message.
-	defaultRsp := rsp.(*services.RenameAppDefault)
-	require.Equal(t, "Unable to rename app - this feature is no longer supported", *defaultRsp.Payload.Message)
-	require.Equal(t, http.StatusServiceUnavailable, getStatusCode(*defaultRsp))
 }
 
 // This test verifies that database backend configurations are parsed correctly
@@ -3025,12 +2953,15 @@ func TestMachineToRestAPIForNilKeaConfig(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, restMachine)
-	require.Len(t, restMachine.Apps, 1)
-	require.Len(t, restMachine.Apps[0].Details.Daemons, 1)
+	require.Len(t, restMachine.Daemons, 1)
 }
 
 // Test conversion of a KeaDaemon to REST API format.
 func TestKeaDaemonToRestAPI(t *testing.T) {
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	rapi, err := NewRestAPI(&dbops.DatabaseSettings{}, fa)
+	require.NoError(t, err)
+
 	machine := &dbmodel.Machine{ID: 2}
 	daemon := &dbmodel.Daemon{
 		ID:              1,
@@ -3063,7 +2994,7 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 			},
 		},
 	}
-	converted := keaDaemonToRestAPI(daemon)
+	converted := rapi.daemonToRestAPI(daemon)
 	require.NotNil(t, converted)
 	require.EqualValues(t, daemon.ID, converted.ID)
 	require.EqualValues(t, daemon.Pid, converted.Pid)
@@ -3076,10 +3007,6 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 	require.Len(t, converted.Hooks, 2)
 	require.Contains(t, converted.Hooks, "hook_abc.so")
 	require.Contains(t, converted.Hooks, "hook_def.so")
-	require.NotNil(t, converted.App)
-	virtualApp := daemon.GetVirtualApp()
-	require.EqualValues(t, virtualApp.ID, converted.App.ID)
-	require.Equal(t, virtualApp.Name, converted.App.Name)
 }
 
 // This test verifies that the lease database configuration storing the
@@ -3308,8 +3235,8 @@ func TestGetAccessPointKeyIsRestrictedToSuperAdmins(t *testing.T) {
 
 	// Act
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
-		AppID: 42,
-		Type:  string(dbmodel.AccessPointControl),
+		DaemonID: 42,
+		Type:     string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -3334,8 +3261,8 @@ func TestGetAccessPointKeyForInvalidDatabase(t *testing.T) {
 	// Act
 	teardown()
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
-		AppID: 42,
-		Type:  string(dbmodel.AccessPointControl),
+		DaemonID: 42,
+		Type:     string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -3360,8 +3287,8 @@ func TestGetAccessPointKeyForMissingEntry(t *testing.T) {
 
 	// Act
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
-		AppID: 42,
-		Type:  string(dbmodel.AccessPointControl),
+		DaemonID: 42,
+		Type:     string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -3397,12 +3324,10 @@ func TestGetAccessPointKey(t *testing.T) {
 	daemon.Bind9Daemon = &dbmodel.Bind9Daemon{}
 	_ = dbmodel.AddDaemon(db, daemon)
 
-	app := daemon.GetVirtualApp()
-
 	// Act
 	rsp := rapi.GetAccessPointKey(ctx, services.GetAccessPointKeyParams{
-		AppID: app.ID,
-		Type:  string(dbmodel.AccessPointControl),
+		DaemonID: daemon.ID,
+		Type:     string(dbmodel.AccessPointControl),
 	})
 
 	// Assert
@@ -4326,11 +4251,11 @@ func TestGetMachinesAppsVersions(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := services.GetMachinesAppsVersionsParams{}
+	params := services.GetMachinesVersionsParams{}
 
 	// Act
-	rsp := rapi.GetMachinesAppsVersions(ctx, params)
-	machines := rsp.(*services.GetMachinesAppsVersionsOK).Payload
+	rsp := rapi.GetMachinesVersions(ctx, params)
+	machines := rsp.(*services.GetMachinesVersionsOK).Payload
 	require.EqualValues(t, machines.Total, 2)
 
 	// Ensure that the returned machines are in a coherent order.
@@ -4343,20 +4268,20 @@ func TestGetMachinesAppsVersions(t *testing.T) {
 	require.Equal(t, int64(2), machines.Total)
 	require.Equal(t, machine1.ID, machines.Items[0].ID)
 	require.NotNil(t, machines.Items[0].Address)
-	require.Equal(t, machine1.Address, *machines.Items[0].Address)
+	require.Equal(t, machine1.Address, machines.Items[0].Address)
 	require.Equal(t, machine2.ID, machines.Items[1].ID)
 	require.NotNil(t, machines.Items[1].Address)
-	require.Equal(t, machine2.Address, *machines.Items[1].Address)
-	require.NotNil(t, machines.Items[0].Apps)
-	require.NotNil(t, machines.Items[1].Apps)
-	require.Equal(t, "3.2.2", machines.Items[0].Apps[0].Version)
+	require.Equal(t, machine2.Address, machines.Items[1].Address)
+	require.NotNil(t, machines.Items[0].Daemons)
+	require.NotNil(t, machines.Items[1].Daemons)
+	require.Equal(t, "3.2.2", machines.Items[0].Daemons[0].Version)
 	require.Equal(t, "9.8.7", machines.Items[0].AgentVersion)
-	require.Equal(t, "3.2.2", machines.Items[0].Apps[0].Details.Daemons[0].Version)
-	require.Equal(t, "3.2.1", machines.Items[0].Apps[0].Details.Daemons[1].Version)
-	require.True(t, machines.Items[0].Apps[0].Details.Daemons[0].Active)
-	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Version)
+	require.Equal(t, "3.2.2", machines.Items[0].Daemons[0].Version)
+	require.Equal(t, "3.2.1", machines.Items[0].Daemons[1].Version)
+	require.True(t, machines.Items[0].Daemons[0].Active)
+	require.Equal(t, "1.2.1", machines.Items[1].Daemons[0].Version)
 	require.Equal(t, "8.7.6", machines.Items[1].AgentVersion)
-	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Details.Daemons[0].Version)
-	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Details.Daemons[1].Version)
-	require.True(t, machines.Items[1].Apps[0].Details.Daemons[0].Active)
+	require.Equal(t, "1.2.1", machines.Items[1].Daemons[0].Version)
+	require.Equal(t, "1.2.1", machines.Items[1].Daemons[1].Version)
+	require.True(t, machines.Items[1].Daemons[0].Active)
 }

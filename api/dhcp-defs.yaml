@@ -310,10 +310,6 @@
         type: integer
       daemonId:
         type: integer
-      machineAddress:
-        type: string
-      machineHostname:
-        type: string
       stats:
         type: object
       statsCollectedAt:
@@ -629,6 +625,8 @@
     allOf:
       - $ref: '#/definitions/Daemon'
       - properties:
+          caCommErrors:
+            type: integer
           rps1:
             type: number
             format: float

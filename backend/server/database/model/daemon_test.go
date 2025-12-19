@@ -1523,3 +1523,86 @@ func TestGetKeaDaemonByID(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, d)
 }
+
+// Test that the access point is retrieved from the daemon.
+func TestGetAccessPoint(t *testing.T) {
+	t.Run("no access points", func(t *testing.T) {
+		// Arrange
+		daemon := &Daemon{}
+
+		// Act
+		accessPoint, err := daemon.GetAccessPoint(AccessPointControl)
+
+		// Assert
+		require.ErrorContains(t, err, "no access point")
+		require.Nil(t, accessPoint)
+	})
+
+	t.Run("single access point", func(t *testing.T) {
+		// Arrange
+		daemon := &Daemon{AccessPoints: []*AccessPoint{{
+			Type: AccessPointControl,
+			Port: 42,
+		}}}
+
+		// Act
+		accessPoint, err := daemon.GetAccessPoint(AccessPointControl)
+
+		// Assert
+		require.NoError(t, err)
+		require.NotNil(t, accessPoint)
+		require.EqualValues(t, 42, accessPoint.Port)
+
+	})
+
+	t.Run("multiple access points", func(t *testing.T) {
+		// Arrange
+		daemon := &Daemon{AccessPoints: []*AccessPoint{
+			{
+				Type: AccessPointControl,
+				Port: 43,
+			},
+			{
+				Type: AccessPointStatistics,
+				Port: 44,
+			},
+		}}
+
+		// Act
+		accessPoint, err := daemon.GetAccessPoint(AccessPointStatistics)
+
+		// Assert
+		require.NoError(t, err)
+		require.NotNil(t, accessPoint)
+		require.EqualValues(t, 44, accessPoint.Port)
+	})
+
+	t.Run("not exists access point", func(t *testing.T) {
+		// Arrange
+		daemon := &Daemon{AccessPoints: []*AccessPoint{
+			{
+				Type: AccessPointStatistics,
+				Port: 46,
+			},
+		}}
+
+		// Act
+		accessPoint, err := daemon.GetAccessPoint(AccessPointControl)
+
+		// Assert
+		require.ErrorContains(t, err, "no access point")
+		require.Nil(t, accessPoint)
+	})
+
+	t.Run("unknown access point", func(t *testing.T) {
+		// Arrange
+		daemon := &Daemon{}
+
+		// Act
+		accessPoint, err := daemon.GetAccessPoint(AccessPointType("unknown"))
+
+		// Assert
+		require.ErrorContains(t, err, "no access point")
+		require.Nil(t, accessPoint)
+	})
+}

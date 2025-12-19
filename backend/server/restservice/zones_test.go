@@ -235,27 +235,25 @@ func TestGetZones(t *testing.T) {
 		require.Zero(t, rspOK.Payload.Total)
 	})
 
-	t.Run("filter by app ID", func(t *testing.T) {
+	t.Run("filter by daemon ID", func(t *testing.T) {
 		ctx := context.Background()
-		virtualApp := daemons[0].GetVirtualApp()
-		appID := virtualApp.ID
 		params := dns.GetZonesParams{
-			AppID: &appID,
+			DaemonID: &daemons[0].ID,
 		}
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
 		rspOK := (rsp).(*dns.GetZonesOK)
 		require.NotEmpty(t, rspOK.Payload.Items)
 		require.Equal(t, 1, len(rspOK.Payload.Items))
-		require.EqualValues(t, virtualApp.ID, rspOK.Payload.Items[0].LocalZones[0].AppID)
+		require.EqualValues(t, daemons[0].ID, rspOK.Payload.Items[0].LocalZones[0].DaemonID)
 		require.EqualValues(t, 1, rspOK.Payload.Total)
 	})
 
-	t.Run("filter by non-existent app ID", func(t *testing.T) {
+	t.Run("filter by non-existent daemon ID", func(t *testing.T) {
 		ctx := context.Background()
-		appID := daemons[99].GetVirtualApp().ID + 100
+		daemonID := daemons[99].ID + 100
 		params := dns.GetZonesParams{
-			AppID: &appID,
+			DaemonID: &daemonID,
 		}
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
@@ -264,12 +262,12 @@ func TestGetZones(t *testing.T) {
 		require.Zero(t, rspOK.Payload.Total)
 	})
 
-	t.Run("filter by DNS app type", func(t *testing.T) {
+	t.Run("filter by DNS daemon name", func(t *testing.T) {
 		ctx := context.Background()
-		appType := "bind9"
+		daemonName := daemonname.Bind9
 		params := dns.GetZonesParams{
-			AppType: &appType,
-			Limit:   storkutil.Ptr(int64(1000)),
+			DaemonName: (*string)(&daemonName),
+			Limit:      storkutil.Ptr(int64(1000)),
 		}
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
@@ -278,11 +276,11 @@ func TestGetZones(t *testing.T) {
 		require.EqualValues(t, 125, rspOK.Payload.Total)
 	})
 
-	t.Run("filter by non-DNS app type", func(t *testing.T) {
+	t.Run("filter by non-DNS daemon name", func(t *testing.T) {
 		ctx := context.Background()
-		appType := "kea"
+		daemonName := daemonname.DHCPv4
 		params := dns.GetZonesParams{
-			AppType: &appType,
+			DaemonName: (*string)(&daemonName),
 		}
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
@@ -570,7 +568,6 @@ func TestGetZonesFetch(t *testing.T) {
 		require.Equal(t, d.DistinctZoneCount, rspOK.Payload.Items[index].DistinctZonesCount)
 		require.Equal(t, d.BuiltinZoneCount, rspOK.Payload.Items[index].BuiltinZonesCount)
 		require.Positive(t, rspOK.Payload.Items[index].DaemonID)
-		require.Positive(t, rspOK.Payload.Items[index].AppID)
 		require.NotZero(t, rspOK.Payload.Items[index].CreatedAt)
 	}
 }

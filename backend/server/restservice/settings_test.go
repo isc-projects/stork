@@ -46,7 +46,7 @@ func TestSettings(t *testing.T) {
 	paramsUS := settings.UpdateSettingsParams{
 		Settings: &models.Settings{
 			Bind9StatsPullerInterval:     1,
-			AppsStatePullerInterval:      2,
+			StatePullerInterval:      2,
 			KeaHostsPullerInterval:       3,
 			KeaStatsPullerInterval:       4,
 			KeaStatusPullerInterval:      5,
@@ -67,7 +67,7 @@ func TestSettings(t *testing.T) {
 	okRsp = rsp.(*settings.GetSettingsOK)
 
 	require.EqualValues(t, 1, okRsp.Payload.Bind9StatsPullerInterval)
-	require.EqualValues(t, 2, okRsp.Payload.AppsStatePullerInterval)
+	require.EqualValues(t, 2, okRsp.Payload.StatePullerInterval)
 	require.EqualValues(t, 3, okRsp.Payload.KeaHostsPullerInterval)
 	require.EqualValues(t, 4, okRsp.Payload.KeaStatsPullerInterval)
 	require.EqualValues(t, 5, okRsp.Payload.KeaStatusPullerInterval)

@@ -45,8 +45,8 @@ func TestSetFilterValues(t *testing.T) {
 
 	// Use an URL with all parameters set.
 	url, err := url.Parse(fmt.Sprintf(
-		"http://example.org/sse?stream=connectivity&stream=message&machine=1&app=%d&subnet=3&daemon=%d&user=5&level=1",
-		daemon.GetVirtualApp().ID, daemon.ID,
+		"http://example.org/sse?stream=connectivity&stream=message&machine=1&&subnet=3&daemon=%d&user=5&level=1",
+		daemon.ID,
 	))
 	require.NoError(t, err)
 
@@ -74,20 +74,11 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
-	require.NoError(t, err)
-	daemon, err := server.GetDaemon()
-	require.NoError(t, err)
-
-	testCases := []string{"machine", "app", "subnet", "daemon", "user"}
+	testCases := []string{"machine", "subnet", "daemon", "user"}
 	for i := range testCases {
 		tc := testCases[i]
 		t.Run(tc, func(t *testing.T) {
 			id := int64(123)
-			if tc == "app" {
-				id = daemon.GetVirtualApp().ID
-			}
-
 			// Create an URL with a test case specific parameter.
 			rawURL := fmt.Sprintf("http://example.org/sse?stream=message&%s=%d", tc, id)
 			url, err := url.Parse(rawURL)
@@ -108,9 +99,6 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 			switch tc {
 			case "machine":
 				ev.Relations.MachineID = 123
-			case "app":
-				ev.Relations.MachineID = daemon.MachineID
-				ev.Relations.DaemonID = daemon.ID
 			case "subnet":
 				ev.Relations.SubnetID = 123
 			case "daemon":
@@ -141,8 +129,8 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 
 	// Create a filtering rule by machine ID, app ID and warning event level.
 	url, err := url.Parse(fmt.Sprintf(
-		"http://example.org/sse?stream=message&machine=%d&app=%d&daemon=%d&level=%d",
-		daemon.MachineID, daemon.GetVirtualApp().ID, daemon.ID, dbmodel.EvWarning,
+		"http://example.org/sse?stream=message&machine=%d&daemon=%d&level=%d",
+		daemon.MachineID, daemon.ID, dbmodel.EvWarning,
 	))
 	require.NoError(t, err)
 
@@ -267,19 +255,6 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 		err = subscriber.applyFiltersFromQuery(db)
 		require.Error(t, err)
-	})
-
-	t.Run("app ID and app type", func(t *testing.T) {
-		// App type is ignored.
-		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&app=%d&appType=kea", daemon.GetVirtualApp().ID)
-		url, err := url.Parse(rawURL)
-		require.NoError(t, err)
-
-		subscriber := newSubscriber(url, "localhost:8080")
-		require.NotNil(t, subscriber)
-
-		err = subscriber.applyFiltersFromQuery(db)
-		require.NoError(t, err)
 	})
 
 	t.Run("daemon ID and daemon name", func(t *testing.T) {

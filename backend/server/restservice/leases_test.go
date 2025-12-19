@@ -226,14 +226,13 @@ func TestFindLeases4(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.ErredApps)
+	require.Empty(t, okRsp.Payload.ErredDaemons)
 
 	lease := okRsp.Payload.Items[0]
-	app := daemon.GetVirtualApp()
-	require.NotNil(t, lease.AppID)
-	require.EqualValues(t, app.ID, *lease.AppID)
-	require.NotNil(t, lease.AppName)
-	require.Equal(t, app.Name, *lease.AppName)
+	require.NotNil(t, lease.DaemonID)
+	require.EqualValues(t, daemon.ID, *lease.DaemonID)
+	require.NotNil(t, lease.DaemonName)
+	require.EqualValues(t, daemon.Name, *lease.DaemonName)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
 	require.NotNil(t, lease.Cltt)
 	require.EqualValues(t, 12345678, *lease.Cltt)
@@ -271,12 +270,12 @@ func TestFindLeases4(t *testing.T) {
 	require.Empty(t, okRsp.Payload.Items)
 	require.Zero(t, okRsp.Payload.Total)
 
-	// Erred apps should contain our daemon.
-	require.Len(t, okRsp.Payload.ErredApps, 1)
-	require.NotNil(t, okRsp.Payload.ErredApps[0].ID)
-	require.EqualValues(t, app.ID, *okRsp.Payload.ErredApps[0].ID)
-	require.NotNil(t, okRsp.Payload.ErredApps[0].Name)
-	require.Equal(t, app.Name, *okRsp.Payload.ErredApps[0].Name)
+	// Erred daemons should contain our daemon.
+	require.Len(t, okRsp.Payload.ErredDaemons, 1)
+	require.NotNil(t, okRsp.Payload.ErredDaemons[0].ID)
+	require.EqualValues(t, daemon.ID, *okRsp.Payload.ErredDaemons[0].ID)
+	require.NotNil(t, okRsp.Payload.ErredDaemons[0].Name)
+	require.EqualValues(t, daemon.Name, *okRsp.Payload.ErredDaemons[0].Name)
 }
 
 // This test verifies that it is possible to search DHCPv6 leases by text
@@ -334,14 +333,13 @@ func TestFindLeases6(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.ErredApps)
+	require.Empty(t, okRsp.Payload.ErredDaemons)
 
-	app := daemon.GetVirtualApp()
 	lease := okRsp.Payload.Items[0]
-	require.NotNil(t, lease.AppID)
-	require.EqualValues(t, app.ID, *lease.AppID)
-	require.NotNil(t, lease.AppName)
-	require.Equal(t, app.Name, *lease.AppName)
+	require.NotNil(t, lease.DaemonID)
+	require.EqualValues(t, daemon.ID, *lease.DaemonID)
+	require.NotNil(t, lease.DaemonName)
+	require.EqualValues(t, daemon.Name, *lease.DaemonName)
 	require.NotNil(t, lease.Cltt)
 	require.EqualValues(t, 12345678, *lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
@@ -373,10 +371,10 @@ func TestFindLeases6(t *testing.T) {
 	require.Equal(t, "UNKNOWN", context["client-classes"].([]any)[2])
 
 	lease = okRsp.Payload.Items[1]
-	require.NotNil(t, lease.AppID)
-	require.EqualValues(t, app.ID, *lease.AppID)
-	require.Equal(t, app.Name, *lease.AppName)
-	require.Equal(t, app.Name, *lease.AppName)
+	require.NotNil(t, lease.DaemonID)
+	require.EqualValues(t, daemon.ID, *lease.DaemonID)
+	require.NotNil(t, lease.DaemonName)
+	require.EqualValues(t, daemon.Name, *lease.DaemonName)
 	require.NotNil(t, lease.Cltt)
 	require.EqualValues(t, 12345678, *lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
@@ -464,7 +462,7 @@ func TestFindLeasesEmptyText(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	// Expect no leases to be returned.
 	require.Empty(t, okRsp.Payload.Items)
-	require.Empty(t, okRsp.Payload.ErredApps)
+	require.Empty(t, okRsp.Payload.ErredDaemons)
 	require.Zero(t, okRsp.Payload.Total)
 }
 
@@ -541,7 +539,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.ErredApps)
+	require.Empty(t, okRsp.Payload.ErredDaemons)
 
 	// Verify that the lease contents were parsed correctly. Specifically, we should
 	// ensure that HW address, client-id and DUID (in v4 case) are empty.
@@ -699,7 +697,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 	// The DHCPv6 is in conflict with host reservation, because DUID
 	// is not in the host reservation.
 	require.Len(t, okRsp.Payload.Conflicts, 1)
-	require.Empty(t, okRsp.Payload.ErredApps)
+	require.Empty(t, okRsp.Payload.ErredDaemons)
 
 	// Verify the leases.
 	require.NotNil(t, okRsp.Payload.Items[0].IPAddress)

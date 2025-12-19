@@ -323,6 +323,8 @@
         type: string
       version:
         type: string
+      active:
+        type: boolean
 
   SimpleDaemons:
     type: object
@@ -353,7 +355,7 @@
         type: array
         items:
           $ref: '#/definitions/LogTarget'
-      controlCommErrors:
+      caCommErrors:
         type: integer
       
   KeaDaemon:

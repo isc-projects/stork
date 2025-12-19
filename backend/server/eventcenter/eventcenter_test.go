@@ -77,7 +77,7 @@ func TestCreateEventDaemon(t *testing.T) {
 	ev := CreateEvent(dbmodel.EvError, "foo {daemon} bar", daemon)
 
 	// Assert
-	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" machineId=\"456\" appId=\"918947245\" appType=\"kea\"> bar", ev.Text)
+	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" machineId=\"456\"> bar", ev.Text)
 	require.EqualValues(t, dbmodel.EvError, ev.Level)
 	require.NotNil(t, ev.Relations)
 	require.EqualValues(t, 456, ev.Relations.MachineID)
@@ -108,7 +108,7 @@ func TestCreateEventDaemonWithoutMachine(t *testing.T) {
 	ev := CreateEvent(dbmodel.EvError, "foo {daemon} bar", daemon)
 
 	// Assert
-	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" machineId=\"456\" appId=\"918947245\" appType=\"kea\"> bar", ev.Text)
+	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" machineId=\"456\"> bar", ev.Text)
 	require.EqualValues(t, dbmodel.EvError, ev.Level)
 	require.NotNil(t, ev.Relations)
 	require.EqualValues(t, 456, ev.Relations.MachineID)
@@ -188,7 +188,7 @@ func TestCreateEventMachineAndDaemon(t *testing.T) {
 	ev := CreateEvent(dbmodel.EvInfo, "foo {daemon} bar {machine} baz", daemon, machine)
 
 	// Assert
-	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" machineId=\"123\" appId=\"0\" appType=\"kea\"> bar <machine id=\"123\" address=\"foo\" hostname=\"bar\"> baz", ev.Text)
+	require.EqualValues(t, "foo <daemon id=\"234\" name=\"dhcp4\" machineId=\"123\"> bar <machine id=\"123\" address=\"foo\" hostname=\"bar\"> baz", ev.Text)
 	require.EqualValues(t, dbmodel.EvInfo, ev.Level)
 	require.NotNil(t, ev.Relations)
 

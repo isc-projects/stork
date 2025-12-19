@@ -98,9 +98,8 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	payloadConfig, err := json.Marshal(okRsp.Payload.Config)
 	require.NoError(t, err)
 	require.JSONEq(t, string(configDHCP4), string(payloadConfig))
-	require.NotZero(t, okRsp.Payload.AppID)
+	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
-	require.Equal(t, "kea", okRsp.Payload.AppType)
 	require.True(t, okRsp.Payload.Editable)
 
 	params = services.GetDaemonConfigParams{
@@ -115,9 +114,8 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	payloadConfig, err = json.Marshal(okRsp.Payload.Config)
 	require.NoError(t, err)
 	require.JSONEq(t, string(configDHCP6), string(payloadConfig))
-	require.NotZero(t, okRsp.Payload.AppID)
+	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
-	require.Equal(t, "kea", okRsp.Payload.AppType)
 	require.True(t, okRsp.Payload.Editable)
 }
 
@@ -390,10 +388,8 @@ func TestGetDaemonConfigForNonActiveKeaDaemon(t *testing.T) {
 	require.NotEmpty(t, okRsp.Payload)
 	payloadJSON, _ := json.Marshal(okRsp.Payload.Config)
 	require.JSONEq(t, string(configDhcp4), string(payloadJSON))
-	require.NotZero(t, okRsp.Payload.AppID)
-	require.Equal(t, "kea@localhost%791348537", okRsp.Payload.AppName)
+	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
-	require.Equal(t, "kea", okRsp.Payload.AppType)
 	require.False(t, okRsp.Payload.Editable)
 
 	params = services.GetDaemonConfigParams{
@@ -407,9 +403,8 @@ func TestGetDaemonConfigForNonActiveKeaDaemon(t *testing.T) {
 	require.NotEmpty(t, okRsp.Payload)
 	payloadJSON, _ = json.Marshal(okRsp.Payload.Config)
 	require.JSONEq(t, string(configDhcp6), string(payloadJSON))
-	require.NotZero(t, okRsp.Payload.AppID)
+	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
-	require.Equal(t, "kea", okRsp.Payload.AppType)
 	require.False(t, okRsp.Payload.Editable)
 }
 

@@ -441,9 +441,6 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 			require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.KeaDaemon)
 		}
 
-		require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.Machine)
-		require.Len(t, returnedNetwork.LocalSharedNetworks[0].Daemon.AccessPoints, 1)
-
 		require.Len(t, returnedNetwork.Subnets, 2)
 
 		for i, s := range returnedNetwork.Subnets {
@@ -454,8 +451,6 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 
 			require.Len(t, s.LocalSubnets, 1)
 			require.NotNil(t, s.LocalSubnets[0].Daemon)
-			require.Len(t, s.LocalSubnets[0].Daemon.AccessPoints, 1)
-			require.NotNil(t, s.LocalSubnets[0].Daemon.Machine)
 
 			if listing {
 				// It must be nil to limit memory usage.

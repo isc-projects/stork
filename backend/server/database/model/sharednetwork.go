@@ -359,7 +359,7 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, daemonID, family int6
 	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("shared_network", sortField, sortDir, subnetAndSharedNetworkCustomOrderAndDistinct)
 	q = q.DistinctOn(distinctOnFields)
 
-	q = q.Relation(string(SharedNetworkRelationLocalSharedNetworksAccessPoints))
+	q = q.Relation(string(SharedNetworkRelationLocalSharedNetworksDaemon))
 
 	// If any of the filtering parameters are specified we need to explicitly join
 	// the subnets table so as we can access its columns in the Where clause.
@@ -374,8 +374,7 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, daemonID, family int6
 	q = q.Relation(string(SharedNetworkRelationSubnets), func(q *orm.Query) (*orm.Query, error) {
 		return q.Order("prefix ASC"), nil
 	}).
-		Relation(string(SharedNetworkRelationSubnetsAccessPoints)).
-		Relation(string(SharedNetworkRelationSubnetsMachine))
+		Relation(string(SharedNetworkRelationSubnetsDaemon))
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.

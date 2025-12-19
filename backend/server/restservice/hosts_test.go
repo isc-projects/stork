@@ -112,16 +112,14 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	// Hosts
 	require.Equal(t, "first.example.org", items[0].Hostname)
 
-	// The first host should be associated with two apps.
+	// The first host should be associated with two daemons.
 	require.Len(t, items[0].LocalHosts, 2)
 	require.NotNil(t, items[0].LocalHosts[0])
-	require.EqualValues(t, daemons[0].GetVirtualApp().ID, items[0].LocalHosts[0].AppID)
+	require.EqualValues(t, daemons[0].ID, items[0].LocalHosts[0].DaemonID)
 	require.Equal(t, dbmodel.HostDataSourceAPI.String(), items[0].LocalHosts[0].DataSource)
-	require.Equal(t, "kea@cool.example.org%793183551", items[0].LocalHosts[0].AppName)
 	require.NotNil(t, items[0].LocalHosts[1])
-	require.EqualValues(t, daemons[2].GetVirtualApp().ID, items[0].LocalHosts[1].AppID)
+	require.EqualValues(t, daemons[2].ID, items[0].LocalHosts[1].DaemonID)
 	require.Equal(t, dbmodel.HostDataSourceAPI.String(), items[0].LocalHosts[1].DataSource)
-	require.Equal(t, "kea@cool.example.org%794297665", items[0].LocalHosts[1].AppName)
 }
 
 // Test that hosts can be filtered by subnet ID.
@@ -713,7 +711,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.Len(t, contents.ClientClasses, 3)
 	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
 	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.App.ID)
+		require.NotZero(t, daemon.Machine.ID)
 	}
 
 	// Submit transaction.
@@ -1349,7 +1347,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	require.Len(t, contents.ClientClasses, 3)
 	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
 	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.App.ID)
+		require.NotZero(t, daemon.Machine.ID)
 	}
 
 	// Submit transaction.

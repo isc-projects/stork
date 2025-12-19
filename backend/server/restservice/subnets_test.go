@@ -231,9 +231,8 @@ func TestGetSubnets(t *testing.T) {
 	}
 
 	// get subnets from daemon DHCPv4 on machine 1
-	virtualApp14 := daemon14.GetVirtualApp()
 	params = dhcp.GetSubnetsParams{
-		AppID: &virtualApp14.ID,
+		DaemonID: &daemon14.ID,
 	}
 	rsp = rapi.GetSubnets(ctx, params)
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
@@ -241,28 +240,25 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
-	require.Equal(t, virtualApp14.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
-	require.Equal(t, virtualApp14.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
+	require.EqualValues(t, daemon14.ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 	require.EqualValues(t, map[string]any(nil), okRsp.Payload.Items[0].Stats)
 	require.Nil(t, okRsp.Payload.Items[0].StatsCollectedAt)
 
 	// get subnets from daemon DHCPv6 on machine 3
-	virtualApp36 := daemon36.GetVirtualApp()
 	params = dhcp.GetSubnetsParams{
-		AppID: &virtualApp36.ID,
+		DaemonID: &daemon36.ID,
 	}
 	rsp = rapi.GetSubnets(ctx, params)
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
-	require.Len(t, okRsp.Payload.Items, 3)
-	require.EqualValues(t, 3, okRsp.Payload.Total)
+	require.Len(t, okRsp.Payload.Items, 2)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
-	require.ElementsMatch(t, []int64{3, 4, 21},
+	require.ElementsMatch(t, []int64{4, 21},
 		[]int64{
 			okRsp.Payload.Items[0].LocalSubnets[0].ID,
 			okRsp.Payload.Items[1].LocalSubnets[0].ID,
-			okRsp.Payload.Items[2].LocalSubnets[0].ID,
 		})
 
 	// get v4 subnets
@@ -322,7 +318,6 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
 	require.Equal(t, daemon34.ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
-	require.Equal(t, daemon34.GetVirtualApp().ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 3, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 	require.Nil(t, okRsp.Payload.Items[0].LocalSubnets[0].Stats)
@@ -338,7 +333,6 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
-	require.Equal(t, virtualApp14.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	require.Equal(t, daemon14.ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].LocalSubnets[0].ID)
@@ -1262,7 +1256,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
 	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.App.ID)
+		require.NotZero(t, daemon.Machine.ID)
 	}
 
 	keaConfigSubnetParameters := &models.KeaConfigSubnetParameters{
@@ -2191,7 +2185,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
 	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.App.ID)
+		require.NotZero(t, daemon.Machine.ID)
 	}
 
 	keaConfigSubnetParameters := &models.KeaConfigSubnetParameters{

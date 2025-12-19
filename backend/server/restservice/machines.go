@@ -20,6 +20,7 @@ import (
 
 	"isc.org/stork"
 	keaconfig "isc.org/stork/daemoncfg/kea"
+	"isc.org/stork/daemondata/bind9stats"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/certs"
@@ -1163,7 +1164,9 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 
 	switch {
 	case dbDaemon.Name.IsKea():
-		daemon.KeaDaemonDetails.Files, daemon.KeaDaemonDetails.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
+		if dbDaemon.KeaDaemon != nil && dbDaemon.KeaDaemon.Config != nil {
+			daemon.KeaDaemonDetails.Files, daemon.KeaDaemonDetails.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
+		}
 
 		if hooks := kea.GetDaemonHooks(dbDaemon); len(hooks) > 0 {
 			daemon.KeaDaemonDetails.Hooks = hooks
@@ -1181,7 +1184,12 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 			})
 		}
 	case dbDaemon.Name == daemonname.Bind9:
-		namedStats := dbDaemon.Bind9Daemon.Stats.NamedStats
+		var namedStats bind9stats.Bind9NamedStats
+		if dbDaemon.Bind9Daemon != nil {
+			namedStats = dbDaemon.Bind9Daemon.Stats.NamedStats
+			daemon.Bind9DaemonDetails.ZoneCount = dbDaemon.Bind9Daemon.Stats.ZoneCount
+			daemon.Bind9DaemonDetails.AutoZoneCount = dbDaemon.Bind9Daemon.Stats.AutomaticZoneCount
+		}
 		var views []*models.Bind9DaemonView
 		for name, view := range namedStats.Views {
 			queryHits := view.Resolver.CacheStats["QueryHits"]
@@ -1205,13 +1213,13 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 		})
 
 		daemon.Bind9DaemonDetails.Views = views
-		daemon.Bind9DaemonDetails.ZoneCount = dbDaemon.Bind9Daemon.Stats.ZoneCount
-		daemon.Bind9DaemonDetails.AutoZoneCount = dbDaemon.Bind9Daemon.Stats.AutomaticZoneCount
 	case dbDaemon.Name == daemonname.PDNS:
-		daemon.PdnsDaemonDetails.URL = dbDaemon.PDNSDaemon.Details.URL
-		daemon.PdnsDaemonDetails.ConfigURL = dbDaemon.PDNSDaemon.Details.ConfigURL
-		daemon.PdnsDaemonDetails.ZonesURL = dbDaemon.PDNSDaemon.Details.ZonesURL
-		daemon.PdnsDaemonDetails.AutoprimariesURL = dbDaemon.PDNSDaemon.Details.AutoprimariesURL
+		if dbDaemon.PDNSDaemon != nil {
+			daemon.PdnsDaemonDetails.URL = dbDaemon.PDNSDaemon.Details.URL
+			daemon.PdnsDaemonDetails.ConfigURL = dbDaemon.PDNSDaemon.Details.ConfigURL
+			daemon.PdnsDaemonDetails.ZonesURL = dbDaemon.PDNSDaemon.Details.ZonesURL
+			daemon.PdnsDaemonDetails.AutoprimariesURL = dbDaemon.PDNSDaemon.Details.AutoprimariesURL
+		}
 	}
 
 	if dbDaemon.Machine != nil {
@@ -1235,10 +1243,10 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 				keaVersion := storkutil.ParseSemanticVersionOrLatest(dbDaemon.Version)
 				if keaVersion.LessThan(storkutil.SemanticVersion{Major: 3, Minor: 0, Patch: 0}) {
 					// Communication via Kea Control Agent.
-					daemon.ControlCommErrors = keaStats.GetErrorCount(daemonname.CA)
+					daemon.CaCommErrors = keaStats.GetErrorCount(daemonname.CA)
 				} else {
 					// Communication directly to the daemon.
-					daemon.DaemonCommErrors = daemon.DaemonCommErrors
+					daemon.CaCommErrors = 0
 				}
 			case dbDaemon.Name == daemonname.Bind9:
 				bind9Errors := agentStats.GetStats().GetBind9Stats()
@@ -1266,6 +1274,7 @@ func (r *RestAPI) simpleDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.Simple
 		ID:      dbDaemon.ID,
 		Name:    string(dbDaemon.Name),
 		Version: dbDaemon.Version,
+		Active:  dbDaemon.Active,
 	}
 
 	return daemon
@@ -1343,11 +1352,8 @@ func (r *RestAPI) GetDaemonsDirectory(ctx context.Context, params services.GetDa
 
 	daemons := &models.SimpleDaemons{}
 	for _, dbDaemon := range dbDaemons {
-		daemon := models.SimpleDaemon{
-			ID:   dbDaemon.ID,
-			Name: string(dbDaemon.Name),
-		}
-		daemons.Items = append(daemons.Items, &daemon)
+		daemon := r.simpleDaemonToRestAPI(&dbDaemon)
+		daemons.Items = append(daemons.Items, daemon)
 	}
 	daemons.Total = int64(len(daemons.Items))
 
@@ -1376,7 +1382,7 @@ func (r *RestAPI) GetDaemonsWithCommunicationIssues(ctx context.Context, params 
 		}
 
 		daemon := r.daemonToRestAPI(&dbDaemon)
-		if daemon.AgentCommErrors > 0 || daemon.ControlCommErrors > 0 || daemon.StatsCommErrors > 0 {
+		if daemon.AgentCommErrors > 0 || daemon.DaemonCommErrors > 0 || daemon.CaCommErrors > 0 || daemon.StatsCommErrors > 0 {
 			daemons = append(daemons, daemon)
 		}
 	}
@@ -1395,6 +1401,13 @@ func (r *RestAPI) GetDaemon(ctx context.Context, params services.GetDaemonParams
 		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
 		log.WithError(err).Error(msg)
 		rsp := services.NewGetDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbDaemon == nil {
+		msg := fmt.Sprintf("Daemon with ID %d not found", params.ID)
+		rsp := services.NewGetDaemonDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -1594,7 +1607,7 @@ func (r *RestAPI) GetDaemonsStats(ctx context.Context, params services.GetDaemon
 	}
 	for _, dbDaemon := range dbDaemons {
 		switch {
-		case dbDaemon.Name.IsDHCP():
+		case dbDaemon.Name.IsKea():
 			daemonsStats.DhcpDaemonsTotal++
 			if !dbDaemon.Active {
 				daemonsStats.DhcpDaemonsNotOk++
@@ -1727,11 +1740,12 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 
 		daemon := r.daemonToRestAPI(&dbDaemon)
 		dhcpDaemon := &models.DhcpDaemon{
-			Daemon:     daemon.Daemon,
-			Rps1:       dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1,
-			Rps2:       dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2,
-			HaEnabled:  haEnabled,
-			HaOverview: haRelationshipOverviews,
+			Daemon:       daemon.Daemon,
+			CaCommErrors: daemon.KeaDaemonDetails.CaCommErrors,
+			Rps1:         dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1,
+			Rps2:         dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2,
+			HaEnabled:    haEnabled,
+			HaOverview:   haRelationshipOverviews,
 		}
 		dhcpDaemons = append(dhcpDaemons, dhcpDaemon)
 	}
