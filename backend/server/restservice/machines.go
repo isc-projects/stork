@@ -1165,18 +1165,18 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 	switch {
 	case dbDaemon.Name.IsKea():
 		if dbDaemon.KeaDaemon != nil && dbDaemon.KeaDaemon.Config != nil {
-			daemon.KeaDaemonDetails.Files, daemon.KeaDaemonDetails.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
+			daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
 		}
 
 		if hooks := kea.GetDaemonHooks(dbDaemon); len(hooks) > 0 {
-			daemon.KeaDaemonDetails.Hooks = hooks
+			daemon.Hooks = hooks
 		} else {
-			daemon.KeaDaemonDetails.Hooks = []string{}
+			daemon.Hooks = []string{}
 		}
 
-		daemon.KeaDaemonDetails.LogTargets = []*models.LogTarget{}
+		daemon.LogTargets = []*models.LogTarget{}
 		for _, logTarget := range dbDaemon.LogTargets {
-			daemon.KeaDaemonDetails.LogTargets = append(daemon.KeaDaemonDetails.LogTargets, &models.LogTarget{
+			daemon.LogTargets = append(daemon.LogTargets, &models.LogTarget{
 				ID:       logTarget.ID,
 				Name:     logTarget.Name,
 				Severity: logTarget.Severity,
@@ -1187,8 +1187,8 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 		var namedStats bind9stats.Bind9NamedStats
 		if dbDaemon.Bind9Daemon != nil {
 			namedStats = dbDaemon.Bind9Daemon.Stats.NamedStats
-			daemon.Bind9DaemonDetails.ZoneCount = dbDaemon.Bind9Daemon.Stats.ZoneCount
-			daemon.Bind9DaemonDetails.AutoZoneCount = dbDaemon.Bind9Daemon.Stats.AutomaticZoneCount
+			daemon.ZoneCount = dbDaemon.Bind9Daemon.Stats.ZoneCount
+			daemon.AutoZoneCount = dbDaemon.Bind9Daemon.Stats.AutomaticZoneCount
 		}
 		var views []*models.Bind9DaemonView
 		for name, view := range namedStats.Views {
@@ -1212,13 +1212,13 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 			return views[i].Name < views[j].Name
 		})
 
-		daemon.Bind9DaemonDetails.Views = views
+		daemon.Views = views
 	case dbDaemon.Name == daemonname.PDNS:
 		if dbDaemon.PDNSDaemon != nil {
-			daemon.PdnsDaemonDetails.URL = dbDaemon.PDNSDaemon.Details.URL
-			daemon.PdnsDaemonDetails.ConfigURL = dbDaemon.PDNSDaemon.Details.ConfigURL
-			daemon.PdnsDaemonDetails.ZonesURL = dbDaemon.PDNSDaemon.Details.ZonesURL
-			daemon.PdnsDaemonDetails.AutoprimariesURL = dbDaemon.PDNSDaemon.Details.AutoprimariesURL
+			daemon.URL = dbDaemon.PDNSDaemon.Details.URL
+			daemon.ConfigURL = dbDaemon.PDNSDaemon.Details.ConfigURL
+			daemon.ZonesURL = dbDaemon.PDNSDaemon.Details.ZonesURL
+			daemon.AutoprimariesURL = dbDaemon.PDNSDaemon.Details.AutoprimariesURL
 		}
 	}
 
@@ -1251,7 +1251,7 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 			case dbDaemon.Name == daemonname.Bind9:
 				bind9Errors := agentStats.GetStats().GetBind9Stats()
 				daemon.DaemonCommErrors = bind9Errors.GetErrorCount(dbmodel.AccessPointControl)
-				daemon.Bind9DaemonDetails.StatsCommErrors = bind9Errors.GetErrorCount(dbmodel.AccessPointStatistics)
+				daemon.StatsCommErrors = bind9Errors.GetErrorCount(dbmodel.AccessPointStatistics)
 			}
 		}
 	}
@@ -1280,7 +1280,7 @@ func (r *RestAPI) simpleDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.Simple
 	return daemon
 }
 
-// Internal function to get daemons from the database with given filter
+// Internal function to get daemons from the database with given filter.
 func (r *RestAPI) getDaemons(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum, daemonNames ...daemonname.Name) (*models.Daemons, error) {
 	dbDaemons, total, err := dbmodel.GetDaemonsByPage(r.DB, offset, limit, filterText, sortField, sortDir, daemonNames...)
 	if err != nil {
@@ -1741,7 +1741,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 		daemon := r.daemonToRestAPI(&dbDaemon)
 		dhcpDaemon := &models.DhcpDaemon{
 			Daemon:       daemon.Daemon,
-			CaCommErrors: daemon.KeaDaemonDetails.CaCommErrors,
+			CaCommErrors: daemon.CaCommErrors,
 			Rps1:         dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1,
 			Rps2:         dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2,
 			HaEnabled:    haEnabled,

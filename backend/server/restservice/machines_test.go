@@ -1506,10 +1506,10 @@ func TestGetPowerDNSApp(t *testing.T) {
 	okRsp := rsp.(*services.GetDaemonOK)
 	require.Equal(t, pdnsDaemon.ID, okRsp.Payload.ID)
 	require.EqualValues(t, pdnsDaemon.Name, okRsp.Payload.Name)
-	require.Equal(t, "https://pdns.example.com", okRsp.Payload.PdnsDaemonDetails.URL)
-	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.PdnsDaemonDetails.ConfigURL)
-	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.PdnsDaemonDetails.ZonesURL)
-	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.PdnsDaemonDetails.AutoprimariesURL)
+	require.Equal(t, "https://pdns.example.com", okRsp.Payload.URL)
+	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.ConfigURL)
+	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.ZonesURL)
+	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.AutoprimariesURL)
 }
 
 func TestRestGetDaemons(t *testing.T) {
@@ -1633,10 +1633,12 @@ func TestRestGetDaemons(t *testing.T) {
 				require.EqualValues(t, 2, daemon.DaemonCommErrors)
 				require.EqualValues(t, 3, daemon.StatsCommErrors)
 			case daemonname.PDNS:
-				require.Equal(t, "https://pdns.example.com", daemon.PdnsDaemonDetails.URL)
-				require.Equal(t, "https://pdns.example.com/config", daemon.PdnsDaemonDetails.ConfigURL)
-				require.Equal(t, "https://pdns.example.com/zones", daemon.PdnsDaemonDetails.ZonesURL)
-				require.Equal(t, "https://pdns.example.com/autoprimaries", daemon.PdnsDaemonDetails.AutoprimariesURL)
+				require.Equal(t, "https://pdns.example.com", daemon.URL)
+				require.Equal(t, "https://pdns.example.com/config", daemon.ConfigURL)
+				require.Equal(t, "https://pdns.example.com/zones", daemon.ZonesURL)
+				require.Equal(t, "https://pdns.example.com/autoprimaries", daemon.AutoprimariesURL)
+			default:
+				require.FailNow(t, "Unexpected daemon name")
 			}
 		}
 	})
@@ -1770,21 +1772,21 @@ func TestRestGetBind9DaemonWithQueryStats(t *testing.T) {
 	bind9Daemon := okRsp.Payload.Items[0]
 	require.NotNil(t, bind9Daemon)
 	require.NotNil(t, bind9Daemon.Daemon)
-	require.NotNil(t, bind9Daemon.Bind9DaemonDetails.Views)
+	require.NotNil(t, bind9Daemon.Views)
 
 	// Zone counts.
-	require.EqualValues(t, 100, bind9Daemon.Bind9DaemonDetails.ZoneCount)
-	require.EqualValues(t, 50, bind9Daemon.Bind9DaemonDetails.AutoZoneCount)
+	require.EqualValues(t, 100, bind9Daemon.ZoneCount)
+	require.EqualValues(t, 50, bind9Daemon.AutoZoneCount)
 
 	// Test "trusted" view. It is at index 1 because the views are sorted by name.
-	trustedView := bind9Daemon.Bind9DaemonDetails.Views[1]
+	trustedView := bind9Daemon.Views[1]
 	require.NotNil(t, trustedView)
 	require.EqualValues(t, 150, trustedView.QueryHits)
 	require.EqualValues(t, 50, trustedView.QueryMisses)
 	require.EqualValues(t, 0.75, trustedView.QueryHitRatio)
 
 	// Test "guest" view. It is at index 0 because the views are sorted by name.
-	guestView := bind9Daemon.Bind9DaemonDetails.Views[0]
+	guestView := bind9Daemon.Views[0]
 	require.NotNil(t, guestView)
 	require.EqualValues(t, 75, guestView.QueryHits)
 	require.EqualValues(t, 50, guestView.QueryMisses)
@@ -2759,7 +2761,7 @@ func TestUpdateDaemon(t *testing.T) {
 	require.IsType(t, &services.GetDaemonOK{}, rsp)
 	okRsp := rsp.(*services.GetDaemonOK)
 	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
-	require.True(t, okRsp.Payload.Daemon.Monitored) // now it is true
+	require.True(t, okRsp.Payload.Monitored) // now it is true
 
 	// setup a user session (UpdateDaemon needs user db object)
 	user, err := dbmodel.GetUserByID(rapi.DB, 1)
@@ -2784,7 +2786,7 @@ func TestUpdateDaemon(t *testing.T) {
 	require.IsType(t, &services.GetDaemonOK{}, rsp)
 	okRsp = rsp.(*services.GetDaemonOK)
 	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
-	require.False(t, okRsp.Payload.Daemon.Monitored) // now it is false
+	require.False(t, okRsp.Payload.Monitored) // now it is false
 }
 
 // Check if generating and getting server token works.

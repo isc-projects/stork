@@ -1552,7 +1552,6 @@ func TestGetAccessPoint(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, accessPoint)
 		require.EqualValues(t, 42, accessPoint.Port)
-
 	})
 
 	t.Run("multiple access points", func(t *testing.T) {

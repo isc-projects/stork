@@ -46,7 +46,7 @@ func TestSettings(t *testing.T) {
 	paramsUS := settings.UpdateSettingsParams{
 		Settings: &models.Settings{
 			Bind9StatsPullerInterval:     1,
-			StatePullerInterval:      2,
+			StatePullerInterval:          2,
 			KeaHostsPullerInterval:       3,
 			KeaStatsPullerInterval:       4,
 			KeaStatusPullerInterval:      5,

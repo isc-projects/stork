@@ -97,12 +97,12 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	}
 
 	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
-		DaemonID:   dbDaemon.GetID(),
+		DaemonID:      dbDaemon.GetID(),
 		DaemonVersion: dbDaemon.Version,
-		DaemonName: string(dbDaemon.Name),
-		Editable:   dbDaemon.Monitored && dbDaemon.Active,
-		Config:     rawConfig,
-		Options:    options,
+		DaemonName:    string(dbDaemon.Name),
+		Editable:      dbDaemon.Monitored && dbDaemon.Active,
+		Config:        rawConfig,
+		Options:       options,
 	})
 	return rsp
 }
