@@ -7,7 +7,7 @@ import { DialogModule } from 'primeng/dialog'
 import { ButtonModule } from 'primeng/button'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { provideRouter, RouterModule } from '@angular/router'
+import { provideRouter, RouterModule, withHashLocation } from '@angular/router'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { TableModule } from 'primeng/table'
@@ -571,21 +571,15 @@ const meta: Meta<MachinesPageComponent> = {
                 provideHttpClient(withInterceptorsFromDi()),
                 { provide: MessageService, useClass: MessageServiceMock },
                 ConfirmationService,
-                provideRouter([
-                    {
-                        path: 'machines',
-                        pathMatch: 'full',
-                        redirectTo: 'machines/all',
-                    },
-                    {
-                        path: 'machines/:id',
-                        component: MachinesPageComponent,
-                    },
-                    {
-                        path: 'iframe.html',
-                        component: MachinesPageComponent,
-                    },
-                ]),
+                provideRouter(
+                    [
+                        {
+                            path: 'machines/:id',
+                            component: MachinesPageComponent,
+                        },
+                    ],
+                    withHashLocation()
+                ),
                 {
                     provide: VersionService,
                     useValue: {
