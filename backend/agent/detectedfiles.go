@@ -12,7 +12,7 @@ const (
 // used by a detected daemon. For example, a BIND 9 config file, a
 // PowerDNS config file, or an rndc.key file.
 //
-// todo: Currently it only holds the file type and path to the file. The goal
+// TODO: Currently it only holds the file type and path to the file. The goal
 // is to also include the file size and the modification time. It will allow
 // for detecting whether the file has changed since the last detection, and
 // skip parsing the file if it has not changed. See issue #2200.
@@ -33,7 +33,7 @@ func newDetectedDaemonFile(fileType detectedFileType, path string) *detectedDaem
 // daemon. In addition, it optionally holds the chroot directory and the base
 // directory of the detected daemon.
 //
-// todo: Add the CommandExecutor instance, so that it is possible to get the
+// TODO: Add the CommandExecutor instance, so that it is possible to get the
 // file size and the modification time of the files. See issue #2200.
 type detectedDaemonFiles struct {
 	files     []*detectedDaemonFile
