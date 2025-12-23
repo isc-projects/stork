@@ -113,9 +113,12 @@ func (df *detectedDaemonFiles) getFirstFilePathByType(fileType detectedFileType)
 // Checks if the other set of detected files is a subset of the current set, and if
 // the files are equal in terms of their type, path, size, and modification time. The
 // current set can contain more files, as they could have been added after parsing the
-// detected daemon's configuration (included files).
+// detected daemon's configuration (included files). If the function receiver or the argument
+// are nil, the function returns false indicating that the sets are not the same. It is
+// a special case for when the detected files are not set and should be always
+// re-detected.
 func (df *detectedDaemonFiles) isSame(other *detectedDaemonFiles) bool {
-	if df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) < len(other.files) {
+	if df == nil || other == nil || df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) < len(other.files) {
 		return false
 	}
 	for _, file := range df.files {
@@ -127,8 +130,13 @@ func (df *detectedDaemonFiles) isSame(other *detectedDaemonFiles) bool {
 }
 
 // Checks if any of the files in the collection have changed on disk since the
-// information about them was gathered.
+// information about them was gathered. If the receiver is nil, the function always
+// returns true to force re-detection and re-parsing of the detected daemon's
+// configuration.
 func (df *detectedDaemonFiles) isChanged() bool {
+	if df == nil {
+		return true
+	}
 	for _, file := range df.files {
 		if file.isChanged() {
 			return true

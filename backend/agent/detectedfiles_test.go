@@ -270,6 +270,26 @@ func TestDetectedDaemonFilesIsSameDifferentFileModificationTimes(t *testing.T) {
 	require.False(t, files1.isSame(files2))
 }
 
+// Test that isSame function always returns false if the receiver or the argument are nil.
+func TestDetectedDaemonFilesIsSameNil(t *testing.T) {
+	t.Run("receiver is nil", func(t *testing.T) {
+		var files1 *detectedDaemonFiles
+		files2 := newDetectedDaemonFiles("", "")
+		require.False(t, files1.isSame(files2))
+	})
+	t.Run("argument is nil", func(t *testing.T) {
+		files1 := newDetectedDaemonFiles("", "")
+		var files2 *detectedDaemonFiles
+		require.False(t, files1.isSame(files2))
+	})
+
+	t.Run("both are nil", func(t *testing.T) {
+		var files1 *detectedDaemonFiles
+		var files2 *detectedDaemonFiles
+		require.False(t, files1.isSame(files2))
+	})
+}
+
 // Test that it is correctly verified that the collection of detected files is changed
 // if the file sizes are different.
 func TestDetectedDaemonFilesSizeChanged(t *testing.T) {
@@ -326,5 +346,11 @@ func TestDetectedDaemonFilesModificationTimeChanged(t *testing.T) {
 	require.False(t, files.isChanged())
 
 	// The second time the mock returns a different modification time.
+	require.True(t, files.isChanged())
+}
+
+// Test that isChanged functions always returns true if the receiver is nil.
+func TestDetectedDaemonFilesIsChangedNil(t *testing.T) {
+	var files *detectedDaemonFiles
 	require.True(t, files.isChanged())
 }
