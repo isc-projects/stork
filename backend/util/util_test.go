@@ -422,23 +422,6 @@ func TestIsNumber(t *testing.T) {
 	require.False(t, IsNumber(&u8))
 }
 
-// Test that the system command executor is constructed properly.
-func TestNewSystemCommandExecutor(t *testing.T) {
-	// Arrange & Act
-	executor := NewSystemCommandExecutor()
-
-	// Assert
-	require.NotNil(t, executor)
-
-	lsPath, err := executor.LookPath("ls")
-	require.NotNil(t, lsPath)
-	require.Nil(t, err)
-	require.True(t, executor.IsFileExist(lsPath))
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-	require.False(t, executor.IsFileExist(path.Join(sb.BasePath, "not-exists")))
-}
-
 // Tests if the SET_LOG_LEVEL environment variable is used correctly to set
 // logging level. Tests positive and negative cases.
 func TestLoggingLevel(t *testing.T) {

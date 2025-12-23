@@ -310,12 +310,16 @@ func detectBind9ConfigPaths(p supportedProcess, executor storkutil.CommandExecut
 
 	// Create a structure to store the detected files.
 	detectedFiles := newDetectedDaemonFiles(chrootDir, baseNamedDir)
-	detectedFiles.addFile(detectedFileTypeConfig, bind9ConfPath)
+	if err := detectedFiles.addFile(detectedFileTypeConfig, bind9ConfPath, executor); err != nil {
+		return nil, err
+	}
 
 	// The rndc key file is optional.
 	rndcKeyPath := filepath.Join(filepath.Dir(bind9ConfPath), RndcKeyFile)
 	if executor.IsFileExist(filepath.Join(chrootDir, rndcKeyPath)) {
-		detectedFiles.addFile(detectedFileTypeRndcKey, rndcKeyPath)
+		if err := detectedFiles.addFile(detectedFileTypeRndcKey, rndcKeyPath, executor); err != nil {
+			return nil, err
+		}
 	}
 	return detectedFiles, nil
 }

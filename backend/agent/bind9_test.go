@@ -2,10 +2,12 @@ package agent
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -15,6 +17,8 @@ import (
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
+
+var _ = (os.FileInfo)((*testFileInfo)(nil))
 
 //go:generate mockgen -package=agent -destination=bind9mock_test.go -mock_names=bind9FileParser=MockBind9FileParser,zoneInventory=MockZoneInventory isc.org/stork/agent bind9FileParser,zoneInventory
 
@@ -143,6 +147,42 @@ threads support is enabled`
 	require.Equal(t, "", namedConf)
 }
 
+// A mock implementation of the os.FileInfo interface for the testing purposes.
+type testFileInfo struct {
+	size    int64
+	modTime time.Time
+}
+
+// Returns empty file name.
+func (t *testFileInfo) Name() string {
+	return ""
+}
+
+// Returns false indicating that the file is not a directory.
+func (t *testFileInfo) IsDir() bool {
+	return false
+}
+
+// Returns 0 as a file mode.
+func (t *testFileInfo) Mode() os.FileMode {
+	return 0
+}
+
+// Returns configured modification time of the file.
+func (t *testFileInfo) ModTime() time.Time {
+	return t.modTime
+}
+
+// Returns configured size of the file.
+func (t *testFileInfo) Size() int64 {
+	return t.size
+}
+
+// Returns nil as the system interface is not implemented.
+func (t *testFileInfo) Sys() any {
+	return nil
+}
+
 // The command executor implementation for the testing purposes.
 // It implements the builder pattern for the configuration methods.
 type testCommandExecutor struct {
@@ -150,6 +190,7 @@ type testCommandExecutor struct {
 	checkConfOutputs        map[string]string
 	rndcStatusError         error
 	rndcStatus              string
+	fileInfos               map[string]os.FileInfo
 }
 
 // Constructs a new instance of the test command executor.
@@ -157,6 +198,7 @@ func newTestCommandExecutor() *testCommandExecutor {
 	return &testCommandExecutor{
 		checkConfOutputs: map[string]string{},
 		rndcStatus:       "Server is up and running",
+		fileInfos:        map[string]os.FileInfo{},
 	}
 }
 
@@ -262,6 +304,21 @@ func (e *testCommandExecutor) IsFileExist(path string) bool {
 	return false
 }
 
+// Adds file information for a given path.
+func (e *testCommandExecutor) addFileInfo(path string, info os.FileInfo) *testCommandExecutor {
+	e.fileInfos[path] = info
+	return e
+}
+
+// Returns file information for a given path.
+func (e *testCommandExecutor) GetFileInfo(path string) (os.FileInfo, error) {
+	info, ok := e.fileInfos[path]
+	if !ok {
+		return nil, errors.New("file not found")
+	}
+	return info, nil
+}
+
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	// Create alternate config files for each step.
@@ -275,7 +332,8 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(config1Path, config1)
+		addCheckConfOutput(config1Path, config1).
+		addFileInfo(config1Path, &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -294,7 +352,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Empty(t, detectedFiles.chrootDir)
 	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 1: if BIND9 detection takes -c parameter
@@ -312,7 +370,8 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(path.Join(chrootPath, config1Path), config1)
+		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
+		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -331,7 +390,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	require.Empty(t, rndcKeyPath)
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
 	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 }
 
 // Checks detection STEP 2: if BIND9 detection takes the explicit config path
@@ -353,7 +412,8 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(confPath, config)
+		addCheckConfOutput(confPath, config).
+		addFileInfo(confPath, &testFileInfo{})
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -370,7 +430,7 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 	require.Empty(t, rndcKeyPath)
 	require.Empty(t, detectedFiles.chrootDir)
-	require.Equal(t, sandbox.BasePath+"/usr/", detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath+"/usr", detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 2: if BIND9 detection takes
@@ -394,7 +454,8 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(fullConfPath, config)
+		addCheckConfOutput(fullConfPath, config).
+		addFileInfo(fullConfPath, &testFileInfo{})
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -412,7 +473,7 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	require.Empty(t, rndcKeyPath)
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
 	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 2: the explicit config path must be
@@ -436,7 +497,8 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(fullConfPath, config)
+		addCheckConfOutput(fullConfPath, config).
+		addFileInfo(fullConfPath, &testFileInfo{})
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -468,7 +530,8 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	// ... and tell the fake executor to return it as the output of named -V.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(varPath, config).
-		setConfigPathInNamedOutput(varPath)
+		setConfigPathInNamedOutput(varPath).
+		addFileInfo(varPath, &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -487,7 +550,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	require.Empty(t, rndcKeyPath)
 	require.Empty(t, detectedFiles.chrootDir)
 	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 }
 
 // Checks detection with chroot STEP 3: parse output of the named -V command.
@@ -511,7 +574,8 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, varPath), config).
 		// The named -V returns the path relative to the chroot directory.
-		setConfigPathInNamedOutput(varPath)
+		setConfigPathInNamedOutput(varPath).
+		addFileInfo(path.Join(chrootPath, varPath), &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -529,7 +593,7 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
 	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 }
 
 // Checks detection STEP 4: look at the typical locations.
@@ -557,7 +621,8 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 		executor.
 			clear().
 			addCheckConfOutput(expectedConfigPath, config).
-			setConfigPathInNamedOutput(expectedConfigPath)
+			setConfigPathInNamedOutput(expectedConfigPath).
+			addFileInfo(expectedConfigPath, &testFileInfo{})
 
 		t.Run(expectedConfigPath, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -580,7 +645,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			require.Empty(t, rndcKeyPath)
 			require.Empty(t, detectedFiles.chrootDir)
 			expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-			require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+			require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 		})
 	}
 }
@@ -607,7 +672,8 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 		executor.
 			clear().
 			addCheckConfOutput(path.Join(chrootPath, expectedConfigPath), config).
-			setConfigPathInNamedOutput(expectedConfigPath)
+			setConfigPathInNamedOutput(expectedConfigPath).
+			addFileInfo(path.Join(chrootPath, expectedConfigPath), &testFileInfo{})
 
 		t.Run(expectedPath, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -630,9 +696,43 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			require.Empty(t, rndcKeyPath)
 			require.Equal(t, chrootPath, detectedFiles.chrootDir)
 			expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-			require.Equal(t, expectedBaseDir, detectedFiles.baseDir)
+			require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 		})
 	}
+}
+
+// Check that an error is returned when detecting the BIND 9 configuration files
+// but an attempt to get the file information fails.
+func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config := `
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, configPath), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getPid().Times(0)
+
+	// Create the command executor without adding an expectation for
+	// GetFileInfo call. It should return an error when this call is
+	// made. We want to make sure that this error is propagated to the caller.
+	executor := newTestCommandExecutor().
+		addCheckConfOutput(configPath, config)
+
+	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+	require.ErrorContains(t, err, "file not found")
+	require.Nil(t, detectedFiles)
 }
 
 // Check that the detected BIND 9 daemon is instantiated and configured
@@ -668,7 +768,9 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
-		addCheckConfOutput(rndcKeyPath, rndcKeyConfig)
+		addCheckConfOutput(rndcKeyPath, rndcKeyConfig).
+		addFileInfo(configPath, &testFileInfo{}).
+		addFileInfo(rndcKeyPath, &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -677,7 +779,8 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	process.EXPECT().getPid().Return(int32(1234))
 
 	files := newDetectedDaemonFiles("", sandbox.BasePath)
-	files.addFile(detectedFileTypeConfig, configPath)
+	err = files.addFile(detectedFileTypeConfig, configPath, executor)
+	require.NoError(t, err)
 
 	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
 	require.NoError(t, err)
@@ -724,7 +827,8 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(configPath, config)
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -733,7 +837,8 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	process.EXPECT().getPid().Return(int32(1234))
 
 	files := newDetectedDaemonFiles("", sandbox.BasePath)
-	files.addFile(detectedFileTypeConfig, configPath)
+	err = files.addFile(detectedFileTypeConfig, configPath, executor)
+	require.NoError(t, err)
 
 	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
 	require.NoError(t, err)
@@ -777,7 +882,8 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 
 	// Check BIND 9 daemon detection.
 	executor := newTestCommandExecutor().
-		addCheckConfOutput(configPath, config)
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
 
 	// Now run the detection as usual.
 	ctrl := gomock.NewController(t)
@@ -786,7 +892,8 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	process.EXPECT().getPid().Return(int32(1234))
 
 	files := newDetectedDaemonFiles("", sandbox.BasePath)
-	files.addFile(detectedFileTypeConfig, configPath)
+	err = files.addFile(detectedFileTypeConfig, configPath, executor)
+	require.NoError(t, err)
 
 	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
 	require.NoError(t, err)
@@ -817,13 +924,17 @@ func TestConfigureBind9DaemonParseError(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 
+	executor := newTestCommandExecutor().
+		addFileInfo("/chroot/etc/bind/named.conf", &testFileInfo{})
+
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/bind/named.conf", "/chroot").Return(nil, errors.New("test error"))
 
 	files := newDetectedDaemonFiles("/chroot", "")
-	files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf")
+	err := files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", executor)
+	require.NoError(t, err)
 
-	daemon, err := configureBind9Daemon(process, files, parser, newTestCommandExecutor())
+	daemon, err := configureBind9Daemon(process, files, parser, executor)
 	require.Error(t, err)
 	require.Nil(t, daemon)
 	require.ErrorContains(t, err, "failed to parse BIND 9 config file")
@@ -868,7 +979,10 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 		addCheckConfOutput(config1Path, config1).
 		addCheckConfOutput(config2Path, config2).
 		addCheckConfOutput(config3Path, config3).
-		setConfigPathInNamedOutput(config3Path)
+		setConfigPathInNamedOutput(config3Path).
+		addFileInfo(config1Path, &testFileInfo{}).
+		addFileInfo(config2Path, &testFileInfo{}).
+		addFileInfo(config3Path, &testFileInfo{})
 
 	// Now run the detection as usual
 	ctrl := gomock.NewController(t)
