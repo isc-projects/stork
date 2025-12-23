@@ -24,6 +24,11 @@ type Config struct {
 	sourcePath string
 	// The absolute path of the chroot directory. Empty string means no chroot.
 	chrootDir string
+	// Copies of included, expanded configurations. Besides being embedded in the
+	// Statements, they are held separately in this slice to preserve associations
+	// with the source files. The slice is empty if the configuration hasn't been
+	// expanded.
+	expandedConfigs []*Config
 	// The configuration contains a list of Statements separated by semicolons.
 	Statements []*Statement `parser:"( @@ ';'* )*"`
 }
@@ -31,6 +36,11 @@ type Config struct {
 // Returns the source path of the configuration file.
 func (c *Config) GetSourcePath() string {
 	return c.sourcePath
+}
+
+// Returns copies of included, expanded configurations.
+func (c *Config) GetExpandedConfigs() []*Config {
+	return c.expandedConfigs
 }
 
 // Returns serialized BIND 9 configuration with filtering and indentation.
@@ -567,6 +577,7 @@ func (c *Config) Expand() (*Config, error) {
 			}
 			// Append the parsed statements to the parent file.
 			expanded.Statements = append(expanded.Statements, parsedInclude.Statements...)
+			expanded.expandedConfigs = append(expanded.expandedConfigs, parsedInclude)
 		} else {
 			// This is not an include statement. Append it as is.
 			expanded.Statements = append(expanded.Statements, statement)
