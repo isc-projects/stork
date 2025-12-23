@@ -21,7 +21,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { SelectModule } from 'primeng/select'
 import { InputIconModule } from 'primeng/inputicon'
 import { IconFieldModule } from 'primeng/iconfield'
-import { toastDecorator } from '../utils-stories'
+import { mockedFilterByText, toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { FormsModule } from '@angular/forms'
 import { InputTextModule } from 'primeng/inputtext'
@@ -29,6 +29,7 @@ import { TagModule } from 'primeng/tag'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
+import { LocalZone, Zone } from '../backend'
 
 const meta: Meta<ZonesPageComponent> = {
     title: 'App/ZonesPage',
@@ -251,7 +252,7 @@ const rootZone = {
     rname: '.',
 }
 
-const masterZones = [
+const primaryZones = [
     {
         id: 1,
         localZones: [
@@ -324,43 +325,71 @@ const masterZones = [
         id: 5,
         localZones: [
             {
-                appId: 1,
-                appName: 'pdns@agent-pdns',
+                appId: 2,
+                appName: 'bind9@agent-bind9-2',
                 class: 'IN',
-                daemonId: 1,
-                loadedAt: '2025-12-22T17:59:38.000Z',
-                serial: 2024031501,
-                view: 'localhost',
-                zoneType: 'master',
+                daemonId: 2,
+                loadedAt: '2025-12-23T08:59:19.000Z',
+                rpz: true,
+                serial: 201702121,
+                view: '_default',
+                zoneType: 'secondary',
+            },
+            {
+                appId: 4,
+                appName: 'bind9@agent-bind9',
+                class: 'IN',
+                daemonId: 4,
+                loadedAt: '2025-08-14T06:05:51.000Z',
+                rpz: true,
+                serial: 201702122,
+                view: 'trusted',
+                zoneType: 'primary',
             },
         ],
-        name: '0.16.172.in-addr.arpa',
-        rname: 'arpa.in-addr.172.16.0',
+        name: 'drop.rpz.example.com',
+        rname: 'com.example.rpz.drop',
     },
     {
         id: 6,
         localZones: [
             {
-                appId: 1,
-                appName: 'pdns@agent-pdns',
+                appId: 2,
+                appName: 'bind9@agent-bind9-2',
                 class: 'IN',
-                daemonId: 1,
-                loadedAt: '2025-12-22T17:59:38.000Z',
-                serial: 2024031501,
-                view: 'localhost',
-                zoneType: 'master',
+                daemonId: 2,
+                loadedAt: '2025-08-14T06:05:51.000Z',
+                rpz: true,
+                serial: 201702121,
+                view: '_default',
+                zoneType: 'primary',
             },
         ],
-        name: '1.16.172.in-addr.arpa',
-        rname: 'arpa.in-addr.172.16.1',
+        name: 'rpz.local',
+        rname: 'local.rpz',
     },
 ]
+
+type TestLocalZone = LocalZone & { class: string }
+
+const allZones: Zone[] = [rootZone, ...builtinZones, ...primaryZones]
+
+const filterByZoneType = (url: string) => {
+    const search = new URL(url, 'http://localhost').search
+    const searchParams = new URLSearchParams(search)
+    const zoneTypes = searchParams.getAll('zoneType')
+    if (zoneTypes.includes('primary')) {
+        zoneTypes.push('master')
+    }
+
+    return allZones.filter((z) => z.localZones.some((lz) => zoneTypes.includes(lz.zoneType)))
+}
 
 export const ListZones: Story = {
     parameters: {
         mockData: [
             {
-                url: 'http://localhost/api/dns-management/zones-fetch',
+                url: 'api/dns-management/zones-fetch',
                 method: 'GET',
                 status: 200,
                 response: () => ({
@@ -400,49 +429,305 @@ export const ListZones: Story = {
                 }),
             },
             {
-                url: 'http://localhost/api/dns-management/zones-fetch',
+                url: 'api/dns-management/zones-fetch',
                 method: 'PUT',
                 status: 202,
                 response: () => {},
             },
             {
-                url: 'http://localhost/api/zones?start=:start&limit=:limit&zoneType=consumer&zoneType=delegation-only&zoneType=forward&zoneType=hint&zoneType=mirror&zoneType=native&zoneType=primary&zoneType=producer&zoneType=redirect&zoneType=secondary&zoneType=static-stub&zoneType=stub',
+                url: 'api/zones?start=s&limit=l&zoneType=1',
                 method: 'GET',
                 status: 200,
-                response: () => ({
-                    items: [rootZone, ...masterZones],
-                    total: 7,
-                }),
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
             },
             {
-                url: 'http://localhost/api/zones?start=:start&limit=:limit&zoneType=builtin&zoneType=consumer&zoneType=delegation-only&zoneType=forward&zoneType=hint&zoneType=mirror&zoneType=native&zoneType=primary&zoneType=producer&zoneType=redirect&zoneType=secondary&zoneType=static-stub&zoneType=stub',
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2',
                 method: 'GET',
                 status: 200,
-                response: () => ({
-                    items: [rootZone, ...builtinZones, ...masterZones],
-                    total: 10,
-                }),
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
             },
             {
-                url: 'http://localhost/api/zones?start=:start&limit=:limit&zoneType=consumer&zoneType=delegation-only&zoneType=forward&zoneType=hint&zoneType=mirror&zoneType=native&zoneType=primary&zoneType=producer&zoneType=redirect&zoneType=secondary&zoneType=static-stub&zoneType=stub&appId=:appId',
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13',
+                method: 'GET',
+                status: 200,
+                response: ({ url }) => {
+                    const filteredZones = filterByZoneType(url)
+                    return {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&appId=a',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
-                    const filteredZones = [rootZone, ...masterZones].filter((z) => {
-                        return z.localZones.some((lz) => lz.appId == req?.searchParams?.appId ?? 0)
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz) => lz.appId == req.searchParams?.appId)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
             },
             {
-                url: 'http://localhost/api/zones?start=:start&limit=:limit&zoneType=builtin&zoneType=consumer&zoneType=delegation-only&zoneType=forward&zoneType=hint&zoneType=mirror&zoneType=native&zoneType=primary&zoneType=producer&zoneType=redirect&zoneType=secondary&zoneType=static-stub&zoneType=stub&appId=:appId',
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&appId=a',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
-                    const filteredZones = [rootZone, ...builtinZones, ...masterZones].filter((z) => {
-                        return z.localZones.some((lz) => lz.appId == req?.searchParams?.appId ?? 0)
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz) => lz.appId == req.searchParams?.appId)
                     })
                     return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&rpz=r',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz) => (!!lz.rpz).toString() == req.searchParams?.rpz)
+                    })
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&rpz=r',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz) => (!!lz.rpz).toString() == req.searchParams?.rpz)
+                    })
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&serial=s',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz) => lz.serial.toString().includes(req.searchParams?.serial))
+                    })
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&serial=s',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz) => lz.serial.toString().includes(req.searchParams?.serial))
+                    })
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&class=c',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz: TestLocalZone) => lz.class == req.searchParams?.class)
+                    })
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&class=c',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) => {
+                        return z.localZones.some((lz: TestLocalZone) => lz.class == req.searchParams?.class)
+                    })
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&appType=a&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) =>
+                        z.localZones.some((lz) => lz.appName.indexOf(req.searchParams?.appType) == 0)
+                    )
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&appType=a&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    let filteredZones = filterByZoneType(req.url)
+                    filteredZones = filteredZones.filter((z) =>
+                        z.localZones.some((lz) => lz.appName.indexOf(req.searchParams?.appType) == 0)
+                    )
+                    return { items: filteredZones, total: filteredZones.length }
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&text=t',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    const filteredZones = filterByZoneType(req.url)
+                    const resp = { items: filteredZones, total: filteredZones.length }
+                    return mockedFilterByText(resp, req, 'name')
+                },
+            },
+            {
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&text=t',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    const filteredZones = filterByZoneType(req.url)
+                    const resp = { items: filteredZones, total: filteredZones.length }
+                    return mockedFilterByText(resp, req, 'name')
                 },
             },
         ],
