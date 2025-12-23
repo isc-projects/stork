@@ -25,9 +25,11 @@ const (
 // changed since the last detection, and skip parsing the file if it has not
 // changed.
 type detectedDaemonFile struct {
-	fileType detectedFileType
-	path     string
-	info     os.FileInfo
+	fileType  detectedFileType
+	path      string
+	info      os.FileInfo
+	chrootDir string
+	executor  storkutil.CommandExecutor
 }
 
 // Creates a new detected daemon file instance. It returns an error if gathering
@@ -38,9 +40,11 @@ func newDetectedDaemonFile(fileType detectedFileType, path, chrootDir string, ex
 		return nil, err
 	}
 	return &detectedDaemonFile{
-		fileType: fileType,
-		path:     filepath.Clean(path),
-		info:     info,
+		fileType:  fileType,
+		path:      filepath.Clean(path),
+		info:      info,
+		chrootDir: chrootDir,
+		executor:  executor,
 	}, nil
 }
 
@@ -51,6 +55,16 @@ func (df *detectedDaemonFile) isEqual(other *detectedDaemonFile) bool {
 		df.path == other.path &&
 		df.info.Size() == other.info.Size() &&
 		df.info.ModTime().Equal(other.info.ModTime())
+}
+
+// Checks if the file has changed on disk since the information about it
+// was gathered.
+func (df *detectedDaemonFile) isChanged() bool {
+	info, err := df.executor.GetFileInfo(filepath.Join(df.chrootDir, df.path))
+	if err != nil {
+		return true
+	}
+	return df.info.Size() != info.Size() || df.info.ModTime().Before(info.ModTime())
 }
 
 // A structure representing a collection of the files used by the detected
@@ -96,7 +110,7 @@ func (df *detectedDaemonFiles) getFirstFilePathByType(fileType detectedFileType)
 	return ""
 }
 
-// Check if the specified file sets contain the same set of files neglecting their
+// Checks if the specified file sets contain the same set of files neglecting their
 // order.
 func (df *detectedDaemonFiles) isEqual(other *detectedDaemonFiles) bool {
 	if df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) != len(other.files) {
@@ -108,4 +122,15 @@ func (df *detectedDaemonFiles) isEqual(other *detectedDaemonFiles) bool {
 		}
 	}
 	return true
+}
+
+// Checks if any of the files in the collection have changed on disk since the
+// information about them was gathered.
+func (df *detectedDaemonFiles) isChanged() bool {
+	for _, file := range df.files {
+		if file.isChanged() {
+			return true
+		}
+	}
+	return false
 }

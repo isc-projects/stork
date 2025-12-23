@@ -269,3 +269,62 @@ func TestDetectedDaemonFilesIsEqualDifferentFileModificationTimes(t *testing.T) 
 	require.NoError(t, err)
 	require.False(t, files1.isEqual(files2))
 }
+
+// Test that it is correctly verified that the collection of detected files is changed
+// if the file sizes are different.
+func TestDetectedDaemonFilesSizeChanged(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Mock the command executor.
+	executor := NewMockCommandExecutor(ctrl)
+
+	// The size of the first file doesn't change.
+	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").Times(3).Return(&testFileInfo{size: 100}, nil)
+	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").Times(2).Return(&testFileInfo{size: 200}, nil)
+	// The first two times the file info is requested for the config file, it returns 200 bytes.
+	// The first time the instance is created. The second time it is called when the test checks
+	// if the file has changed the first time. The third time it is called when the test checks
+	// if the file has changed the second time. This time, a different file size is returned.
+	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").Return(&testFileInfo{size: 300}, nil)
+
+	// Add two files to the collection.
+	files := newDetectedDaemonFiles("", "")
+	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
+	require.NoError(t, err)
+	err = files.addFile(detectedFileTypeRndcKey, "/etc/bind/config/rndc.key", executor)
+	require.NoError(t, err)
+
+	// The file size does not change the first time.
+	require.False(t, files.isChanged())
+
+	/// The second time the mock returns a different file size.
+	require.True(t, files.isChanged())
+}
+
+// Test that it is correctly verified that the collection of detected files is changed
+// if the file modification times are different.
+func TestDetectedDaemonFilesModificationTimeChanged(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	// The modification time of the first file doesn't change.
+	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").Times(3).Return(&testFileInfo{modTime: time.Unix(0, 0)}, nil)
+	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").Times(2).Return(&testFileInfo{modTime: time.Unix(0, 1)}, nil)
+	// The third time the file info is requested for the second file, it returns a different modification time.
+	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").Return(&testFileInfo{modTime: time.Unix(0, 2)}, nil)
+
+	// Add two files to the collection.
+	files := newDetectedDaemonFiles("", "")
+	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
+	require.NoError(t, err)
+	err = files.addFile(detectedFileTypeRndcKey, "/etc/bind/config/rndc.key", executor)
+	require.NoError(t, err)
+
+	// The modification time does not change the first time.
+	require.False(t, files.isChanged())
+
+	// The second time the mock returns a different modification time.
+	require.True(t, files.isChanged())
+}
