@@ -110,10 +110,12 @@ func (df *detectedDaemonFiles) getFirstFilePathByType(fileType detectedFileType)
 	return ""
 }
 
-// Checks if the specified file sets contain the same set of files neglecting their
-// order.
-func (df *detectedDaemonFiles) isEqual(other *detectedDaemonFiles) bool {
-	if df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) != len(other.files) {
+// Checks if the other set of detected files is a subset of the current set, and if
+// the files are equal in terms of their type, path, size, and modification time. The
+// current set can contain more files, as they could have been added after parsing the
+// detected daemon's configuration (included files).
+func (df *detectedDaemonFiles) isSame(other *detectedDaemonFiles) bool {
+	if df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) < len(other.files) {
 		return false
 	}
 	for _, file := range df.files {

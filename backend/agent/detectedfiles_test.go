@@ -117,8 +117,8 @@ func TestDetectDaemonFilesAddFileError(t *testing.T) {
 	require.ErrorContains(t, err, "test error")
 }
 
-// Test that it is correctly verified that two sets of detected files are equal.
-func TestDetectedDaemonFilesIsEqual(t *testing.T) {
+// Test that it is correctly verified that two sets of detected files are the same.
+func TestDetectedDaemonFilesIsSame(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -128,22 +128,22 @@ func TestDetectedDaemonFilesIsEqual(t *testing.T) {
 
 	files1 := newDetectedDaemonFiles("", "")
 	files2 := newDetectedDaemonFiles("", "")
-	require.True(t, files1.isEqual(files2))
+	require.True(t, files1.isSame(files2))
 
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
-	require.True(t, files1.isEqual(files2))
+	require.True(t, files1.isSame(files2))
 
 	files1.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
 	files2.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
-	require.True(t, files1.isEqual(files2))
+	require.True(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are equal
+// Test that it is correctly verified that two sets of detected files are same
 // even if the files are in different order.
-func TestDetectedDaemonFilesIsEqualOutOfOrder(t *testing.T) {
+func TestDetectedDaemonFilesIsSameOutOfOrder(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -161,12 +161,12 @@ func TestDetectedDaemonFilesIsEqualOutOfOrder(t *testing.T) {
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
-	require.True(t, files1.isEqual(files2))
+	require.True(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are not equal
+// Test that it is correctly verified that two sets of detected files are not the same
 // if the chroot directories are different.
-func TestDetectedDaemonFilesIsEqualDifferentChrootDir(t *testing.T) {
+func TestDetectedDaemonFilesIsSameDifferentChrootDir(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -175,12 +175,12 @@ func TestDetectedDaemonFilesIsEqualDifferentChrootDir(t *testing.T) {
 
 	files1 := newDetectedDaemonFiles("/chroot1", "")
 	files2 := newDetectedDaemonFiles("/chroot2", "")
-	require.False(t, files1.isEqual(files2))
+	require.False(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are not equal
+// Test that it is correctly verified that two sets of detected files are not the same
 // if the base directories are different.
-func TestDetectedDaemonFilesIsEqualDifferentBaseDir(t *testing.T) {
+func TestDetectedDaemonFilesIsSameDifferentBaseDir(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -189,12 +189,12 @@ func TestDetectedDaemonFilesIsEqualDifferentBaseDir(t *testing.T) {
 
 	files1 := newDetectedDaemonFiles("", "/base1")
 	files2 := newDetectedDaemonFiles("", "/base2")
-	require.False(t, files1.isEqual(files2))
+	require.False(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are not equal
+// Test that it is correctly verified that two sets of detected files are not the same
 // if the file paths are different.
-func TestDetectedDaemonFilesIsEqualDifferentFilePaths(t *testing.T) {
+func TestDetectedDaemonFilesIsSameDifferentFilePaths(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -209,12 +209,12 @@ func TestDetectedDaemonFilesIsEqualDifferentFilePaths(t *testing.T) {
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/rndc.key", executor)
 	require.NoError(t, err)
-	require.False(t, files1.isEqual(files2))
+	require.False(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are not equal
+// Test that it is correctly verified that two sets of detected files are not the same
 // if the file types are different.
-func TestDetectedDaemonFilesIsEqualDifferentFileTypes(t *testing.T) {
+func TestDetectedDaemonFilesIsSameDifferentFileTypes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -227,12 +227,12 @@ func TestDetectedDaemonFilesIsEqualDifferentFileTypes(t *testing.T) {
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeRndcKey, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
-	require.False(t, files1.isEqual(files2))
+	require.False(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are not equal
+// Test that it is correctly verified that two sets of detected files are not the same
 // if the file sizes are different.
-func TestDetectedDaemonFilesIsEqualDifferentFileSizes(t *testing.T) {
+func TestDetectedDaemonFilesIsSameDifferentFileSizes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -247,12 +247,12 @@ func TestDetectedDaemonFilesIsEqualDifferentFileSizes(t *testing.T) {
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor2)
 	require.NoError(t, err)
-	require.False(t, files1.isEqual(files2))
+	require.False(t, files1.isSame(files2))
 }
 
-// Test that it is correctly verified that two sets of detected files are not equal
+// Test that it is correctly verified that two sets of detected files are not the same
 // if the file modification times are different.
-func TestDetectedDaemonFilesIsEqualDifferentFileModificationTimes(t *testing.T) {
+func TestDetectedDaemonFilesIsSameDifferentFileModificationTimes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -267,7 +267,7 @@ func TestDetectedDaemonFilesIsEqualDifferentFileModificationTimes(t *testing.T) 
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor2)
 	require.NoError(t, err)
-	require.False(t, files1.isEqual(files2))
+	require.False(t, files1.isSame(files2))
 }
 
 // Test that it is correctly verified that the collection of detected files is changed
