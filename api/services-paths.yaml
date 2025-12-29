@@ -107,7 +107,7 @@
     get:
       summary: Returns authorized machines with ISC software versions.
       description: >-
-        Returns a list of all machines' ids and ISC versions. It excludes detailed
+        Returns a list of all machines' ids and ISC software versions. It excludes detailed
         information about the machines to return reasonably compact information. Having
         the machines' names and/or daemon versions is useful for assessment of ISC software
         versions being used on machines that are monitored by Stork.

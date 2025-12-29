@@ -15,7 +15,7 @@
         202:
           description: >-
             Zones fetch is still in progress but the returned structure contains the
-            number of apps from which the fetch has completed.
+            number of daemons from which the fetch has completed.
           schema:
             $ref: "#/definitions/ZonesFetchStatus"
         204:
