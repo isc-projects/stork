@@ -2,10 +2,10 @@
   ZonesFetchStatus:
     type: object
     properties:
-      completedAppsCount:
+      completedDaemonsCount:
         type: integer
         x-omitempty: false
-      appsCount:
+      daemonsCount:
         type: integer
         x-omitempty: false
 

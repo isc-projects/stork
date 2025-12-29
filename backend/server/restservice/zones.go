@@ -154,11 +154,11 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 
 // Get the states of fetching the DNS zone information from the remote zone inventories.
 func (r *RestAPI) GetZonesFetch(ctx context.Context, params dns.GetZonesFetchParams) middleware.Responder {
-	isFetching, appsCount, completedAppsCount := r.DNSManager.GetFetchZonesProgress()
+	isFetching, daemonsCount, completedDaemonsCount := r.DNSManager.GetFetchZonesProgress()
 	if isFetching {
 		payload := models.ZonesFetchStatus{
-			CompletedAppsCount: int64(completedAppsCount),
-			AppsCount:          int64(appsCount),
+			CompletedDaemonsCount: int64(completedDaemonsCount),
+			DaemonsCount:          int64(daemonsCount),
 		}
 		rsp := dns.NewGetZonesFetchAccepted().WithPayload(&payload)
 		return rsp

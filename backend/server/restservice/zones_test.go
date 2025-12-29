@@ -594,8 +594,8 @@ func TestGetZonesFetchAlreadyFetching(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.IsType(t, &dns.GetZonesFetchAccepted{}, rsp)
 	rspAccepted := (rsp).(*dns.GetZonesFetchAccepted)
-	require.EqualValues(t, 10, rspAccepted.Payload.AppsCount)
-	require.EqualValues(t, 5, rspAccepted.Payload.CompletedAppsCount)
+	require.EqualValues(t, 10, rspAccepted.Payload.DaemonsCount)
+	require.EqualValues(t, 5, rspAccepted.Payload.CompletedDaemonsCount)
 }
 
 // Test getting the zone inventory states when no state is available.
