@@ -5,7 +5,7 @@
         A set of lists of records is returned. Each list is made of
         items field accompanied by total count. Currently the
         following lists are returned: subnets, shared networks, hosts,
-        machines, applications, users and groups.
+        machines, daemons, users and groups.
       operationId: searchRecords
       tags:
         - Search
