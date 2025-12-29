@@ -250,11 +250,17 @@ type monitor struct {
 	daemons []Daemon
 }
 
-// Creates an Monitor instance. It used to start it as well, but this is now done
+// Returns an exported interface to the monitor. It used to start it as well, but this is now done
 // by a dedicated method Start(). Make sure you call Start() before using daemon
 // monitor.
 func NewMonitor(explicitBind9ConfigPath string, explicitPowerDNSConfigPath string, keaHTTPClientConfig HTTPClientConfig) Monitor {
-	sm := &monitor{
+	return newMonitor(explicitBind9ConfigPath, explicitPowerDNSConfigPath, keaHTTPClientConfig)
+}
+
+// Creates a new monitor instance. It is used internally by the NewMonitor function and
+// in the tests.
+func newMonitor(explicitBind9ConfigPath string, explicitPowerDNSConfigPath string, keaHTTPClientConfig HTTPClientConfig) *monitor {
+	return &monitor{
 		requests:                   make(chan chan []Daemon),
 		quit:                       make(chan bool),
 		wg:                         &sync.WaitGroup{},
@@ -268,7 +274,6 @@ func NewMonitor(explicitBind9ConfigPath string, explicitPowerDNSConfigPath strin
 		running:                    false,
 		daemons:                    nil,
 	}
-	return sm
 }
 
 // This function starts the actual monitor. This start is delayed in case we want to only
@@ -406,13 +411,7 @@ func (sm *monitor) detectDaemons(ctx context.Context) {
 
 		case daemonname.Bind9:
 			// BIND 9 DNS server.
-			detectedDaemon, err := detectBind9Daemon(
-				p,
-				sm.commander,
-				sm.explicitBind9ConfigPath,
-				sm.bind9FileParser,
-				sm.daemons...,
-			)
+			detectedDaemon, err := sm.detectBind9Daemon(p)
 			if err != nil {
 				log.WithError(err).Warnf("Failed to detect BIND 9 DNS server daemon")
 				continue

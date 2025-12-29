@@ -331,7 +331,8 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addFileInfo(config1Path, &testFileInfo{})
 
@@ -343,7 +344,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -369,7 +370,8 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
 		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
 
@@ -380,7 +382,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -411,7 +413,8 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor(confPath, "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(confPath, config).
 		addFileInfo(confPath, &testFileInfo{})
 
@@ -421,7 +424,8 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "usr", "sbin", "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, confPath)
+
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -453,7 +457,8 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor(fullConfPath, "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config).
 		addFileInfo(fullConfPath, &testFileInfo{})
 
@@ -463,7 +468,8 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, fullConfPath)
+
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -496,7 +502,8 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config).
 		addFileInfo(fullConfPath, &testFileInfo{})
 
@@ -506,7 +513,7 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, confPath)
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "BIND 9 config file not found")
 	require.Nil(t, detectedFiles)
 }
@@ -528,7 +535,8 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// ... and tell the fake executor to return it as the output of named -V.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(varPath, config).
 		setConfigPathInNamedOutput(varPath).
 		addFileInfo(varPath, &testFileInfo{})
@@ -540,7 +548,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -571,7 +579,8 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// ... and tell the fake executor to return it as the output of named -V.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, varPath), config).
 		// The named -V returns the path relative to the chroot directory.
 		setConfigPathInNamedOutput(varPath).
@@ -585,7 +594,7 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -611,14 +620,13 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 	_, err := sandbox.Write("testing.conf", config)
 	require.NoError(t, err)
 
-	executor := newTestCommandExecutor()
-
 	for _, expectedPath := range getPotentialNamedConfLocations() {
 		// getPotentialNamedConfLocations now returns dirs, need to append
 		// filename.
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
 
-		executor.
+		monitor := newMonitor("", "", HTTPClientConfig{})
+		monitor.commander = newTestCommandExecutor().
 			clear().
 			addCheckConfOutput(expectedConfigPath, config).
 			setConfigPathInNamedOutput(expectedConfigPath).
@@ -633,7 +641,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
 			process.EXPECT().getCwd().Return("", nil)
-			detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+			detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
 			require.NoError(t, err)
@@ -665,11 +673,11 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	_, err := sandbox.Write("chroot/testing.conf", config)
 	require.NoError(t, err)
 
-	executor := newTestCommandExecutor()
 	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	for _, expectedPath := range getPotentialNamedConfLocations() {
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
-		executor.
+		monitor := newMonitor("", "", HTTPClientConfig{})
+		monitor.commander = newTestCommandExecutor().
 			clear().
 			addCheckConfOutput(path.Join(chrootPath, expectedConfigPath), config).
 			setConfigPathInNamedOutput(expectedConfigPath).
@@ -684,7 +692,7 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
 			process.EXPECT().getCwd().Return("", nil)
-			detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+			detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
 			require.NoError(t, err)
@@ -727,10 +735,11 @@ func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
 	// Create the command executor without adding an expectation for
 	// GetFileInfo call. It should return an error when this call is
 	// made. We want to make sure that this error is propagated to the caller.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config)
 
-	detectedFiles, err := detectBind9ConfigPaths(process, executor, "")
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "file not found")
 	require.Nil(t, detectedFiles)
 }
@@ -766,7 +775,8 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addCheckConfOutput(rndcKeyPath, rndcKeyConfig).
 		addFileInfo(configPath, &testFileInfo{}).
@@ -779,10 +789,10 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	process.EXPECT().getPid().Return(int32(1234))
 
 	files := newDetectedDaemonFiles("", sandbox.BasePath)
-	err = files.addFile(detectedFileTypeConfig, configPath, executor)
+	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
+	daemon, err := monitor.configureBind9Daemon(process, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -826,7 +836,8 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addFileInfo(configPath, &testFileInfo{})
 
@@ -837,10 +848,10 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	process.EXPECT().getPid().Return(int32(1234))
 
 	files := newDetectedDaemonFiles("", sandbox.BasePath)
-	err = files.addFile(detectedFileTypeConfig, configPath, executor)
+	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
+	daemon, err := monitor.configureBind9Daemon(process, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -881,7 +892,8 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addFileInfo(configPath, &testFileInfo{})
 
@@ -892,10 +904,10 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	process.EXPECT().getPid().Return(int32(1234))
 
 	files := newDetectedDaemonFiles("", sandbox.BasePath)
-	err = files.addFile(detectedFileTypeConfig, configPath, executor)
+	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := configureBind9Daemon(process, files, bind9config.NewParser(), executor)
+	daemon, err := monitor.configureBind9Daemon(process, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -924,17 +936,20 @@ func TestConfigureBind9DaemonParseError(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/chroot/etc/bind/named.conf", &testFileInfo{})
 
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/bind/named.conf", "/chroot").Return(nil, errors.New("test error"))
 
+	monitor.bind9FileParser = parser
+
 	files := newDetectedDaemonFiles("/chroot", "")
-	err := files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", executor)
+	err := files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := configureBind9Daemon(process, files, parser, executor)
+	daemon, err := monitor.configureBind9Daemon(process, files)
 	require.Error(t, err)
 	require.Nil(t, daemon)
 	require.ErrorContains(t, err, "failed to parse BIND 9 config file")
@@ -975,7 +990,8 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	config3Path := path.Join(sandbox.BasePath, "step3.conf")
 
 	// ... and tell the fake executor to return it as the output of named -V
-	executor := newTestCommandExecutor().
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addCheckConfOutput(config2Path, config2).
 		addCheckConfOutput(config3Path, config3).
@@ -992,7 +1008,7 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
 	process.EXPECT().getCwd().Return("", nil)
 	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, config2Path, bind9config.NewParser())
+	daemon, err := monitor.detectBind9Daemon(process)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())

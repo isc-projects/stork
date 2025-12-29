@@ -579,16 +579,22 @@ func TestDetectBind9DaemonAbsPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
 		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(defaultBind9Config))
 	})
+	monitor.bind9FileParser = parser
+
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/named -c /etc/named.conf", nil)
 	process.EXPECT().getCwd().Return("", nil)
 	process.EXPECT().getPid().Return(int32(1234))
-	executor := newTestCommandExecutorDefault()
-	daemon, err := detectBind9Daemon(process, executor, "", parser)
+
+	monitor.commander = newTestCommandExecutorDefault()
+
+	daemon, err := monitor.detectBind9Daemon(process)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -610,16 +616,20 @@ func TestDetectBind9DaemonRelativePath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
 		return bind9config.NewParser().Parse(configPath, "", strings.NewReader(defaultBind9Config))
 	})
-	executor := newTestCommandExecutorDefault()
+	monitor.bind9FileParser = parser
+
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/named -c named.conf", nil)
 	process.EXPECT().getCwd().Return("/etc", nil)
 	process.EXPECT().getPid().Return(int32(1234))
-	daemon, err := detectBind9Daemon(process, executor, "", parser)
+	monitor.commander = newTestCommandExecutorDefault()
+	daemon, err := monitor.detectBind9Daemon(process)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
