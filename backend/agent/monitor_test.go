@@ -293,7 +293,7 @@ func TestDetectDaemons(t *testing.T) {
 	// when new apps are detected.
 	fakeDaemon := NewMockDaemon(ctrl)
 	fakeDaemon.EXPECT().Cleanup().Times(1)
-	fakeDaemon.EXPECT().IsEqual(gomock.Any()).AnyTimes().Return(false)
+	fakeDaemon.EXPECT().IsSame(gomock.Any()).AnyTimes().Return(false)
 	fakeDaemon.EXPECT().String().AnyTimes().Return("fake-daemon")
 
 	monitor.daemons = append(monitor.daemons, fakeDaemon)
@@ -339,6 +339,10 @@ func TestDetectDaemons(t *testing.T) {
 			monitor.daemons[2].(*pdnsDaemon).AccessPoints[index].Port = 8082
 		}
 	}
+
+	// Also, emulate the size change of the configuration file to ensure
+	// that the new daemon instance is used.
+	commander.addFileInfo("/etc/named.conf", &testFileInfo{size: 200})
 
 	// Redetect apps. It should result in recreating the zone inventory.
 	monitor.detectDaemons(t.Context())
@@ -399,7 +403,7 @@ func TestDetectDaemonsConfigNoStatistics(t *testing.T) {
 	fakeDaemon := NewMockDaemon(ctrl)
 	fakeDaemon.EXPECT().RefreshState(gomock.Any(), gomock.Any()).AnyTimes()
 	fakeDaemon.EXPECT().Cleanup().Times(1)
-	fakeDaemon.EXPECT().IsEqual(gomock.Any()).AnyTimes().Return(false)
+	fakeDaemon.EXPECT().IsSame(gomock.Any()).AnyTimes().Return(false)
 	fakeDaemon.EXPECT().String().AnyTimes().Return("fake-daemon")
 
 	monitor.daemons = append(monitor.daemons, fakeDaemon)
@@ -823,7 +827,7 @@ func TestDaemonGetAccessPoint(t *testing.T) {
 }
 
 // Test that the daemon can be compared by their overall content.
-func TestDaemonEqual(t *testing.T) {
+func TestDaemonIsSame(t *testing.T) {
 	// Arrange
 	daemon1 := &keaDaemon{
 		daemon: daemon{
@@ -872,15 +876,15 @@ func TestDaemonEqual(t *testing.T) {
 
 	// Act & Assert
 	// Same daemon names and access points.
-	require.True(t, daemon1.IsEqual(daemon2))
+	require.True(t, daemon1.IsSame(daemon2))
 	// Different daemon names but the same access points.
-	require.False(t, daemon1.IsEqual(daemon3))
+	require.False(t, daemon1.IsSame(daemon3))
 	// Same daemon names, and the same access point location but different
 	// configuration.
-	require.False(t, daemon1.IsEqual(daemon4))
+	require.False(t, daemon1.IsSame(daemon4))
 	// The second daemon has the same daemon name and includes the access
 	// points from the first daemon but it has an additional access point.
-	require.False(t, daemon1.IsEqual(daemon5))
+	require.False(t, daemon1.IsSame(daemon5))
 }
 
 // Test that the DNS zone inventories are successfully populated.

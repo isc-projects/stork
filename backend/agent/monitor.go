@@ -68,8 +68,10 @@ type Daemon interface {
 	GetName() daemonname.Name
 	GetAccessPoint(apType string) *AccessPoint
 	GetAccessPoints() []AccessPoint
-	// Checks if data of two daemons are equal.
-	IsEqual(other Daemon) bool
+	// Checks if two daemon instances are the same. It is used to determine
+	// whether the newly detected daemon is the same as the previously detected
+	// daemon. In that case, the detected daemon is ignored.
+	IsSame(other Daemon) bool
 	// Called when the monitor newly detects the daemon.
 	// It allows the daemon to perform initialization tasks
 	// such as starting a background goroutine.
@@ -128,9 +130,9 @@ func (d *daemon) String() string {
 	return b.String()
 }
 
-// Checks if two applications are the same. It checks the name and access
+// Checks if two daemons are the same. It checks the name and access
 // points including their configuration.
-func (d *daemon) IsEqual(other Daemon) bool {
+func (d *daemon) IsSame(other Daemon) bool {
 	if d.Name != other.GetName() {
 		return false
 	}
@@ -155,18 +157,34 @@ func (d *daemon) IsEqual(other Daemon) bool {
 // An interface representing the DNS daemon.
 type dnsDaemon interface {
 	Daemon
+	isSame(other dnsDaemon) bool
 	getZoneInventory() zoneInventory
+	getDetectedFiles() *detectedDaemonFiles
 }
 
 // An implementation providing common functionality for DNS daemons.
 type dnsDaemonImpl struct {
 	daemon
 	zoneInventory zoneInventory
+	detectedFiles *detectedDaemonFiles
+}
+
+// Checks if the embedded daemon instance has the same name and access points
+// as the other daemon instance, and that the detected files are the same as
+// well. It includes checking the paths, modification times, and sizes of the
+// files.
+func (d *dnsDaemonImpl) isSame(other dnsDaemon) bool {
+	return other != nil && d.IsSame(other) && d.getDetectedFiles().isSame(other.getDetectedFiles())
 }
 
 // Returns the zone inventory.
 func (d *dnsDaemonImpl) getZoneInventory() zoneInventory {
 	return d.zoneInventory
+}
+
+// Returns the files associated with the detected daemon (e.g., configuration files).
+func (d *dnsDaemonImpl) getDetectedFiles() *detectedDaemonFiles {
+	return d.detectedFiles
 }
 
 // Bootstrap the DNS daemon. It starts the zone inventory if available.
@@ -324,12 +342,14 @@ func splitDaemonsByTransition(previous, next []Daemon) (started, unchanged, unch
 
 	for ip, p := range previous {
 		for in, n := range next {
-			if p.IsEqual(n) {
+			if p == n || p.IsSame(n) {
 				// Daemon is still running.
 				stoppedMap[ip] = false
 				startedMap[in] = false
 				unchangedMap[ip] = true
-				unchangedDuplicatedMap[in] = true
+				if ip != in {
+					unchangedDuplicatedMap[in] = true
+				}
 				break
 			}
 		}
@@ -391,6 +411,7 @@ func (sm *monitor) detectDaemons(ctx context.Context) {
 				sm.commander,
 				sm.explicitBind9ConfigPath,
 				sm.bind9FileParser,
+				sm.daemons...,
 			)
 			if err != nil {
 				log.WithError(err).Warnf("Failed to detect BIND 9 DNS server daemon")

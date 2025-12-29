@@ -42,6 +42,18 @@ type Bind9Daemon struct {
 	rndcKeyConfig *bind9config.Config
 }
 
+// Checks if the current daemon instance is the same as the other daemon instance.
+// Besides checking the name and the access points, it also checks if the detected
+// files are the same.
+func (b *Bind9Daemon) IsSame(other Daemon) bool {
+	switch other := other.(type) {
+	case *Bind9Daemon:
+		return b.isSame(other)
+	default:
+		return false
+	}
+}
+
 // List of BIND 9 executables used during daemon detection.
 const (
 	namedCheckconfExec = "named-checkconf"
@@ -429,6 +441,7 @@ func configureBind9Daemon(p supportedProcess, files *detectedDaemonFiles, parser
 				AccessPoints: accessPoints,
 			},
 			zoneInventory: inventory,
+			detectedFiles: files,
 		},
 		rndcClient:    rndcClient,
 		pid:           p.getPid(),
@@ -441,16 +454,33 @@ func configureBind9Daemon(p supportedProcess, files *detectedDaemonFiles, parser
 
 // Detects the BIND 9 process, parses its configuration and returns its
 // instance with all its access points.
-func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (Daemon, error) {
+func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser, existingDaemons ...Daemon) (Daemon, error) {
 	detectedFiles, err := detectBind9ConfigPaths(p, executor, explicitConfigPath)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to detect BIND 9 config path")
 		return nil, err
 	}
 	log.WithFields(log.Fields{
-		"path": detectedFiles.files[0].path,
+		"path": detectedFiles.getFirstFilePathByType(detectedFileTypeConfig),
 	}).Debug("BIND 9 config path detected")
 
+	// Check if the detected files match the files of the existing daemon.
+	// If they do, we can use the existing daemon and skip parsing the config files.
+	for _, existingDaemon := range existingDaemons {
+		bind9Daemon, ok := existingDaemon.(*Bind9Daemon)
+		if !ok {
+			continue
+		}
+		if bind9Daemon.getDetectedFiles().isSame(detectedFiles) {
+			if !bind9Daemon.getDetectedFiles().isChanged() {
+				return existingDaemon, nil
+			}
+			// Configuration files have changed. We will have to parse the updated config files.
+			log.Debug("BIND 9 config files have changed, parsing updated config files")
+			break
+		}
+	}
+	// Parse the updated config files.
 	daemon, err := configureBind9Daemon(p, detectedFiles, parser, executor)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to configure BIND 9 daemon")
@@ -460,6 +490,6 @@ func detectBind9Daemon(p supportedProcess, executor storkutil.CommandExecutor, e
 }
 
 // Send a command to named using rndc client.
-func (ba *Bind9Daemon) sendRNDCCommand(command []string) (output []byte, err error) {
-	return ba.rndcClient.SendCommand(command)
+func (b *Bind9Daemon) sendRNDCCommand(command []string) (output []byte, err error) {
+	return b.rndcClient.SendCommand(command)
 }
