@@ -109,7 +109,7 @@ definitions:
       range:
         type: string
 
-  AppVersionMetadata:
+  VersionMetadata:
     type: object
     required:
       - currentStable
@@ -144,11 +144,11 @@ definitions:
       - date
     properties:
       bind9:
-        $ref: '#/definitions/AppVersionMetadata'
+        $ref: '#/definitions/VersionMetadata'
       kea:
-        $ref: '#/definitions/AppVersionMetadata'
+        $ref: '#/definitions/VersionMetadata'
       stork:
-        $ref: '#/definitions/AppVersionMetadata'
+        $ref: '#/definitions/VersionMetadata'
       date:
         type: string
         format: date

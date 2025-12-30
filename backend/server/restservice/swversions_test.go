@@ -48,15 +48,15 @@ func getExampleData() ReportAppsVersions {
 		&dev,
 		&secure,
 	}
-	kea := ReportAppVersionMetadata{
+	kea := ReportVersionMetadata{
 		LatestDev:     &dev,
 		CurrentStable: stables,
 	}
-	stork := ReportAppVersionMetadata{
+	stork := ReportVersionMetadata{
 		LatestDev:    &dev,
 		LatestSecure: secures,
 	}
-	bind := ReportAppVersionMetadata{
+	bind := ReportVersionMetadata{
 		LatestDev:     &dev,
 		CurrentStable: bindStables,
 	}
@@ -167,8 +167,8 @@ func TestStableSwVersionsToRestAPI(t *testing.T) {
 	}
 }
 
-// Test that appVersionMetadataToRestAPI works fine.
-func TestAppVersionMetadataToRestAPI(t *testing.T) {
+// Test that versionMetadataToRestAPI works fine.
+func TestVersionMetadataToRestAPI(t *testing.T) {
 	// Arrange
 	testData := getExampleData()
 

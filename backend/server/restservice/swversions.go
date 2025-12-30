@@ -22,7 +22,7 @@ type ReportVersionDetails struct {
 }
 
 // This struct gathers different types of releases and contains details for each type.
-type ReportAppVersionMetadata struct {
+type ReportVersionMetadata struct {
 	CurrentStable []*ReportVersionDetails `json:"currentStable,omitempty"`
 	LatestDev     *ReportVersionDetails   `json:"latestDev,omitempty"`
 	LatestSecure  []*ReportVersionDetails `json:"latestSecure,omitempty"`
@@ -30,10 +30,10 @@ type ReportAppVersionMetadata struct {
 
 // This is top level struct representing all metadata for ISC Kea, BIND9 and Stork latest software releases.
 type ReportAppsVersions struct {
-	Bind9 *ReportAppVersionMetadata `json:"bind9"`
-	Date  *string                   `json:"date"`
-	Kea   *ReportAppVersionMetadata `json:"kea"`
-	Stork *ReportAppVersionMetadata `json:"stork"`
+	Bind9 *ReportVersionMetadata `json:"bind9"`
+	Date  *string                `json:"date"`
+	Kea   *ReportVersionMetadata `json:"kea"`
+	Stork *ReportVersionMetadata `json:"stork"`
 }
 
 // VersionsJSONPath is a path to a JSON file with offline software versions metadata.
@@ -42,8 +42,8 @@ var VersionsJSONPath = "/etc/stork/versions.json" //nolint:gochecknoglobals
 
 // Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
 // It returns an error when problem occurs when parsing dates.
-func daemonVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {
-	out := models.AppVersionMetadata{}
+func daemonVersionMetadataToRestAPI(input ReportVersionMetadata) (*models.VersionMetadata, error) {
+	out := models.VersionMetadata{}
 	if input.LatestSecure != nil {
 		if v, err := secureSoftwareVersionsToRestAPI(input.LatestSecure); err == nil {
 			out.LatestSecure = v
