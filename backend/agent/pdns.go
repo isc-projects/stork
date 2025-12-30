@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	pdnsconfig "isc.org/stork/daemoncfg/pdns"
 	"isc.org/stork/datamodel/daemonname"
-	storkutil "isc.org/stork/util"
 )
 
 var (
@@ -46,19 +45,19 @@ type pdnsDaemon struct {
 
 // It returns the PowerDNS daemon instance or an error if the PowerDNS is not
 // recognized or any error occurs.
-func detectPowerDNSDaemon(p supportedProcess, commander storkutil.CommandExecutor, parser pdnsConfigParser, explicitConfigPath string) (Daemon, error) {
+func (sm *monitor) detectPowerDNSDaemon(p supportedProcess) (Daemon, error) {
 	// PowerDNS server configuration location detection.
-	configPath, err := detectPowerDNSConfigPath(p, commander, explicitConfigPath)
+	detectedFiles, err := sm.detectPowerDNSConfigPath(p)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to detect PowerDNS server config path")
 		return nil, err
 	}
 	log.WithFields(log.Fields{
-		"path": *configPath,
+		"path": detectedFiles.getFirstFilePathByType(detectedFileTypeConfig),
 	}).Debug("PowerDNS server config path detected")
 
 	// Parse and interpret the PowerDNS server configuration.
-	daemon, err := configurePowerDNSDaemon(*configPath, parser)
+	daemon, err := sm.configurePowerDNSDaemon(detectedFiles)
 	if err != nil {
 		err = errors.WithMessage(err, "PowerDNS server configuration is invalid")
 		return nil, err
@@ -83,7 +82,7 @@ func detectPowerDNSDaemon(p supportedProcess, commander storkutil.CommandExecuto
 // STEP 3: Try to find the config file in the common locations:
 // - Use the locations returned by getPotentialPDNSConfLocations() function.
 // - Prepend the chroot directory if it is set.
-func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string) (*string, error) {
+func (sm *monitor) detectPowerDNSConfigPath(p supportedProcess) (*detectedDaemonFiles, error) {
 	// We can't proceed without the command line.
 	cmdline, err := p.getCmdline()
 	if err != nil {
@@ -183,32 +182,28 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 			configPath = filepath.Join(configDir, configFileName)
 		}
 	}
-	if configPath != "" {
-		// Found the config file location. There is nothing more to do.
-		return &configPath, nil
-	}
 
 	// STEP 2: Check if the config path is explicitly specified in settings. If
 	// it is, we'll use whatever value is provided.
-	if explicitConfigPath != "" {
+	if configPath == "" && sm.explicitPowerDNSConfigPath != "" {
 		var candidatePath string
-		log.Debugf("Looking for PowerDNS config in the location explicitly specified in settings: %s", explicitConfigPath)
+		log.Debugf("Looking for PowerDNS config in the location explicitly specified in settings: %s", sm.explicitPowerDNSConfigPath)
 		if chrootDir != "" {
-			rel, err := filepath.Rel(chrootDir, explicitConfigPath)
+			rel, err := filepath.Rel(chrootDir, sm.explicitPowerDNSConfigPath)
 			if err != nil || strings.HasPrefix(rel, "..") {
 				// The explicit config path does not belong to the chroot directory when
 				// it is impossible to build a relative path between the two (error case).
 				// If the explicit path is a parent of the chroot directory, it is also
 				// wrong (the double dot case).
-				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, explicitConfigPath)
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, sm.explicitPowerDNSConfigPath)
 			} else {
-				candidatePath = explicitConfigPath
+				candidatePath = sm.explicitPowerDNSConfigPath
 			}
 		} else {
-			candidatePath = explicitConfigPath
+			candidatePath = sm.explicitPowerDNSConfigPath
 		}
 		if candidatePath != "" {
-			if executor.IsFileExist(candidatePath) {
+			if sm.commander.IsFileExist(candidatePath) {
 				configPath = candidatePath
 			} else {
 				log.Errorf("Explicitly specified PowerDNS config file (%s) not found or unreadable", candidatePath)
@@ -216,32 +211,42 @@ func detectPowerDNSConfigPath(p supportedProcess, executor storkutil.CommandExec
 		}
 	}
 
-	if configPath != "" {
-		// Found the config file location. There is nothing more to do.
-		return &configPath, nil
-	}
-
 	// STEP 3: If the config path is not explicitly specified, we'll try to
 	// find it in the potential locations.
-	log.Debugf("Looking for PowerDNS config file in typical locations")
-	for _, location := range getPotentialPDNSConfLocations() {
-		// Concat with root or chroot.
-		path := filepath.Join(chrootDir, location, configFileName)
-		log.Debugf("Checking if config file exists: %s", path)
-		if executor.IsFileExist(path) {
-			return &path, nil
+	if configPath == "" {
+		log.Debugf("Looking for PowerDNS config file in typical locations")
+		for _, location := range getPotentialPDNSConfLocations() {
+			// Concat with root or chroot.
+			path := filepath.Join(chrootDir, location, configFileName)
+			log.Debugf("Checking if config file exists: %s", path)
+			if sm.commander.IsFileExist(path) {
+				configPath = path
+				break
+			}
 		}
 	}
-	return nil, errors.Errorf("PowerDNS config file not found")
+
+	if configPath == "" {
+		return nil, errors.Errorf("PowerDNS config file not found")
+	}
+
+	detectedFiles := newDetectedDaemonFiles(chrootDir, "")
+	if err := detectedFiles.addFileFromChroot(detectedFileTypeConfig, configPath, sm.commander); err != nil {
+		return nil, err
+	}
+
+	return detectedFiles, nil
 }
 
 // Parses the PowerDNS configuration file specified in the first argument. It extracts
 // the webserver configuration and the API key. If the webserver is disabled or the
 // API key does not exist it returns an error. Otherwise it instantiates the
 // PowerDNS app and the zone inventory.
-func configurePowerDNSDaemon(configPath string, parser pdnsConfigParser) (*pdnsDaemon, error) {
+func (sm *monitor) configurePowerDNSDaemon(detectedFiles *detectedDaemonFiles) (*pdnsDaemon, error) {
 	// Parse the configuration file.
-	parsedConfig, err := parser.ParseFile(configPath)
+	configPath := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
+	chrootDir := detectedFiles.chrootDir
+	parsedConfig, err := sm.pdnsConfigParser.ParseFile(filepath.Join(chrootDir, configPath))
 	if err != nil {
 		return nil, err
 	}

@@ -570,7 +570,8 @@ func newTestCommandExecutorDefault() *testCommandExecutor {
 	return newTestCommandExecutor().
 		addCheckConfOutput("/etc/named.conf", defaultBind9Config).
 		setConfigPathInNamedOutput("/etc/named.conf").
-		addFileInfo("/etc/named.conf", &testFileInfo{})
+		addFileInfo("/etc/named.conf", &testFileInfo{}).
+		addFileInfo("/etc/powerdns/pdns.conf", &testFileInfo{})
 }
 
 // Check BIND 9 daemon detection when its conf file is absolute path.

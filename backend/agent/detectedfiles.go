@@ -4,7 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
+	"github.com/pkg/errors"
 	storkutil "isc.org/stork/util"
 )
 
@@ -98,6 +100,22 @@ func (df *detectedDaemonFiles) addFile(fileType detectedFileType, path string, e
 	}
 	df.files = append(df.files, detectedFile)
 	return nil
+}
+
+// Adds a file to the collection removing the chroot directory from its
+// prefix. If the specified path has no chroot prefix (it is not possible
+// to find a relative path from chroot and the specified path),
+// it returns an error. If the chroot directory is not set, it adds the
+// file using the original path.
+func (df *detectedDaemonFiles) addFileFromChroot(fileType detectedFileType, path string, executor storkutil.CommandExecutor) error {
+	if df.chrootDir == "" {
+		return df.addFile(fileType, path, executor)
+	}
+	rel, err := filepath.Rel(df.chrootDir, path)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return errors.Errorf("the path %s does not belong to the chroot directory %s", path, df.chrootDir)
+	}
+	return df.addFile(fileType, filepath.Join("/", rel), executor)
 }
 
 // Returns the path to the first file having the specified type.

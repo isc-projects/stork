@@ -84,7 +84,11 @@ func TestPowerDNSDaemonCmdLineError(t *testing.T) {
 	process.EXPECT().getCmdline().Return("", errors.New("test error"))
 
 	executor := NewMockCommandExecutor(ctrl)
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	configPath, err := monitor.detectPowerDNSConfigPath(process)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
 	require.Nil(t, configPath)
@@ -104,8 +108,13 @@ func TestDetectPowerDNSDaemon(t *testing.T) {
 	})
 
 	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
-	daemon, err := detectPowerDNSDaemon(process, executor, parser, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.pdnsConfigParser = parser
+	monitor.commander = executor
+
+	daemon, err := monitor.detectPowerDNSDaemon(process)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 
@@ -134,11 +143,15 @@ func TestDetectPowerDNSDaemonNoConfigDir(t *testing.T) {
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
 		return path == "/etc/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the PowerDNS config path is correctly detected when the config-dir
@@ -148,13 +161,18 @@ func TestDetectPowerDNSDaemonConfigDir(t *testing.T) {
 	defer ctrl.Finish()
 
 	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/etc/pdns.conf").Return(&testFileInfo{}, nil)
+
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the config directory is correctly detected when it is relative
@@ -164,14 +182,19 @@ func TestDetectPowerDNSDaemonRelConfigDir(t *testing.T) {
 	defer ctrl.Finish()
 
 	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/opt/etc/pdns.conf").Return(&testFileInfo{}, nil)
+
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
 	process.EXPECT().getCwd().Return("/opt", nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/opt/etc/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/opt/etc/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that an error is returned when getting a process current working directory fails
@@ -185,10 +208,13 @@ func TestDetectPowerDNSDaemonRelConfigDirCwdError(t *testing.T) {
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
 	process.EXPECT().getCwd().Return("", errors.New("test error"))
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
-	require.Nil(t, configPath)
+	require.Nil(t, detectedFiles)
 }
 
 // Test that the config-name parameter is correctly interpreted when detected
@@ -201,14 +227,18 @@ func TestDetectPowerDNSDaemonConfigName(t *testing.T) {
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
 		return path == "/etc/powerdns/pdns-foo.conf"
 	})
+	executor.EXPECT().GetFileInfo("/etc/powerdns/pdns-foo.conf").Return(&testFileInfo{}, nil)
 
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=foo", nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/powerdns/pdns-foo.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/powerdns/pdns-foo.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the PowerDNS config path is correctly detected when both
@@ -222,10 +252,15 @@ func TestDetectPowerDNSAppChrootAbsConfigDir(t *testing.T) {
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/chroot --config-dir=/chroot/etc --config-name=foo", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	executor.EXPECT().GetFileInfo("/chroot/etc/pdns-foo.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/chroot/etc/pdns-foo.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/pdns-foo.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that using chroot and relative config-dir falls back to alternative
@@ -241,11 +276,15 @@ func TestDetectPowerDNSAppChrootRelConfigDir(t *testing.T) {
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
 		return path == "/var/chroot/etc/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the PowerDNS config path is correctly detected even for a relative
@@ -268,11 +307,15 @@ func TestDetectPowerDNSAppRelChroot(t *testing.T) {
 		// one below.
 		return path == "/var/chroot/etc/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that an error is returned when getting a process current working directory fails.
@@ -286,10 +329,14 @@ func TestDetectPowerDNSDaemonRelChrootCwdError(t *testing.T) {
 	process.EXPECT().getCwd().Return("", errors.New("test error"))
 
 	executor := NewMockCommandExecutor(ctrl)
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
-	require.Nil(t, configPath)
+	require.Nil(t, detectedFiles)
 }
 
 // Test that the PowerDNS config path is correctly detected when the explicit
@@ -306,11 +353,16 @@ func TestDetectPowerDNSDaemonExplicitConfigPath(t *testing.T) {
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
 		return path == "/etc/custom/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/etc/custom/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "/etc/custom/powerdns/pdns.conf")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+	monitor.explicitPowerDNSConfigPath = "/etc/custom/powerdns/pdns.conf"
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/etc/custom/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/custom/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the explicit PowerDNS config path is respected when this path
@@ -326,11 +378,16 @@ func TestDetectPowerDNSAppExplicitConfigPathChroot(t *testing.T) {
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
 		return path == "/chroot/etc/custom/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/chroot/etc/custom/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "/chroot/etc/custom/powerdns/pdns.conf")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+	monitor.explicitPowerDNSConfigPath = "/chroot/etc/custom/powerdns/pdns.conf"
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/chroot/etc/custom/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/custom/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the explicit PowerDNS config path is ignored when it is not
@@ -349,12 +406,18 @@ func TestDetectPowerDNSAppExplicitConfigPathChrootMismatch(t *testing.T) {
 		// not belong to the chroot directory.
 		return path == "/var/chroot/etc/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
 
 	// Explicit path does not belong to the chroot directory.
-	configPath, err := detectPowerDNSConfigPath(process, executor, "/chroot/etc/custom/powerdns/pdns.conf")
+	monitor.explicitPowerDNSConfigPath = "/chroot/etc/custom/powerdns/pdns.conf"
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the explicit PowerDNS config path is ignored when it contains
@@ -373,14 +436,20 @@ func TestDetectPowerDNSAppExplicitConfigPathInChrootParent(t *testing.T) {
 		// not belong to the chroot directory.
 		return path == "/var/chroot/etc/powerdns/pdns.conf"
 	})
+	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
 
 	// Explicit path does not belong to the chroot directory. The
 	// explicit path should be ignored and one of the default locations
 	// should be used.
-	configPath, err := detectPowerDNSConfigPath(process, executor, "/var/pdns.conf")
+	monitor.explicitPowerDNSConfigPath = "/var/pdns.conf"
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
-	require.NotNil(t, configPath)
-	require.Equal(t, "/var/chroot/etc/powerdns/pdns.conf", *configPath)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/powerdns/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 }
 
 // Test that the PowerDNS config path is correctly detected when the config
@@ -396,14 +465,18 @@ func TestDetectPowerDNSAppConfigPathPotentialConfLocations(t *testing.T) {
 			executor.EXPECT().IsFileExist(gomock.Any()).AnyTimes().DoAndReturn(func(path string) bool {
 				return path == filepath.Join(location, "pdns-custom.conf")
 			})
+			executor.EXPECT().GetFileInfo(gomock.Any()).AnyTimes().Return(&testFileInfo{}, nil)
 
 			process := NewMockSupportedProcess(ctrl)
 			process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=custom", nil)
 
-			configPath, err := detectPowerDNSConfigPath(process, executor, "")
+			monitor := newMonitor("", "", HTTPClientConfig{})
+			monitor.commander = executor
+
+			configPath, err := monitor.detectPowerDNSConfigPath(process)
 			require.NoError(t, err)
 			require.NotNil(t, configPath)
-			require.Equal(t, filepath.Join(location, "pdns-custom.conf"), *configPath)
+			require.Equal(t, filepath.Join(location, "pdns-custom.conf"), configPath.getFirstFilePathByType(detectedFileTypeConfig))
 		})
 	}
 }
@@ -417,10 +490,13 @@ func TestDetectPowerDNSAppConfigPathCmdLineError(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("", errors.New("test error"))
 
-	configPath, err := detectPowerDNSConfigPath(process, executor, "")
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
-	require.Nil(t, configPath)
+	require.Nil(t, detectedFiles)
 }
 
 // Test instantiating and configuring the PowerDNS app using specified config path.
@@ -428,12 +504,21 @@ func TestConfigurePowerDNSApp(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addFileInfo("/etc/pdns.conf", &testFileInfo{})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(path, strings.NewReader(defaultPDNSConfig))
 	})
+	monitor.pdnsConfigParser = parser
 
-	daemon, err := configurePowerDNSDaemon("/etc/pdns.conf", parser)
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 
@@ -452,10 +537,19 @@ func TestConfigurePowerDNSAppParseError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addFileInfo("/etc/pdns.conf", &testFileInfo{})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").Return(nil, errors.New("test error"))
+	monitor.pdnsConfigParser = parser
 
-	daemon, err := configurePowerDNSDaemon("/etc/pdns.conf", parser)
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "test error")
 	require.Nil(t, daemon)
@@ -467,6 +561,10 @@ func TestConfigurePowerDNSAppDefaultWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addFileInfo("/etc/pdns.conf", &testFileInfo{})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
@@ -475,8 +573,13 @@ func TestConfigurePowerDNSAppDefaultWebserver(t *testing.T) {
 			api-key=stork
 		`))
 	})
+	monitor.pdnsConfigParser = parser
 
-	daemon, err := configurePowerDNSDaemon("/etc/pdns.conf", parser)
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 
@@ -496,6 +599,10 @@ func TestConfigurePowerDNSAppNoAPIKey(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addFileInfo("/etc/pdns.conf", &testFileInfo{})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
@@ -503,9 +610,13 @@ func TestConfigurePowerDNSAppNoAPIKey(t *testing.T) {
 			webserver=yes
 		`))
 	})
+	monitor.pdnsConfigParser = parser
 
-	daemon, err := configurePowerDNSDaemon("/etc/pdns.conf", parser)
-	require.Error(t, err)
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.ErrorContains(t, err, "api-key not found in /etc/pdns.conf")
 	require.Nil(t, daemon)
 }
@@ -516,6 +627,10 @@ func TestConfigurePowerDNSAppNoWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addFileInfo("/etc/pdns.conf", &testFileInfo{})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
@@ -523,9 +638,13 @@ func TestConfigurePowerDNSAppNoWebserver(t *testing.T) {
 			webserver=no
 		`))
 	})
+	monitor.pdnsConfigParser = parser
 
-	daemon, err := configurePowerDNSDaemon("/etc/pdns.conf", parser)
-	require.Error(t, err)
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.ErrorContains(t, err, "webserver disabled in /etc/pdns.conf")
 	require.Nil(t, daemon)
 }
@@ -536,15 +655,23 @@ func TestConfigurePowerDNSAppNoAPI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addFileInfo("/etc/pdns.conf", &testFileInfo{})
+
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(path, strings.NewReader(`
 			webserver=yes
 		`))
 	})
+	monitor.pdnsConfigParser = parser
 
-	daemon, err := configurePowerDNSDaemon("/etc/pdns.conf", parser)
-	require.Error(t, err)
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.ErrorContains(t, err, "API or webserver disabled in /etc/pdns.conf")
 	require.Nil(t, daemon)
 }
