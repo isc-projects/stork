@@ -355,6 +355,15 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, files *detectedDaemo
 		return nil, errors.WithMessage(err, "failed to resolve include statements in BIND 9 config file")
 	}
 
+	for _, expandedConfig := range bind9Config.GetExpandedConfigs() {
+		// Record the included configuration files because later modification of those
+		// files should trigger configuration parsing again. It will only be the case if
+		// the file belongs to the set because it will permit for detecting file changes.
+		if err := files.addFile(detectedFileTypeInclude, expandedConfig.GetSourcePath(), sm.commander); err != nil {
+			return nil, err
+		}
+	}
+
 	if bind9Config.HasNoParse() {
 		// If some of the configuration parts are elided, it may cause issues with
 		// interactions of the Stork agent with BIND 9. The user should be warned.

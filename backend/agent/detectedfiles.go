@@ -16,6 +16,7 @@ type detectedFileType int
 const (
 	detectedFileTypeConfig detectedFileType = iota
 	detectedFileTypeRndcKey
+	detectedFileTypeInclude
 )
 
 // A structure representing a single file (typically a configuration file)

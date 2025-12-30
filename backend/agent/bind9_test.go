@@ -1005,6 +1005,88 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	require.Empty(t, statisticsPoint.Key)
 }
 
+// Test that the included BIND 9 configuration files are recorded in the set
+// of detected files.
+func TestConfigureBind9DaemonIncludedFiles(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file with two included files.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		include "include1.conf";
+		include "include2.conf";
+
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		statistics-channels {
+			inet 1.1.1.1 port 1112 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// First included file.
+	include1Path := path.Join(sandbox.BasePath, "include1.conf")
+	include1Config := `
+		acl first { 1.1.1.1; };
+	`
+	_, err = sandbox.Write("include1.conf", include1Config)
+	require.NoError(t, err)
+
+	// Second included file.
+	include2Path := path.Join(sandbox.BasePath, "include2.conf")
+	include2Config := `
+		acl second { 2.2.2.2; };
+	`
+	_, err = sandbox.Write("include2.conf", include2Config)
+	require.NoError(t, err)
+
+	// Create the monitor with mock command executor.
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addCheckConfOutput(include1Path, include1Config).
+		addCheckConfOutput(include2Path, include2Config).
+		addFileInfo(configPath, &testFileInfo{}).
+		addFileInfo(include1Path, &testFileInfo{}).
+		addFileInfo(include2Path, &testFileInfo{})
+
+	// Create the mock process.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+
+	// Create the set of detected files with one config file
+	// and without the includes.
+	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
+	require.NoError(t, err)
+
+	// Parse and expand the configuration files.
+	daemon, err := monitor.configureBind9Daemon(process, files)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+	require.Equal(t, daemonname.Bind9, daemon.GetName())
+	require.Len(t, daemon.GetAccessPoints(), 2)
+
+	// We should now have three files recorded. One main config file
+	// and two included files.
+	require.NotNil(t, daemon.detectedFiles)
+	require.Len(t, daemon.detectedFiles.files, 3)
+
+	// Make sure their paths are correct.
+	require.Equal(t, configPath, daemon.detectedFiles.files[0].path)
+	require.Equal(t, include1Path, daemon.detectedFiles.files[1].path)
+	require.Equal(t, include2Path, daemon.detectedFiles.files[2].path)
+}
+
 // Check that the detected BIND 9 daemon is instantiated and configured
 // when the statistics channels are not configured.
 func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
