@@ -186,7 +186,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // The version of the Kea daemon is recognized by calling its executable with
 // the --version flag.
 //
-// The specified httpClientConfig is used to create a new HTTP client instance
+// The monitor's keaHTTPClientConfig is used to create a new HTTP client instance
 // for the detected Kea app. The client inherits the the general HTTP client
 // configuration from the Stork agent configuration and additionally sets the
 // basic authentication credentials if they are provided in the Kea CA
@@ -196,7 +196,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 //
 // It returns the Kea daemon instance or an error if the Kea is not recognized or
 // any error occurs.
-func detectKeaDaemons(ctx context.Context, p supportedProcess, httpClientConfig HTTPClientConfig, commander storkutil.CommandExecutor) ([]Daemon, error) {
+func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]Daemon, error) {
 	// Extract the daemon name from the process.
 	processName, err := p.getName()
 	if err != nil {
@@ -239,7 +239,7 @@ func detectKeaDaemons(ctx context.Context, p supportedProcess, httpClientConfig 
 		executablePath = path.Join(cwd, executablePath)
 	}
 
-	versionRaw, err := commander.Output(executablePath, "-v")
+	versionRaw, err := sm.commander.Output(executablePath, "-v")
 	if err != nil {
 		return nil, errors.WithMessagef(err, "cannot get Kea version by executing %s -v", executablePath)
 	}
@@ -294,7 +294,7 @@ func detectKeaDaemons(ctx context.Context, p supportedProcess, httpClientConfig 
 					}
 				}
 
-				httpClientConfig.BasicAuth = basicAuthCredentials(credentials)
+				sm.keaHTTPClientConfig.BasicAuth = basicAuthCredentials(credentials)
 				key = credentials.User
 			}
 		}
@@ -307,7 +307,7 @@ func detectKeaDaemons(ctx context.Context, p supportedProcess, httpClientConfig 
 			Key:      key,
 		}
 		accessPoints = append(accessPoints, accessPoint)
-		connector = newKeaConnector(accessPoint, httpClientConfig)
+		connector = newKeaConnector(accessPoint, sm.keaHTTPClientConfig)
 	}
 
 	thisDaemon := &keaDaemon{

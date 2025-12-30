@@ -402,7 +402,7 @@ func (sm *monitor) detectDaemons(ctx context.Context) {
 		switch daemonName {
 		case daemonname.DHCPv4, daemonname.DHCPv6, daemonname.D2, daemonname.CA:
 			// Kea DHCP server.
-			detectedDaemons, err := detectKeaDaemons(ctx, p, sm.keaHTTPClientConfig, sm.commander)
+			detectedDaemons, err := sm.detectKeaDaemons(ctx, p)
 			if err != nil {
 				log.WithField("daemon", daemonName).WithError(err).Warn("Failed to detect Kea daemon(s)")
 				continue

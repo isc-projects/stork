@@ -700,6 +700,9 @@ func TestDetectKeaDaemon(t *testing.T) {
 	httpClientConfig := HTTPClientConfig{}
 	commander := newTestCommandExecutorDefault()
 
+	monitor := newMonitor("", "", httpClientConfig)
+	monitor.commander = commander
+
 	t.Run("config file without include statement", func(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFile()
 		defer clean()
@@ -713,7 +716,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("/usr/bin/kea-ctrl-agent -c %s", tmpFilePath), nil)
 		process.EXPECT().getCwd().Return("", nil)
-		daemon, err := detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
+		daemon, err := monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)
 
@@ -723,7 +726,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
 		process.EXPECT().getCwd().Return(cwd, nil)
-		daemon, err = detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
+		daemon, err = monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)
 	})
@@ -742,7 +745,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("/usr/bin/kea-ctrl-agent -c %s", tmpFilePath), nil)
 		process.EXPECT().getCwd().Return("", nil)
 
-		daemon, err := detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
+		daemon, err := monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)
 
@@ -752,7 +755,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
 		process.EXPECT().getCwd().Return(cwd, nil)
-		daemon, err = detectKeaDaemons(t.Context(), process, httpClientConfig, commander)
+		daemon, err = monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)
 	})

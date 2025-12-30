@@ -936,8 +936,11 @@ func TestDetectKeaCAPrior3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("2.3.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1012,8 +1015,11 @@ func TestDetectKeaCAPost3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1061,8 +1067,11 @@ func TestDetectKeaDHCPPrior3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("2.3.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1105,8 +1114,11 @@ func TestDetectKeaDHCPOnSocketPost3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1159,8 +1171,11 @@ func TestDetectKeaDHCPOnHTTPPost3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1238,8 +1253,11 @@ func TestDetectKeaCAWithCredentials(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1295,8 +1313,11 @@ func TestDetectKeaDHCPWithCredentials(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1327,8 +1348,11 @@ func TestDetectKeaProcessNameUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1351,8 +1375,11 @@ func TestDetectKeaDaemonNameUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1379,8 +1406,11 @@ func TestDetectKeaCommandLineUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1417,8 +1447,11 @@ func TestDetectKeaCwdUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1454,8 +1487,11 @@ func TestDetectKeaWithDefaultConfigurationPath(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1492,8 +1528,11 @@ func TestDetectKeaUnparsableVersion(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("git+dirty\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1550,8 +1589,11 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
@@ -1640,8 +1682,11 @@ func TestDetectKeaCommunicationError(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("2.3.0\n"), nil)
 
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
 	// Act
-	daemons, err := detectKeaDaemons(t.Context(), process, httpConfig, commander)
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
