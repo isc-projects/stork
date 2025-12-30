@@ -362,7 +362,7 @@ func GetDetailedAllServices(dbi dbops.DBI) ([]Service, error) {
 }
 
 // Deletes the service and all associations of this service with the
-// applications. The applications are not removed.
+// daemons. The daemons are not removed.
 func DeleteService(dbi dbops.DBI, serviceID int64) error {
 	service := &Service{
 		BaseService: BaseService{

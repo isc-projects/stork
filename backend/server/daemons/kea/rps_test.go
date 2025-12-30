@@ -228,7 +228,7 @@ func TestRpsWorkerValuePermutations(t *testing.T) {
 
 // Convenience function that creates a machine with two Kea daemons.
 func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool) (*dbmodel.Daemon, *dbmodel.Daemon) {
-	// add one machine with one kea app
+	// add one machine with one kea daemon
 	m := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",

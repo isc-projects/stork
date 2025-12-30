@@ -551,7 +551,7 @@ func TestAddDaemonToService(t *testing.T) {
 	err := AddDaemonToService(db, services[0].ID, services[1].Daemons[0])
 	require.NoError(t, err)
 
-	// That service should now include 6 apps.
+	// That service should now include 6 daemons.
 	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
 	require.Len(t, service.Daemons, 6)

@@ -332,7 +332,7 @@ func TestApplyGlobalParametersUpdate(t *testing.T) {
 				}`,
 				string(marshalled))
 		}
-		// Verify they are associated with appropriate apps.
+		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
 	}
 }
@@ -1571,7 +1571,7 @@ func TestApplyHostDelete(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
 	// Simulate submitting new host entry. The host is associated with
-	// two different daemons/apps.
+	// two different daemons.
 	host := &dbmodel.Host{
 		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
@@ -2026,7 +2026,7 @@ func TestApplySharedNetworkAdd(t *testing.T) {
 				}`,
 				string(marshalled))
 		}
-		// Verify they are associated with appropriate apps.
+		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
 	}
 }
@@ -2900,7 +2900,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 		default:
 			require.Fail(t, fmt.Sprintf("Unexpected command index: %d", i))
 		}
-		// Verify they are associated with appropriate apps.
+		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
 	}
 }
@@ -3859,7 +3859,7 @@ func TestApplySubnetAdd(t *testing.T) {
 				}`,
 				string(marshalled))
 		}
-		// Verify they are associated with appropriate apps.
+		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
 	}
 }
@@ -4368,7 +4368,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 				}`,
 				string(marshalled))
 		}
-		// Verify they are associated with appropriate apps.
+		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
 	}
 }

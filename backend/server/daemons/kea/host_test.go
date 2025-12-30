@@ -514,7 +514,7 @@ func testReservationGetPageReceived(t *testing.T, iterator *hostIterator) {
 	require.Contains(t, recordedDaemons, iterator.daemon.Name)
 }
 
-// Tests that host reservations can be extracted from the Kea app's
+// Tests that host reservations can be extracted from the Kea daemon's
 // configuration.
 func TestDetectHostsFromConfig(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1262,7 +1262,7 @@ func TestFetchHostsFromHostCmds(t *testing.T) {
 	require.NotNil(t, puller)
 
 	// Detect hosts two times in the row. This simulates periodic
-	// pull of the hosts for the given app.
+	// pull of the hosts for the given daemon.
 	for i := 0; i < 2; i++ {
 		err = puller.pull()
 		require.NoError(t, err)
@@ -1375,7 +1375,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 	require.NotNil(t, puller)
 
 	// Detect hosts two times in the row. This simulates periodic
-	// pull of the hosts for the given app.
+	// pull of the hosts for the given daemon.
 	for i := 0; i < 2; i++ {
 		err = puller.pull()
 		require.NoError(t, err)

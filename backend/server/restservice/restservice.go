@@ -109,7 +109,7 @@ type RestAPI struct {
 // - *RestAPISettings,
 // - *dbops.DatabaseSettings,
 // - *pg.DB,
-// - *apps.Pullers,
+// - *daemons.Pullers,
 // - *EndpointControl
 //
 // Accepted interfaces:

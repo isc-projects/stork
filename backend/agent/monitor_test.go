@@ -290,7 +290,7 @@ func TestDetectDaemons(t *testing.T) {
 	}
 
 	// Create fake daemon for which the zone inventory should be stopped
-	// when new apps are detected.
+	// when new daemons are detected.
 	fakeDaemon := NewMockDaemon(ctrl)
 	fakeDaemon.EXPECT().Cleanup().Times(1)
 	fakeDaemon.EXPECT().IsSame(gomock.Any()).AnyTimes().Return(false)
@@ -311,7 +311,7 @@ func TestDetectDaemons(t *testing.T) {
 	require.Equal(t, daemonname.Bind9, daemons[1].GetName())
 	require.Equal(t, daemonname.PDNS, daemons[2].GetName())
 
-	// Detect tha apps again. The zone inventory should be preserved.
+	// Detect tha daemons again. The zone inventory should be preserved.
 	monitor.detectDaemons(t.Context())
 	daemons2 := monitor.daemons
 	sort.Slice(daemons2, func(i, j int) bool {
@@ -510,10 +510,10 @@ func TestDetectDaemonsSkipOnNotAvailableCwd(t *testing.T) {
 }
 
 // The monitor periodically searches for the Kea/Bind9 instances. Usually, at
-// least one application should be available. If no monitored daemon is found,
+// least one daemon should be available. If no monitored daemon is found,
 // the Stork prints the warning message to indicate that something unexpected
 // happened.
-func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
+func TestDetectDaemonsNoDaemonDetectedWarning(t *testing.T) {
 	// Arrange
 	// Prepare logger.
 	output := logrus.StandardLogger().Out

@@ -1037,7 +1037,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
 
-	// Make sure we have some Kea apps in the database.
+	// Make sure we have some Kea daemons in the database.
 	_, daemons := storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
@@ -1189,7 +1189,7 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
 
-	// Make sure we have some Kea apps in the database.
+	// Make sure we have some Kea daemons in the database.
 	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction.
@@ -1259,7 +1259,7 @@ func TestCreateHostDeleteError(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
 
-	// Make sure we have some Kea apps in the database.
+	// Make sure we have some Kea daemons in the database.
 	_, _ = storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction. It will be needed for the actual part of the
@@ -1742,7 +1742,7 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
 
-	// Make sure we have some Kea apps in the database.
+	// Make sure we have some Kea daemons in the database.
 	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	// Begin transaction.
@@ -1907,7 +1907,7 @@ func TestDeleteHostError(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
 
-	// Make sure we have some Kea apps in the database.
+	// Make sure we have some Kea daemons in the database.
 	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	// Submit transaction with non-matching host ID.

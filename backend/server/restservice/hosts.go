@@ -349,7 +349,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Remember the context, i.e. new transaction has been successfully created.
 	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
 
-	// Return transaction ID, apps and subnets to the user.
+	// Return transaction ID, daemons and subnets to the user.
 	contents := &models.CreateHostBeginResponse{
 		ID:            cctxID,
 		Daemons:       respDaemons,
@@ -539,7 +539,7 @@ func (r *RestAPI) UpdateHostBegin(ctx context.Context, params dhcp.UpdateHostBeg
 	// Remember the context, i.e. new transaction has been successfully created.
 	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
 
-	// Return transaction ID, apps and subnets to the user.
+	// Return transaction ID, daemons and subnets to the user.
 	contents := &models.UpdateHostBeginResponse{
 		ID:            cctxID,
 		Host:          r.convertHostFromRestAPI(host),

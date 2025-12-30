@@ -41,8 +41,7 @@ func createKeaMock(t *testing.T, jsonFactory func(callNo int) (jsons []string)) 
 
 // Prepares the Kea mock with the statistic values compatible with the
 // configurations produced by the createDhcpConfigs function.
-// It assigns different, predictable values for each application. Supports the
-// applications with a single DHCPv4 daemon.
+// It assigns different, predictable values for each daemons.
 // Accepts a parameter that indicates if the old names of the statistics should
 // be used (missing doubled "s" in "addresses" word).
 func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, cmdResponses []any) {
@@ -548,7 +547,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	_ = dbmodel.InitializeSettings(db, 0)
 	_ = dbmodel.InitializeStats(db)
 
-	// prepare apps with subnets and local subnets
+	// prepare daemons with subnets and local subnets
 	v4Config, v6Config := createDhcpConfigs()
 	daemons := createDaemonsWithSubnets(t, db, 0, v4Config, v6Config)
 
@@ -1181,7 +1180,7 @@ var statisticGetAllBigNumbersJSON []byte
 
 // Test that the statistics with values exceeding the maximum value of int64
 // are stored without loss of precision.
-func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
+func TestProcessDaemonResponsesForResponseWithBigNumbers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

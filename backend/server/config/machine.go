@@ -6,7 +6,7 @@ type MachineState struct {
 }
 
 // An implementation of the dbmodel.MachineTag interface used
-// by the configuration manager to represent machines with apps
+// by the configuration manager to represent machines with daemons
 // to which control commands can be sent.
 type Machine struct {
 	ID        int64

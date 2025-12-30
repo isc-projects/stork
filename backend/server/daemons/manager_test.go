@@ -406,7 +406,7 @@ func TestUnlockForMissingKey(t *testing.T) {
 }
 
 // Test that the commit call is routed to the Kea module when the
-// transaction target is dbmodel.AppTypeKea.
+// transaction operation is Kea-specific.
 func TestCommitKeaModule(t *testing.T) {
 	manager := NewManager(&appstest.ManagerAccessorsWrapper{})
 	require.NotNil(t, manager)

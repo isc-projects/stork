@@ -1088,7 +1088,7 @@ func TestGetMachine(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, daemon.ID)
 
-	// get added machine 2 with kea app
+	// get added machine 2 with kea daemons
 	params = services.GetMachineParams{
 		ID: m2.ID,
 	}
@@ -1282,7 +1282,7 @@ func TestDeleteMachine(t *testing.T) {
 	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
-	// Add a zone associated with the app. We will later check if its deleted
+	// Add a zone associated with the daemon. We will later check if its deleted
 	// when the machine is deleted.
 	zone := &dbmodel.Zone{
 		Name: "example.org",
@@ -1343,7 +1343,7 @@ func TestGetDaemon(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get non-existing app
+	// get non-existing daemon
 	params := services.GetDaemonParams{
 		ID: 123,
 	}
@@ -1457,8 +1457,8 @@ func TestRestGetDaemon(t *testing.T) {
 	require.EqualValues(t, bind9Daemon.Name, okRsp.Payload.Name)
 }
 
-// Test getting PowerDNS app by ID.
-func TestGetPowerDNSApp(t *testing.T) {
+// Test getting PowerDNS daemon by ID.
+func TestGetPowerDNSDaemon(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1841,21 +1841,21 @@ func TestGetDaemonsDirectory(t *testing.T) {
 	params := services.GetDaemonsDirectoryParams{}
 	rsp := rapi.GetDaemonsDirectory(ctx, params)
 	require.IsType(t, &services.GetDaemonsDirectoryOK{}, rsp)
-	apps := rsp.(*services.GetDaemonsDirectoryOK).Payload
-	require.EqualValues(t, 2, apps.Total)
+	daemons := rsp.(*services.GetDaemonsDirectoryOK).Payload
+	require.EqualValues(t, 2, daemons.Total)
 
-	// Ensure that the returned apps are in a coherent order.
-	sort.Slice(apps.Items, func(i, j int) bool {
-		return apps.Items[i].ID < apps.Items[j].ID
+	// Ensure that the returned daemons are in a coherent order.
+	sort.Slice(daemons.Items, func(i, j int) bool {
+		return daemons.Items[i].ID < daemons.Items[j].ID
 	})
 
 	// Validate the returned data.
-	require.Equal(t, keaDaemon.ID, apps.Items[0].ID)
-	require.NotNil(t, apps.Items[0].Name)
-	require.EqualValues(t, keaDaemon.Name, apps.Items[0].Name)
-	require.Equal(t, bind9Daemon.ID, apps.Items[1].ID)
-	require.NotNil(t, apps.Items[1].Name)
-	require.EqualValues(t, bind9Daemon.Name, apps.Items[1].Name)
+	require.Equal(t, keaDaemon.ID, daemons.Items[0].ID)
+	require.NotNil(t, daemons.Items[0].Name)
+	require.EqualValues(t, keaDaemon.Name, daemons.Items[0].Name)
+	require.Equal(t, bind9Daemon.ID, daemons.Items[1].ID)
+	require.NotNil(t, daemons.Items[1].Name)
+	require.EqualValues(t, bind9Daemon.Name, daemons.Items[1].Name)
 }
 
 // Test that a list of daemons with communication issues is returned.
@@ -2012,9 +2012,9 @@ func TestGetDaemonsCommunicationIssues(t *testing.T) {
 		params := services.GetDaemonsWithCommunicationIssuesParams{}
 		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
 		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
-		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, string(daemonname.Bind9), apps.Items[0].Name)
+		daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, daemons.Total)
+		require.Equal(t, string(daemonname.Bind9), daemons.Items[0].Name)
 	})
 
 	t.Run("rndc errors", func(t *testing.T) {
@@ -2052,9 +2052,9 @@ func TestGetDaemonsCommunicationIssues(t *testing.T) {
 		params := services.GetDaemonsWithCommunicationIssuesParams{}
 		rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
 		require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
-		require.EqualValues(t, 1, apps.Total)
-		require.Equal(t, string(daemonname.Bind9), apps.Items[0].Name)
+		daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+		require.EqualValues(t, 1, daemons.Total)
+		require.Equal(t, string(daemonname.Bind9), daemons.Items[0].Name)
 	})
 }
 
@@ -2095,8 +2095,8 @@ func TestGetDaemonsCommunicationIssuesNotMonitored(t *testing.T) {
 	params := services.GetDaemonsWithCommunicationIssuesParams{}
 	rsp := rapi.GetDaemonsWithCommunicationIssues(ctx, params)
 	require.IsType(t, &services.GetDaemonsWithCommunicationIssuesOK{}, rsp)
-	apps := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
-	require.EqualValues(t, 0, apps.Total)
+	daemons := rsp.(*services.GetDaemonsWithCommunicationIssuesOK).Payload
+	require.EqualValues(t, 0, daemons.Total)
 }
 
 // Test that status of three HA services for a Kea daemon is parsed
@@ -2221,7 +2221,7 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 		},
 	}
 
-	// Add the services and associate them with the app.
+	// Add the services and associate them with the daemon.
 	for i := range keaServices {
 		err = dbmodel.AddService(db, &keaServices[i])
 		require.NoError(t, err)
@@ -2362,7 +2362,7 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 
 // Test that status of a HA service providing passive-backup mode is
 // parsed correctly.
-func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
+func TestRestGetDaemonServicesStatusPassiveBackup(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -2412,7 +2412,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 		},
 	}
 
-	// Add the services and associate them with the app.
+	// Add the services and associate them with the daemon.
 	for i := range keaServices {
 		err = dbmodel.AddService(db, &keaServices[i])
 		require.NoError(t, err)
@@ -2525,7 +2525,7 @@ func TestRestGetDaemonsStats(t *testing.T) {
 	err = dbmodel.AddDaemon(db, s3)
 	require.NoError(t, err)
 
-	// get added app
+	// get added daemon
 	params = services.GetDaemonsStatsParams{}
 	rsp = rapi.GetDaemonsStats(ctx, params)
 	require.IsType(t, &services.GetDaemonsStatsOK{}, rsp)
@@ -4181,9 +4181,9 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
 	require.Len(t, okRsp.Payload.Stork.CurrentStable, 0)
 }
 
-// Test that a list of all authorized machines' ids and apps versions is returned
+// Test that a list of all authorized machines' ids and daemons versions is returned
 // via the API.
-func TestGetMachinesAppsVersions(t *testing.T) {
+func TestGetMachinesDaemonsVersions(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

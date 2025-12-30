@@ -470,7 +470,7 @@ func (r *RestAPI) getSubnets(offset, limit int64, filters *dbmodel.SubnetsByPage
 	return subnets, nil
 }
 
-// Get list of DHCP subnets. The list can be filtered by app ID, DHCP version and text.
+// Get list of DHCP subnets. The list can be filtered by daemon ID, DHCP version and text.
 func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) middleware.Responder {
 	var start int64
 	if params.Start != nil {

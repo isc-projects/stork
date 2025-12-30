@@ -22,7 +22,7 @@ func handleSearchError(err error, text string) middleware.Responder {
 }
 
 // Search through different tables in database. Currently supported tables are:
-// machines, apps, subnets, shared networks, hosts, users, groups.
+// machines, daemons, subnets, shared networks, hosts, users, groups.
 // If filter text is empty then empty result is returned.
 func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecordsParams) middleware.Responder {
 	// if empty text is provided then empty result is returned

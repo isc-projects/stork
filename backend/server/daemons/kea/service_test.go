@@ -434,7 +434,7 @@ func TestDetectHAServices(t *testing.T) {
 
 // Test that a daemon doesn't belong to a blank service , i.e. a
 // service that comprises no daemons.
-func TestAppBelongsToHAServiceBlankService(t *testing.T) {
+func TestDaemonBelongsToHAServiceBlankService(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 

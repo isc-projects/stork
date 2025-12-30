@@ -254,9 +254,9 @@ func TestVersionReturnErrorForInvalidSignature(t *testing.T) {
 	require.ErrorContains(t, err, "symbol GetVersion has unexpected signature")
 }
 
-// Test that the version library function returns an application name and
+// Test that the version library function returns a daemon name and
 // version string on success.
-func TestVersionReturnAppAndVersionOnSuccess(t *testing.T) {
+func TestVersionReturnDaemonAndVersionOnSuccess(t *testing.T) {
 	// Arrange
 	library := newLibraryManager("", newPluginMock().
 		addLookupGetVersion(validGetVersion("bar", "baz"), nil),

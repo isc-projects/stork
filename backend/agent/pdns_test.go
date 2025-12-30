@@ -378,7 +378,7 @@ func TestDetectPowerDNSDaemonConfigName(t *testing.T) {
 // Test that the PowerDNS config path is correctly detected when both
 // the chroot and config-dir are absolute and the config-dir belongs to
 // the chroot directory.
-func TestDetectPowerDNSAppChrootAbsConfigDir(t *testing.T) {
+func TestDetectPowerDNSDaemonChrootAbsConfigDir(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -399,7 +399,7 @@ func TestDetectPowerDNSAppChrootAbsConfigDir(t *testing.T) {
 
 // Test that using chroot and relative config-dir falls back to alternative
 // locations.
-func TestDetectPowerDNSAppChrootRelConfigDir(t *testing.T) {
+func TestDetectPowerDNSDaemonChrootRelConfigDir(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -423,7 +423,7 @@ func TestDetectPowerDNSAppChrootRelConfigDir(t *testing.T) {
 
 // Test that the PowerDNS config path is correctly detected even for a relative
 // chroot directory if cwd is correctly set.
-func TestDetectPowerDNSAppRelChroot(t *testing.T) {
+func TestDetectPowerDNSDaemonRelChroot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -501,7 +501,7 @@ func TestDetectPowerDNSDaemonExplicitConfigPath(t *testing.T) {
 
 // Test that the explicit PowerDNS config path is respected when this path
 // belongs to the chroot directory.
-func TestDetectPowerDNSAppExplicitConfigPathChroot(t *testing.T) {
+func TestDetectPowerDNSDaemonExplicitConfigPathChroot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -526,7 +526,7 @@ func TestDetectPowerDNSAppExplicitConfigPathChroot(t *testing.T) {
 
 // Test that the explicit PowerDNS config path is ignored when it is not
 // inside the chroot directory.
-func TestDetectPowerDNSAppExplicitConfigPathChrootMismatch(t *testing.T) {
+func TestDetectPowerDNSDaemonExplicitConfigPathChrootMismatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -556,7 +556,7 @@ func TestDetectPowerDNSAppExplicitConfigPathChrootMismatch(t *testing.T) {
 
 // Test that the explicit PowerDNS config path is ignored when it contains
 // a path to a file which is in a parent of the chroot directory.
-func TestDetectPowerDNSAppExplicitConfigPathInChrootParent(t *testing.T) {
+func TestDetectPowerDNSDaemonExplicitConfigPathInChrootParent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -589,7 +589,7 @@ func TestDetectPowerDNSAppExplicitConfigPathInChrootParent(t *testing.T) {
 // Test that the PowerDNS config path is correctly detected when the config
 // directory is not specified. It should try to find the config file in
 // typical locations.
-func TestDetectPowerDNSAppConfigPathPotentialConfLocations(t *testing.T) {
+func TestDetectPowerDNSDaemonConfigPathPotentialConfLocations(t *testing.T) {
 	for _, location := range getPotentialPDNSConfLocations() {
 		t.Run(location, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -616,7 +616,7 @@ func TestDetectPowerDNSAppConfigPathPotentialConfLocations(t *testing.T) {
 }
 
 // Test that an error is returned when getting a process command line fails.
-func TestDetectPowerDNSAppConfigPathCmdLineError(t *testing.T) {
+func TestDetectPowerDNSDaemonConfigPathCmdLineError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -633,8 +633,8 @@ func TestDetectPowerDNSAppConfigPathCmdLineError(t *testing.T) {
 	require.Nil(t, detectedFiles)
 }
 
-// Test instantiating and configuring the PowerDNS app using specified config path.
-func TestConfigurePowerDNSApp(t *testing.T) {
+// Test instantiating and configuring the PowerDNS daemon using specified config path.
+func TestConfigurePowerDNSDaemon(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -667,7 +667,7 @@ func TestConfigurePowerDNSApp(t *testing.T) {
 }
 
 // Test that an error is returned when parsing the configuration file fails.
-func TestConfigurePowerDNSAppParseError(t *testing.T) {
+func TestConfigurePowerDNSDaemonParseError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -691,7 +691,7 @@ func TestConfigurePowerDNSAppParseError(t *testing.T) {
 
 // Test that default webserver address and port are used when not specified
 // in the configuration file.
-func TestConfigurePowerDNSAppDefaultWebserver(t *testing.T) {
+func TestConfigurePowerDNSDaemonDefaultWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -729,7 +729,7 @@ func TestConfigurePowerDNSAppDefaultWebserver(t *testing.T) {
 
 // Test that an error is returned when the API key is not specified in the
 // configuration file.
-func TestConfigurePowerDNSAppNoAPIKey(t *testing.T) {
+func TestConfigurePowerDNSDaemonNoAPIKey(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -757,7 +757,7 @@ func TestConfigurePowerDNSAppNoAPIKey(t *testing.T) {
 
 // Test that an error is returned when the webserver is disabled in the
 // configuration file.
-func TestConfigurePowerDNSAppNoWebserver(t *testing.T) {
+func TestConfigurePowerDNSDaemonNoWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -785,7 +785,7 @@ func TestConfigurePowerDNSAppNoWebserver(t *testing.T) {
 
 // Test that an error is returned when the API is disabled in the
 // configuration file.
-func TestConfigurePowerDNSAppNoAPI(t *testing.T) {
+func TestConfigurePowerDNSDaemonNoAPI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

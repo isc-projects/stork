@@ -50,7 +50,7 @@ func TestGetZones(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db)
 	require.NoError(t, err)
 
-	// Store zones in the database and associate them with our app.
+	// Store zones in the database and associate them with our daemon.
 	randomZones := testutil.GenerateRandomZones(25)
 	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
@@ -399,7 +399,7 @@ func TestGetZone(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db)
 	require.NoError(t, err)
 
-	// Store zones in the database and associate them with our app.
+	// Store zones in the database and associate them with our daemon.
 	randomZones := testutil.GenerateRandomZones(5)
 	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 5, "CH")
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 5, "secondary")

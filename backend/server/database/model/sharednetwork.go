@@ -56,7 +56,7 @@ const (
 	SharedNetworkRelationSubnetsMachine                  SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.Machine"
 )
 
-// This structure holds shared network information retrieved from an app.
+// This structure holds shared network information retrieved from a daemon.
 // Multiple DHCP servers may be configured to serve leases in the same
 // shared network. For the same shared network configured in the different
 // DHCP servers there will be separate instances of the LocalSharedNetwork

@@ -270,7 +270,7 @@ func (sm *monitor) detectPowerDNSConfigPath(p supportedProcess) (*detectedDaemon
 // Parses the PowerDNS configuration file specified in the first argument. It extracts
 // the webserver configuration and the API key. If the webserver is disabled or the
 // API key does not exist it returns an error. Otherwise it instantiates the
-// PowerDNS app and the zone inventory.
+// PowerDNS daemon and the zone inventory.
 func (sm *monitor) configurePowerDNSDaemon(detectedFiles *detectedDaemonFiles) (*pdnsDaemon, error) {
 	// Parse the configuration file.
 	configPath := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -298,7 +298,7 @@ func (sm *monitor) configurePowerDNSDaemon(detectedFiles *detectedDaemonFiles) (
 	// Create the zone inventory.
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), parsedConfig, client, *webserverAddress, *webserverPort)
 
-	// Create the PowerDNS app.
+	// Create the PowerDNS daemon.
 	daemon := &pdnsDaemon{
 		dnsDaemonImpl: dnsDaemonImpl{
 			daemon: daemon{

@@ -4813,7 +4813,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 		b.Fatalf("failed to add a machine: %+v", err)
 	}
 
-	// Create the app.
+	// Create the daemon.
 	daemon := &dbmodel.Daemon{
 		MachineID: machine.ID,
 		Name:      daemonname.DHCPv4,

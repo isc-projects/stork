@@ -198,13 +198,13 @@ type utilizationStats interface {
 	GetStatistics() Stats
 }
 
-// This structure holds subnet information retrieved from an app. Multiple
-// DHCP server apps may be configured to serve leases in the same subnet.
+// This structure holds subnet information retrieved from a daemon. Multiple
+// DHCP server daemons may be configured to serve leases in the same subnet.
 // For the same subnet configured on different DHCP server there will be
 // a separate instance of the LocalSubnet structure. Apart from possibly
-// different local subnet id between different apps there will also be
+// different local subnet id between different daemons there will also be
 // other information stored here, e.g. statistics for the particular
-// subnet retrieved from the given app. Multiple local subnets can be
+// subnet retrieved from the given daemon. Multiple local subnets can be
 // associated with a single global subnet depending on how many daemons
 // serve the same subnet.
 type LocalSubnet struct {
@@ -883,7 +883,7 @@ func GetSubnetPrefixes(dbi dbops.DBI) ([]string, error) {
 func addDaemonToSubnet(dbi dbops.DBI, subnet *Subnet, daemon *Daemon) error {
 	localSubnetID := int64(0)
 	// If the prefix is available we should try to match the subnet prefix
-	// with the app's configuration and retrieve the local subnet id from
+	// with the daemon's configuration and retrieve the local subnet id from
 	// there.
 	if len(subnet.Prefix) > 0 {
 		localSubnetID = daemon.GetLocalSubnetID(subnet.Prefix)
@@ -958,7 +958,7 @@ func DeleteDaemonFromSubnets(dbi dbops.DBI, daemonID int64) (int64, error) {
 
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
-// specified Kea application. Returns a list of added subnets.
+// specified Kea daemon. Returns a list of added subnets.
 func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
@@ -996,7 +996,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 }
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
-// In addition it associates them with the specified app. Returns a list of added subnets.
+// In addition it associates them with the specified daemon. Returns a list of added subnets.
 // This function runs all database operations in a transaction.
 func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet) ([]*Subnet, error) {
 	var (

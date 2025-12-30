@@ -1177,7 +1177,7 @@ func TestConfigureBind9DaemonParseError(t *testing.T) {
 // The actual Ubuntu 22.04 system is a good example. I have BIND 9 installed
 // and the detection actually detects the BIND 9 config file. However, it fails
 // to read rndc.key file, because it's set to be read by bind user only.
-// Without rndc the BIND detection fails and returns no apps.
+// Without rndc the BIND detection fails and returns no daemons.
 //
 // An alternative approach would be to enable debug logging, then capture the
 // stdout and parse if the messages mention default locations. We _could_ do

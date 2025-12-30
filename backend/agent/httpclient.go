@@ -148,7 +148,7 @@ func NewHTTPClient(config HTTPClientConfig) *httpClient {
 
 // Sends a request to a given endpoint using the HTTP POST method. The payload
 // must contain the valid JSON. If the authentication credentials or TLS
-// certificates are provided in the application configuration, they are added
+// certificates are provided in the daemon configuration, they are added
 // to the request.
 func (c *httpClient) Call(ctx context.Context, url string, payload io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, payload)

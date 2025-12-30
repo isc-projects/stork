@@ -380,7 +380,6 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.ElementsMatch(t, localSubnetIDs, []int64{1, 2, 3, 4, 11, 12, 21})
 
 	// Get subnets from daemon d4
-	// Note: AppID filter no longer exists, so we verify daemon associations directly
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 7, total)

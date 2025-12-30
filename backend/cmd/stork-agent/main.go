@@ -40,7 +40,7 @@ func (e *ctrlcError) Error() string {
 	return "received Ctrl-C signal"
 }
 
-// Helper function that starts agent, apps monitor and prometheus exports
+// Helper function that starts agent, daemons monitor and prometheus exporters
 // if they are enabled.
 func runAgent(ctx context.Context, settings *generalSettings, reload bool) error {
 	if !reload {

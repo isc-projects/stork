@@ -42,7 +42,7 @@ var VersionsJSONPath = "/etc/stork/versions.json" //nolint:gochecknoglobals
 
 // Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
 // It returns an error when problem occurs when parsing dates.
-func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {
+func daemonVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {
 	out := models.AppVersionMetadata{}
 	if input.LatestSecure != nil {
 		if v, err := secureSoftwareVersionsToRestAPI(input.LatestSecure); err == nil {

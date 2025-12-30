@@ -236,7 +236,7 @@ func (agents *connectedAgentsImpl) getConnectedAgent(address string) (*agentStat
 
 // Returns statistics for the connected agent. The statistics include number
 // of errors to communicate with the agent and the number of errors to
-// communicate with the apps behind the agent.
+// communicate with the daemons behind the agent.
 func (agents *connectedAgentsImpl) getConnectedAgentStats(address string, port int64) *CommStats {
 	if port != 0 {
 		address = net.JoinHostPort(address, strconv.FormatInt(port, 10))

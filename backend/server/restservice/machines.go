@@ -49,7 +49,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 
 // Tries to send HTTP GET to STORK_REST_VERSIONS_URL to retrieve versions metadata file containing information about current ISC software versions.
 // If the response to the HTTP request is successful, it tries to unmarshal received data.
-// If it succeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
+// If it succeeds, pointer to the DaemonsVersions is returned. Non-nil error is returned in case of any fail.
 func (r *RestAPI) getOnlineVersionsJSON() (*models.AppsVersions, error) {
 	url := r.Settings.VersionsURL
 	accept := "application/json"
@@ -134,17 +134,17 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (*
 		return nil, err
 	}
 
-	bind9, err := appVersionMetadataToRestAPI(*s.Bind9)
+	bind9, err := daemonVersionMetadataToRestAPI(*s.Bind9)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem converting BIND 9 data from the %s JSON file with software versions metadata", mode)
 		return nil, err
 	}
-	kea, err := appVersionMetadataToRestAPI(*s.Kea)
+	kea, err := daemonVersionMetadataToRestAPI(*s.Kea)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem converting Kea data from the %s JSON file with software versions metadata", mode)
 		return nil, err
 	}
-	stork, err := appVersionMetadataToRestAPI(*s.Stork)
+	stork, err := daemonVersionMetadataToRestAPI(*s.Stork)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem converting Stork data from the %s JSON file with software versions metadata", mode)
 		return nil, err
@@ -244,7 +244,7 @@ func (r *RestAPI) simpleMachineToRestAPI(dbMachine dbmodel.Machine) *models.Simp
 	}
 
 	// Return only minimal information about the machine and add software versions
-	// data for the Apps.
+	// data for the Daemons.
 	m := models.SimpleMachine{
 		ID:           dbMachine.ID,
 		Address:      dbMachine.Address,
@@ -1566,7 +1566,7 @@ func (r *RestAPI) GetDaemonServicesStatus(ctx context.Context, params services.G
 	}
 
 	var servicesStatus *models.ServicesStatus
-	// If this is Kea application, get the Kea DHCP servers status which possibly
+	// If this is Kea daemon, get the Kea DHCP servers status which possibly
 	// includes HA status.
 	if daemon.Name.IsKea() {
 		servicesStatus = getKeaServicesStatus(r.DB, daemon)
@@ -1588,7 +1588,7 @@ func (r *RestAPI) GetDaemonServicesStatus(ctx context.Context, params services.G
 // Get statistics about daemon.
 func (r *RestAPI) GetDaemonsStats(ctx context.Context, params services.GetDaemonsStatsParams) middleware.Responder {
 	// The second argument indicates that only basic information about the daemons
-	// should be returned, i.e. the information stored in the app table.
+	// should be returned, i.e. the information stored in the daemon table.
 	dbDaemons, err := dbmodel.GetAllDaemons(r.DB)
 	if err != nil {
 		msg := "Cannot get all daemons from db"
@@ -1696,7 +1696,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 		DeclinedNAs: fmt.Sprint(stats[dbmodel.StatNameDeclinedNAs]),
 	}
 
-	// get kea apps and daemons statuses
+	// get kea daemons and daemons statuses
 	dbDaemons, err := dbmodel.GetDaemonsByName(r.DB, daemonname.DHCPv4, daemonname.DHCPv6)
 	if err != nil {
 		msg := "Cannot get DHCP daemons from db"

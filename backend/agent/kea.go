@@ -216,7 +216,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // the --version flag.
 //
 // The monitor's keaHTTPClientConfig is used to create a new HTTP client instance
-// for the detected Kea app. The client inherits the the general HTTP client
+// for the detected Kea daemon. The client inherits the the general HTTP client
 // configuration from the Stork agent configuration and additionally sets the
 // basic authentication credentials if they are provided in the Kea CA
 // configuration. It picks the first credentials with the user name "stork" or
@@ -484,7 +484,7 @@ func (d *keaDaemon) Bootstrap() error {
 }
 
 // Called periodically to update the daemon state.
-// Gathers the configured log files for detected apps and enables them
+// Gathers the configured log files for detected daemons and enables them
 // for viewing from the UI.
 func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error {
 	config, err := d.fetchConfig(ctx)

@@ -383,7 +383,7 @@ func TestGetZonesWithSorting(t *testing.T) {
 	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
 
-	// Store zones in the database and associate them with our app.
+	// Store zones in the database and associate them with our daemon.
 	randomZones := testutil.GenerateRandomZones(25)
 	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
@@ -728,7 +728,7 @@ func TestGetZonesWithDaemonIDFilterOverlappingZones(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// Make sure that the zones are returned for each app.
+	// Make sure that the zones are returned for each daemon.
 	for i := 0; i < 3; i++ {
 		filter := &GetZonesFilter{
 			DaemonID: storkutil.Ptr(daemons[i].ID),
@@ -871,7 +871,7 @@ func TestGetZoneCountStatsByDaemon(t *testing.T) {
 	err = AddDaemon(db, daemon)
 	require.NoError(t, err)
 
-	// Store zones in the database and associate them with our app.
+	// Store zones in the database and associate them with our daemon.
 	randomZones := testutil.GenerateRandomZones(25)
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, string(ZoneTypeBuiltin))
 

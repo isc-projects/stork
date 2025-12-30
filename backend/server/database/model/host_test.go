@@ -123,7 +123,7 @@ func addMachineDaemonsAndSubnets(t *testing.T, db *pg.DB) []*Daemon {
 	return daemons
 }
 
-// This function creates machine, app, daemons, subnets, and multiple hosts
+// This function creates machine, daemons, subnets, and multiple hosts
 // used in tests.
 //
 // Host configurations:
@@ -1983,10 +1983,10 @@ func TestAddHost(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Insert apps and hosts into the database.
+	// Insert daemons and hosts into the database.
 	_, hosts := addTestHosts(t, db)
 
-	// Associate the first host with the first app.
+	// Associate the first host with the first daemon.
 	host := hosts[0]
 	host.LocalHosts = []LocalHost{
 		{
@@ -2151,12 +2151,12 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	require.Empty(t, returned)
 }
 
-// Test deleting hosts not assigned to any apps.
+// Test deleting hosts not assigned to any daemons.
 func TestDeleteOrphanedHosts(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Insert apps and hosts into the database.
+	// Insert daemons and hosts into the database.
 	_, hosts := addTestHosts(t, db)
 	_, _ = DeleteDaemonsFromHost(db, hosts[0].ID, HostDataSourceUnspecified)
 	_, _ = DeleteDaemonsFromHost(db, hosts[1].ID, HostDataSourceUnspecified)
@@ -2164,7 +2164,7 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 	// Deletes only one of two data sources.
 	_, _ = DeleteDaemonsFromHost(db, hosts[3].ID, HostDataSourceConfig)
 
-	// Delete hosts not assigned to any apps.
+	// Delete hosts not assigned to any daemons.
 	count, err := DeleteOrphanedHosts(db)
 	require.NoError(t, err)
 	require.EqualValues(t, len(hosts)-1, count)
@@ -2371,7 +2371,7 @@ func TestHostIdentifierToHex(t *testing.T) {
 	require.Equal(t, "01020304050a0b", id.ToHex(""))
 }
 
-// Tests that global host reservations and their associations with the apps
+// Tests that global host reservations and their associations with the daemons
 // are properly stored in the database.
 func TestCommitGlobalHostsIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

@@ -36,7 +36,7 @@ func (op ConfigOperation) IsKeaOperation() bool {
 }
 
 // Representation of the config changes scheduled by the config
-// manager (see server/apps). Each scheduled config change includes
+// manager (see server/daemons). Each scheduled config change includes
 // a deadline (timestamp) indicating when this config change should
 // be committed (sent to the configured daemon). A change can
 // comprise one or multiple updates. For example: a single change

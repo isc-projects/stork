@@ -127,7 +127,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 	daemon, err := server.GetDaemon()
 	require.NoError(t, err)
 
-	// Create a filtering rule by machine ID, app ID and warning event level.
+	// Create a filtering rule by machine ID, daemon ID and warning event level.
 	url, err := url.Parse(fmt.Sprintf(
 		"http://example.org/sse?stream=message&machine=%d&daemon=%d&level=%d",
 		daemon.MachineID, daemon.ID, dbmodel.EvWarning,
@@ -142,7 +142,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 
 	require.True(t, subscriber.useFilter)
 
-	// This event lacks app id so it should not be accepted.
+	// This event lacks daemon id so it should not be accepted.
 	ev := &dbmodel.Event{
 		Level: dbmodel.EvError,
 		Relations: &dbmodel.Relations{
@@ -192,9 +192,9 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 	require.Contains(t, subscriber.findMatchingEventStreams(ev), dbmodel.SSERegularMessage)
 }
 
-// Test that appType and daemonName can be specified instead of app and daemon
-// parameters when machine id is also provided.
-func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
+// Test that daemonName can be specified instead of daemon ID when machine ID
+// is also provided.
+func TestIndirectRelationsDaemonName(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -205,7 +205,7 @@ func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
 	daemon, err := server.GetDaemon()
 	require.NoError(t, err)
 
-	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&appType=kea&daemonName=dhcp4&level=1")
+	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&daemonName=dhcp4&level=1")
 	require.NoError(t, err)
 
 	subscriber := newSubscriber(url, "localhost:8080")
@@ -222,7 +222,7 @@ func TestIndirectRelationsAppTypeDaemonName(t *testing.T) {
 	require.Equal(t, "localhost:8080", subscriber.subscriberAddress)
 }
 
-// Test that invalid combination of appType and daemonName parameters with other
+// Test that invalid combination of daemonName parameters with other
 // parameters yields an error.
 func TestIndirectRelationsWrongParams(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -234,8 +234,8 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("NoMachineID", func(t *testing.T) {
-		// App type and daemon name require machine id.
-		url, err := url.Parse("http://example.org/sse?stream=message&appType=kea&daemonName=dhcp4")
+		// Daemon name requires machine ID.
+		url, err := url.Parse("http://example.org/sse?stream=message&daemonName=dhcp4")
 		require.NoError(t, err)
 
 		subscriber := newSubscriber(url, "localhost:8080")
@@ -259,7 +259,7 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 	t.Run("daemon ID and daemon name", func(t *testing.T) {
 		// Daemon ID with daemon name are mutually exclusive.
-		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&appType=kea&daemon=%d&daemonName=dhcp4",
+		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&daemon=%d&daemonName=dhcp4",
 			daemon.ID)
 		url, err := url.Parse(rawURL)
 		require.NoError(t, err)

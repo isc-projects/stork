@@ -107,7 +107,7 @@ func TestStatePullerPullData(t *testing.T) {
 	// fake config review dispatcher
 	fd := &storktest.FakeDispatcher{}
 
-	// add one machine with one kea app
+	// add one machine with one kea daemon
 	m := &dbmodel.Machine{
 		ID:         0,
 		Address:    "localhost",
@@ -258,7 +258,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	// fake config review dispatcher
 	fd := &storktest.FakeDispatcher{}
 
-	// add one machine with one kea app
+	// add one machine with one kea daemon
 	m := &dbmodel.Machine{
 		ID:         0,
 		Address:    "localhost",

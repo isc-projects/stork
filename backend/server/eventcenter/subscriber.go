@@ -76,11 +76,10 @@ func newSubscriber(serverURL *url.URL, subscriberAddress string) *Subscriber {
 // Populates filters from URL. In a simplest case, a caller provides ids of the
 // objects to filter by, e.g. machine=1, indicating that only events associated
 // with machine id of 1 should be returned. However, there are also other
-// parameters, such as appType or daemonName, which can't be directly used to
+// parameters, such as daemonName, which can't be directly used to
 // filter events. In order to map these parameters to the event relations this
-// function needs to query the database. In particular, machine id and app type
-// map to a specific app id. When also a daemon name is specified, this maps
-// to a specific daemon id etc.
+// function needs to query the database. In particular, machine id and daemon
+// name map to a specific daemon id.
 func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	f := &s.filters
 	queryValues := s.serverURL.Query()
@@ -124,7 +123,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	}
 
 	// There is additional query parameters supported by the server:
-	// daemonName. They are mutually exclusive with app and daemon parameters.
+	// daemonName. They are mutually exclusive with daemon parameters.
 	daemonName := queryValues["daemonName"]
 
 	// Daemon ID must not be specified with daemonName.
@@ -133,10 +132,9 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	}
 
 	if len(daemonName) > 0 {
-		// App type and daemon name are ambiguous without saying to which machine
-		// the app and/or daemon belong.
+		// Daemon name is ambiguous without saying to which machine the daemon belongs.
 		if f.MachineID == 0 {
-			return errors.Errorf("machine is required when appType or daemonName is specified: %s",
+			return errors.Errorf("machine is required when daemonName is specified: %s",
 				s.serverURL)
 		}
 

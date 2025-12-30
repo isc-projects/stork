@@ -22,7 +22,7 @@ type agentManager interface {
 	allowLeaseTracking() (bool, int)
 }
 
-// An access point for an application to retrieve information such
+// An access point for a daemon to retrieve information such
 // as status or metrics.
 type AccessPoint struct {
 	Type     string

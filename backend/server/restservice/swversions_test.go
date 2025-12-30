@@ -173,9 +173,9 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	testData := getExampleData()
 
 	// Act
-	kea, err1 := appVersionMetadataToRestAPI(*testData.Kea)
-	stork, err2 := appVersionMetadataToRestAPI(*testData.Stork)
-	bind, err3 := appVersionMetadataToRestAPI(*testData.Bind9)
+	kea, err1 := daemonVersionMetadataToRestAPI(*testData.Kea)
+	stork, err2 := daemonVersionMetadataToRestAPI(*testData.Stork)
+	bind, err3 := daemonVersionMetadataToRestAPI(*testData.Bind9)
 
 	// Assert
 	require.NoError(t, err1)

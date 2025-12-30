@@ -97,7 +97,7 @@ func convertSharedNetworkParametersToRestAPI(keaParameters *keaconfig.SharedNetw
 // Creates a REST API representation of a shared network from a database model.
 func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *models.SharedNetwork {
 	subnets := []*models.Subnet{}
-	// Exclude the subnets that are not attached to any app. This shouldn't
+	// Exclude the subnets that are not attached to any daemon. This shouldn't
 	// be the case but let's be safe.
 	for i := range sn.Subnets {
 		subnet := r.convertSubnetToRestAPI(&sn.Subnets[i])
@@ -162,7 +162,7 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 // It is pulled from the Kea servers periodically.
 func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.SharedNetwork) (*dbmodel.SharedNetwork, error) {
 	subnets := []dbmodel.Subnet{}
-	// Exclude the subnets that are not attached to any app. This shouldn't
+	// Exclude the subnets that are not attached to any daemon. This shouldn't
 	// be the case but let's be safe.
 	for i := range restSharedNetwork.Subnets {
 		subnet, err := r.convertSubnetFromRestAPI(restSharedNetwork.Subnets[i])
@@ -285,7 +285,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, daemonID, family int64, filte
 	return sharedNetworks, nil
 }
 
-// Get list of DHCP shared networks. The list can be filtered by app ID, DHCP version and text.
+// Get list of DHCP shared networks. The list can be filtered by daemon ID, DHCP version and text.
 func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNetworksParams) middleware.Responder {
 	var start int64
 	if params.Start != nil {
