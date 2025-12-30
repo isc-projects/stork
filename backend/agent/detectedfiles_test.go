@@ -164,6 +164,35 @@ func TestDetectedDaemonFilesIsSameOutOfOrder(t *testing.T) {
 	require.True(t, files1.isSame(files2))
 }
 
+// Test that it is correctly verified that two sets of detected files are the same
+// if the second set is a subset of the first set.
+func TestDetectedDaemonFilesIsSameSubset(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
+	executor.EXPECT().GetFileInfo("/etc/bind/rndc.key").AnyTimes().Return(&testFileInfo{}, nil)
+
+	files1 := newDetectedDaemonFiles("", "")
+	files2 := newDetectedDaemonFiles("", "")
+
+	// Add two files to the first set.
+	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
+	require.NoError(t, err)
+	err = files1.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
+	require.NoError(t, err)
+
+	// Add only one file to the second set.
+	err = files2.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
+	require.NoError(t, err)
+
+	// The first set is a superset of the second set.
+	require.True(t, files1.isSame(files2))
+	// The second set is not a superset of the first set.
+	require.False(t, files2.isSame(files1))
+}
+
 // Test that it is correctly verified that two sets of detected files are not the same
 // if the chroot directories are different.
 func TestDetectedDaemonFilesIsSameDifferentChrootDir(t *testing.T) {

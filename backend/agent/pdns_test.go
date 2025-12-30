@@ -10,10 +10,144 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	pdnsconfig "isc.org/stork/daemoncfg/pdns"
 	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 )
 
 //go:generate mockgen -package=agent -destination=pdnsconfigparsermock_test.go -mock_names=pdnsConfigParser=MockPDNSConfigParser isc.org/stork/agent pdnsConfigParser
 //go:generate mockgen -package=agent -destination=commandexecutormock_test.go -mock_names=commandExecutor=MockCommandExecutor isc.org/stork/util CommandExecutor
+
+// Test that the function correctly checks if two PowerDNS daemons are the same.
+// Note that it is not checking them for equality. It merely checks if they
+// represent the same daemon in terms of their name, access points, and detected
+// files.
+func TestPowerDNSDaemonIsSame(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/etc/pdns.conf").AnyTimes().Return(&testFileInfo{}, nil)
+
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", executor)
+	require.NoError(t, err)
+
+	comparedDaemon := &pdnsDaemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.PDNS,
+				AccessPoints: []AccessPoint{
+					{
+						Type:     AccessPointControl,
+						Address:  "127.0.0.1",
+						Port:     8081,
+						Protocol: protocoltype.HTTP,
+					},
+				},
+			},
+			detectedFiles: detectedFiles,
+		},
+	}
+
+	t.Run("same daemon", func(t *testing.T) {
+		otherDaemon := &pdnsDaemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.PDNS,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.True(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("different daemon name", func(t *testing.T) {
+		otherDaemon := &pdnsDaemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("different access points", func(t *testing.T) {
+		otherDaemon := &pdnsDaemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.PDNS,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8082,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("different detected files", func(t *testing.T) {
+		otherDaemon := &pdnsDaemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.PDNS,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: nil,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("not a PowerDNS daemon", func(t *testing.T) {
+		otherDaemon := &Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+}
 
 // Test that the daemon structure can be accessed.
 func TestPowerDNSDaemonGetBaseDaemon(t *testing.T) {

@@ -475,11 +475,12 @@ func (sm *monitor) detectBind9Daemon(p supportedProcess) (Daemon, error) {
 			if !bind9Daemon.getDetectedFiles().isChanged() {
 				return existingDaemon, nil
 			}
-			// Configuration files have changed. We will have to parse the updated config files.
-			log.Debug("BIND 9 config files have changed, parsing updated config files")
-			break
 		}
 	}
+
+	// Configuration files have changed. We will have to parse the updated config files.
+	log.Debug("BIND 9 config files have changed, parsing updated config files")
+
 	// Parse the updated config files.
 	daemon, err := sm.configureBind9Daemon(p, detectedFiles)
 	if err != nil {

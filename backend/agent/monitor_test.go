@@ -340,9 +340,10 @@ func TestDetectDaemons(t *testing.T) {
 		}
 	}
 
-	// Also, emulate the size change of the configuration file to ensure
-	// that the new daemon instance is used.
+	// Also, emulate the size change of the configuration files to ensure
+	// that the new daemon instances are used.
 	commander.addFileInfo("/etc/named.conf", &testFileInfo{size: 200})
+	commander.addFileInfo("/etc/powerdns/pdns.conf", &testFileInfo{size: 200})
 
 	// Redetect apps. It should result in recreating the zone inventory.
 	monitor.detectDaemons(t.Context())

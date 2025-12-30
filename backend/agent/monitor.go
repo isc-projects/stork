@@ -352,7 +352,7 @@ func splitDaemonsByTransition(previous, next []Daemon) (started, unchanged, unch
 				stoppedMap[ip] = false
 				startedMap[in] = false
 				unchangedMap[ip] = true
-				if ip != in {
+				if p != n {
 					unchangedDuplicatedMap[in] = true
 				}
 				break

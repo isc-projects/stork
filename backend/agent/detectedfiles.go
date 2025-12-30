@@ -139,8 +139,8 @@ func (df *detectedDaemonFiles) isSame(other *detectedDaemonFiles) bool {
 	if df == nil || other == nil || df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) < len(other.files) {
 		return false
 	}
-	for _, file := range df.files {
-		if !slices.ContainsFunc(other.files, file.isEqual) {
+	for _, file := range other.files {
+		if !slices.ContainsFunc(df.files, file.isEqual) {
 			return false
 		}
 	}

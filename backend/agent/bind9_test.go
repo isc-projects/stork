@@ -14,6 +14,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
@@ -21,6 +22,139 @@ import (
 var _ = (os.FileInfo)((*testFileInfo)(nil))
 
 //go:generate mockgen -package=agent -destination=bind9mock_test.go -mock_names=bind9FileParser=MockBind9FileParser,zoneInventory=MockZoneInventory isc.org/stork/agent bind9FileParser,zoneInventory
+
+// Test that the function correctly checks if two BIND 9 daemons are the same.
+// Note that it is not checking them for equality. It merely checks if they
+// represent the same daemon in terms of their name, access points, and detected
+// files.
+func TestBind9DaemonIsSame(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/etc/bind/named.conf").AnyTimes().Return(&testFileInfo{}, nil)
+
+	detectedFiles := newDetectedDaemonFiles("", "")
+	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", executor)
+	require.NoError(t, err)
+
+	comparedDaemon := &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{
+					{
+						Type:     AccessPointControl,
+						Address:  "127.0.0.1",
+						Port:     8081,
+						Protocol: protocoltype.HTTP,
+					},
+				},
+			},
+			detectedFiles: detectedFiles,
+		},
+	}
+
+	t.Run("same daemon", func(t *testing.T) {
+		otherDaemon := &Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.True(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("different daemon name", func(t *testing.T) {
+		otherDaemon := &Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.PDNS,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("different access points", func(t *testing.T) {
+		otherDaemon := &Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8082,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("different detected files", func(t *testing.T) {
+		otherDaemon := &Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: nil,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+
+	t.Run("not a BIND 9 daemon", func(t *testing.T) {
+		otherDaemon := &pdnsDaemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Type:     AccessPointControl,
+							Address:  "127.0.0.1",
+							Port:     8081,
+							Protocol: protocoltype.HTTP,
+						},
+					},
+				},
+				detectedFiles: detectedFiles,
+			},
+		}
+		require.False(t, comparedDaemon.IsSame(otherDaemon))
+	})
+}
 
 // Test the state is refreshed properly. It should fetch the zone inventory
 // data.

@@ -43,6 +43,18 @@ type pdnsDaemon struct {
 	dnsDaemonImpl
 }
 
+// Checks if the current daemon instance is the same as the other daemon instance.
+// Besides checking the name and the access points, it also checks if the detected
+// files are the same.
+func (p *pdnsDaemon) IsSame(other Daemon) bool {
+	switch other := other.(type) {
+	case *pdnsDaemon:
+		return p.isSame(other)
+	default:
+		return false
+	}
+}
+
 // It returns the PowerDNS daemon instance or an error if the PowerDNS is not
 // recognized or any error occurs.
 func (sm *monitor) detectPowerDNSDaemon(p supportedProcess) (Daemon, error) {
@@ -55,6 +67,23 @@ func (sm *monitor) detectPowerDNSDaemon(p supportedProcess) (Daemon, error) {
 	log.WithFields(log.Fields{
 		"path": detectedFiles.getFirstFilePathByType(detectedFileTypeConfig),
 	}).Debug("PowerDNS server config path detected")
+
+	// Check if the detected files match the files of the existing daemon.
+	// If they do, we can use the existing daemon and skip parsing the config files.
+	for _, existingDaemon := range sm.daemons {
+		pdnsDaemon, ok := existingDaemon.(*pdnsDaemon)
+		if !ok {
+			continue
+		}
+		if pdnsDaemon.getDetectedFiles().isSame(detectedFiles) {
+			if !pdnsDaemon.getDetectedFiles().isChanged() {
+				return existingDaemon, nil
+			}
+		}
+	}
+
+	// Configuration file has changed. We will have to parse the updated config files.
+	log.Debug("PowerDNS config file has changed, parsing the updated config file")
 
 	// Parse and interpret the PowerDNS server configuration.
 	daemon, err := sm.configurePowerDNSDaemon(detectedFiles)
@@ -284,6 +313,7 @@ func (sm *monitor) configurePowerDNSDaemon(detectedFiles *detectedDaemonFiles) (
 				},
 			},
 			zoneInventory: inventory,
+			detectedFiles: detectedFiles,
 		},
 	}
 	return daemon, nil
