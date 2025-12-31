@@ -31,6 +31,8 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { LocalZone, Zone } from '../backend'
 import { expect, userEvent, waitFor, within } from '@storybook/test'
+import { ProgressBarModule } from 'primeng/progressbar'
+import { SkeletonModule } from 'primeng/skeleton'
 
 const meta: Meta<ZonesPageComponent> = {
     title: 'App/ZonesPage',
@@ -80,6 +82,8 @@ const meta: Meta<ZonesPageComponent> = {
                 FormsModule,
                 InputTextModule,
                 TagModule,
+                ProgressBarModule,
+                SkeletonModule,
             ],
             providers: [ConfirmationService],
         }),
