@@ -30,7 +30,7 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { LocalZone, Zone } from '../backend'
-import { expect, userEvent, within } from '@storybook/test'
+import { expect, userEvent, waitFor, within } from '@storybook/test'
 
 const meta: Meta<ZonesPageComponent> = {
     title: 'App/ZonesPage',
@@ -128,17 +128,17 @@ const builtinZones = [
             {
                 appId: 2,
                 appName: 'bind9@agent-bind9-2',
-                class: 'IN',
+                class: 'CH',
                 daemonId: 2,
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
-                view: '_default',
+                view: '_bind',
                 zoneType: 'builtin',
             },
             {
                 appId: 4,
                 appName: 'bind9@agent-bind9',
-                class: 'IN',
+                class: 'CH',
                 daemonId: 4,
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
@@ -148,7 +148,7 @@ const builtinZones = [
             {
                 appId: 4,
                 appName: 'bind9@agent-bind9',
-                class: 'IN',
+                class: 'CH',
                 daemonId: 4,
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
@@ -156,8 +156,8 @@ const builtinZones = [
                 zoneType: 'builtin',
             },
         ],
-        name: 'EMPTY.AS112.ARPA',
-        rname: 'ARPA.AS112.EMPTY',
+        name: 'hostname.bind',
+        rname: 'bind.hostname',
     },
     {
         id: 21,
@@ -776,6 +776,118 @@ export const TestAllZonesShown: Story = {
         await expect(canvas.getByText(builtinZones[1].name)).toBeInTheDocument()
         await expect(canvas.getByText(builtinZones[2].name)).toBeInTheDocument()
         await canvas.findAllByText('builtin')
+
+        await userEvent.click(clearFiltersBtn)
+    },
+}
+
+export const TestZonesFiltering: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListZones.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        const table = await canvas.findByRole('table')
+        let spanID = canvas.getByText('App Type').getAttribute('for')
+        const comboboxes = canvas.getAllByRole('combobox') // PrimeNG p-select component has combobox role.
+        let selectSpan = comboboxes.find((el) => el.getAttribute('id') == spanID)
+        await expect(selectSpan).toBeTruthy()
+
+        // Act
+        // Filter only BIND9 zones.
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(selectSpan)
+        const bindOption = await canvas.findByRole('option', { name: 'BIND9' })
+        await userEvent.click(bindOption)
+
+        // Assert
+        // 3 BIND9 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(4)) // All rows in tbody + one row in the thead.
+        await expect(within(table).getByText('(root)')).toBeInTheDocument()
+        await expect(within(table).getByText(primaryZones[4].name)).toBeInTheDocument()
+        await expect(within(table).getByText(primaryZones[5].name)).toBeInTheDocument()
+
+        // Toggle builtin zones.
+        const toggleBuiltinZones = await canvas.findByRole('button', { name: 'Toggle builtin zones' })
+        await userEvent.click(toggleBuiltinZones)
+        // 3 additional (6 in total) BIND9 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(7)) // All rows in tbody + one row in the thead.
+        await expect(within(table).getByText(builtinZones[0].name)).toBeInTheDocument()
+        await expect(within(table).getByText(builtinZones[1].name)).toBeInTheDocument()
+        await expect(within(table).getByText(builtinZones[2].name)).toBeInTheDocument()
+
+        // Filter only PowerDNS zones.
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(selectSpan)
+        const pdnsOption = await canvas.findByRole('option', { name: 'PDNS' })
+        await userEvent.click(pdnsOption)
+
+        // 4 PowerDNS zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(5)) // All rows in tbody + one row in the thead.
+        await expect(within(table).getByText(primaryZones[0].name)).toBeInTheDocument()
+        await expect(within(table).getByText(primaryZones[1].name)).toBeInTheDocument()
+        await expect(within(table).getByText(primaryZones[2].name)).toBeInTheDocument()
+        await expect(within(table).getByText(primaryZones[3].name)).toBeInTheDocument()
+
+        // Check filtering by class.
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(toggleBuiltinZones)
+        spanID = canvas.getByText('Zone Class').getAttribute('for')
+        selectSpan = comboboxes.find((el) => el.getAttribute('id') == spanID)
+        await expect(selectSpan).toBeTruthy()
+
+        // Filter by IN class.
+        await userEvent.click(selectSpan)
+        const inOption = await canvas.findByRole('option', { name: 'IN' })
+        await userEvent.click(inOption)
+
+        // 9 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(10)) // All rows in tbody + one row in the thead.
+
+        // Filter by CH class.
+        await userEvent.click(selectSpan)
+        const chOption = await canvas.findByRole('option', { name: 'CH' })
+        await userEvent.click(chOption)
+
+        // 1 zone is expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
+
+        // Check filtering by RPZ.
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(toggleBuiltinZones)
+        spanID = canvas.getAllByText('RPZ')[0].getAttribute('for')
+        selectSpan = comboboxes.find((el) => el.getAttribute('id') == spanID)
+        await expect(selectSpan).toBeTruthy()
+
+        // Filter by RPZ - include.
+        await userEvent.click(selectSpan)
+        const includeOption = await canvas.findByRole('option', { name: 'include' })
+        await userEvent.click(includeOption)
+
+        // All 10 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(11)) // All rows in tbody + one row in the thead.
+        await expect(within(table).queryAllByText('RPZ')).toHaveLength(2)
+
+        // Filter by RPZ - exclude.
+        await userEvent.click(selectSpan)
+        const excludeOption = await canvas.findByRole('option', { name: 'exclude' })
+        await userEvent.click(excludeOption)
+
+        // 8 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(9)) // All rows in tbody + one row in the thead.
+        await expect(within(table).queryAllByText('RPZ')).toHaveLength(0)
+
+        // Filter by RPZ - only.
+        await userEvent.click(selectSpan)
+        const onlyOption = await canvas.findByRole('option', { name: 'only' })
+        await userEvent.click(onlyOption)
+
+        // 2 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(3)) // All rows in tbody + one row in the thead.
+        await expect(within(table).queryAllByText('RPZ')).toHaveLength(2)
 
         await userEvent.click(clearFiltersBtn)
     },
