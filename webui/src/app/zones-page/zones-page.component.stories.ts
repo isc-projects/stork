@@ -30,6 +30,7 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { LocalZone, Zone } from '../backend'
+import { expect, userEvent, within } from '@storybook/test'
 
 const meta: Meta<ZonesPageComponent> = {
     title: 'App/ZonesPage',
@@ -731,5 +732,51 @@ export const ListZones: Story = {
                 },
             },
         ],
+    },
+}
+
+export const TestAllZonesShown: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListZones.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        const table = await canvas.findByRole('table')
+
+        // Act
+        await userEvent.click(clearFiltersBtn)
+
+        // Assert
+        // At first, builtin zones should be hidden.
+        await expect(await canvas.findAllByRole('row')).toHaveLength(allZones.length + 1 - builtinZones.length) // All rows in tbody + one row in the thead.
+        await expect(canvas.getByText('(root)')).toBeInTheDocument()
+        await expect(canvas.getByText(primaryZones[0].name)).toBeInTheDocument()
+        await expect(canvas.getByText(primaryZones[1].name)).toBeInTheDocument()
+        await expect(canvas.getByText(primaryZones[4].name)).toBeInTheDocument()
+        await expect(canvas.getByText(primaryZones[5].name)).toBeInTheDocument()
+        canvas.getAllByText(primaryZones[0].localZones[0].serial).forEach((el) => expect(el).toBeInTheDocument())
+        await expect(within(table).getAllByText('RPZ')).toHaveLength(2)
+
+        // Check expanding the row.
+        const allCells = await canvas.findAllByRole('cell')
+        const expandRootZoneRow = await within(allCells[0]).findByRole('button')
+        await userEvent.click(expandRootZoneRow)
+        await expect(within(table).getByText(rootZone.localZones[0].appName)).toBeInTheDocument()
+        await expect(within(table).getByText(rootZone.localZones[0].view)).toBeInTheDocument()
+        await userEvent.click(expandRootZoneRow)
+
+        // Toggle builtin zones.
+        const toggleBuiltinZones = await canvas.findByRole('button', { name: 'Toggle builtin zones' })
+        await userEvent.click(toggleBuiltinZones)
+        await expect(await canvas.findAllByRole('row')).toHaveLength(allZones.length + 1) // All rows in tbody + one row in the thead.
+        await expect(canvas.getByText(builtinZones[0].name)).toBeInTheDocument()
+        await expect(canvas.getByText(builtinZones[1].name)).toBeInTheDocument()
+        await expect(canvas.getByText(builtinZones[2].name)).toBeInTheDocument()
+        await canvas.findAllByText('builtin')
+
+        await userEvent.click(clearFiltersBtn)
     },
 }
