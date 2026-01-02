@@ -80,6 +80,50 @@ func TestNewDetectedDaemonFiles(t *testing.T) {
 	require.Equal(t, fileInfo, files.files[1].info)
 }
 
+// Test that it is possible to add a file when its path includes the chroot directory.
+// The recorded path should be relative to the chroot directory.
+func TestDetectedDaemonFilesAddFileFromChroot(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/chroot/etc/bind/config/config.conf").Return(&testFileInfo{}, nil)
+
+	files := newDetectedDaemonFiles("/chroot", "")
+	err := files.addFileFromChroot(detectedFileTypeConfig, "/chroot/etc/bind/config/config.conf", executor)
+	require.NoError(t, err)
+	require.Equal(t, "/etc/bind/config/config.conf", files.files[0].path)
+	require.Equal(t, &testFileInfo{}, files.files[0].info)
+}
+
+// Test that when adding a file when the chroot directory is empty, the file
+// is added using the original path.
+func TestDetectedDaemonFilesAddFileFromEmptyChroot(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/chroot/etc/bind/config/config.conf").Return(&testFileInfo{}, nil)
+
+	files := newDetectedDaemonFiles("", "")
+	err := files.addFileFromChroot(detectedFileTypeInclude, "/chroot/etc/bind/config/config.conf", executor)
+	require.NoError(t, err)
+	require.Equal(t, "/chroot/etc/bind/config/config.conf", files.files[0].path)
+	require.Equal(t, &testFileInfo{}, files.files[0].info)
+}
+
+// Test that an error is returned when file path does not belong to the chroot directory.
+func TestDetectedDaemonFilesAddFileFromChrootError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	executor := NewMockCommandExecutor(ctrl)
+
+	files := newDetectedDaemonFiles("/chroot", "")
+	err := files.addFileFromChroot(detectedFileTypeInclude, "/opt/etc/bind/config/config.conf", executor)
+	require.ErrorContains(t, err, "the path /opt/etc/bind/config/config.conf does not belong to the chroot directory /chroot")
+}
+
 // Test getting the first file path by type.
 func TestDetectedDaemonFilesGetFirstFilePathByType(t *testing.T) {
 	ctrl := gomock.NewController(t)
