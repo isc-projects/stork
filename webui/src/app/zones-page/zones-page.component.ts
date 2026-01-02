@@ -60,6 +60,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
+import { ZoneTypeAliasPipe } from '../pipes/zone-type-alias.pipe'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -108,6 +109,7 @@ interface ExtendedLocalZone extends LocalZone {
         PluralizePipe,
         UnrootPipe,
         ZoneViewerComponent,
+        ZoneTypeAliasPipe,
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {

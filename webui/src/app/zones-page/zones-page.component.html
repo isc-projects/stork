@@ -86,7 +86,9 @@
     </td>
     <td>
         <div class="flex flex-wrap justify-center align-items-center gap-2">
-            <a routerLink="/dns/zones" [queryParams]="{ zoneType: localZone.zoneType }">{{ localZone.zoneType }}</a>
+            <a routerLink="/dns/zones" [queryParams]="{ zoneType: (localZone.zoneType | zoneTypeAlias) }">{{
+                localZone.zoneType
+            }}</a>
             <p-tag *ngIf="localZone.rpz" value="RPZ" severity="success" />
         </div>
     </td>
