@@ -347,12 +347,19 @@ func splitDaemonsByTransition(previous, next []Daemon) (started, unchanged, unch
 
 	for ip, p := range previous {
 		for in, n := range next {
+			// The daemon detecting functions may reuse existing daemon instances
+			// when configuration files appear to not have changed. In this case,
+			// instead of checking if the daemons are the same (that involves some
+			// IO operations), it is enough to say if the daemons have equal pointers.
 			if p == n || p.IsSame(n) {
 				// Daemon is still running.
 				stoppedMap[ip] = false
 				startedMap[in] = false
 				unchangedMap[ip] = true
 				if p != n {
+					// Only stop the duplicated daemon if it is not the same
+					// as the unchanged daemon. Otherwise, we'd stop the unchanged
+					// daemon.
 					unchangedDuplicatedMap[in] = true
 				}
 				break
