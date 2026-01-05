@@ -21,6 +21,7 @@ import { MultiSelect } from 'primeng/multiselect'
 import { IconField } from 'primeng/iconfield'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { InputIcon } from 'primeng/inputicon'
+import { InputTextModule } from 'primeng/inputtext'
 
 /**
  * Interface describing the columns of the table.
@@ -60,6 +61,7 @@ interface Column {
         InputIcon,
         LocaltimePipe,
         PlaceholderPipe,
+        InputTextModule,
     ],
 })
 export class ZoneViewerComponent implements OnInit {

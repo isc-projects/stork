@@ -1,38 +1,10 @@
 import { ZonesPageComponent } from './zones-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { ConfirmationService } from 'primeng/api'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { provideRouter, RouterModule, withHashLocation } from '@angular/router'
-import { DialogModule } from 'primeng/dialog'
-import { ButtonModule } from 'primeng/button'
-import { TableModule } from 'primeng/table'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { MessageModule } from 'primeng/message'
-import { PopoverModule } from 'primeng/popover'
-import { PanelModule } from 'primeng/panel'
-import { TooltipModule } from 'primeng/tooltip'
-import { FloatLabelModule } from 'primeng/floatlabel'
-import { MultiSelectModule } from 'primeng/multiselect'
-import { InputNumberModule } from 'primeng/inputnumber'
-import { SelectModule } from 'primeng/select'
-import { InputIconModule } from 'primeng/inputicon'
-import { IconFieldModule } from 'primeng/iconfield'
+import { provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { FormsModule } from '@angular/forms'
-import { InputTextModule } from 'primeng/inputtext'
-import { TagModule } from 'primeng/tag'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { UnrootPipe } from '../pipes/unroot.pipe'
 import { LocalZone, Zone } from '../backend'
 import { expect, userEvent, waitFor, within } from '@storybook/test'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { SkeletonModule } from 'primeng/skeleton'
 
 const meta: Meta<ZonesPageComponent> = {
     title: 'App/ZonesPage',
@@ -52,39 +24,6 @@ const meta: Meta<ZonesPageComponent> = {
             ],
         }),
         moduleMetadata({
-            declarations: [
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                LocaltimePipe,
-                PlaceholderPipe,
-                UnrootPipe,
-            ],
-            imports: [
-                RouterModule,
-                DialogModule,
-                ButtonModule,
-                TableModule,
-                ConfirmDialogModule,
-                TabViewComponent,
-                BreadcrumbModule,
-                MessageModule,
-                PopoverModule,
-                PanelModule,
-                TooltipModule,
-                FloatLabelModule,
-                MultiSelectModule,
-                InputNumberModule,
-                SelectModule,
-                InputIconModule,
-                IconFieldModule,
-                ToastModule,
-                FormsModule,
-                InputTextModule,
-                TagModule,
-                ProgressBarModule,
-                SkeletonModule,
-            ],
             providers: [ConfirmationService],
         }),
         toastDecorator,

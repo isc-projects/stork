@@ -1,41 +1,12 @@
 import { MachinesPageComponent } from './machines-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ConfirmationService, MessageService } from 'primeng/api'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { DialogModule } from 'primeng/dialog'
-import { ButtonModule } from 'primeng/button'
-import { TabViewComponent } from '../tab-view/tab-view.component'
-import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { provideRouter, RouterModule, withHashLocation } from '@angular/router'
+import { ConfirmationService } from 'primeng/api'
+import { provideRouter, withHashLocation } from '@angular/router'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { TableModule } from 'primeng/table'
-import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { PanelModule } from 'primeng/panel'
-import { IconFieldModule } from 'primeng/iconfield'
-import { InputIconModule } from 'primeng/inputicon'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { PopoverModule } from 'primeng/popover'
-import { SelectButtonModule } from 'primeng/selectbutton'
-import { MenuModule } from 'primeng/menu'
-import { InputTextModule } from 'primeng/inputtext'
-import { BadgeModule } from 'primeng/badge'
-import { TagModule } from 'primeng/tag'
-import { FormsModule } from '@angular/forms'
-import { EntitiesResponse, MessageServiceMock, mockedFilterByText, toastDecorator } from '../utils-stories'
-import { ToastModule } from 'primeng/toast'
-import { VersionStatusComponent } from '../version-status/version-status.component'
-import { ProgressBarModule } from 'primeng/progressbar'
-import { MessageModule } from 'primeng/message'
-import { TooltipModule } from 'primeng/tooltip'
-import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
+import { EntitiesResponse, mockedFilterByText, toastDecorator } from '../utils-stories'
 import { Severity, VersionService } from '../version.service'
 import { of } from 'rxjs'
 import { AppsVersions, Machine } from '../backend'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { userEvent, within, expect, waitFor } from '@storybook/test'
 import { deepCopy } from '../utils'
 
@@ -568,9 +539,6 @@ const meta: Meta<MachinesPageComponent> = {
     decorators: [
         applicationConfig({
             providers: [
-                provideHttpClient(withInterceptorsFromDi()),
-                { provide: MessageService, useClass: MessageServiceMock },
-                ConfirmationService,
                 provideRouter(
                     [
                         {
@@ -580,6 +548,11 @@ const meta: Meta<MachinesPageComponent> = {
                     ],
                     withHashLocation()
                 ),
+            ],
+        }),
+        moduleMetadata({
+            providers: [
+                ConfirmationService,
                 {
                     provide: VersionService,
                     useValue: {
@@ -589,42 +562,7 @@ const meta: Meta<MachinesPageComponent> = {
                     },
                 },
             ],
-        }),
-        moduleMetadata({
-            declarations: [
-                BreadcrumbsComponent,
-                MachinesTableComponent,
-                PluralizePipe,
-                HelpTipComponent,
-                VersionStatusComponent,
-                AppDaemonsStatusComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-            ],
-            imports: [
-                DialogModule,
-                ButtonModule,
-                TabViewComponent,
-                ConfirmDialogModule,
-                BreadcrumbModule,
-                TableModule,
-                PanelModule,
-                IconFieldModule,
-                InputIconModule,
-                TriStateCheckboxComponent,
-                PopoverModule,
-                SelectButtonModule,
-                MenuModule,
-                InputTextModule,
-                BadgeModule,
-                TagModule,
-                FormsModule,
-                ToastModule,
-                ProgressBarModule,
-                MessageModule,
-                TooltipModule,
-                RouterModule,
-            ],
+            imports: [MachinesTableComponent],
         }),
         toastDecorator,
     ],

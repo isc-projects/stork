@@ -4,16 +4,7 @@ import { ZonesPageComponent } from './zones-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 import { Router, provideRouter } from '@angular/router'
-import {
-    DNSClass,
-    DNSService,
-    ZoneInventoryState,
-    ZoneInventoryStates,
-    ZoneRR,
-    ZoneRRs,
-    Zones,
-    Zone,
-} from '../backend'
+import { DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, ZoneRR, ZoneRRs, Zones, Zone } from '../backend'
 import { Observable, of } from 'rxjs'
 import {
     HttpEventType,
