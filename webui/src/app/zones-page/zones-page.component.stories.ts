@@ -793,11 +793,12 @@ export const TestZonesFiltering: Story = {
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         const table = await canvas.findByRole('table')
-        let spanID = canvas.getByText('App Type').getAttribute('for')
+        let elementID = canvas.getByText('App Type').getAttribute('for')
         const comboboxes = canvas.getAllByRole('combobox') // PrimeNG p-select component has combobox role.
-        let selectSpan = comboboxes.find((el) => el.getAttribute('id') == spanID)
+        let selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
         // Act
@@ -839,8 +840,8 @@ export const TestZonesFiltering: Story = {
         // Check filtering by class.
         await userEvent.click(clearFiltersBtn)
         await userEvent.click(toggleBuiltinZones)
-        spanID = canvas.getByText('Zone Class').getAttribute('for')
-        selectSpan = comboboxes.find((el) => el.getAttribute('id') == spanID)
+        elementID = canvas.getByText('Zone Class').getAttribute('for')
+        selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
         // Filter by IN class.
@@ -862,8 +863,8 @@ export const TestZonesFiltering: Story = {
         // Check filtering by RPZ.
         await userEvent.click(clearFiltersBtn)
         await userEvent.click(toggleBuiltinZones)
-        spanID = canvas.getAllByText('RPZ')[0].getAttribute('for')
-        selectSpan = comboboxes.find((el) => el.getAttribute('id') == spanID)
+        elementID = canvas.getAllByText('RPZ')[0].getAttribute('for')
+        selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
         // Filter by RPZ - include.
@@ -892,6 +893,74 @@ export const TestZonesFiltering: Story = {
         // 2 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(3)) // All rows in tbody + one row in the thead.
         await expect(within(table).queryAllByText('RPZ')).toHaveLength(2)
+
+        // Check filtering by zone type.
+        await userEvent.click(clearFiltersBtn)
+        elementID = canvas.getAllByText('Zone Type')[0].getAttribute('for')
+        selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
+        await expect(selectSpan).toBeTruthy()
+
+        // Filter only builtin zones.
+        await userEvent.click(selectSpan)
+        await userEvent.keyboard('b')
+        let zoneTypeOption = await canvas.findByRole('option', { name: 'builtin' })
+        await userEvent.click(zoneTypeOption)
+
+        // Only builtin zones rows are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(builtinZones.length + 1)) // All rows in tbody + one row in the thead.
+        // Check that the builtin zones toggler state is correct.
+        await userEvent.hover(toggleBuiltinZones)
+        await expect(body.getByRole('tooltip', { name: 'Click to hide builtin zones' })).toBeInTheDocument()
+        await userEvent.unhover(toggleBuiltinZones)
+
+        // Deselect builtin zones and select mirror type zones.
+        await userEvent.click(zoneTypeOption)
+        zoneTypeOption = await canvas.findByRole('option', { name: 'mirror' })
+        await userEvent.click(zoneTypeOption)
+
+        // Only one mirror zone is expected (the root zone).
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
+        // Check that the builtin zones toggler state is correct.
+        await userEvent.hover(toggleBuiltinZones)
+        await expect(body.getByRole('tooltip', { name: 'Click to show builtin zones' })).toBeInTheDocument()
+        await userEvent.unhover(toggleBuiltinZones)
+
+        // Deselect mirror zones and select primary type zones.
+        await userEvent.click(zoneTypeOption)
+        zoneTypeOption = await canvas.findByRole('option', { name: 'primary' })
+        await userEvent.click(zoneTypeOption)
+
+        // Only primary zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(primaryZones.length + 1)) // All rows in tbody + one row in the thead.
+
+        // Check that the builtin zones toggler state is correct.
+        await userEvent.hover(toggleBuiltinZones)
+        await expect(body.getByRole('tooltip', { name: 'Click to show builtin zones' })).toBeInTheDocument()
+        await userEvent.unhover(toggleBuiltinZones)
+
+        // Deselect primary zones and select secondary type zones.
+        await userEvent.click(zoneTypeOption)
+        zoneTypeOption = await canvas.findByRole('option', { name: 'secondary' })
+        await userEvent.click(zoneTypeOption)
+
+        // Only one secondary zone is expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
+
+        // Check that the builtin zones toggler state is correct.
+        await userEvent.hover(toggleBuiltinZones)
+        await expect(body.getByRole('tooltip', { name: 'Click to show builtin zones' })).toBeInTheDocument()
+        await userEvent.unhover(toggleBuiltinZones)
+
+        // Toggle builtin zones.
+        await userEvent.click(toggleBuiltinZones)
+
+        // One secondary zone and all builtin zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2 + builtinZones.length)) // All rows in tbody + one row in the thead.
+
+        // Check that the builtin zones toggler state is correct.
+        await userEvent.hover(toggleBuiltinZones)
+        await expect(body.getByRole('tooltip', { name: 'Click to hide builtin zones' })).toBeInTheDocument()
+        await userEvent.unhover(toggleBuiltinZones)
 
         await userEvent.click(clearFiltersBtn)
     },

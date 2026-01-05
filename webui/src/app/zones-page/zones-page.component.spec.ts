@@ -30,7 +30,6 @@ import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
 import { take } from 'rxjs/operators'
 import { NgZone } from '@angular/core'
-import { hasFilter } from '../table'
 import { AuthService } from '../auth.service'
 
 describe('ZonesPageComponent', () => {
@@ -645,47 +644,6 @@ describe('ZonesPageComponent', () => {
         })
     }))
 
-    xit('should filter zones table by type', fakeAsync(() => {
-        // TODO: this test should be moved away from Karma tests.
-        // Arrange
-        expect(component.builtinZonesDisplayed).toBeTrue()
-        const inputMultiselect = fixture.debugElement.query(By.css('[inputId="zone-type"] .p-multiselect'))
-        expect(inputMultiselect).toBeTruthy()
-        inputMultiselect.nativeElement.click()
-        fixture.detectChanges()
-        const listItems = inputMultiselect.queryAll(By.css('li.p-multiselect-item'))
-        expect(listItems).toBeTruthy()
-        // Filter out builtin zone type.
-        const filteredListItems = listItems.filter((liDe) => liDe.nativeElement.innerText !== 'builtin')
-        expect(filteredListItems.length).toBeGreaterThan(3)
-
-        // Act
-        filteredListItems[0].nativeElement.click()
-        filteredListItems[1].nativeElement.click()
-        filteredListItems[2].nativeElement.click()
-        tick(300)
-        fixture.detectChanges()
-
-        // Assert
-        expect(component.builtinZonesDisplayed).toBeFalse()
-        expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(
-            0,
-            10,
-            null,
-            jasmine.arrayContaining([
-                filteredListItems[0].nativeElement.innerText,
-                filteredListItems[1].nativeElement.innerText,
-                filteredListItems[2].nativeElement.innerText,
-            ]),
-            null,
-            null,
-            null,
-            null,
-            null
-        )
-    }))
-
     xit('should display feedback when wrong filter in query params', async () => {
         // TODO: this test should be moved away from Karma tests.
         // Arrange + Act + Assert
@@ -783,71 +741,6 @@ describe('ZonesPageComponent', () => {
             '123',
             null
         )
-    })
-
-    xit('should clear zones filter and reset zones table', async () => {
-        // TODO: this test should be moved away from Karma tests.
-        // Arrange
-        getZonesSpy.and.returnValue(of(noZones))
-        const zone = fixture.debugElement.injector.get(NgZone)
-        const r = fixture.debugElement.injector.get(Router)
-        await zone.run(() =>
-            r.navigate([], {
-                queryParams: {
-                    appId: 2,
-                    zoneSerial: '123',
-                    zoneType: ['builtin', 'primary'],
-                    zoneClass: 'IN',
-                    appType: 'bind9',
-                    text: 'test',
-                },
-            })
-        )
-        fixture.detectChanges()
-        expect(hasFilter(component?.zonesTable?.filters)).toBeTrue()
-
-        // Act + Assert
-        expect(component.builtinZonesDisplayed).toBeTrue()
-        component.toggleBuiltinZones()
-        await fixture.whenStable()
-        fixture.detectChanges()
-        expect(component.builtinZonesDisplayed).toBeFalse()
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, 'bind9', ['primary'], 'IN', 'test', 2, '123', null)
-        component.toggleBuiltinZones()
-        await fixture.whenStable()
-        fixture.detectChanges()
-        expect(getZonesSpy).toHaveBeenCalledWith(
-            0,
-            10,
-            'bind9',
-            jasmine.arrayContaining(['primary', 'builtin']),
-            'IN',
-            'test',
-            2,
-            '123',
-            null
-        )
-
-        component.clearFilter(component?.zonesTable?.filters['appId'])
-        await fixture.whenStable()
-        fixture.detectChanges()
-        expect(hasFilter(component?.zonesTable?.filters)).toBeTrue()
-        expect(getZonesSpy).toHaveBeenCalledWith(
-            0,
-            10,
-            'bind9',
-            jasmine.arrayContaining(['primary', 'builtin']),
-            'IN',
-            'test',
-            null,
-            '123',
-            null
-        )
-
-        component.clearTableFiltering()
-        fixture.detectChanges()
-        expect(hasFilter(component?.zonesTable?.filters)).toBeFalse()
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, null)
     })
 
     it('should have non empty enum values for all enum type of supported query param filters', () => {
