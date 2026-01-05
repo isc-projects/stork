@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
-	"isc.org/stork/daemoncfg/dnsconfig"
+	dnsmodel "isc.org/stork/datamodel/dns"
 )
 
 // A structure specifying zone RRs filtering.
@@ -79,7 +79,7 @@ func (filter *GetZoneRRsFilter) GetText() string {
 
 // Returns true if the specified RR matches the text filter. It checks
 // if the text is contained in the RR name or rdata.
-func (filter *GetZoneRRsFilter) IsTextMatches(rr *dnsconfig.RR) bool {
+func (filter *GetZoneRRsFilter) IsTextMatches(rr *dnsmodel.RR) bool {
 	if filter.text == "" {
 		return true
 	}
@@ -130,7 +130,7 @@ func (filter *GetZoneRRsFilter) GetOffset() int {
 
 // Represents a DNS resource record in the database.
 type LocalZoneRR struct {
-	dnsconfig.RR
+	dnsmodel.RR
 	ID          int64
 	LocalZoneID int64
 
@@ -157,8 +157,8 @@ func AddLocalZoneRRs(dbi pg.DBI, rrs ...*LocalZoneRR) error {
 
 // Returns a set of RRs converted to an array of []*dnsconfig.RR for
 // specified local zone.
-func GetDNSConfigRRs(dbi pg.DBI, localZoneID int64, filter *GetZoneRRsFilter) ([]*dnsconfig.RR, int, error) {
-	var rrs []*dnsconfig.RR
+func GetDNSConfigRRs(dbi pg.DBI, localZoneID int64, filter *GetZoneRRsFilter) ([]*dnsmodel.RR, int, error) {
+	var rrs []*dnsmodel.RR
 	q := dbi.Model((*LocalZoneRR)(nil)).
 		Column("name", "ttl", "class", "type", "rdata")
 

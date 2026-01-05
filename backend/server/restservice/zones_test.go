@@ -15,8 +15,8 @@ import (
 	dnslib "github.com/miekg/dns"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
-	dnsconfig "isc.org/stork/daemoncfg/dnsconfig"
 	"isc.org/stork/datamodel/daemonname"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
@@ -704,9 +704,9 @@ func TestGetZoneRRs(t *testing.T) {
 		require.Equal(t, "example.com", filter.GetText())
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
-				rr, err := dnsconfig.NewRR(rr)
+				rr, err := dnsmodel.NewRR(rr)
 				require.NoError(t, err)
-				if !yield(dnsop.NewZoneTransferRRResponse([]*dnsconfig.RR{rr})) {
+				if !yield(dnsop.NewZoneTransferRRResponse([]*dnsmodel.RR{rr})) {
 					return
 				}
 			}
@@ -768,9 +768,9 @@ func TestPutZoneRRsCache(t *testing.T) {
 		require.Equal(t, "example.com", filter.GetText())
 		return func(yield func(*dnsop.RRResponse) bool) {
 			for _, rr := range rrs {
-				rr, err := dnsconfig.NewRR(rr)
+				rr, err := dnsmodel.NewRR(rr)
 				require.NoError(t, err)
-				if !yield(dnsop.NewZoneTransferRRResponse([]*dnsconfig.RR{rr})) {
+				if !yield(dnsop.NewZoneTransferRRResponse([]*dnsmodel.RR{rr})) {
 					return
 				}
 			}

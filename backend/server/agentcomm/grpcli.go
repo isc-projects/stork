@@ -17,7 +17,6 @@ import (
 
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
-	"isc.org/stork/daemoncfg/dnsconfig"
 	keactrl "isc.org/stork/daemonctrl/kea"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
@@ -1116,8 +1115,8 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 
 // Makes a request to the agent to perform a zone transfer for a specified view
 // and zone. It returns an iterator to the received RRs and error.
-func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error] {
-	return func(yield func([]*dnsconfig.RR, error) bool) {
+func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsmodel.RR, error] {
+	return func(yield func([]*dnsmodel.RR, error) bool) {
 		// Get control access point for the specified daemon. It will be sent
 		// in the request to the agent, so the agent can identify correct
 		// zone inventory.
@@ -1197,9 +1196,9 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 			}
 			// Convert the received RRs to the format convenient for further processing
 			// on the server side.
-			rrs := make([]*dnsconfig.RR, len(receivedRRs.Rrs))
+			rrs := make([]*dnsmodel.RR, len(receivedRRs.Rrs))
 			for i, rr := range receivedRRs.Rrs {
-				rrs[i], err = dnsconfig.NewRR(rr)
+				rrs[i], err = dnsmodel.NewRR(rr)
 				if err != nil {
 					// This is unlikely but we need to handle it.
 					_ = yield(nil, errors.Wrap(err, "failed to parse zone RRs received from the agent"))

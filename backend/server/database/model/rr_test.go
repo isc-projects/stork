@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/daemoncfg/dnsconfig"
 	"isc.org/stork/datamodel/daemonname"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
 )
@@ -35,24 +35,24 @@ func TestNewGetZoneRRsFilterWithActualParams(t *testing.T) {
 func TestGetZoneRRsFilterIsTextMatchesName(t *testing.T) {
 	filter := NewGetZoneRRsFilter()
 	filter.SetText("EXAMPLE.co")
-	require.True(t, filter.IsTextMatches(&dnsconfig.RR{Name: "example.COM", Type: "A", Rdata: "192.0.2.1"}))
-	require.False(t, filter.IsTextMatches(&dnsconfig.RR{Name: "example.org", Type: "A", Rdata: "192.0.2.1"}))
+	require.True(t, filter.IsTextMatches(&dnsmodel.RR{Name: "example.COM", Type: "A", Rdata: "192.0.2.1"}))
+	require.False(t, filter.IsTextMatches(&dnsmodel.RR{Name: "example.org", Type: "A", Rdata: "192.0.2.1"}))
 }
 
 // Test that the IsTextMatches method returns true if the text is contained in the RR rdata.
 func TestGetZoneRRsFilterIsTextMatchesRdata(t *testing.T) {
 	filter := NewGetZoneRRsFilter()
 	filter.SetText("0.2.2")
-	require.False(t, filter.IsTextMatches(&dnsconfig.RR{Name: "example.com", Type: "A", Rdata: "192.0.2.1"}))
-	require.True(t, filter.IsTextMatches(&dnsconfig.RR{Name: "example.org", Type: "A", Rdata: "192.0.2.2"}))
+	require.False(t, filter.IsTextMatches(&dnsmodel.RR{Name: "example.com", Type: "A", Rdata: "192.0.2.1"}))
+	require.True(t, filter.IsTextMatches(&dnsmodel.RR{Name: "example.org", Type: "A", Rdata: "192.0.2.2"}))
 }
 
 // Test that the IsTextMatches method returns true if the text is empty.
 func TestGetZoneRRsFilterIsTextMatchesEmpty(t *testing.T) {
 	filter := NewGetZoneRRsFilter()
 	filter.SetText("")
-	require.True(t, filter.IsTextMatches(&dnsconfig.RR{Name: "example.com", Type: "A", Rdata: "192.0.2.1"}))
-	require.True(t, filter.IsTextMatches(&dnsconfig.RR{Name: "example.org", Type: "A", Rdata: "192.0.2.2"}))
+	require.True(t, filter.IsTextMatches(&dnsmodel.RR{Name: "example.com", Type: "A", Rdata: "192.0.2.1"}))
+	require.True(t, filter.IsTextMatches(&dnsmodel.RR{Name: "example.org", Type: "A", Rdata: "192.0.2.2"}))
 }
 
 // Test setting the offset on the filter.
@@ -156,7 +156,7 @@ func TestAddGetDeleteLocalZoneRRs(t *testing.T) {
 	}
 	var parsedRRs []*LocalZoneRR
 	for _, rr := range rrs {
-		parsedRR, err := dnsconfig.NewRR(rr)
+		parsedRR, err := dnsmodel.NewRR(rr)
 		require.NoError(t, err)
 		parsedRRs = append(parsedRRs, &LocalZoneRR{
 			RR:          *parsedRR,
@@ -244,7 +244,7 @@ func TestFilterLocalZoneRRs(t *testing.T) {
 	}
 	var parsedRRs []*LocalZoneRR
 	for _, rr := range rrs {
-		parsedRR, err := dnsconfig.NewRR(rr)
+		parsedRR, err := dnsmodel.NewRR(rr)
 		require.NoError(t, err)
 		parsedRRs = append(parsedRRs, &LocalZoneRR{
 			RR:          *parsedRR,

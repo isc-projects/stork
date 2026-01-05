@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
-	"isc.org/stork/daemoncfg/dnsconfig"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -223,7 +223,7 @@ type RRResponse struct {
 	Cached         bool
 	ZoneTransferAt time.Time
 	Total          int
-	RRs            []*dnsconfig.RR
+	RRs            []*dnsmodel.RR
 	Err            error
 }
 
@@ -238,7 +238,7 @@ func (response *RRResponse) applyFilter(filter *dbmodel.GetZoneRRsFilter, pos in
 		return response, response.Total
 	}
 	// Filter the RRs according to the filter.
-	filteredRRs := []*dnsconfig.RR{}
+	filteredRRs := []*dnsmodel.RR{}
 	for _, rr := range response.RRs {
 		if filter.IsTypeEnabled(rr.Type) && filter.IsTextMatches(rr) {
 			filteredRRs = append(filteredRRs, rr)
@@ -292,7 +292,7 @@ func NewErrorRRResponse(err error) *RRResponse {
 
 // Creates a new non-cached RRResponse with RRs. The zone transfer time is
 // set to current time.
-func NewZoneTransferRRResponse(rrs []*dnsconfig.RR) *RRResponse {
+func NewZoneTransferRRResponse(rrs []*dnsmodel.RR) *RRResponse {
 	return &RRResponse{
 		Cached:         false,
 		ZoneTransferAt: time.Now().UTC(),
@@ -301,7 +301,7 @@ func NewZoneTransferRRResponse(rrs []*dnsconfig.RR) *RRResponse {
 }
 
 // Creates a new cached RRResponse with RRs.
-func NewCacheRRResponse(rrs []*dnsconfig.RR, total int, transferAt time.Time) *RRResponse {
+func NewCacheRRResponse(rrs []*dnsmodel.RR, total int, transferAt time.Time) *RRResponse {
 	return &RRResponse{
 		Cached:         true,
 		ZoneTransferAt: transferAt,

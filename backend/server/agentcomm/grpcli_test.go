@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc/status"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
-	"isc.org/stork/daemoncfg/dnsconfig"
 	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
@@ -2126,7 +2125,7 @@ func TestReceiveZoneRRs(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
 
 	// Collect the RRs returned over the stream.
-	var contents []*dnsconfig.RR
+	var contents []*dnsmodel.RR
 	for receivedRRs, err := range agents.ReceiveZoneRRs(context.Background(), daemon, "zone1", "_default") {
 		require.NoError(t, err)
 		require.NotNil(t, receivedRRs)

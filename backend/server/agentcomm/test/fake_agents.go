@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
-	"isc.org/stork/daemoncfg/dnsconfig"
 	keactrl "isc.org/stork/daemonctrl/kea"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	dnsmodel "isc.org/stork/datamodel/dns"
@@ -253,7 +252,7 @@ func (fa *FakeAgents) ReceiveZones(ctx context.Context, daemon agentcomm.Control
 	return nil
 }
 
-func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, daemon agentcomm.ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsconfig.RR, error] {
+func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, daemon agentcomm.ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsmodel.RR, error] {
 	return nil
 }
 
