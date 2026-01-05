@@ -19,9 +19,9 @@ import (
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	"isc.org/stork/daemoncfg/dnsconfig"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	"isc.org/stork/daemondata/bind9stats"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/datamodel/protocoltype"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -1003,8 +1003,8 @@ func (agents *connectedAgentsImpl) TailTextFile(ctx context.Context, machine dbm
 // Receive DNS zones over the stream from a selected agent's zone inventory.
 // It returns an iterator with a pointer to zone and error. The iterator ends
 // when an error occurs. Receiving the zones is not cancellable at the moment.
-func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon ControlledDaemon, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-	return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon ControlledDaemon, filter *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 		// Get control access point for the specified daemon. It will be sent
 		// in the request to the agent, so the agent can identify correct
 		// zone inventory.
@@ -1094,8 +1094,8 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 				return
 			}
 
-			zone := &bind9stats.ExtendedZone{
-				Zone: bind9stats.Zone{
+			zone := &dnsmodel.ExtendedZone{
+				Zone: dnsmodel.Zone{
 					ZoneName: receivedZone.GetName(),
 					Class:    receivedZone.GetClass(),
 					Serial:   receivedZone.GetSerial(),

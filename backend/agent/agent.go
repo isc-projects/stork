@@ -32,7 +32,7 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	"isc.org/stork/daemondata/bind9stats"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
 )
@@ -683,9 +683,9 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 		return status.New(codes.FailedPrecondition, "attempted to receive DNS zones from a daemon for which zone inventory was not instantiated").Err()
 	}
 	// Set filtering rules based on the request.
-	var filter *bind9stats.ZoneFilter
+	var filter *dnsmodel.ZoneFilter
 	if req.ViewName != "" || req.Limit > 0 || req.LoadedAfter > 0 || req.LowerBound != "" {
-		filter = bind9stats.NewZoneFilter()
+		filter = dnsmodel.NewZoneFilter()
 		if req.ViewName != "" {
 			filter.SetView(req.ViewName)
 		}

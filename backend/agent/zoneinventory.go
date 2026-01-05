@@ -20,20 +20,20 @@ import (
 	log "github.com/sirupsen/logrus"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	pdnsconfig "isc.org/stork/daemoncfg/pdns"
-	"isc.org/stork/daemondata/bind9stats"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	storkutil "isc.org/stork/util"
 )
 
 var (
-	_ zoneFetcher                     = (*bind9StatsClient)(nil)
-	_ zoneInventoryStorage            = (*zoneInventoryStorageDisk)(nil)
-	_ zoneInventoryStorage            = (*zoneInventoryStorageMemory)(nil)
-	_ zoneInventoryStorage            = (*zoneInventoryStorageMemoryDisk)(nil)
-	_ zoneInventoryAXFRExecutor       = (*zoneInventoryAXFRExecutorImpl)(nil)
-	_ bind9stats.ZoneIteratorAccessor = (*viewIO)(nil)
-	_ bind9stats.NameAccessor         = (os.DirEntry)(nil)
-	_ dnsConfigAccessor               = (*bind9config.Config)(nil)
-	_ dnsConfigAccessor               = (*pdnsconfig.Config)(nil)
+	_ zoneFetcher                   = (*bind9StatsClient)(nil)
+	_ zoneInventoryStorage          = (*zoneInventoryStorageDisk)(nil)
+	_ zoneInventoryStorage          = (*zoneInventoryStorageMemory)(nil)
+	_ zoneInventoryStorage          = (*zoneInventoryStorageMemoryDisk)(nil)
+	_ zoneInventoryAXFRExecutor     = (*zoneInventoryAXFRExecutorImpl)(nil)
+	_ dnsmodel.ZoneIteratorAccessor = (*viewIO)(nil)
+	_ dnsmodel.NameAccessor         = (os.DirEntry)(nil)
+	_ dnsConfigAccessor             = (*bind9config.Config)(nil)
+	_ dnsConfigAccessor             = (*pdnsconfig.Config)(nil)
 )
 
 // A file name holding zone inventory meta data.
@@ -53,15 +53,15 @@ type dnsConfigAccessor interface {
 // interface. In the future, a BIND9 REST client and other clients communicating
 // with non-ISC DNS implementations should also implement this interface.
 //
-// This interface returns *bind9stats.Views for simplicity. It groups zones into
+// This interface returns *dnsmodel.Views for simplicity. It groups zones into
 // views which are BIND9-specific concept. For other DNS implementations we can use
 // the same structure, and create an artificial (default) view but we also take into
 // account that this structure may be replaced with a generic structure or interface
-// if the bind9stats.Views is not a good fit for the integrations with other DNS
+// if the dnsmodel.Views is not a good fit for the integrations with other DNS
 // servers.
 type zoneFetcher interface {
 	// Returns a list of zones configured in a DNS server grouped into views.
-	getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error)
+	getViews(apiKey string, host string, port int64) (httpResponse, *dnsmodel.Views, error)
 }
 
 // An error indicating that the zone inventory is busy and the requested transition
@@ -149,13 +149,13 @@ func (e zoneInventoryNoDiskStorageError) Error() string {
 // from memory, persistent storage or both.
 type zoneInventoryStorage interface {
 	// Returns an iterator to the views in the storage.
-	getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error]
+	getViewsIterator(filter *dnsmodel.ZoneFilter) iter.Seq2[dnsmodel.ZoneIteratorAccessor, error]
 	// Returns a zone within a specified view.
-	getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error)
+	getZoneInView(viewName, zoneName string) (*dnsmodel.Zone, error)
 	// Loads views and zones from the storage making them accessible for reading.
 	loadViews() (time.Time, error)
 	// Saves views and zones in the storage.
-	saveViews(views *bind9stats.Views) error
+	saveViews(views *dnsmodel.Views) error
 }
 
 // A storage holding the zone information in memory and on disk.
@@ -182,13 +182,13 @@ func newZoneInventoryStorageMemoryDisk(location string) (*zoneInventoryStorageMe
 
 // Returns an iterator to the views in the storage. This access to the
 // views is fast because they are read from the in-memory storage.
-func (storage *zoneInventoryStorageMemoryDisk) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
+func (storage *zoneInventoryStorageMemoryDisk) getViewsIterator(filter *dnsmodel.ZoneFilter) iter.Seq2[dnsmodel.ZoneIteratorAccessor, error] {
 	return storage.memory.getViewsIterator(filter)
 }
 
 // Returns a selected zone from a view. The access to the data is fast
 // because it is read from the in-memory storage.
-func (storage *zoneInventoryStorageMemoryDisk) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+func (storage *zoneInventoryStorageMemoryDisk) getZoneInView(viewName, zoneName string) (*dnsmodel.Zone, error) {
 	return storage.memory.getZoneInView(viewName, zoneName)
 }
 
@@ -200,7 +200,7 @@ func (storage *zoneInventoryStorageMemoryDisk) loadViews() (time.Time, error) {
 	if err != nil {
 		return populatedAt, err
 	}
-	var viewList []*bind9stats.View
+	var viewList []*dnsmodel.View
 	// Get the list of files/directories.
 	files, err := os.ReadDir(storage.disk.location)
 	if err != nil {
@@ -218,7 +218,7 @@ func (storage *zoneInventoryStorageMemoryDisk) loadViews() (time.Time, error) {
 			viewList = append(viewList, view)
 		}
 	}
-	views := bind9stats.NewViews(viewList)
+	views := dnsmodel.NewViews(viewList)
 
 	log.WithFields(log.Fields{
 		"zones": views.GetZoneCount(),
@@ -233,7 +233,7 @@ func (storage *zoneInventoryStorageMemoryDisk) loadViews() (time.Time, error) {
 
 // Saves specified views on disk and in-memory effectively replacing the
 // entire inventory.
-func (storage *zoneInventoryStorageMemoryDisk) saveViews(views *bind9stats.Views) error {
+func (storage *zoneInventoryStorageMemoryDisk) saveViews(views *dnsmodel.Views) error {
 	for _, s := range []zoneInventoryStorage{storage.disk, storage.memory} {
 		if err := s.saveViews(views); err != nil {
 			return err
@@ -282,8 +282,8 @@ func newZoneInventoryStorageDisk(location string) (*zoneInventoryStorageDisk, er
 // views is slower than in case of the zoneInventoryStorageMemoryDisk
 // storage because the iterator reads the views and zones from disk
 // while the caller iterates over the returned views.
-func (storage *zoneInventoryStorageDisk) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
-	return func(yield func(bind9stats.ZoneIteratorAccessor, error) bool) {
+func (storage *zoneInventoryStorageDisk) getViewsIterator(filter *dnsmodel.ZoneFilter) iter.Seq2[dnsmodel.ZoneIteratorAccessor, error] {
+	return func(yield func(dnsmodel.ZoneIteratorAccessor, error) bool) {
 		files, err := os.ReadDir(storage.location)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to read view directory %s", storage.location)
@@ -305,7 +305,7 @@ func (storage *zoneInventoryStorageDisk) getViewsIterator(filter *bind9stats.Zon
 
 // Returns a selected zone from a view. The access to the data is slower
 // than for other storage types because it is searched and read from disk.
-func (storage *zoneInventoryStorageDisk) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+func (storage *zoneInventoryStorageDisk) getZoneInView(viewName, zoneName string) (*dnsmodel.Zone, error) {
 	vio := newViewIO(storage.location, viewName)
 	zone, err := vio.loadZone(getViewIOZoneFileName(zoneName))
 	if err != nil {
@@ -327,7 +327,7 @@ func (storage *zoneInventoryStorageDisk) loadViews() (time.Time, error) {
 }
 
 // Saves specified views on disk replacing the entire inventory.
-func (storage *zoneInventoryStorageDisk) saveViews(views *bind9stats.Views) error {
+func (storage *zoneInventoryStorageDisk) saveViews(views *dnsmodel.Views) error {
 	err := storage.removeMeta()
 	if err != nil {
 		return err
@@ -398,7 +398,7 @@ func (storage *zoneInventoryStorageDisk) readMeta() (*ZoneInventoryMeta, error) 
 // A storage holding the zone information in memory only.
 type zoneInventoryStorageMemory struct {
 	mutex sync.RWMutex
-	views *bind9stats.Views
+	views *dnsmodel.Views
 }
 
 // Instantiates the storage.
@@ -410,8 +410,8 @@ func newZoneInventoryStorageMemory() *zoneInventoryStorageMemory {
 
 // Returns an iterator to the views in the storage. This access to the
 // views is fast because they are read from the in-memory storage.
-func (storage *zoneInventoryStorageMemory) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
-	return func(yield func(bind9stats.ZoneIteratorAccessor, error) bool) {
+func (storage *zoneInventoryStorageMemory) getViewsIterator(filter *dnsmodel.ZoneFilter) iter.Seq2[dnsmodel.ZoneIteratorAccessor, error] {
+	return func(yield func(dnsmodel.ZoneIteratorAccessor, error) bool) {
 		if storage.views == nil {
 			return
 		}
@@ -428,7 +428,7 @@ func (storage *zoneInventoryStorageMemory) getViewsIterator(filter *bind9stats.Z
 
 // Returns a selected zone from a view. The access to the data is fast
 // because it is read from the in-memory storage.
-func (storage *zoneInventoryStorageMemory) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+func (storage *zoneInventoryStorageMemory) getZoneInView(viewName, zoneName string) (*dnsmodel.Zone, error) {
 	storage.mutex.RLock()
 	views := storage.views
 	storage.mutex.RUnlock()
@@ -449,7 +449,7 @@ func (storage *zoneInventoryStorageMemory) loadViews() (time.Time, error) {
 }
 
 // Replaces the inventory with a new collection of views.
-func (storage *zoneInventoryStorageMemory) saveViews(views *bind9stats.Views) error {
+func (storage *zoneInventoryStorageMemory) saveViews(views *dnsmodel.Views) error {
 	storage.mutex.Lock()
 	defer storage.mutex.Unlock()
 	storage.views = views
@@ -677,7 +677,7 @@ type zoneInventory interface {
 	// views. This function is typically called in the implementation of the
 	// streaming gRPC response used to transfer the zone information to the
 	// server.
-	receiveZones(ctx context.Context, filter *bind9stats.ZoneFilter) (chan zoneInventoryReceiveZoneResult, error)
+	receiveZones(ctx context.Context, filter *dnsmodel.ZoneFilter) (chan zoneInventoryReceiveZoneResult, error)
 	// Requests an AXFR (zone transfer) for the specified zone and view.
 	// It returns a channel to which the caller must subscribe to receive
 	// the AXFR results. The channel is closed by the zone inventory when
@@ -752,7 +752,7 @@ type zoneInventoryAsyncNotify struct {
 // It includes an optional err field which signals an error during
 // the zone fetch (e.g., an IO error during zone read from disk).
 type zoneInventoryReceiveZoneResult struct {
-	zone *bind9stats.ExtendedZone
+	zone *dnsmodel.ExtendedZone
 	err  error
 }
 
@@ -939,7 +939,7 @@ func (inventory *zoneInventoryImpl) load(block bool) (chan zoneInventoryAsyncNot
 // views. This function is typically called in the implementation of the
 // streaming gRPC response used to transfer the zone information to the
 // server.
-func (inventory *zoneInventoryImpl) receiveZones(ctx context.Context, filter *bind9stats.ZoneFilter) (chan zoneInventoryReceiveZoneResult, error) {
+func (inventory *zoneInventoryImpl) receiveZones(ctx context.Context, filter *dnsmodel.ZoneFilter) (chan zoneInventoryReceiveZoneResult, error) {
 	var err error
 	inventory.mutex.Lock()
 	state := inventory.getCurrentStateUnsafe()
@@ -989,7 +989,7 @@ func (inventory *zoneInventoryImpl) receiveZones(ctx context.Context, filter *bi
 					if err != nil {
 						result.err = err
 					} else {
-						result.zone = &bind9stats.ExtendedZone{
+						result.zone = &dnsmodel.ExtendedZone{
 							Zone:           *zone,
 							ViewName:       view.GetViewName(),
 							RPZ:            inventory.config.IsRPZ(view.GetViewName(), zone.Name()),
@@ -1014,7 +1014,7 @@ func (inventory *zoneInventoryImpl) receiveZones(ctx context.Context, filter *bi
 // Attempts to find zone information in the specified view. Depending on the
 // inventory storage it finds the zone information in memory or reads it from
 // disk.
-func (inventory *zoneInventoryImpl) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+func (inventory *zoneInventoryImpl) getZoneInView(viewName, zoneName string) (*dnsmodel.Zone, error) {
 	state := inventory.getCurrentState()
 	if state.isInitial() || state.isErred() {
 		return nil, newZoneInventoryNotInitedError()
@@ -1209,8 +1209,8 @@ func (vio *viewIO) GetViewName() string {
 }
 
 // Returns iterator to zones in the view.
-func (vio *viewIO) GetZoneIterator(filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.Zone, error] {
-	return func(yield func(*bind9stats.Zone, error) bool) {
+func (vio *viewIO) GetZoneIterator(filter *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.Zone, error] {
+	return func(yield func(*dnsmodel.Zone, error) bool) {
 		files, err := os.ReadDir(vio.viewLocation)
 		if err != nil {
 			_ = yield(nil, errors.Wrapf(err, "failed to read the DNS view directory %s", vio.viewLocation))
@@ -1220,7 +1220,7 @@ func (vio *viewIO) GetZoneIterator(filter *bind9stats.ZoneFilter) iter.Seq2[*bin
 		slices.SortFunc(files, func(file1, file2 os.DirEntry) int {
 			return storkutil.CompareNames(file1.Name(), file2.Name())
 		})
-		files = bind9stats.ApplyZoneLowerBoundFilter(files, filter)
+		files = dnsmodel.ApplyZoneLowerBoundFilter(files, filter)
 		var count int
 		for _, file := range files {
 			filePath := path.Join(vio.viewLocation, file.Name())
@@ -1233,7 +1233,7 @@ func (vio *viewIO) GetZoneIterator(filter *bind9stats.ZoneFilter) iter.Seq2[*bin
 				continue
 			}
 			// Parse the JSON file with zone information.
-			var zone bind9stats.Zone
+			var zone dnsmodel.Zone
 			err = json.Unmarshal(content, &zone)
 			if err != nil {
 				if !yield(nil, errors.Wrapf(err, "failed to parse file containing zone information %s", filePath)) {
@@ -1277,7 +1277,7 @@ func (vio *viewIO) removeView() error {
 
 // Creates the view directory and writes zone information files in this
 // directory.
-func (vio *viewIO) createView(view *bind9stats.View) error {
+func (vio *viewIO) createView(view *dnsmodel.View) error {
 	fileInfo, err := os.Stat(vio.viewLocation)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
@@ -1304,7 +1304,7 @@ func (vio *viewIO) createView(view *bind9stats.View) error {
 }
 
 // Recreates the view directory and creates the zone information files in it.
-func (vio *viewIO) recreateView(view *bind9stats.View) (err error) {
+func (vio *viewIO) recreateView(view *dnsmodel.View) (err error) {
 	err = vio.removeView()
 	if err == nil {
 		err = vio.createView(view)
@@ -1313,7 +1313,7 @@ func (vio *viewIO) recreateView(view *bind9stats.View) (err error) {
 }
 
 // Creates a zone information file in the view directory.
-func (vio *viewIO) createZone(zone *bind9stats.Zone) (err error) {
+func (vio *viewIO) createZone(zone *dnsmodel.Zone) (err error) {
 	zoneDataFilePath := filepath.Join(vio.viewLocation, getViewIOZoneFileName(zone.Name()))
 	zoneDataFile, err := os.OpenFile(zoneDataFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o640)
 	if err != nil {
@@ -1333,19 +1333,19 @@ func (vio *viewIO) createZone(zone *bind9stats.Zone) (err error) {
 }
 
 // Reads the view and the corresponding zones from a file.
-func (vio *viewIO) loadView() (*bind9stats.View, error) {
+func (vio *viewIO) loadView() (*dnsmodel.View, error) {
 	files, err := os.ReadDir(vio.viewLocation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read files while loading the zone view inventory in %s", vio.viewLocation)
 	}
-	var zones []*bind9stats.Zone
+	var zones []*dnsmodel.Zone
 	for _, file := range files {
 		if !file.IsDir() {
 			content, err := os.ReadFile(path.Join(vio.viewLocation, file.Name()))
 			if err != nil {
 				continue
 			}
-			var zone bind9stats.Zone
+			var zone dnsmodel.Zone
 			err = json.Unmarshal(content, &zone)
 			if err != nil {
 				continue
@@ -1353,12 +1353,12 @@ func (vio *viewIO) loadView() (*bind9stats.View, error) {
 			zones = append(zones, &zone)
 		}
 	}
-	view := bind9stats.NewView(vio.viewName, zones)
+	view := dnsmodel.NewView(vio.viewName, zones)
 	return view, nil
 }
 
 // Reads information about the specified zone from a file.
-func (vio *viewIO) loadZone(zoneName string) (*bind9stats.Zone, error) {
+func (vio *viewIO) loadZone(zoneName string) (*dnsmodel.Zone, error) {
 	content, err := os.ReadFile(path.Join(vio.viewLocation, zoneName))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -1366,7 +1366,7 @@ func (vio *viewIO) loadZone(zoneName string) (*bind9stats.Zone, error) {
 		}
 		return nil, errors.Wrapf(err, "failed to read the inventory file for zone %s", zoneName)
 	}
-	var zone bind9stats.Zone
+	var zone dnsmodel.Zone
 	err = json.Unmarshal(content, &zone)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse the inventory file for zone %s", zoneName)

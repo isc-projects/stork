@@ -10,8 +10,8 @@ import (
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	"isc.org/stork/daemoncfg/dnsconfig"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	"isc.org/stork/daemondata/bind9stats"
 	pdnsdata "isc.org/stork/daemondata/pdns"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -249,7 +249,7 @@ func (fa *FakeAgents) TailTextFile(ctx context.Context, machine dbmodel.MachineT
 
 // FakeAgents specific implementation of the function which gathers the zones from the
 // agents one by one.
-func (fa *FakeAgents) ReceiveZones(ctx context.Context, daemon agentcomm.ControlledDaemon, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+func (fa *FakeAgents) ReceiveZones(ctx context.Context, daemon agentcomm.ControlledDaemon, filter *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 	return nil
 }
 

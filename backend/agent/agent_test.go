@@ -30,9 +30,9 @@ import (
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
-	"isc.org/stork/daemondata/bind9stats"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
@@ -1096,7 +1096,7 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 func TestReceiveZonesFilterByView(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(10)
-	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	bindZones := generateRandomZones(20)
@@ -1262,7 +1262,7 @@ func TestReceiveZonesPDNS(t *testing.T) {
 func TestReceiveRPZZones(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(10)
-	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	response := map[string]any{
@@ -1352,7 +1352,7 @@ func TestReceiveRPZZones(t *testing.T) {
 func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(10)
-	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	response := map[string]any{
@@ -1420,7 +1420,7 @@ func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(10)
-	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	response := map[string]any{
@@ -1583,7 +1583,7 @@ func TestReceiveZonesUnsupportedDaemon(t *testing.T) {
 func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(10)
-	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	bindZones := generateRandomZones(20)
@@ -1659,7 +1659,7 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(10)
-	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	bindZones := generateRandomZones(20)
@@ -1747,7 +1747,7 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 func TestReceiveZoneRRs(t *testing.T) {
 	// Setup server response for populating the zone inventory.
 	trustedZones := generateRandomZones(10)
-	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(trustedZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	guestZones := generateRandomZones(10)
@@ -2005,7 +2005,7 @@ func TestReceiveZoneRRsNilZoneInventory(t *testing.T) {
 func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	// Setup server response for populating the zone inventory.
 	trustedZones := generateRandomZones(10)
-	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(trustedZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	guestZones := generateRandomZones(10)
@@ -2092,7 +2092,7 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	// Setup server response for populating the zone inventory.
 	trustedZones := generateRandomZones(10)
-	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	slices.SortFunc(trustedZones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	guestZones := generateRandomZones(10)

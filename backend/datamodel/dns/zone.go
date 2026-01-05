@@ -1,4 +1,4 @@
-package bind9stats
+package dnsmodel
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ var _ NameAccessor = (*Zone)(nil)
 // is performed. A binary search is used for larger collections.
 const binaryZoneSearchThreshold = 3000
 
-// Represents a DNS zone information retrieved from the stats channel.
+// Represents a DNS zone information.
 type Zone struct {
 	ZoneName string    `json:"name"`
 	Class    string    `json:"class"`

@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	pkgerrors "github.com/pkg/errors"
-	"isc.org/stork/daemondata/bind9stats"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	storkutil "isc.org/stork/util"
 )
 
@@ -115,13 +115,13 @@ func (request *bind9StatsClientRequest) getRawJSON(path string) (httpResponse, [
 }
 
 // Makes a request to retrieve BIND9 views over the stats channel.
-func (request *bind9StatsClientRequest) getViews() (httpResponse, *bind9stats.Views, error) {
+func (request *bind9StatsClientRequest) getViews() (httpResponse, *dnsmodel.Views, error) {
 	// The /zones path returns the top level stats structure. Besides the
 	// map of views it returns other top-level information. We need to embed
 	// the Views field in the structure to fit the returned data. Next
 	// we will extract the views map from it.
 	var result struct {
-		Views *bind9stats.Views
+		Views *dnsmodel.Views
 	}
 	response, err := request.getJSON(&result, "/zones")
 	if err != nil {
@@ -172,7 +172,7 @@ func (client *bind9StatsClient) createRequestFromURL(url string) *bind9StatsClie
 }
 
 // Makes a request to retrieve BIND9 views over the stats channel.
-func (client *bind9StatsClient) getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error) {
+func (client *bind9StatsClient) getViews(apiKey string, host string, port int64) (httpResponse, *dnsmodel.Views, error) {
 	return client.createRequest(host, port).getViews()
 }
 

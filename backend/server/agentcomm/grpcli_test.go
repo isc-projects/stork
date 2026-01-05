@@ -21,8 +21,8 @@ import (
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	"isc.org/stork/daemoncfg/dnsconfig"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	"isc.org/stork/daemondata/bind9stats"
 	"isc.org/stork/datamodel/daemonname"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/datamodel/protocoltype"
 	dbmodel "isc.org/stork/server/database/model"
 	storktest "isc.org/stork/server/test/dbmodel"
@@ -1811,7 +1811,7 @@ func TestReceiveZones(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
 
 	// Collect the zones returned over the stream.
-	var zones []*bind9stats.ExtendedZone
+	var zones []*dnsmodel.ExtendedZone
 	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
 		require.NoError(t, err)
 		require.NotNil(t, zone)

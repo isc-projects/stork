@@ -19,8 +19,8 @@ import (
 	"gopkg.in/h2non/gock.v1"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	pdnsconfig "isc.org/stork/daemoncfg/pdns"
-	"isc.org/stork/daemondata/bind9stats"
 	pdnsdata "isc.org/stork/daemondata/pdns"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
@@ -28,8 +28,8 @@ import (
 //go:generate mockgen -package=agent -destination=zoneinventorymock_test.go -mock_names=zoneInventoryAXFRExecutor=MockZoneInventoryAXFRExecutor isc.org/stork/agent zoneInventoryAXFRExecutor
 
 // This function generates a root zone.
-func generateRootZone() *bind9stats.Zone {
-	return &bind9stats.Zone{
+func generateRootZone() *dnsmodel.Zone {
+	return &dnsmodel.Zone{
 		ZoneName: ".",
 		Class:    "IN",
 		Serial:   1,
@@ -40,11 +40,11 @@ func generateRootZone() *bind9stats.Zone {
 
 // This function generates a collection of zones used in the benchmarks.
 // The function argument specifies the number of zones to be generated.
-func generateRandomZones(num int) []*bind9stats.Zone {
+func generateRandomZones(num int) []*dnsmodel.Zone {
 	generatedZones := testutil.GenerateRandomZones(num)
-	var zones []*bind9stats.Zone
+	var zones []*dnsmodel.Zone
 	for _, generatedZone := range generatedZones {
-		zones = append(zones, &bind9stats.Zone{
+		zones = append(zones, &dnsmodel.Zone{
 			ZoneName: generatedZone.Name,
 			Class:    generatedZone.Class,
 			Serial:   generatedZone.Serial,
@@ -71,8 +71,8 @@ func generateRandomPDNSZones(num int) []*pdnsdata.Zone {
 }
 
 // Sort zones and return the one at specified index.
-func getOrderedZoneByIndex(zones []*bind9stats.Zone, index int) *bind9stats.Zone {
-	slices.SortFunc(zones, func(zone1, zone2 *bind9stats.Zone) int {
+func getOrderedZoneByIndex(zones []*dnsmodel.Zone, index int) *dnsmodel.Zone {
+	slices.SortFunc(zones, func(zone1, zone2 *dnsmodel.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
 	return zones[index]
@@ -277,8 +277,8 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	require.NotNil(t, storage)
 
 	// Save example zones on disk.
-	views := bind9stats.NewViews([]*bind9stats.View{
-		bind9stats.NewView("_default", []*bind9stats.Zone{
+	views := dnsmodel.NewViews([]*dnsmodel.View{
+		dnsmodel.NewView("_default", []*dnsmodel.Zone{
 			{
 				ZoneName: "zone1.example.org",
 			},
@@ -286,7 +286,7 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 				ZoneName: "zone2.example.org",
 			},
 		}),
-		bind9stats.NewView("_bind", []*bind9stats.Zone{
+		dnsmodel.NewView("_bind", []*dnsmodel.Zone{
 			{
 				ZoneName: "zone2.example.org",
 			},
@@ -313,7 +313,7 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 
 	// Get the views and zones and ensure we get the same set of data.
 	iterator := loadedStorage.getViewsIterator(nil)
-	var capturedViews []bind9stats.ZoneIteratorAccessor
+	var capturedViews []dnsmodel.ZoneIteratorAccessor
 	for view, err := range iterator {
 		require.NoError(t, err)
 		capturedViews = append(capturedViews, view)
@@ -322,7 +322,7 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	zoneCount, err := capturedViews[0].GetZoneCount()
 	require.NoError(t, err)
 	require.EqualValues(t, 1, zoneCount)
-	var zones []*bind9stats.Zone
+	var zones []*dnsmodel.Zone
 	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
 		require.NoError(t, err)
 		zones = append(zones, zone)
@@ -334,7 +334,7 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	zoneCount, err = capturedViews[1].GetZoneCount()
 	require.NoError(t, err)
 	require.EqualValues(t, 2, zoneCount)
-	zones = []*bind9stats.Zone{}
+	zones = []*dnsmodel.Zone{}
 	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
 		require.NoError(t, err)
 		zones = append(zones, zone)
@@ -384,8 +384,8 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 	require.NotNil(t, storage)
 
 	// Save example zones in the storage.
-	views := bind9stats.NewViews([]*bind9stats.View{
-		bind9stats.NewView("_default", []*bind9stats.Zone{
+	views := dnsmodel.NewViews([]*dnsmodel.View{
+		dnsmodel.NewView("_default", []*dnsmodel.Zone{
 			{
 				ZoneName: "zone1.example.org",
 			},
@@ -393,7 +393,7 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 				ZoneName: "zone2.example.org",
 			},
 		}),
-		bind9stats.NewView("_bind", []*bind9stats.Zone{
+		dnsmodel.NewView("_bind", []*dnsmodel.Zone{
 			{
 				ZoneName: "zone2.example.org",
 			},
@@ -410,7 +410,7 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 
 	// Get the views and zones.
 	iterator := storage.getViewsIterator(nil)
-	var capturedViews []bind9stats.ZoneIteratorAccessor
+	var capturedViews []dnsmodel.ZoneIteratorAccessor
 	for view, err := range iterator {
 		require.NoError(t, err)
 		capturedViews = append(capturedViews, view)
@@ -419,7 +419,7 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 	zoneCount, err := capturedViews[0].GetZoneCount()
 	require.NoError(t, err)
 	require.EqualValues(t, 1, zoneCount)
-	var zones []*bind9stats.Zone
+	var zones []*dnsmodel.Zone
 	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
 		require.NoError(t, err)
 		zones = append(zones, zone)
@@ -431,7 +431,7 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 	zoneCount, err = capturedViews[1].GetZoneCount()
 	require.NoError(t, err)
 	require.EqualValues(t, 2, zoneCount)
-	zones = []*bind9stats.Zone{}
+	zones = []*dnsmodel.Zone{}
 	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
 		require.NoError(t, err)
 		zones = append(zones, zone)
@@ -496,8 +496,8 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	require.NotNil(t, storage)
 
 	// Save example zones on disk.
-	views := bind9stats.NewViews([]*bind9stats.View{
-		bind9stats.NewView("_default", []*bind9stats.Zone{
+	views := dnsmodel.NewViews([]*dnsmodel.View{
+		dnsmodel.NewView("_default", []*dnsmodel.Zone{
 			{
 				ZoneName: "zone1.example.org",
 			},
@@ -505,7 +505,7 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 				ZoneName: "zone2.example.org",
 			},
 		}),
-		bind9stats.NewView("_bind", []*bind9stats.Zone{
+		dnsmodel.NewView("_bind", []*dnsmodel.Zone{
 			{
 				ZoneName: "zone2.example.org",
 			},
@@ -532,7 +532,7 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 
 	// Get the views and zones and ensure we get the same set of data.
 	iterator := loadedStorage.getViewsIterator(nil)
-	var capturedViews []bind9stats.ZoneIteratorAccessor
+	var capturedViews []dnsmodel.ZoneIteratorAccessor
 	for view, err := range iterator {
 		require.NoError(t, err)
 		capturedViews = append(capturedViews, view)
@@ -541,7 +541,7 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	zoneCount, err := capturedViews[0].GetZoneCount()
 	require.NoError(t, err)
 	require.EqualValues(t, 1, zoneCount)
-	var zones []*bind9stats.Zone
+	var zones []*dnsmodel.Zone
 	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
 		require.NoError(t, err)
 		zones = append(zones, zone)
@@ -553,7 +553,7 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	zoneCount, err = capturedViews[1].GetZoneCount()
 	require.NoError(t, err)
 	require.EqualValues(t, 2, zoneCount)
-	zones = []*bind9stats.Zone{}
+	zones = []*dnsmodel.Zone{}
 	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
 		require.NoError(t, err)
 		zones = append(zones, zone)
@@ -688,7 +688,7 @@ func TestZoneInventoryTransition(t *testing.T) {
 // Test populating the zones from the DNS server to memory and disk.
 func TestZoneInventoryPopulateMemoryDisk(t *testing.T) {
 	// Setup server response.
-	defaultZones := []*bind9stats.Zone{generateRootZone()}
+	defaultZones := []*dnsmodel.Zone{generateRootZone()}
 	defaultZones = append(defaultZones, generateRandomZones(9)...)
 	bindZones := generateRandomZones(20)
 	response := map[string]any{
@@ -964,7 +964,7 @@ func TestZoneInventoryPopulateInventoryNotStarted(t *testing.T) {
 // Test loading the inventory from disk to memory.
 func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 	// Setup server response.
-	defaultZones := []*bind9stats.Zone{generateRootZone()}
+	defaultZones := []*dnsmodel.Zone{generateRootZone()}
 	defaultZones = append(defaultZones, generateRandomZones(9)...)
 	bindZones := generateRandomZones(20)
 	response := map[string]any{
@@ -1075,7 +1075,7 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 // Test loading the inventory from disk.
 func TestZoneInventoryLoadDisk(t *testing.T) {
 	// Setup server response.
-	defaultZones := []*bind9stats.Zone{generateRootZone()}
+	defaultZones := []*dnsmodel.Zone{generateRootZone()}
 	defaultZones = append(defaultZones, generateRandomZones(9)...)
 	bindZones := generateRandomZones(20)
 	response := map[string]any{
@@ -1324,7 +1324,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1347,7 +1347,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 	})
 
 	t.Run("filter by view", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := dnsmodel.NewZoneFilter()
 		filter.SetView("_bind")
 		channel, err := inventory.receiveZones(context.Background(), filter)
 		require.NoError(t, err)
@@ -1358,7 +1358,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1375,7 +1375,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 	})
 
 	t.Run("filter by view and page", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := dnsmodel.NewZoneFilter()
 		filter.SetView("_bind")
 		filter.SetLowerBound(getOrderedZoneByIndex(bindZones, 14).Name(), 15)
 		channel, err := inventory.receiveZones(context.Background(), filter)
@@ -1387,7 +1387,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1405,7 +1405,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 	})
 
 	t.Run("page out of range", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := dnsmodel.NewZoneFilter()
 		filter.SetView("_bind")
 		filter.SetLowerBound(getOrderedZoneByIndex(bindZones, 19).Name(), 20)
 		channel, err := inventory.receiveZones(context.Background(), filter)
@@ -1417,7 +1417,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1475,7 +1475,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1496,7 +1496,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 	})
 
 	t.Run("filter by view", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := dnsmodel.NewZoneFilter()
 		filter.SetView("_bind")
 		channel, err := inventory.receiveZones(context.Background(), filter)
 		require.NoError(t, err)
@@ -1507,7 +1507,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1524,7 +1524,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 	})
 
 	t.Run("filter by view and page", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := dnsmodel.NewZoneFilter()
 		filter.SetView("_bind")
 		filter.SetLowerBound(getOrderedZoneByIndex(bindZones, 14).Name(), 15)
 		channel, err := inventory.receiveZones(context.Background(), filter)
@@ -1536,7 +1536,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1553,7 +1553,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 	})
 
 	t.Run("page out of range", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := dnsmodel.NewZoneFilter()
 		filter.SetView("_bind")
 		filter.SetLowerBound(getOrderedZoneByIndex(bindZones, 19).Name(), 20)
 		channel, err := inventory.receiveZones(context.Background(), filter)
@@ -1565,7 +1565,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		// Get the zones from the channel.
-		var receivedZones []*bind9stats.ExtendedZone
+		var receivedZones []*dnsmodel.ExtendedZone
 		for result := range channel {
 			require.NoError(t, result.err)
 			receivedZones = append(receivedZones, result.zone)
@@ -1581,7 +1581,7 @@ func TestZoneInventoryReceiveZonesRPZ(t *testing.T) {
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": []*bind9stats.Zone{
+				"zones": []*dnsmodel.Zone{
 					{
 						ZoneName: "rpz.example.com",
 						Class:    "IN",
@@ -1624,7 +1624,7 @@ func TestZoneInventoryReceiveZonesRPZ(t *testing.T) {
 	}, time.Second, time.Millisecond)
 
 	// Get the zones from the channel.
-	var receivedZones []*bind9stats.ExtendedZone
+	var receivedZones []*dnsmodel.ExtendedZone
 	for result := range channel {
 		require.NoError(t, result.err)
 		receivedZones = append(receivedZones, result.zone)
@@ -1829,7 +1829,7 @@ func TestZoneInventoryGetZoneInViewDisk(t *testing.T) {
 // Test requesting a successful zone transfer.
 func TestZoneInventoryRequestAXFR(t *testing.T) {
 	// Setup server response.
-	zone := &bind9stats.Zone{
+	zone := &dnsmodel.Zone{
 		ZoneName: "example.com",
 		Class:    "IN",
 		Serial:   1234567890,
@@ -1839,7 +1839,7 @@ func TestZoneInventoryRequestAXFR(t *testing.T) {
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": []*bind9stats.Zone{
+				"zones": []*dnsmodel.Zone{
 					zone,
 				},
 			},
@@ -1913,7 +1913,7 @@ func TestZoneInventoryRequestAXFR(t *testing.T) {
 // Test requesting a zone transfer when error is returned in the envelope.
 func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 	// Setup server response.
-	zone := &bind9stats.Zone{
+	zone := &dnsmodel.Zone{
 		ZoneName: "example.com",
 		Class:    "IN",
 		Serial:   1234567890,
@@ -1923,7 +1923,7 @@ func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": []*bind9stats.Zone{
+				"zones": []*dnsmodel.Zone{
 					zone,
 				},
 			},
@@ -1985,7 +1985,7 @@ func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 // transfer is started.
 func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	// Setup server response.
-	zone := &bind9stats.Zone{
+	zone := &dnsmodel.Zone{
 		ZoneName: "example.com",
 		Class:    "IN",
 		Serial:   1234567890,
@@ -1995,7 +1995,7 @@ func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": []*bind9stats.Zone{
+				"zones": []*dnsmodel.Zone{
 					zone,
 				},
 			},
@@ -2149,7 +2149,7 @@ func BenchmarkZoneInventoryReceiveZonesMemory(b *testing.B) {
 			// Begin the actual benchmark.
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				var receivedZones []*bind9stats.ExtendedZone
+				var receivedZones []*dnsmodel.ExtendedZone
 				channel, err := inventory.receiveZones(context.Background(), nil)
 				if err != nil {
 					b.Fatal(err)
@@ -2214,7 +2214,7 @@ func BenchmarkZoneInventoryReceiveZonesDisk(b *testing.B) {
 			// Begin the actual benchmark.
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				var receivedZones []*bind9stats.ExtendedZone
+				var receivedZones []*dnsmodel.ExtendedZone
 				channel, err := inventory.receiveZones(context.Background(), nil)
 				if err != nil {
 					b.Fatal(err)

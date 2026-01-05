@@ -1,4 +1,4 @@
-package bind9stats
+package dnsmodel
 
 import (
 	"encoding/json"
@@ -9,7 +9,8 @@ import (
 
 var _ ZoneIteratorAccessor = (*View)(nil)
 
-// Represents a BIND9 view retrieved from the stats channel.
+// Represents a DNS view. Typically it is a BIND 9 view but some other
+// DNS servers also support views.
 type View struct {
 	// View name.
 	Name string `json:"-"`

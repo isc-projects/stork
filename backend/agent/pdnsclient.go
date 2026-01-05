@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	pkgerrors "github.com/pkg/errors"
-	"isc.org/stork/daemondata/bind9stats"
 	pdnsdata "isc.org/stork/daemondata/pdns"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	storkutil "isc.org/stork/util"
 )
 
@@ -93,12 +93,12 @@ func (request *pdnsClientRequest) getRawJSON(path string) (httpResponse, []byte,
 
 // Makes a request to retrieve zones encapsulated in the artificial view (localhost)
 // from the PowerDNS server. Note that the returned views are encapsulated in the
-// bind9stats.Views type. Using common type between BIND 9 and PowerDNS is
+// dnsmodel.Views type. Using common type between BIND 9 and PowerDNS is
 // intentional, because the zone inventory is shared between BIND 9 and PowerDNS.
 // The zone inventory treats the returned views/zones in a uniform way, regardless
-// of the server type. We may consider moving the bind9stats.Views type to a separate
+// of the server type. We may consider moving the dnsmodel.Views type to a separate
 // package in the future.
-func (request *pdnsClientRequest) getViews() (httpResponse, *bind9stats.Views, error) {
+func (request *pdnsClientRequest) getViews() (httpResponse, *dnsmodel.Views, error) {
 	var zones pdnsdata.Zones
 	response, err := request.getJSON("/servers/localhost/zones", &zones)
 	if err != nil {
@@ -107,9 +107,9 @@ func (request *pdnsClientRequest) getViews() (httpResponse, *bind9stats.Views, e
 	if response.IsError() {
 		return response, nil, nil
 	}
-	bind9Zones := []*bind9stats.Zone{}
+	bind9Zones := []*dnsmodel.Zone{}
 	for zone := range zones.GetIterator() {
-		bind9Zone := &bind9stats.Zone{
+		bind9Zone := &dnsmodel.Zone{
 			ZoneName: strings.TrimSuffix(zone.Name(), "."),
 			Class:    "IN",
 			Serial:   zone.Serial,
@@ -118,8 +118,8 @@ func (request *pdnsClientRequest) getViews() (httpResponse, *bind9stats.Views, e
 		}
 		bind9Zones = append(bind9Zones, bind9Zone)
 	}
-	view := bind9stats.NewView("localhost", bind9Zones)
-	views := bind9stats.NewViews([]*bind9stats.View{view})
+	view := dnsmodel.NewView("localhost", bind9Zones)
+	views := dnsmodel.NewViews([]*dnsmodel.View{view})
 
 	// Extract the views and drop other top-level information.
 	return response, views, err
@@ -213,11 +213,10 @@ func (client *pdnsClient) getCombinedServerInfo(apiKey string, host string, port
 // Makes a request to retrieve zones encapsulated in the artificial view (localhost)
 // from the PowerDNS server. It implements the zoneFetcher interface used by the
 // zone inventory. Note that the returned views are encapsulated in the
-// bind9stats.Views type. Using common type between BIND 9 and PowerDNS is
+// dnsmodel.Views type. Using common type between BIND 9 and PowerDNS is
 // intentional, because the zone inventory is shared between BIND 9 and PowerDNS.
 // The zone inventory treats the returned views/zones in a uniform way, regardless
-// of the server type. We may consider moving the bind9stats.Views type to a separate
-// package in the future.
-func (client *pdnsClient) getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error) {
+// of the server type.
+func (client *pdnsClient) getViews(apiKey string, host string, port int64) (httpResponse, *dnsmodel.Views, error) {
 	return client.createRequest(apiKey, host, port).getViews()
 }

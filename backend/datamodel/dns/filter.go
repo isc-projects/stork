@@ -1,4 +1,4 @@
-package bind9stats
+package dnsmodel
 
 import (
 	"strings"

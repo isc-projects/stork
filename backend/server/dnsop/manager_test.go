@@ -15,8 +15,8 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	dnsconfig "isc.org/stork/daemoncfg/dnsconfig"
-	bind9stats "isc.org/stork/daemondata/bind9stats"
 	"isc.org/stork/datamodel/daemonname"
+	dnsmodel "isc.org/stork/datamodel/dns"
 	agentcomm "isc.org/stork/server/agentcomm"
 	appstest "isc.org/stork/server/daemons/test"
 	dbmodel "isc.org/stork/server/database/model"
@@ -291,8 +291,8 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	// Return "busy" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			_ = !yield(nil, agentcomm.NewZoneInventoryBusyError("foo"))
 		}
 	})
@@ -363,8 +363,8 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	// Return "uninitialized" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			_ = !yield(nil, agentcomm.NewZoneInventoryNotInitedError("foo"))
 		}
 	})
@@ -436,8 +436,8 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	// Return "uninitialized" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			_ = !yield(nil, &testError{})
 		}
 	})
@@ -511,14 +511,14 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 	// Return "uninitialized" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			// We are on the fist iteration. Let's close the database connection
 			// to cause an error.
 			teardown()
 			// Return the zone.
-			zone := &bind9stats.ExtendedZone{
-				Zone: bind9stats.Zone{
+			zone := &dnsmodel.ExtendedZone{
+				Zone: dnsmodel.Zone{
 					ZoneName: randomZones[0].Name,
 					Class:    randomZones[0].Class,
 					Serial:   randomZones[0].Serial,
@@ -588,11 +588,11 @@ func TestFetchZones(t *testing.T) {
 		// sure that no zone is lost due to conflicts.
 		mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 			return d.(*dbmodel.Daemon).ID == daemon.ID
-		}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-			return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+		}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+			return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 				for _, zone := range randomZones {
-					zone := &bind9stats.ExtendedZone{
-						Zone: bind9stats.Zone{
+					zone := &dnsmodel.ExtendedZone{
+						Zone: dnsmodel.Zone{
 							ZoneName: zone.Name,
 							Class:    zone.Class,
 							Serial:   zone.Serial,
@@ -705,11 +705,11 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	mock := NewMockConnectedAgents(controller)
 
 	// Return an empty iterator. Getting actual zones is not in scope for this test.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			for _, zone := range randomZones {
-				zone := &bind9stats.ExtendedZone{
-					Zone: bind9stats.Zone{
+				zone := &dnsmodel.ExtendedZone{
+					Zone: dnsmodel.Zone{
 						ZoneName: zone.Name,
 						Class:    zone.Class,
 						Serial:   zone.Serial,
@@ -827,13 +827,13 @@ func TestFetchRepeatedZones(t *testing.T) {
 
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			// Return the same zones from two different views.
 			for _, view := range []string{"foo", "bar"} {
 				for _, zone := range randomZones {
-					zone := &bind9stats.ExtendedZone{
-						Zone: bind9stats.Zone{
+					zone := &dnsmodel.ExtendedZone{
+						Zone: dnsmodel.Zone{
 							ZoneName: zone.Name,
 							Class:    zone.Class,
 							Serial:   zone.Serial,
