@@ -184,28 +184,27 @@ Monitoring the Status of Services
 =================================
 
 The Stork server continuously monitors the status of the Kea DHCP daemons,
-the Kea Control Agent (Kea CA), and the Kea DHCP-DDNS and BIND 9 services, and provides a dashboard
-to show their current states.
+the Kea Control Agent (Kea CA), the Kea DHCP-DDNS, BIND 9, and PowerDNS services,
+and provides a dashboard to show their current states.
 
 The statuses are monitored on two levels: the first level is the status of the
-machine where Kea or BIND 9 is running. The user can see if the connection to
+machine where Kea, BIND 9 or PowerDNS is running. The user can see if the connection to
 the agent is established and can view additional information about the machine, such as
 the operating system as well as CPU and memory usage.
-The second level is the status of the Kea DHCP and BIND 9 daemons. The user can
+The second level is the status of the Kea DHCP and DNS daemons. The user can
 inspect whether the processes are running; if they are not, the user can see the
 reason for the failure.
 
 The Stork server keeps an events log, which contains the history of status
-changes of the Kea and BIND 9 services.
+changes of the Kea and DNS services.
 
 Browsing the Logs
 =================
 
-The Stork server provides a way to browse the logs of the Kea DHCP and BIND 9
-services.
+The Stork server provides a way to browse the logs of the Kea DHCP services.
 
 The logs are fetched directly from the filesystem, so the logs can be read
-even if the Kea or BIND 9 services are down.
+even if the Kea services are down.
 
 The Stork server can read only the data logged into a file. It cannot read
 the logs from the syslog or standard output. The Stork agent must have the
@@ -364,7 +363,7 @@ DNS server kinds is planned for future versions.
 
 Stork can gather and display the list of zones configured on the supported
 DNS servers. It can also display the contents of the zones (RRs) for
-the primary and secondary zones.
+the primary, secondary and mirror zones.
 
 Stork agent can also work as a Prometheus exporter for the BIND 9 server.
 The statistics export for PowerDNS is currently unavailable.
