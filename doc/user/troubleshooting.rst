@@ -20,24 +20,31 @@ This section describes the solutions for some common issues with the Stork agent
 
               - Kea Control Agent, Kea DHCPv4 server, and/or Kea DHCPv6 server
               - BIND 9
+              - PowerDNS
 
               Stork looks for the processes named ``kea-ctrl-agent`` (for Kea CA), ``kea-dhcp4`` or ``kea-dhcp6``
-              (for Kea DHCP servers), ``kea-d2`` (for Kea DDNS), or ``named`` (for BIND 9). Make sure
+              (for Kea DHCP servers), ``kea-d2`` (for Kea DDNS), ``named`` (for BIND 9), or ``pdns_server`` (for PowerDNS). Make sure
               those processes are running and are named appropriately. Use the ``ps aux`` (or similar) command
               to determine whether the processes are running. Currently, Stork does not support detecting off-line services. If
-              BIND 9 is located in an uncommon location and the Stork agent is unable to detect it, there are several steps that
+              BIND 9 or PowerDNS is located in an uncommon location and the Stork agent is unable to detect it, there are several steps that
               may be helpful. First, enable the DEBUG logging level, so the agent will print more detailed information
               about locations being checked.
 
-              Stork attempts the next four actions, in order:
+              Stork attempts the next four actions to detect `named` configuration, in order:
 
               1. Try to parse the ``-c`` parameter of the running process;
               2. Use the STORK_AGENT_BIND9_CONFIG environment variable;
               3. Try to parse the output of the ``named -V`` command;
               4. Try to find the named.conf file in the default locations.
 
-              The ``STORK_AGENT_BIND9_CONFIG`` environment variable may be defined to specify
-              the exact location of the BIND 9 configuration file.
+              Stork attempts the next four actions to detect `pdns_server` configuration, in order:
+              1. Try to parse the `--config-dir` parameter of the running process;
+              2. Use the STORK_AGENT_POWERDNS_CONFIG environment variable;
+              3. Try to find the `pdns.conf` file (or a file having a name resulting from the use of the `--config-name` parameter) in the default locations.
+
+              The ``STORK_AGENT_BIND9_CONFIG`` or ``STORK_AGENT_POWERDNS_CONFIG`` environment
+              variables may be defined to specify the exact locations of the BIND 9 or PowerDNS
+              configuration files.
 
               For BIND 9, make sure that the rndc channel is enabled. By
               default it is enabled, even if the ``controls`` clause is
@@ -59,13 +66,70 @@ This section describes the solutions for some common issues with the Stork agent
               but it may vary greatly, depending on a given setup. Please consult
               the BIND 9 Administrator Reference Manual (ARM) for details.
 
+              For PowerDNS, make sure that the webserver API is enabled, and that
+              the API key is set. For example:
+
+              .. code-block:: console
+
+                api=yes
+                api-key=secret-api-key
+                webserver=yes
+                webserver-address=127.0.0.1
+                webserver-port=8085
+
 :Explanation: If the "Last Refreshed" column has a value, and the "Error" column value has no errors,
               the communication between ``stork-server`` and ``stork-agent`` works correctly, which implies that
               the cause of the problem is between the Stork agent and the daemons. The most likely issue is that none of
-              the Kea/BIND 9 daemons are running. ``stork-agent`` communicates with the BIND 9 and Kea since 3.0.0
-              version daemons directly; however, for Kea versions prior to 3.0.0, it communicates with the Kea DHCPv4 and
+              the Kea/BIND 9/PowerDNS daemons are running. ``stork-agent`` communicates with the PowerDNS, BIND 9 and
+              Kea (since Kea version 3.0.0) daemons directly; however, for Kea versions prior to 3.0.0, it communicates with the Kea DHCPv4 and
               Kea DHCPv6 servers via the Kea Control Agent. If only the "CA" daemon is displayed in the Stork interface,
               the Kea Control Agent is running, but the DHCP daemons are not.
+
+--------------
+
+:Issue:       An error occurs after clicking the "Show Zone" button for the selected zone in the zone viewer.
+:Description: The "Show Zone" button is clicked for a zone, but the zone viewer shows an error message.
+              The typical error message for PowerDNS server is: "failed to get AXFR credentials for zone
+              0.0.10.in-addr.arpa: allow-axfr-ips allows neither 127.0.0.1 nor ::1".
+:Solution:    Make sure that the DNS server configuration allows zone transfers.
+
+              The PowerDNS server has straightforward configuration to enable zone transfers. In fact, the default
+              ``allow-axfr-ips`` parameter allows zone transfers from the localhost. If additional IP addresses should
+              be allowed to perform the zone transfer, make sure that the ``allow-axfr-ips`` parameter includes
+              ``127.0.0.1`` or ``::1``. For example:
+
+              .. code-block:: console
+
+                allow-axfr-ips=127.0.0.1,::1,172.24.0.10
+
+
+              For BIND 9, the zone transfer is enabled using the ``allow-transfer`` parameter. This parameter can
+              be specified at different levels. If there is an issue with a transfer of one of the zones, but not others,
+              it can be an indication that one of the zone-level ``allow-transfer`` parameters prohibits the transfer
+              for that zone. Make sure that the ``allow-transfer`` permits the transfer. It is also important to note
+              that Stork agent prefers running the zone transfer using a local loopback address (assuming that it
+              finds the DNS server is listening on a local loopback address). In this case, the ``allow-transfer``
+              settings should allow running the zone transfer from the local loopback address. For example:
+
+              .. code-block:: console
+
+                options {
+                    listen-on port 53 { 127.0.0.1; 172.24.0.10; };
+                    allow-transfer { 127.0.0.1; 172.24.0.15; };
+                };
+
+
+              Note that in the configuration example above, the ``listen-on`` parameter explicitly enables
+              the DNS service on the local loopback address. The agent will therefore try to perform the
+              zone transfer using this address. It implies that the ``allow-transfer`` parameter must allow
+              zone transfer from the local loopback address. Using the keyword ``any`` in the ``listen-on`` and
+              ``allow-transfer`` parameters is supported by the Stork agent. The agent will use the local loopback
+              addresses in this case.
+
+:Explanation: Stork agent uses DNS zone transfer (AXFR) to retrieve the zone data from the monitored DNS servers.
+              If the DNS server configuration does not allow zone transfer, or restricts the zone transfer,
+              such that the Stork agent is not allowed to retrieve the zone data, the zone viewer will
+              report an error.
 
 --------------
 
