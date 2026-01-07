@@ -209,7 +209,7 @@ func TestParseFile(t *testing.T) {
 	require.Empty(t, cfg.chrootDir)
 
 	// Expand included files.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -227,7 +227,7 @@ func TestParseFileChroot(t *testing.T) {
 	require.Equal(t, testdataPathAbs, cfg.chrootDir)
 
 	// Expand included files.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -243,7 +243,7 @@ func TestParseFileChrootNoSubdirectory(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	// Expand included files.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -316,7 +316,7 @@ func TestConfigGetFormattedString(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	// Expand the included files.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -707,7 +707,7 @@ func TestParseIncludes(t *testing.T) {
 	require.Equal(t, includedPath, cfg.Statements[1].Include.Path)
 
 	// Expand the includes.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -770,7 +770,7 @@ func TestParseIncludesChroot(t *testing.T) {
 	require.Equal(t, "/etc/bind/2.conf", cfg.Statements[1].Include.Path)
 
 	// Expand the includes.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -810,7 +810,7 @@ func TestParseIncludeSelf(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	// Expand the includes.
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 

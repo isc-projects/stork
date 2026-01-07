@@ -350,16 +350,17 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, files *detectedDaemo
 	}
 
 	// Resolve include statements.
-	bind9Config, err = bind9Config.Expand()
+	var includes []string
+	bind9Config, includes, err = bind9Config.Expand()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to resolve include statements in BIND 9 config file")
 	}
 
-	for _, expandedConfig := range bind9Config.GetExpandedConfigs() {
+	for _, includeFilePath := range includes {
 		// Record the included configuration files because later modification of those
 		// files should trigger configuration parsing again. It will only be the case if
 		// the file belongs to the set because it will permit for detecting file changes.
-		if err := files.addFile(detectedFileTypeInclude, expandedConfig.GetSourcePath(), sm.commander); err != nil {
+		if err := files.addFile(detectedFileTypeInclude, includeFilePath, sm.commander); err != nil {
 			return nil, err
 		}
 	}

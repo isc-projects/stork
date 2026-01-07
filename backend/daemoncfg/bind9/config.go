@@ -24,11 +24,6 @@ type Config struct {
 	sourcePath string
 	// The absolute path of the chroot directory. Empty string means no chroot.
 	chrootDir string
-	// Copies of included, expanded configurations. Besides being embedded in the
-	// Statements, they are held separately in this slice to preserve associations
-	// with the source files. The slice is empty if the configuration hasn't been
-	// expanded.
-	expandedConfigs []*Config
 	// The configuration contains a list of Statements separated by semicolons.
 	Statements []*Statement `parser:"( @@ ';'* )*"`
 }
@@ -36,11 +31,6 @@ type Config struct {
 // Returns the source path of the configuration file.
 func (c *Config) GetSourcePath() string {
 	return c.sourcePath
-}
-
-// Returns copies of included, expanded configurations.
-func (c *Config) GetExpandedConfigs() []*Config {
-	return c.expandedConfigs
 }
 
 // Returns serialized BIND 9 configuration with filtering and indentation.
@@ -545,11 +535,13 @@ func (c *Config) GetZoneKey(viewName string, zoneName string) (*Key, error) {
 }
 
 // Expands the configuration by including the contents of the included files.
-func (c *Config) Expand() (*Config, error) {
+// Returns the expanded configuration and the list of paths of included files.
+func (c *Config) Expand() (*Config, []string, error) {
 	baseDir := filepath.Dir(c.sourcePath)
 	expanded := &Config{
 		sourcePath: c.sourcePath,
 	}
+	var includedFiles []string
 	// Go over the top-level statements and identify the include statements.
 	for _, statement := range c.Statements {
 		if statement.Include != nil {
@@ -573,17 +565,17 @@ func (c *Config) Expand() (*Config, error) {
 			// Parse the included file.
 			parsedInclude, err := NewParser().ParseFile(path, c.chrootDir)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			// Append the parsed statements to the parent file.
 			expanded.Statements = append(expanded.Statements, parsedInclude.Statements...)
-			expanded.expandedConfigs = append(expanded.expandedConfigs, parsedInclude)
+			includedFiles = append(includedFiles, parsedInclude.GetSourcePath())
 		} else {
 			// This is not an include statement. Append it as is.
 			expanded.Statements = append(expanded.Statements, statement)
 		}
 	}
-	return expanded, nil
+	return expanded, includedFiles, nil
 }
 
 // Accepts paths to two files and checks if they point to the same file.

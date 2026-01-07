@@ -135,7 +135,7 @@ func TestGetACL(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -163,7 +163,7 @@ func TestViewKeysTooMuchRecursion(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -178,7 +178,7 @@ func TestGetViewKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	cfg, err = cfg.Expand()
+	cfg, _, err = cfg.Expand()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -1193,7 +1193,7 @@ func TestConfigExpand(t *testing.T) {
 			)
 
 			// Act
-			expanded, err := config.Expand()
+			expanded, _, err := config.Expand()
 
 			// Assert
 			require.NoError(t, err)
@@ -1271,7 +1271,7 @@ func TestConfigGetExpandedConfigs(t *testing.T) {
 	}
 
 	// Expand the main configuration.
-	expanded, err := config.Expand()
+	expanded, includes, err := config.Expand()
 	require.NoError(t, err)
 
 	// Ensure that the statements are expended in the main configuration.
@@ -1293,29 +1293,8 @@ func TestConfigGetExpandedConfigs(t *testing.T) {
 	require.Equal(t, "1.1.1.1", acl3.AddressMatchList.Elements[0].IPAddressOrACLName)
 
 	// Verify that the expanded config files have been recorded.
-	expandedConfigs := expanded.GetExpandedConfigs()
-	require.Len(t, expandedConfigs, 3)
-	require.Equal(t, filepath.Join(sandbox.BasePath, "include1.conf"), expandedConfigs[0].GetSourcePath())
-	require.Equal(t, filepath.Join(sandbox.BasePath, "include2.conf"), expandedConfigs[1].GetSourcePath())
-	require.Equal(t, filepath.Join(sandbox.BasePath, "include3.conf"), expandedConfigs[2].GetSourcePath())
-
-	// Verify that the individual expanded config files contain the statements
-	// that were included in the main configuration.
-	acl1 = expandedConfigs[0].GetACL("test1")
-	require.NotNil(t, acl1)
-	require.Equal(t, "test1", acl1.Name)
-	require.Len(t, acl1.AddressMatchList.Elements, 1)
-	require.Equal(t, "1.2.3.4", acl1.AddressMatchList.Elements[0].IPAddressOrACLName)
-
-	acl2 = expandedConfigs[1].GetACL("test2")
-	require.NotNil(t, acl2)
-	require.Equal(t, "test2", acl2.Name)
-	require.Len(t, acl2.AddressMatchList.Elements, 1)
-	require.Equal(t, "4.3.2.1", acl2.AddressMatchList.Elements[0].IPAddressOrACLName)
-
-	acl3 = expandedConfigs[2].GetACL("test3")
-	require.NotNil(t, acl3)
-	require.Equal(t, "test3", acl3.Name)
-	require.Len(t, acl3.AddressMatchList.Elements, 1)
-	require.Equal(t, "1.1.1.1", acl3.AddressMatchList.Elements[0].IPAddressOrACLName)
+	require.Len(t, includes, 3)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "include1.conf"), includes[0])
+	require.Equal(t, filepath.Join(sandbox.BasePath, "include2.conf"), includes[1])
+	require.Equal(t, filepath.Join(sandbox.BasePath, "include3.conf"), includes[2])
 }
