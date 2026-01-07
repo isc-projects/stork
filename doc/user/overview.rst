@@ -86,8 +86,8 @@ Since the server token is a secret and must be protected, we recommend using it 
 server token is compromised, the administrator can revoke it in the server UI. See the :ref:`secure-server-agent` for more details.
 
 The Stork agent is responsible for exchanging data between the Stork server and the Kea (connection no. 11 on the
-diagram) and DNS (connections no. 7 and 9 on the diagram) daemons. The agent and the daemons are running on the same
-machine, so the communication is local; however, it can still be secured.
+diagram) and DNS (connections no. 7, 9, 16, 17 and 18 on the diagram) daemons. The agent and the daemons are running on the same
+machine, so the communication is local. Some of these local connections can be secured.
 
 The Kea Control Agent (Kea CA) and other Kea daemons (since Kea 3.0.0) support Basic Auth to authenticate the
 clients of their REST APIs, via the control channel used by the Stork agent. This solution may be enabled to protect
@@ -100,22 +100,25 @@ recognizes that Kea requires a client certificate, the Stork agent attaches its 
 that was obtained during the agent registration) to the request. This certificate does not pass client-certificate
 verification by Kea, which means that Kea must be configured not to verify the client certificate.
 
-Stork's connection to BIND 9 utilizes two protocols: RNDC (control channel, connection no. 9 on the diagram) and HTTP (
-statistics channel, connection no. 7 on the diagram). The RNDC protocol may be secured by using RNDC keys; this is
-especially recommended if the BIND 9 daemon listens on non-localhost interfaces. The Stork agent retries the RNDC
-key from the BIND 9 configuration file; the agent must have the necessary permissions to read this file and use the
-``rndc`` and ``named-checkconf`` commands.
-The statistics channel is served over the HTTP protocol and may be secured by the SSL/TLS certificate.
+Stork's connection to BIND 9 utilizes multiple protocols: RNDC (control channel, connection no. 9 on the diagram),
+HTTP (statistics channel, connection no. 7 on the diagram), and DNS (zone transfer, connection no. 17 on the diagram).
+The RNDC protocol may be secured by using RNDC keys; this is especially recommended if the BIND 9 daemon listens on
+non-localhost interfaces. The Stork agent retries the RNDC key from the BIND 9 configuration file; the agent must have
+the necessary permissions to read this file and use the ``rndc`` and ``named-checkconf`` commands.
+The statistics channel is served over the HTTP protocol and is not secured. In typical configurations, this channel
+is exposed on the localhost interface to the Stork agent. The agent uses DNS zone transfer (AXFR) to fetch the zone
+data from the BIND 9 server. The agent determines the security keys (if configured) to use for the zone transfer from
+the BIND 9 configuration file. Currently, Stork agent does not support DoT (DNS over TLS), so the communication with
+the BIND 9 server is not secured. Therefore, to limit the access to the zone transfer, it is recommended to allow
+it over the localhost interface, and secure using non-permissive `allow-transfer` configuration settings.
 
-The Stork agent acts as a Prometheus exporter for the Kea and BIND 9 statistics. The Prometheus server scrapes the
-metrics from the agent over the HTTP protocol (connection no. 6 on the diagram); this connection is unsecure and does not
-support TLS. The metrics channel is expected not to be exposed to the public network. It is recommended to configure any
-firewall to limit access to the metrics endpoint only to the Prometheus server.
+Stork agent communicates with the PowerDNS server over the webserver API (connnection no. 16). The agent determines the
+API key to use from the PowerDNS configuration file. The PowerDNS authoritative webserver does not natively support TLS
+to secure this channel. New versions of PowerDNS recursor natively support TLS, but the Stork agent does not use it.
+Therefore, since the Stork agent and PowerDNS are running on the same machine, it is recommended to expose the webserver
+API to the Stork agent on the localhost interface. Similarly to BIND 9, Stork agent uses DNS zone transfer (AXFR) to
+fetch the zone data from the PowerDNS (connection no. 18). This communication is local and not secured.
 
-The Stork server supports hooks that may be loaded to provide new authentication methods. If these authentication methods
-use a dedicated authentication service, we recommend securing the connection to this service with the SSL/TLS
-certificate if the service and hook support it. In particular, the LDAP hook may be configured to use the SSL/TLS (LDAPS)
-protocol.
 
 Databases
 =========
