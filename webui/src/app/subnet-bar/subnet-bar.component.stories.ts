@@ -1,14 +1,14 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SubnetBarComponent } from './subnet-bar.component'
 import { Subnet } from '../backend'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/SubnetBar',
     component: SubnetBarComponent,
     decorators: [
         applicationConfig({
-            providers: [provideRouter([])],
+            providers: [provideRouter([{ path: '**', component: SubnetBarComponent }], withHashLocation())],
         }),
     ],
 } as Meta

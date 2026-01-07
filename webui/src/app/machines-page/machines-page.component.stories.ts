@@ -1,6 +1,6 @@
 import { MachinesPageComponent } from './machines-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
-import { ConfirmationService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { EntitiesResponse, mockedFilterByText, toastDecorator } from '../utils-stories'
@@ -9,6 +9,7 @@ import { of } from 'rxjs'
 import { AppsVersions, Machine } from '../backend'
 import { userEvent, within, expect, waitFor } from '@storybook/test'
 import { deepCopy } from '../utils'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 let mockedAuthorizedMachines: Machine[]
 let mockedAllMachines: Machine[]
@@ -545,9 +546,15 @@ const meta: Meta<MachinesPageComponent> = {
                             path: 'machines/:id',
                             component: MachinesPageComponent,
                         },
+                        {
+                            path: '**',
+                            component: MachinesPageComponent,
+                        },
                     ],
                     withHashLocation()
                 ),
+                provideHttpClient(withInterceptorsFromDi()),
+                MessageService,
             ],
         }),
         moduleMetadata({

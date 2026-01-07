@@ -1,12 +1,11 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { Events } from '../backend'
 import { toastDecorator } from '../utils-stories'
 import { EventsPanelComponent } from './events-panel.component'
 import { action } from '@storybook/addon-actions'
-import { AuthService } from '../auth.service'
 
 export default {
     title: 'App/EventsPanel',
@@ -16,13 +15,7 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideRouter([]),
-                {
-                    provide: AuthService,
-                    useValue: {
-                        hasPrivilege: (privilege: string) => privilege === 'events',
-                    },
-                },
+                provideRouter([{ path: '**', component: EventsPanelComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

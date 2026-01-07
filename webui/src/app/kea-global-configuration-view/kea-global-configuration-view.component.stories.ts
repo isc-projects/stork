@@ -3,14 +3,13 @@ import { KeaGlobalConfigurationViewComponent } from './kea-global-configuration-
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
-import { provideAnimations } from '@angular/platform-browser/animations'
 
 export default {
     title: 'App/KeaGlobalConfigurationView',
     component: KeaGlobalConfigurationViewComponent,
     decorators: [
         applicationConfig({
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideAnimations(), MessageService],
+            providers: [provideHttpClient(withInterceptorsFromDi()), MessageService],
         }),
         toastDecorator,
     ],

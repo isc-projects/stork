@@ -1,15 +1,9 @@
-import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { Meta, StoryObj } from '@storybook/angular'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 
 export default {
     title: 'App/DhcpOptionSetView',
     component: DhcpOptionSetViewComponent,
-    decorators: [
-        applicationConfig({
-            providers: [provideAnimations()],
-        }),
-    ],
 } as Meta
 
 type Story = StoryObj<DhcpOptionSetViewComponent>

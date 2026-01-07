@@ -1,10 +1,9 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { ConfigMigrationTabComponent } from './config-migration-tab.component'
-import { provideRouter } from '@angular/router'
 import { MessageService } from 'primeng/api'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/ConfigMigrationTab',
@@ -13,9 +12,8 @@ export default {
         applicationConfig({
             providers: [
                 provideHttpClient(withInterceptorsFromDi()),
-                provideRouter([]),
-                provideAnimations(),
                 MessageService,
+                provideRouter([{ path: '**', component: ConfigMigrationTabComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

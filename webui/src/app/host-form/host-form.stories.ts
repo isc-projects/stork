@@ -1,14 +1,12 @@
 import { HostFormComponent } from './host-form.component'
 
 import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { UntypedFormBuilder } from '@angular/forms'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
 import { CreateHostBeginResponse, DHCPService, UpdateHostBeginResponse } from '../backend'
-import { provideRouter } from '@angular/router'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 const mockCreateHostBeginData: CreateHostBeginResponse = {
     id: 123,
@@ -139,10 +137,13 @@ export default {
     component: HostFormComponent,
     decorators: [
         applicationConfig({
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), provideRouter([])],
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([{ path: '**', component: HostFormComponent }], withHashLocation()),
+            ],
         }),
         moduleMetadata({
-            providers: [UntypedFormBuilder, DHCPService, MessageService, provideAnimations()],
+            providers: [UntypedFormBuilder, DHCPService, MessageService],
         }),
         toastDecorator,
     ],

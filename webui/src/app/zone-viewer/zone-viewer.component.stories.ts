@@ -1,9 +1,9 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
 import { ZoneRRs } from '../backend'
 import { ZoneViewerComponent } from './zone-viewer.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 let mockGetZoneRRs: ZoneRRs = {
     zoneTransferAt: '2024-03-15T01:00:00Z',
@@ -80,7 +80,7 @@ export default {
     component: ZoneViewerComponent,
     decorators: [
         applicationConfig({
-            providers: [provideAnimations(), MessageService],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
         }),
         toastDecorator,
     ],

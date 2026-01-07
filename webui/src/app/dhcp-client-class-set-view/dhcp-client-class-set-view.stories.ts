@@ -1,7 +1,6 @@
 import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view.component'
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
 
@@ -10,7 +9,7 @@ export default {
     component: DhcpClientClassSetViewComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, provideAnimations()],
+            providers: [MessageService],
         }),
         toastDecorator,
     ],

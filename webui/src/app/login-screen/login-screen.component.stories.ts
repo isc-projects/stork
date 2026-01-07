@@ -5,14 +5,18 @@ import { AuthenticationMethod, AuthenticationMethods, Version } from '../backend
 import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
 import { action } from '@storybook/addon-actions'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/LoginScreen',
     component: LoginScreenComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([{ path: '**', component: LoginScreenComponent }], withHashLocation()),
+            ],
         }),
         toastDecorator,
     ],

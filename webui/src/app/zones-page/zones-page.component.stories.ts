@@ -1,10 +1,11 @@
 import { ZonesPageComponent } from './zones-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
-import { ConfirmationService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
 import { LocalZone, Zone } from '../backend'
 import { expect, userEvent, waitFor, within } from '@storybook/test'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 const meta: Meta<ZonesPageComponent> = {
     title: 'App/ZonesPage',
@@ -18,9 +19,15 @@ const meta: Meta<ZonesPageComponent> = {
                             path: 'dns/zones/:id',
                             component: ZonesPageComponent,
                         },
+                        {
+                            path: '**',
+                            component: ZonesPageComponent,
+                        },
                     ],
                     withHashLocation()
                 ),
+                provideHttpClient(withInterceptorsFromDi()),
+                MessageService,
             ],
         }),
         moduleMetadata({

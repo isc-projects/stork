@@ -1,11 +1,10 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SettingsPageComponent } from './settings-page.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { Settings } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
@@ -27,8 +26,7 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([]),
+                provideRouter([{ path: '**', component: SettingsPageComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

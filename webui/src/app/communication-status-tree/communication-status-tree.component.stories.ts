@@ -1,14 +1,15 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { CommunicationStatusTreeComponent } from './communication-status-tree.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/CommunicationStatusTree',
     component: CommunicationStatusTreeComponent,
     decorators: [
         applicationConfig({
-            providers: [provideRouter([]), provideAnimations()],
+            providers: [
+                provideRouter([{ path: '**', component: CommunicationStatusTreeComponent }], withHashLocation()),
+            ],
         }),
     ],
 } as Meta

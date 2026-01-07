@@ -1,5 +1,4 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ServicesService } from '../backend'
@@ -32,12 +31,7 @@ export default {
     component: ConfigCheckerPreferenceUpdaterComponent,
     decorators: [
         applicationConfig({
-            providers: [
-                MessageService,
-                ServicesService,
-                provideAnimations(),
-                provideHttpClient(withInterceptorsFromDi()),
-            ],
+            providers: [MessageService, ServicesService, provideHttpClient(withInterceptorsFromDi())],
         }),
         toastDecorator,
     ],

@@ -1,11 +1,10 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SharedNetworkTabComponent } from './shared-network-tab.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { IPType } from '../iptype'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/SharedNetworkTab',
@@ -16,11 +15,13 @@ export default {
                 ConfirmationService,
                 provideHttpClient(withInterceptorsFromDi()),
                 MessageService,
-                provideAnimations(),
-                provideRouter([
-                    { path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent },
-                    { path: 'iframe.html', component: SharedNetworkTabComponent },
-                ]),
+                provideRouter(
+                    [
+                        { path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent },
+                        { path: '**', component: SharedNetworkTabComponent },
+                    ],
+                    withHashLocation()
+                ),
             ],
         }),
         toastDecorator,

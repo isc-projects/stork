@@ -2,7 +2,6 @@ import { ConfigCheckerPreferencePickerComponent } from './config-checker-prefere
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { ConfigChecker } from '../backend'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -11,7 +10,7 @@ export default {
     component: ConfigCheckerPreferencePickerComponent,
     decorators: [
         applicationConfig({
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideAnimations(), MessageService],
+            providers: [provideHttpClient(withInterceptorsFromDi()), MessageService],
         }),
     ],
     argTypes: {

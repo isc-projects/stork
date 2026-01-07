@@ -1,11 +1,10 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SubnetTabComponent } from './subnet-tab.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { IPType } from '../iptype'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/SubnetTab',
@@ -16,11 +15,13 @@ export default {
                 ConfirmationService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([
-                    { path: 'dhcp/subnets/:id', component: SubnetTabComponent },
-                    { path: 'iframe.html', component: SubnetTabComponent },
-                ]),
+                provideRouter(
+                    [
+                        { path: 'dhcp/subnets/:id', component: SubnetTabComponent },
+                        { path: '**', component: SubnetTabComponent },
+                    ],
+                    withHashLocation()
+                ),
             ],
         }),
         toastDecorator,
@@ -406,6 +407,7 @@ export const Subnet4: Story = {
 export const Subnet4NoPools: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 50,
@@ -429,6 +431,7 @@ export const Subnet4NoPools: Story = {
 export const Subnet4NoPoolsInOneServer: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '192.0.2.0/24',
             sharedNetwork: 'Fiber',
             addrUtilization: 30,
@@ -461,6 +464,7 @@ export const Subnet4NoPoolsInOneServer: Story = {
 export const Subnet6Address: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '2001:db8:1::/64',
             addrUtilization: 60,
             stats: {
@@ -486,6 +490,7 @@ export const Subnet6Address: Story = {
 export const Subnet6Prefix: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '2001:db8:1::/64',
             pdUtilization: 60,
             stats: {
@@ -512,6 +517,7 @@ export const Subnet6Prefix: Story = {
 export const Subnet6AddressPrefix: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '2001:db8:1::/64',
             addrUtilization: 88,
             pdUtilization: 60,
@@ -547,6 +553,7 @@ export const Subnet6AddressPrefix: Story = {
 export const Subnet6DifferentPoolsOnDifferentServers: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '2001:db8:1::/64',
             addrUtilization: 88,
             pdUtilization: 60,
@@ -615,6 +622,7 @@ export const Subnet6DifferentPoolsOnDifferentServers: Story = {
 export const Subnet6NoPools: Story = {
     args: {
         subnet: {
+            id: 123,
             subnet: '2001:db8:1::/64',
             addrUtilization: 88,
             pdUtilization: 60,

@@ -1,10 +1,9 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
-import { provideRouter } from '@angular/router'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { HostTabComponent } from './host-tab.component'
 import { toastDecorator } from '../utils-stories'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/HostTab',
@@ -15,11 +14,13 @@ export default {
                 ConfirmationService,
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([
-                    { path: 'dhcp/hosts/:id', component: HostTabComponent },
-                    { path: 'iframe.html', component: HostTabComponent },
-                ]),
+                provideRouter(
+                    [
+                        { path: 'dhcp/hosts/:id', component: HostTabComponent },
+                        { path: '**', component: HostTabComponent },
+                    ],
+                    withHashLocation()
+                ),
             ],
         }),
         toastDecorator,

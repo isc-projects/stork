@@ -1,16 +1,10 @@
-import { moduleMetadata, Meta, StoryObj } from '@storybook/angular'
+import { Meta, StoryObj } from '@storybook/angular'
 import { CascadedParametersBoardComponent } from './cascaded-parameters-board.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { KeaConfigSubnetDerivedParameters } from '../backend'
 
 export default {
     title: 'App/CascadedParametersBoard',
     component: CascadedParametersBoardComponent,
-    decorators: [
-        moduleMetadata({
-            providers: [provideAnimations()],
-        }),
-    ],
 } as Meta
 
 type Story = StoryObj<CascadedParametersBoardComponent<KeaConfigSubnetDerivedParameters>>

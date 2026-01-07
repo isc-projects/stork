@@ -1,17 +1,11 @@
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.component'
 
-import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
-import { provideAnimations } from '@angular/platform-browser/animations'
+import { StoryObj, Meta } from '@storybook/angular'
 import { FormBuilder } from '@angular/forms'
 
 export default {
     title: 'App/DhcpClientClassSetForm',
     component: DhcpClientClassSetFormComponent,
-    decorators: [
-        applicationConfig({
-            providers: [provideAnimations()],
-        }),
-    ],
 } as Meta
 
 const fb: FormBuilder = new FormBuilder()

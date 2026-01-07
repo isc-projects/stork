@@ -1,10 +1,9 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 let mockGetAppsWithCommunicationIssues = {
     items: [
@@ -272,8 +271,7 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([]),
+                provideRouter([{ path: '**', component: CommunicationStatusPageComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

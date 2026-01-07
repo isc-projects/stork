@@ -1,6 +1,5 @@
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { TextFileViewerComponent } from './text-file-viewer.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
 
@@ -9,7 +8,7 @@ export default {
     component: TextFileViewerComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, provideAnimations()],
+            providers: [MessageService],
         }),
         toastDecorator,
     ],

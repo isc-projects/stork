@@ -4,7 +4,6 @@ import { toastDecorator } from '../utils-stories'
 import { FormControl, FormGroup, UntypedFormArray, Validators } from '@angular/forms'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { MessageService } from 'primeng/api'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { KeaPoolParametersForm, PrefixForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
 import { StorkValidators } from '../validators'
 
@@ -20,7 +19,7 @@ export default {
     },
     decorators: [
         applicationConfig({
-            providers: [provideAnimations(), MessageService],
+            providers: [MessageService],
         }),
         toastDecorator,
     ],

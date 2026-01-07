@@ -1,6 +1,5 @@
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { Bind9ConfigViewFeederComponent } from './bind9-config-view-feeder.component'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
@@ -52,7 +51,7 @@ export default {
     component: Bind9ConfigViewFeederComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, provideAnimations(), provideHttpClient(withInterceptorsFromDi())],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
         }),
         toastDecorator,
     ],

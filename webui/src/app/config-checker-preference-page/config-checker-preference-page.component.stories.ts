@@ -1,11 +1,10 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
 import { toastDecorator } from '../utils-stories'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -43,8 +42,7 @@ export default {
                 MessageService,
                 ServicesService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideRouter([]),
-                provideAnimations(),
+                provideRouter([{ path: '**', component: ConfigCheckerPreferencePageComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

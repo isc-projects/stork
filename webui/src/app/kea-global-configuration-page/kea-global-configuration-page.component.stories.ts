@@ -5,7 +5,6 @@ import { MockParamMap } from '../utils'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 
 const mockGetDaemonConfig = {
@@ -204,7 +203,6 @@ export default {
                 },
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
             ],
         }),
         toastDecorator,

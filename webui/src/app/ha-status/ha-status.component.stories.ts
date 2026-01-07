@@ -3,9 +3,8 @@ import { HaStatusComponent } from './ha-status.component'
 import { ServicesService, ServicesStatus } from '../backend'
 import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 let mockHubAndSpokeStatus: ServicesStatus = {
     items: [
@@ -128,10 +127,9 @@ export default {
         applicationConfig({
             providers: [
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([]),
                 ServicesService,
                 MessageService,
+                provideRouter([{ path: '**', component: HaStatusComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

@@ -1,8 +1,6 @@
 import { JsonTreeRootComponent } from './json-tree-root.component'
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
-import { provideRouter } from '@angular/router'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -13,12 +11,7 @@ export default {
     subcomponents: [JsonTreeComponent],
     decorators: [
         applicationConfig({
-            providers: [
-                MessageService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([]),
-            ],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
         }),
     ],
     argTypes: {

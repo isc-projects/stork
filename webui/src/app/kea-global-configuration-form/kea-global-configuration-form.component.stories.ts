@@ -4,7 +4,6 @@ import { MockParamMap } from '../utils'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
 import { UpdateKeaDaemonsGlobalParametersBeginResponse } from '../backend'
@@ -193,7 +192,6 @@ export default {
                 },
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
             ],
         }),
         toastDecorator,

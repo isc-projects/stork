@@ -1,15 +1,14 @@
 import { IdentifierComponent } from './identifier.component'
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
-import { provideAnimations } from '@angular/platform-browser/animations'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {
     title: 'App/Identifier',
     component: IdentifierComponent,
     decorators: [
         applicationConfig({
-            providers: [provideRouter([]), provideAnimations()],
+            providers: [provideRouter([{ path: '**', component: IdentifierComponent }], withHashLocation())],
         }),
     ],
 } as Meta

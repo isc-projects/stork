@@ -1,5 +1,5 @@
 import { componentWrapperDecorator } from '@storybook/angular'
-import { MessageService, ToastMessageOptions } from 'primeng/api'
+import { AuthService } from './auth.service'
 
 /**
  * Wraps the component with the PrimeNG toast handler.
@@ -11,26 +11,6 @@ export const toastDecorator = componentWrapperDecorator(
         <div>${story}</div>
     </div>`
 )
-
-export class MessageServiceMock extends MessageService {
-    /**
-     * Overrides PrimeNG MessageService "add" method.
-     * @param message message to be displayed
-     */
-    add(message: ToastMessageOptions) {
-        if (
-            message.detail.includes('URL parameter id not supported') ||
-            message.detail.includes('URL parameter viewMode not supported') ||
-            message.detail.includes('URL parameter args not supported') ||
-            message.detail.includes('URL parameter globals not supported')
-        ) {
-            // Do not display toast messages about not supported URL parameters that are internal Storybook params.
-            return
-        }
-
-        super.add(message)
-    }
-}
 
 /**
  * Type representing typical Stork REST API response with paged data.
@@ -54,3 +34,78 @@ export function mockedFilterByText(response: EntitiesResponse, request: any, mat
 
     return response
 }
+
+/**
+ * Global variables used by MockedAuthService.
+ */
+let isSuperAdmin = true
+let isAdmin = false
+let isReadOnly = false
+
+/**
+ * Mocks AuthService by extending its normal implementation,
+ * with the exception of superAdmin, isAdmin and isInReadOnlyGroup methods.
+ * Overridden methods will return values kept in global variables.
+ * Global variables values are controlled by authServiceDecorator.
+ */
+export class MockedAuthService extends AuthService {
+    /**
+     * Returns whether current user belongs to super-admin group.
+     */
+    superAdmin() {
+        return isSuperAdmin
+    }
+
+    /**
+     * Returns whether current user belongs to admin group.
+     */
+    isAdmin() {
+        return isAdmin
+    }
+
+    /**
+     * Returns whether current user belongs to read-only group.
+     */
+    isInReadOnlyGroup() {
+        return isReadOnly
+    }
+}
+
+/**
+ * Wraps the component so that isSuperAdmin, isReadOnly and isAdmin global variables
+ * are controlled by Storybook "globals.role" setting.
+ */
+export const authServiceDecorator = componentWrapperDecorator(
+    (story) => story,
+    ({ globals }) => {
+        if (!globals.role) {
+            isSuperAdmin = true
+            isReadOnly = false
+            isAdmin = false
+            return
+        }
+
+        switch (globals.role) {
+            case 'super-admin':
+                isSuperAdmin = true
+                isAdmin = false
+                isReadOnly = false
+                break
+            case 'admin':
+                isSuperAdmin = false
+                isAdmin = true
+                isReadOnly = false
+                break
+            case 'read-only':
+                isReadOnly = true
+                isSuperAdmin = false
+                isAdmin = false
+                break
+            default:
+                isSuperAdmin = true
+                isReadOnly = false
+                isAdmin = false
+                break
+        }
+    }
+)

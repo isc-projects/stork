@@ -1,7 +1,6 @@
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { SubnetFormComponent } from './subnet-form.component'
 import { toastDecorator } from '../utils-stories'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { CreateSubnetBeginResponse, UpdateSubnetBeginResponse } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -452,7 +451,7 @@ export default {
     component: SubnetFormComponent,
     decorators: [
         applicationConfig({
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideAnimations()],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
         }),
         toastDecorator,
     ],

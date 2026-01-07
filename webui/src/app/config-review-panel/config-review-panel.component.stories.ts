@@ -1,4 +1,3 @@
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
@@ -39,12 +38,7 @@ export default {
     component: ConfigReviewPanelComponent,
     decorators: [
         applicationConfig({
-            providers: [
-                MessageService,
-                ServicesService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-            ],
+            providers: [MessageService, ServicesService, provideHttpClient(withInterceptorsFromDi())],
         }),
         toastDecorator,
     ],

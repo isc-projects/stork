@@ -1,11 +1,10 @@
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { SharedNetworkFormComponent } from './shared-network-form.component'
 import { toastDecorator } from '../utils-stories'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { CreateSharedNetworkBeginResponse, UpdateSharedNetworkBeginResponse } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 
 let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
     id: 123,
@@ -280,8 +279,7 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([]),
+                provideRouter([{ path: '**', component: SharedNetworkFormComponent }], withHashLocation()),
             ],
         }),
         toastDecorator,

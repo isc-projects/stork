@@ -1,11 +1,10 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AppTabComponent } from './app-tab.component'
 import { of } from 'rxjs'
-import { provideRouter } from '@angular/router'
+import { provideRouter, withHashLocation } from '@angular/router'
 import { AppsVersions } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
@@ -150,8 +149,7 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideAnimations(),
-                provideRouter([{ path: 'iframe.html', component: AppTabComponent }]),
+                provideRouter([{ path: '**', component: AppTabComponent }], withHashLocation()),
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
             ],
