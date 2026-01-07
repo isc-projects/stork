@@ -1483,6 +1483,13 @@ If BIND 9 listens on non-localhost interfaces, it is recommended to:
 
 - Secure its control channel by setting the RNDC key.
 
+Monitoring PowerDNS
+~~~~~~~~~~~~~~~~~~~
+
+- The Stork agent must have rights to read the PowerDNS configuration files (e.g., ``/etc/powerdns/pdns.conf``) and its references.
+- The PowerDNS webserver should be configured to server the API over the localhost interface.
+- The PowerDNS server should be configured to allow zone transfer over the localhost interface.
+
 PostgreSQL
 ----------
 
