@@ -20,7 +20,6 @@ import { By } from '@angular/platform-browser'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
 import { take } from 'rxjs/operators'
-import { NgZone } from '@angular/core'
 import { AuthService } from '../auth.service'
 
 describe('ZonesPageComponent', () => {

@@ -1027,6 +1027,8 @@ export const TestIncorrectQueryParamFilters: Story = {
         await expect(body.queryAllByText('Wrong URL parameter value').length).toBeGreaterThan(0)
 
         // No correct filter in queryParams found, so no filtering should be applied. All zones without builtin zones should be displayed.
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        await expect(clearFiltersBtn).toBeDisabled()
         await waitFor(
             () => expect(within(table).getAllByRole('row')).toHaveLength(allZones.length + 1 - builtinZones.length) // All rows in tbody + one row in the thead.
         )
