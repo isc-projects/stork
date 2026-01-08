@@ -1595,6 +1595,92 @@ func TestReceiveZonesNilZoneInventory(t *testing.T) {
 	require.Contains(t, err.Error(), "attempted to receive DNS zones from a daemon for which zone inventory was not instantiated")
 }
 
+// Test that it is possible to force populating the zone inventory while
+// receiving the zones.
+func TestReceiveZonesForcePopulate(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *dnsmodel.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(20)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+			"_bind": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory but don't populate the zones.
+	config := parseDefaultBind9Config(t)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	inventory.start()
+	defer inventory.stop()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 daemon with the inventory.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+			zoneInventory: inventory,
+		},
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+	ctx := context.Background()
+	mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+	// The zones from the _default view should be returned in order.
+	var mocks []any
+	for _, zone := range defaultZones {
+		apiZone := &agentapi.Zone{
+			Name:           zone.Name(),
+			Class:          zone.Class,
+			Serial:         zone.Serial,
+			Type:           zone.Type,
+			Loaded:         zone.Loaded.Unix(),
+			View:           "_default",
+			TotalZoneCount: 10,
+		}
+		mocks = append(mocks, mock.EXPECT().Send(apiZone).Return(nil))
+	}
+	gomock.InOrder(mocks...)
+
+	// Run the actual test and force populating the zones using
+	// the ForcePopulate flag.
+	err := sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "_default",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+		ForcePopulate:  true,
+	}, mock)
+	require.NoError(t, err)
+}
+
 // Test that an error is returned when the daemon is not a DNS server.
 func TestReceiveZonesUnsupportedDaemon(t *testing.T) {
 	sa, _, teardown := setupAgentTest()

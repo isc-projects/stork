@@ -265,6 +265,9 @@ message ReceiveZonesReq {
   // Filter the zones by load time. Only return the zones loaded
   // after specified time.
   int64 loadedAfter = 6;
+  // Indicates if the zone inventory should be populated before returning the zones.
+  // If true, it will be populated again even if it is already populated.
+  bool forcePopulate = 7;
 }
 
 // A single zone returned over the stream.

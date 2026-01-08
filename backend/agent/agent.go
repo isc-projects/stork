@@ -694,6 +694,22 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 		// zone inventory initialized.
 		return status.New(codes.FailedPrecondition, "attempted to receive DNS zones from a daemon for which zone inventory was not instantiated").Err()
 	}
+
+	if req.ForcePopulate {
+		// Refresh the zone inventory if requested by the Stork server. This
+		// operation will block until the zone inventory is populated.
+		ch, err := inventory.populate(true)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		if ch != nil {
+			s := <-ch
+			if s.err != nil {
+				return status.Error(codes.Internal, s.err.Error())
+			}
+		}
+	}
+
 	// Set filtering rules based on the request.
 	var filter *dnsmodel.ZoneFilter
 	if req.ViewName != "" || req.Limit > 0 || req.LoadedAfter > 0 || req.LowerBound != "" {
