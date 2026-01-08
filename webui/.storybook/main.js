@@ -9,7 +9,7 @@ const config = {
         'storybook-addon-mock',
     ],
 
-    framework:  '@storybook/angular',
+    framework: '@storybook/angular',
 
     core: {
         disableTelemetry: true, // Disables telemetry

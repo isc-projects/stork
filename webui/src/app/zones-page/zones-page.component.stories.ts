@@ -1,7 +1,7 @@
 import { ZonesPageComponent } from './zones-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { provideRouter, withHashLocation } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
 import { LocalZone, Zone } from '../backend'
 import { expect, userEvent, waitFor, within } from '@storybook/test'
@@ -681,6 +681,40 @@ export const ListZones: Story = {
                     return mockedFilterByText(resp, req, 'name')
                 },
             },
+            {
+                url: 'api/zone/1',
+                method: 'GET',
+                status: 200,
+                response: () => primaryZones[0],
+            },
+            {
+                url: 'api/zones?start=s&limit=l&appType=a&zoneType=t&class=c&text=t&serial=s&rpz=r',
+                method: 'GET',
+                status: 200,
+                response: (req) => {
+                    const search = new URL(req.url, 'http://localhost').search
+                    const searchParams = new URLSearchParams(search)
+                    const zoneTypes = searchParams.getAll('zoneType')
+                    if (zoneTypes.includes('primary')) {
+                        zoneTypes.push('master')
+                    }
+                    const filteredZones = allZones.filter((z) =>
+                        z.localZones.some(
+                            (lz: TestLocalZone) =>
+                                zoneTypes.includes(lz.zoneType) &&
+                                (!!lz.rpz).toString() == req.searchParams?.rpz &&
+                                lz.serial.toString().includes(req.searchParams?.serial) &&
+                                lz.class == req.searchParams?.class &&
+                                lz.appName.indexOf(req.searchParams?.appType) == 0
+                        )
+                    )
+                    const resp = {
+                        items: filteredZones,
+                        total: filteredZones.length,
+                    }
+                    return mockedFilterByText(resp, req, 'name')
+                },
+            },
         ],
     },
 }
@@ -909,5 +943,92 @@ export const TestZonesFiltering: Story = {
         await userEvent.unhover(toggleBuiltinZones)
 
         await userEvent.click(clearFiltersBtn)
+    },
+}
+
+export const TestCorrectQueryParamFilters: Story = {
+    decorators: [
+        applicationConfig({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            paramMap: convertToParamMap({}),
+                            queryParamMap: convertToParamMap({
+                                appType: 'bind9',
+                                zoneType: 'primary',
+                                zoneClass: 'IN',
+                                rpz: 'only',
+                                text: 'example',
+                                zoneSerial: '2017',
+                            }),
+                            fragment: null,
+                        },
+                    },
+                },
+            ],
+        }),
+    ],
+    parameters: ListZones.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange + Act + Assert
+        const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        const table = await canvas.findByRole('table')
+
+        // There should be no warning.
+        await expect(body.queryAllByText('Wrong URL parameter value')).toHaveLength(0)
+        await expect(clearFiltersBtn).toBeEnabled()
+
+        // Check that the builtin zones toggler state is correct.
+        const toggleBuiltinZones = await canvas.findByRole('button', { name: 'Toggle builtin zones' })
+        await userEvent.hover(toggleBuiltinZones)
+        await expect(body.getByRole('tooltip', { name: 'Click to show builtin zones' })).toBeInTheDocument()
+        await userEvent.unhover(toggleBuiltinZones)
+
+        // Only one zone should be filtered.
+        await expect(await within(table).findAllByRole('row')).toHaveLength(2) // All rows in tbody + one row in the thead.
+        await expect(canvas.getByText('drop.rpz.example.com')).toBeInTheDocument()
+    },
+}
+
+export const TestIncorrectQueryParamFilters: Story = {
+    decorators: [
+        applicationConfig({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            paramMap: convertToParamMap({}),
+                            queryParamMap: convertToParamMap({
+                                foo: 'bind9',
+                                bar: 'primary',
+                                zoneClass: 'CLASS',
+                                rpz: 'onlyNot',
+                            }),
+                            fragment: null,
+                        },
+                    },
+                },
+            ],
+        }),
+    ],
+    parameters: ListZones.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange + Act + Assert
+        const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
+        const table = await canvas.findByRole('table')
+
+        // Warning toast message should be displayed.
+        await expect(body.queryAllByText('Wrong URL parameter value').length).toBeGreaterThan(0)
+
+        // No correct filter in queryParams found, so no filtering should be applied. All zones without builtin zones should be displayed.
+        await waitFor(
+            () => expect(within(table).getAllByRole('row')).toHaveLength(allZones.length + 1 - builtinZones.length) // All rows in tbody + one row in the thead.
+        )
     },
 }
