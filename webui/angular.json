@@ -107,6 +107,7 @@
                 "storybook": {
                     "builder": "@storybook/angular:start-storybook",
                     "options": {
+                        "compodoc": false,
                         "browserTarget": "stork:build",
                         "port": 6006
                     }
@@ -114,6 +115,7 @@
                 "build-storybook": {
                     "builder": "@storybook/angular:build-storybook",
                     "options": {
+                        "compodoc": false,
                         "browserTarget": "stork:build"
                     }
                 }
