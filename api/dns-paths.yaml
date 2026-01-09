@@ -38,6 +38,13 @@
       operationId: putZonesFetch
       tags:
         - DNS
+      parameters:
+        - name: forcePopulate
+          in: query
+          description: >-
+            Force the Stork agent to refresh the list of zones from the DNS server before
+            returning the zones.
+          type: boolean
       responses:
         202:
           description: >-

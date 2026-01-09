@@ -641,6 +641,28 @@ func TestPutZonesFetch(t *testing.T) {
 	require.IsType(t, &dns.PutZonesFetchAccepted{}, rsp)
 }
 
+// Test that the flag indicating that the zone inventory should be populated
+// is propagated from the REST API to the manager.
+func TestPutZonesFetchForcePopulate(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	mockManager := NewMockManager(ctrl)
+	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any(), dnsop.FetchZonesOptionForcePopulate).Return(nil, nil)
+
+	settings := RestAPISettings{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, mockManager)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := dns.PutZonesFetchParams{
+		ForcePopulate: storkutil.Ptr(true),
+	}
+	rsp := rapi.PutZonesFetch(ctx, params)
+	require.IsType(t, &dns.PutZonesFetchAccepted{}, rsp)
+}
+
 // Test that the HTTP Accepted status is returned upon an attempt to
 // fetch the zones while the fetch is already in progress.
 func TestPutZonesFetchAlreadyFetching(t *testing.T) {
