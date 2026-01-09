@@ -16,7 +16,9 @@ import (
 	"isc.org/stork/daemondata/kea"
 )
 
-// Write the lines from input to the file in output one at a time, returning control to the Go scheduler after each write..
+// Write the lines from input to the file in output one at a time, syncing the
+// file to encourage the changes to reach the disk and trigger a filesystem
+// event.
 func slowlyWriteToLeasefile(input string, output *os.File) error {
 	defer output.Close()
 	infile, err := os.Open(input)
@@ -63,6 +65,7 @@ func slowlyWriteToLeasefileWithSwapAndDelay(input1 string, input2 string, output
 
 var (
 	ErrInvalidLimit = errors.New("invalid limit parameter; it is not possible to read a negative number of items from the channel")
+	ErrChanClosed   = errors.New("channel closed unexpectedly")
 	ErrTimedOut     = errors.New("timed out while waiting for enough rows")
 )
 
@@ -81,7 +84,7 @@ func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context,
 		select {
 		case row, ok := <-c:
 			if !ok {
-				didTimeOut = ErrTimedOut
+				didTimeOut = ErrChanClosed
 				break
 			}
 			results = append(results, row)
@@ -368,6 +371,86 @@ func TestParseRowAsLease4(t *testing.T) {
 			nil,
 			"",
 		},
+		{
+			"Non-integer expiry timestamp, which it should refuse to parse.",
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"CA55E11E",
+				"123",
+				"0",
+				"0",
+				"",
+				"0",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"expiry",
+		},
+		{
+			"Non-integer valid lifetime, which it should refuse to parse.",
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"CA55E11E",
+				"1761257849",
+				"123",
+				"0",
+				"0",
+				"",
+				"0",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"valid_lifetime",
+		},
+		{
+			"Non-integer subnet ID, which it should refuse to parse.",
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"1761257849",
+				"CA55E11E",
+				"0",
+				"0",
+				"",
+				"0",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"subnet ID",
+		},
+		{
+			"Non-integer lease state, which it should refuse to parse.",
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"1761257849",
+				"123",
+				"0",
+				"0",
+				"",
+				"CA55E11E",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"lease state",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -391,6 +474,13 @@ func TestParseRowAsLease6(t *testing.T) {
 		expected    *keadata.Lease
 		expectedErr string // Zero value means no expected error.
 	}{
+		{
+			"Empty slice, which it should skip",
+			[]string{},
+			0,
+			nil,
+			"empty",
+		},
 		{
 			"Headers, which it should skip",
 			[]string{
@@ -491,6 +581,136 @@ func TestParseRowAsLease6(t *testing.T) {
 			1761669050,
 			nil,
 			"",
+		},
+		{
+			"Non-integer expiry timestamp, which it should refuse to parse.",
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"CA55E11E",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"expiry",
+		},
+		{
+			"Non-integer valid lifetime, which it should refuse to parse.",
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"CA55E11E",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"valid_lifetime",
+		},
+		{
+			"Non-integer subnet ID, which it should refuse to parse.",
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"CA55E11E",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"subnet ID",
+		},
+		{
+			"Non-integer lease state, which it should refuse to parse.",
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"128",
+				"0",
+				"0",
+				"",
+				"",
+				"CA55E11E",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"lease state",
+		},
+		{
+			"Non-integer prefix length, which it should refuse to parse.",
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"CA55E11E",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				"",
+				"",
+				"0",
+			},
+			0,
+			nil,
+			"prefix length",
 		},
 	}
 	for _, tc := range testCases {
