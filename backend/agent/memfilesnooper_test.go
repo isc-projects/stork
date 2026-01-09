@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -258,6 +259,181 @@ func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
 			require.EqualValues(t, expected2Addr, parsedRows[5][0], "complete parse results: %v; file contents: '%s'", parsedRows, fileContents)
 		})
 	}
+}
+
+// Confirm that RowSource conitnues producing rows from a file when EnsureWatching is called with the same file path.
+func TestRowSourceEnsureWatchingNoChange(t *testing.T) {
+	// Arrange
+	tmpdir := t.TempDir()
+	err := os.MkdirAll(tmpdir, 0o750)
+	require.NoError(t, err, "unable to create temporary directory for test execution")
+
+	leasefileName := filepath.Join(tmpdir, "kea-leases4.csv")
+	leasefile, err := os.Create(leasefileName)
+	require.NoError(t, err, "unable to create temporary leases file")
+	defer os.Remove(leasefileName)
+
+	infile := "testdata/small-leases4.csv"
+	infile2 := "testdata/small2-leases4.csv"
+	expected0 := []string{
+		"address",
+		"hwaddr",
+		"client_id",
+		"valid_lifetime",
+		"expire",
+		"subnet_id",
+		"fqdn_fwd",
+		"fqdn_rev",
+		"hostname",
+		"state",
+		"user_context",
+		"pool_id",
+	}
+	expected1 := []string{
+		"192.110.111.2",
+		"03:00:00:00:00:00",
+		"01:03:00:00:00:00:00",
+		"3600",
+		"1761257849",
+		"123",
+		"0",
+		"0",
+		"",
+		"0",
+		"",
+		"0",
+	}
+	expected5 := []string{
+		"192.110.111.5",
+		"03:00:00:00:00:03",
+		"01:03:00:00:00:00:03",
+		"3600",
+		"1761257853",
+		"123",
+		"0",
+		"0",
+		"",
+		"0",
+		"",
+		"0",
+	}
+	rowsource, err := NewRowSource(leasefileName)
+	require.NoError(t, err)
+	batch1, err := os.ReadFile(infile)
+	require.NoError(t, err)
+	_, err = leasefile.Write(batch1)
+	require.NoError(t, err)
+
+	// Act
+	channel := rowsource.Start()
+	defer rowsource.Stop()
+	actual, errRead1 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	errEnsure := rowsource.EnsureWatching(leasefileName)
+	go func() {
+		err = slowlyWriteToLeasefile(infile2, leasefile)
+		require.NoError(t, err, "Got an error when trying to WRITE the second set of rows")
+	}()
+
+	actualAfter, errRead2 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+
+	// Assert
+	require.NoError(t, errRead1, "Got an error when trying to read the first set of rows")
+	require.NoError(t, errEnsure, "Got an error when trying to EnsureWatching")
+	require.NoError(t, errRead2, "Got an error when trying to read the second set of rows")
+	require.Equal(t, expected0, actual[0])
+	require.Equal(t, expected1, actual[1])
+	require.Equal(t, expected0, actualAfter[0])
+	require.Equal(t, expected5, actualAfter[1])
+}
+
+// Confirm that RowSource produces rows from a new file if EnsureWatching is
+// called with a new path.
+func TestRowSourceEnsureWatchingWithChange(t *testing.T) {
+	// Arrange
+	infile := "testdata/small-leases4.csv"
+	infile2 := "testdata/small2-leases4.csv"
+	expected0 := []string{
+		"address",
+		"hwaddr",
+		"client_id",
+		"valid_lifetime",
+		"expire",
+		"subnet_id",
+		"fqdn_fwd",
+		"fqdn_rev",
+		"hostname",
+		"state",
+		"user_context",
+		"pool_id",
+	}
+	expected1 := []string{
+		"192.110.111.2",
+		"03:00:00:00:00:00",
+		"01:03:00:00:00:00:00",
+		"3600",
+		"1761257849",
+		"123",
+		"0",
+		"0",
+		"",
+		"0",
+		"",
+		"0",
+	}
+	expected5 := []string{
+		"192.110.111.5",
+		"03:00:00:00:00:03",
+		"01:03:00:00:00:00:03",
+		"3600",
+		"1761257853",
+		"123",
+		"0",
+		"0",
+		"",
+		"0",
+		"",
+		"0",
+	}
+	rowsource, err := NewRowSource(infile)
+	require.NoError(t, err)
+
+	// Act
+	channel := rowsource.Start()
+	defer rowsource.Stop()
+	actual, errRead1 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+
+	errEnsure := rowsource.EnsureWatching(infile2)
+
+	actualAfter, errRead2 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+
+	// Assert
+	require.NoError(t, errRead1, "Got an error when trying to read the first set of rows")
+	require.NoError(t, errEnsure, "Got an error when trying to EnsureWatching the new file")
+	require.NoError(t, errRead2, "Got an error when trying to read the second set of rows")
+	require.Equal(t, expected0, actual[0])
+	require.Equal(t, expected1, actual[1])
+	require.Equal(t, expected0, actualAfter[0])
+	require.Equal(t, expected5, actualAfter[1])
+}
+
+func TestRowSourcePreconditions(t *testing.T) {
+	t.Run("Calling .Stop() on a RowSource that isn't running should not error out", func(t *testing.T) {
+		rowsource, err := NewRowSource("testdata/small-leases4.csv")
+		require.NoError(t, err)
+
+		rowsource.Stop()
+	})
+
+	t.Run("Calling .Start() on a RowSource that is already running should not start a second goroutine", func(t *testing.T) {
+		rowsource, err := NewRowSource("testdata/small-leases4.csv")
+		require.NoError(t, err)
+
+		_ = rowsource.Start()
+		grCount := runtime.NumGoroutine()
+		_ = rowsource.Start()
+		grCount2 := runtime.NumGoroutine()
+		require.Equal(t, grCount, grCount2, "the number of goroutines running changed after calling .Start() a second time")
+	})
 }
 
 // Confirm that ParseRowAsLease4 handles the various kinds of rows as expected.

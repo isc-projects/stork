@@ -91,6 +91,12 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 	return &lease, nil
 }
 
+type RowSource interface {
+	Start() chan []string
+	EnsureWatching(path string) error
+	Stop()
+}
+
 // A tool to produce rows from a CSV file over time.
 //
 // RowSource watches a file using the `fsnotify` library and emits string slices
@@ -99,7 +105,7 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 // When the watched file is renamed, it will be read one last time to process any
 // data that may have been written prior to the rename, and then it will wait for a
 // new file to appear with the original name.
-type RowSource struct {
+type FSNotifyRowSource struct {
 	path    string
 	results chan []string
 	memfile *os.File
@@ -111,10 +117,14 @@ type RowSource struct {
 
 // Create a new RowSource which watches the file described by `path`.
 // When `error` is non-nil, the first return value is undefined.
-func NewRowSource(path string) (*RowSource, error) {
+func NewRowSource(path string) (RowSource, error) {
+	realPath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return nil, err
+	}
 	results := make(chan []string, 1)
 	stop := make(chan bool)
-	memfile, err := os.Open(path)
+	memfile, err := os.Open(realPath)
 	if err != nil {
 		return nil, err
 	}
@@ -122,13 +132,13 @@ func NewRowSource(path string) (*RowSource, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = watcher.Add(filepath.Dir(path))
+	err = watcher.Add(filepath.Dir(realPath))
 	if err != nil {
 		return nil, err
 	}
 	reader := csv.NewReader(memfile)
-	rs := RowSource{
-		path,
+	rs := FSNotifyRowSource{
+		realPath,
 		results,
 		memfile,
 		reader,
@@ -141,7 +151,7 @@ func NewRowSource(path string) (*RowSource, error) {
 }
 
 // Read the watched file and emit rows into the channel until reaching EOF.
-func (rs *RowSource) readToEOF() {
+func (rs *FSNotifyRowSource) readToEOF() {
 	for {
 		log.Trace("Start of readToEOF loop")
 		record, err := rs.reader.Read()
@@ -158,7 +168,7 @@ func (rs *RowSource) readToEOF() {
 }
 
 // Reopen the watched file (after it was renamed or deleted).
-func (rs *RowSource) reopen() error {
+func (rs *FSNotifyRowSource) reopen() error {
 	log.Trace("Trying to reopen log file")
 	// If it's already closed, the error doesn't matter.
 	rs.memfile.Close()
@@ -184,7 +194,7 @@ func (rs *RowSource) reopen() error {
 
 // Start a background goroutine which watches the file and puts CSV-parsed rows
 // into the channel (this function's return value).
-func (rs *RowSource) Start() chan []string {
+func (rs *FSNotifyRowSource) Start() chan []string {
 	// Don't start two of them.
 	if rs.running {
 		return rs.results
@@ -240,13 +250,57 @@ func (rs *RowSource) Start() chan []string {
 }
 
 // Stop the background goroutine. After this function is called, the RowSource cannot be reused.
-func (rs *RowSource) Stop() {
+func (rs *FSNotifyRowSource) Stop() {
 	if !rs.running {
 		return
 	}
-	rs.stop <- true
+	rs.watcher.Close()
+	rs.memfile.Close()
+	// Don't send the stop signal because .Close() on the Watcher also exits the
+	// loop and means the stop would block indefinitely.
 	close(rs.results)
 	rs.running = false
+}
+
+// Ensure that the RowSource is watching the named file.  If this is the same
+// file as it was already watching, no state is changed.  If it is a different
+// file, the RowSource is stopped, reset to examine the new file, and then
+// started again.
+func (rs *FSNotifyRowSource) EnsureWatching(path string) error {
+	if !rs.running {
+		return nil
+	}
+	realPath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return err
+	}
+	// Don't do anything if it's the same file.
+	if realPath == rs.path {
+		return nil
+	}
+	// Don't call rs.Stop() because it closes the channel, which makes things more difficult for consumers of this API.
+	rs.watcher.Close()
+	rs.memfile.Close()
+	rs.stop <- true
+	rs.running = false
+
+	rs.path = realPath
+
+	rs.memfile, err = os.Open(realPath)
+	if err != nil {
+		return err
+	}
+	rs.watcher, err = fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	err = rs.watcher.Add(filepath.Dir(realPath))
+	if err != nil {
+		return err
+	}
+	rs.reader = csv.NewReader(rs.memfile)
+	rs.Start()
+	return nil
 }
 
 // Parse the "Expire" and "Lifetime" columns of the provided into uint64s.
