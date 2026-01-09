@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -315,6 +316,8 @@ func GetDaemonsByMachine(dbi pg.DBI, machineID int64) (daemons []Daemon, err err
 // Retrieves all daemons.
 func GetAllDaemons(dbi dbops.DBI) ([]Daemon, error) {
 	return GetAllDaemonsWithRelations(dbi,
+		nil,
+		nil,
 		DaemonRelationAccessPoints,
 		DaemonRelationMachine,
 		DaemonRelationLogTargets,
@@ -325,12 +328,43 @@ func GetAllDaemons(dbi dbops.DBI) ([]Daemon, error) {
 }
 
 // Retrieves all daemons with provided relationships to other tables.
-func GetAllDaemonsWithRelations(dbi dbops.DBI, relations ...DaemonRelation) ([]Daemon, error) {
+// It is possible to filter retrieved daemons by search text or dns/dhcp domain.
+func GetAllDaemonsWithRelations(dbi dbops.DBI, filterText *string, filterDomain *string, relations ...DaemonRelation) ([]Daemon, error) {
 	var daemons []Daemon
 
 	q := dbi.Model(&daemons)
 	for _, relation := range relations {
 		q = q.Relation(relation)
+	}
+	if filterText != nil {
+		text := "%" + *filterText + "%"
+		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
+			qq = qq.WhereOr("name ILIKE ?", text)
+			if slices.Contains(relations, DaemonRelationMachine) {
+				qq = qq.WhereOr("machine.address ILIKE ?", text)
+				qq = qq.WhereOr("machine.state->>'Hostname' ILIKE ?", text)
+			}
+			return qq, nil
+		})
+	}
+	if filterDomain != nil {
+		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
+			var names []string
+			switch *filterDomain {
+			case "dns":
+				names = []string{string(daemonname.Bind9), string(daemonname.PDNS)}
+			case "dhcp":
+				names = []string{
+					string(daemonname.DHCPv4),
+					string(daemonname.DHCPv6),
+					string(daemonname.NetConf),
+					string(daemonname.D2),
+					string(daemonname.CA),
+				}
+			}
+			qq = qq.Where("name IN (?)", pg.In(names))
+			return qq, nil
+		})
 	}
 	err := q.OrderExpr("id ASC").Select()
 	if err != nil {
