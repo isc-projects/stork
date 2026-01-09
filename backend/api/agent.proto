@@ -38,6 +38,9 @@ service Agent {
 
   // Retrieves the BIND 9 configuration from the agent.
   rpc ReceiveBind9Config(ReceiveBind9ConfigReq) returns (stream ReceiveBind9ConfigRsp) {}
+
+  // Retrieves a snapshot of all current DHCP leases from the agent.
+  rpc GetKeaLeases(GetKeaLeasesReq) returns (GetKeaLeasesRsp) {}
 }
 
 
@@ -354,6 +357,15 @@ message ReceiveBind9ConfigRsp {
     ReceiveBind9ConfigFile file = 1;
     string line = 2;
   }
+}
+
+message GetKeaLeasesReq {
+  optional uint64 minCLTT = 1;
+}
+
+message GetKeaLeasesRsp {
+  uint32 leaseCount = 1;
+  bytes leasesPacked = 2;
 }
 
 message Lease {

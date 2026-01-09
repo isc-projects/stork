@@ -20,7 +20,7 @@ import (
 	"isc.org/stork/datamodel/daemonname"
 )
 
-//go:generate mockgen -source memfilesnooper.go -package=agent -destination=memfilesnoopermock_test.go -mock_names=RowSource=MockRowSource isc.org/agent RowSource
+//go:generate mockgen -source memfilesnooper.go -package=agent -destination=memfilesnoopermock_test.go -mock_names=RowSource=MockRowSource,MemfileSnooper=MockMemfileSnooper isc.org/agent RowSource,MemfileSnooper
 
 // Write the lines from input to the file in output one at a time, syncing the
 // file to encourage the changes to reach the disk and trigger a filesystem
