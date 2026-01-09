@@ -1523,7 +1523,7 @@ func TestReceiveZonesNonExistingAccessPoint(t *testing.T) {
 
 	// The iterator should return an error that there is no access point available
 	// for this daemon.
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		require.ErrorContains(t, err, "access point")
 		require.Nil(t, zone)
 	}
@@ -1567,7 +1567,7 @@ func TestReceiveZonesConnectionError(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(0)
 
 	// The iterator should return an error during an attempt to connect.
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		var testError *testError
 		require.ErrorAs(t, err, &testError)
 		require.Nil(t, zone)
@@ -1599,7 +1599,7 @@ func TestReceiveZonesGetStreamError(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, &testError{})
 
 	// The iterator should return an error returned by ReceiveZones().
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		require.ErrorContains(t, err, "test error")
 		require.Nil(t, zone)
 	}
@@ -1641,7 +1641,7 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Return(mockStreamingClient, nil)
 
 	// The iterator should return ZoneInventoryNotInitedError.
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		var zoneInventoryNotInitedError *ZoneInventoryNotInitedError
 		require.ErrorAs(t, err, &zoneInventoryNotInitedError)
 		require.Nil(t, zone)
@@ -1683,7 +1683,7 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Return(mockStreamingClient, nil)
 
 	// The iterator should return ZoneInventoryBusyError.
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		var zoneInventoryBusyError *ZoneInventoryBusyError
 		require.ErrorAs(t, err, &zoneInventoryBusyError)
 		require.Nil(t, zone)
@@ -1722,7 +1722,7 @@ func TestReceiveZonesOtherStatusError(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
 
 	// The iterator should return the original error without special handling.
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		require.ErrorContains(t, err, "internal server error")
 		require.Nil(t, zone)
 	}
@@ -1752,7 +1752,7 @@ func TestReceiveZonesZoneInventoryReceiveZoneError(t *testing.T) {
 	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(1).Return(mockStreamingClient, nil)
 
 	// The iterator should return an error returned by Recv().
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		var testError *testError
 		require.ErrorAs(t, err, &testError)
 		require.Nil(t, zone)
@@ -1806,12 +1806,103 @@ func TestReceiveZones(t *testing.T) {
 	// Make sure the zones are returned in order.
 	gomock.InOrder(mocks...)
 
-	// Return the mocked client when ReceiveZones() called.
-	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
+	filter := dnsmodel.NewZoneFilter()
+	filter.SetView("foo")
+	filter.SetOffsetLimit(100, 200)
+	filter.SetLoadedAfter(time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC))
+	filter.SetLowerBound("bar", 100)
+
+	// Return the mocked client when ReceiveZones() called. Make sure that the  correct
+	// request is passed, including the filter and the ForcePopulate flag.
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), &agentapi.ReceiveZonesReq{
+		ControlAddress: "localhost",
+		ControlPort:    8000,
+		ViewName:       *filter.View,
+		Limit:          int64(*filter.Limit),
+		ForcePopulate:  true,
+	}).AnyTimes().Return(mockStreamingClient, nil)
 
 	// Collect the zones returned over the stream.
 	var zones []*dnsmodel.ExtendedZone
-	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, filter, true) {
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+		zones = append(zones, zone)
+	}
+	// Make sure all zones have been returned.
+	require.Len(t, zones, len(generatedZones))
+
+	// Validate returned zones.
+	for i, zone := range zones {
+		require.Equal(t, generatedZones[i].Name, zone.Name())
+		require.Equal(t, generatedZones[i].Class, zone.Class)
+		require.Equal(t, generatedZones[i].Serial, zone.Serial)
+		require.Equal(t, generatedZones[i].Type, zone.Type)
+		require.True(t, zone.RPZ)
+		require.Equal(t, time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC), zone.Loaded)
+		require.Equal(t, "_default", zone.ViewName)
+		require.EqualValues(t, 100, zone.TotalZoneCount)
+	}
+}
+
+// Test successful reception of all zones over the stream when no filter
+// and no ForcePopulate flag is set.
+func TestReceiveZonesNoFilterNoForcePopulate(t *testing.T) {
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Generate a bunch of zones to be returned over the stream.
+	generatedZones := testutil.GenerateRandomZones(100)
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// Create the client mock.
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// The mock will return a sequence of zones.
+	var mocks []any
+	for _, zone := range generatedZones {
+		zone := &agentapi.Zone{
+			Name:           zone.Name,
+			Class:          zone.Class,
+			Serial:         zone.Serial,
+			Type:           zone.Type,
+			Loaded:         time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC).Unix(),
+			Rpz:            true,
+			View:           "_default",
+			TotalZoneCount: 100,
+		}
+		mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(zone, nil))
+	}
+	// The last item returned by the mock must be io.EOF indicating the
+	// end of the stream.
+	mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF))
+
+	// Make sure the zones are returned in order.
+	gomock.InOrder(mocks...)
+
+	// Return the mocked client when ReceiveZones() called. Make sure that the  correct
+	// request is passed without the filter or the ForcePopulate flag.
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), &agentapi.ReceiveZonesReq{
+		ControlAddress: "localhost",
+		ControlPort:    8000,
+	}).AnyTimes().Return(mockStreamingClient, nil)
+
+	// Collect the zones returned over the stream.
+	var zones []*dnsmodel.ExtendedZone
+	for zone, err := range agents.ReceiveZones(context.Background(), daemon, nil, false) {
 		require.NoError(t, err)
 		require.NotNil(t, zone)
 		zones = append(zones, zone)

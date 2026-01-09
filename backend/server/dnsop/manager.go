@@ -90,13 +90,7 @@ type Manager interface {
 	// makes the fetch sequential (next agent is contacted after fetching all zones
 	// from the previous agent). The batchSize controls the maximum number of zones
 	// that are collected and inserted into the database in a single SQL INSERT.
-	// Finally, block boolean flag indicates if the caller is going to wait for the
-	// completion of the function (if true) or not (if false). In the latter case
-	// the returned ManagerDoneNotify channel is buffered, in which case there is
-	// no requirement to read from this channel before the fetch is complete. Setting
-	// this flag to true is helpful in the unit tests to ensure that specific sequence
-	// of calls is executed.
-	FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error)
+	FetchZones(poolSize, batchSize int, options ...FetchZonesOption) (chan ManagerDoneNotify, error)
 	// Checks if the DNS Manager is currently fetching the zones and returns progress.
 	// The first boolean flag indicates whether or not fetch is in progress. The int
 	// parameters indicate the number of daemons from which the zones are fetched and
@@ -120,6 +114,21 @@ type Manager interface {
 	GetBind9FormattedConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*Bind9FormattedConfigResponse]
 	Shutdown()
 }
+
+// Type of options for FetchZones function.
+type FetchZonesOption int
+
+const (
+	// Indicates that the caller is going to wait for the completion of the function.
+	// In the latter case the returned ManagerDoneNotify channel is buffered, in which
+	// case there is no requirement to read from this channel before the fetch is complete.
+	// Setting this flag is helpful in the unit tests to ensure that specific sequence
+	// of calls is executed.
+	FetchZonesOptionBlock FetchZonesOption = iota
+	// Force zone inventory to be populated from the DNS server before fetching the zones.
+	// Setting this flag may significantly increase the time to fetch the zones.
+	FetchZonesOptionForcePopulate
+)
 
 // Type of options for GetZoneRRs function.
 type GetZoneRRsOption int
@@ -430,7 +439,7 @@ func NewManager(owner ManagerAccessors) (Manager, error) {
 
 // Contacts all agents with DNS servers and fetches zones from these servers.
 // It implements the Manager interface.
-func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error) {
+func (manager *managerImpl) FetchZones(poolSize, batchSize int, options ...FetchZonesOption) (chan ManagerDoneNotify, error) {
 	// Only start fetching if there is no other fetch in progress.
 	if !manager.fetchingState.startFetching() {
 		return nil, &ManagerAlreadyFetchingError{}
@@ -450,7 +459,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 	// that writing to the channel doesn't block. Otherwise, set the
 	// length of 0 to make the channel blocking.
 	bufLen := 1
-	if block {
+	if slices.Contains(options, FetchZonesOptionBlock) {
 		bufLen = 0
 	}
 	notifyChannel := make(chan ManagerDoneNotify, bufLen)
@@ -480,7 +489,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 			go func(daemonsChan <-chan dbmodel.Daemon) {
 				// Read next daemon from the channel.
 				for daemon := range daemonsChan {
-					manager.fetchZonesFromDNSServer(&daemon, batchSize, &wg, &mutex, results)
+					manager.fetchZonesFromDNSServer(&daemon, batchSize, slices.Contains(options, FetchZonesOptionForcePopulate), &wg, &mutex, results)
 				}
 			}(daemonsChan)
 		}
@@ -516,11 +525,13 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 // Contacts a specified DNS server and fetches zones from it. The daemon
 // indicates the DNS server to contact. The batchSize parameter controls
 // the size of the batch of zones to be inserted into the database in a single
-// SQL INSERT. The wg and mutex parameters are used to synchronize the work
+// SQL INSERT. The forcePopulate flag controls whether or not the zone inventory
+// should refresh the zones from the DNS server before returning to the Stork
+// server. The wg and mutex parameters are used to synchronize the work
 // between multiple goroutines. The results parameter is a map of errors for
 // respective daemons. This function can merely be called from the
 // FetchZones function.
-func (manager *managerImpl) fetchZonesFromDNSServer(daemon *dbmodel.Daemon, batchSize int, wg *sync.WaitGroup, mutex *sync.Mutex, results map[int64]*dbmodel.ZoneInventoryStateDetails) {
+func (manager *managerImpl) fetchZonesFromDNSServer(daemon *dbmodel.Daemon, batchSize int, forcePopulate bool, wg *sync.WaitGroup, mutex *sync.Mutex, results map[int64]*dbmodel.ZoneInventoryStateDetails) {
 	defer wg.Done()
 	var (
 		// Track views. We need to flush the batch when the view changes.
@@ -536,7 +547,7 @@ func (manager *managerImpl) fetchZonesFromDNSServer(daemon *dbmodel.Daemon, batc
 	// performance for large number of zones.
 	batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
 	state := dbmodel.NewZoneInventoryStateDetails()
-	for zone, err := range manager.agents.ReceiveZones(context.Background(), daemon, nil) {
+	for zone, err := range manager.agents.ReceiveZones(context.Background(), daemon, nil, forcePopulate) {
 		if err != nil {
 			// Returned status depends on the returned error type. Some
 			// errors require special handling.

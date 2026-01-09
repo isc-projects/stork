@@ -44,7 +44,7 @@ type ConnectedAgents interface {
 	ForwardToKeaOverHTTP(ctx context.Context, daemon ControlledDaemon, commands []keactrl.SerializableCommand, cmdResponses ...any) (*KeaCmdsResult, error)
 	GetPowerDNSServerInfo(ctx context.Context, daemon ControlledDaemon) (*pdnsdata.ServerInfo, error)
 	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
-	ReceiveZones(ctx context.Context, daemon ControlledDaemon, filter *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error]
+	ReceiveZones(ctx context.Context, daemon ControlledDaemon, filter *dnsmodel.ZoneFilter, forcePopulate bool) iter.Seq2[*dnsmodel.ExtendedZone, error]
 	ReceiveZoneRRs(ctx context.Context, daemon ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsmodel.RR, error]
 	ReceiveBind9FormattedConfig(ctx context.Context, daemon ControlledDaemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error]
 }

@@ -254,7 +254,7 @@ func TestFetchZonesDatabaseError(t *testing.T) {
 	require.NotNil(t, manager)
 	defer manager.Shutdown()
 
-	_, err = manager.FetchZones(10, 1000, true)
+	_, err = manager.FetchZones(10, 1000, FetchZonesOptionBlock)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem selecting daemons with names: [named pdns]")
 }
@@ -290,7 +290,7 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	// Return "busy" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	}), nil, false).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			_ = !yield(nil, agentcomm.NewZoneInventoryBusyError("foo"))
 		}
@@ -304,7 +304,7 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 	defer manager.Shutdown()
-	notifyChannel, err := manager.FetchZones(10, 100, true)
+	notifyChannel, err := manager.FetchZones(10, 100, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	notification := <-notifyChannel
 
@@ -362,7 +362,7 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	// Return "uninitialized" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	}), nil, false).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			_ = !yield(nil, agentcomm.NewZoneInventoryNotInitedError("foo"))
 		}
@@ -377,7 +377,7 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	require.NotNil(t, manager)
 	defer manager.Shutdown()
 
-	notifyChannel, err := manager.FetchZones(10, 100, true)
+	notifyChannel, err := manager.FetchZones(10, 100, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	notification := <-notifyChannel
 
@@ -435,7 +435,7 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	// Return "uninitialized" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	}), nil, false).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			_ = !yield(nil, &testError{})
 		}
@@ -450,7 +450,7 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	require.NotNil(t, manager)
 	defer manager.Shutdown()
 
-	notifyChannel, err := manager.FetchZones(10, 100, true)
+	notifyChannel, err := manager.FetchZones(10, 100, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	notification := <-notifyChannel
 
@@ -510,7 +510,7 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 	// Return "uninitialized" error on first iteration.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	}), nil, false).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			// We are on the fist iteration. Let's close the database connection
 			// to cause an error.
@@ -540,7 +540,7 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 	require.NotNil(t, manager)
 	defer manager.Shutdown()
 
-	notifyChannel, err := manager.FetchZones(10, 100, true)
+	notifyChannel, err := manager.FetchZones(10, 100, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	notification := <-notifyChannel
 
@@ -587,7 +587,7 @@ func TestFetchZones(t *testing.T) {
 		// sure that no zone is lost due to conflicts.
 		mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 			return d.(*dbmodel.Daemon).ID == daemon.ID
-		}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		}), nil, false).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 			return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 				for _, zone := range randomZones {
 					zone := &dnsmodel.ExtendedZone{
@@ -621,7 +621,7 @@ func TestFetchZones(t *testing.T) {
 
 	// Start zones fetch. Use up to 10 goroutines and set the batch
 	// size to 100 zones.
-	notifyChannel, err := manager.FetchZones(10, 100, true)
+	notifyChannel, err := manager.FetchZones(10, 100, FetchZonesOptionBlock)
 	require.Nil(t, err)
 	notification := <-notifyChannel
 
@@ -674,6 +674,88 @@ func TestFetchZones(t *testing.T) {
 	}
 }
 
+// This test verifies that the manager can request the zone inventory to be populated
+// from the DNS server before fetching the zones.
+func TestFetchZonesForcePopulate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	randomZones := testutil.GenerateRandomZones(1000)
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon := dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{
+		{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    953,
+		},
+	})
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// Expact that the forcePopulate boolean flag is set to true.
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
+		return d.(*dbmodel.Daemon).ID == daemon.ID
+	}), nil, true).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
+			for _, zone := range randomZones {
+				zone := &dnsmodel.ExtendedZone{
+					Zone: dnsmodel.Zone{
+						ZoneName: zone.Name,
+						Class:    zone.Class,
+						Serial:   zone.Serial,
+						Type:     zone.Type,
+						Loaded:   time.Now().UTC(),
+					},
+					ViewName:       "foo",
+					TotalZoneCount: int64(len(randomZones)),
+				}
+				if !yield(zone, nil) {
+					return
+				}
+			}
+		}
+	})
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	defer manager.Shutdown()
+
+	// Begin the fetch.
+	notifyChannel, err := manager.FetchZones(1, 1000, FetchZonesOptionBlock, FetchZonesOptionForcePopulate)
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
+		return isFetching && appsNum == 1 && completedAppsNum == 1
+	}, 5*time.Second, 10*time.Millisecond)
+
+	// All zones should be in the database.
+	zones, _, err := dbmodel.GetZones(db, nil, "", dbmodel.SortDirAny, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Len(t, zones, 1000)
+
+	// Complete the fetch.
+	<-notifyChannel
+	require.Eventually(t, func() bool {
+		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
+		return !isFetching && appsNum == 1 && completedAppsNum == 1
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
 // Test triggering the zone fetch multiple times. The second attempt
 // to fetch the zones should return an error.
 func TestFetchZonesMultipleTimes(t *testing.T) {
@@ -704,7 +786,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	mock := NewMockConnectedAgents(controller)
 
 	// Return an empty iterator. Getting actual zones is not in scope for this test.
-	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil, false).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			for _, zone := range randomZones {
 				zone := &dnsmodel.ExtendedZone{
@@ -735,7 +817,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 
 	// Begin first fetch but do not receive the result from the notifyChannel.
 	// This should keep the fetch active.
-	notifyChannel, err := manager.FetchZones(1, 1000, true)
+	notifyChannel, err := manager.FetchZones(1, 1000, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
@@ -752,7 +834,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	randomZones = randomZones[:100]
 
 	// Begin the second fetch. It should return an error.
-	_, err = manager.FetchZones(10, 1000, true)
+	_, err = manager.FetchZones(10, 1000, FetchZonesOptionBlock)
 	var alreadyFetching *ManagerAlreadyFetchingError
 	require.ErrorAs(t, err, &alreadyFetching)
 	require.Eventually(t, func() bool {
@@ -778,7 +860,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	require.Len(t, zones, 1000)
 
 	// This time the new attempt should succeed.
-	notifyChannel, err = manager.FetchZones(10, 1000, true)
+	notifyChannel, err = manager.FetchZones(10, 1000, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
@@ -826,7 +908,7 @@ func TestFetchRepeatedZones(t *testing.T) {
 
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(d any) bool {
 		return d.(*dbmodel.Daemon).ID == daemon.ID
-	}), nil).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter) iter.Seq2[*dnsmodel.ExtendedZone, error] {
+	}), nil, false).DoAndReturn(func(context.Context, *dbmodel.Daemon, *dnsmodel.ZoneFilter, bool) iter.Seq2[*dnsmodel.ExtendedZone, error] {
 		return func(yield func(*dnsmodel.ExtendedZone, error) bool) {
 			// Return the same zones from two different views.
 			for _, view := range []string{"foo", "bar"} {
@@ -859,7 +941,7 @@ func TestFetchRepeatedZones(t *testing.T) {
 	defer manager.Shutdown()
 
 	// Set the batch size that will include the ones from both views.
-	notifyChannel, err := manager.FetchZones(1, 100, true)
+	notifyChannel, err := manager.FetchZones(1, 100, FetchZonesOptionBlock)
 	require.Nil(t, err)
 	notification := <-notifyChannel
 

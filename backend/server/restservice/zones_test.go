@@ -629,7 +629,7 @@ func TestPutZonesFetch(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any(), false).Return(nil, nil)
+	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	settings := RestAPISettings{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, mockManager)
@@ -649,7 +649,7 @@ func TestPutZonesFetchAlreadyFetching(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any(), false).Return(nil, &dnsop.ManagerAlreadyFetchingError{})
+	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any()).Return(nil, &dnsop.ManagerAlreadyFetchingError{})
 
 	settings := RestAPISettings{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, mockManager)
@@ -669,7 +669,7 @@ func TestPutZonesFetchError(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockManager := NewMockManager(ctrl)
-	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any(), false).Return(nil, &testError{})
+	mockManager.EXPECT().FetchZones(gomock.Any(), gomock.Any()).Return(nil, &testError{})
 
 	settings := RestAPISettings{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, mockManager)

@@ -236,7 +236,7 @@ func (r *RestAPI) GetZonesFetch(ctx context.Context, params dns.GetZonesFetchPar
 // Begins fetching the zones from the zone inventories into the Stork server.
 func (r *RestAPI) PutZonesFetch(ctx context.Context, params dns.PutZonesFetchParams) middleware.Responder {
 	var alreadyFetchingError *dnsop.ManagerAlreadyFetchingError
-	_, err := r.DNSManager.FetchZones(10, 1000, false)
+	_, err := r.DNSManager.FetchZones(10, 1000)
 	switch {
 	case err == nil, errors.As(err, &alreadyFetchingError):
 		return dns.NewPutZonesFetchAccepted()
