@@ -1,0 +1,15 @@
+<p-floatlabel variant="on">
+    <p-autoComplete
+        [(ngModel)]="daemon"
+        (ngModelChange)="onValueChange($event)"
+        [multiple]="false"
+        [suggestions]="currentSuggestions"
+        [dropdown]="true"
+        (completeMethod)="searchDaemon($event)"
+        [unique]="true"
+        [forceSelection]="true"
+        inputId="daemon-filter"
+        optionLabel="label"
+    ></p-autoComplete>
+    <label for="daemon-filter">Daemon (type or pick)</label>
+</p-floatlabel>
