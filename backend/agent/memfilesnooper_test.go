@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
+	"isc.org/stork/daemondata/kea"
 )
 
 // Write the lines from input to the file in output one at a time, returning control to the Go scheduler after each write..
@@ -262,9 +264,16 @@ func TestParseRowAsLease4(t *testing.T) {
 		desc        string
 		row         []string
 		minCLTT     uint64
-		expected    *Lease4
+		expected    *keadata.Lease
 		expectedErr string // Zero value means no expected error.
 	}{
+		{
+			"Empty slice, which it should skip",
+			[]string{},
+			0,
+			nil,
+			"empty",
+		},
 		{
 			"Headers, which it should skip.",
 			[]string{
@@ -302,14 +311,14 @@ func TestParseRowAsLease4(t *testing.T) {
 				"0",
 			},
 			0,
-			&Lease4{
-				"192.110.111.2",
-				"03:00:00:00:00:00",
-				1761257849,
-				1761254249,
-				3600,
-				123,
-				0,
+			&keadata.Lease{
+				IPVersion:     keadata.LeaseIPv4,
+				IPAddress:     "192.110.111.2",
+				HWAddress:     "03:00:00:00:00:00",
+				CLTT:          1761254249,
+				ValidLifetime: 3600,
+				SubnetID:      123,
+				State:         0,
 			},
 			"",
 		},
@@ -379,7 +388,7 @@ func TestParseRowAsLease6(t *testing.T) {
 		desc        string
 		row         []string
 		minCLTT     uint64
-		expected    *Lease6
+		expected    *keadata.Lease
 		expectedErr string // Zero value means no expected error.
 	}{
 		{
@@ -445,15 +454,15 @@ func TestParseRowAsLease6(t *testing.T) {
 				"0",
 			},
 			0,
-			&Lease6{
-				"51a4:14ec:1::",
-				"01:00:00:00:00:00",
-				1761672649,
-				1761669049,
-				3600,
-				123,
-				2,
-				128,
+			&keadata.Lease{
+				IPVersion:     keadata.LeaseIPv6,
+				IPAddress:     "51a4:14ec:1::",
+				DUID:          "01:00:00:00:00:00",
+				CLTT:          1761669049,
+				ValidLifetime: 3600,
+				SubnetID:      123,
+				State:         2,
+				PrefixLength:  128,
 			},
 			"",
 		},

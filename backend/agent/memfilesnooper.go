@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"isc.org/stork/daemondata/kea"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -39,95 +41,54 @@ const (
 // | FsNotify +-->| RowSource +-->| (caller) |
 // +----------+   +-----------+   +----------+
 
-// The subset of data about a DHCPv4 lease that lease tracking is interested in.
-type Lease4 struct {
-	// IPv4 address in dotted-decimal notation.
-	IPAddr string
-	// MAC address in hexadecimal notation with colons between each byte.
-	HWAddr string
-	// Expiration date of the lease in seconds since the Unix epoch (1 Jan 1970, UTC)
-	Expire uint64
-	// "Client Last Transaction Time", the last time this client talked to us, in seconds as above.
-	CLTT uint64
-	// Number of seconds for which the lease is valid.
-	ValidLifetime uint32
-	// ID of the subnet from the Kea configuration file.
-	SubnetID int
-	// Actually an enum, documented here: https://reports.kea.isc.org/dev_guide/d6/dbd/dhcpDatabaseBackends.html#lease4-csv
-	State int
-}
-
 // Create a new Lease4 from a CSV row, and the already-parsed values.
-func newLease4(record []string, expire uint64, cltt uint64, lifetime uint32) (*Lease4, error) {
-	subnet, err := strconv.Atoi(record[v4Subnet])
+func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
+	subnet64, err := strconv.ParseUint(record[v4Subnet], 10, 32)
 	if err != nil {
 		return nil, errors.Wrap(err, "the subnet ID is not valid")
 	}
+	subnet := uint32(subnet64)
 	state, err := strconv.Atoi(record[v4State])
 	if err != nil {
 		return nil, errors.Wrap(err, "the lease state is not valid")
 	}
-	lease := Lease4{
+	lease := keadata.NewLease4(
 		record[v4IPAddr],
 		record[v4HWAddr],
-		expire,
 		cltt,
 		lifetime,
 		subnet,
 		state,
-	}
+	)
 	return &lease, nil
 }
 
-// The subset of data about a DHCPv6 lease that lease tracking is interested in.
-type Lease6 struct {
-	// IPv6 address in hexadecimal with colons between every two bytes, and with a
-	// double-colon indicating a span of zeroes.
-	IPAddr string
-	// "Device Unique IDentifier", a unique ID that may or may not be the MAC address (up to the client).
-	DUID string
-	// Expiration date of the lease in seconds since the Unix epoch (1 Jan 1970, UTC)
-	Expire uint64
-	// "Client Last Transaction Time", the last time this client talked to us, in
-	// seconds as above.
-	CLTT uint64
-	// Number of seconds for which the lease is valid.
-	ValidLifetime uint32
-	// ID of the subnet from the Kea configuration file.
-	SubnetID int
-	// Actually an enum, documented here:
-	// https://reports.kea.isc.org/dev_guide/d6/dbd/dhcpDatabaseBackends.html#lease4-csv
-	State int
-	// Length of the CIDR prefix for this address. 128 means that it's just the one
-	// address, other values mean this is a delegated prefix.
-	PrefixLen int
-}
-
 // Create a new Lease6 from a CSV row, and the already-parsed values.
-func newLease6(record []string, expire uint64, cltt uint64, lifetime uint32) (Lease6, error) {
-	subnet, err := strconv.Atoi(record[v6Subnet])
+func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
+	subnet64, err := strconv.Atoi(record[v6Subnet])
 	if err != nil {
-		return Lease6{}, errors.Wrap(err, "the subnet ID is not valid")
+		return nil, errors.Wrap(err, "the subnet ID is not valid")
 	}
+	subnet := uint32(subnet64)
 	state, err := strconv.Atoi(record[v6State])
 	if err != nil {
-		return Lease6{}, errors.Wrap(err, "the lease state is not valid")
+		return nil, errors.Wrap(err, "the lease state is not valid")
 	}
-	prefixLen, err := strconv.Atoi(record[v6Prefix])
+	prefixLen64, err := strconv.ParseUint(record[v6Prefix], 10, 32)
 	if err != nil {
-		return Lease6{}, errors.Wrap(err, "the prefix length is not valid")
+		return nil, errors.Wrap(err, "the prefix length is not valid")
 	}
-	lease := Lease6{
+	prefixLen := uint32(prefixLen64)
+	lease := keadata.NewLease6(
 		record[v6IPAddr],
 		record[v6DUID],
-		expire,
 		cltt,
 		lifetime,
 		subnet,
 		state,
 		prefixLen,
-	}
-	return lease, nil
+	)
+	return &lease, nil
 }
 
 // A tool to produce rows from a CSV file over time.
@@ -289,36 +250,39 @@ func (rs *RowSource) Stop() {
 }
 
 // Parse the "Expire" and "Lifetime" columns of the provided into uint64s.
-func parseExpireLifetime(record []string, expireIdx, lifetimeIdx int) (uint64, uint64, error) {
+func parseExpireLifetime(record []string, expireIdx, lifetimeIdx int) (uint64, uint32, error) {
 	expire, err := strconv.ParseUint(record[expireIdx], 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}
 	lifetime64, err := strconv.ParseUint(record[lifetimeIdx], 10, 32)
-	return expire, lifetime64, err
+	lifetime := uint32(lifetime64)
+	return expire, lifetime, err
 }
 
 // Parse the provided row as a [Lease4].  If the row's CLTT is less than (older
 // than) minCLTT, this parser will return nil and also a nil error.
-func ParseRowAsLease4(record []string, minCLTT uint64) (*Lease4, error) {
+func ParseRowAsLease4(record []string, minCLTT uint64) (*keadata.Lease, error) {
+	if len(record) == 0 {
+		return nil, errors.New("cannot parse empty slice as a lease structure")
+	}
 	if record[0] == "address" {
 		return nil, errors.New("cannot parse column headers as a lease structure")
 	}
 	if strings.Contains(record[0], ":") {
 		return nil, errors.Errorf("'%s' contains a colon: unexpected IPv6 address", record[0])
 	}
-	expire, lifetime64, err := parseExpireLifetime(record, v4Expire, v4ValidLifetime)
+	expire, lifetime, err := parseExpireLifetime(record, v4Expire, v4ValidLifetime)
 	if err != nil {
 		return nil, errors.Wrap(err, "the expiry or valid_lifetime values were not valid")
 	}
-	lifetime := uint32(lifetime64)
 	// Infinite-lifetime leases are stored as 0xFFFFFFFF.  This will need to be
 	// refactored come 2038.
-	cltt := expire - lifetime64
+	cltt := expire - uint64(lifetime)
 	if cltt < minCLTT {
 		return nil, nil
 	}
-	lease, err := newLease4(record, expire, cltt, lifetime)
+	lease, err := newLease4(record, cltt, lifetime)
 	if err != nil {
 		return nil, err
 	}
@@ -327,25 +291,27 @@ func ParseRowAsLease4(record []string, minCLTT uint64) (*Lease4, error) {
 
 // Parse the provided row as a [Lease6].  If the row's CLTT is less than (older
 // than) minCLTT, this parser will return nil and also a nil error.
-func ParseRowAsLease6(record []string, minCLTT uint64) (*Lease6, error) {
+func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
+	if len(record) == 0 {
+		return nil, errors.New("cannot parse empty sljice as a lease structure")
+	}
 	if record[0] == "address" {
 		return nil, errors.New("cannot parse column headers as a lease structure")
 	}
 	if strings.Contains(record[0], ".") {
 		return nil, errors.Errorf("'%s' contains a dot: unexpected IPv4 address", record[0])
 	}
-	expire, lifetime64, err := parseExpireLifetime(record, v6Expire, v6ValidLifetime)
+	expire, lifetime, err := parseExpireLifetime(record, v6Expire, v6ValidLifetime)
 	if err != nil {
 		return nil, errors.Wrap(err, "the expiry or valid_lifetime values were not valid")
 	}
-	lifetime := uint32(lifetime64)
-	cltt := expire - lifetime64
+	cltt := expire - uint64(lifetime)
 	if cltt < minCLTT {
 		return nil, nil
 	}
-	lease, err := newLease6(record, expire, cltt, lifetime)
+	lease, err := newLease6(record, cltt, lifetime)
 	if err != nil {
 		return nil, err
 	}
-	return &lease, nil
+	return lease, nil
 }
