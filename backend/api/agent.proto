@@ -355,3 +355,21 @@ message ReceiveBind9ConfigRsp {
     string line = 2;
   }
 }
+
+message Lease {
+  enum IPVersion {
+    V_UNKNOWN = 0;
+    V4 = 4;
+    V6 = 6;
+  }
+  IPVersion ipVersion = 1;
+  string ipAddress = 2;
+  string hwAddress = 3;
+  string duid = 4;
+  uint64 expire = 5;
+  uint64 cltt = 6;
+  uint64 validLifetime = 7;
+  uint32 subnetID = 8;
+  uint32 state = 9;
+  uint32 prefixLen = 10;
+}
