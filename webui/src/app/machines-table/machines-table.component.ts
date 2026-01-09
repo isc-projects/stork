@@ -20,12 +20,12 @@ import { InputIcon } from 'primeng/inputicon'
 import { FormsModule } from '@angular/forms'
 import { InputText } from 'primeng/inputtext'
 import { VersionStatusComponent } from '../version-status/version-status.component'
-import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { ProgressBar } from 'primeng/progressbar'
 import { Message } from 'primeng/message'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
 
 /**
  * This component is dedicated to display the table of Machines. It supports
@@ -52,12 +52,12 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
         RouterLink,
         VersionStatusComponent,
         NgFor,
-        AppDaemonsStatusComponent,
         ProgressBar,
         Message,
         LocaltimePipe,
         PlaceholderPipe,
         PluralizePipe,
+        DaemonStatusComponent,
     ],
 })
 export class MachinesTableComponent implements OnInit, OnDestroy {
@@ -205,7 +205,6 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
                 event.first,
                 event.rows,
                 (event.filters['text'] as FilterMetadata)?.value || null,
-                null,
                 authorized,
                 ...convertSortingFields<MachineSortField>(event)
             )

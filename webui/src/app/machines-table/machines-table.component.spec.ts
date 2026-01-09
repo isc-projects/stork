@@ -99,7 +99,7 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
+        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null)
         expect(component.dataCollection).toBe(getAllMachinesResp.items)
         expect(component.totalRecords).toBe(5)
         expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
@@ -125,7 +125,7 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
+        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null)
         expect(component.dataCollection).toEqual([])
         expect(component.totalRecords).toBe(0)
         expect(component.dataLoading).toBeFalse()
@@ -146,7 +146,7 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getMachinesSpy).toHaveBeenCalledOnceWith(100, 30, 'foo', null, true, null, null)
+        expect(getMachinesSpy).toHaveBeenCalledOnceWith(100, 30, 'foo', true, null, null)
         expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
         expect(component.unauthorizedMachinesCount).toBe(5)
         expect(unauthorizedMachinesCountChangeSpy).toHaveBeenCalledOnceWith(5)
@@ -165,7 +165,7 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
+        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null)
         expect(component.dataCollection).toEqual([])
         expect(component.totalRecords).toBeUndefined()
         expect(msgSpy).toHaveBeenCalledOnceWith(

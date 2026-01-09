@@ -63,16 +63,16 @@
             </p>
         </p-message>
     </div>
-    <div *ngIf="erredApps && erredApps.length > 0">
-        <p-message id="erred-apps-message" severity="warn">
+    <div *ngIf="erredDaemons && erredDaemons.length > 0">
+        <p-message id="erred-daemons-message" severity="warn">
             <div>
-                Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
+                Stork attempted to find leases on the Kea daemons, but some daemons failed to respond or returned an
                 error in response to the control commands. The reservation usage status may not take into account all
-                matching leases because some of them may reside on the servers, which returned an error. Issues were
-                found for the following Kea servers:
+                matching leases because some of them may reside on the daemons, which returned an error. Issues were
+                found for the following Kea daemons:
                 <ul style="list-style-type: disc">
-                    <li *ngFor="let erredApp of erredApps">
-                        <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                    <li *ngFor="let erredDaemon of erredDaemons">
+                        <a routerLink="/daemons/{{ erredDaemon.id }}">{{ erredDaemon.name }}</a>
                     </li>
                 </ul>
             </div>
@@ -80,12 +80,14 @@
     </div>
     <div>
         <div class="my-4">
-            <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Host">
-                <p-table [value]="localHostsGroups.appID">
+            <p-fieldset id="daemons-fieldset" legend="DHCP Servers Using the Host">
+                <p-table [value]="localHostsGroups.daemonID">
                     <ng-template #body let-ls>
                         <tr>
                             <td class="border-none w-10rem">
-                                <a routerLink="/apps/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
+                                <a routerLink="/daemons/{{ ls[0].daemonId }}">
+                                    {{ ls[0].daemonName || ('Daemon ' + ls[0].daemonId) }}
+                                </a>
                                 <app-host-data-source-label
                                     class="ml-2"
                                     *ngFor="let l of ls"
@@ -328,7 +330,9 @@
     <span class="stork-fieldset-legend-text">
         {{ title }}&nbsp;/&nbsp;
         <ng-container *ngIf="!all">
-            <a class="mr-1" routerLink="/apps/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>
+            <a class="mr-1" routerLink="/daemons/{{ localHosts[0].daemonId }}">
+                {{ localHosts[0].daemonName || ('Daemon ' + localHosts[0].daemonId) }}
+            </a>
             <app-host-data-source-label
                 *ngFor="let localHost of localHosts"
                 class="ml-2"

@@ -29,7 +29,6 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
     selector: 'app-events-panel',
     templateUrl: './events-panel.component.html',
     styleUrls: ['./events-panel.component.sass'],
-    providers: [ConfirmationService],
     imports: [
         NgIf,
         SelectButton,
@@ -295,7 +294,6 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.limit,
                 this.filter.level,
                 this.filter.machine,
-                this.filter.appType,
                 this.filter.daemonType,
                 this.filter.user,
                 ...convertSortingFields<EventSortField>(event)

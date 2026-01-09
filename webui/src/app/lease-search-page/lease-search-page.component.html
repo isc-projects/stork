@@ -87,16 +87,16 @@
         invalidSearchTextError
     }}</span>
 </div>
-<div *ngIf="erredApps && erredApps.length > 0" class="max-w-40rem mt-2">
-    <p-message id="erred-apps-message" severity="warn">
+<div *ngIf="erredDaemons && erredDaemons.length > 0" class="max-w-40rem mt-2">
+    <p-message id="erred-daemons-message" severity="warn">
         <div>
             Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an error
             in response to the control commands. The results presented in the table below may not include all leases
             matching the query because some matching leases may reside on a server that returned an error. Issues were
             found for the following Kea servers:
             <ul style="list-style-type: disc">
-                <li *ngFor="let erredApp of erredApps">
-                    <a routerLink="/apps/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                <li *ngFor="let erredDaemon of erredDaemons">
+                    <a routerLink="/daemons/{{ erredDaemon.id }}">{{ erredDaemon.name }}</a>
                 </li>
             </ul>
         </div>
@@ -109,7 +109,7 @@
             <th>Lease</th>
             <th>Type</th>
             <th>State</th>
-            <th>App Name</th>
+            <th>Daemon Name</th>
         </tr>
     </ng-template>
     <ng-template #body let-lease let-expanded="expanded">
@@ -129,8 +129,8 @@
                 {{ leaseStateAsText(lease.state) }}
             </td>
             <td>
-                <a routerLink="/apps/{{ lease.appId }}" style="display: block">
-                    {{ lease.appName }}
+                <a routerLink="/daemons/{{ lease.daemonId }}" style="display: block">
+                    {{ lease.daemonName }}
                 </a>
             </td>
         </tr>
@@ -157,6 +157,7 @@
                                     <td>
                                         <app-identifier
                                             [hexValue]="lease.clientId"
+                                            [defaultHexFormat]="false"
                                             styleClass="font-italic"
                                         ></app-identifier>
                                     </td>
@@ -166,6 +167,7 @@
                                     <td>
                                         <app-identifier
                                             [hexValue]="lease.duid"
+                                            [defaultHexFormat]="false"
                                             styleClass="font-italic"
                                         ></app-identifier>
                                     </td>

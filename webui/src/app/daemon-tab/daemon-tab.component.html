@@ -1,0 +1,94 @@
+<div class="grid m-0" *ngIf="daemon">
+    <div class="col-12">
+        <p-panel>
+            <ng-template #header>
+                <div class="flex justify-content-between flex-wrap gap-3 align-items-center">
+                    <div class="daemon-header">
+                        <i
+                            class="{{ daemonStatusIconName }} text-xl"
+                            [style.color]="daemonStatusIconColor"
+                            pTooltip="{{ daemonStatusIconTooltip }}"
+                        ></i>
+                        <div>
+                            <div class="text-xl font-bold">{{ daemon.name | daemonNiceName }}</div>
+                            <div class="daemon-meta">
+                                Machine:
+                                <ng-container *ngIf="daemon.machine; else unknownMachine">
+                                    <a routerLink="/machines/{{ daemon.machine.id }}">
+                                        {{ daemon.machine.hostname || daemon.machine.address }}
+                                    </a>
+                                </ng-container>
+                                <ng-template #unknownMachine>Unknown</ng-template>
+                            </div>
+                        </div>
+                    </div>
+                    <p-button
+                        label="Refresh"
+                        icon="pi pi-refresh"
+                        (onClick)="refresh()"
+                        [disabled]="daemon.id === undefined"
+                    ></p-button>
+                </div>
+            </ng-template>
+            <div class="grid">
+                <div class="col-12 sm:col-6">
+                    <div class="font-medium">Monitored</div>
+                    <div>{{ daemon.monitored ? 'Yes' : 'No' }}</div>
+                </div>
+                <div class="col-12 md:col-6">
+                    <div class="font-medium">Version</div>
+                    <div>
+                        {{ daemon.version }}
+                        <app-version-status
+                            [app]="appTypeForEvents(daemon) || daemon.name"
+                            [version]="daemon.version"
+                            [styleClass]="'pl-2'"
+                        ></app-version-status>
+                    </div>
+                </div>
+                <div class="col-12 md:col-6">
+                    <div class="font-medium">Extended Version</div>
+                    <div class="white-space-preline">{{ daemon.extendedVersion | placeholder: 'N/A' }}</div>
+                </div>
+                <div class="col-12 md:col-6">
+                    <div class="font-medium">Status</div>
+                    <div class="flex align-items-center gap-2">
+                        <i
+                            class="{{ daemonStatusIconName }}"
+                            [style.color]="daemonStatusIconColor"
+                        ></i>
+                        <span>{{ daemonStatusIconTooltip }}</span>
+                    </div>
+                </div>
+                <div class="col-12 md:col-6">
+                    <div class="font-medium">Uptime</div>
+                    <div>{{ daemon.uptime | duration }}</div>
+                </div>
+                <div class="col-12 md:col-6">
+                    <div class="font-medium">Last Reloaded At</div>
+                    <div>{{ daemon.reloadedAt | localtime | placeholder: 'never' }}</div>
+                </div>
+            </div>
+        </p-panel>
+    </div>
+
+    <div class="col-12" *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6' || daemon.name === 'ca' || daemon.name === 'd2' || daemon.name === 'netconf'">
+        <app-kea-daemon [daemon]="daemon"></app-kea-daemon>
+    </div>
+
+    <div class="col-12" *ngIf="daemon.name === 'bind9'">
+        <app-bind9-daemon [daemon]="daemon"></app-bind9-daemon>
+    </div>
+
+    <div class="col-12" *ngIf="daemon.name === 'pdns'">
+        <app-pdns-daemon [daemon]="daemon"></app-pdns-daemon>
+    </div>
+
+    <div class="col-12">
+        <h3 class="underlined">Events</h3>
+        <app-events-panel
+            [ui]="'table'"
+            [filter]="{ machine: daemon.machine?.id, appType: appTypeForEvents(daemon), daemonType: daemon.name }"
+        ></app-events-panel>
+    </div>
+</div>

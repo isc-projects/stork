@@ -244,7 +244,7 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
      * Returns an array of server names associated with the configs.
      */
     get servers(): string[] {
-        return this.response?.configs?.map((c) => `${c.appName}/${c.daemonName}`) ?? []
+        return this.response?.configs?.map((c) => c.daemonName) ?? []
     }
 
     /**

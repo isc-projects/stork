@@ -13,15 +13,15 @@
                     severity="info"
                     [text]="
                         'The server is fetching zones from the agents in the background. It may take some time, depending on the number of the DNS servers and zones. Completed for ' +
-                        fetchAppsCompletedCount +
+                        fetchDaemonsCompletedCount +
                         ' out of ' +
-                        fetchTotalAppsCount +
-                        ' DNS apps.'
+                        fetchTotalDaemonsCount +
+                        ' DNS daemons.'
                     "
                 ></p-message>
                 <h4>Progress</h4>
-                <p-progressBar [value]="(fetchAppsCompletedCount / fetchTotalAppsCount) * 100" styleClass="max-w-30rem">
-                    <span>{{ fetchAppsCompletedCount }}/{{ fetchTotalAppsCount }}</span>
+                <p-progressBar [value]="(fetchDaemonsCompletedCount / fetchTotalDaemonsCount) * 100" styleClass="max-w-30rem">
+                    <span>{{ fetchDaemonsCompletedCount }}/{{ fetchTotalDaemonsCount }}</span>
                 </p-progressBar>
             </td>
         </tr>
@@ -76,10 +76,10 @@
 
 <ng-template #localZoneCells let-localZone let-serialInfo="serialInfo">
     <td>
-        <a routerLink="/apps/{{ localZone.appId }}">{{ localZone.appName }}</a>
+        <a routerLink="/daemons/{{ localZone.daemonId }}">{{ localZone.daemonName }}</a>
     </td>
     <td>
-        <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }">{{ localZone.appId }}</a>
+        <a routerLink="/dns/zones" [queryParams]="{ daemonId: localZone.daemonId }">{{ localZone.daemonId }}</a>
     </td>
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ text: localZone.view }">{{ localZone.view }}</a>
@@ -92,7 +92,7 @@
             <p-tag *ngIf="localZone.rpz" value="RPZ" severity="success" />
         </div>
     </td>
-    <td [class.app-error]="serialInfo.hasMismatch">
+    <td [class.daemon-error]="serialInfo.hasMismatch">
         {{ localZone.serial
         }}<i
             *ngIf="serialInfo.hasMismatch"
@@ -143,8 +143,8 @@
     >
         <ng-template #header>
             <tr>
-                <th>App Name</th>
-                <th>App ID</th>
+                <th>Daemon Name</th>
+                <th>Daemon ID</th>
                 <th
                     pTooltip="Zone config is a zone specification in the BIND9 view.
 If the zone appears in several views, this count is increased
@@ -180,9 +180,9 @@ to the number of configured zones.
         <ng-template #body let-state>
             <tr>
                 <td>
-                    <a routerLink="/apps/{{ state.appId }}">{{ state.appName }}</a>
+                    <a routerLink="/daemons/{{ state.daemonId }}">{{ state.daemonName }}</a>
                 </td>
-                <td>{{ state.appId }}</td>
+                <td>{{ state.daemonId }}</td>
                 <td>{{ state.zoneConfigsCount || 'n/a' }}</td>
                 <td>{{ state.distinctZonesCount || 'n/a' }}</td>
                 <td>{{ state.builtinZonesCount || 'n/a' }}</td>
@@ -332,15 +332,14 @@ to the number of configured zones.
                                         with other zones, should be excluded (only non-RPZ are listed), or only the RPZ
                                         should be listed (and regular zones excluded).
                                     </li>
-                                    <li>App ID - the ID of the DNS App.</li>
+                                    <li>Daemon ID - the ID of the DNS Daemon.</li>
                                     <li>Serial - partial or exact zone serial.</li>
                                     <li>Zone Class - exact zone class.</li>
-                                    <li>App Type - type of the DNS App.</li>
                                 </ul>
                                 <p>
                                     Zones can also be filtered by entering text in the search box; the table shows all
                                     zones matching the exact or partial filter text. The text is matched against the
-                                    zone name, app name, or view. For clarity, the
+                                    zone name, daemon name, or view. For clarity, the
                                     <span class="font-bold">(root)</span> keyword marks a root zone. Typing
                                     <span class="font-italic white-space-nowrap">(root)</span> or
                                     <span class="font-italic white-space-nowrap">root</span> will return the root zone.
@@ -429,12 +428,12 @@ to the number of configured zones.
                                 </div>
                             </ng-template>
                         </p-columnFilter>
-                        <p-columnFilter field="appId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                        <p-columnFilter field="daemonId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel variant="on">
                                         <p-inputNumber
-                                            inputId="app-id"
+                                            inputId="daemon-id"
                                             mode="decimal"
                                             [useGrouping]="false"
                                             (onInput)="
@@ -447,7 +446,7 @@ to the number of configured zones.
                                             min="1"
                                             styleClass="w-6rem"
                                         ></p-inputNumber>
-                                        <label for="app-id">App ID</label>
+                                        <label for="daemon-id">Daemon ID</label>
                                     </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="
@@ -522,33 +521,6 @@ to the number of configured zones.
                                 </div>
                             </ng-template>
                         </p-columnFilter>
-                        <p-columnFilter field="appType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
-                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
-                                <div class="flex align-items-center">
-                                    <p-floatlabel variant="on">
-                                        <p-select
-                                            inputId="app-type"
-                                            [options]="appTypes"
-                                            optionLabel="name"
-                                            optionValue="value"
-                                            (onChange)="filterZonesTable($event.value, filterConstraint)"
-                                            [ngModel]="value"
-                                            styleClass="w-10rem"
-                                        ></p-select>
-                                        <label for="app-type">App Type</label>
-                                    </p-floatlabel>
-                                    <ng-container
-                                        *ngTemplateOutlet="
-                                            clearFilterBtn;
-                                            context: {
-                                                $implicit: value,
-                                                filterConstraint: filterConstraint,
-                                            }
-                                        "
-                                    ></ng-container>
-                                </div>
-                            </ng-template>
-                        </p-columnFilter>
                         <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
@@ -562,7 +534,7 @@ to the number of configured zones.
                                             id="text-filter"
                                             (input)="filterZonesTable($event.target.value, filterConstraint)"
                                             [ngModel]="value"
-                                            placeholder="App name, Zone name or view"
+                                            placeholder="Daemon name, Zone name or view"
                                             class="max-w-13rem sm:w-18rem sm:max-w-18rem"
                                         />
                                     </p-iconfield>
@@ -799,8 +771,8 @@ to the number of configured zones.
                                                     <span class="font-bold text-2xl">{{ zone.name | unroot }}</span>
                                                     <span class="text-lg">
                                                         for
-                                                        <a routerLink="/apps/{{ localZone.appId }}">{{
-                                                            localZone.appName
+                                                        <a routerLink="/daemons/{{ localZone.daemonId }}">{{
+                                                            localZone.daemonName
                                                         }}</a
                                                         >, view:
                                                         <a

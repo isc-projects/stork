@@ -35,9 +35,10 @@
     [createTransactionDeleteAPICaller]="callCreateHostDeleteTransaction"
     [updateTransactionDeleteAPICaller]="callUpdateHostDeleteTransaction"
     [tableQueryParamFilters]="{
+        machineId: { type: 'numeric', matchMode: 'equals' },
+        daemonId: { type: 'numeric', matchMode: 'equals' },
         subnetId: { type: 'numeric', matchMode: 'equals' },
         keaSubnetId: { type: 'numeric', matchMode: 'equals' },
-        appId: { type: 'numeric', matchMode: 'equals' },
         isGlobal: { type: 'boolean', matchMode: 'equals' },
         conflict: { type: 'boolean', matchMode: 'equals' },
         text: { type: 'string', matchMode: 'contains' },

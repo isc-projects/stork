@@ -1,0 +1,9 @@
+<a
+    pTooltip="{{ daemonStatusIconTooltip }}"
+    [ngStyle]="{ color: daemonStatusIconColor }"
+    style="white-space: nowrap; margin: 0 0.5rem 0 0"
+    routerLink="/daemons/{{ daemon.id }}"
+    [queryParams]="{ daemon: daemon.name }"
+>
+    <i class="{{ daemonStatusIconName }} text-sm pr-1"></i>{{ daemon.name | daemonNiceName }}
+</a>

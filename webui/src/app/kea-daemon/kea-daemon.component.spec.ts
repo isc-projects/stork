@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { KeaAppTabComponent } from './kea-app-tab.component'
 import { ActivatedRoute, provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
@@ -7,79 +6,63 @@ import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
-import { AppsVersions, ServicesService } from '../backend'
+import { AppsVersions, KeaDaemon, ServicesService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { KeaDaemonComponent } from './kea-daemon.component'
 
-class Details {
-    daemons: any = [
+const dhcp4Daemon: KeaDaemon = {
+    id: 1,
+    pid: 1234,
+    name: 'dhcp4',
+    active: false,
+    monitored: true,
+    version: '1.9.4',
+    extendedVersion: '1.9.4-extended',
+    uptime: 100,
+    reloadedAt: '2025-01-01T12:00:00Z',
+    hooks: [],
+    files: [
         {
-            id: 1,
-            pid: 1234,
-            name: 'dhcp4',
-            active: false,
-            monitored: true,
-            version: '1.9.4',
-            extendedVersion: '1.9.4-extended',
-            uptime: 100,
-            reloadedAt: 10000,
-            hooks: [],
-            files: [
-                {
-                    filetype: 'Lease file',
-                    filename: '/tmp/kea-leases4.csv',
-                },
-            ],
-            backends: [
-                {
-                    backendType: 'mysql',
-                    database: 'kea',
-                    host: 'localhost',
-                    dataTypes: ['Leases', 'Host Reservations'],
-                },
-            ],
+            filetype: 'Lease file',
+            filename: '/tmp/kea-leases4.csv',
         },
+    ],
+    backends: [
         {
-            id: 2,
-            pid: 2345,
-            name: 'dhcp6',
-            active: false,
-            monitored: true,
-            version: '1.9.5',
-            extendedVersion: '1.9.5-extended',
-            uptime: 100,
-            reloadedAt: 10000,
-            hooks: [],
-            files: [],
-            backends: [],
+            backendType: 'mysql',
+            database: 'kea',
+            host: 'localhost',
+            dataTypes: ['Leases', 'Host Reservations'],
         },
-    ]
+    ],
+    machine: { id: 1 },
 }
 
-class Machine {
-    id = 1
+const dhcp6Daemon: KeaDaemon = {
+    id: 2,
+    pid: 2345,
+    name: 'dhcp6',
+    active: false,
+    monitored: true,
+    version: '1.9.5',
+    extendedVersion: '1.9.5-extended',
+    uptime: 100,
+    reloadedAt: '2025-01-01T12:00:00Z',
+    hooks: [],
+    files: [],
+    backends: [],
+    machine: { id: 1 },
 }
 
-class App {
-    id = 1
-    name = ''
-    machine = new Machine()
-    details = new Details()
-}
-
-class AppTab {
-    app = new App()
-}
-
-describe('KeaAppTabComponent', () => {
-    let component: KeaAppTabComponent
-    let fixture: ComponentFixture<KeaAppTabComponent>
+describe('KeaDaemonComponent', () => {
+    let component: KeaDaemonComponent
+    let fixture: ComponentFixture<KeaDaemonComponent>
     let servicesApi: ServicesService
-    let serverData: ServerDataService
     let route: ActivatedRoute
     let versionServiceStub: Partial<VersionService>
 
@@ -105,83 +88,17 @@ describe('KeaAppTabComponent', () => {
     }))
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(KeaAppTabComponent)
+        fixture = TestBed.createComponent(KeaDaemonComponent)
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
-        serverData = fixture.debugElement.injector.get(ServerDataService)
         route = fixture.debugElement.injector.get(ActivatedRoute)
         fixture.debugElement.injector.get(VersionService)
-        component.appTab = new AppTab()
+        component.daemon = dhcp4Daemon
         fixture.detectChanges()
     })
 
     it('should create', () => {
         expect(component).toBeTruthy()
-    })
-
-    it('should display rename dialog', () => {
-        const fakeAppsNames = new Map()
-        spyOn(serverData, 'getAppsNames').and.returnValue(of(fakeAppsNames))
-        const fakeMachinesAddresses = new Set<string>()
-        spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
-        expect(component.appRenameDialogVisible).toBeFalse()
-        component.showRenameAppDialog()
-        expect(serverData.getAppsNames).toHaveBeenCalled()
-        expect(serverData.getMachinesAddresses).toHaveBeenCalled()
-        // The dialog should be visible after fetching apps names and machines
-        // addresses successfully.
-        expect(component.appRenameDialogVisible).toBeTrue()
-    })
-
-    it('should not display rename dialog when fetching machines fails', () => {
-        const fakeAppsNames = new Map()
-        spyOn(serverData, 'getAppsNames').and.returnValue(of(fakeAppsNames))
-        // Simulate an error while getting machines addresses.
-        spyOn(serverData, 'getMachinesAddresses').and.returnValue(throwError({ status: 404 }))
-        expect(component.appRenameDialogVisible).toBeFalse()
-        component.showRenameAppDialog()
-        expect(serverData.getAppsNames).toHaveBeenCalled()
-        expect(serverData.getMachinesAddresses).toHaveBeenCalled()
-        // The dialog should not be visible because there was an error.
-        expect(component.appRenameDialogVisible).toBeFalse()
-    })
-
-    it('should not display rename dialog when fetching apps fails', () => {
-        // Simulate an error while getting apps names.
-        spyOn(serverData, 'getAppsNames').and.returnValue(throwError({ status: 404 }))
-        const fakeMachinesAddresses = new Set<string>()
-        spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
-        expect(component.appRenameDialogVisible).toBeFalse()
-        component.showRenameAppDialog()
-        expect(serverData.getAppsNames).toHaveBeenCalled()
-        expect(serverData.getMachinesAddresses).toHaveBeenCalled()
-        // The dialog should not be visible because there was an error.
-        expect(component.appRenameDialogVisible).toBeFalse()
-    })
-
-    it('should send app rename request', () => {
-        // Prepare fake success response to renameApp call.
-        const fakeResponse: any = { data: {} }
-        spyOn(servicesApi, 'renameApp').and.returnValue(of(fakeResponse))
-        // Simulate submitting the app rename request.
-        component.handleRenameDialogSubmitted('keax@machine3')
-        // Make sure that the request to rename the app was submitted.
-        expect(servicesApi.renameApp).toHaveBeenCalled()
-        // As a result, the app name in the tab should have been updated.
-        expect(component.appTab.app.name).toBe('keax@machine3')
-    })
-
-    it('should hide app rename dialog', () => {
-        // Show the dialog box.
-        component.appRenameDialogVisible = true
-        fixture.detectChanges()
-        spyOn(servicesApi, 'renameApp')
-        // Cancel the dialog box.
-        component.handleRenameDialogHidden()
-        // Ensure that the dialog box is no longer visible.
-        expect(component.appRenameDialogVisible).toBeFalse()
-        // A request to rename the app should not be sent.
-        expect(servicesApi.renameApp).not.toHaveBeenCalled()
     })
 
     it('should return filename from file', () => {
@@ -229,18 +146,11 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should not display data storage when files and backends are blank', () => {
-        component.appTab.app.details.daemons[0].files = []
-        component.appTab.app.details.daemons[0].backends = []
+        component.daemon.files = []
+        component.daemon.backends = []
         fixture.detectChanges()
         const dataStorage = fixture.debugElement.query(By.css('#data-storage-div'))
         expect(dataStorage).toBeNull()
-    })
-
-    it('should select tab according to the daemon parameter', () => {
-        spyOn(route.snapshot.queryParamMap, 'get').and.returnValue('dhcp6')
-        component.appTab = new AppTab()
-        fixture.detectChanges()
-        expect(component.activeTabDaemonID).toBe(2)
     })
 
     it('should know how to take the base name out of a path', () => {
@@ -284,8 +194,7 @@ describe('KeaAppTabComponent', () => {
         expect(component.docAnchorFromHookLibrary('libdhcp_mysql.so', '2.3.8')).toBeNull()
     })
 
-    it('should display an empty placeholder when no app is loaded', () => {
-        // Check legend.
+    it('should display an empty placeholder when no hooks are present', () => {
         const hooksFieldset = fixture.debugElement.query(By.css('#hooks-fieldset'))
         expect(hooksFieldset).toBeTruthy()
         expect(hooksFieldset.attributes['legend']).toEqual('Hooks')
@@ -299,7 +208,7 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should display hook libraries', () => {
-        component.appTab.app.details.daemons[0].hooks = [
+        component.daemon.hooks = [
             '/libdhcp_cb_cmds.so',
             '/lib/libdhcp_custom.so',
             '/usr/lib/libdhcp_fake.so',
@@ -342,9 +251,12 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should properly recognize that daemon was never monitored', () => {
-        expect(component.isNeverFetchedDaemon({})).toBeTrue()
-        expect(component.isNeverFetchedDaemon({ reloadedAt: undefined })).toBeTrue()
-        expect(component.isNeverFetchedDaemon({ reloadedAt: null })).toBeTrue()
+        component.daemon = {}
+        expect(component.isNeverFetchedDaemon).toBeTrue()
+        component.daemon = { reloadedAt: undefined }
+        expect(component.isNeverFetchedDaemon).toBeTrue()
+        component.daemon = { reloadedAt: null }
+        expect(component.isNeverFetchedDaemon).toBeTrue()
         // Any value.
         for (const timestamp of [
             '1970-01-01T12:00:00Z',
@@ -352,16 +264,22 @@ describe('KeaAppTabComponent', () => {
             '0001-01-01T00:00:00.000Z',
             'foobar',
         ]) {
-            expect(component.isNeverFetchedDaemon({ reloadedAt: timestamp })).toBeFalse()
+            component.daemon = { reloadedAt: timestamp }
+            expect(component.isNeverFetchedDaemon).toBeFalse()
         }
     })
 
     it('should properly recognize the DHCP daemons', () => {
-        expect(component.isDhcpDaemon({ name: 'dhcp4' })).toBeTrue()
-        expect(component.isDhcpDaemon({ name: 'dhcp6' })).toBeTrue()
-        expect(component.isDhcpDaemon({ name: 'd2' })).toBeFalse()
-        expect(component.isDhcpDaemon({ name: 'netconf' })).toBeFalse()
-        expect(component.isDhcpDaemon({ name: 'foobar' })).toBeFalse()
+        expect(component.isDhcpDaemon).toBeTrue()
+        component.daemon = { name: 'dhcp4' }
+        expect(component.isDhcpDaemon).toBeTrue()
+        component.daemon = { name: 'dhcp6' }
+        expect(component.isDhcpDaemon).toBeFalse()
+        component.daemon = { name: 'd2' }
+        expect(component.isDhcpDaemon).toBeFalse()
+        component.daemon = { name: 'netconf' }
+        expect(component.isDhcpDaemon).toBeFalse()
+        component.daemon = { name: 'foobar' }
     })
 
     it('should display version status component', () => {

@@ -44,10 +44,10 @@
                 <a routerLink="/machines/all" [queryParams]="{ text: searchText }">more</a>
             </div>
         </div>
-        <div id="apps-div" *ngIf="searchResults.apps.items.length > 0" style="margin-right: 20px; min-width: 9em">
-            <h4>Apps</h4>
-            <div *ngFor="let a of searchResults.apps.items">
-                <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a>
+        <div id="daemons-div" *ngIf="searchResults.daemons.items.length > 0" style="margin-right: 20px; min-width: 9em">
+            <h4>Daemons</h4>
+            <div *ngFor="let d of searchResults.daemons.items">
+                <a routerLink="/daemons/{{ d.id }}">{{ d.name }}</a>
             </div>
             <!-- TODO: not supported yet <div style="margin-top: 10px;"><a >more</a></div> -->
         </div>

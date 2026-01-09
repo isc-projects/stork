@@ -57,8 +57,7 @@ describe('SharedNetworksTableComponent', () => {
                                 id: 5,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -102,8 +101,7 @@ describe('SharedNetworksTableComponent', () => {
                                 id: 5,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -134,8 +132,7 @@ describe('SharedNetworksTableComponent', () => {
                                 id: 5,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -161,8 +158,7 @@ describe('SharedNetworksTableComponent', () => {
                                 id: 6,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -187,8 +183,7 @@ describe('SharedNetworksTableComponent', () => {
                                 id: 7,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -213,8 +208,7 @@ describe('SharedNetworksTableComponent', () => {
                                 id: 8,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonName: 'dhcp4',
                                         id: 2,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -395,7 +389,7 @@ describe('SharedNetworksTableComponent', () => {
     xit('should display error about wrong query params filter', async () => {
         // TODO: this test should be moved away from Karma tests.
         // Filter with query params that have wrong syntax.
-        // component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'xyz', dhcpVersion: 7 }))
+        // component.updateFilterFromQueryParameters(convertToParamMap({ daemonId: 'xyz', dhcpVersion: 7 }))
         await fixture.whenStable()
         fixture.detectChanges()
 
@@ -403,7 +397,7 @@ describe('SharedNetworksTableComponent', () => {
         const errors = fixture.debugElement.queryAll(By.css('small.app-error'))
         expect(errors).toBeTruthy()
         expect(errors.length).toBe(2)
-        expect(errors[0].nativeElement.innerText).toBe('Please specify appId as a number (e.g., appId=4).')
+        expect(errors[0].nativeElement.innerText).toBe('Please specify daemonId as a number (e.g., daemonId=4).')
         expect(errors[1].nativeElement.innerText).toBe('Filter dhcpVersion allows only values: 4, 6.')
     })
 
@@ -414,7 +408,7 @@ describe('SharedNetworksTableComponent', () => {
         const filterInputs = fixture.debugElement.queryAll(By.css('.p-datatable-filter input'))
         expect(filterInputs).toBeTruthy()
 
-        // First is filter by appId, second is text search filter.
+        // First is filter by daemonId, second is text search filter.
         expect(filterInputs.length).toBe(2)
         const input = filterInputs[1].nativeElement
 
@@ -427,7 +421,7 @@ describe('SharedNetworksTableComponent', () => {
         fixture.detectChanges()
         expect(component.filterTable).toHaveBeenCalledWith('cat', component.table.filters['text'] as FilterMetadata)
 
-        // Filter by kea app id.
+        // Filter by daemon id.
         const inputNumberEls = fixture.debugElement.queryAll(By.css('.p-datatable-filter p-inputnumber'))
         expect(inputNumberEls).toBeTruthy()
         expect(inputNumberEls.length).toBe(1)
@@ -437,7 +431,7 @@ describe('SharedNetworksTableComponent', () => {
         // Verify that the API was called for that filter.
         tick(300)
         fixture.detectChanges()
-        expect(component.filterTable).toHaveBeenCalledWith(5, component.table.filters['appId'] as FilterMetadata)
+        expect(component.filterTable).toHaveBeenCalledWith(5, component.table.filters['daemonId'] as FilterMetadata)
 
         // Filter by DHCP version.
         // TODO: this part of test should be moved away from Karma tests.
@@ -462,12 +456,12 @@ describe('SharedNetworksTableComponent', () => {
         spyOn(component, 'filterTable')
 
         // Act
-        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
+        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', 0) // daemonId
         tick(300)
         fixture.detectChanges()
 
         // Assert
-        expect(component.filterTable).toHaveBeenCalledOnceWith(1, component.table.filters['appId'] as FilterMetadata)
+        expect(component.filterTable).toHaveBeenCalledOnceWith(1, component.table.filters['daemonId'] as FilterMetadata)
     }))
 
     it('should get total delegated prefixes for v6 network', () => {

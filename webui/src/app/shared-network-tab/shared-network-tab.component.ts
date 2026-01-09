@@ -7,7 +7,7 @@ import {
 import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, SharedNetwork } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
-import { getErrorMessage } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ConfirmDialog } from 'primeng/confirmdialog'
 import { NgIf, NgFor } from '@angular/common'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -107,7 +107,7 @@ export class SharedNetworkTabComponent implements OnInit {
         if (this.sharedNetwork?.localSharedNetworks) {
             for (let ls of this.sharedNetwork.localSharedNetworks) {
                 this.dhcpParameters.push({
-                    name: ls.appName,
+                    name: daemonNameToFriendlyName(ls.daemonName),
                     parameters: [
                         ls.keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters,
                         ls.keaConfigSharedNetworkParameters?.globalParameters,

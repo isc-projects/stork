@@ -72,7 +72,7 @@
                             filters. The currently supported fields for explicit filtering are:
                         </p>
                         <ul>
-                            <li>Kea App ID</li>
+                            <li>Daemon ID</li>
                             <li>Subnet ID - the subnet ID assigned in the Kea DHCP daemon configuration</li>
                             <li>DHCP Version</li>
                         </ul>
@@ -88,12 +88,12 @@
                     [disabled]="!tableHasFilter(subnetsTable)"
                 ></p-button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                <p-columnFilter field="daemonId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <div class="flex align-items-center">
                             <p-floatlabel variant="on">
                                 <p-inputNumber
-                                    inputId="app-id"
+                                    inputId="daemon-id"
                                     mode="decimal"
                                     [useGrouping]="false"
                                     min="1"
@@ -101,7 +101,7 @@
                                     [ngModel]="value"
                                     class="max-w-8rem"
                                 ></p-inputNumber>
-                                <label for="app-id">Kea App ID</label>
+                                <label for="daemon-id">Daemon ID</label>
                             </p-floatlabel>
                             <p-button
                                 icon="pi pi-filter-slash"
@@ -215,7 +215,7 @@
                     Shared Network <p-sortIcon [field]="SubnetSortField.SharedNetwork" />
                 </div>
             </th>
-            <th colspan="2">Application</th>
+            <th colspan="2">Daemon</th>
             <th rowspan="2" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
                 <i class="pi pi-chart-line text-2xl"></i>
             </th>
@@ -319,7 +319,7 @@
             </td>
             <td>
                 <div *ngFor="let lsn of sn.localSubnets">
-                    <a routerLink="/apps/{{ lsn.appId }}" class="block">{{ lsn.appName }}</a>
+                    <a routerLink="/daemons/{{ lsn.daemonId }}" class="block">{{ lsn.daemonName }}</a>
                 </div>
             </td>
             <td>

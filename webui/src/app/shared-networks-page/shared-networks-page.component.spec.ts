@@ -56,8 +56,8 @@ describe('SharedNetworksPageComponent', () => {
                                 id: 5,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonId: 27,
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -101,8 +101,8 @@ describe('SharedNetworksPageComponent', () => {
                                 id: 5,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonId: 27,
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -133,8 +133,8 @@ describe('SharedNetworksPageComponent', () => {
                                 id: 5,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonId: 27,
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -160,8 +160,8 @@ describe('SharedNetworksPageComponent', () => {
                                 id: 6,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonId: 27,
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -186,8 +186,8 @@ describe('SharedNetworksPageComponent', () => {
                                 id: 7,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonId: 27,
+                                        daemonName: 'dhcp4',
                                         id: 1,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',
@@ -212,8 +212,8 @@ describe('SharedNetworksPageComponent', () => {
                                 id: 8,
                                 localSubnets: [
                                     {
-                                        appId: 27,
-                                        appName: 'kea@localhost',
+                                        daemonId: 27,
+                                        daemonName: 'dhcp4',
                                         id: 2,
                                         machineAddress: 'localhost',
                                         machineHostname: 'lv-pc',

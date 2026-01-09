@@ -84,8 +84,8 @@ describe('AppComponent', () => {
             'Subnets',
             'Shared Networks',
             'Services',
-            'Kea Apps',
-            'DNS Apps',
+            'Kea Daemons',
+            'DNS Daemons',
             'Machines',
             'Grafana',
             'Monitoring',
@@ -103,7 +103,7 @@ describe('AppComponent', () => {
 
         // List of menu items that are expected to be hidden. Unless listed here, the test expects
         // the menu item to be visible.
-        const expHiddenItems = ['DHCP', 'Kea Apps', 'DNS Apps', 'Grafana', 'Users']
+        const expHiddenItems = ['DHCP', 'Kea Daemons', 'DNS Daemons', 'Grafana', 'Users']
 
         for (const name of expMenuItems) {
             // Check if the menu item is there
@@ -136,12 +136,12 @@ describe('AppComponent', () => {
             grafanaUrl: 'http://localhost:3000',
         }
         spyOn(settingService, 'getSettings').and.returnValue(of(settings))
-        spyOn(serverDataService, 'getAppsStats').and.returnValue(of({} as any))
+        spyOn(serverDataService, 'getDaemonsStats').and.returnValue(of({} as any))
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
-        expect(serverDataService.getAppsStats).toHaveBeenCalled()
+        expect(serverDataService.getDaemonsStats).toHaveBeenCalled()
         expect(settingService.getSettings).toHaveBeenCalled()
         const menuItem = component.getMenuItem('Grafana')
         expect(menuItem).toBeTruthy()

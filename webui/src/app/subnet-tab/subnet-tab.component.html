@@ -105,9 +105,9 @@
                     <tr>
                         <td class="w-15rem">
                             <app-entity-link
-                                entity="app"
+                                entity="daemon"
                                 [showEntityName]="false"
-                                [attrs]="{ type: 'kea', id: l.appId, name: l.appName }"
+                                [attrs]="{ id: l.daemonId, name: l.daemonName }"
                             ></app-entity-link>
                         </td>
                         <td>
@@ -125,9 +125,9 @@
                     >Pools&nbsp;/&nbsp;
                     <a
                         *ngIf="!allDaemonsHaveEqualPools(); else equalPoolsBlock"
-                        routerLink="/apps/{{ localSubnet.appId }}"
+                        routerLink="/daemons/{{ localSubnet.daemonId }}"
                     >
-                        {{ localSubnet.appName }}
+                        {{ localSubnet.daemonName }}
                     </a>
                     <ng-template #equalPoolsBlock>
                         <span class="font-normal"> All Servers </span>
@@ -174,9 +174,9 @@
                     >User Context&nbsp;/&nbsp;
                     <a
                         *ngIf="!allDaemonsHaveEqualUserContext(); else equalPoolsBlock"
-                        routerLink="/apps/{{ localSubnet.appId }}"
+                        routerLink="/daemons/{{ localSubnet.daemonId }}"
                     >
-                        {{ localSubnet.appName }}
+                        {{ localSubnet.daemonName }}
                     </a>
                     <ng-template #equalPoolsBlock>
                         <span class="font-normal"> All Servers </span>
@@ -211,9 +211,9 @@
                         >DHCP Options&nbsp;/&nbsp;
                         <a
                             *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
-                            routerLink="/apps/{{ localSubnet.appId }}"
+                            routerLink="/daemons/{{ localSubnet.daemonId }}"
                         >
-                            {{ localSubnet.appName }}
+                            {{ localSubnet.daemonName }}
                         </a>
                         <ng-template #equalDhcpOptionsBlock>
                             <span class="font-normal"> All Servers </span>

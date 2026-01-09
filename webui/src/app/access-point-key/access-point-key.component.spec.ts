@@ -82,7 +82,7 @@ describe('AccessPointKeyComponent', () => {
     })
 
     it('should set loading state during the key fetching', fakeAsync(() => {
-        component.appId = 42
+        component.daemonId = 42
         component.accessPointType = 'control'
         spyOn(servicesApi, 'getAccessPointKey').and.returnValue(of('foobar' as string & HttpEvent<string>))
         component.onAuthenticationKeyRequest()
@@ -90,7 +90,7 @@ describe('AccessPointKeyComponent', () => {
     }))
 
     it('should fetch key from API', fakeAsync(() => {
-        component.appId = 42
+        component.daemonId = 42
         component.accessPointType = 'control'
         spyOn(servicesApi, 'getAccessPointKey').and.returnValue(of('foobar' as string & HttpEvent<string>))
         component.onAuthenticationKeyRequest()
@@ -100,7 +100,7 @@ describe('AccessPointKeyComponent', () => {
     }))
 
     it('should reset the key on error', fakeAsync(() => {
-        component.appId = 42
+        component.daemonId = 42
         component.accessPointType = 'control'
         spyOn(servicesApi, 'getAccessPointKey').and.returnValue(throwError('error'))
         component.onAuthenticationKeyRequest()

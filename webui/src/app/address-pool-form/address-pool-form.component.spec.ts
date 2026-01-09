@@ -67,25 +67,19 @@ describe('AddressPoolFormComponent', () => {
         component.selectableDaemons = [
             {
                 id: 1,
-                appId: 1,
-                appType: 'kea',
-                name: 'first/dhcp4',
+                name: 'dhcp4',
                 version: '3.0.0',
                 label: 'first/dhcp4',
             },
             {
                 id: 2,
-                appId: 2,
-                appType: 'kea',
-                name: 'second/dhcp4',
+                name: 'dhcp4',
                 version: '3.0.0',
                 label: 'second/dhcp4',
             },
             {
                 id: 3,
-                appId: 3,
-                appType: 'kea',
-                name: 'third/dhcp4',
+                name: 'dhcp4',
                 version: '3.0.0',
                 label: 'third/dhcp4',
             },

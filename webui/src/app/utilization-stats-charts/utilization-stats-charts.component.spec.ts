@@ -36,7 +36,7 @@ describe('UtilizationStatsChartsComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    appName: 'foo@192.0.2.1',
+                    daemonName: 'dhcp4',
                     pools: [
                         {
                             pool: '192.0.2.1-192.0.2.100',
@@ -75,7 +75,7 @@ describe('UtilizationStatsChartsComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    appName: 'foo@192.0.2.1',
+                    daemonName: 'dhcp4',
                     pools: [
                         {
                             pool: '192.0.2.1-192.0.2.100',
@@ -89,7 +89,7 @@ describe('UtilizationStatsChartsComponent', () => {
                 },
                 {
                     id: 12223,
-                    appName: 'bar@192.0.2.2',
+                    daemonName: 'dhcp6',
                     pools: [
                         {
                             pool: '192.0.2.1-192.0.2.100',
@@ -113,12 +113,12 @@ describe('UtilizationStatsChartsComponent', () => {
         expect(charts[0].nativeElement.innerText).toContain('70')
         expect(charts[0].nativeElement.innerText).toContain('10')
 
-        expect(charts[1].nativeElement.innerText).toContain('foo@192.0.2.1')
+        expect(charts[1].nativeElement.innerText).toContain('dhcp4')
         expect(charts[1].nativeElement.innerText).toContain('240')
         expect(charts[1].nativeElement.innerText).toContain('50')
         expect(charts[1].nativeElement.innerText).toContain('4')
 
-        expect(charts[2].nativeElement.innerText).toContain('bar@192.0.2.2')
+        expect(charts[2].nativeElement.innerText).toContain('dhcp6')
         expect(charts[2].nativeElement.innerText).toContain('240')
         expect(charts[2].nativeElement.innerText).toContain('20')
         expect(charts[2].nativeElement.innerText).toContain('6')
@@ -138,11 +138,11 @@ describe('UtilizationStatsChartsComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    appName: 'foo@192.0.2.1',
+                    daemonName: 'dhcp4',
                 },
                 {
                     id: 12223,
-                    appName: 'bar@192.0.2.2',
+                    daemonName: 'dhcp6',
                 },
             ],
         }
@@ -170,7 +170,7 @@ describe('UtilizationStatsChartsComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    appName: 'foo@2001:db8:1::1',
+                    daemonName: 'dhcp4',
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -207,7 +207,7 @@ describe('UtilizationStatsChartsComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    appName: 'foo@2001:db8:1::1',
+                    daemonName: 'dhcp4',
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -221,7 +221,7 @@ describe('UtilizationStatsChartsComponent', () => {
                 },
                 {
                     id: 12223,
-                    appName: 'bar@2001:db8:1::2',
+                    daemonName: 'dhcp6',
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -244,11 +244,11 @@ describe('UtilizationStatsChartsComponent', () => {
         expect(charts[0].nativeElement.innerText).toContain('500')
         expect(charts[0].nativeElement.innerText).toContain('358')
 
-        expect(charts[1].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(charts[1].nativeElement.innerText).toContain('dhcp4')
         expect(charts[1].nativeElement.innerText).toContain('300')
         expect(charts[1].nativeElement.innerText).toContain('200')
 
-        expect(charts[2].nativeElement.innerText).toContain('bar@2001:db8:1::2')
+        expect(charts[2].nativeElement.innerText).toContain('dhcp6')
         expect(charts[2].nativeElement.innerText).toContain('200')
         expect(charts[2].nativeElement.innerText).toContain('158')
     })
@@ -266,7 +266,7 @@ describe('UtilizationStatsChartsComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    appName: 'foo@2001:db8:1::1',
+                    daemonName: 'dhcp6',
                     stats: {
                         'total-pds': 500,
                         'assigned-pds': 358,

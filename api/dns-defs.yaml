@@ -53,6 +53,8 @@
         type: string
       daemonId:
         type: integer
+      daemonName:
+        type: string
       loadedAt:
         type: string
         format: date-time

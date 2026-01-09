@@ -209,36 +209,34 @@
                     </td>
                     <td>
                         <span class="p-datatable-column-title">App(s) Version</span>
-                        <ng-container *ngFor="let a of m.apps; let i = index"
-                            ><br *ngIf="i > 0" />{{ a.type === 'bind9' ? '' : (a.type | titlecase) }}
-                            {{ a.version }}</ng-container
-                        >
+                        <ng-container *ngFor="let d of m.daemons; let i = index">
+                            <br *ngIf="i > 0" />{{ d.name | daemonNiceName }} {{ d.version }}
+                        </ng-container>
                     </td>
                     <td>
                         <span class="p-datatable-column-title">Summary</span>
-                        <ng-container *ngFor="let a of m.apps">
-                            <ng-container *ngIf="a.mismatchingDaemons">
-                                <p-message
-                                    severity="error"
-                                    text="Kea daemons version mismatch!"
-                                    [icon]="getIconBySeverity(Severity.error)"
-                                    styleClass="max-w-50rem"
-                                    class="custom-message"
-                                >
-                                    The Kea <a routerLink="/apps/{{ a.id }}">{{ a.name }}</a> daemons are using
-                                    mismatching versions:<br />
-                                    {{ getDaemonsVersions(a) | uppercase }}.<br />
-                                    All daemons should have the same version!
-                                </p-message>
-                            </ng-container>
+                        <ng-container *ngIf="m.mismatchingDaemons">
+                            <p-message
+                                severity="error"
+                                text="Kea daemons version mismatch!"
+                                [icon]="getIconBySeverity(Severity.error)"
+                                styleClass="max-w-50rem"
+                                class="custom-message"
+                            >
+                                The Kea daemons are using mismatching versions:<br />
+                                {{ getDaemonsVersions(m.mismatchingDaemons) | uppercase }}.<br />
+                                All daemons should have the same version!
+                            </p-message>
+                        </ng-container>
+                        <ng-container *ngFor="let d of m.daemons">
                             <app-version-status
-                                [app]="a.type"
-                                [version]="a.version"
+                                [app]="d.name?.toLowerCase().includes('bind') ? 'bind9' : 'kea'"
+                                [version]="d.version"
                                 [showAppName]="true"
                                 [inline]="false"
                                 styleClass="max-w-50rem"
-                            ></app-version-status
-                        ></ng-container>
+                            ></app-version-status>
+                        </ng-container>
                         <app-version-status
                             app="stork"
                             [version]="m.agentVersion"

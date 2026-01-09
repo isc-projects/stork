@@ -13,7 +13,7 @@
     </div>
     <div class="col-12 sm:col-3 pb-0 font-medium">Zone Configs Count</div>
     <div class="col-12 sm:col-9">
-        <a routerLink="/dns/zones" [queryParams]="{ appId: appId, zoneType: configuredZoneTypes }">{{
+        <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemon.id, zoneType: configuredZoneTypes }">{{
             daemon.zoneCount
         }}</a>
     </div>

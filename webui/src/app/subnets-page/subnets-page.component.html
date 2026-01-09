@@ -21,7 +21,7 @@
     entityTitleKey="subnet"
     [tableQueryParamFilters]="{
         subnetId: { type: 'numeric', matchMode: 'equals' },
-        appId: { type: 'numeric', matchMode: 'equals' },
+        daemonId: { type: 'numeric', matchMode: 'equals' },
         dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
         text: { type: 'string', matchMode: 'contains' },
     }"

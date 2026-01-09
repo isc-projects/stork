@@ -11,7 +11,7 @@
     [createTransactionDeleteAPICaller]="callCreateNetworkDeleteTransaction"
     [updateTransactionDeleteAPICaller]="callUpdateNetworkDeleteTransaction"
     [tableQueryParamFilters]="{
-        appId: { type: 'numeric', matchMode: 'equals' },
+        daemonId: { type: 'numeric', matchMode: 'equals' },
         dhcpVersion: { type: 'enum', matchMode: 'equals', enumValues: ['4', '6'] },
         text: { type: 'string', matchMode: 'contains' },
     }"

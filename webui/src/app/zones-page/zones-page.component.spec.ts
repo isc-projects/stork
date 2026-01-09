@@ -40,42 +40,38 @@ describe('ZonesPageComponent', () => {
     }
 
     const progress1 = {
-        appsCount: 3,
-        completedAppsCount: 0,
+        daemonsCount: 3,
+        completedDaemonsCount: 0,
         status: HttpStatusCode.Accepted,
     }
 
     const progress2 = {
-        appsCount: 3,
-        completedAppsCount: 1,
+        daemonsCount: 3,
+        completedDaemonsCount: 1,
         status: HttpStatusCode.Accepted,
     }
 
     const progress3 = {
-        appsCount: 3,
-        completedAppsCount: 2,
+        daemonsCount: 3,
+        completedDaemonsCount: 2,
         status: HttpStatusCode.Accepted,
     }
 
     const progress4 = {
-        appsCount: 3,
-        completedAppsCount: 3,
+        daemonsCount: 3,
+        completedDaemonsCount: 3,
         status: HttpStatusCode.Accepted,
     }
 
     const zoneFetchStates = {
         items: [
             {
-                appId: 30,
-                appName: 'bind9@agent-bind9',
                 createdAt: '2025-03-04T20:37:05.096Z',
                 daemonId: 73,
                 status: 'ok',
                 zoneConfigsCount: 105,
             },
             {
-                appId: 31,
-                appName: 'bind9@agent-bind9-2',
                 createdAt: '2025-03-04T20:37:13.106Z',
                 daemonId: 74,
                 status: 'erred',
@@ -91,16 +87,12 @@ describe('ZonesPageComponent', () => {
         body: {
             items: [
                 {
-                    appId: 30,
-                    appName: 'bind9@agent-bind9',
                     createdAt: '2025-03-04T20:37:05.096Z',
                     daemonId: 73,
                     status: 'ok',
                     zoneConfigsCount: 105,
                 },
                 {
-                    appId: 31,
-                    appName: 'bind9@agent-bind9-2',
                     createdAt: '2025-03-04T20:37:13.106Z',
                     daemonId: 74,
                     status: 'erred',
@@ -128,20 +120,18 @@ describe('ZonesPageComponent', () => {
                 id: 21320,
                 localZones: [
                     {
-                        appId: 30,
-                        appName: 'bind9@agent-bind9',
                         _class: 'IN',
                         daemonId: 73,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
                         zoneType: 'primary',
                     },
                     {
-                        appId: 31,
-                        appName: 'bind9@agent-bind9-2',
                         _class: 'IN',
                         daemonId: 74,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -155,20 +145,18 @@ describe('ZonesPageComponent', () => {
                 id: 21321,
                 localZones: [
                     {
-                        appId: 30,
-                        appName: 'bind9@agent-bind9',
                         _class: 'IN',
                         daemonId: 73,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
                         zoneType: 'primary',
                     },
                     {
-                        appId: 31,
-                        appName: 'bind9@agent-bind9-2',
                         _class: 'IN',
                         daemonId: 74,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -182,20 +170,18 @@ describe('ZonesPageComponent', () => {
                 id: 21322,
                 localZones: [
                     {
-                        appId: 30,
-                        appName: 'bind9@agent-bind9',
                         _class: 'IN',
                         daemonId: 73,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
                         zoneType: 'primary',
                     },
                     {
-                        appId: 31,
-                        appName: 'bind9@agent-bind9-2',
                         _class: 'IN',
                         daemonId: 74,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -209,10 +195,9 @@ describe('ZonesPageComponent', () => {
                 id: 21323,
                 localZones: [
                     {
-                        appId: 30,
-                        appName: 'bind9@agent-bind9',
                         _class: 'IN',
                         daemonId: 73,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -220,10 +205,9 @@ describe('ZonesPageComponent', () => {
                         rpz: true,
                     },
                     {
-                        appId: 31,
-                        appName: 'bind9@agent-bind9-2',
                         _class: 'IN',
                         daemonId: 74,
+                        daemonName: "named",
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -553,17 +537,17 @@ describe('ZonesPageComponent', () => {
         expect(resp.status).toEqual(HttpStatusCode.Ok)
         expect(resp.items).toEqual(zoneFetchStatesHttpResp.body.items)
         expect(resp.total).toEqual(zoneFetchStatesHttpResp.body.total)
-        expect(resp.appsCount).toBeUndefined()
-        expect(resp.completedAppsCount).toBeUndefined()
+        expect(resp.daemonsCount).toBeUndefined()
+        expect(resp.completedDaemonsCount).toBeUndefined()
     })
 
     it('should init filter dropdowns and multiselect', () => {
         // Arrange + Act + Assert
         expect(component.zoneTypes.length).toBeGreaterThan(0)
         expect(component.zoneClasses.length).toBeGreaterThan(0)
-        expect(component.appTypes.length).toBeGreaterThan(0)
-        expect(component.appTypes[0].value).toBeTruthy()
-        expect(component.appTypes[0].name).toBeTruthy()
+        expect(component.daemonNames.length).toBeGreaterThan(0)
+        expect(component.daemonNames[0].value).toBeTruthy()
+        expect(component.daemonNames[0].name).toBeTruthy()
         expect(component.zoneClasses).not.toContain(DNSClass.Any)
     })
 
@@ -605,18 +589,17 @@ describe('ZonesPageComponent', () => {
             queryParams: {
                 zoneType: null,
                 rpz: null,
-                appId: null,
+                daemonId: null,
                 zoneSerial: '1',
                 zoneClass: null,
-                appType: null,
                 text: null,
             },
         })
     }))
 
-    it('should filter zones table by app id', fakeAsync(() => {
+    it('should filter zones table by daemon id', fakeAsync(() => {
         // Arrange
-        const inputNumber = fixture.debugElement.query(By.css('[inputId="app-id"]'))
+        const inputNumber = fixture.debugElement.query(By.css('[inputId="daemon-id"]'))
         expect(inputNumber).toBeTruthy()
 
         // Act
@@ -629,10 +612,9 @@ describe('ZonesPageComponent', () => {
             queryParams: {
                 zoneType: null,
                 rpz: null,
-                appId: 9,
+                daemonId: 9,
                 zoneSerial: null,
                 zoneClass: null,
-                appType: null,
                 text: null,
             },
         })
@@ -654,10 +636,9 @@ describe('ZonesPageComponent', () => {
             queryParams: {
                 zoneType: null,
                 rpz: null,
-                appId: null,
+                daemonId: null,
                 zoneSerial: null,
                 zoneClass: null,
-                appType: null,
                 text: 'test',
             },
         })
@@ -679,9 +660,6 @@ describe('ZonesPageComponent', () => {
             name: 'example.org',
             id: 10,
             localZones: [
-                {
-                    zoneType: 'builtin',
-                },
                 {
                     zoneType: 'builtin',
                 },
@@ -862,10 +840,10 @@ describe('ZonesPageComponent', () => {
         )
     })
 
-    xit('should not filter zones table by app id value zero', fakeAsync(() => {
+    xit('should not filter zones table by daemon id value zero', fakeAsync(() => {
         // TODO: this test should be moved away from Karma tests.
         // Arrange
-        const inputNumber = fixture.debugElement.query(By.css('[inputId="app-id"]'))
+        const inputNumber = fixture.debugElement.query(By.css('[inputId="daemon-id"]'))
         expect(inputNumber).toBeTruthy()
 
         // Act

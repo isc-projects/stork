@@ -1,6 +1,6 @@
 <section class="stork-layout" *ngIf="loaded">
     <article>
-        <div *ngIf="noApps" class="max-w-50rem">
+        <div *ngIf="noDaemons" class="max-w-50rem">
             <p-panel>
                 <ng-template #header>
                     <span class="font-semibold text-3xl">Welcome to Stork!</span>
@@ -33,7 +33,7 @@
             </p-panel>
         </div>
 
-        <div *ngIf="appsStats.keaAppsTotal > 0">
+        <div *ngIf="stats.dhcpDaemonsTotal > 0">
             <p-panel
                 [toggleable]="true"
                 [collapsed]="isDHCPDashboardHidden()"
@@ -320,8 +320,7 @@
                     <ng-template #header>
                         <tr>
                             <th>Host</th>
-                            <th>App Version</th>
-                            <th>App Name</th>
+                            <th>Version</th>
                             <th>Daemon</th>
                             <th>Status</th>
                             <th>RPS (15min)</th>
@@ -338,13 +337,11 @@
                                 <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                             </td>
                             <td>
-                                <a routerLink="/apps/{{ d.appId }}">Kea {{ d.appVersion }}</a
-                                ><app-version-status app="kea" [version]="d.appVersion"></app-version-status>
+                                <app-version-status app="kea" [version]="d.version" [showAppName]="true"></app-version-status>
                             </td>
                             <td>
-                                <a routerLink="/apps/{{ d.appId }}">{{ d.appName }}</a>
+                                <a routerLink="/daemons/{{ d.id }}">{{ d.name }} | daemonNiceName</a>
                             </td>
-                            <td>{{ d.name | daemonNiceName }}</td>
                             <td>
                                 <i
                                     pTooltip="{{ daemonStatusIconTooltip(d) }}"
@@ -358,7 +355,7 @@
                             <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 | number: '1.0-2' }}</td>
                             <td>
                                 <span *ngIf="d.haEnabled && d.haOverview && d.haOverview.length > 0">
-                                    <a routerLink="/apps/{{ d.appId }}">
+                                    <a routerLink="/daemons/{{ d.id }}">
                                         {{ showHAState(d) }}
                                     </a>
                                 </span>
@@ -384,7 +381,7 @@
             </p-panel>
         </div>
 
-        <div *ngIf="appsStats.dnsAppsTotal > 0">
+        <div *ngIf="stats.dnsDaemonsTotal > 0">
             <p-panel
                 [toggleable]="true"
                 [collapsed]="isDNSDashboardHidden()"
@@ -408,13 +405,13 @@
                 <h1 class="section-heading">Service Status</h1>
                 <p-table
                     #dnsServiceStatusTable
-                    [value]="dnsApps"
+                    [value]="dnsDaemons"
                     size="small"
                     [stripedRows]="true"
                     styleClass="max-w-100vw"
                     [lazy]="true"
                     (onLazyLoad)="refreshDnsOverview($event)"
-                    [totalRecords]="dnsAppsTotalCount"
+                    [totalRecords]="dnsDaemonsTotalCount"
                     [loading]="dnsServiceStatusLoading"
                     [paginator]="true"
                     [rows]="5"
@@ -424,8 +421,7 @@
                     <ng-template #header>
                         <tr>
                             <th>Host</th>
-                            <th>App Version</th>
-                            <th>App Name</th>
+                            <th>Version</th>
                             <th>Daemon</th>
                             <th>Status</th>
                             <th>Zone Fetch Status</th>
@@ -459,64 +455,63 @@
                             <th>Uptime</th>
                         </tr>
                     </ng-template>
-                    <ng-template #body let-a>
+                    <ng-template #body let-d>
                         <tr>
                             <td>
-                                <a *ngIf="a.machine?.id" routerLink="/machines/{{ a.machine.id }}">{{
-                                    a.machine?.hostname ?? 'unknown'
+                                <a *ngIf="d.machine?.id" routerLink="/machines/{{ d.machine.id }}">{{
+                                    d.machine?.hostname ?? 'unknown'
                                 }}</a>
                             </td>
                             <td>
-                                <a *ngIf="a.id" routerLink="/apps/{{ a.id }}"
+                                <a *ngIf="d.id" routerLink="/daemons/{{ d.id }}"
                                     ><app-version-status
-                                        [app]="a.type"
-                                        [version]="a.version"
+                                        [app]="d.type"
+                                        [version]="d.version"
                                         [showAppName]="true"
                                     ></app-version-status
                                 ></a>
                             </td>
                             <td>
-                                <a *ngIf="a.id" routerLink="/apps/{{ a.id }}">{{ a.name ?? 'unknown' }}</a>
+                                <a *ngIf="d.id" routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
                             </td>
-                            <td>{{ getDNSDaemon(a)?.name | daemonNiceName | placeholder: 'unknown' }}</td>
                             <td>
                                 <i
-                                    *ngIf="getDNSDaemon(a)"
-                                    pTooltip="{{ daemonStatusIconTooltip(getDNSDaemon(a)) }}"
-                                    class="{{ daemonStatusIconName(getDNSDaemon(a)) }} text-2xl"
+                                    *ngIf="d"
+                                    pTooltip="{{ daemonStatusIconTooltip(d) }}"
+                                    class="{{ daemonStatusIconName(d) }} text-2xl"
                                     [ngStyle]="{
-                                        color: daemonStatusIconColor(getDNSDaemon(a)),
+                                        color: daemonStatusIconColor(d),
                                     }"
                                 ></i>
                             </td>
                             <td>
-                                <a *ngIf="a.id" routerLink="/dns/zones" [queryParams]="{ appId: a.id }">
-                                    {{ !zoneInventoryStateMap.get(a.id) ? 'n/a' : '' }}
+                                <a *ngIf="d.id" routerLink="/dns/zones" [queryParams]="{ daemonId: d.id }">
+                                    {{ !zoneInventoryStateMap.get(d.id) ? 'n/a' : '' }}
                                     <p-tag
-                                        *ngIf="zoneInventoryStateMap.get(a.id)"
+                                        *ngIf="zoneInventoryStateMap.get(d.id)"
                                         value="{{
-                                            zoneInventoryStateMap.get(a.id).status === 'erred'
+                                            zoneInventoryStateMap.get(d.id).status === 'erred'
                                                 ? 'Error'
-                                                : (zoneInventoryStateMap.get(a.id).status | titlecase)
+                                                : (zoneInventoryStateMap.get(d.id).status | titlecase)
                                         }} "
-                                        [severity]="getSeverity(zoneInventoryStateMap.get(a.id).status)"
-                                        [pTooltip]="getTooltip(zoneInventoryStateMap.get(a.id).status)"
+                                        [severity]="getSeverity(zoneInventoryStateMap.get(d.id).status)"
+                                        [pTooltip]="getTooltip(zoneInventoryStateMap.get(d.id).status)"
                                     />
                                 </a>
                             </td>
                             <td>
-                                <ng-template #zoneCountCell let-appId="appId" let-propertyName="propertyName">
-                                    <ng-container *ngIf="zoneInventoryStateMap.get(appId)">
-                                        <a routerLink="/dns/zones" [queryParams]="{ appId: appId }">{{
-                                            zoneInventoryStateMap.get(appId)[propertyName] ?? 0
+                                <ng-template #zoneCountCell let-daemonId="daemonId" let-propertyName="propertyName">
+                                    <ng-container *ngIf="zoneInventoryStateMap.get(daemonId)">
+                                        <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemonId }">{{
+                                            zoneInventoryStateMap.get(daemonId)[propertyName] ?? 0
                                         }}</a>
                                     </ng-container>
-                                    <ng-container *ngIf="!zoneInventoryStateMap.get(appId)"> n/a </ng-container>
+                                    <ng-container *ngIf="!zoneInventoryStateMap.get(daemonId)"> n/a </ng-container>
                                 </ng-template>
                                 <ng-container
                                     *ngTemplateOutlet="
                                         zoneCountCell;
-                                        context: { appId: a.id, propertyName: 'zoneConfigsCount' }
+                                        context: { daemonId: d.id, propertyName: 'zoneConfigsCount' }
                                     "
                                 >
                                 </ng-container>
@@ -525,7 +520,7 @@
                                 <ng-container
                                     *ngTemplateOutlet="
                                         zoneCountCell;
-                                        context: { appId: a.id, propertyName: 'distinctZonesCount' }
+                                        context: { daemonId: d.id, propertyName: 'distinctZonesCount' }
                                     "
                                 >
                                 </ng-container>
@@ -534,12 +529,12 @@
                                 <ng-container
                                     *ngTemplateOutlet="
                                         zoneCountCell;
-                                        context: { appId: a.id, propertyName: 'builtinZonesCount' }
+                                        context: { daemonId: d.id, propertyName: 'builtinZonesCount' }
                                     "
                                 >
                                 </ng-container>
                             </td>
-                            <td>{{ showDuration(getDNSDaemon(a)?.uptime ?? 0) }}</td>
+                            <td>{{ showDuration(d)?.uptime ?? 0 }}</td>
                         </tr>
                     </ng-template>
                 </p-table>

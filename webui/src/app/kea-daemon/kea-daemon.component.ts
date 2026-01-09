@@ -5,7 +5,6 @@ import { prerelease, gte } from 'semver'
 
 import { MessageService } from 'primeng/api'
 
-import { AppTab } from '../apps'
 import { ServicesService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 
@@ -16,15 +15,14 @@ import {
     daemonStatusIconColor,
     daemonStatusIconTooltip,
     getErrorMessage,
+    daemonNameToFriendlyName,
 } from '../utils'
 import { KeaDaemon, ModelFile } from '../backend'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { Panel } from 'primeng/panel'
 import { NgIf, NgClass, NgFor } from '@angular/common'
 import { Button } from 'primeng/button'
 import { ProgressSpinner } from 'primeng/progressspinner'
-import { AppOverviewComponent } from '../app-overview/app-overview.component'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { ToggleSwitch } from 'primeng/toggleswitch'
 import { FormsModule } from '@angular/forms'
@@ -39,19 +37,18 @@ import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { DaemonOverviewComponent } from '../daemon-overview/daemon-overview.component'
 
 @Component({
-    selector: 'app-kea-app-tab',
-    templateUrl: './kea-app-tab.component.html',
-    styleUrls: ['./kea-app-tab.component.sass'],
+    selector: 'app-kea-daemon',
+    templateUrl: './kea-daemon.component.html',
+    styleUrls: ['./kea-daemon.component.sass'],
     imports: [
         ManagedAccessDirective,
-        RenameAppDialogComponent,
         Panel,
         NgIf,
         Button,
         ProgressSpinner,
-        AppOverviewComponent,
         TabViewComponent,
         ToggleSwitch,
         FormsModule,
@@ -71,48 +68,8 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
         PlaceholderPipe,
     ],
 })
-export class KeaAppTabComponent {
-    private _appTab: AppTab
-    @Output() refreshApp = new EventEmitter<number>()
-
-    daemons: KeaDaemon[] = []
-
-    /**
-     * Keeps track of daemon ID currently displayed in the tab.
-     */
-    activeTabDaemonID: number
-
-    /**
-     * Holds a map of existing apps' names and ids.
-     *
-     * The apps' names are used in rename-app-dialog component to validate
-     * the user input.
-     */
-    existingApps = new Map<string, number>()
-
-    /**
-     * Holds a set of existing machines' addresses.
-     *
-     * The machines' addresses are used in rename-app-dialog component to
-     * validate the user input.
-     */
-    existingMachines = new Set<string>()
-
-    /**
-     * Controls whether the rename-app-dialog is visible or not.
-     */
-    appRenameDialogVisible = false
-
-    /**
-     * Indicates if a pencil icon was clicked.
-     *
-     * As a result of clicking this icon a dialog box is shown to
-     * rename an app. Loading the dialog box may take a while before
-     * the information about available apps and machines is loaded.
-     * In the meantime, a spinner is shown, indicating that the dialog
-     * box is loading.
-     */
-    showRenameDialogClicked = false
+export class KeaDaemonComponent {
+    @Input() daemon: KeaDaemon
 
     /**
      * Holds Kea documentation anchors indexed by hook libraries base names.
@@ -149,88 +106,11 @@ export class KeaAppTabComponent {
         'libdhcp_user_chk.so': 'user-chk-user-check',
     }
 
-    /**
-     * Event emitter sending an event to the parent component when an app is
-     * renamed.
-     */
-    @Output() renameApp = new EventEmitter<string>()
-
     constructor(
         private route: ActivatedRoute,
         private servicesApi: ServicesService,
-        private serverData: ServerDataService,
         private msgService: MessageService
     ) {}
-
-    /**
-     * Selects new application tab
-     *
-     * As a result, the local information about the daemons is updated.
-     *
-     * @param appTab pointer to the new app tab data structure.
-     */
-    @Input()
-    set appTab(appTab: AppTab) {
-        this._appTab = appTab
-        // Refresh local information about the daemons presented by this
-        // component.
-        this.initDaemons(appTab.app.details.daemons)
-    }
-
-    /**
-     * Returns information about currently selected app tab.
-     */
-    get appTab(): AppTab {
-        return this._appTab
-    }
-
-    /**
-     * Initializes information about the daemons according to the information
-     * carried in the provided parameter.
-     *
-     * As a result of invoking this function, the view of the component will be
-     * updated.
-     *
-     * @param appTabDaemons information about the daemons stored in the app tab
-     *                      data structure.
-     */
-    private initDaemons(appTabDaemons: KeaDaemon[]) {
-        const activeDaemonTabName = this.route.snapshot.queryParamMap.get('daemon')
-        const daemonMap = []
-        for (const d of appTabDaemons) {
-            daemonMap[d.name] = d
-        }
-        const DMAP = [
-            ['dhcp4', 'DHCPv4'],
-            ['dhcp6', 'DHCPv6'],
-            ['d2', 'DDNS'],
-            ['ca', 'CA'],
-            ['netconf', 'NETCONF'],
-        ]
-        const daemons = []
-        for (const dm of DMAP) {
-            if (daemonMap[dm[0]] !== undefined) {
-                daemonMap[dm[0]].niceName = dm[1]
-                daemonMap[dm[0]].icon = this.daemonStatusIconName(daemonMap[dm[0]])
-                daemonMap[dm[0]].subnets = []
-                daemonMap[dm[0]].totalSubnets = 0
-                daemonMap[dm[0]].statusErred = this.daemonStatusErred(daemonMap[dm[0]])
-                daemons.push(daemonMap[dm[0]])
-
-                if (dm[0].toUpperCase() === activeDaemonTabName?.toUpperCase()) {
-                    this.activeTabDaemonID = daemonMap[dm[0]].id
-                }
-            }
-        }
-        this.daemons = daemons
-    }
-
-    /**
-     * An action triggered when refresh button is pressed.
-     */
-    refreshAppState() {
-        this.refreshApp.emit(this._appTab.app.id)
-    }
 
     /**
      * Converts duration to pretty string.
@@ -247,13 +127,11 @@ export class KeaAppTabComponent {
      * Returns boolean value indicating if there is an issue with communication
      * with the active daemon.
      *
-     * @param daemon data structure holding the information about the daemon.
-     *
      * @return true if there is a communication problem with the daemon,
      *         false otherwise.
      */
-    private daemonStatusErred(daemon: KeaDaemon): boolean {
-        return daemon.active && daemonStatusErred(daemon)
+    get daemonStatusErred(): boolean {
+        return this.daemon.active && ((this.daemon.agentCommErrors ?? 0) + (this.daemon.caCommErrors ?? 0) + (this.daemon.daemonCommErrors ?? 0)) > 0
     }
 
     /**
@@ -263,52 +141,46 @@ export class KeaAppTabComponent {
      * active and whether there is a communication with the daemon or
      * not.
      *
-     * @param daemon data structure holding the information about the daemon.
-     *
      * @returns ban icon if the daemon is not active, times icon if the daemon
      *          should be active but the communication with it is broken and
      *          check icon if the communication with the active daemon is ok.
      */
-    daemonStatusIconName(daemon: KeaDaemon) {
-        return daemonStatusIconName(daemon)
+    get daemonStatusIconName() {
+        return daemonStatusIconName(this.daemon)
     }
 
     /**
      * Returns the color of the icon used when presenting daemon status
      *
-     * @param daemon data structure holding the information about the daemon.
-     *
      * @returns grey color if the daemon is not active, red if the daemon is
      *          active but there are communication issues, green if the
      *          communication with the active daemon is ok.
      */
-    daemonStatusIconColor(daemon: KeaDaemon) {
-        return daemonStatusIconColor(daemon)
+    get daemonStatusIconColor() {
+        return daemonStatusIconColor(this.daemon)
     }
 
     /**
      * Returns error text to be displayed when there is a communication issue
      * with a given daemon
      *
-     * @param daemon data structure holding the information about the daemon.
-     *
      * @returns Error text. It includes hints about the communication
      *          problems when such problems occur, e.g. it includes the
      *          hint whether the communication is with the agent or daemon.
      */
-    daemonStatusErrorText(daemon: KeaDaemon) {
-        return daemonStatusIconTooltip(daemon)
+    get daemonStatusErrorText() {
+        return daemonStatusIconTooltip(this.daemon)
     }
 
     /**
      * Changes the monitored state of the given daemon. It sends a request
      * to API.
      */
-    changeMonitored(daemon: KeaDaemon) {
-        const dmn = { monitored: !daemon.monitored }
-        this.servicesApi.updateDaemon(daemon.id, dmn).subscribe(
+    changeMonitored() {
+        const dmn = { monitored: !this.daemon.monitored }
+        this.servicesApi.updateDaemon(this.daemon.id, dmn).subscribe(
             (/* data */) => {
-                daemon.monitored = dmn.monitored
+                this.daemon.monitored = dmn.monitored
             },
             (/* err */) => {
                 console.warn('Failed to update monitoring flag in daemon')
@@ -317,13 +189,13 @@ export class KeaAppTabComponent {
     }
 
     /** Returns true if the daemon was never running correctly. */
-    isNeverFetchedDaemon(daemon: KeaDaemon) {
-        return daemon.reloadedAt == null
+    get isNeverFetchedDaemon() {
+        return this.daemon.reloadedAt == null
     }
 
     /** Returns true if the daemon is DHCP daemon. */
-    isDhcpDaemon(daemon: KeaDaemon) {
-        return daemon.name === 'dhcp4' || daemon.name === 'dhcp6'
+    get isDhcpDaemon() {
+        return this.daemon.name === 'dhcp4' || this.daemon.name === 'dhcp6'
     }
 
     /**
@@ -337,87 +209,6 @@ export class KeaAppTabComponent {
      */
     logTargetViewable(target: string): boolean {
         return target !== 'stdout' && target !== 'stderr' && !target.startsWith('syslog')
-    }
-
-    /**
-     * Reacts to submitting a new app name from the dialog.
-     *
-     * This function is called when a user presses the rename button in
-     * the app-rename-app-dialog component. It attempts to submit the new
-     * name to the server.
-     *
-     * If the app is successfully renamed, the app name is refreshed in
-     * the app tab view. Additionally, the success message is displayed
-     * in the message service.
-     *
-     * @param name holds new app name.
-     */
-    handleRenameDialogSubmitted(name: string) {
-        this.servicesApi.renameApp(this.appTab.app.id, { name: name }).subscribe(
-            (/* data */) => {
-                // Renaming the app was successful.
-                this.msgService.add({
-                    severity: 'success',
-                    summary: 'App renamed',
-                    detail: 'App successfully renamed to ' + name,
-                })
-                // Let's update the app name in the current tab.
-                this.appTab.app.name = name
-                // Notify the parent component about successfully renaming the app.
-                this.renameApp.emit(name)
-            },
-            (err) => {
-                // Renaming the app failed.
-                const msg = getErrorMessage(err)
-                this.msgService.add({
-                    severity: 'error',
-                    summary: 'Error renaming app',
-                    detail: 'Error renaming app to ' + name + ': ' + msg,
-                    life: 10000,
-                })
-            }
-        )
-    }
-
-    /**
-     * Reacts to hiding a dialog box for renaming an app.
-     *
-     * This function is called when a dialog box for renaming an app is
-     * closed. It is triggered both in the case when the form is submitted
-     * or cancelled.
-     */
-    handleRenameDialogHidden() {
-        this.appRenameDialogVisible = false
-    }
-
-    /**
-     * Shows a dialog for renaming an app.
-     *
-     * The dialog box component requires a set of machines' addresses
-     * and a map of existing apps' names to validate the new app name.
-     * Therefore, this function attempts to load the machines' addresses
-     * and apps' names prior to displaying the dialog. If it fails, the
-     * dialog box is not displayed.
-     */
-    showRenameAppDialog() {
-        this.showRenameDialogClicked = true
-        forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]).subscribe(
-            (data) => {
-                this.existingApps = data[0]
-                this.existingMachines = data[1]
-                this.appRenameDialogVisible = true
-                this.showRenameDialogClicked = false
-            },
-            (/* err */) => {
-                this.msgService.add({
-                    severity: 'error',
-                    summary: 'Failed to fetch apps and machines',
-                    detail: 'Failed to fetch app and machine list from the server',
-                    life: 10000,
-                })
-                this.showRenameDialogClicked = false
-            }
-        )
     }
 
     /**

@@ -78,9 +78,9 @@
                     <tr>
                         <td class="border-none w-15rem">
                             <app-entity-link
-                                entity="app"
+                                entity="daemon"
                                 [showEntityName]="false"
-                                [attrs]="{ type: 'kea', id: l.appId, name: l.appName }"
+                                [attrs]="{ id: l.daemonId, name: l.daemonName }"
                             ></app-entity-link>
                         </td>
                     </tr>
@@ -138,9 +138,9 @@
                         >DHCP Options&nbsp;/&nbsp;
                         <a
                             *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
-                            routerLink="/apps/{{ localSharedNetwork.appId }}"
+                            routerLink="/daemons/{{ localSharedNetwork.daemonId }}"
                         >
-                            {{ localSharedNetwork.appName }}
+                            {{ localSharedNetwork.daemonName }}
                         </a>
                         <ng-template #equalDhcpOptionsBlock>
                             <span class="font-normal"> All Servers </span>

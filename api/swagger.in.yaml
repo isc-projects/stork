@@ -169,7 +169,7 @@ definitions:
   DNSDaemonName:
     type: string
     enum: &DNSDAEMONNAME
-      - bind9
+      - named
       - pdns
 
   DNSClass:

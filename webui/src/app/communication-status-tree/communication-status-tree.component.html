@@ -17,32 +17,32 @@
     </ng-template>
     <ng-template let-node pTemplate="kea">
         <div class="flex align-items-center">
-            Kea Control Agent of
-            <app-entity-link
-                [showEntityName]="false"
-                entity="app"
-                [attrs]="node.data.attrs"
-                styleClass="ml-1 mr-1"
-            ></app-entity-link>
-            <span
-                *ngIf="node.data?.caCommErrors"
-                class="ml-2 pi pi-exclamation-triangle"
-                pTooltip="There are communication issues with the Kea Control Agent. The Stork agent may be responding, but it is unable to forward commands to the Kea daemons via the Kea Control Agent."
-            ></span>
-        </div>
-    </ng-template>
-    <ng-template let-node pTemplate="kea-daemon">
-        <div class="flex align-items-center">
-            Control channel of
+            Kea daemon on
             <app-entity-link
                 [showEntityName]="false"
                 entity="daemon"
                 [attrs]="node.data.attrs"
                 styleClass="ml-1 mr-1"
             ></app-entity-link>
-            server
             <span
                 *ngIf="node.data?.monitored && node.data?.daemonCommErrors"
+                class="ml-2 pi pi-exclamation-triangle"
+                pTooltip="There are communication issues with the daemon. The Stork agent may be responding, but it is unable to forward commands to the Kea daemon."
+            ></span>
+            <span *ngIf="!node.data?.monitored" class="ml-2 pi pi-ban" pTooltip="This daemon is not monitored."> </span>
+        </div>
+    </ng-template>
+    <ng-template let-node pTemplate="other">
+        <div class="flex align-items-center">
+            Daemon on
+            <app-entity-link
+                [showEntityName]="false"
+                entity="daemon"
+                [attrs]="node.data.attrs"
+                styleClass="ml-1 mr-1"
+            ></app-entity-link>
+            <span
+                *ngIf="node.data?.monitored && (node.data?.daemonCommErrors || node.data?.caCommErrors)"
                 class="ml-2 pi pi-exclamation-triangle"
                 pTooltip="There are communication issues with the daemon. The daemon may be down or failing."
             ></span>

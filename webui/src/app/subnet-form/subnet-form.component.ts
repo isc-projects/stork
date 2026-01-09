@@ -214,11 +214,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         for (let d of response.daemons) {
             this.state.allDaemons.push({
                 id: d.id,
-                appId: d.app.id,
-                appType: d.app.type,
                 name: d.name,
                 version: d.version,
-                label: `${d.app.name}/${d.name}`,
+                label: d.name,
             })
         }
         // Initially, list all daemons.
@@ -408,7 +406,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * @param toggledDaemonId optional id of the removed daemon in the controls.
      */
-    private handleDaemonsChange(toggledDaemonId?: number): void {
+    handleDaemonsChange(toggledDaemonId?: number): void {
         const toggledDaemonIndex = toggledDaemonId
             ? this.state.filteredDaemons.findIndex((fd) => fd.id === toggledDaemonId)
             : -1

@@ -1,7 +1,7 @@
 <div style="margin-top: 20px">
-    <a *ngIf="appId" routerLink="/apps/{{ appId }}">
+    <a *ngIf="daemonId" routerLink="/daemons/{{ daemonId }}">
         <span class="fa fa-arrow-left"></span>
-        <span style="margin-left: 5px">Back to {{ appTypeCapitalized }} view</span>
+        <span style="margin-left: 5px">Back to {{ daemonLabel }} daemon</span>
     </a>
 </div>
 
@@ -51,9 +51,9 @@
                     Log {{ data.logTargetOutput }}
                     from the
                     <app-entity-link
-                        id="app-link"
-                        entity="app"
-                        [attrs]="{ id: appId, type: appType, name: appName, version: '' }"
+                        id="daemon-link"
+                        entity="daemon"
+                        [attrs]="{ id: daemonId, name: daemonName }"
                     ></app-entity-link>
                     on the
                     <app-entity-link

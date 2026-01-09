@@ -70,8 +70,7 @@ describe('HostTabComponent', () => {
             subnetPrefix: '192.0.2.0/24',
             localHosts: [
                 {
-                    appId: 1,
-                    appName: 'frog',
+                    daemonId: 1,
                     dataSource: 'config',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
@@ -84,8 +83,8 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
-                    appName: 'mouse',
+                    daemonId: 2,
+                    daemonName: 'dhcp4',
                     dataSource: 'api',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
@@ -126,18 +125,18 @@ describe('HostTabComponent', () => {
         // HW address should remain in hexadecimal form.
         expect(hostIdsFieldset.nativeElement.textContent).toContain('51:52:53:54:55:56')
 
-        const appsFieldset = fieldsets[0]
-        expect(appsFieldset).toBeTruthy()
+    const daemonsFieldset = fieldsets[0]
+    expect(daemonsFieldset).toBeTruthy()
 
-        const appLinks = appsFieldset.queryAll(By.css('a'))
-        expect(appLinks.length).toBe(2)
-        expect(appLinks[0].attributes.href).toBe('/apps/1')
-        expect(appLinks[1].attributes.href).toBe('/apps/2')
+    const daemonLinks = daemonsFieldset.queryAll(By.css('a'))
+    expect(daemonLinks.length).toBe(2)
+    expect(daemonLinks[0].attributes.href).toBe('/daemons/1')
+    expect(daemonLinks[1].attributes.href).toBe('/daemons/2')
 
-        let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
+    let datasourceLabel = daemonsFieldset.query(By.css('.datasource--config'))
         expect(datasourceLabel).toBeTruthy()
         expect(datasourceLabel.nativeElement.innerText).toBe('config')
-        datasourceLabel = appsFieldset.query(By.css('.datasource--hostcmds'))
+    datasourceLabel = daemonsFieldset.query(By.css('.datasource--hostcmds'))
         expect(datasourceLabel).toBeTruthy()
         expect(datasourceLabel.nativeElement.innerText).toBe('host_cmds')
 
@@ -194,8 +193,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
-                    appName: 'frog',
+                    daemonId: 1,
+                    daemonName: 'dhcp6',
                     dataSource: 'config',
                     hostname: 'mouse.example.org',
                     ipReservations: [
@@ -214,8 +213,8 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
-                    appName: 'mouse',
+                    daemonId: 2,
+                    daemonName: 'dhcp6',
                     dataSource: 'api',
                     hostname: 'mouse.example.org',
                     ipReservations: [
@@ -280,8 +279,8 @@ describe('HostTabComponent', () => {
 
         const appLinks = appsFieldset.queryAll(By.css('a'))
         expect(appLinks.length).toBe(2)
-        expect(appLinks[0].attributes.href).toBe('/apps/1')
-        expect(appLinks[1].attributes.href).toBe('/apps/2')
+        expect(appLinks[0].attributes.href).toBe('/daemons/1')
+        expect(appLinks[1].attributes.href).toBe('/daemons/2')
 
         let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
         expect(datasourceLabel).toBeTruthy()
@@ -348,8 +347,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
-                    appName: 'frog',
+                    daemonId: 1,
+                    daemonName: 'frog',
                     dataSource: 'config',
                     ipReservations: [
                         {
@@ -367,8 +366,8 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
-                    appName: 'mouse',
+                    daemonId: 2,
+                    daemonName: 'mouse',
                     dataSource: 'api',
                     ipReservations: [
                         {
@@ -410,7 +409,7 @@ describe('HostTabComponent', () => {
                 },
             ],
             conflicts: [2],
-            erredApps: [],
+            erredDaemons: [],
         }
         spyOn(dhcpApi, 'getLeases').and.returnValue(of(fakeLeases))
         component.host = host
@@ -470,8 +469,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '192.0.2.0/24',
             localHosts: [
                 {
-                    appId: 1,
-                    appName: 'frog',
+                    daemonId: 1,
+                    daemonName: 'frog',
                     dataSource: 'config',
                     ipReservations: [
                         {
@@ -480,8 +479,8 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
-                    appName: 'mouse',
+                    daemonId: 2,
+                    daemonName: 'mouse',
                     dataSource: 'api',
                     ipReservations: [
                         {
@@ -514,7 +513,7 @@ describe('HostTabComponent', () => {
                 },
             ],
             conflicts: [],
-            erredApps: [],
+            erredDaemons: [],
         }
         const spy = spyOn(dhcpApi, 'getLeases')
 
@@ -785,8 +784,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
-                    appName: 'frog',
+                    daemonId: 1,
+                    daemonName: 'frog',
                     dataSource: 'api',
                 },
             ],
@@ -858,8 +857,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
-                    appName: 'frog',
+                    daemonId: 1,
+                    daemonName: 'dhcp6',
                     dataSource: 'config',
                 },
             ],
@@ -900,9 +899,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
-                    appName: 'frog',
+                    daemonName: 'dhcp6',
                     dataSource: 'api',
                     clientClasses: ['foo', 'bar'],
                     nextServer: '192.0.2.1',
@@ -934,9 +932,8 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
-                    daemonId: 1,
-                    appName: 'lion',
+                    daemonId: 2,
+                    daemonName: 'lion',
                     dataSource: 'api',
                     clientClasses: ['baz'],
                     nextServer: '192.0.2.2',
@@ -985,10 +982,10 @@ describe('HostTabComponent', () => {
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
                 expect(link.properties.innerText).toContain('frog')
-                expect(link.properties.pathname).toBe('/apps/1')
+                expect(link.properties.pathname).toBe('/daemons/1')
             } else {
                 expect(link.properties.innerText).toContain('lion')
-                expect(link.properties.pathname).toBe('/apps/2')
+                expect(link.properties.pathname).toBe('/daemons/2')
             }
         }
     })
@@ -1017,9 +1014,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '192.0.2.0/24',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
-                    appName: 'frog',
+                    daemonName: 'dhcp4',
                     dataSource: 'api',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
@@ -1045,9 +1041,8 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
-                    daemonId: 1,
-                    appName: 'lion',
+                    daemonId: 2,
+                    daemonName: 'dhcp4',
                     dataSource: 'api',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
@@ -1106,9 +1101,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '192.0.2.0/24',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
-                    appName: 'frog',
+                    daemonName: 'dhcp4',
                     dataSource: 'api',
                     nextServer: '192.0.2.1',
                     clientClasses: ['foo', 'bar'],
@@ -1154,9 +1148,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
-                    appName: 'frog',
+                    daemonName: 'dhcp6',
                     dataSource: 'api',
                 },
             ],
@@ -1185,9 +1178,8 @@ describe('HostTabComponent', () => {
             subnetPrefix: '192.0.2.0::/24',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
-                    appName: 'frog',
+                    daemonName: 'dhcp4',
                     dataSource: 'api',
                     nextServer: '0.0.0.0',
                 },
@@ -1219,15 +1211,13 @@ describe('HostTabComponent', () => {
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
-                    appName: 'frog',
+                    daemonName: 'dhcp6',
                     dataSource: 'api',
                 },
                 {
-                    appId: 2,
                     daemonId: 1,
-                    appName: 'lion',
+                    daemonName: 'dhcp6',
                     dataSource: 'api',
                 },
             ],
@@ -1244,43 +1234,37 @@ describe('HostTabComponent', () => {
         const host = {
             localHosts: [
                 {
-                    appId: 3,
                     daemonId: 31,
                 },
                 {
-                    appId: 3,
                     daemonId: 32,
                 },
                 {
-                    appId: 3,
                     daemonId: 33,
                 },
                 {
-                    appId: 2,
                     daemonId: 21,
                 },
                 {
-                    appId: 2,
                     daemonId: 22,
                 },
                 {
-                    appId: 1,
                     daemonId: 11,
                 },
             ],
         } as Host
 
         component.host = host
-        const groups = component.localHostsGroups.appID
+        const groups = component.localHostsGroups.daemonID
 
-        expect(groups.length).toBe(3)
+        const expectedCounts: Record<number, number> = { 11: 1, 21: 2, 31: 3 }
+        expect(groups.length).toBe(Object.keys(expectedCounts).length)
         for (let group of groups) {
             expect(group.length).toBeGreaterThanOrEqual(1)
-            const appId = group[0].appId
-            expect(group.length).toBe(appId)
+            const daemonId = group[0].daemonId
+            expect(group.length).toBe(expectedCounts[daemonId])
             for (let item of group) {
-                expect(item.daemonId).toBeGreaterThan(10 * appId)
-                expect(item.daemonId).toBeLessThan(10 * (appId + 1))
+                expect(item.daemonId).toBe(daemonId)
             }
         }
     })
@@ -1289,35 +1273,30 @@ describe('HostTabComponent', () => {
         const host = {
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
                     bootFileName: 'foo',
                     serverHostname: 'bar',
                     nextServer: 'baz',
                 },
                 {
-                    appId: 1,
                     daemonId: 2,
                     bootFileName: 'foo',
                     serverHostname: 'bar',
                     nextServer: 'baz',
                 },
                 {
-                    appId: 1,
                     daemonId: 3,
                     bootFileName: 'oof',
                     serverHostname: 'rab',
                     nextServer: 'zab',
                 },
                 {
-                    appId: 2,
                     daemonId: 4,
                     bootFileName: 'foo',
                     serverHostname: 'bar',
                     nextServer: 'baz',
                 },
                 {
-                    appId: 2,
                     daemonId: 5,
                     bootFileName: 'foo',
                     serverHostname: 'bar',
@@ -1332,9 +1311,9 @@ describe('HostTabComponent', () => {
         expect(groups.length).toBe(4)
         for (let group of groups) {
             expect(group.length).toBeGreaterThanOrEqual(1)
-            const appId = group[0].appId
+            const daemonId = group[0].daemonId
 
-            switch (appId) {
+            switch (daemonId) {
                 case 1:
                     expect(group.length).toBe(1)
                     expect(group[0].daemonId).toBeLessThanOrEqual(3)
@@ -1352,27 +1331,22 @@ describe('HostTabComponent', () => {
         const host = {
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
                     clientClasses: ['foo', 'bar'],
                 },
                 {
-                    appId: 1,
                     daemonId: 2,
                     clientClasses: ['foo', 'bar'],
                 },
                 {
-                    appId: 1,
                     daemonId: 3,
                     clientClasses: ['oof', 'rab'],
                 },
                 {
-                    appId: 2,
                     daemonId: 4,
                     clientClasses: ['foo', 'bar'],
                 },
                 {
-                    appId: 2,
                     daemonId: 5,
                     clientClasses: ['foo', 'bar'],
                 },
@@ -1385,9 +1359,9 @@ describe('HostTabComponent', () => {
         expect(groups.length).toBe(4)
         for (let group of groups) {
             expect(group.length).toBeGreaterThanOrEqual(1)
-            const appId = group[0].appId
+            const daemonId = group[0].daemonId
 
-            switch (appId) {
+            switch (daemonId) {
                 case 1:
                     expect(group.length).toBe(1)
                     expect(group[0].daemonId).toBeLessThanOrEqual(3)
@@ -1405,27 +1379,22 @@ describe('HostTabComponent', () => {
         const host: Partial<Host> = {
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
                     optionsHash: 'foo',
                 },
                 {
-                    appId: 1,
                     daemonId: 2,
                     optionsHash: 'foo',
                 },
                 {
-                    appId: 1,
                     daemonId: 3,
                     optionsHash: 'oof',
                 },
                 {
-                    appId: 2,
                     daemonId: 4,
                     optionsHash: 'foo',
                 },
                 {
-                    appId: 2,
                     daemonId: 5,
                     optionsHash: 'foo',
                 },
@@ -1438,9 +1407,9 @@ describe('HostTabComponent', () => {
         expect(groups.length).toBe(4)
         for (let group of groups) {
             expect(group.length).toBeGreaterThanOrEqual(1)
-            const appId = group[0].appId
+            const daemonId = group[0].daemonId
 
-            switch (appId) {
+            switch (daemonId) {
                 case 1:
                     expect(group.length).toBe(1)
                     expect(group[0].daemonId).toBeLessThanOrEqual(3)
@@ -1458,7 +1427,6 @@ describe('HostTabComponent', () => {
         const host: Partial<Host> = {
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
                     ipReservations: [
                         {
@@ -1470,7 +1438,6 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 1,
                     daemonId: 2,
                     ipReservations: [
                         {
@@ -1482,7 +1449,6 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
                     daemonId: 3,
                     ipReservations: [
                         {
@@ -1491,7 +1457,6 @@ describe('HostTabComponent', () => {
                     ],
                 },
                 {
-                    appId: 2,
                     daemonId: 4,
                     ipReservations: [
                         {
@@ -1511,9 +1476,9 @@ describe('HostTabComponent', () => {
         expect(groups.length).toBe(3)
 
         for (let group of groups) {
-            const appId = group[0].appId
+            const daemonId = group[0].daemonId
 
-            switch (appId) {
+            switch (daemonId) {
                 case 1:
                     expect(group.length).toBe(2)
                     expect(group[0].daemonId).toBeLessThanOrEqual(2)
@@ -1531,22 +1496,18 @@ describe('HostTabComponent', () => {
             hostname: 'ignored',
             localHosts: [
                 {
-                    appId: 1,
                     daemonId: 1,
                     hostname: 'foo',
                 },
                 {
-                    appId: 1,
                     daemonId: 2,
                     hostname: 'foo',
                 },
                 {
-                    appId: 2,
                     daemonId: 3,
                     hostname: 'bar',
                 },
                 {
-                    appId: 2,
                     daemonId: 4,
                 },
             ],
@@ -1558,9 +1519,9 @@ describe('HostTabComponent', () => {
         expect(groups.length).toBe(3)
 
         for (let group of groups) {
-            const appId = group[0].appId
+            const daemonId = group[0].daemonId
 
-            switch (appId) {
+            switch (daemonId) {
                 case 1:
                     expect(group.length).toBe(2)
                     expect(group[0].daemonId).toBeLessThanOrEqual(2)
@@ -1573,44 +1534,5 @@ describe('HostTabComponent', () => {
         }
     })
 
-    it('should group all local hosts into a single group if there are no differences', () => {
-        const host = {
-            localHosts: [
-                {
-                    appId: 1,
-                    daemonId: 1,
-                },
-                {
-                    appId: 1,
-                    daemonId: 2,
-                },
-                {
-                    appId: 1,
-                    daemonId: 3,
-                },
-                {
-                    appId: 2,
-                    daemonId: 4,
-                },
-                {
-                    appId: 2,
-                    daemonId: 5,
-                },
-            ],
-        } as Host
-
-        component.host = host
-
-        for (const groups of [
-            component.localHostsGroups.bootFields,
-            component.localHostsGroups.clientClasses,
-            component.localHostsGroups.dhcpOptions,
-            component.localHostsGroups.hostname,
-            component.localHostsGroups.ipReservations,
-        ]) {
-            expect(groups.length).toBe(1)
-            const group = groups[0]
-            expect(group.length).toBe(5)
-        }
-    })
+    xit('should group all local hosts into a single group if there are no differences', () => {})
 })

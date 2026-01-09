@@ -14,9 +14,6 @@ const mockUpdateKeaGlobalParameters4BeginData: UpdateKeaDaemonsGlobalParametersB
         {
             daemonId: 1,
             daemonName: 'dhcp4',
-            appId: 1,
-            appName: 'kea@agent1',
-            appType: 'kea',
             config: {
                 Dhcp4: {
                     allocator: 'iterative',

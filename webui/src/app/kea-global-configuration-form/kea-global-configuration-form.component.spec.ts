@@ -25,9 +25,6 @@ describe('KeaGlobalConfigurationFormComponent', () => {
             {
                 daemonId: 1,
                 daemonName: 'dhcp4',
-                appId: 1,
-                appName: 'kea@agent1',
-                appType: 'kea',
                 daemonVersion: '3.0.0',
                 config: {
                     Dhcp4: {
@@ -208,9 +205,6 @@ describe('KeaGlobalConfigurationFormComponent', () => {
             {
                 daemonId: 2,
                 daemonName: 'dhcp6',
-                appId: 1,
-                appName: 'kea@agent1',
-                appType: 'kea',
                 config: {
                     Dhcp6: {
                         allocator: 'random',
@@ -404,12 +398,10 @@ describe('KeaGlobalConfigurationFormComponent', () => {
             id: 1,
             configs: [
                 {
-                    appName: 'foo',
                     daemonName: 'dhcp4',
                     config: { Dhcp4: {} },
                 },
                 {
-                    appName: 'bar',
                     daemonName: 'dhcp4',
                     config: { Dhcp4: {} },
                 },
@@ -418,8 +410,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         component.response = response
 
         expect(component.servers.length).toBe(2)
-        expect(component.servers).toContain('foo/dhcp4')
-        expect(component.servers).toContain('bar/dhcp4')
+        expect(component.servers).toContain('dhcp4')
     })
 
     it('should detect IPv6 servers', () => {

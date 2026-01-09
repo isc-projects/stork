@@ -13,14 +13,10 @@ describe('SharedNetworkFormState', () => {
                 name: 'stanza',
                 localSharedNetworks: [
                     {
-                        appId: 111,
                         daemonId: 1,
-                        appName: 'server 1',
                     },
                     {
-                        appId: 222,
                         daemonId: 2,
-                        appName: 'server 2',
                     },
                 ],
             },
@@ -28,51 +24,26 @@ describe('SharedNetworkFormState', () => {
                 {
                     id: 1,
                     name: 'dhcp4',
-                    app: {
-                        id: 1,
-                        name: 'one',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 3,
                     name: 'dhcp6',
-                    app: {
-                        id: 3,
-                        name: 'three',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 2,
                     name: 'dhcp4',
-                    app: {
-                        id: 2,
-                        name: 'two',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 4,
                     name: 'dhcp6',
-                    app: {
-                        id: 4,
-                        name: 'four',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 5,
                     name: 'dhcp6',
-                    app: {
-                        id: 5,
-                        name: 'five',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
             ],
@@ -117,43 +88,33 @@ describe('SharedNetworkFormState', () => {
         // Filtered daemons.
         expect(state.filteredDaemons).toContain({
             id: 1,
-            appId: 1,
-            appType: 'kea',
             name: 'dhcp4',
             version: '3.0.0',
-            label: 'one/dhcp4',
+            label: 'dhcp4',
         })
         expect(state.filteredDaemons).toContain({
             id: 3,
-            appId: 3,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'three/dhcp6',
+            label: 'dhcp6',
         })
         expect(state.filteredDaemons).toContain({
             id: 2,
-            appId: 2,
-            appType: 'kea',
             name: 'dhcp4',
             version: '3.0.0',
-            label: 'two/dhcp4',
+            label: 'dhcp4',
         })
         expect(state.filteredDaemons).toContain({
             id: 4,
-            appId: 4,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'four/dhcp6',
+            label: 'dhcp6',
         })
         expect(state.filteredDaemons).toContain({
             id: 5,
-            appId: 5,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'five/dhcp6',
+            label: 'dhcp6',
         })
 
         // Form group.
@@ -167,7 +128,7 @@ describe('SharedNetworkFormState', () => {
         expect(state.savedSharedNetworkBeginData).toBeFalsy()
 
         // Servers selection.
-        expect(state.servers).toEqual(['one/dhcp4', 'two/dhcp4'])
+        expect(state.servers).toEqual(['dhcp4', 'dhcp4'])
 
         // Identifiers.
         expect(state.sharedNetworkId).toBe(123)
@@ -183,14 +144,10 @@ describe('SharedNetworkFormState', () => {
                 universe: 6,
                 localSharedNetworks: [
                     {
-                        appId: 111,
                         daemonId: 3,
-                        appName: 'server 1',
                     },
                     {
-                        appId: 222,
                         daemonId: 4,
-                        appName: 'server 2',
                     },
                 ],
             },
@@ -198,51 +155,26 @@ describe('SharedNetworkFormState', () => {
                 {
                     id: 1,
                     name: 'dhcp4',
-                    app: {
-                        id: 1,
-                        name: 'one',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 3,
                     name: 'dhcp6',
-                    app: {
-                        id: 3,
-                        name: 'three',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 2,
                     name: 'dhcp4',
-                    app: {
-                        id: 2,
-                        name: 'two',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 4,
                     name: 'dhcp6',
-                    app: {
-                        id: 4,
-                        name: 'four',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
                 {
                     id: 5,
                     name: 'dhcp6',
-                    app: {
-                        id: 5,
-                        name: 'five',
-                        type: 'kea',
-                    },
                     version: '3.0.0',
                 },
             ],
@@ -268,43 +200,33 @@ describe('SharedNetworkFormState', () => {
         // Filtered daemons.
         expect(state.filteredDaemons).toContain({
             id: 1,
-            appId: 1,
-            appType: 'kea',
             name: 'dhcp4',
             version: '3.0.0',
-            label: 'one/dhcp4',
+            label: 'dhcp4',
         })
         expect(state.filteredDaemons).toContain({
             id: 3,
-            appId: 3,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'three/dhcp6',
+            label: 'dhcp6',
         })
         expect(state.filteredDaemons).toContain({
             id: 2,
-            appId: 2,
-            appType: 'kea',
             name: 'dhcp4',
             version: '3.0.0',
-            label: 'two/dhcp4',
+            label: 'dhcp4',
         })
         expect(state.filteredDaemons).toContain({
             id: 4,
-            appId: 4,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'four/dhcp6',
+            label: 'dhcp6',
         })
         expect(state.filteredDaemons).toContain({
             id: 5,
-            appId: 5,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'five/dhcp6',
+            label: 'dhcp6',
         })
 
         // Form group.
@@ -318,7 +240,7 @@ describe('SharedNetworkFormState', () => {
         expect(state.savedSharedNetworkBeginData).toBeFalsy()
 
         // Servers selection.
-        expect(state.servers).toEqual(['three/dhcp6', 'four/dhcp6'])
+        expect(state.servers).toEqual(['dhcp6', 'dhcp6'])
 
         // Identifiers.
         expect(state.sharedNetworkId).toBe(234)
@@ -336,9 +258,9 @@ describe('SharedNetworkFormState', () => {
         let state = new SharedNetworkFormState()
         state.sharedNetworkId = 123
         state.initStateFromServerResponse(response)
-        expect(state.servers).toEqual(['one/dhcp4', 'two/dhcp4'])
+        expect(state.servers).toEqual(['dhcp4', 'dhcp4'])
         state.updateServers([2])
-        expect(state.servers).toEqual(['two/dhcp4'])
+        expect(state.servers).toEqual(['dhcp4'])
     })
 
     it('should update universe for selected daemons', () => {
@@ -355,27 +277,21 @@ describe('SharedNetworkFormState', () => {
         expect(state.filteredDaemons.length).toBe(3)
         expect(state.filteredDaemons).toContain({
             id: 3,
-            appId: 3,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'three/dhcp6',
+            label: 'dhcp6',
         })
         expect(state.filteredDaemons).toContain({
             id: 4,
-            appId: 4,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'four/dhcp6',
+            label: 'dhcp6',
         })
         expect(state.filteredDaemons).toContain({
             id: 5,
-            appId: 5,
-            appType: 'kea',
             name: 'dhcp6',
             version: '3.0.0',
-            label: 'five/dhcp6',
+            label: 'dhcp6',
         })
     })
 })

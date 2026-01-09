@@ -19,11 +19,6 @@ import { DurationPipe } from '../pipes/duration.pipe'
 })
 export class Bind9DaemonComponent {
     /**
-     * ID of the parent application.
-     */
-    @Input() appId: number
-
-    /**
      * BIND9 daemon information.
      */
     @Input() daemon: Bind9Daemon

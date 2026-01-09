@@ -39,19 +39,6 @@ describe('KeaDaemonConfigurationPageComponent', () => {
     }))
 
     beforeEach(async () => {
-        const fakeResponse: any = {
-            id: 1,
-            name: 'foo',
-            details: {
-                daemons: [
-                    {
-                        id: 2,
-                        name: 'dhcp6',
-                    },
-                ],
-            },
-        }
-        spyOn(dataService.servicesApi, 'getApp').and.returnValue(of(fakeResponse))
         spyOn(dataService.servicesApi, 'getDaemonConfig').and.returnValues(
             of({
                 config: {},
@@ -137,7 +124,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
 
     it('should set filename for download file', async () => {
         await fixture.whenStable()
-        expect(component.downloadFilename).toBe('foo_DHCPv6.json')
+        expect(component.downloadFilename).toBe('daemon_2.json')
     })
 
     it('should set daemon id', async () => {
@@ -183,12 +170,10 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(breadcrumbsElement).not.toBeNull()
         const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
         expect(breadcrumbsComponent).not.toBeNull()
-        expect(breadcrumbsComponent.items).toHaveSize(6)
+        expect(breadcrumbsComponent.items).toHaveSize(4)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
-        expect(breadcrumbsComponent.items[1].label).toEqual('Apps')
-        expect(breadcrumbsComponent.items[2].label).toEqual('foo')
-        expect(breadcrumbsComponent.items[3].label).toEqual('Daemons')
-        expect(breadcrumbsComponent.items[4].label).toEqual('DHCPv6')
-        expect(breadcrumbsComponent.items[5].label).toEqual('Configuration')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Kea Daemons')
+        expect(breadcrumbsComponent.items[2].label).toEqual('Daemon')
+        expect(breadcrumbsComponent.items[3].label).toEqual('Configuration')
     })
 })

@@ -18,164 +18,139 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should convert apps to tree', () => {
-        component.apps = [
-            // Kea app with the Communication issues with Stork Agent.
+    it('should convert daemons to tree', () => {
+        component.daemons = [
+            // Kea daemons on agent1.
             {
-                accessPoints: [
-                    {
-                        address: '127.0.0.1',
-                        port: 8000,
-                        type: 'control',
-                    },
-                ],
-                details: {
-                    daemons: [
-                        {
-                            active: true,
-                            agentCommErrors: 1,
-                            id: 1,
-                            monitored: true,
-                            name: 'ca',
-                        },
-                        {
-                            active: true,
-                            agentCommErrors: 0,
-                            id: 3,
-                            monitored: true,
-                            name: 'dhcp4',
-                        },
-                    ],
-                },
                 id: 1,
+                name: 'ca',
                 machine: {
                     address: 'agent1',
                     hostname: 'agent1',
                     id: 1,
                 },
-                name: 'kea&bind9@agent1',
-                type: 'kea',
+                active: true,
+                monitored: true,
+                agentCommErrors: 1,
             },
-            // Kea app with the Communication errors with some daemons.
             {
-                accessPoints: [
-                    {
-                        address: '127.0.0.1',
-                        port: 8000,
-                        type: 'control',
-                    },
-                ],
-                details: {
-                    daemons: [
-                        {
-                            daemonCommErrors: 3,
-                            active: true,
-                            id: 1,
-                            monitored: true,
-                            name: 'ca',
-                        },
-                        {
-                            daemonCommErrors: 2,
-                            id: 2,
-                            name: 'd2',
-                        },
-                        {
-                            active: true,
-                            id: 3,
-                            monitored: true,
-                            name: 'dhcp4',
-                        },
-                        {
-                            daemonCommErrors: 3,
-                            id: 4,
-                            name: 'dhcp6',
-                        },
-                    ],
+                id: 3,
+                name: 'dhcp4',
+                machine: {
+                    address: 'agent1',
+                    hostname: 'agent1',
+                    id: 1,
                 },
-                id: 2,
+                active: true,
+                monitored: true,
+                agentCommErrors: 0,
+            },
+            // Kea daemons on agent2.
+            {
+                id: 1,
+                name: 'ca',
                 machine: {
                     address: 'agent2',
                     hostname: 'agent2',
                     id: 2,
                 },
-                name: 'kea@agent2',
-                type: 'kea',
+                active: true,
+                monitored: true,
             },
-            // Kea app with the Communication issues with the Kea Control Agent.
             {
-                accessPoints: [
-                    {
-                        address: '127.0.0.1',
-                        port: 8000,
-                        type: 'control',
-                    },
-                ],
-                details: {
-                    daemons: [
-                        {
-                            active: true,
-                            caCommErrors: 1,
-                            id: 1,
-                            monitored: true,
-                            name: 'ca',
-                        },
-                        {
-                            active: true,
-                            agentCommErrors: 0,
-                            id: 3,
-                            monitored: true,
-                            name: 'dhcp4',
-                        },
-                    ],
+                id: 2,
+                name: 'd2',
+                machine: {
+                    address: 'agent2',
+                    hostname: 'agent2',
+                    id: 2,
                 },
+                daemonCommErrors: 2,
+            },
+            {
                 id: 3,
+                name: 'dhcp4',
+                machine: {
+                    address: 'agent2',
+                    hostname: 'agent2',
+                    id: 2,
+                },
+                active: true,
+                monitored: true,
+            },
+            {
+                id: 4,
+                name: 'dhcp6',
+                machine: {
+                    address: 'agent2',
+                    hostname: 'agent2',
+                    id: 2,
+                },
+                daemonCommErrors: 3,
+            },
+            // Kea daemons on agent3.
+            {
+                id: 1,
+                name: 'ca',
                 machine: {
                     address: 'agent3',
                     hostname: 'agent3',
                     id: 3,
                 },
-                name: 'kea@agent3',
-                type: 'kea',
+                active: true,
+                monitored: true,
+                caCommErrors: 1,
             },
-            // Kea app with the Communication issues at all levels.
             {
-                accessPoints: [
-                    {
-                        address: '127.0.0.1',
-                        port: 8000,
-                        type: 'control',
-                    },
-                ],
-                details: {
-                    daemons: [
-                        {
-                            active: true,
-                            caCommErrors: 1,
-                            id: 1,
-                            monitored: true,
-                            name: 'ca',
-                        },
-                        {
-                            active: true,
-                            agentCommErrors: 5,
-                            daemonCommErrors: 4,
-                            id: 3,
-                            monitored: true,
-                            name: 'dhcp4',
-                        },
-                    ],
+                id: 3,
+                name: 'dhcp4',
+                machine: {
+                    address: 'agent3',
+                    hostname: 'agent3',
+                    id: 3,
                 },
-                id: 4,
+                active: true,
+                monitored: true,
+                agentCommErrors: 0,
+            },
+            // Kea daemons on agent4.
+            {
+                id: 1,
+                name: 'ca',
                 machine: {
                     address: 'agent4',
                     hostname: 'agent4',
                     id: 4,
                 },
-                name: 'kea@agent4',
-                type: 'kea',
+                active: true,
+                monitored: true,
+                caCommErrors: 1,
             },
-            // Bind9 app with the Communication issues with the Stork Agent.
             {
+                id: 3,
+                name: 'dhcp4',
+                machine: {
+                    address: 'agent4',
+                    hostname: 'agent4',
+                    id: 4,
+                },
+                active: true,
+                monitored: true,
+                agentCommErrors: 5,
+                daemonCommErrors: 4,
+            },
+            // Bind9 daemon on agent5.
+            {
+                id: 5,
+                name: 'named',
+                machine: {
+                    address: 'agent5',
+                    hostname: 'agent5',
+                    id: 5,
+                },
+                active: true,
+                monitored: true,
+                agentCommErrors: 5,
                 accessPoints: [
                     {
                         address: '127.0.0.1',
@@ -188,24 +163,6 @@ describe('CommunicationStatusTreeComponent', () => {
                         type: 'statistics',
                     },
                 ],
-                details: {
-                    daemons: [],
-                    daemon: {
-                        active: true,
-                        id: 6,
-                        monitored: true,
-                        name: 'named',
-                        agentCommErrors: 5,
-                    },
-                },
-                id: 5,
-                machine: {
-                    address: 'agent5',
-                    hostname: 'agent5',
-                    id: 5,
-                },
-                name: 'bind9@agent5',
-                type: 'bind9',
             },
             // Bind9 app with the Communication issues over RNDC.
             {
@@ -221,24 +178,15 @@ describe('CommunicationStatusTreeComponent', () => {
                         type: 'statistics',
                     },
                 ],
-                details: {
-                    daemons: [],
-                    daemon: {
-                        active: true,
-                        id: 6,
-                        monitored: true,
-                        name: 'named',
-                        rndcCommErrors: 4,
-                    },
-                },
                 id: 6,
                 machine: {
                     address: 'agent6',
                     hostname: 'agent6',
                     id: 6,
                 },
-                name: 'bind9@agent6',
-                type: 'bind9',
+                name: 'named',
+                daemonCommErrors: 6,
+                monitored: true,
             },
             // Bind9 app with the Communication issues over stats. It runs
             // on the same machine as first Kea.
@@ -255,23 +203,15 @@ describe('CommunicationStatusTreeComponent', () => {
                         type: 'statistics',
                     },
                 ],
-                details: {
-                    daemon: {
-                        active: true,
-                        id: 6,
-                        monitored: true,
-                        name: 'named',
-                        statsCommErrors: 7,
-                    },
-                },
                 id: 7,
                 machine: {
                     address: 'agent1',
                     hostname: 'agent1',
                     id: 1,
                 },
-                name: 'kea&bind9@agent1',
-                type: 'bind9',
+                name: 'named',
+                statsCommErrors: 7,
+                monitored: true,
             },
         ]
         component.ngOnInit()
@@ -280,7 +220,7 @@ describe('CommunicationStatusTreeComponent', () => {
         // Stork agent on agent1.
         expect(component.nodes[0].icon).toBe('pi pi-server')
         expect(component.nodes[0].type).toBe('machine')
-        expect(component.nodes[0].children.length).toBe(3)
+        expect(component.nodes[0].children.length).toBe(4)
         expect(component.nodes[0].styleClass).toBe('communication-failing')
         expect(component.nodes[0].expanded).toBeTrue()
         expect(component.nodes[0].data?.attrs?.id).toBe(1)
@@ -289,49 +229,42 @@ describe('CommunicationStatusTreeComponent', () => {
         // Kea agent on agent1.
         expect(component.nodes[0].children[0].icon).toBe('pi pi-sitemap')
         expect(component.nodes[0].children[0].type).toBe('kea')
-        expect(component.nodes[0].children[0].children.length).toBe(1)
+        expect(component.nodes[0].children[0].children).toBeUndefined()
         expect(component.nodes[0].children[0].styleClass).toBe('communication-ok')
         expect(component.nodes[0].children[0].expanded).toBeTrue()
         expect(component.nodes[0].children[0].data?.attrs?.id).toBe(1)
-        expect(component.nodes[0].children[0].data?.attrs?.type).toBe('kea')
-        expect(component.nodes[0].children[0].data?.attrs?.name).toBe('kea&bind9@agent1')
+        expect(component.nodes[0].children[0].data?.attrs?.name).toBe('ca')
 
         // DHCPv4 server on agent1.
-        expect(component.nodes[0].children[0].children[0].icon).toBe('pi pi-link')
-        expect(component.nodes[0].children[0].children[0].type).toBe('kea-daemon')
-        expect(component.nodes[0].children[0].children[0].children).toBeFalsy()
-        expect(component.nodes[0].children[0].children[0].styleClass).toBe('communication-ok')
-        expect(component.nodes[0].children[0].children[0].data?.attrs?.id).toBe(3)
-        expect(component.nodes[0].children[0].children[0].data?.attrs?.appType).toBe('kea')
-        expect(component.nodes[0].children[0].children[0].data?.attrs?.appId).toBe(1)
-        expect(component.nodes[0].children[0].children[0].data?.attrs?.name).toBe('dhcp4')
-
-        // named control channel on agent1.
-        expect(component.nodes[0].children[1].icon).toBe('pi pi-link')
-        expect(component.nodes[0].children[1].type).toBe('named-channel')
+        expect(component.nodes[0].children[1].icon).toBe('pi pi-sitemap')
+        expect(component.nodes[0].children[1].type).toBe('kea')
         expect(component.nodes[0].children[1].children).toBeFalsy()
         expect(component.nodes[0].children[1].styleClass).toBe('communication-ok')
-        expect(component.nodes[0].children[1].data?.attrs?.id).toBe(6)
-        expect(component.nodes[0].children[1].data?.attrs?.appType).toBe('bind9')
-        expect(component.nodes[0].children[1].data?.attrs?.appId).toBe(7)
-        expect(component.nodes[0].children[1].data?.attrs?.name).toBe('named')
-        expect(component.nodes[0].children[1].data?.channelName).toBe('Control')
+        expect(component.nodes[0].children[1].data?.attrs?.id).toBe(3)
+        expect(component.nodes[0].children[1].data?.attrs?.name).toBe('dhcp4')
 
-        // named stats channel on agent1.
+        // named control channel on agent1.
         expect(component.nodes[0].children[2].icon).toBe('pi pi-link')
         expect(component.nodes[0].children[2].type).toBe('named-channel')
         expect(component.nodes[0].children[2].children).toBeFalsy()
-        expect(component.nodes[0].children[2].styleClass).toBe('communication-failing')
-        expect(component.nodes[0].children[2].data?.attrs?.id).toBe(6)
-        expect(component.nodes[0].children[2].data?.attrs?.appType).toBe('bind9')
-        expect(component.nodes[0].children[2].data?.attrs?.appId).toBe(7)
+        expect(component.nodes[0].children[2].styleClass).toBe('communication-ok')
+        expect(component.nodes[0].children[2].data?.attrs?.id).toBe(7)
         expect(component.nodes[0].children[2].data?.attrs?.name).toBe('named')
-        expect(component.nodes[0].children[2].data?.channelName).toBe('Statistics')
+        expect(component.nodes[0].children[2].data?.channelName).toBe('Control')
+
+        // named stats channel on agent1.
+        expect(component.nodes[0].children[3].icon).toBe('pi pi-link')
+        expect(component.nodes[0].children[3].type).toBe('named-channel')
+        expect(component.nodes[0].children[3].children).toBeFalsy()
+        expect(component.nodes[0].children[3].styleClass).toBe('communication-failing')
+        expect(component.nodes[0].children[3].data?.attrs?.id).toBe(7)
+        expect(component.nodes[0].children[3].data?.attrs?.name).toBe('named')
+        expect(component.nodes[0].children[3].data?.channelName).toBe('Statistics')
 
         // Stork agent on agent2.
         expect(component.nodes[1].icon).toBe('pi pi-server')
         expect(component.nodes[1].type).toBe('machine')
-        expect(component.nodes[1].children.length).toBe(1)
+        expect(component.nodes[1].children.length).toBe(4)
         expect(component.nodes[1].styleClass).toBe('communication-ok')
         expect(component.nodes[1].expanded).toBeTrue()
         expect(component.nodes[1].data?.attrs?.id).toBe(2)
@@ -340,47 +273,40 @@ describe('CommunicationStatusTreeComponent', () => {
         // Kea agent on agent2.
         expect(component.nodes[1].children[0].icon).toBe('pi pi-sitemap')
         expect(component.nodes[1].children[0].type).toBe('kea')
-        expect(component.nodes[1].children[0].children.length).toBe(3)
+        expect(component.nodes[1].children[0].children).toBeUndefined()
         expect(component.nodes[1].children[0].styleClass).toBe('communication-ok')
         expect(component.nodes[1].children[0].expanded).toBeTrue()
-        expect(component.nodes[1].children[0].data?.attrs?.id).toBe(2)
-        expect(component.nodes[1].children[0].data?.attrs?.type).toBe('kea')
-        expect(component.nodes[1].children[0].data?.attrs?.name).toBe('kea@agent2')
+        expect(component.nodes[1].children[0].data?.attrs?.id).toBe(1)
+        expect(component.nodes[1].children[0].data?.attrs?.name).toBe('ca')
 
         // DDNS server on agent2.
-        expect(component.nodes[1].children[0].children[0].icon).toBe('pi pi-link')
-        expect(component.nodes[1].children[0].children[0].type).toBe('kea-daemon')
-        expect(component.nodes[1].children[0].children[0].children).toBeFalsy()
-        expect(component.nodes[1].children[0].children[0].styleClass).toBe('communication-disabled')
-        expect(component.nodes[1].children[0].children[0].data?.attrs?.id).toBe(2)
-        expect(component.nodes[1].children[0].children[0].data?.attrs?.appType).toBe('kea')
-        expect(component.nodes[1].children[0].children[0].data?.attrs?.appId).toBe(2)
-        expect(component.nodes[1].children[0].children[0].data?.attrs?.name).toBe('d2')
+        expect(component.nodes[1].children[1].icon).toBe('pi pi-sitemap')
+        expect(component.nodes[1].children[1].type).toBe('kea')
+        expect(component.nodes[1].children[1].children).toBeFalsy()
+        expect(component.nodes[1].children[1].styleClass).toBe('communication-disabled')
+        expect(component.nodes[1].children[1].data?.attrs?.id).toBe(2)
+        expect(component.nodes[1].children[1].data?.attrs?.name).toBe('d2')
 
         // DHCPv4 server on agent2.
-        expect(component.nodes[1].children[0].children[1].icon).toBe('pi pi-link')
-        expect(component.nodes[1].children[0].children[1].type).toBe('kea-daemon')
-        expect(component.nodes[1].children[0].children[1].children).toBeFalsy()
-        expect(component.nodes[1].children[0].children[1].styleClass).toBe('communication-ok')
-        expect(component.nodes[1].children[0].children[1].data?.attrs?.id).toBe(3)
-        expect(component.nodes[1].children[0].children[1].data?.attrs?.appType).toBe('kea')
-        expect(component.nodes[1].children[0].children[1].data?.attrs?.appId).toBe(2)
-        expect(component.nodes[1].children[0].children[1].data?.attrs?.name).toBe('dhcp4')
+        expect(component.nodes[1].children[2].icon).toBe('pi pi-sitemap')
+        expect(component.nodes[1].children[2].type).toBe('kea')
+        expect(component.nodes[1].children[2].children).toBeFalsy()
+        expect(component.nodes[1].children[2].styleClass).toBe('communication-ok')
+        expect(component.nodes[1].children[2].data?.attrs?.id).toBe(3)
+        expect(component.nodes[1].children[2].data?.attrs?.name).toBe('dhcp4')
 
         // DHCPv6 server on agent2.
-        expect(component.nodes[1].children[0].children[2].icon).toBe('pi pi-link')
-        expect(component.nodes[1].children[0].children[2].type).toBe('kea-daemon')
-        expect(component.nodes[1].children[0].children[2].children).toBeFalsy()
-        expect(component.nodes[1].children[0].children[2].styleClass).toBe('communication-disabled')
-        expect(component.nodes[1].children[0].children[2].data?.attrs?.id).toBe(4)
-        expect(component.nodes[1].children[0].children[2].data?.attrs?.appType).toBe('kea')
-        expect(component.nodes[1].children[0].children[2].data?.attrs?.appId).toBe(2)
-        expect(component.nodes[1].children[0].children[2].data?.attrs?.name).toBe('dhcp6')
+        expect(component.nodes[1].children[3].icon).toBe('pi pi-sitemap')
+        expect(component.nodes[1].children[3].type).toBe('kea')
+        expect(component.nodes[1].children[3].children).toBeFalsy()
+        expect(component.nodes[1].children[3].styleClass).toBe('communication-disabled')
+        expect(component.nodes[1].children[3].data?.attrs?.id).toBe(4)
+        expect(component.nodes[1].children[3].data?.attrs?.name).toBe('dhcp6')
 
         // Stork agent on agent3.
         expect(component.nodes[2].icon).toBe('pi pi-server')
         expect(component.nodes[2].type).toBe('machine')
-        expect(component.nodes[2].children.length).toBe(1)
+        expect(component.nodes[2].children.length).toBe(2)
         expect(component.nodes[2].styleClass).toBe('communication-ok')
         expect(component.nodes[2].expanded).toBeTrue()
         expect(component.nodes[2].data?.attrs?.id).toBe(3)
@@ -389,17 +315,25 @@ describe('CommunicationStatusTreeComponent', () => {
         // Kea agent on agent3.
         expect(component.nodes[2].children[0].icon).toBe('pi pi-sitemap')
         expect(component.nodes[2].children[0].type).toBe('kea')
-        expect(component.nodes[2].children[0].children.length).toBe(1)
+        expect(component.nodes[2].children[0].children).toBeUndefined()
         expect(component.nodes[2].children[0].styleClass).toBe('communication-failing')
         expect(component.nodes[2].children[0].expanded).toBeTrue()
-        expect(component.nodes[2].children[0].data?.attrs?.id).toBe(3)
-        expect(component.nodes[2].children[0].data?.attrs?.type).toBe('kea')
-        expect(component.nodes[2].children[0].data?.attrs?.name).toBe('kea@agent3')
+        expect(component.nodes[2].children[0].data?.attrs?.id).toBe(1)
+        expect(component.nodes[2].children[0].data?.attrs?.name).toBe('ca')
+
+        // Kea DHCPv4 on agent3.
+        expect(component.nodes[2].children[1].icon).toBe('pi pi-sitemap')
+        expect(component.nodes[2].children[1].type).toBe('kea')
+        expect(component.nodes[2].children[1].children).toBeUndefined()
+        expect(component.nodes[2].children[1].styleClass).toBe('communication-ok')
+        expect(component.nodes[2].children[1].expanded).toBeTrue()
+        expect(component.nodes[2].children[1].data?.attrs?.id).toBe(3)
+        expect(component.nodes[2].children[1].data?.attrs?.name).toBe('dhcp4')
 
         // Stork agent on agent4.
         expect(component.nodes[3].icon).toBe('pi pi-server')
         expect(component.nodes[3].type).toBe('machine')
-        expect(component.nodes[3].children.length).toBe(1)
+        expect(component.nodes[3].children.length).toBe(2)
         expect(component.nodes[3].styleClass).toBe('communication-failing')
         expect(component.nodes[3].expanded).toBeTrue()
         expect(component.nodes[3].data?.attrs?.id).toBe(4)
@@ -408,22 +342,19 @@ describe('CommunicationStatusTreeComponent', () => {
         // Kea agent on agent4.
         expect(component.nodes[3].children[0].icon).toBe('pi pi-sitemap')
         expect(component.nodes[3].children[0].type).toBe('kea')
-        expect(component.nodes[3].children[0].children.length).toBe(1)
+        expect(component.nodes[3].children[0].children).toBeUndefined()
         expect(component.nodes[3].children[0].styleClass).toBe('communication-failing')
         expect(component.nodes[3].children[0].expanded).toBeTrue()
-        expect(component.nodes[3].children[0].data?.attrs?.id).toBe(4)
-        expect(component.nodes[3].children[0].data?.attrs?.type).toBe('kea')
-        expect(component.nodes[3].children[0].data?.attrs?.name).toBe('kea@agent4')
+        expect(component.nodes[3].children[0].data?.attrs?.id).toBe(1)
+        expect(component.nodes[3].children[0].data?.attrs?.name).toBe('ca')
 
         // DHCPv4 server on agent4.
-        expect(component.nodes[3].children[0].children[0].icon).toBe('pi pi-link')
-        expect(component.nodes[3].children[0].children[0].type).toBe('kea-daemon')
-        expect(component.nodes[3].children[0].children[0].children).toBeFalsy()
-        expect(component.nodes[3].children[0].children[0].styleClass).toBe('communication-failing')
-        expect(component.nodes[3].children[0].children[0].data?.attrs?.id).toBe(3)
-        expect(component.nodes[3].children[0].children[0].data?.attrs?.appType).toBe('kea')
-        expect(component.nodes[3].children[0].children[0].data?.attrs?.appId).toBe(4)
-        expect(component.nodes[3].children[0].children[0].data?.attrs?.name).toBe('dhcp4')
+        expect(component.nodes[3].children[1].icon).toBe('pi pi-sitemap')
+        expect(component.nodes[3].children[1].type).toBe('kea')
+        expect(component.nodes[3].children[1].children).toBeFalsy()
+        expect(component.nodes[3].children[1].styleClass).toBe('communication-failing')
+        expect(component.nodes[3].children[1].data?.attrs?.id).toBe(3)
+        expect(component.nodes[3].children[1].data?.attrs?.name).toBe('dhcp4')
 
         // Stork agent on agent5.
         expect(component.nodes[4].icon).toBe('pi pi-server')
@@ -439,9 +370,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[4].children[0].type).toBe('named-channel')
         expect(component.nodes[4].children[0].children).toBeFalsy()
         expect(component.nodes[4].children[0].styleClass).toBe('communication-ok')
-        expect(component.nodes[4].children[0].data?.attrs?.id).toBe(6)
-        expect(component.nodes[4].children[0].data?.attrs?.appType).toBe('bind9')
-        expect(component.nodes[4].children[0].data?.attrs?.appId).toBe(5)
+        expect(component.nodes[4].children[0].data?.attrs?.id).toBe(5)
         expect(component.nodes[4].children[0].data?.attrs?.name).toBe('named')
         expect(component.nodes[4].children[0].data?.channelName).toBe('Control')
 
@@ -450,9 +379,7 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[4].children[1].type).toBe('named-channel')
         expect(component.nodes[4].children[1].children).toBeFalsy()
         expect(component.nodes[4].children[1].styleClass).toBe('communication-ok')
-        expect(component.nodes[4].children[1].data?.attrs?.id).toBe(6)
-        expect(component.nodes[4].children[1].data?.attrs?.appType).toBe('bind9')
-        expect(component.nodes[4].children[1].data?.attrs?.appId).toBe(5)
+        expect(component.nodes[4].children[1].data?.attrs?.id).toBe(5)
         expect(component.nodes[4].children[1].data?.attrs?.name).toBe('named')
         expect(component.nodes[4].children[1].data?.channelName).toBe('Statistics')
 
@@ -471,8 +398,6 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[5].children[0].children).toBeFalsy()
         expect(component.nodes[5].children[0].styleClass).toBe('communication-failing')
         expect(component.nodes[5].children[0].data?.attrs?.id).toBe(6)
-        expect(component.nodes[5].children[0].data?.attrs?.appType).toBe('bind9')
-        expect(component.nodes[5].children[0].data?.attrs?.appId).toBe(6)
         expect(component.nodes[5].children[0].data?.attrs?.name).toBe('named')
         expect(component.nodes[5].children[0].data?.channelName).toBe('Control')
 
@@ -482,8 +407,6 @@ describe('CommunicationStatusTreeComponent', () => {
         expect(component.nodes[5].children[1].children).toBeFalsy()
         expect(component.nodes[5].children[1].styleClass).toBe('communication-ok')
         expect(component.nodes[5].children[1].data?.attrs?.id).toBe(6)
-        expect(component.nodes[5].children[1].data?.attrs?.appType).toBe('bind9')
-        expect(component.nodes[5].children[1].data?.attrs?.appId).toBe(6)
         expect(component.nodes[5].children[1].data?.attrs?.name).toBe('named')
         expect(component.nodes[5].children[1].data?.channelName).toBe('Statistics')
     })

@@ -67,49 +67,91 @@ describe('HostsTableComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should group the hosts by application', () => {
+    it('should group the hosts by daemon', () => {
         // Arrange
         const hosts: Partial<Host>[] = [
-            { id: 1, localHosts: [{ appId: 11 }] },
-            { id: 2, localHosts: [{ appId: 22 }, { appId: 22 }, { appId: 33 }] },
-            { id: 3, localHosts: [{ appId: 11 }, { appId: 22 }] },
+            { id: 1, localHosts: [{ daemonId: 11 }] },
+            { id: 2, localHosts: [{ daemonId: 22 }, { daemonId: 22 }, { daemonId: 33 }] },
+            { id: 3, localHosts: [{ daemonId: 11 }, { daemonId: 22 }] },
         ]
 
         // Act
         component.hosts = hosts as Host[]
 
         // Assert
-        expect(component.localHostsGroupedByApp[1].length).toBe(1)
-        expect(component.localHostsGroupedByApp[1][0].length).toBe(1)
-        expect(component.localHostsGroupedByApp[1][0][0].appId).toBe(11)
+        expect(component.localHostsGroupedByDaemon[1].length).toBe(1)
+        expect(component.localHostsGroupedByDaemon[1][0].length).toBe(1)
+        expect(component.localHostsGroupedByDaemon[1][0][0].daemonId).toBe(11)
 
-        expect(component.localHostsGroupedByApp[2].length).toBe(2)
-        expect(component.localHostsGroupedByApp[2][0].length).toBe(2)
-        expect(component.localHostsGroupedByApp[2][0][0].appId).toBe(22)
-        expect(component.localHostsGroupedByApp[2][0][1].appId).toBe(22)
-        expect(component.localHostsGroupedByApp[2][1].length).toBe(1)
-        expect(component.localHostsGroupedByApp[2][1][0].appId).toBe(33)
+        expect(component.localHostsGroupedByDaemon[2].length).toBe(2)
+        expect(component.localHostsGroupedByDaemon[2][0].length).toBe(2)
+        expect(component.localHostsGroupedByDaemon[2][0][0].daemonId).toBe(22)
+        expect(component.localHostsGroupedByDaemon[2][0][1].daemonId).toBe(22)
+        expect(component.localHostsGroupedByDaemon[2][1].length).toBe(1)
+        expect(component.localHostsGroupedByDaemon[2][1][0].daemonId).toBe(33)
 
-        expect(component.localHostsGroupedByApp[3][0].length).toBe(1)
-        expect(component.localHostsGroupedByApp[3][0][0].appId).toBe(11)
-        expect(component.localHostsGroupedByApp[3][1].length).toBe(1)
-        expect(component.localHostsGroupedByApp[3][1][0].appId).toBe(22)
+        expect(component.localHostsGroupedByDaemon[3][0].length).toBe(1)
+        expect(component.localHostsGroupedByDaemon[3][0][0].daemonId).toBe(11)
+        expect(component.localHostsGroupedByDaemon[3][1].length).toBe(1)
+        expect(component.localHostsGroupedByDaemon[3][1][0].daemonId).toBe(22)
     })
 
     it('should detect local hosts state', () => {
         // Arrange
         const zero = []
 
-        const single = [{ appId: 1, bootFields: { field1: 'value1' }, clientClasses: ['class1'], dhcpOptions: {} }]
-
-        const conflict = [
-            { appId: 1, bootFields: { field1: 'value1' }, clientClasses: ['class1'], dhcpOptions: {} },
-            { appId: 1, bootFields: { field1: 'value2' }, clientClasses: ['class2'], dhcpOptions: {} },
+        const single: LocalHost[] = [
+            {
+                daemonId: 1,
+                daemonName: "dhcp4",
+                optionsHash: 'hash1',
+                clientClasses: ['class1'],
+                nextServer: 'srv1',
+                serverHostname: 'host1',
+                bootFileName: 'boot1',
+            },
         ]
 
-        const duplicate = [
-            { appId: 1, bootFields: { field1: 'value1' }, clientClasses: ['class1'], dhcpOptions: {} },
-            { appId: 1, bootFields: { field1: 'value1' }, clientClasses: ['class1'], dhcpOptions: {} },
+        const conflict: LocalHost[] = [
+            {
+                daemonId: 1,
+                daemonName: "dhcp4",
+                optionsHash: 'hash1',
+                clientClasses: ['class1'],
+                nextServer: 'srv1',
+                serverHostname: 'host1',
+                bootFileName: 'boot1',
+            },
+            {
+                daemonId: 1,
+                daemonName: "dhcp4",
+                optionsHash: 'hash2',
+                clientClasses: ['class2'],
+                nextServer: 'srv2',
+                serverHostname: 'host2',
+                bootFileName: 'boot2',
+            },
+        ]
+
+        const duplicate: LocalHost[] = [
+            {
+                daemonId: 1,
+                daemonName: "dhcp4",
+                optionsHash: 'hash1',
+                clientClasses: ['class1'],
+                nextServer: 'srv1',
+                serverHostname: 'host1',
+                bootFileName: 'boot1',
+            },
+            {
+                daemonId: 1,
+                daemonName: "dhcp4",
+                optionsHash: 'hash1',
+                clientClasses: ['class1'],
+                nextServer: 'srv1',
+                serverHostname: 'host1',
+                bootFileName: 'boot1',
+            },
         ]
 
         // Act
@@ -131,7 +173,10 @@ describe('HostsTableComponent', () => {
         component.canStartMigration = true
 
         component.table.filters = {
-            appId: { value: 1 },
+            machineId: { value: 5 },
+            daemonId: { value: 1 },
+            subnetId: { value: 2 },
+            localSubnetId: { value: 7 },
             isGlobal: { value: true },
             text: { value: 'foo' },
         }
@@ -146,7 +191,7 @@ describe('HostsTableComponent', () => {
         confirmDialog.onAccept()
         tick()
 
-        expect(dhcpService.startHostsMigration).toHaveBeenCalledWith(1, null, null, 'foo', true)
+        expect(dhcpService.startHostsMigration).toHaveBeenCalledWith(1, null, null, null, 'foo', true)
     }))
 
     it('should extract filter entries properly', () => {
@@ -157,11 +202,11 @@ describe('HostsTableComponent', () => {
         expect(component.migrationFilterEntries).toEqual([['Conflict', 'false']])
 
         component.table.filters = {
-            appId: { value: 42 },
+            machineId: { value: 42 },
         }
         expect(component.migrationFilterEntries).toEqual([
-            ['App ID', '42'],
             ['Conflict', 'false'],
+            ['Machine ID', '42'],
         ])
 
         component.table.filters = {
@@ -181,15 +226,17 @@ describe('HostsTableComponent', () => {
         ])
 
         component.table.filters = {
-            appId: { value: 1 },
+            machineId: { value: 1 },
             subnetId: { value: 1 },
+            localSubnetId: { value: 10 },
             isGlobal: { value: false },
             text: { value: 'foo' },
         }
         expect(component.migrationFilterEntries).toEqual([
-            ['App ID', '1'],
             ['Conflict', 'false'],
             ['Is Global', 'false'],
+            ['Local Subnet ID', '10'],
+            ['Machine ID', '1'],
             ['Subnet ID', '1'],
             ['Text', 'foo'],
         ])
@@ -199,19 +246,22 @@ describe('HostsTableComponent', () => {
         // Arrange
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
-        expect(inputNumbers.length).toEqual(3)
+        expect(inputNumbers.length).toEqual(4)
 
         // Act
         component.table.clear()
         tick()
         fixture.detectChanges()
-        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
+        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // machineId
         tick(300)
         fixture.detectChanges()
-        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
+        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // daemonId
         tick(300)
         fixture.detectChanges()
-        inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
+        inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
+        tick(300)
+        fixture.detectChanges()
+        inputNumbers[3].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // localSubnetId
         tick(300)
         fixture.detectChanges()
 
@@ -219,7 +269,15 @@ describe('HostsTableComponent', () => {
         expect(dhcpService.getHosts).toHaveBeenCalled()
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
         expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: { appId: 1, subnetId: 1, keaSubnetId: 1, isGlobal: null, conflict: null, text: null },
+            queryParams: {
+                machineId: 1,
+                daemonId: 1,
+                subnetId: 1,
+                localSubnetId: 1,
+                isGlobal: null,
+                conflict: null,
+                text: null,
+            },
         })
     }))
 
@@ -242,13 +300,7 @@ describe('HostsTableComponent', () => {
                         address: '192.0.2.1',
                     },
                 ],
-                localHosts: [
-                    {
-                        appId: 1,
-                        appName: 'frog',
-                        dataSource: 'config',
-                    },
-                ],
+                localHosts: [{ daemonId: 1, daemonName: "dhcp4", dataSource: 'config' } as LocalHost],
             },
             {
                 id: 2,
@@ -263,13 +315,7 @@ describe('HostsTableComponent', () => {
                         address: '192.0.2.2',
                     },
                 ],
-                localHosts: [
-                    {
-                        appId: 2,
-                        appName: 'mouse',
-                        dataSource: 'config',
-                    },
-                ],
+                localHosts: [{ daemonId: 2, daemonName: "dhcp4", dataSource: 'config' } as LocalHost],
             },
             {
                 id: 3,
@@ -284,13 +330,7 @@ describe('HostsTableComponent', () => {
                         address: '192.0.2.2',
                     },
                 ],
-                localHosts: [
-                    {
-                        appId: 3,
-                        appName: 'lion',
-                        dataSource: 'config',
-                    },
-                ],
+                localHosts: [{ daemonId: 3, daemonName: "dhcp4", dataSource: 'config' } as LocalHost],
             },
         ]
         fixture.detectChanges()
@@ -331,23 +371,31 @@ describe('HostsTableComponent', () => {
         expect(component.loadData).toHaveBeenCalled()
     }))
 
-    it('hosts list should be filtered by appId', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+    it('hosts list should be filtered by machineId', fakeAsync(() => {
+        component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, daemonName: "dhcp4", dataSource: 'config' }] }]
         fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
 
-        component.filterTable(2, <FilterMetadata>component.table.filters['appId'])
+        component.filterTable(2, <FilterMetadata>component.table.filters['machineId'])
         tick(300)
         fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: { appId: 2, subnetId: null, keaSubnetId: null, isGlobal: null, conflict: null, text: null },
+            queryParams: {
+                machineId: 2,
+                daemonId: null,
+                subnetId: null,
+                localSubnetId: null,
+                isGlobal: null,
+                conflict: null,
+                text: null,
+            },
         })
     }))
 
     it('hosts list should be filtered by subnetId', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
@@ -357,12 +405,20 @@ describe('HostsTableComponent', () => {
         fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: { appId: null, subnetId: 89, keaSubnetId: null, isGlobal: null, conflict: null, text: null },
+            queryParams: {
+                machineId: null,
+                daemonId: null,
+                subnetId: 89,
+                localSubnetId: null,
+                isGlobal: null,
+                conflict: null,
+                text: null,
+            },
         })
     }))
 
     it('hosts list should be filtered by conflicts', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
@@ -372,12 +428,20 @@ describe('HostsTableComponent', () => {
         fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: { appId: null, subnetId: null, keaSubnetId: null, isGlobal: null, conflict: true, text: null },
+            queryParams: {
+                machineId: null,
+                daemonId: null,
+                subnetId: null,
+                localSubnetId: null,
+                isGlobal: null,
+                conflict: true,
+                text: null,
+            },
         })
     }))
 
     it('hosts list should be filtered by non-conflicts', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
@@ -388,9 +452,10 @@ describe('HostsTableComponent', () => {
 
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
-                appId: null,
+                machineId: null,
+                daemonId: null,
                 subnetId: null,
-                keaSubnetId: null,
+                localSubnetId: null,
                 isGlobal: null,
                 conflict: false,
                 text: null,
@@ -399,7 +464,7 @@ describe('HostsTableComponent', () => {
     }))
 
     it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, daemonName: "dhcp4", dataSource: 'config' }] }]
         fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
@@ -409,66 +474,64 @@ describe('HostsTableComponent', () => {
         fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: { appId: null, subnetId: null, keaSubnetId: 101, isGlobal: null, conflict: null, text: null },
+            queryParams: {
+                machineId: null,
+                daemonId: null,
+                subnetId: null,
+                localSubnetId: 101,
+                isGlobal: null,
+                conflict: null,
+                text: null,
+            },
         })
     }))
 
-    it('should group the local hosts by appId', () => {
+    it('should group the local hosts by daemonId', () => {
         const host = {
             id: 42,
             localHosts: [
                 {
-                    appId: 3,
                     daemonId: 31,
                 },
                 {
-                    appId: 3,
                     daemonId: 32,
                 },
                 {
-                    appId: 3,
                     daemonId: 33,
                 },
                 {
-                    appId: 2,
                     daemonId: 21,
                 },
                 {
-                    appId: 2,
                     daemonId: 22,
                 },
                 {
-                    appId: 1,
                     daemonId: 11,
                 },
             ],
         } as Host
 
         component.hosts = [host]
-        const groups = component.localHostsGroupedByApp[host.id]
+        const groups = component.localHostsGroupedByDaemon[host.id]
 
-        expect(groups.length).toBe(3)
-        for (let group of groups) {
-            expect(group.length).toBeGreaterThanOrEqual(1)
-            const appId = group[0].appId
-            expect(group.length).toBe(appId)
-            for (let item of group) {
-                expect(item.daemonId).toBeGreaterThan(10 * appId)
-                expect(item.daemonId).toBeLessThan(10 * (appId + 1))
-            }
-        }
+        expect(groups.length).toBe(6)
+        const daemonIds = groups.map((g) => g[0].daemonId).sort()
+        expect(daemonIds).toEqual([11, 21, 22, 31, 32, 33])
+
+        const groupByDaemon = Object.fromEntries(groups.map((g) => [g[0].daemonId, g]))
+        expect(groupByDaemon[31].length).toBe(1)
+        expect(groupByDaemon[21].length).toBe(1)
+        expect(groupByDaemon[11].length).toBe(1)
     })
 
     it('should recognize the state of local hosts', () => {
         // Conflict
         let localHosts = [
             {
-                appId: 1,
                 daemonId: 1,
                 nextServer: 'foo',
             },
             {
-                appId: 1,
                 daemonId: 2,
                 nextServer: 'bar',
             },
@@ -480,12 +543,10 @@ describe('HostsTableComponent', () => {
         // Duplicate
         localHosts = [
             {
-                appId: 1,
                 daemonId: 1,
                 nextServer: 'foo',
             },
             {
-                appId: 1,
                 daemonId: 2,
                 nextServer: 'foo',
             },
@@ -497,7 +558,6 @@ describe('HostsTableComponent', () => {
         // Null
         localHosts = [
             {
-                appId: 1,
                 daemonId: 1,
                 nextServer: 'foo',
             },
@@ -507,22 +567,25 @@ describe('HostsTableComponent', () => {
         expect(state).toBeNull()
     })
 
-    it('host table should have valid app name and app link', () => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+    it('host table should have valid daemon name and daemon link', () => {
+        component.hosts = [
+            {
+                id: 1,
+                localHosts: [{ daemonId: 1, daemonName: 'frog', dataSource: 'config' } as unknown as LocalHost],
+            } as Host,
+        ]
         fixture.detectChanges()
         // Table rows have ids created by appending host id to the host-row- string.
         const row = fixture.debugElement.query(By.css('#host-row-1'))
         // There should be 6 table cells in the row.
         expect(row.children.length).toBe(6)
-        // The last one includes the app name.
-        const appNameTd = row.children[5]
-        // The cell includes a link to the app.
-        expect(appNameTd.children.length).toBe(1)
-        const appLink = appNameTd.children[0]
-        expect(appLink.nativeElement.textContent).toBe('frog config')
-        // Verify that the link to the app is correct.
-        const appLinkAnchor = appLink.query(By.css('a'))
-        expect(appLinkAnchor.properties.hasOwnProperty('pathname')).toBeTrue()
-        expect(appLinkAnchor.properties.pathname).toBe('/apps/1')
+        // The last one includes the daemon name and link.
+        const daemonTd = row.children[5]
+        const daemonLink = daemonTd.query(By.css('a'))
+        expect(daemonLink.nativeElement.textContent).toContain('frog')
+        expect(daemonLink.properties.hasOwnProperty('pathname')).toBeTrue()
+        expect(daemonLink.properties.pathname).toBe('/daemons/1')
+        // Data source labels are still rendered.
+        expect(daemonTd.query(By.css('app-host-data-source-label'))).toBeTruthy()
     })
 })

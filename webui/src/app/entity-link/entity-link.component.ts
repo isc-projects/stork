@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core'
 import { daemonNameToFriendlyName } from '../utils'
 import { NgSwitch, NgClass, NgSwitchCase, NgSwitchDefault } from '@angular/common'
 import { RouterLink } from '@angular/router'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * A component that displays given entity as a link with rounded border
@@ -16,7 +17,7 @@ import { RouterLink } from '@angular/router'
     selector: 'app-entity-link',
     templateUrl: './entity-link.component.html',
     styleUrls: ['./entity-link.component.sass'],
-    imports: [NgSwitch, NgClass, NgSwitchCase, RouterLink, NgSwitchDefault],
+    imports: [NgSwitch, NgClass, NgSwitchCase, RouterLink, NgSwitchDefault, DaemonNiceNamePipe],
 })
 export class EntityLinkComponent {
     /**

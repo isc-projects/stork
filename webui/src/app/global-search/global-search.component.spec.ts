@@ -40,7 +40,7 @@ describe('GlobalSearchComponent', () => {
             sharedNetworks: { items: [] },
             hosts: { items: [] },
             machines: { items: [] },
-            apps: { items: [{ type: 'kea', id: 1, name: 'dhcp-server' }] },
+            daemons: { items: [{ id: 1, name: 'dhcp-server' }] },
             users: { items: [] },
             groups: { items: [] },
         }
@@ -50,13 +50,13 @@ describe('GlobalSearchComponent', () => {
         await fixture.whenRenderingDone()
         fixture.detectChanges()
 
-        const appsDiv = fixture.debugElement.query(By.css('#apps-div'))
-        expect(appsDiv).toBeDefined()
-        expect(appsDiv.children.length).toBe(2)
-        const appDiv = appsDiv.children[1]
-        expect(appDiv.children.length).toBe(1)
-        const appAnchor = appDiv.children[0]
-        expect(appAnchor.nativeElement.innerText).toBe('dhcp-server')
-        expect(appAnchor.attributes.href).toBe('/apps/1')
+        const daemonsDiv = fixture.debugElement.query(By.css('#daemons-div'))
+        expect(daemonsDiv).toBeDefined()
+        expect(daemonsDiv.children.length).toBe(2)
+        const daemonDiv = daemonsDiv.children[1]
+        expect(daemonDiv.children.length).toBe(1)
+        const daemonAnchor = daemonDiv.children[0]
+        expect(daemonAnchor.nativeElement.innerText).toBe('dhcp-server')
+        expect(daemonAnchor.attributes.href).toBe('/daemons/1')
     })
 })

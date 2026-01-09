@@ -1,7 +1,6 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
 
-import { AppsPageComponent } from './apps-page.component'
 import { provideRouter } from '@angular/router'
 import { ServicesService } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
@@ -11,10 +10,11 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ConfirmDialog } from 'primeng/confirmdialog'
 import { of, throwError } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { DaemonsPageComponent } from './daemons-page.component'
 
-describe('AppsPageComponent', () => {
-    let component: AppsPageComponent
-    let fixture: ComponentFixture<AppsPageComponent>
+describe('DaemonsPageComponent', () => {
+    let component: DaemonsPageComponent
+    let fixture: ComponentFixture<DaemonsPageComponent>
     let api: ServicesService
     let msgSrv: MessageService
 
@@ -26,13 +26,13 @@ describe('AppsPageComponent', () => {
                 provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([{ path: 'apps/all', component: AppsPageComponent }]),
+                provideRouter([{ path: 'daemons', component: DaemonsPageComponent }]),
             ],
         }).compileComponents()
     }))
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(AppsPageComponent)
+        fixture = TestBed.createComponent(DaemonsPageComponent)
         component = fixture.componentInstance
         api = fixture.debugElement.injector.get(ServicesService)
         msgSrv = fixture.debugElement.injector.get(MessageService)
@@ -43,45 +43,6 @@ describe('AppsPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    xit('should render good app tab title and link', () => {
-        // TODO: this test should be moved away from Karma tests.
-        // const app = new App()
-        // app.id = 1
-        // app.name = 'test-app'
-        //
-        // component.addAppTab(app)
-        // expect(component.tabs.length).toEqual(2)
-        // expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
-        // expect(component.tabs[1].hasOwnProperty('routerLink')).toBeTrue()
-        //
-        // expect(component.tabs[1].label).toBe('test-app')
-        // expect(component.tabs[1].routerLink).toBe('/apps/1')
-    })
-
-    xit('should change app tab label after rename', () => {
-        // TODO: this test should be moved away from Karma tests.
-        // const app = new App()
-        // app.id = 1
-        // app.name = 'kea@@machine1'
-        //
-        // // Open a tab presenting our test app.
-        // component.addAppTab(app)
-        // component.switchToTab(1)
-        // expect(component.tabs.length).toEqual(2)
-        // expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
-        // expect(component.tabs[1].label).toBe('kea@@machine1')
-        //
-        // // Generate notification that the app was renamed.
-        // const event = 'kea@@machine2'
-        // component.onRenameApp(event)
-        //
-        // // The notification should cause the app tab label to
-        // // be changed to the new name.
-        // expect(component.tabs.length).toEqual(2)
-        // expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
-        // expect(component.tabs[1].label).toBe('kea@@machine2')
-    })
-
     it('should have breadcrumbs', () => {
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
         expect(breadcrumbsElement).not.toBeNull()
@@ -89,7 +50,7 @@ describe('AppsPageComponent', () => {
         expect(breadcrumbsComponent).not.toBeNull()
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
-        expect(breadcrumbsComponent.items[1].label).toEqual('Apps')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Daemons')
     })
 
     it('should request synchronization configurations from Kea', fakeAsync(() => {

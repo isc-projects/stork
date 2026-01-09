@@ -379,13 +379,13 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
             // Sanitize the local subnets and shared networks.
             sharedNetwork.subnets.forEach((s) => {
                 s.localSubnets.forEach((ls) => {
-                    delete ls['appId']
-                    delete ls['appName']
+                    delete ls['daemonId']
+                    delete ls['daemonName']
                 })
             })
             sharedNetwork.localSharedNetworks.forEach((lsn) => {
-                delete lsn['appId']
-                delete lsn['appName']
+                delete lsn['daemonId']
+                delete lsn['daemonName']
             })
         } catch (err) {
             this.messageService.add({

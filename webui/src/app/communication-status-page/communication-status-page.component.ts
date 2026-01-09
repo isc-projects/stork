@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { App, ServicesService } from '../backend'
+import { AnyDaemon, ServicesService } from '../backend'
 import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { MessageService } from 'primeng/api'
@@ -11,7 +11,7 @@ import { ProgressSpinner } from 'primeng/progressspinner'
 
 /**
  * A component displaying a page showing the communication issues with
- * the monitored apps.
+ * the monitored daemons.
  *
  * It fetches the list of communication issues from the Stork server and
  * displays them as a tree using the CommunicationStatusTreeComponent.
@@ -33,7 +33,7 @@ export class CommunicationStatusPageComponent implements OnInit {
     /**
      * A list of communication issues fetched from the server.
      */
-    apps: Array<App> = []
+    daemons: Array<AnyDaemon> = []
 
     /**
      * A boolean flag indicating if the data are being loaded.
@@ -70,9 +70,9 @@ export class CommunicationStatusPageComponent implements OnInit {
      */
     private reload(): void {
         this.loading = true
-        lastValueFrom(this.servicesService.getAppsWithCommunicationIssues())
+        lastValueFrom(this.servicesService.getDaemonsWithCommunicationIssues())
             .then((data) => {
-                this.apps = data.items || []
+                this.daemons = data.items ?? []
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -82,7 +82,7 @@ export class CommunicationStatusPageComponent implements OnInit {
                     detail: 'Failed to create transaction for adding new host: ' + msg,
                     life: 10000,
                 })
-                this.apps = []
+                this.daemons = []
             })
             .finally(() => {
                 this.loading = false

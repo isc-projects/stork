@@ -6,11 +6,10 @@ import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
+import { KeaDaemonConfig } from '../backend'
 
-const mockGetDaemonConfig = {
-    appName: 'kea-server',
-    appType: 'kea',
-    appId: 1,
+const mockGetDaemonConfig: KeaDaemonConfig = {
+    daemonId: 1,
     daemonName: 'dhcp4',
     config: {
         Dhcp4: {
@@ -236,9 +235,7 @@ export const Empty: Story = {
                 status: 200,
                 delay: 2000,
                 response: {
-                    appName: 'kea-server',
-                    appType: 'kea',
-                    appId: 1,
+                    daemonId: 1,
                     daemonName: 'dhcp4',
                     config: {},
                     options: {},

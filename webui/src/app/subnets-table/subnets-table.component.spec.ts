@@ -50,8 +50,8 @@ describe('SubnetsTableComponent', () => {
                     id: 5,
                     localSubnets: [
                         {
-                            appId: 27,
-                            appName: 'kea@localhost',
+                            daemonId: 27,
+                            daemonName: 'dhcp4',
                             id: 1,
                             machineAddress: 'localhost',
                             machineHostname: 'lv-pc',
@@ -62,8 +62,8 @@ describe('SubnetsTableComponent', () => {
                             ],
                         },
                         {
-                            appId: 28,
-                            appName: 'kea2@localhost',
+                            daemonId: 28,
+                            daemonName: 'dhcp4',
                             // Misconfiguration,  all local subnets in a
                             // subnet should share the same subnet ID. In
                             // this case, we display a value from the first
@@ -93,8 +93,8 @@ describe('SubnetsTableComponent', () => {
                     id: 42,
                     localSubnets: [
                         {
-                            appId: 27,
-                            appName: 'kea@localhost',
+                            daemonId: 27,
+                            daemonName: 'dhcp4',
                             machineAddress: 'localhost',
                             machineHostname: 'lv-pc',
                             pools: [
@@ -112,22 +112,22 @@ describe('SubnetsTableComponent', () => {
                     localSubnets: [
                         {
                             id: 4,
-                            appId: 28,
-                            appName: 'ha@localhost',
+                            daemonId: 28,
+                            daemonName: 'dhcp4',
                             machineAddress: 'localhost',
                             machineHostname: 'ha-cluster-1',
                         },
                         {
                             id: 4,
-                            appId: 28,
-                            appName: 'ha@localhost',
+                            daemonId: 28,
+                            daemonName: "dhcp4",
                             machineAddress: 'localhost',
                             machineHostname: 'ha-cluster-2',
                         },
                         {
                             id: 4,
-                            appId: 28,
-                            appName: 'ha@localhost',
+                            daemonId: 28,
+                            daemonName: "dhcp4",
                             machineAddress: 'localhost',
                             machineHostname: 'ha-cluster-3',
                         },
@@ -153,7 +153,6 @@ describe('SubnetsTableComponent', () => {
                     localSubnets: [
                         {
                             id: 1,
-                            machineHostname: 'foo',
                         },
                     ],
                 },
@@ -162,7 +161,6 @@ describe('SubnetsTableComponent', () => {
                     localSubnets: [
                         {
                             id: 2,
-                            machineHostname: 'foo',
                         },
                     ],
                 },
@@ -171,7 +169,6 @@ describe('SubnetsTableComponent', () => {
                     localSubnets: [
                         {
                             id: 3,
-                            machineHostname: 'foo',
                         },
                     ],
                 },
@@ -300,7 +297,7 @@ describe('SubnetsTableComponent', () => {
         component.table.clear()
         tick(300)
         fixture.detectChanges()
-        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
+        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // daemonId
         tick(300)
         fixture.detectChanges()
         inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
@@ -310,7 +307,7 @@ describe('SubnetsTableComponent', () => {
         // Assert
         expect(getSubnetsSpy).toHaveBeenCalled()
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
-        expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['appId'] as FilterMetadata)
+        expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['daemonId'] as FilterMetadata)
         expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['subnetId'] as FilterMetadata)
         flush()
     }))

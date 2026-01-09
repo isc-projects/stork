@@ -17,16 +17,12 @@ describe('HostForm', () => {
         form.allDaemons = [
             {
                 id: 1,
-                appId: 1,
-                appType: 'kea',
                 name: 'dhcp4',
                 version: '3.0.0',
                 label: 'server1',
             },
             {
                 id: 2,
-                appId: 3,
-                appType: 'bind9',
                 name: 'named',
                 version: '3.0.0',
                 label: 'server2',
@@ -36,14 +32,12 @@ describe('HostForm', () => {
         let daemon = form.getDaemonById(1)
         expect(daemon).toBeTruthy()
         expect(daemon.id).toBe(1)
-        expect(daemon.appId).toBe(1)
         expect(daemon.name).toBe('dhcp4')
         expect(daemon.label).toBe('server1')
 
         daemon = form.getDaemonById(2)
         expect(daemon).toBeTruthy()
         expect(daemon.id).toBe(2)
-        expect(daemon.appId).toBe(3)
         expect(daemon.name).toBe('named')
         expect(daemon.label).toBe('server2')
 
@@ -54,32 +48,24 @@ describe('HostForm', () => {
         form.allDaemons = [
             {
                 id: 1,
-                appId: 1,
-                appType: 'kea',
                 name: 'dhcp4',
                 version: '3.0.0',
                 label: 'server1',
             },
             {
                 id: 2,
-                appId: 1,
-                appType: 'kea',
                 name: 'dhcp6',
                 version: '3.0.0',
                 label: 'server2',
             },
             {
                 id: 3,
-                appId: 2,
-                appType: 'kea',
                 name: 'dhcp4',
                 version: '3.0.0',
                 label: 'server3',
             },
             {
                 id: 4,
-                appId: 2,
-                appType: 'kea',
                 name: 'dhcp6',
                 version: '3.0.0',
                 label: 'server4',

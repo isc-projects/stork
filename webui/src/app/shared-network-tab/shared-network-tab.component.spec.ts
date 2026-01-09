@@ -89,8 +89,8 @@ describe('SharedNetworkTabComponent', () => {
             statsCollectedAt: '2023-06-05',
             localSharedNetworks: [
                 {
-                    appId: 1,
-                    appName: 'foo@192.0.2.1',
+                    daemonId: 1,
+                    daemonName: 'dhcp4',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -214,8 +214,8 @@ describe('SharedNetworkTabComponent', () => {
                     },
                 },
                 {
-                    appId: 2,
-                    appName: 'foo@192.0.2.2',
+                    daemonId: 2,
+                    daemonName: 'dhcp4',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -366,11 +366,12 @@ describe('SharedNetworkTabComponent', () => {
             name: 'bar',
             localSharedNetworks: [
                 {
-                    appId: 1,
-                    appName: 'foo@192.0.2.1',
+                    daemonId: 10,
+                    daemonName: 'dhcp4',
                 },
             ],
         }
+
 
         component.ngOnInit()
         fixture.detectChanges()
@@ -431,8 +432,8 @@ describe('SharedNetworkTabComponent', () => {
             statsCollectedAt: '2023-06-05',
             localSharedNetworks: [
                 {
-                    appId: 1,
-                    appName: 'foo@192.0.2.1',
+                    daemonId: 1,
+                    daemonName: 'dhcp4',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             hostnameCharReplacement: 'X',
@@ -501,8 +502,8 @@ describe('SharedNetworkTabComponent', () => {
             ],
             localSharedNetworks: [
                 {
-                    appId: 1,
-                    appName: 'foo@192.0.2.1',
+                    daemonId: 1,
+                    daemonName: 'dhcp4',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {},
                     },

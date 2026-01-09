@@ -26,10 +26,10 @@ import { Message } from 'primeng/message'
 import { InputText } from 'primeng/inputtext'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
 
 /**
  * This component implements a page which displays authorized
@@ -64,11 +64,11 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
         VersionStatusComponent,
         HelpTipComponent,
         NgFor,
-        AppDaemonsStatusComponent,
         EventsPanelComponent,
         AsyncPipe,
         LocaltimePipe,
         PlaceholderPipe,
+        DaemonStatusComponent,
     ],
 })
 export class MachinesPageComponent implements OnInit, OnDestroy {
@@ -406,7 +406,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
-                this.serverData.forceReloadAppsStats()
+                this.serverData.forceReloadDaemonsStats()
             })
             .catch((err) => {
                 machine.authorized = stateBackup
@@ -499,7 +499,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 lastValueFrom(this.servicesApi.deleteMachine(machineId))
                     .then(() => {
                         // reload apps stats to reflect new state (adjust menu content)
-                        this.serverData.forceReloadAppsStats()
+                        this.serverData.forceReloadDaemonsStats()
 
                         this.tabView()?.onDeleteEntity(machineId)
                         this.machinesTable()?.fetchUnauthorizedMachinesCount()
@@ -688,14 +688,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
-                this.serverData.forceReloadAppsStats()
+                this.serverData.forceReloadDaemonsStats()
             },
             complete: () => {
                 this.machinesTable()?.setDataLoading(false)
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
-                this.serverData.forceReloadAppsStats()
+                this.serverData.forceReloadDaemonsStats()
             },
         })
 

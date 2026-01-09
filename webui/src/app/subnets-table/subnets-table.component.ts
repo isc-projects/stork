@@ -145,7 +145,7 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
                 .getSubnets(
                     event.first,
                     event.rows,
-                    (event.filters['appId'] as FilterMetadata)?.value ?? null,
+                    (event.filters['daemonId'] as FilterMetadata)?.value ?? null,
                     (event.filters['subnetId'] as FilterMetadata)?.value ?? null,
                     (event.filters['dhcpVersion'] as FilterMetadata)?.value ?? null,
                     (event.filters['text'] as FilterMetadata)?.value || null,

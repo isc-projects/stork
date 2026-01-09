@@ -68,7 +68,7 @@
                             dropdown filters. The currently supported fields for explicit filtering are:
                         </p>
                         <ul>
-                            <li>Kea App ID</li>
+                            <li>Daemon ID</li>
                             <li>DHCP Version</li>
                         </ul>
                     </app-help-tip>
@@ -83,12 +83,12 @@
                     [disabled]="!tableHasFilter(networksTable)"
                 ></p-button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                <p-columnFilter field="daemonId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <div class="flex align-items-center">
                             <p-floatlabel variant="on">
                                 <p-inputNumber
-                                    inputId="app-id"
+                                    inputId="daemon-id"
                                     mode="decimal"
                                     [useGrouping]="false"
                                     min="1"
@@ -96,7 +96,7 @@
                                     [ngModel]="value"
                                     class="max-w-8rem"
                                 ></p-inputNumber>
-                                <label for="app-id">Kea App ID</label>
+                                <label for="daemon-id">Daemon ID</label>
                             </p-floatlabel>
                             <p-button
                                 icon="pi pi-filter-slash"
@@ -177,7 +177,7 @@
             <th colspan="3" style="width: 16rem">Addresses</th>
             <th colspan="3" style="width: 16rem" *ngIf="ipV6SubnetsFilterIncluded()">Prefixes</th>
             <th rowspan="2">Subnets</th>
-            <th rowspan="2" style="width: 14rem">App Name</th>
+            <th rowspan="2" style="width: 14rem">Daemon Name</th>
         </tr>
         <tr>
             <th [pSortableColumn]="NetworkSortField.TotalAddresses">
@@ -257,8 +257,8 @@
                 <app-subnet-bar class="utilization-bar" *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
             </td>
             <td>
-                <div *ngFor="let app of getApps(net)">
-                    <a routerLink="/apps/{{ app.id }}">{{ app.name }}</a>
+                <div *ngFor="let daemon of getDaemons(net)">
+                    <a routerLink="/daemons/{{ daemon.id }}">{{ daemon.name }}</a>
                 </div>
             </td>
         </tr>

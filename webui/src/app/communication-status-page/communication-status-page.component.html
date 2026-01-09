@@ -8,7 +8,7 @@
     </div>
 </app-breadcrumbs>
 <div *ngIf="!loading; else loadingBlock">
-    <app-communication-status-tree *ngIf="!loading" [apps]="apps"></app-communication-status-tree>
+    <app-communication-status-tree *ngIf="!loading" [daemons]="daemons"></app-communication-status-tree>
     <p-button *ngIf="!loading" label="Reload" styleClass="mt-3" (onClick)="onReload()"></p-button>
 </div>
 <ng-template #loadingBlock>

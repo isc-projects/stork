@@ -84,17 +84,13 @@ export const AddressPool4: Story = {
         selectableDaemons: [
             {
                 id: 1,
-                appId: 1,
-                appType: 'kea',
-                name: 'first/dhcp4',
+                name: 'dhcp4',
                 version: '2.7.0',
                 label: 'first/dhcp4',
             },
             {
                 id: 2,
-                appId: 2,
-                appType: 'kea',
-                name: 'second/dhcp4',
+                name: 'dhcp4',
                 version: '2.7.0',
                 label: 'second/dhcp4',
             },
@@ -142,17 +138,13 @@ export const AddressPool6: Story = {
         selectableDaemons: [
             {
                 id: 1,
-                appId: 1,
-                appType: 'kea',
-                name: 'first/dhcp6',
+                name: 'dhcp6',
                 version: '2.7.0',
                 label: 'first/dhcp6',
             },
             {
                 id: 2,
-                appId: 2,
-                appType: 'kea',
-                name: 'second/dhcp6',
+                name: 'dhcp6',
                 version: '2.7.0',
                 label: 'second/dhcp6',
             },

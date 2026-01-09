@@ -2,8 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { Bind9Daemon, DHCPService, DNSService, PdnsDaemon, ServicesService } from '../backend'
-import { AppsStats } from '../backend'
+import { Bind9Daemon, DaemonsStats, DHCPService, DNSService, PdnsDaemon, ServicesService } from '../backend'
 import {
     datetimeToLocal,
     durationToString,
@@ -20,7 +19,6 @@ import { concatMap, lastValueFrom, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
 import {
-    App,
     DhcpDaemon,
     DhcpDaemonHARelationshipOverview,
     DhcpOverview,
@@ -135,9 +133,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     loaded = false
 
     /**
-     * Application statistics fetched from the server.
+     * Daemon statistics fetched from the server.
      */
-    appsStats: AppsStats
+    stats: DaemonsStats
 
     /**
      * The overview data of DHCP daemons.
@@ -164,14 +162,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     grafanaDhcp6DashboardId: string
 
     /**
-     * List of DNS Apps displayed in the DNS dashboard.
+     * List of DNS Daemons displayed in the DNS dashboard.
      */
-    dnsApps: App[] = []
+    dnsDaemons: Array<Bind9Daemon | PdnsDaemon> = []
 
     /**
-     * Total count of DNS Apps returned by the backend.
+     * Total count of DNS Daemons returned by the backend.
      */
-    dnsAppsTotalCount: number = 0
+    dnsDaemonsTotalCount: number = 0
 
     /**
      * Flag stating whether DNS Service Status table data is loading or not.
@@ -179,24 +177,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
     dnsServiceStatusLoading: boolean = false
 
     /**
-     * Key-value map where keys are DNS app IDs and values are information about zone fetching for particular DNS server.
+     * Key-value map where keys are DNS daemon IDs and values are information about zone fetching for particular DNS server.
      */
     zoneInventoryStateMap: Map<number, ZoneInventoryState> = new Map()
 
     /**
-     * Returns true when no kea and no DNS apps exist among authorized machines;
+     * Returns true when no kea and no DNS daemons exist among authorized machines;
      * false otherwise.
      */
-    get noApps(): boolean {
-        return this.appsStats.keaAppsTotal === 0 && this.appsStats.dnsAppsTotal === 0
+    get noDaemons(): boolean {
+        return this.stats.dhcpDaemonsTotal === 0 && this.stats.dnsDaemonsTotal === 0
     }
 
     /**
-     * Returns true when both DHCP and DNS apps exist among authorized machines;
+     * Returns true when both DHCP and DNS daemons exist among authorized machines;
      * false otherwise.
      */
-    get bothDHCPAndDNSAppsExist(): boolean {
-        return this.appsStats.keaAppsTotal > 0 && this.appsStats.dnsAppsTotal > 0
+    get bothDHCPAndDNSDaemonsExist(): boolean {
+        return this.stats.dhcpDaemonsTotal > 0 && this.stats.dnsDaemonsTotal > 0
     }
 
     /**
@@ -250,27 +248,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
             dhcp6Stats: { assignedNAs: 0, totalNAs: 0, assignedPDs: 0, totalPDs: 0 },
             dhcpDaemons: [],
         }
-        this.appsStats = {
-            keaAppsTotal: 0,
-            keaAppsNotOk: 0,
-            dnsAppsTotal: 0,
-            dnsAppsNotOk: 0,
+        this.stats = {
+            dhcpDaemonsTotal: 0,
+            dhcpDaemonsNotOk: 0,
+            dnsDaemonsTotal: 0,
+            dnsDaemonsNotOk: 0,
         }
 
-        // get stats about apps
+        // get stats about daemons
         this.subscriptions.add(
-            this.serverData.getAppsStats().subscribe(
+            this.serverData.getDaemonsStats().subscribe(
                 (data) => {
                     this.loaded = true
-                    this.appsStats = { ...this.appsStats, ...data }
+                    this.stats = { ...this.stats, ...data }
                 },
                 (err) => {
                     this.loaded = true
                     let msg = getErrorMessage(err)
                     this.msgSrv.add({
                         severity: 'error',
-                        summary: 'Cannot get application statistics',
-                        detail: 'Error getting application statistics: ' + msg,
+                        summary: 'Cannot get daemon statistics',
+                        detail: 'Error getting daemon statistics: ' + msg,
                         life: 10000,
                     })
                 }
@@ -365,16 +363,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     if (zonesFetch?.items?.length > 0) {
                         this.zoneInventoryStateMap = new Map()
                         zonesFetch.items.forEach((s) => {
-                            this.zoneInventoryStateMap.set(s.appId, s)
+                            this.zoneInventoryStateMap.set(s.daemonId, s)
                         })
                     }
-                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, ['bind9', 'pdns'])
+                    return this.servicesApi.getDaemons(event?.first ?? 0, event?.rows ?? 5, null, ['bind9', 'pdns'])
                 })
             )
         )
             .then((data) => {
-                this.dnsApps = data.items ?? []
-                this.dnsAppsTotalCount = data.total ?? 0
+                this.dnsDaemons = data.items ?? []
+                this.dnsDaemonsTotalCount = data.total ?? 0
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -654,7 +652,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     isDNSDashboardHidden(): boolean {
         const hidden =
             localStorage.getItem(this._dnsDashboardHiddenStorageKey) ??
-            (this.bothDHCPAndDNSAppsExist ? 'true' : 'false')
+            (this.bothDHCPAndDNSDaemonsExist ? 'true' : 'false')
         return hidden === 'true'
     }
 
@@ -672,7 +670,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     isDHCPDashboardHidden(): boolean {
         const hidden =
             localStorage.getItem(this._dhcpDashboardHiddenStorageKey) ??
-            (this.bothDHCPAndDNSAppsExist ? 'true' : 'false')
+            (this.bothDHCPAndDNSDaemonsExist ? 'true' : 'false')
         return hidden === 'true'
     }
 
@@ -684,17 +682,4 @@ export class DashboardComponent implements OnInit, OnDestroy {
         localStorage.setItem(this._dhcpDashboardHiddenStorageKey, JSON.stringify(hidden))
     }
 
-    /**
-     * Returns a DNS daemon for a given app.
-     *
-     * @param app an app holding a daemon.
-     * @returns BIND 9 or PowerDNS daemon.
-     */
-    getDNSDaemon(app: App): Bind9Daemon | PdnsDaemon {
-        if (app.details?.daemon) {
-            return app.details.daemon
-        } else {
-            return app.details.pdnsDaemon
-        }
-    }
 }

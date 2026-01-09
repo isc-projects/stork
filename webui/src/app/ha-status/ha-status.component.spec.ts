@@ -30,7 +30,7 @@ describe('HaStatusComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(HaStatusComponent)
         component = fixture.componentInstance
-        component.appId = 4
+        component.daemonId = 4
     })
 
     it('should create', () => {
@@ -39,7 +39,7 @@ describe('HaStatusComponent', () => {
 
     it('should present a waiting indicator during initial loading', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
             of({
                 items: [],
             } as ServicesStatus & HttpEvent<ServicesStatus>)
@@ -66,7 +66,7 @@ describe('HaStatusComponent', () => {
 
     it('should present a placeholder when loaded data contain no statuses', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
             of({
                 items: [],
             } as ServicesStatus & HttpEvent<ServicesStatus>)
@@ -96,7 +96,7 @@ describe('HaStatusComponent', () => {
 
     it('should not present a placeholder on the initial data loading failure', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(throwError(new HttpErrorResponse({ status: 500 })))
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(throwError(new HttpErrorResponse({ status: 500 })))
         spyOn(component, 'setCountdownTimer')
 
         // Execute ngOnInit hook.
@@ -122,7 +122,7 @@ describe('HaStatusComponent', () => {
 
     it('should present a hub and spoke configuration state', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
             of({
                 items: [
                     {
@@ -132,10 +132,9 @@ describe('HaStatusComponent', () => {
                                 relationship: 'server1',
                                 primaryServer: {
                                     age: 0,
-                                    appId: 234,
+                                    id: 234,
                                     controlAddress: '192.0.2.1:8080',
                                     failoverTime: null,
-                                    id: 1,
                                     inTouch: true,
                                     role: 'primary',
                                     scopes: ['server1'],
@@ -149,10 +148,9 @@ describe('HaStatusComponent', () => {
                                 },
                                 secondaryServer: {
                                     age: 0,
-                                    appId: 123,
+                                    id: 123,
                                     controlAddress: '192.0.2.2:8080',
                                     failoverTime: null,
-                                    id: 1,
                                     inTouch: true,
                                     role: 'standby',
                                     scopes: [],
@@ -174,10 +172,9 @@ describe('HaStatusComponent', () => {
                                 relationship: 'server3',
                                 primaryServer: {
                                     age: 0,
-                                    appId: 345,
+                                    id: 345,
                                     controlAddress: '192.0.2.3:8080',
                                     failoverTime: null,
-                                    id: 1,
                                     inTouch: true,
                                     role: 'primary',
                                     scopes: ['server3'],
@@ -191,10 +188,9 @@ describe('HaStatusComponent', () => {
                                 },
                                 secondaryServer: {
                                     age: 0,
-                                    appId: 123,
+                                    id: 123,
                                     controlAddress: '192.0.2.2:8081',
                                     failoverTime: '2024-02-16 11:11:12',
-                                    id: 1,
                                     inTouch: true,
                                     role: 'standby',
                                     scopes: [],
@@ -214,13 +210,13 @@ describe('HaStatusComponent', () => {
         )
         spyOn(component, 'setCountdownTimer')
 
-        component.appId = 123
+        component.daemonId = 123
         component.daemonName = 'dhcp4'
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
-        expect(servicesApi.getAppServicesStatus).toHaveBeenCalled()
+        expect(servicesApi.getDaemonServicesStatus).toHaveBeenCalled()
         expect(component.setCountdownTimer).toHaveBeenCalled()
 
         expect(component.status.length).toBe(24)
@@ -229,13 +225,9 @@ describe('HaStatusComponent', () => {
             expect(component.status[i].relationship.name).toBe('Relationship #1')
             expect(component.status[i].relationship.cells).toBeTruthy()
             expect(component.status[i].relationship.cells.length).toBe(2)
-            expect(component.status[i].relationship.cells[0].appId).toBeFalsy()
-            expect(component.status[i].relationship.cells[0].appName).toBeFalsy()
             expect(component.status[i].relationship.cells[0].iconType).toBeFalsy()
             expect(component.status[i].relationship.cells[0].progress).toBeFalsy()
             expect(component.status[i].relationship.cells[0].value).toBe('standby')
-            expect(component.status[i].relationship.cells[1].appId).toBe(234)
-            expect(component.status[i].relationship.cells[1].appName).toBe('Kea@192.0.2.1:8080')
             expect(component.status[i].relationship.cells[1].iconType).toBeFalsy()
             expect(component.status[i].relationship.cells[1].progress).toBeFalsy()
             expect(component.status[i].relationship.cells[1].value).toBe('primary')
@@ -246,13 +238,9 @@ describe('HaStatusComponent', () => {
             expect(component.status[i].relationship.cells).toBeTruthy()
             expect(component.status[i].relationship.cells.length).toBe(2)
             expect(component.status[i].relationship.cells.length).toBe(2)
-            expect(component.status[i].relationship.cells[0].appId).toBeFalsy()
-            expect(component.status[i].relationship.cells[0].appName).toBeFalsy()
             expect(component.status[i].relationship.cells[0].iconType).toBe('error')
             expect(component.status[i].relationship.cells[0].progress).toBeFalsy()
             expect(component.status[i].relationship.cells[0].value).toBe('standby')
-            expect(component.status[i].relationship.cells[1].appId).toBe(345)
-            expect(component.status[i].relationship.cells[1].appName).toBe('Kea@192.0.2.3:8080')
             expect(component.status[i].relationship.cells[1].iconType).toBeFalsy()
             expect(component.status[i].relationship.cells[1].progress).toBeFalsy()
             expect(component.status[i].relationship.cells[1].value).toBe('primary')
@@ -333,7 +321,7 @@ describe('HaStatusComponent', () => {
 
     it('should present a passive-backup configuration state', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
             of({
                 items: [
                     {
@@ -343,10 +331,9 @@ describe('HaStatusComponent', () => {
                                 relationship: 'server1',
                                 primaryServer: {
                                     age: 7,
-                                    appId: 234,
+                                    id: 234,
                                     controlAddress: '192.0.2.1:8080',
                                     failoverTime: null,
-                                    id: 1,
                                     inTouch: true,
                                     role: 'primary',
                                     scopes: ['server1'],
@@ -361,13 +348,13 @@ describe('HaStatusComponent', () => {
         )
         spyOn(component, 'setCountdownTimer')
 
-        component.appId = 234
+        component.daemonId = 234
         component.daemonName = 'dhcp4'
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
-        expect(servicesApi.getAppServicesStatus).toHaveBeenCalled()
+        expect(servicesApi.getDaemonServicesStatus).toHaveBeenCalled()
         expect(component.setCountdownTimer).toHaveBeenCalled()
 
         expect(component.status.length).toBe(5)
@@ -377,8 +364,6 @@ describe('HaStatusComponent', () => {
             expect(row.relationship.name).toBe('Relationship #1')
             expect(row.relationship.cells).toBeTruthy()
             expect(row.relationship.cells.length).toBe(1)
-            expect(row.relationship.cells[0].appId).toBeFalsy()
-            expect(row.relationship.cells[0].appName).toBeFalsy()
             expect(row.relationship.cells[0].iconType).toBeFalsy()
             expect(row.relationship.cells[0].progress).toBeFalsy()
             expect(row.relationship.cells[0].value).toBe('primary')
@@ -398,9 +383,9 @@ describe('HaStatusComponent', () => {
         expect(component.status[4].cells[0].value).toBe('7 seconds ago')
     }))
 
-    it('should not present HA state when the appId is not matching', fakeAsync(() => {
+    it('should not present HA state when the daemonId is not matching', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
             of({
                 items: [
                     {
@@ -410,10 +395,9 @@ describe('HaStatusComponent', () => {
                                 relationship: 'server1',
                                 primaryServer: {
                                     age: 7,
-                                    appId: 234,
+                                    id: 234,
                                     controlAddress: '192.0.2.1:8080',
                                     failoverTime: null,
-                                    id: 1,
                                     inTouch: true,
                                     role: 'primary',
                                     scopes: ['server1'],
@@ -428,13 +412,13 @@ describe('HaStatusComponent', () => {
         )
         spyOn(component, 'setCountdownTimer')
 
-        component.appId = 345
+        component.daemonId = 345
         component.daemonName = 'dhcp4'
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
-        expect(servicesApi.getAppServicesStatus).toHaveBeenCalled()
+        expect(servicesApi.getDaemonServicesStatus).toHaveBeenCalled()
         expect(component.setCountdownTimer).toHaveBeenCalled()
 
         expect(component.status.length).toBe(0)
@@ -442,7 +426,7 @@ describe('HaStatusComponent', () => {
 
     it('should not present HA state when the daemon is not matching', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getAppServicesStatus').and.returnValue(
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
             of({
                 items: [
                     {
@@ -452,10 +436,9 @@ describe('HaStatusComponent', () => {
                                 relationship: 'server1',
                                 primaryServer: {
                                     age: 7,
-                                    appId: 234,
+                                    id: 234,
                                     controlAddress: '192.0.2.1:8080',
                                     failoverTime: null,
-                                    id: 1,
                                     inTouch: true,
                                     role: 'primary',
                                     scopes: ['server1'],
@@ -470,13 +453,13 @@ describe('HaStatusComponent', () => {
         )
         spyOn(component, 'setCountdownTimer')
 
-        component.appId = 234
+        component.daemonId = 234
         component.daemonName = 'dhcp6'
         component.ngOnInit()
         tick()
         fixture.detectChanges()
 
-        expect(servicesApi.getAppServicesStatus).toHaveBeenCalled()
+        expect(servicesApi.getDaemonServicesStatus).toHaveBeenCalled()
         expect(component.setCountdownTimer).toHaveBeenCalled()
 
         expect(component.status.length).toBe(0)

@@ -3297,8 +3297,6 @@ describe('SubnetSetFormService', () => {
     it('should convert global DHCPv4 configurations to form - single config', () => {
         const configs: KeaDaemonConfig[] = [
             {
-                appId: 1,
-                appName: 'kea',
                 daemonId: 1,
                 daemonName: 'dhcp6',
                 config: {
@@ -3340,8 +3338,6 @@ describe('SubnetSetFormService', () => {
     it('should convert global DHCPv6 configurations to form - many configs', () => {
         const configs: KeaDaemonConfig[] = [
             {
-                appId: 1,
-                appName: 'kea',
                 daemonId: 1,
                 daemonName: 'dhcp4',
                 config: {
@@ -3362,8 +3358,6 @@ describe('SubnetSetFormService', () => {
                 },
             },
             {
-                appId: 2,
-                appName: 'kea',
                 daemonId: 2,
                 daemonName: 'dhcp4',
                 config: {
@@ -3408,8 +3402,6 @@ describe('SubnetSetFormService', () => {
     it('should convert global DHCPv6 configurations to form - daemon mishmash', () => {
         const configs: KeaDaemonConfig[] = [
             {
-                appId: 1,
-                appName: 'kea',
                 daemonId: 1,
                 daemonName: 'dhcp4',
                 config: {
@@ -3419,8 +3411,6 @@ describe('SubnetSetFormService', () => {
                 },
             },
             {
-                appId: 2,
-                appName: 'kea',
                 daemonId: 2,
                 daemonName: 'dhcp6',
                 config: {

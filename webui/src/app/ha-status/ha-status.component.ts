@@ -20,8 +20,8 @@ import { ProgressSpinner } from 'primeng/progressspinner'
  */
 interface RelationshipNodeCell {
     iconType?: string
-    appId?: number
-    appName?: string
+    daemonId?: number
+    daemonName?: string
     value?: string | number
     progress?: number
 }
@@ -90,13 +90,13 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     private readonly refreshInterval = 10
 
     /**
-     * ID of the Kea application for which the High Availability state
+     * ID of the Kea daemon for which the High Availability state
      * is presented.
      *
      * This should be id of one of the active Kea servers. The HA status
      * of this server and its partner (if it has any) is fetched and presented.
      */
-    @Input() appId: number
+    @Input() daemonId: number
 
     /**
      * A name of the Kea daemon for which the HA status is displayed.
@@ -173,7 +173,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * no local server status.
      */
     getLocalServerStatus(relationship: ServiceStatus): KeaHAServerStatus | null {
-        return relationship.status?.haServers?.primaryServer.appId === this.appId
+        return relationship.status?.haServers?.primaryServer.id === this.daemonId
             ? relationship.status?.haServers.primaryServer
             : relationship.status?.haServers.secondaryServer
     }
@@ -187,7 +187,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * no remote server status.
      */
     getRemoteServerStatus(relationship: ServiceStatus): KeaHAServerStatus | null {
-        return relationship.status?.haServers?.primaryServer.appId !== this.appId
+        return relationship.status?.haServers?.primaryServer.id !== this.daemonId
             ? relationship.status?.haServers.primaryServer
             : relationship.status?.haServers.secondaryServer
     }
@@ -222,8 +222,8 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * This function is invoked periodically to refresh the status.
      */
     private refreshStatus() {
-        // Get the services status for the app from the server.
-        lastValueFrom(this.servicesApi.getAppServicesStatus(this.appId))
+        // Get the services status for the daemon from the server.
+        lastValueFrom(this.servicesApi.getDaemonServicesStatus(this.daemonId))
             .then((data) => {
                 if (data.items) {
                     let status: RelationshipTableDataRow[] = []
@@ -258,8 +258,8 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                                     // It only makes sense to add an app link if it is a remote
                                     // server. The local server is currently displayed.
                                     if (index > 0) {
-                                        cell.appId = s.appId
-                                        cell.appName = `Kea@${s.controlAddress}`
+                                        cell.daemonId = s.id
+                                        cell.daemonName = `Kea@${s.controlAddress}`
                                     }
                                     return cell
                                 }),
@@ -351,7 +351,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
             .catch((err) => {
                 this.messageService.add({
                     severity: 'error',
-                    summary: `Failed to fetch the HA status for Kea application ID: ${this.appId}`,
+                    summary: `Failed to fetch the HA status for daemon ID: ${this.daemonId}`,
                     detail: getErrorMessage(err),
                 })
                 this.status = []

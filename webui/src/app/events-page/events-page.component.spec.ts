@@ -5,7 +5,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page.component'
 import { EventsService } from '../backend/api/events.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter } from '@angular/router'
@@ -17,6 +17,7 @@ describe('EventsPageComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             providers: [
+                ConfirmationService,
                 EventsService,
                 MessageService,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },

@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { LogViewPageComponent } from './log-view-page.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LogViewPageComponent', () => {
@@ -31,15 +32,17 @@ describe('LogViewPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should include app link', () => {
+    it('should include daemon link', () => {
         component.loaded = true
         component.data = { logTargetOutput: '/tmp/xyz', machine: { id: 1 } }
-        component.appName = 'fantastic-app'
+        component.daemonName = 'fantastic-daemon'
+        component.daemonId = 15
         fixture.detectChanges()
-        const appLink = fixture.debugElement.query(By.css('#app-link'))
-        const appLinkComponent = appLink.componentInstance
-        expect(appLinkComponent).toBeDefined()
-        expect(appLinkComponent.attrs.hasOwnProperty('name')).toBeTrue()
-        expect(appLinkComponent.attrs.name).toEqual('fantastic-app')
+        const daemonLink = fixture.debugElement.query(By.css('#daemon-link'))
+        const daemonLinkComponent = daemonLink.componentInstance
+        expect(daemonLinkComponent).toBeDefined()
+        expect(daemonLinkComponent.attrs.hasOwnProperty('name')).toBeTrue()
+        expect(daemonLinkComponent.attrs.name).toEqual('fantastic-daemon')
+        expect(daemonLinkComponent.attrs.id).toEqual(15)
     })
 })

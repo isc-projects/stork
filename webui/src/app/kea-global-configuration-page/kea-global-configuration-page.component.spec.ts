@@ -10,7 +10,7 @@ import { KeaDaemonConfig, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { AppsPageComponent } from '../apps-page/apps-page.component'
+import { DaemonsPageComponent } from '../daemons-page/daemons-page.component'
 import { RouterTestingHarness } from '@angular/router/testing'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
@@ -30,8 +30,8 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 provideNoopAnimations(),
                 provideRouter([
                     {
-                        path: 'apps/:id',
-                        component: AppsPageComponent,
+                        path: 'daemons/:id',
+                        component: DaemonsPageComponent,
                     },
                     {
                         path: 'apps/:appId/daemons/:daemonId/global-config',
@@ -51,9 +51,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         fixture.detectChanges()
 
         validDaemonConfig = {
-            appId: 2,
-            appName: 'kea-server',
-            appType: 'kea',
+            daemonId: 1,
             daemonName: 'dhcp4',
             editable: true,
             config: {
@@ -241,7 +239,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         expect(component.disableEdit).toBeFalse()
 
         expect(component.dhcpParameters.length).toBe(1)
-        expect(component.dhcpParameters.at(0).name).toBe('kea-server / DHCPv4')
+        expect(component.dhcpParameters.at(0).name).toBe('DHCPv4')
         expect(component.dhcpParameters.at(0).parameters.length).toBe(1)
         expect(component.dhcpParameters.at(0).parameters[0].hasOwnProperty('allocator'))
         expect(component.dhcpParameters.at(0).parameters[0]['allocator']).toBe('iterative')
@@ -280,13 +278,13 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(validDaemonConfig as any))
 
         component.ngOnInit()
-        expect(component.updateBreadcrumbs).toHaveBeenCalledOnceWith(2)
+        expect(component.updateBreadcrumbs).toHaveBeenCalledOnceWith(1)
 
         tick()
         fixture.detectChanges()
 
         expect(component.updateBreadcrumbs).toHaveBeenCalledTimes(2)
-        expect(component.updateBreadcrumbs).toHaveBeenCalledWith(2, 'kea-server', 'dhcp4')
+        expect(component.updateBreadcrumbs).toHaveBeenCalledWith(1, 'dhcp4')
     }))
 
     it('should display a message on error', fakeAsync(() => {
@@ -309,7 +307,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         expect(component.subscriptions.unsubscribe).toHaveBeenCalledTimes(1)
     })
 
-    it('should update breadcrumbs if only app is provided', () => {
+    it('should update breadcrumbs if only daemon is provided', () => {
         component.updateBreadcrumbs(1)
         fixture.detectChanges()
 
@@ -317,29 +315,21 @@ describe('KeaGlobalConfigurationPageComponent', () => {
             .componentInstance as BreadcrumbsComponent
         expect(breadcrumbs).toBeTruthy()
 
-        expect(breadcrumbs.items.length).toBe(6)
-        expect(breadcrumbs.items[2].label).toBe('App')
-        expect(breadcrumbs.items[2].routerLink).toBe('/apps/1')
-
-        expect(breadcrumbs.items[4].label).toBe('Daemon')
-        expect(breadcrumbs.items[4].routerLink).toBeUndefined()
-        expect(breadcrumbs.items[4].queryParams).toBeUndefined()
+        expect(breadcrumbs.items.length).toBe(4)
+        expect(breadcrumbs.items[2].label).toBe('Daemon')
+        expect(breadcrumbs.items[2].routerLink).toBe('/daemons/1')
     })
 
-    it('should update breadcrumbs if app, app name and daemon name are provided', () => {
-        component.updateBreadcrumbs(1, 'My App', 'My Daemon')
+    it('should update breadcrumbs if daemon id and daemon name are provided', () => {
+        component.updateBreadcrumbs(1, 'My Daemon')
         fixture.detectChanges()
 
         const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
             .componentInstance as BreadcrumbsComponent
         expect(breadcrumbs).toBeTruthy()
 
-        expect(breadcrumbs.items.length).toBe(6)
-        expect(breadcrumbs.items[2].label).toBe('My App')
-        expect(breadcrumbs.items[2].routerLink).toBe('/apps/1')
-
-        expect(breadcrumbs.items[4].label).toBe('My Daemon')
-        expect(breadcrumbs.items[4].routerLink).toBe('/apps/1')
-        expect(breadcrumbs.items[4].queryParams).toEqual({ daemon: 'My Daemon' })
+        expect(breadcrumbs.items.length).toBe(4)
+        expect(breadcrumbs.items[2].label).toBe('My Daemon')
+        expect(breadcrumbs.items[2].routerLink).toBe('/daemons/1')
     })
 })

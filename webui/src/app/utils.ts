@@ -254,7 +254,7 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text?: string }>
  *         false otherwise.
  */
 export function daemonStatusErred(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
-    return ['agentCommErrors', 'caCommErrors', 'daemonCommErrors', 'rndcCommErrors', 'statsCommErrors'].some(
+    return ['agentCommErrors', 'caCommErrors', 'daemonCommErrors', 'statsCommErrors'].some(
         (errorType) => (daemon as any)[errorType] && (daemon as any)[errorType] > 0
     )
 }
@@ -310,9 +310,9 @@ export function daemonStatusIconColor(daemon: PdnsDaemon | Bind9Daemon | KeaDaem
  *          problems when such problems occur, e.g. it includes the
  *          hint whether the communication is with the agent or daemon.
  */
-export function daemonStatusIconTooltip(daemon: PdnsDaemon & KeaDaemon & Bind9Daemon) {
+export function daemonStatusIconTooltip(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
     if (!daemon.monitored) {
-        return 'Monitoring of this daemon has been disabled. It can be enabled on the daemon tab on the Kea Apps page.'
+        return 'Monitoring of this daemon has been disabled. It can be enabled on the daemon tab on the Kea Daemons page.'
     }
     if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
         return (
@@ -325,12 +325,13 @@ export function daemonStatusIconTooltip(daemon: PdnsDaemon & KeaDaemon & Bind9Da
             'settings permit communication with the agent.'
         )
     }
-    if (daemon.caCommErrors && daemon.caCommErrors > 0) {
+    const caCommErrors = (daemon as KeaDaemon).caCommErrors
+    if (caCommErrors && caCommErrors > 0) {
         return (
             'Communication with the Kea Control Agent on this machine ' +
             'is broken. The Stork Agent appears to be working, but the ' +
             'Kea CA is down or returns errors. The last ' +
-            daemon.caCommErrors +
+            caCommErrors +
             ' attempt(s) to communicate with the Kea CA failed. Please ' +
             'make sure that Kea CA is up and that the firewall settings permit ' +
             'communication between the Stork Agent and Kea CA running ' +
@@ -341,29 +342,20 @@ export function daemonStatusIconTooltip(daemon: PdnsDaemon & KeaDaemon & Bind9Da
         return (
             'Communication with the daemon on this machine ' +
             'is broken. The Stork Agent and Kea Control Agent appear to ' +
-            'be working, but the daemon behind Kea CA is not responding or ' +
+            'be working, but the daemon behind it is not responding or ' +
             'responds with errors. The last ' +
             daemon.daemonCommErrors +
             ' attempt(s) to communicate with the daemon failed. Please ' +
-            'make sure that the daemon is up and is reachable from the ' +
-            'Kea Control Agent over the control channel (UNIX domain socket).'
+            'make sure that the daemon is up and is reachable.'
         )
     }
-    if (daemon.rndcCommErrors && daemon.rndcCommErrors > 0) {
-        return (
-            'Communication with the BIND 9 daemon over RNDC is broken. The ' +
-            'Stork Agent appears to be working, but the BIND 9 daemon appears ' +
-            'to be down or is responding with errors. The last ' +
-            daemon.rndcCommErrors +
-            ' attempt(s) to communicate with the BIND 9 daemon failed.'
-        )
-    }
-    if (daemon.statsCommErrors && daemon.statsCommErrors > 0) {
+    const statsCommErrors = (daemon as Bind9Daemon).statsCommErrors
+    if (statsCommErrors && statsCommErrors > 0) {
         return (
             'Communication with the BIND 9 statistics endpoint is broken. The ' +
             'Stork Agent appears to be working, but the BIND 9 statistics channel ' +
             'seems to be unreachable or is responding with errors. The last ' +
-            daemon.statsCommErrors +
+            statsCommErrors +
             ' attempt(s) to communicate with the BIND 9 daemon over ' +
             'the statistics channel failed.'
         )

@@ -50,22 +50,22 @@ describe('ServerDataService', () => {
         expect(service.servicesApi.getMachinesDirectory).toHaveBeenCalled()
     })
 
-    it('should return app names', () => {
+    it('should return daemon names', () => {
         const fakeResponse: any = {
             items: [
                 { id: 100, name: 'lion' },
                 { id: 110, name: 'frog' },
             ],
         }
-        spyOn(service.servicesApi, 'getAppsDirectory').and.returnValue(of(fakeResponse))
-        service.getAppsNames().subscribe((data) => {
+        spyOn(service.servicesApi, 'getDaemonsDirectory').and.returnValue(of(fakeResponse))
+        service.getDaemonsNames().subscribe((data) => {
             expect(data.size).toBe(2)
             expect(data.has('lion')).toBeTrue()
             expect(data.has('frog')).toBeTrue()
             expect(data.get('lion')).toBe(100)
             expect(data.get('frog')).toBe(110)
         })
-        expect(service.servicesApi.getAppsDirectory).toHaveBeenCalled()
+        expect(service.servicesApi.getDaemonsDirectory).toHaveBeenCalled()
     })
 
     it('should return daemon configuration', fakeAsync(() => {

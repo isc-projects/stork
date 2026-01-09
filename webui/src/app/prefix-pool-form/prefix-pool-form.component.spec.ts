@@ -75,25 +75,19 @@ describe('PrefixPoolFormComponent', () => {
         component.selectableDaemons = [
             {
                 id: 1,
-                appId: 1,
-                appType: 'kea',
-                name: 'first/dhcp6',
+                name: 'dhcp6',
                 version: '3.0.0',
                 label: 'first/dhcp6',
             },
             {
                 id: 2,
-                appId: 2,
-                appType: 'kea',
-                name: 'second/dhcp6',
+                name: 'dhcp6',
                 version: '3.0.0',
                 label: 'second/dhcp6',
             },
             {
                 id: 3,
-                appId: 3,
-                appType: 'kea',
-                name: 'third/dhcp6',
+                name: 'dhcp6',
                 version: '3.0.0',
                 label: 'third/dhcp6',
             },

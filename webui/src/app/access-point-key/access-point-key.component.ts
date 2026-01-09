@@ -16,9 +16,9 @@ export class AccessPointKeyComponent {
     constructor(private servicesApi: ServicesService) {}
 
     /**
-     * Application ID.
+     * Daemon ID.
      */
-    @Input() appId: number
+    @Input() daemonId: number
 
     /**
      * Access point type.
@@ -60,7 +60,7 @@ export class AccessPointKeyComponent {
         // Set loading state for a given access point.
         this.key = null
         this.servicesApi
-            .getAccessPointKey(this.appId, this.accessPointType)
+            .getAccessPointKey(this.daemonId, this.accessPointType)
             .toPromise()
             .then((key) => {
                 // Set the new key.

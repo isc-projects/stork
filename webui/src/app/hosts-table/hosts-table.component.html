@@ -135,7 +135,8 @@
                             The currently supported fields for explicit filtering are:
                         </p>
                         <ul>
-                            <li>Kea App ID - the ID of the Kea App used by Stork.</li>
+                            <li>Machine ID - the ID of the machine used by Stork.</li>
+                            <li>Daemon ID - the ID of the daemon used by Stork.</li>
                             <li>Subnet ID - the subnet ID used by Stork.</li>
                             <li>Kea Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
                         </ul>
@@ -155,12 +156,12 @@
                     [disabled]="!tableHasFilter(hostsTable)"
                 ></p-button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                <p-columnFilter field="machineId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <div class="flex align-items-center">
                             <p-floatlabel variant="on">
                                 <p-inputNumber
-                                    inputId="app-id"
+                                    inputId="machine-id"
                                     mode="decimal"
                                     [useGrouping]="false"
                                     min="1"
@@ -168,7 +169,33 @@
                                     [ngModel]="value"
                                     class="max-w-8rem"
                                 ></p-inputNumber>
-                                <label for="app-id">Kea App ID</label>
+                                <label for="machine-id">Machine ID</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="daemonId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <p-floatlabel variant="on">
+                                <p-inputNumber
+                                    inputId="daemon-id"
+                                    mode="decimal"
+                                    [useGrouping]="false"
+                                    min="1"
+                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    class="max-w-8rem"
+                                ></p-inputNumber>
+                                <label for="daemon-id">Daemon ID</label>
                             </p-floatlabel>
                             <p-button
                                 icon="pi pi-filter-slash"
@@ -338,7 +365,7 @@
             <th style="width: 12%" [pSortableColumn]="HostSortField.Subnet">
                 <div class="flex gap-1">Global/Subnet<p-sortIcon [field]="HostSortField.Subnet" /></div>
             </th>
-            <th style="width: 14%">App Name</th>
+            <th style="width: 14%">Daemon</th>
         </tr>
     </ng-template>
     <ng-template #emptymessage>
@@ -399,9 +426,11 @@
                 <td>global</td>
             </ng-template>
             <td>
-                <div *ngFor="let lhs of localHostsGroupedByApp[h.id]" class="flex align-items-baseline">
-                    <!-- Hyperlink to the host page -->
-                    <a routerLink="/apps/{{ lhs[0].appId }}" class="block white-space-nowrap">{{ lhs[0].appName }} </a>
+                <div *ngFor="let lhs of localHostsGroupedByDaemon[h.id]" class="flex align-items-baseline">
+                    <!-- Hyperlink to the daemon details -->
+                    <a routerLink="/daemons/{{ lhs[0].daemonId }}" class="block white-space-nowrap">
+                        {{ lhs[0].daemonName || ('Daemon ' + lhs[0].daemonId) }}
+                    </a>
                     <!-- Data source labels -->
                     <app-host-data-source-label
                         *ngFor="let lh of lhs"

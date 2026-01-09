@@ -36,9 +36,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
      */
     breadcrumbs: MenuItem[] = [
         { label: 'Services' },
-        { label: 'Apps', routerLink: '/apps/all' },
-        { label: 'App' },
-        { label: 'Daemons' },
+        { label: 'Daemons', routerLink: '/daemons/all' },
         { label: 'Daemon' },
         { label: 'Global Configuration' },
     ]
@@ -52,16 +50,6 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
      * Daemon name fetched from the server.
      */
     daemonName: string
-
-    /**
-     * App ID to which the daemon belongs.
-     */
-    appId: number
-
-    /**
-     * App name for which the daemon belongs.
-     */
-    appName: string
 
     /**
      * Holds fetched configuration. It always contains one (or zero) element.
@@ -135,8 +123,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 const daemonIdStr = params.get('daemonId')
                 const daemonId = parseInt(daemonIdStr, 10)
                 this.daemonId = daemonId
-                this.appId = parseInt(params.get('appId'), 10)
-                this.updateBreadcrumbs(this.appId)
+                this.updateBreadcrumbs(this.daemonId)
                 this.load()
             })
         )
@@ -188,13 +175,11 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 // Update daemon and app identifiers.
                 this.daemonName = data.daemonName
                 const friendlyDaemonName = daemonNameToFriendlyName(data.daemonName)
-                this.appId = data.appId
-                this.appName = data.appName
 
                 // Update DHCP parameters.
                 this.dhcpParameters = [
                     {
-                        name: `${data.appName} / ${friendlyDaemonName}`,
+                        name: friendlyDaemonName,
                         parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
                     },
                 ]
@@ -203,7 +188,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 this.dhcpOptions = data.options ? [data.options.options] : []
 
                 // Update breadcrumbs.
-                this.updateBreadcrumbs(this.appId, this.appName, data.daemonName)
+                this.updateBreadcrumbs(this.daemonId, data.daemonName)
             })
             .catch((err) => {
                 let msg = getErrorMessage(err)
@@ -220,23 +205,15 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     /** Updates the breadcrumbs links and labels. */
-    updateBreadcrumbs(appId: number, appName?: string, daemonName?: string): void {
+    updateBreadcrumbs(daemonId: number, daemonName?: string): void {
         const breadcrumb = [...this.breadcrumbs]
 
-        if (appId != null) {
-            breadcrumb[2].routerLink = `/apps/${appId}`
-            if (daemonName != null) {
-                breadcrumb[4].routerLink = `/apps/${appId}`
-                breadcrumb[4].queryParams = { daemon: daemonName }
-            }
-        }
-
-        if (appName != null) {
-            breadcrumb[2].label = appName
+        if (daemonId != null) {
+            breadcrumb[2].routerLink = `/daemons/${daemonId}`
         }
 
         if (daemonName != null) {
-            breadcrumb[4].label = daemonNameToFriendlyName(daemonName)
+            breadcrumb[2].label = daemonNameToFriendlyName(daemonName)
         }
 
         this.breadcrumbs = breadcrumb

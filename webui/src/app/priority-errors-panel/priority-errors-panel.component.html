@@ -17,7 +17,7 @@
                 review the requests.
             } @else if (message.key === EventStream.Connectivity) {
                 Stork server reports communication problems for
-                {{ formatNoun(connectivityIssuesCount(), 'app', 's') }} on the monitored machines. You can check the
+                {{ formatNoun(connectivityIssuesCount(), 'daemon', 's') }} on the monitored machines. You can check the
                 details <a routerLink="/communication">here</a>.
             } @else {
                 {{ message.detail }}

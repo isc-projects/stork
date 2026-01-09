@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { ServicesService } from '../backend/api/api'
-import { getErrorMessage } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { NgIf, NgFor } from '@angular/common'
 import { Message } from 'primeng/message'
 import { Panel } from 'primeng/panel'
@@ -43,10 +43,9 @@ export class LogViewPageComponent implements OnInit {
     maxLengthChunk = 4000
     maxLength = this.maxLengthChunk
 
-    appId: number
-    appName: string
-    appType: string
-    appTypeCapitalized: string
+    daemonId: number
+    daemonName: string
+    daemonLabel: string
     private _logId: number
     contents: string[]
     data: any
@@ -100,12 +99,9 @@ export class LogViewPageComponent implements OnInit {
                 this.data = data
 
                 // Set other data.
-                this.appId = data.appId
-                this.appName = data.appName
-                this.appType = data.appType
-                if (this.appType.length > 1) {
-                    this.appTypeCapitalized = this.appType.charAt(0).toUpperCase() + this.appType.slice(1)
-                }
+                this.daemonId = data.daemonId
+                this.daemonName = data.daemonName
+                this.daemonLabel = daemonNameToFriendlyName(data.daemonName)
                 // Fill the text box with the log contents.
                 this.contents = data.contents
 

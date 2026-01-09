@@ -114,7 +114,7 @@ export class SubnetTabComponent implements OnInit {
         if (this.subnet?.localSubnets) {
             for (let ls of this.subnet.localSubnets) {
                 this.dhcpParameters.push({
-                    name: ls.appName,
+                    name: ls.daemonName,
                     parameters:
                         this.subnet.sharedNetwork?.length > 0
                             ? [

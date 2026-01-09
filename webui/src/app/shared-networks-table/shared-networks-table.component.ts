@@ -128,7 +128,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
                 .getSharedNetworks(
                     event.first,
                     event.rows,
-                    (event.filters['appId'] as FilterMetadata)?.value ?? null,
+                    (event.filters['daemonId'] as FilterMetadata)?.value ?? null,
                     (event.filters['dhcpVersion'] as FilterMetadata)?.value ?? null,
                     (event.filters['text'] as FilterMetadata)?.value || null,
                     ...convertSortingFields<NetworkSortField>(event)
@@ -216,26 +216,27 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Returns a list of applications maintaining a given shared network.
+     * Returns a list of daemons maintaining a given shared network.
      * The list doesn't contain duplicates.
      *
      * @param net Shared network
-     * @returns List of the applications (only ID and app name)
+     * @returns List of the daemons (only ID and daemon name)
      */
-    getApps(net: SharedNetwork) {
-        const apps = []
-        const appIds = {}
+    getDaemons(net: SharedNetwork) {
+        const daemons = []
+        const daemonIds: Record<number, boolean> = {}
 
-        if (net.localSharedNetworks) {
-            net.localSharedNetworks.forEach((lsn) => {
-                if (!appIds.hasOwnProperty(lsn.appId)) {
-                    apps.push({ id: lsn.appId, name: lsn.appName })
-                    appIds[lsn.appId] = true
-                }
-            })
-        }
+        net.localSharedNetworks?.forEach((lsn) => {
+            const id = lsn.daemonId
+            if (!id || daemonIds[id]) {
+                return
+            }
+            const name = lsn.daemonName
+            daemons.push({ id, name })
+            daemonIds[id] = true
+        })
 
-        return apps
+        return daemons
     }
 
     /**

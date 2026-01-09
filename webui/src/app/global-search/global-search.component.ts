@@ -8,7 +8,7 @@ import { InputText } from 'primeng/inputtext'
 import { NgIf, NgFor } from '@angular/common'
 import { RouterLink } from '@angular/router'
 
-const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', 'users', 'groups']
+const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'daemons', 'users', 'groups']
 
 /**
  * Component for handling global search. It provides box
@@ -54,11 +54,8 @@ export class GlobalSearchComponent implements OnInit {
             this.searchApi.searchRecords(this.searchText).subscribe((data) => {
                 this.resetResults()
                 for (const k of recordTypes) {
-                    if (data[k] && data[k].items) {
-                        this.searchResults[k] = data[k]
-                    } else {
-                        this.searchResults[k] = { items: [] }
-                    }
+                    const apiResult = data[k] ?? (k === 'daemons' ? (data as any).apps : undefined)
+                    this.searchResults[k] = apiResult?.items ? apiResult : { items: [] }
                 }
                 this.searchResultsBox.show(event)
                 // this is a workaround to fix position when content of overlay panel changes

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
-import { App, AppsVersions, GeneralService } from './backend'
+import { AnyDaemon, AppsVersions, GeneralService } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable, tap } from 'rxjs'
 
@@ -489,11 +489,14 @@ export class VersionService {
      * @return true if any daemon version mismatch is found; falsy (may also return undefined) otherwise
      * (in case all Kea daemons have the same version or when provided app wasn't the Kea app, or it couldn't be determined)
      */
-    areKeaDaemonsVersionsMismatching(app: App): boolean {
-        if (app?.type === 'kea') {
-            const daemons = app.details?.daemons?.filter((daemon) => daemon.version)
-            return daemons?.slice(1)?.some((daemon) => daemon.version !== daemons?.[0]?.version)
-        }
+    /**
+     * Checks whether all provided Kea daemons have the exact same version.
+     * @param daemons Kea daemons to be checked
+     * @return true if mismatch found (daemons have different versions); false otherwise
+     */
+    areVersionsMismatching(daemons?: AnyDaemon[]): boolean {
+        daemons = daemons?.filter((daemon) => daemon?.version)
+        return daemons?.slice(1)?.some((daemon) => daemon.version !== daemons?.[0]?.version)
 
         return false
     }

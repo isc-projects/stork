@@ -37,7 +37,6 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     private _failedFetch = false
 
     private changeDaemonId = new Subject<number>()
-    private changeAppId = new Subject<number>()
     private subscriptions = new Subscription()
 
     constructor(
@@ -52,7 +51,6 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      * Unsubscribe all subscriptions.
      */
     ngOnDestroy(): void {
-        this.changeAppId.complete()
         this.changeDaemonId.complete()
         this.subscriptions.unsubscribe()
     }
@@ -74,44 +72,10 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.breadcrumbs = [
             { label: 'Services' },
-            { label: 'Kea Apps', routerLink: '/apps/all', queryParams: { appType: 'kea' } },
-            { label: 'App' },
-            { label: 'Daemons' },
+            { label: 'Kea Daemons', routerLink: '/daemons/all', queryParams: { appType: 'kea' } },
             { label: 'Daemon' },
             { label: 'Configuration' },
         ]
-
-        // Friendly names of daemons
-        const DMAP = {
-            dhcp4: 'DHCPv4',
-            dhcp6: 'DHCPv6',
-            d2: 'DDNS',
-            ca: 'CA',
-            netconf: 'NETCONF',
-        }
-
-        // Update friendly names
-        this.subscriptions.add(
-            this.changeAppId.pipe(switchMap((appId) => this.servicesApi.getApp(appId))).subscribe((app) => {
-                // Find specific daemon
-                const daemons = app.details.daemons.filter((d) => d.id === this._daemonId)
-                const daemonName = daemons[0]?.name
-                const friendlyName = DMAP[daemonName] ?? daemonName ?? this._daemonId + '' ?? 'Unknown'
-
-                // User-friendly download filename
-                this._downloadFilename = `${app.name}_${friendlyName}.json`
-
-                // Breadcrumbs
-                this.breadcrumbs = [
-                    { label: 'Services' },
-                    { label: 'Apps', routerLink: '/apps/all' },
-                    { label: app.name, routerLink: `/apps/${app.id}` },
-                    { label: 'Daemons' },
-                    { label: friendlyName, routerLink: `/apps/${app.id}`, queryParams: { daemon: daemonName } },
-                    { label: 'Configuration' },
-                ]
-            })
-        )
 
         // Update Kea daemon configuration
         this.subscriptions.add(
@@ -137,26 +101,19 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
         // Resolve URI parameters
         this.subscriptions.add(
             this.route.paramMap.subscribe((params) => {
-                const appIdStr = params.get('appId')
                 const daemonIdStr = params.get('daemonId')
 
-                const appId = parseInt(appIdStr, 10)
                 const daemonId = parseInt(daemonIdStr, 10)
 
                 // Daemon ID is required
                 if (!Number.isFinite(daemonId)) {
-                    this.router.navigate(['/apps/all'])
+                    this.router.navigate(['/daemons/all'])
                 }
 
                 this._daemonId = daemonId
 
-                // Ignore App ID if it is incorrect. It is not necessary to display
-                // the configuration tree. It is merely used in breadcrumbs.
-                if (Number.isFinite(appId)) {
-                    this.changeAppId.next(appId)
-                }
-
                 this.changeDaemonId.next(daemonId)
+                this._downloadFilename = `daemon_${daemonId}.json`
             })
         )
     }

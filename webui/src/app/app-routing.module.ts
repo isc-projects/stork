@@ -6,7 +6,7 @@ import { DashboardComponent } from './dashboard/dashboard.component'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { UsersPageComponent } from './users-page/users-page.component'
-import { AppsPageComponent } from './apps-page/apps-page.component'
+import { DaemonsPageComponent } from './daemons-page/daemons-page.component'
 import { ProfilePageComponent } from './profile-page/profile-page.component'
 import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
 import { HostsPageComponent } from './hosts-page/hosts-page.component'
@@ -63,18 +63,18 @@ const routes: Routes = [
         data: { key: 'communication' },
     },
     {
-        path: 'apps',
+        path: 'daemons',
         pathMatch: 'full',
-        redirectTo: 'apps/all',
+        redirectTo: 'daemons/all',
     },
     {
-        path: 'apps/:id',
-        component: AppsPageComponent,
+        path: 'daemons/:id',
+        component: DaemonsPageComponent,
         canActivate: [AuthGuard],
-        data: { key: 'app' },
+        data: { key: 'daemon' },
     },
     {
-        path: 'apps/:appId/daemons/:daemonId/config',
+        path: 'daemons/:daemonId/config',
         component: KeaDaemonConfigurationPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'daemon-config' },
@@ -130,7 +130,7 @@ const routes: Routes = [
         data: { key: 'zones' },
     },
     {
-        path: 'apps/:appId/daemons/:daemonId/global-config',
+        path: 'daemons/:daemonId/global-config',
         component: KeaGlobalConfigurationPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'daemon-global-config' },

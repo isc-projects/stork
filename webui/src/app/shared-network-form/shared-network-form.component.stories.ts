@@ -63,9 +63,8 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
         universe: 4,
         localSharedNetworks: [
             {
-                appId: 234,
                 daemonId: 1,
-                appName: 'server 1',
+                daemonName: 'dhcp4',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'random',
@@ -89,9 +88,8 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
                 },
             },
             {
-                appId: 234,
                 daemonId: 2,
-                appName: 'server 2',
+                daemonName: 'dhcp4',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'iterative',
@@ -171,9 +169,8 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
         universe: 6,
         localSharedNetworks: [
             {
-                appId: 234,
                 daemonId: 4,
-                appName: 'server 1',
+                daemonName: 'dhcp4',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'random',
@@ -197,9 +194,8 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
                 },
             },
             {
-                appId: 345,
                 daemonId: 5,
-                appName: 'server 2',
+                daemonName: 'dhcp4',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'random',

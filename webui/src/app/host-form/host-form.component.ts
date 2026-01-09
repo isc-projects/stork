@@ -28,7 +28,7 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { IPType } from '../iptype'
-import { getErrorMessage, stringToHex } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage, stringToHex } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 import { hasDifferentLocalHostData } from '../hosts'
 import { GenericFormService } from '../forms/generic-form.service'
@@ -512,11 +512,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
         for (const d of data.daemons) {
             const daemon = {
                 id: d.id,
-                appId: d.app.id,
-                appType: 'kea',
                 name: d.name,
-                version: d.name,
-                label: `${d.app.name}/${d.name}`,
+                version: d.version,
+                label: daemonNameToFriendlyName(d.name),
             }
             daemons.push(daemon)
         }

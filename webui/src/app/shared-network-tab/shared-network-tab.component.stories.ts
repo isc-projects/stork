@@ -62,8 +62,8 @@ export const SharedNetwork4: Story = {
             statsCollectedAt: '2023-06-05',
             localSharedNetworks: [
                 {
-                    appId: 1,
-                    appName: 'foo@192.0.2.1',
+                    daemonId: 1,
+                    daemonName: 'foo@192.0.2.1',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -187,8 +187,8 @@ export const SharedNetwork4: Story = {
                     },
                 },
                 {
-                    appId: 2,
-                    appName: 'foo@192.0.2.2',
+                    daemonId: 2,
+                    daemonName: 'foo@192.0.2.2',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -319,8 +319,8 @@ export const SharedNetwork6: Story = {
             statsCollectedAt: '2023-06-05',
             localSharedNetworks: [
                 {
-                    appId: 1,
-                    appName: 'foo@192.0.2.1',
+                    daemonId: 1,
+                    daemonName: 'foo@192.0.2.1',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             hostnameCharReplacement: 'X',

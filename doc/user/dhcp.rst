@@ -397,7 +397,7 @@ The filtering mechanism also recognizes a set of keywords that can be
 used in combination with integer values to search host reservations by
 selected properties. For example, type:
 
-   - ``appId:2`` to search the host reservations belonging to the app with ID 2.
+   - ``daemonId:2`` to search the host reservations belonging to the daemon with ID 2.
    - ``subnetId:78`` to search the host reservations in subnet with ID 78. In this
      case the ID is the one assigned to the subnet by Stork.
    - ``keaSubnetId:123`` to search the host reservations in subnets with ID 123

@@ -82,8 +82,8 @@ describe('LeaseSearchPageComponent', () => {
                     id: 0,
                     ipAddress: '192.0.2.3',
                     state: 0,
-                    appId: 1,
-                    appName: 'kea@frog',
+                    daemonId: 1,
+                    daemonName: 'dhcp4',
                     hwAddress: '01:02:03:04:05:06',
                     subnetId: 123,
                     cltt: 1616149050,
@@ -113,9 +113,9 @@ describe('LeaseSearchPageComponent', () => {
         expect(component.leases[0].hasOwnProperty('id')).toBeTrue()
         expect(component.leases[0].id).toBe(1)
 
-        // A warning message informing about erred apps should not be displayed.
-        const erredAppsMessage = fixture.debugElement.query(By.css('#erred-apps-message'))
-        expect(erredAppsMessage).toBeNull()
+        // A warning message informing about erred daemons should not be displayed.
+        const erredMessage = fixture.debugElement.query(By.css('#erred-daemons-message'))
+        expect(erredMessage).toBeNull()
     }))
 
     it('should return correct lease state name', () => {
@@ -139,8 +139,8 @@ describe('LeaseSearchPageComponent', () => {
                 id: 0,
                 ipAddress: '192.0.2.3',
                 state: 0,
-                appId: 1,
-                appName: 'kea@frog',
+                daemonId: 1,
+                daemonName: 'dhcp4',
                 hwAddress: '01:02:03:04:05:06',
                 clientId: '51:52:53:54',
                 hostname: 'faq.example.org',
@@ -168,11 +168,11 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
         expect(cols[2].nativeElement.innerText).toBe('IPv4 address')
         expect(cols[3].nativeElement.innerText).toBe('Valid')
-        expect(cols[4].nativeElement.innerText).toBe('kea@frog')
+        expect(cols[4].nativeElement.innerText).toBe('dhcp4')
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].attributes.href).toBe('/apps/1')
+        expect(cols[4].children[0].attributes.href).toBe('/daemons/1')
 
         // Simulate expanding the lease information.
         expandButton.click()
@@ -251,8 +251,8 @@ describe('LeaseSearchPageComponent', () => {
                 id: 0,
                 ipAddress: '192.0.2.3',
                 state: 1,
-                appId: 1,
-                appName: 'kea@frog',
+                daemonId: 1,
+                daemonName: 'dhcp4',
                 subnetId: 123,
                 cltt: 1616149050,
                 validLifetime: 3600,
@@ -274,11 +274,11 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
         expect(cols[2].nativeElement.innerText).toBe('IPv4 address')
         expect(cols[3].nativeElement.innerText).toBe('Declined')
-        expect(cols[4].nativeElement.innerText).toBe('kea@frog')
+        expect(cols[4].nativeElement.innerText).toBe('dhcp4')
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].attributes.href).toBe('/apps/1')
+        expect(cols[4].children[0].attributes.href).toBe('/daemons/1')
 
         // Simulate expanding the lease information.
         expandButton.click()
@@ -332,8 +332,8 @@ describe('LeaseSearchPageComponent', () => {
                 ipAddress: '2001:db8:1::1',
                 leaseType: 'IA_NA',
                 state: 1,
-                appId: 2,
-                appName: 'kea@ipv6',
+                daemonId: 2,
+                daemonName: 'dhcp6',
                 hwAddress: '01:02:03:04:05:06',
                 duid: '01:02:03:04',
                 hostname: 'faq.example.org',
@@ -352,8 +352,8 @@ describe('LeaseSearchPageComponent', () => {
                 prefixLength: 64,
                 leaseType: 'IA_PD',
                 state: 2,
-                appId: 2,
-                appName: 'kea@ipv6',
+                daemonId: 2,
+                daemonName: 'dhcp6',
                 duid: '01:02:03:05',
                 subnetId: 345,
                 iaid: 13,
@@ -380,11 +380,11 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[1].nativeElement.innerText).toBe('2001:db8:1::1')
         expect(cols[2].nativeElement.innerText).toBe('IPv6 address (IA_NA)')
         expect(cols[3].nativeElement.innerText).toBe('Declined')
-        expect(cols[4].nativeElement.innerText).toBe('kea@ipv6')
+        expect(cols[4].nativeElement.innerText).toBe('dhcp6')
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].attributes.href).toBe('/apps/2')
+        expect(cols[4].children[0].attributes.href).toBe('/daemons/2')
 
         // Prefix lease.
 
@@ -397,11 +397,11 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[6].nativeElement.innerText).toBe('3000::/64')
         expect(cols[7].nativeElement.innerText).toBe('IPv6 prefix (IA_PD)')
         expect(cols[8].nativeElement.innerText).toBe('Expired/Reclaimed')
-        expect(cols[9].nativeElement.innerText).toBe('kea@ipv6')
+        expect(cols[9].nativeElement.innerText).toBe('dhcp6')
 
         // Validate app link.
         expect(cols[9].children.length).toBe(1)
-        expect(cols[9].children[0].attributes.href).toBe('/apps/2')
+        expect(cols[9].children[0].attributes.href).toBe('/daemons/2')
 
         // Simulate expanding the lease information.
         expandButton1.click()
@@ -506,31 +506,31 @@ describe('LeaseSearchPageComponent', () => {
         expect(leasesSearchSummary.properties.innerText).toBe('Found 2 leases matching 2001:db8:1::1.')
     })
 
-    it('should display erred apps message', () => {
-        component.erredApps = [
+    it('should display erred daemons message', () => {
+        component.erredDaemons = [
             {
                 id: 1,
-                name: 'kea@frog',
+                name: 'dhcp4',
             },
             {
                 id: 1,
-                name: 'kea@frog',
+                name: 'dhcp4',
             },
         ]
         component.lastSearchText = '192.0.2.3'
         fixture.detectChanges()
 
-        // A warning message informing about erred apps should be displayed.
-        const erredAppsMessage = fixture.debugElement.query(By.css('#erred-apps-message'))
-        expect(erredAppsMessage).not.toBeNull()
+        // A warning message informing about erred daemons should be displayed.
+        const erredMessage = fixture.debugElement.query(By.css('#erred-daemons-message'))
+        expect(erredMessage).not.toBeNull()
     })
 
     it('should handle communication error', fakeAsync(() => {
-        // Set erred apps to non-empty array.
-        component.erredApps = [
+        // Set erred daemons to non-empty array.
+        component.erredDaemons = [
             {
                 id: 1,
-                name: 'kea@frog',
+                name: 'dhcp4',
             },
         ]
         // Do the same for leases.
@@ -539,8 +539,8 @@ describe('LeaseSearchPageComponent', () => {
                 id: 0,
                 ipAddress: '192.0.2.3',
                 state: 0,
-                appId: 1,
-                appName: 'kea@frog',
+                daemonId: 1,
+                daemonName: 'dhcp4',
                 hwAddress: '01:02:03:04:05:06',
                 clientId: '01:02:03:04',
                 hostname: 'faq.example.org',
@@ -564,7 +564,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // The lease information and metadata should have been cleared.
         expect(component.leases.length).toBe(0)
-        expect(component.erredApps.length).toBe(0)
+        expect(component.erredDaemons.length).toBe(0)
         expect(component.searchStatus).toBe(component.Status.Searched)
 
         // An error message should have been displayed.

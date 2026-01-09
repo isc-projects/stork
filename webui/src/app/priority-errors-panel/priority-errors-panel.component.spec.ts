@@ -68,7 +68,7 @@ describe('PriorityErrorsPanelComponent', () => {
         // No unauthorized machines.
         const unauthorized: any = 0
 
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(component, 'setBackoff').and.callThrough()
         spyOn(component, 'setBackoffTimeout')
@@ -80,7 +80,7 @@ describe('PriorityErrorsPanelComponent', () => {
         tick()
 
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(1)
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(1)
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
 
         expect(component.setBackoff).toHaveBeenCalledTimes(2)
@@ -107,7 +107,7 @@ describe('PriorityErrorsPanelComponent', () => {
         // The backoff has been enabled so the new event should not trigger
         // any API calls.
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(1)
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(1)
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
 
         // The event count should be raised, though.
@@ -132,7 +132,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(2)
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(2)
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
 
         // The backoff should still be enabled.
@@ -152,7 +152,7 @@ describe('PriorityErrorsPanelComponent', () => {
         spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
 
         // Simulate no connectivity issues.
-        const apps: any = {
+        const daemons: any = {
             items: [],
             total: 0,
         }
@@ -160,7 +160,7 @@ describe('PriorityErrorsPanelComponent', () => {
         // First, return no unauthorized machines. Return some in the second call.
         const unauthorized: any[] = [0, 2]
 
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(daemons))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValues(of(unauthorized[0]), of(unauthorized[1]))
         spyOn(component, 'setBackoff').and.callThrough()
         spyOn(component, 'setBackoffTimeout')
@@ -172,7 +172,7 @@ describe('PriorityErrorsPanelComponent', () => {
         tick()
 
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(1)
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(1)
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
 
         expect(component.setBackoff).toHaveBeenCalledTimes(2)
@@ -203,7 +203,7 @@ describe('PriorityErrorsPanelComponent', () => {
         // The backoff has been enabled so the new event should not trigger
         // any API calls.
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(1)
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(1)
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
 
         // The event count should be raised, though.
@@ -228,7 +228,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(1)
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(1)
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(2)
 
         // The backoff should still be enabled.
@@ -258,14 +258,14 @@ describe('PriorityErrorsPanelComponent', () => {
             total: 1,
         }
         const unauthorized: any = 1
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(component, 'setBackoffTimeout')
         component.ngOnInit()
         fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalled()
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalled()
 
         expect(component.messages.length).toBe(2)
@@ -286,7 +286,7 @@ describe('PriorityErrorsPanelComponent', () => {
         }
         // Also, no unauthorized machines.
         const unauthorized: any = 0
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(component, 'setBackoffTimeout')
 
@@ -297,7 +297,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalled()
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalled()
         expect(component.setBackoffTimeout).toHaveBeenCalled()
 
@@ -314,7 +314,7 @@ describe('PriorityErrorsPanelComponent', () => {
             total: 0,
         }
         const unauthorized: any = 0
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(sse, 'receivePriorityEvents').and.returnValue(
             of({
@@ -327,7 +327,7 @@ describe('PriorityErrorsPanelComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalled()
         expect(sse.receivePriorityEvents).toHaveBeenCalled()
 
@@ -344,7 +344,7 @@ describe('PriorityErrorsPanelComponent', () => {
             })
         )
         // Simulate an error while fetching the apps.
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(
             throwError(() => new HttpErrorResponse({ status: 404 }))
         )
         const unauthorized: any = 0
@@ -355,7 +355,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalled()
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)
@@ -373,7 +373,7 @@ describe('PriorityErrorsPanelComponent', () => {
             items: [],
             total: 0,
         }
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(apps)
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(apps)
 
         // Simulate returning an error while getting unauthorized machines.
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(
@@ -385,7 +385,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalled()
-        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
         expect(api.getUnauthorizedMachinesCount).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)

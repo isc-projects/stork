@@ -9,20 +9,6 @@ export interface SelectableDaemon {
     id: number
 
     /**
-     * App ID.
-     *
-     * It is used to construct the links to the apps.
-     */
-    appId: number
-
-    /**
-     * App type.
-     *
-     * It is used to construct the links to the apps.
-     */
-    appType: string
-
-    /**
      * Daemon name.
      */
     name: string

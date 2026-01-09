@@ -27,9 +27,8 @@ describe('SharedNetworkFormComponent', () => {
             universe: 4,
             localSharedNetworks: [
                 {
-                    appId: 234,
                     daemonId: 1,
-                    appName: 'server 1',
+                    daemonName: 'dhcp4',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'random',
@@ -53,9 +52,8 @@ describe('SharedNetworkFormComponent', () => {
                     },
                 },
                 {
-                    appId: 345,
                     daemonId: 2,
-                    appName: 'server 2',
+                    daemonName: 'dhcp4',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'iterative',
@@ -81,22 +79,19 @@ describe('SharedNetworkFormComponent', () => {
             ],
             subnets: [
                 {
-                    id: 123,
                     subnet: '192.0.2.0/24',
                     sharedNetwork: 'floor3',
                     sharedNetworkId: 3,
                     localSubnets: [
                         {
                             id: 123,
-                            appId: 234,
                             daemonId: 1,
-                            appName: 'server 1',
+                            daemonName: 'dhcp4',
                         },
                         {
                             id: 234,
-                            appId: 345,
                             daemonId: 2,
-                            appName: 'server 2',
+                            daemonName: 'dhcp4',
                         },
                     ],
                 },
@@ -159,9 +154,8 @@ describe('SharedNetworkFormComponent', () => {
             universe: 6,
             localSharedNetworks: [
                 {
-                    appId: 234,
                     daemonId: 4,
-                    appName: 'server 1',
+                    daemonName: 'dhcp6',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'random',
@@ -185,9 +179,8 @@ describe('SharedNetworkFormComponent', () => {
                     },
                 },
                 {
-                    appId: 345,
                     daemonId: 5,
-                    appName: 'server 2',
+                    daemonName: 'dhcp6',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'random',

@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { AppType, Severity, UpdateNotification, VersionService } from '../version.service'
-import { App as BackendApp, AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
+import { AppsVersions, Machine, ServicesService, VersionDetails, SimpleMachine, SimpleDaemon } from '../backend'
 import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
@@ -14,6 +14,7 @@ import { TableModule } from 'primeng/table'
 import { Badge } from 'primeng/badge'
 import { RouterLink } from '@angular/router'
 import { VersionStatusComponent } from '../version-status/version-status.component'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * This component displays current known released versions of ISC Kea, BIND 9, and Stork.
@@ -42,6 +43,7 @@ import { VersionStatusComponent } from '../version-status/version-status.compone
         UpperCasePipe,
         TitleCasePipe,
         DatePipe,
+        DaemonNiceNamePipe,
     ],
 })
 export class VersionPageComponent implements OnInit, OnDestroy {
@@ -151,9 +153,9 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     storkServerUpdateAvailable$: Observable<UpdateNotification>
 
     /**
-     * An array of Machines in the "summary of ISC software versions detected by Stork" table.
-     */
-    machines: Machine[]
+    * An array of Machines in the "summary of ISC software versions detected by Stork" table.
+    */
+    machines: SimpleMachine[]
 
     /**
      * Class constructor.
@@ -201,7 +203,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                     }),
                     // We need to first wait for the data from the getCurrentData() observable.
                     // Whenever new data is emitted by the getCurrentData(), the summary table needs to be refreshed,
-                    // and for that getMachinesAppsVersions() api must be called right after.
+                    // and for that getMachinesVersions() api must be called right after.
                     // To keep the order of source and inner observable, let's use concatMap operator.
                     concatMap((data) => {
                         if (data) {
@@ -233,7 +235,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         }
 
                         this.swVersionsDataLoading = false
-                        return this.servicesApi.getMachinesAppsVersions().pipe(
+                        return this.servicesApi.getMachinesVersions().pipe(
                             tap(() => {
                                 this.summaryDataLoading = true
                                 this.counters = [0, 0, 0, 0, 0]
@@ -255,7 +257,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         )
                     }),
                     map((data) => {
-                        data.items?.map((m: Machine & { versionCheckSeverity: Severity }) => {
+                        data.items?.map((m: SimpleMachine & { versionCheckSeverity: Severity, mismatchingDaemons: boolean }) => {
                             m.versionCheckSeverity = Severity.success
                             m.versionCheckSeverity = Math.min(
                                 this.severityMap[
@@ -267,26 +269,35 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 ],
                                 m.versionCheckSeverity
                             )
-                            m.apps
-                                .filter((a: BackendApp) => ['kea', 'bind9', 'stork'].includes(a.type))
-                                .forEach((a: BackendApp & { mismatchingDaemons: boolean }) => {
+
+                            let keaDaemons: SimpleDaemon[] = []
+                            m.daemons
+                                ?.filter((daemon: SimpleDaemon) => daemon?.version)
+                                .forEach((daemon: SimpleDaemon) => {
+                                    const appType: AppType = daemon.name?.toLowerCase().includes('bind')
+                                        ? 'bind9'
+                                        : 'kea'
                                     m.versionCheckSeverity = Math.min(
                                         this.severityMap[
                                             this.versionService.getSoftwareVersionFeedback(
-                                                a.version,
-                                                a.type as AppType,
+                                                daemon.version,
+                                                appType,
                                                 this._processedData
                                             )?.severity ?? Severity.success
                                         ],
                                         m.versionCheckSeverity
                                     )
-                                    // daemons version match check
-                                    if (this.versionService.areKeaDaemonsVersionsMismatching(a)) {
-                                        m.versionCheckSeverity = Severity.error
-                                        a.mismatchingDaemons = true
-                                        this.versionService.detectAlertingSeverity(m.versionCheckSeverity)
+                                    if (appType === 'kea') {
+                                        keaDaemons.push(daemon)
                                     }
                                 })
+
+                            if (keaDaemons.length > 0 && this.versionService.areVersionsMismatching(keaDaemons)) {
+                                m.versionCheckSeverity = Severity.error
+                                m.mismatchingDaemons = true
+                                this.versionService.detectAlertingSeverity(m.versionCheckSeverity)
+                            }
+
                             this.counters[m.versionCheckSeverity]++
                             return m
                         })
@@ -348,18 +359,18 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Returns concatenated list of Kea daemons versions for given Kea app.
-     * @param a Kea app
+     * Returns concatenated list of Kea daemons versions for given machine.
+     * @param daemons machine daemons list
      */
-    getDaemonsVersions(a: BackendApp): string {
-        const daemons: string[] = []
-        for (const d of a.details?.daemons ?? []) {
+    getDaemonsVersions(daemons?: SimpleDaemon[]): string {
+        const versions: string[] = []
+        for (const d of daemons ?? []) {
             if (d.name && d.version) {
-                daemons.push(`${d.name} ${d.version}`)
+                versions.push(`${d.name} ${d.version}`)
             }
         }
 
-        return daemons.join(', ')
+        return versions.join(', ')
     }
 
     /**

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing'
 
 import { Severity, UpdateNotification, VersionAlert, VersionService } from './version.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { App, AppsVersions, GeneralService, VersionDetails } from './backend'
+import { AnyDaemon, AppsVersions, GeneralService, VersionDetails } from './backend'
 import { of } from 'rxjs'
 import { deepCopy } from './utils'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -509,65 +509,38 @@ describe('VersionService', () => {
     it('should detect mismatching kea daemons', () => {
         // Arrange & Act & Assert
         // Test some cases with incomplete data.
-        expect(service.areKeaDaemonsVersionsMismatching(null)).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching(undefined)).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching({})).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching({ type: 'bind9' } as App)).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea' } as App)).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea', details: {} } as App)).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea', details: { daemons: null } } as App)).toBeFalsy()
-        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea', details: { daemons: [] } } as App)).toBeFalsy()
-        expect(
-            service.areKeaDaemonsVersionsMismatching({
-                type: 'kea',
-                details: { daemons: [{ id: 1 }, { id: 2 }] },
-            } as App)
-        ).toBeFalsy()
-        expect(
-            service.areKeaDaemonsVersionsMismatching({
-                type: 'kea',
-                details: { daemons: [{ id: 1 }, { id: 2, version: '2.6.1' }] },
-            } as App)
-        ).toBeFalsy()
+        expect(service.areVersionsMismatching(null)).toBeFalsy()
+        expect(service.areVersionsMismatching(undefined)).toBeFalsy()
+        expect(service.areVersionsMismatching([])).toBeFalsy()
+        expect(service.areVersionsMismatching([{ id: 1 }, { id: 2 } as AnyDaemon])).toBeFalsy()
+        expect(service.areVersionsMismatching([{ id: 1 }, { id: 2, version: '2.6.1' } as AnyDaemon])).toBeFalsy()
         // Test valid data.
         expect(
-            service.areKeaDaemonsVersionsMismatching({
-                type: 'kea',
-                details: {
-                    daemons: [
-                        { id: 1, version: '2.6.1' },
-                        { id: 2, version: '2.6.1' },
-                    ],
-                },
-            } as App)
+            service.areVersionsMismatching([
+                { id: 1, version: '2.6.1' } as AnyDaemon,
+                { id: 2, version: '2.6.1' } as AnyDaemon,
+            ])
         ).toBeFalsy()
         expect(
-            service.areKeaDaemonsVersionsMismatching({
-                type: 'kea',
-                details: {
-                    daemons: [{ id: 1 }, { id: 2, version: '2.6.1' }, { id: 3, version: '2.6.1' }],
-                },
-            } as App)
+            service.areVersionsMismatching([
+                { id: 1 } as AnyDaemon,
+                { id: 2, version: '2.6.1' } as AnyDaemon,
+                { id: 3, version: '2.6.1' } as AnyDaemon,
+            ])
         ).toBeFalsy()
         expect(
-            service.areKeaDaemonsVersionsMismatching({
-                type: 'kea',
-                details: {
-                    daemons: [
-                        { id: 1, version: '2.6.1' },
-                        { id: 2, version: '2.6.1' },
-                        { id: 3, version: '2.6.0' },
-                    ],
-                },
-            } as App)
+            service.areVersionsMismatching([
+                { id: 1, version: '2.6.1' } as AnyDaemon,
+                { id: 2, version: '2.6.1' } as AnyDaemon,
+                { id: 3, version: '2.6.0' } as AnyDaemon,
+            ])
         ).toBeTrue()
         expect(
-            service.areKeaDaemonsVersionsMismatching({
-                type: 'kea',
-                details: {
-                    daemons: [{ id: 1 }, { id: 2, version: '2.6.1' }, { id: 3, version: '2.6.0' }],
-                },
-            } as App)
+            service.areVersionsMismatching([
+                { id: 1 } as AnyDaemon,
+                { id: 2, version: '2.6.1' } as AnyDaemon,
+                { id: 3, version: '2.6.0' } as AnyDaemon,
+            ])
         ).toBeTrue()
     })
 

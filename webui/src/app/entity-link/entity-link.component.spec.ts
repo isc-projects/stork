@@ -25,11 +25,11 @@ describe('EntityLinkComponent', () => {
 
     it('should construct daemon link', () => {
         component.entity = 'daemon'
-        component.attrs = { id: 98, appType: 'kea', appId: 1, name: 'dhcp4' }
+        component.attrs = { id: 98, name: 'dhcp4' }
         component.showEntityName = false
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#daemon-link-98'))
-        expect(link.attributes.href).toEqual('/apps/1?daemon=dhcp4')
+        expect(link.attributes.href).toEqual('/daemons/98')
         expect(link.nativeElement.innerText).toEqual('[98] DHCPv4')
 
         // Test entity name is not displayed.
@@ -41,26 +41,6 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         native = fixture.nativeElement
         expect(native.textContent).toContain('daemon')
-    })
-
-    it('should construct app link', () => {
-        component.entity = 'app'
-        component.attrs = { type: 'kea', id: 1, name: 'mouse' }
-        component.showEntityName = false
-        fixture.detectChanges()
-        const link = fixture.debugElement.query(By.css('#app-link-1'))
-        expect(link.attributes.href).toEqual('/apps/1')
-        expect(link.nativeElement.innerText).toEqual('mouse')
-
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('app')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('app')
     })
 
     it('should construct machine link', () => {
