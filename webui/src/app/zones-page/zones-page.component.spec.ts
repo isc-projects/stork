@@ -477,6 +477,35 @@ describe('ZonesPageComponent', () => {
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
     })
 
+    it('should fetch zones when fetch zones clicked', async () => {
+        // Arrange + Act
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        fixture.detectChanges()
+        const fetchZonesBtn = fixture.debugElement.query(By.css('#fetch-zones button'))
+        expect(fetchZonesBtn).toBeTruthy()
+        fetchZonesBtn.nativeElement.click()
+        fixture.detectChanges()
+
+        // Assert
+        const confirmDialog = fixture.debugElement.query(By.css('.p-confirmdialog'))
+        expect(confirmDialog).toBeTruthy()
+        expect(confirmDialog.nativeElement.innerText).toContain('Confirm Fetching Zones')
+        expect(confirmDialog.nativeElement.innerText).toContain('Are you sure you want to continue?')
+
+        // checkbox
+        const checkboxDe = confirmDialog.query(By.css('[inputId="force-populate-zone-inventory"] .p-checkbox-input'))
+        expect(checkboxDe).toBeTruthy()
+        checkboxDe.nativeElement.click()
+        fixture.detectChanges()
+
+        // accept
+        const acceptBtnDe = confirmDialog.query(By.css('button.p-confirmdialog-accept-button'))
+        expect(acceptBtnDe).toBeTruthy()
+        acceptBtnDe.nativeElement.click()
+        fixture.detectChanges()
+        expect(putZonesFetchSpy).toHaveBeenCalledOnceWith(true)
+    })
+
     it('should retrieve list of zone fetch states', async () => {
         // Arrange
         expect(component.zonesFetchStatesLoading)

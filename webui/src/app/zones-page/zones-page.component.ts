@@ -61,6 +61,8 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ZoneTypeAliasPipe } from '../pipes/zone-type-alias.pipe'
+import { ToastModule } from 'primeng/toast'
+import { CheckboxModule } from 'primeng/checkbox'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -110,6 +112,8 @@ interface ExtendedLocalZone extends LocalZone {
         UnrootPipe,
         ZoneViewerComponent,
         ZoneTypeAliasPipe,
+        ToastModule,
+        CheckboxModule,
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {
@@ -317,6 +321,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * A record keeping zone viewer dialog visibility state for each zone viewer dialog.
      */
     zoneViewerDialogVisible = signal<Record<string, boolean>>({})
+
+    /**
+     * Flag indicating whether to force populate zone inventory when fetching zones.
+     */
+    forcePopulateZoneInventory: boolean = false
 
     /**
      * Class constructor.
@@ -558,10 +567,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         } else {
             this.confirmationService.confirm({
                 message:
-                    'This operation instructs the Stork server to fetch the zones from all DNS servers' +
-                    ' and update them in the Stork database. This operation may take long time depending' +
-                    ' on the number of the DNS servers and zones. All zones data will be overwritten with the newly ' +
-                    'fetched data from DNS servers that Stork is monitoring. Are you sure you want to continue?',
+                    'This operation instructs the Stork server to fetch the zones from all Stork agents' +
+                    ' and update them in the Stork database. Stork agents cache zones from their local DNS' +
+                    ' servers. By default, this operation will fetch the zones cached by the Stork agents.' +
+                    ' If cached zones are outdated after new zones were added to the DNS configurations,' +
+                    ' the user can select the checkbox below to force the agents to refresh the cached zones' +
+                    ' from the DNS servers. Fetching the zones may take up to several minutes, depending on the' +
+                    ' number of servers and zones. The zone list will be replaced with a new list.',
                 header: 'Confirm Fetching Zones!',
                 icon: 'pi pi-exclamation-triangle',
                 acceptLabel: 'Continue',
@@ -571,7 +583,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     icon: 'pi pi-check',
                 },
                 accept: () => {
-                    this._sendPutZonesFetch()
+                    const forcePopulateZoneInventory = this.forcePopulateZoneInventory
+                    this.forcePopulateZoneInventory = false
+                    this._sendPutZonesFetch(forcePopulateZoneInventory)
+                },
+                reject: () => {
+                    this.forcePopulateZoneInventory = false
                 },
             })
         }
@@ -594,12 +611,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Sends PUT /dns-management/zones-fetch request and triggers refreshing data of the Zones Fetch Status table right after.
      * @private
      */
-    private _sendPutZonesFetch() {
+    private _sendPutZonesFetch(forcePopulateZoneInventory: boolean = false) {
         this._subscriptions.add(this._putZonesFetchGuard.subscribe())
         this.fetchAppsCompletedCount = 0
 
         lastValueFrom(
-            this.dnsService.putZonesFetch().pipe(
+            this.dnsService.putZonesFetch(forcePopulateZoneInventory || undefined).pipe(
                 tap(() => (this.fetchInProgress = true)),
                 delay(500), // Trigger refreshFetchStatusTable() with small delay - smaller deployments will likely have 200 Ok ZoneInventoryStates response there.
                 concatMap((resp) => {

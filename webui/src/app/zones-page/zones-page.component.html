@@ -217,7 +217,29 @@ to the number of configured zones.
     </p-table>
 </p-dialog>
 
-<p-confirmDialog styleClass="w-28rem" />
+<p-confirmdialog styleClass="w-30rem">
+    <ng-template #message let-message>
+        @if (message) {
+            <div class="p-dialog-content">
+                <i class="pi pi-exclamation-triangle p-confirmdialog-icon"></i>
+                <div class="flex flex-column gap-4 p-confirmdialog-message">
+                    <div>{{ message.message }}</div>
+                    <div>Are you sure you want to continue?</div>
+                    <div class="flex items-center">
+                        <p-checkbox
+                            inputId="force-populate-zone-inventory"
+                            [(ngModel)]="forcePopulateZoneInventory"
+                            binary="true"
+                        />
+                        <label for="force-populate-zone-inventory" class="ml-2"
+                            >Refresh cached zones from DNS servers</label
+                        >
+                    </div>
+                </div>
+            </div>
+        }
+    </ng-template>
+</p-confirmdialog>
 
 <app-tab-view
     routePath="/dns/zones/"
