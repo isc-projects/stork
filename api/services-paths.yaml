@@ -397,11 +397,20 @@
         about the daemons to return reasonably compact information. Having the daemons'
         names is useful in the forms which require validating user's input against
         the list of daemons present in the system. It may be also useful to create
-        drop down lists holding the daemons' names. Each returned name is accompanied
-        by its id.
+        drop down lists holding the daemons' names. Each returned daemon name is accompanied
+        by its id and compact information about machine it belongs to.
       operationId: getDaemonsDirectory
       tags:
         - Services
+      parameters:
+        -   $ref: '#/parameters/filterTextParam'
+        -   name: domain
+            in: query
+            description: Limit returned list of daemons to either DHCP or DNS domain. If omitted, daemons from all domains are returned.
+            type: string
+            enum:
+              - dhcp
+              - dns
       responses:
         200:
           description: List of daemon ids and names.
