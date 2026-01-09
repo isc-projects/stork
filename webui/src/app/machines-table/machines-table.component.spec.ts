@@ -215,42 +215,27 @@ describe('MachinesTableComponent', () => {
                     id: 1,
                     authorized: true,
                     hostname: 'zzz',
-                    apps: [
-                        {
-                            id: 1,
-                            name: 'kea@localhost',
-                            type: 'kea',
-                            details: {
-                                daemons: [
+                    daemons: [
                                     {
                                         active: true,
                                         extendedVersion: '2.2.0',
                                         id: 1,
                                         name: 'dhcp4',
+                                        version: '2.2.0',
                                     },
                                     {
                                         active: false,
                                         extendedVersion: '2.3.0',
                                         id: 2,
                                         name: 'ca',
+                                        version: '2.2.0',
                                     },
-                                ],
-                            },
-                            version: '2.2.0',
-                        },
-                        {
-                            id: 2,
-                            name: 'bind9@localhost',
-                            type: 'bind9',
-                            details: {
-                                daemon: {
-                                    active: true,
-                                    id: 3,
-                                    name: 'named',
-                                },
-                            },
-                            version: '9.18.30',
-                        },
+                                    {
+                                        active: true,
+                                        id: 3,
+                                        name: 'named',
+                                        version: '9.18.30',
+                                    },
                     ],
                     agentVersion: '1.19.0',
                 },

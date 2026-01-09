@@ -265,10 +265,10 @@
                 </td>
                 <td>
                     <ng-container *ngIf="m.authorized">
-                        <ng-container *ngFor="let a of m.apps"
+                        <ng-container *ngFor="let d of m.daemons"
                             ><app-version-status
-                                [app]="a.type"
-                                [version]="a.version"
+                                [app]="d.type"
+                                [version]="d.version"
                                 [showAppName]="true"
                             ></app-version-status
                         ></ng-container>
@@ -276,8 +276,8 @@
                 </td>
                 <td>
                     <ng-container *ngIf="m.authorized">
-                        <div *ngFor="let a of m.apps">
-                            <app-daemon-status [daemon]="a"></app-daemon-status>
+                        <div *ngFor="let d of m.daemons">
+                            <app-daemon-status [daemon]="d"></app-daemon-status>
                         </div>
                     </ng-container>
                 </td>

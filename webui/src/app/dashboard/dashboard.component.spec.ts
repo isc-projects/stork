@@ -1,7 +1,19 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { DashboardComponent } from './dashboard.component'
-import { AppsVersions, DaemonsStats, DhcpOverview, DHCPService, DNSService, ServicesService, ZoneInventoryStates } from '../backend'
+import { PanelModule } from 'primeng/panel'
+import { ButtonModule } from 'primeng/button'
+import {
+    AppsVersions,
+    DaemonsStats,
+    DhcpOverview,
+    DHCPService,
+    DNSService,
+    ServicesService,
+    SettingsService,
+    UsersService,
+    ZoneInventoryStates,
+} from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { LocationStrategy, PathLocationStrategy } from '@angular/common'
