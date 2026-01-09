@@ -1,4 +1,4 @@
-import { Component, input, OnInit, output } from '@angular/core'
+import { Component, effect, input, model, OnInit, output } from '@angular/core'
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete'
 import { FloatLabel } from 'primeng/floatlabel'
 import { FormsModule } from '@angular/forms'
@@ -36,10 +36,29 @@ export class DaemonFilterComponent implements OnInit {
     domain = input<'dns' | 'dhcp' | undefined>(undefined)
 
     /**
-     * Output property emitting events whenever selected daemon changes.
-     * It emits daemon ID.
+     * Input property with label value.
      */
-    valueChange = output<number>()
+    label = input<string>('Daemon (type or pick)')
+
+    /**
+     * Input/Output (ModelSignal) property emitting daemon ID whenever selected daemon changes.
+     * It also accepts input daemonID to update selected daemon in the autocomplete component.
+     */
+    daemonID = model<number>(undefined)
+
+    /**
+     * Effect reacting on daemonID change done by parent component. It updates model of the autocomplete component.
+     */
+    valueChangeEffect = effect(() => {
+        const currentValue = this.daemonID()
+        const selectedDaemon = this.daemonSuggestions
+            ?.map((d: SimpleDaemon) => ({
+                ...d,
+                label: `${d.name}@${d.machine.address}`,
+            }))
+            .find((d) => d.id == currentValue)
+        this.daemon = selectedDaemon || null
+    })
 
     /**
      * Output property emitting events whenever error occurs while fetching daemons from backend.
@@ -53,6 +72,15 @@ export class DaemonFilterComponent implements OnInit {
         lastValueFrom(this.servicesApi.getDaemonsDirectory(undefined, this.domain()))
             .then((response) => {
                 this.daemonSuggestions = response.items ?? []
+                if (this.daemonID()) {
+                    const selectedDaemon = this.daemonSuggestions
+                        .map((d: SimpleDaemon) => ({
+                            ...d,
+                            label: `${d.name}@${d.machine.address}`,
+                        }))
+                        .find((d) => d.id == this.daemonID())
+                    this.daemon = selectedDaemon || null
+                }
             })
             .catch(() => {
                 this.errorOccurred.emit('Failed to retrieve daemons from Stork server.')
@@ -97,6 +125,6 @@ export class DaemonFilterComponent implements OnInit {
      */
     onValueChange(d: LabeledSimpleDaemon) {
         console.log('value changed', d)
-        this.valueChange.emit(d?.id ?? null)
+        this.daemonID.set(d?.id ?? null)
     }
 }

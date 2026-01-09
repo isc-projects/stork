@@ -305,7 +305,7 @@ export default {
     render: (args) => ({
         props: args,
         template: `
-            <app-daemon-filter (valueChange)="output.value=$event" (errorOccurred)="err.value=$event" ${argsToTemplate(args)}></app-daemon-filter>
+            <app-daemon-filter (daemonIDChange)="output.value=$event" (errorOccurred)="err.value=$event" ${argsToTemplate(args)}></app-daemon-filter>
             <hr />
             Selected daemon ID:
             <input #output disabled />
