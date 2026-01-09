@@ -271,6 +271,7 @@ describe('SubnetTabComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
+                    daemonId: 42,
                     daemonName: 'dhcp6',
                     pools: [
                         {
@@ -301,7 +302,7 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
-        expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[42] DHCPv6')
         expect(fieldsets[0].nativeElement.innerText).toContain('12223')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
@@ -448,8 +449,8 @@ describe('SubnetTabComponent', () => {
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('[42] DHCPv6')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[43] DHCPv6')
         expect(fieldsets[0].nativeElement.innerText).toContain('12223')
-        expect(fieldsets[0].nativeElement.innerText).toContain('bar@2001:db8:2::5')
         expect(fieldsets[0].nativeElement.innerText).toContain('25432')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')

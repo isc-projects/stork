@@ -981,7 +981,7 @@ describe('HostTabComponent', () => {
             let link = fieldsets[i].query(By.css('a:not([aria-expanded])'))
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
-                expect(link.properties.innerText).toContain('frog')
+                expect(link.properties.innerText).toContain('dhcp6')
                 expect(link.properties.pathname).toBe('/daemons/1')
             } else {
                 expect(link.properties.innerText).toContain('lion')
