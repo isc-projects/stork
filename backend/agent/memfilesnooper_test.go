@@ -7,15 +7,20 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
 	"isc.org/stork/daemondata/kea"
+	"isc.org/stork/datamodel/daemonname"
 )
+
+//go:generate mockgen -source memfilesnooper.go -package=agent -destination=memfilesnoopermock_test.go -mock_names=RowSource=MockRowSource isc.org/agent RowSource
 
 // Write the lines from input to the file in output one at a time, syncing the
 // file to encourage the changes to reach the disk and trigger a filesystem
@@ -900,4 +905,262 @@ func TestParseRowAsLease6(t *testing.T) {
 			require.Equal(t, tc.expected, actual)
 		})
 	}
+}
+
+func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
+	return func() chan []string {
+		channel := make(chan []string)
+		go func() {
+			for _, row := range rows {
+				channel <- row
+			}
+			// This is a load-bearing sleep.  Without it, this goroutine exits promptly and
+			// control is almost always transferred back to the main test, rather than to
+			// the MemfileSnooper's goroutine.  If the MemfileSnooper doesn't run again
+			// before the GetSnapshot call, the fifth lease will not be appended before
+			// GetSnapshot takes the lock.
+			time.Sleep(time.Millisecond)
+			wg.Done()
+		}()
+		return channel
+	}
+}
+
+func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sync.WaitGroup) {
+	rowSource := NewMockRowSource(ctrl)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	rowSource.EXPECT().Start().DoAndReturn(mockEmitRows(rows, &wg))
+	rowSource.EXPECT().Stop()
+	return rowSource, &wg
+}
+
+func TestMemfileSnooperCollectsLeases(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	rows := [][]string{
+		{"192.168.1.1", "00:00:00:00:00:00", "01:03:00:00:00:00:00", "3600", "1761257849", "123", "0", "0", "", "0", "", "0"},
+		{"192.168.1.2", "00:00:00:00:00:01", "01:03:00:00:00:00:01", "3600", "1761257850", "123", "0", "0", "", "0", "", "0"},
+		{"192.168.1.3", "00:00:00:00:00:02", "01:03:00:00:00:00:02", "3600", "1761257851", "123", "0", "0", "", "0", "", "0"},
+		{"192.168.1.4", "00:00:00:00:00:03", "01:03:00:00:00:00:03", "3600", "1761257852", "123", "0", "0", "", "0", "", "0"},
+		{"192.168.1.5", "00:00:00:00:00:04", "01:03:00:00:00:00:04", "3600", "1761257853", "123", "0", "0", "", "0", "", "0"},
+	}
+	rowSource, wg := makeMockRowSource(ctrl, rows)
+
+	memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+	require.NoError(t, err)
+
+	// Act
+	memfileSnooper.Start()
+	wg.Wait()
+	memfileSnooper.Stop()
+
+	// Assert
+	snapshot := memfileSnooper.GetSnapshot()
+	require.Len(t, snapshot, 5)
+}
+
+func TestMemfileSnooperErrorConditions(t *testing.T) {
+	t.Run("header row in input", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		rows := [][]string{
+			{"address", "hwaddr", "client_id", "valid_lifetime", "expire", "subnet_id", "fqdn_fwd", "fqdn_rev", "hostname", "state", "user_context", "pool_id"},
+		}
+		rowSource, wg := makeMockRowSource(ctrl, rows)
+
+		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+		require.NoError(t, err)
+
+		// Act
+		memfileSnooper.Start()
+		wg.Wait()
+		memfileSnooper.Stop()
+
+		// Assert
+		snapshot := memfileSnooper.GetSnapshot()
+		require.Len(t, snapshot, 0)
+	})
+	t.Run("old CLTT", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		rows := [][]string{
+			{"192.168.1.5", "00:00:00:00:00:04", "01:03:00:00:00:00:04", "3600", "1761257853", "123", "0", "0", "", "0", "", "0"},
+			{"192.168.1.4", "00:00:00:00:00:03", "01:03:00:00:00:00:03", "3600", "1761257852", "123", "0", "0", "", "0", "", "0"},
+		}
+		rowSource, wg := makeMockRowSource(ctrl, rows)
+
+		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+		require.NoError(t, err)
+
+		// Act
+		memfileSnooper.Start()
+		wg.Wait()
+		memfileSnooper.Stop()
+
+		// Assert
+		snapshot := memfileSnooper.GetSnapshot()
+		require.Len(t, snapshot, 1)
+	})
+	t.Run("channel closed", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		rowSource := NewMockRowSource(ctrl)
+		rowSource.EXPECT().Start().DoAndReturn(func() chan []string {
+			c := make(chan []string)
+			go func() {
+				time.Sleep(time.Millisecond)
+				close(c)
+				wg.Done()
+			}()
+			return c
+		})
+		rowSource.EXPECT().Stop()
+		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv6, rowSource)
+		require.NoError(t, err)
+
+		// Act
+		memfileSnooper.Start()
+		wg.Wait()
+		memfileSnooper.Stop()
+
+		// Assert
+		snapshot := memfileSnooper.GetSnapshot()
+		require.Len(t, snapshot, 0)
+	})
+	t.Run("invalid daemon name", func(t *testing.T) {
+		ms1, err := NewMemfileSnooper(daemonname.CA, nil)
+		require.Nil(t, ms1)
+		require.ErrorContains(t, err, "daemons other than DHCPv4 and DHCPv6")
+
+		ms2 := RealMemfileSnooper{
+			kind:         daemonname.D2,
+			rs:           nil,
+			leaseUpdates: make([]*keadata.Lease, 0),
+			stop:         make(chan bool, 1),
+		}
+		snapshot := ms2.GetSnapshot()
+		require.Empty(t, snapshot)
+	})
+	t.Run(".Stop() on stopped snooper", func(t *testing.T) {
+		snooper, err := NewMemfileSnooper(daemonname.DHCPv4, nil)
+		require.NoError(t, err)
+
+		snooper.Stop()
+	})
+
+	t.Run(".Start() on running snooper", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		rows := [][]string{}
+		rowSource, _ := makeMockRowSource(ctrl, rows)
+
+		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+		require.NoError(t, err)
+
+		memfileSnooper.Start()
+		defer memfileSnooper.Stop()
+		grCount := runtime.NumGoroutine()
+		memfileSnooper.Start()
+		grCount2 := runtime.NumGoroutine()
+		require.Equal(t, grCount, grCount2, "the number of goroutines running changed after calling .Start() a second time")
+	})
+}
+
+func TestMemfileSnooperGetSnapshotDeduplicates(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	rows := [][]string{
+		{
+			"51a4:14ec:1::",
+			"01:00:00:00:00:00",
+			"3600",
+			"1761672649",
+			"123",
+			"2250",
+			"0",
+			"1",
+			"128",
+			"0",
+			"0",
+			"",
+			"",
+			"2",
+			"",
+			"",
+			"",
+			"0",
+		},
+		{
+			"51a4:14ec:1::",
+			"01:00:00:00:00:00",
+			"3600",
+			"1761672650",
+			"123",
+			"2250",
+			"0",
+			"1",
+			"128",
+			"0",
+			"0",
+			"",
+			"",
+			"0",
+			"",
+			"",
+			"",
+			"0",
+		},
+		{
+			"51a4:14ec:1::",
+			"01:00:00:00:00:00",
+			"3600",
+			"1761672648",
+			"123",
+			"2250",
+			"0",
+			"1",
+			"128",
+			"0",
+			"0",
+			"",
+			"",
+			"1",
+			"",
+			"",
+			"",
+			"0",
+		},
+	}
+	rowSource, wg := makeMockRowSource(ctrl, rows)
+
+	memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv6, rowSource)
+	require.NoError(t, err)
+
+	// Act
+	memfileSnooper.Start()
+	wg.Wait()
+	memfileSnooper.Stop()
+
+	// Assert
+	snapshot := memfileSnooper.GetSnapshot()
+	require.Len(t, snapshot, 1)
+	require.Equal(t, 0, snapshot[0].State)
+}
+
+func TestMemfileSnooperEnsureWatchingCallsRowSource(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	rowSource := NewMockRowSource(ctrl)
+	rowSource.EXPECT().EnsureWatching("foo").Times(1)
+	memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv6, rowSource)
+	require.NoError(t, err)
+
+	// Act
+	memfileSnooper.EnsureWatching("foo")
+
+	// Assert (ctrl.Finish does the work)
 }

@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"isc.org/stork/daemondata/kea"
+	"isc.org/stork/datamodel/daemonname"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
@@ -368,4 +370,132 @@ func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
 		return nil, err
 	}
 	return lease, nil
+}
+
+type MemfileSnooper interface {
+	Start()
+	Stop()
+	EnsureWatching(path string) error
+	GetSnapshot() []*keadata.Lease
+}
+
+type RealMemfileSnooper struct {
+	kind         daemonname.Name
+	rs           RowSource
+	lastCLTT     uint64
+	leaseUpdates []*keadata.Lease
+	running      bool
+	stop         chan bool
+	mutex        sync.Mutex
+	parser       func([]string, uint64) (*keadata.Lease, error)
+}
+
+func NewMemfileSnooper(kind daemonname.Name, rs RowSource) (MemfileSnooper, error) {
+	ms := RealMemfileSnooper{
+		kind:         kind,
+		rs:           rs,
+		leaseUpdates: make([]*keadata.Lease, 0),
+		stop:         make(chan bool),
+	}
+	switch kind {
+	case daemonname.DHCPv4:
+		ms.parser = ParseRowAsLease4
+	case daemonname.DHCPv6:
+		ms.parser = ParseRowAsLease6
+	default:
+		return nil, errors.New("MemfileSnooper cannot snoop lease memfiles for daemons other than DHCPv4 and DHCPv6.")
+	}
+	return &ms, nil
+}
+
+// A structure to use as the key for identifying duplicate leases.
+type leaseKey struct {
+	// The IPv[46] address that was leased.
+	IP string
+	// The MAC address or DUID of the client which requested the lease.
+	ID string
+}
+
+func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
+	snapshot := make([]*keadata.Lease, 0)
+	index := map[leaseKey]int{}
+	var getID func(*keadata.Lease) string
+	switch ms.kind {
+	case daemonname.DHCPv4:
+		getID = func(lease *keadata.Lease) string {
+			return lease.HWAddress
+		}
+	case daemonname.DHCPv6:
+		getID = func(lease *keadata.Lease) string {
+			return lease.DUID
+		}
+	default:
+		// This should be impossible because the constructor function returns an error if you set a daemonname other than the two above, but let's do something approximately correct rather than calling panic().
+		log.Warn("GetSnapshot was called on a MemfileSnooper with an invalid daemonname. This is a programming error that must be corrected.")
+		return []*keadata.Lease{}
+	}
+	ms.mutex.Lock()
+	for _, lease := range ms.leaseUpdates {
+		key := leaseKey{
+			IP: lease.IPAddress,
+			ID: getID(lease),
+		}
+		if snapIdx, exists := index[key]; exists {
+			snapLease := snapshot[snapIdx]
+			if snapLease.CLTT < lease.CLTT {
+				snapshot[snapIdx] = lease
+			}
+		} else {
+			snapshot = append(snapshot, lease)
+			index[key] = len(snapshot) - 1
+		}
+	}
+	ms.mutex.Unlock()
+	return snapshot
+}
+
+func (ms *RealMemfileSnooper) EnsureWatching(path string) error {
+	return ms.rs.EnsureWatching(path)
+}
+
+func (ms *RealMemfileSnooper) Stop() {
+	if !ms.running {
+		return
+	}
+	close(ms.stop)
+	ms.rs.Stop()
+	ms.running = false
+}
+
+func (ms *RealMemfileSnooper) Start() {
+	if ms.running {
+		return
+	}
+	channel := ms.rs.Start()
+	go func() {
+		for {
+			select {
+			case <-ms.stop:
+				return
+			case row, ok := <-channel:
+				if !ok {
+					return
+				}
+				parsed, err := ms.parser(row, ms.lastCLTT)
+				if err != nil {
+					log.WithError(err).Warn("Unable to parse this lease record")
+					continue
+				}
+				if parsed == nil {
+					// This is normal; it happens when the row is older than the most recent CLTT.
+					continue
+				}
+				ms.mutex.Lock()
+				ms.leaseUpdates = append(ms.leaseUpdates, parsed)
+				ms.lastCLTT = parsed.CLTT
+				ms.mutex.Unlock()
+			}
+		}
+	}()
+	ms.running = true
 }
