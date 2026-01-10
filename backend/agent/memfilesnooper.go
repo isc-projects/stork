@@ -257,10 +257,11 @@ func (rs *FSNotifyRowSource) Stop() {
 	if !rs.running {
 		return
 	}
+	// Send the stop signal first so that the unbuffered channel doesn't hang
+	// forever waiting for the already-ended loop to take the stop signal out.
+	rs.stop <- true
 	rs.watcher.Close()
 	rs.memfile.Close()
-	// Don't send the stop signal because .Close() on the Watcher also exits the
-	// loop and means the stop would block indefinitely.
 	close(rs.results)
 	rs.running = false
 }
@@ -282,9 +283,11 @@ func (rs *FSNotifyRowSource) EnsureWatching(path string) error {
 		return nil
 	}
 	// Don't call rs.Stop() because it closes the channel, which makes things more difficult for consumers of this API.
+	// Also, send the stop signal first so that the unbuffered channel doesn't hang
+	// forever waiting for the already-ended loop to take the stop signal out.
+	rs.stop <- true
 	rs.watcher.Close()
 	rs.memfile.Close()
-	rs.stop <- true
 	rs.running = false
 
 	rs.path = realPath
