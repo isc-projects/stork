@@ -280,7 +280,13 @@ export function daemonStatusIconClass(daemon: AnyDaemon) {
     if (!daemon.active) {
         return 'pi pi-times text-red-500'
     }
-    if ((daemon.daemonCommErrors ?? 0) + (daemon.agentCommErrors ?? 0) + (daemon.caCommErrors ?? 0) + (daemon.statsCommErrors ?? 0) > 0) {
+    if (
+        (daemon.daemonCommErrors ?? 0) +
+            (daemon.agentCommErrors ?? 0) +
+            (daemon.caCommErrors ?? 0) +
+            (daemon.statsCommErrors ?? 0) >
+        0
+    ) {
         return 'pi pi-exclamation-triangle text-orange-400'
     }
     return 'pi pi-check text-green-500'

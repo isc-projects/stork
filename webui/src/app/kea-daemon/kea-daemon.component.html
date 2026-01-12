@@ -75,9 +75,9 @@
             >
                 <div>
                     <p>
-                        This daemon is currently not monitored by Stork. The daemon has not been active
-                        since being added to the Stork server. This daemon appears in the list because its
-                        configuration was detected in the Kea Control Agent's configuration file.
+                        This daemon is currently not monitored by Stork. The daemon has not been active since being
+                        added to the Stork server. This daemon appears in the list because its configuration was
+                        detected in the Kea Control Agent's configuration file.
                     </p>
                     <p>
                         If the daemon is operational (e.g. it allocates leases), make sure it has the
@@ -113,11 +113,7 @@
                             The daemon was manually disabled."
             >
             </p-message>
-            <p-message
-                *ngIf="daemon.monitored"
-                severity="error"
-                text="There is a communication issue with the daemon."
-            >
+            <p-message *ngIf="daemon.monitored" severity="error" text="There is a communication issue with the daemon.">
             </p-message>
         </div>
 
@@ -163,9 +159,7 @@
                                     </div>
                                     <div class="flex flex-none">
                                         <a
-                                            *ngIf="
-                                                docAnchorFromHookLibrary(basename(hook), daemon.version)
-                                            "
+                                            *ngIf="docAnchorFromHookLibrary(basename(hook), daemon.version)"
                                             href="https://kea.readthedocs.io/en/{{
                                                 docAnchorFromHookLibrary(basename(hook), daemon.version)
                                             }}"
@@ -185,10 +179,7 @@
             <!-- Database Configurations -->
             <div
                 id="data-storage-div"
-                *ngIf="
-                    (daemon.files && daemon.files.length > 0) ||
-                    (daemon.backends && daemon.backends.length > 0)
-                "
+                *ngIf="(daemon.files && daemon.files.length > 0) || (daemon.backends && daemon.backends.length > 0)"
                 class="mt-4"
             >
                 <h3 class="underlined">Data Storage</h3>
@@ -211,9 +202,9 @@
                         <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                             <div *ngFor="let backend of daemon.backends">
                                 <i class="fa fa-database text-gray-400"></i>
-                                {{ databaseNameFromType(backend.backendType) }} ({{
-                                    backend.database
-                                }}&#64;{{ backend.host }}) with:
+                                {{ databaseNameFromType(backend.backendType) }} ({{ backend.database }}&#64;{{
+                                    backend.host
+                                }}) with:
                                 <ul class="word-break-all" style="list-style-type: disc">
                                     <li *ngFor="let dataType of backend.dataTypes">
                                         <i>{{ dataType }}</i>
@@ -266,20 +257,18 @@
                     <app-help-tip subject="daemon configuration review section">
                         <p>
                             The Stork server reviews the monitored servers' configurations, flags potential
-                            configuration issues, and suggests changes to these configurations to improve
-                            Stork's monitoring capabilities. The review is performed using different
-                            checkers built into the Stork server. Each checker is responsible for examining
-                            a different part or aspect of the configuration. Each checker has a unique name,
-                            which is shown in the blue badge before the text of each issue in the list
-                            below.
+                            configuration issues, and suggests changes to these configurations to improve Stork's
+                            monitoring capabilities. The review is performed using different checkers built into the
+                            Stork server. Each checker is responsible for examining a different part or aspect of the
+                            configuration. Each checker has a unique name, which is shown in the blue badge before the
+                            text of each issue in the list below.
                         </p>
                         <p>
-                            Each checker can be disabled if its review report is not desired in a particular
-                            deployment.
+                            Each checker can be disabled if its review report is not desired in a particular deployment.
                         </p>
                         <p>
-                            By default, only reports that discover an issue are visible. Use the toggle
-                            button to display reports from all executed checkers for a given daemon.
+                            By default, only reports that discover an issue are visible. Use the toggle button to
+                            display reports from all executed checkers for a given daemon.
                         </p>
                     </app-help-tip>
                 </h3>

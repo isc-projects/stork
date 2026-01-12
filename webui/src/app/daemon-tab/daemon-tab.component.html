@@ -4,10 +4,7 @@
             <ng-template #header>
                 <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
                     <div class="daemon-header">
-                        <i
-                            class="{{ daemonStatusIconClass }} text-xl"
-                            pTooltip="{{ daemonStatusIconTooltip }}"
-                        ></i>
+                        <i class="{{ daemonStatusIconClass }} text-xl" pTooltip="{{ daemonStatusIconTooltip }}"></i>
                         <div>
                             <div class="text-xl font-bold">{{ daemon.name | daemonNiceName }}</div>
                             <div class="daemon-meta">
@@ -41,8 +38,6 @@
 
     <div class="col-12 md:col-5">
         <h3 class="underlined">Events</h3>
-        <app-events-panel
-            [filter]="{ machine: daemon.machine?.id, daemonId: daemon.id }"
-        ></app-events-panel>
+        <app-events-panel [filter]="{ machine: daemon.machine?.id, daemonId: daemon.id }"></app-events-panel>
     </div>
 </div>

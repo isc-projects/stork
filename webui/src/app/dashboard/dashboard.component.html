@@ -334,7 +334,11 @@
                     <ng-template #body let-d>
                         <tr>
                             <td>
-                                <app-entity-link [showEntityName]="false" entity="machine" [attrs]="d.machine"></app-entity-link>
+                                <app-entity-link
+                                    [showEntityName]="false"
+                                    entity="machine"
+                                    [attrs]="d.machine"
+                                ></app-entity-link>
                             </td>
                             <td>
                                 <app-version-status

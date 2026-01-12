@@ -369,7 +369,11 @@ sudo ./stork-install-agent.sh</textarea
                         <a routerLink="/daemons/{{ daemon.id }}">
                             <app-daemon-status [daemon]="daemon"></app-daemon-status>
                         </a>
-                            <app-version-status [daemonName]="daemon.name" [showVersion]="true" [version]="daemon.version"></app-version-status>
+                        <app-version-status
+                            [daemonName]="daemon.name"
+                            [showVersion]="true"
+                            [version]="daemon.version"
+                        ></app-version-status>
                     </div>
                 </div>
             </div>
