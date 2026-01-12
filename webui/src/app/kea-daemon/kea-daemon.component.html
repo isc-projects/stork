@@ -130,8 +130,8 @@
                         <div class="grid">
                             <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
                             <div class="col-12 sm:col-9">
-                                {{ daemon.version }}
                                 <app-version-status
+                                    [showVersion]="true"
                                     [daemonName]="daemon.name"
                                     [version]="daemon.version"
                                 ></app-version-status>

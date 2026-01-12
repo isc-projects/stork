@@ -259,10 +259,10 @@ sudo ./stork-install-agent.sh</textarea
                         <tr>
                             <td>Agent Version</td>
                             <td>
-                                {{ machineTab?.agentVersion }}
                                 <app-version-status
                                     *ngIf="machineTab?.authorized"
                                     daemonName="stork"
+                                    [showVersion]="true"
                                     [version]="machineTab?.agentVersion"
                                 ></app-version-status>
                             </td>

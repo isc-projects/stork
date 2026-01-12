@@ -260,7 +260,8 @@
                 <td>
                     <ng-container *ngIf="m.authorized">
                         <app-version-status
-                            [showDaemonName]="true"
+                            [showName]="true"
+                            [showVersion]="true"
                             daemonName="stork"
                             [version]="m.agentVersion"
                         ></app-version-status>
@@ -272,7 +273,8 @@
                             ><app-version-status
                                 [daemonName]="d.name"
                                 [version]="d.version"
-                                [showDaemonName]="true"
+                                [showName]="true"
+                                [showVersion]="true"
                             ></app-version-status
                         ></ng-container>
                     </ng-container>

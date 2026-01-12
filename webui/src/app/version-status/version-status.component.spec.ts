@@ -195,9 +195,10 @@ describe('VersionStatusComponent', () => {
         expect(Object.keys(component.iconClasses).length).toBe(0)
     })
 
-    it('should display daemon name', () => {
+    it('should display daemon name and version', () => {
         // Arrange
-        fixture.componentRef.setInput('showDaemonName', true)
+        fixture.componentRef.setInput('showName', true)
+        fixture.componentRef.setInput('showVersion', true)
 
         // Act & Assert
         setCorrectInputs()

@@ -38,11 +38,18 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     @Input({ required: true }) version: string
 
     /**
-     * For inline component version, this flag enables showing the daemon name with its version on the left side
+     * For inline component version, this flag enables showing the daemon name on the left side
      * of the icon with the tooltip.
      * Defaults to false.
      */
-    @Input() showDaemonName = false
+    @Input() showName = false
+
+    /**
+     * For inline component version, this flag enables showing the daemon version on the left side
+     * of the icon with the tooltip.
+     * Defaults to false.
+     */
+    @Input() showVersion = false
 
     /**
      * This flag sets whether the component has a form of inline icon with the tooltip,
