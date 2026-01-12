@@ -5,8 +5,7 @@
                 <div class="flex justify-content-between flex-wrap gap-3 align-items-center">
                     <div class="daemon-header">
                         <i
-                            class="{{ daemonStatusIconName }} text-xl"
-                            [style.color]="daemonStatusIconColor"
+                            class="{{ daemonStatusIconClass }} text-xl"
                             pTooltip="{{ daemonStatusIconTooltip }}"
                         ></i>
                         <div>
@@ -30,42 +29,7 @@
                     ></p-button>
                 </div>
             </ng-template>
-            <div class="grid">
-                <div class="col-12 sm:col-6">
-                    <div class="font-medium">Monitored</div>
-                    <div>{{ daemon.monitored ? 'Yes' : 'No' }}</div>
-                </div>
-                <div class="col-12 md:col-6">
-                    <div class="font-medium">Version</div>
-                    <div>
-                        {{ daemon.version }}
-                        <app-version-status
-                            [daemonName]="daemon.name"
-                            [version]="daemon.version"
-                            [styleClass]="'pl-2'"
-                        ></app-version-status>
-                    </div>
-                </div>
-                <div class="col-12 md:col-6">
-                    <div class="font-medium">Extended Version</div>
-                    <div class="white-space-preline">{{ daemon.extendedVersion | placeholder: 'N/A' }}</div>
-                </div>
-                <div class="col-12 md:col-6">
-                    <div class="font-medium">Status</div>
-                    <div class="flex align-items-center gap-2">
-                        <i class="{{ daemonStatusIconName }}" [style.color]="daemonStatusIconColor"></i>
-                        <span>{{ daemonStatusIconTooltip }}</span>
-                    </div>
-                </div>
-                <div class="col-12 md:col-6">
-                    <div class="font-medium">Uptime</div>
-                    <div>{{ daemon.uptime | duration }}</div>
-                </div>
-                <div class="col-12 md:col-6">
-                    <div class="font-medium">Last Reloaded At</div>
-                    <div>{{ daemon.reloadedAt | localtime | placeholder: 'never' }}</div>
-                </div>
-            </div>
+            <app-daemon-overview [daemon]="daemon"></app-daemon-overview>
         </p-panel>
     </div>
 
