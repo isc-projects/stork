@@ -331,6 +331,7 @@ func GetAllDaemons(dbi dbops.DBI) ([]Daemon, error) {
 // It is possible to filter retrieved daemons by search text or dns/dhcp domain.
 func GetAllDaemonsWithRelations(dbi dbops.DBI, filterText *string, filterDomain *string, relations ...DaemonRelation) ([]Daemon, error) {
 	var daemons []Daemon
+	withMachineRelation := slices.Contains(relations, DaemonRelationMachine)
 
 	q := dbi.Model(&daemons)
 	for _, relation := range relations {
@@ -340,7 +341,7 @@ func GetAllDaemonsWithRelations(dbi dbops.DBI, filterText *string, filterDomain 
 		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			qq = qq.WhereOr("name ILIKE ?", text)
-			if slices.Contains(relations, DaemonRelationMachine) {
+			if withMachineRelation {
 				qq = qq.WhereOr("machine.address ILIKE ?", text)
 				qq = qq.WhereOr("machine.state->>'Hostname' ILIKE ?", text)
 			}
@@ -366,7 +367,11 @@ func GetAllDaemonsWithRelations(dbi dbops.DBI, filterText *string, filterDomain 
 			return qq, nil
 		})
 	}
-	err := q.OrderExpr("id ASC").Select()
+	orderExpr := "machine_id"
+	if withMachineRelation {
+		orderExpr = "machine.hostname"
+	}
+	err := q.OrderExpr(orderExpr + " ASC").Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem getting daemons from the database")
 	}
