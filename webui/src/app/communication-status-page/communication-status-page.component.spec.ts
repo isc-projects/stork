@@ -54,11 +54,11 @@ describe('CommunicationStatusPageComponent', () => {
             items: [],
             total: 0,
         }
-            spyOn(servicesService, 'getDaemonsWithCommunicationIssues').and.returnValue(of(list))
+        spyOn(servicesService, 'getDaemonsWithCommunicationIssues').and.returnValue(of(list))
         component.onReload()
         tick()
         fixture.detectChanges()
-            expect(servicesService.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
+        expect(servicesService.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
 
         const issuesTree = fixture.debugElement.query(By.css('app-communication-status-tree'))
         expect(issuesTree).toBeTruthy()
@@ -67,7 +67,7 @@ describe('CommunicationStatusPageComponent', () => {
 
     it('should show an error when getting communication issues fails', fakeAsync(() => {
         spyOn(messageService, 'add')
-            spyOn(servicesService, 'getDaemonsWithCommunicationIssues').and.returnValue(throwError({ status: 404 }))
+        spyOn(servicesService, 'getDaemonsWithCommunicationIssues').and.returnValue(throwError({ status: 404 }))
         component.ngOnInit()
         tick()
         expect(messageService.add).toHaveBeenCalled()

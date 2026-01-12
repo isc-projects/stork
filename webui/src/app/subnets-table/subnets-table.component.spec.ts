@@ -120,14 +120,14 @@ describe('SubnetsTableComponent', () => {
                         {
                             id: 4,
                             daemonId: 28,
-                            daemonName: "dhcp4",
+                            daemonName: 'dhcp4',
                             machineAddress: 'localhost',
                             machineHostname: 'ha-cluster-2',
                         },
                         {
                             id: 4,
                             daemonId: 28,
-                            daemonName: "dhcp4",
+                            daemonName: 'dhcp4',
                             machineAddress: 'localhost',
                             machineHostname: 'ha-cluster-3',
                         },

@@ -18,13 +18,7 @@ import { ServerDataService } from '../server-data.service'
 import { concatMap, lastValueFrom, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import {
-    DhcpDaemon,
-    DhcpDaemonHARelationshipOverview,
-    DhcpOverview,
-    Settings,
-    ZoneInventoryState,
-} from '../backend'
+import { DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview, Settings, ZoneInventoryState } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 import { TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { getSeverity, getTooltip } from '../zone-inventory-utils'
@@ -41,7 +35,6 @@ import { Tag } from 'primeng/tag'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 type DhcpOverviewParsed = ModifyDeep<
@@ -116,7 +109,6 @@ type DhcpOverviewParsed = ModifyDeep<
         TitleCasePipe,
         HumanCountPipe,
         SurroundPipe,
-        PlaceholderPipe,
         DaemonNiceNamePipe,
     ],
 })
@@ -681,5 +673,4 @@ export class DashboardComponent implements OnInit, OnDestroy {
     storeDHCPDashboardHidden(hidden: boolean): void {
         localStorage.setItem(this._dhcpDashboardHiddenStorageKey, JSON.stringify(hidden))
     }
-
 }

@@ -20,7 +20,10 @@
                     "
                 ></p-message>
                 <h4>Progress</h4>
-                <p-progressBar [value]="(fetchDaemonsCompletedCount / fetchTotalDaemonsCount) * 100" styleClass="max-w-30rem">
+                <p-progressBar
+                    [value]="(fetchDaemonsCompletedCount / fetchTotalDaemonsCount) * 100"
+                    styleClass="max-w-30rem"
+                >
                     <span>{{ fetchDaemonsCompletedCount }}/{{ fetchTotalDaemonsCount }}</span>
                 </p-progressBar>
             </td>
@@ -428,7 +431,12 @@ to the number of configured zones.
                                 </div>
                             </ng-template>
                         </p-columnFilter>
-                        <p-columnFilter field="daemonId" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                        <p-columnFilter
+                            field="daemonId"
+                            matchMode="contains"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel variant="on">

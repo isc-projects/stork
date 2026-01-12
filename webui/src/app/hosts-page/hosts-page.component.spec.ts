@@ -855,9 +855,7 @@ describe('HostsPageComponent', () => {
 
     xit('should display error message when daemonId is invalid', fakeAsync(() => {
         // TODO: this test should be moved away from Karma tests.
-        component.hostsTable().hosts = [
-            { id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] },
-        ]
+        component.hostsTable().hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
@@ -875,9 +873,7 @@ describe('HostsPageComponent', () => {
 
     xit('should display error message when subnetId is invalid', fakeAsync(() => {
         // TODO: this test should be moved away from Karma tests.
-        component.hostsTable().hosts = [
-            { id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] },
-        ]
+        component.hostsTable().hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
@@ -897,9 +893,7 @@ describe('HostsPageComponent', () => {
 
     xit('should display error message when keaSubnetId is invalid', fakeAsync(() => {
         // TODO: this test should be moved away from Karma tests.
-        component.hostsTable().hosts = [
-            { id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] },
-        ]
+        component.hostsTable().hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
@@ -919,9 +913,7 @@ describe('HostsPageComponent', () => {
 
     xit('should display multiple error message for each invalid value', fakeAsync(() => {
         // TODO: this test should be moved away from Karma tests.
-        component.hostsTable().hosts = [
-            { id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] },
-        ]
+        component.hostsTable().hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()

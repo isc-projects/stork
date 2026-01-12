@@ -429,7 +429,7 @@
                 <div *ngFor="let lhs of localHostsGroupedByDaemon[h.id]" class="flex align-items-baseline">
                     <!-- Hyperlink to the daemon details -->
                     <a routerLink="/daemons/{{ lhs[0].daemonId }}" class="block white-space-nowrap">
-                        {{ lhs[0].daemonName || ('Daemon ' + lhs[0].daemonId) }}
+                        {{ lhs[0].daemonName || 'Daemon ' + lhs[0].daemonId }}
                     </a>
                     <!-- Data source labels -->
                     <app-host-data-source-label

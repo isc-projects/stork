@@ -536,7 +536,7 @@ export class VersionService {
      * @return "kea", "bind9", or "stork" types.
      */
     private getDaemonType(daemon: DaemonName): 'kea' | 'bind9' | 'stork' | 'unsupported' {
-        if (isKeaDaemon(daemon))  {
+        if (isKeaDaemon(daemon)) {
             return 'kea'
         } else if (daemon === 'named') {
             return 'bind9'

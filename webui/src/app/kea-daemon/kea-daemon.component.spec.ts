@@ -4,11 +4,10 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
-import { of, throwError } from 'rxjs'
+import { of } from 'rxjs'
 
 import { AppsVersions, KeaDaemon, ServicesService } from '../backend'
-import { ServerDataService } from '../server-data.service'
-import { NoopAnimationsModule, provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
@@ -89,32 +88,32 @@ describe('KeaDaemonComponent', () => {
 
     beforeEach(() => {
         const dhcp4Daemon: KeaDaemon = {
-    id: 1,
-    pid: 1234,
-    name: 'dhcp4',
-    active: false,
-    monitored: true,
-    version: '1.9.4',
-    extendedVersion: '1.9.4-extended',
-    uptime: 100,
-    reloadedAt: '2025-01-01T12:00:00Z',
-    hooks: [],
-    files: [
-        {
-            filetype: 'Lease file',
-            filename: '/tmp/kea-leases4.csv',
-        },
-    ],
-    backends: [
-        {
-            backendType: 'mysql',
-            database: 'kea',
-            host: 'localhost',
-            dataTypes: ['Leases', 'Host Reservations'],
-        },
-    ],
-    machine: { id: 1 },
-}
+            id: 1,
+            pid: 1234,
+            name: 'dhcp4',
+            active: false,
+            monitored: true,
+            version: '1.9.4',
+            extendedVersion: '1.9.4-extended',
+            uptime: 100,
+            reloadedAt: '2025-01-01T12:00:00Z',
+            hooks: [],
+            files: [
+                {
+                    filetype: 'Lease file',
+                    filename: '/tmp/kea-leases4.csv',
+                },
+            ],
+            backends: [
+                {
+                    backendType: 'mysql',
+                    database: 'kea',
+                    host: 'localhost',
+                    dataTypes: ['Leases', 'Host Reservations'],
+                },
+            ],
+            machine: { id: 1 },
+        }
 
         fixture = TestBed.createComponent(KeaDaemonComponent)
         component = fixture.componentInstance

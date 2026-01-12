@@ -130,7 +130,7 @@ describe('VersionPageComponent', () => {
                         accessPoints: null,
                         id: 9,
                         name: 'named',
-                        version: "9.18.30",
+                        version: '9.18.30',
                         extendedVersion: 'BIND 9.18.30 (Extended Support Version) <id:cdc8d69>',
                     },
                 ],

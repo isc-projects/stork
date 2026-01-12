@@ -216,26 +216,26 @@ describe('MachinesTableComponent', () => {
                     authorized: true,
                     hostname: 'zzz',
                     daemons: [
-                                    {
-                                        active: true,
-                                        extendedVersion: '2.2.0',
-                                        id: 1,
-                                        name: 'dhcp4',
-                                        version: '2.2.0',
-                                    },
-                                    {
-                                        active: false,
-                                        extendedVersion: '2.3.0',
-                                        id: 2,
-                                        name: 'ca',
-                                        version: '2.2.0',
-                                    },
-                                    {
-                                        active: true,
-                                        id: 3,
-                                        name: 'named',
-                                        version: '9.18.30',
-                                    },
+                        {
+                            active: true,
+                            extendedVersion: '2.2.0',
+                            id: 1,
+                            name: 'dhcp4',
+                            version: '2.2.0',
+                        },
+                        {
+                            active: false,
+                            extendedVersion: '2.3.0',
+                            id: 2,
+                            name: 'ca',
+                            version: '2.2.0',
+                        },
+                        {
+                            active: true,
+                            id: 3,
+                            name: 'named',
+                            version: '9.18.30',
+                        },
                     ],
                     agentVersion: '1.19.0',
                 },
@@ -279,7 +279,6 @@ describe('MachinesTableComponent', () => {
 
         expect(versionStatus[3].nativeElement.innerHTML).toContain('9.18.30')
         expect(versionStatus[3].nativeElement.innerHTML).toContain('named')
-        
 
         // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')

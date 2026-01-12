@@ -8,7 +8,6 @@ import { Pipe, PipeTransform } from '@angular/core'
  */
 @Pipe({
     name: 'zoneTypeAlias',
-    standalone: true,
 })
 export class ZoneTypeAliasPipe implements PipeTransform {
     /**

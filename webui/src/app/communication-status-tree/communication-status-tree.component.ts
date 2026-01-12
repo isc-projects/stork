@@ -118,7 +118,10 @@ export class CommunicationStatusTreeComponent implements OnInit {
 
             machineNode.children.push({
                 icon: isKeaDaemon ? 'pi pi-sitemap' : 'pi pi-link',
-                styleClass: this.getStyleClassForErrors(daemon.monitored, (daemon.daemonCommErrors ?? 0) + (daemon.caCommErrors ?? 0)),
+                styleClass: this.getStyleClassForErrors(
+                    daemon.monitored,
+                    (daemon.daemonCommErrors ?? 0) + (daemon.caCommErrors ?? 0)
+                ),
                 type: isKeaDaemon ? 'kea' : 'other',
                 expanded: true,
                 data: {
@@ -161,7 +164,10 @@ export class CommunicationStatusTreeComponent implements OnInit {
      * @param channelType channel type for which the node should be created.
      * @returns An instance of the tree node.
      */
-    private createNamedChannelNode(daemon: Bind9Daemon, channelType: 'rndc' | 'stats'): TreeNode<CommunicationStatusNodeData> {
+    private createNamedChannelNode(
+        daemon: Bind9Daemon,
+        channelType: 'rndc' | 'stats'
+    ): TreeNode<CommunicationStatusNodeData> {
         return {
             icon: `pi pi-link`,
             type: 'named-channel',

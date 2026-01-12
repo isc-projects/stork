@@ -259,7 +259,11 @@
             <ng-container *ngIf="authorizedMachinesDisplayed()">
                 <td>
                     <ng-container *ngIf="m.authorized">
-                        <app-version-status [showDaemonName]="true" daemonName="stork" [version]="m.agentVersion"></app-version-status>
+                        <app-version-status
+                            [showDaemonName]="true"
+                            daemonName="stork"
+                            [version]="m.agentVersion"
+                        ></app-version-status>
                     </ng-container>
                 </td>
                 <td>

@@ -119,7 +119,7 @@ export class HostTabComponent {
      * can be specified multiple times in the same daemon (e.g., in the JSON
      * configuration and host database). So, the pair host-daemon is not unique
      * in the local host slice. Unique is triple: host-daemon-source.
-     * 
+     *
      * The component presents the daemon-related host data.
      * If all daemons in all sources have the same data, the data are presented
      * once with a label that it concerns all servers.
@@ -128,7 +128,7 @@ export class HostTabComponent {
      * separately with a label indicating the sources are consistent.
      * If the daemons have various data and their sources also varies, the
      * component display one entry for each daemon-source pair.
-     * 
+     *
      * Local hosts of the @currentHost grouped by data compliance.
      * If all the daemons have the same set of options (in all sources), their
      * are grouped to a single group.
@@ -179,7 +179,7 @@ export class HostTabComponent {
     private _leasesSearchStatus = new Map<number, boolean>()
 
     /**
-    * List of Kea daemons which returned an error during leases search.
+     * List of Kea daemons which returned an error during leases search.
      */
     erredDaemons: LeasesSearchErredDaemon[] = []
 

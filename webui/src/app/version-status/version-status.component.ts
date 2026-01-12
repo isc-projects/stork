@@ -130,7 +130,11 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                     .getCurrentData()
                     .pipe(
                         map((data) => {
-                            return this.versionService.getSoftwareVersionFeedback(sanitizedSemver, this.daemonName, data)
+                            return this.versionService.getSoftwareVersionFeedback(
+                                sanitizedSemver,
+                                this.daemonName,
+                                data
+                            )
                         }),
                         // Use first() operator to unsubscribe after receiving first data.
                         // This is to avoid too many subscriptions for larger Stork deployments.

@@ -96,7 +96,9 @@ describe('HaStatusComponent', () => {
 
     it('should not present a placeholder on the initial data loading failure', fakeAsync(() => {
         // Mock the API response.
-        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(throwError(new HttpErrorResponse({ status: 500 })))
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
+            throwError(new HttpErrorResponse({ status: 500 }))
+        )
         spyOn(component, 'setCountdownTimer')
 
         // Execute ngOnInit hook.

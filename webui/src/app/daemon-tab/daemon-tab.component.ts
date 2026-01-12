@@ -1,11 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { AnyDaemon } from '../backend'
-import {
-    daemonStatusIconColor,
-    daemonStatusIconName,
-    daemonStatusIconTooltip,
-} from '../utils'
+import { daemonStatusIconColor, daemonStatusIconName, daemonStatusIconTooltip } from '../utils'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { KeaDaemonComponent } from '../kea-daemon/kea-daemon.component'
@@ -15,9 +11,9 @@ import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
-import { Button, ButtonModule } from 'primeng/button'
-import { Tooltip, TooltipModule } from 'primeng/tooltip'
-import { Panel, PanelModule } from 'primeng/panel'
+import { Button } from 'primeng/button'
+import { Tooltip } from 'primeng/tooltip'
+import { Panel } from 'primeng/panel'
 import { RouterLink } from '@angular/router'
 
 @Component({
@@ -38,7 +34,7 @@ import { RouterLink } from '@angular/router'
         LocaltimePipe,
         DurationPipe,
         RouterLink,
-    ]
+    ],
 })
 export class DaemonTabComponent {
     @Input() daemon: AnyDaemon

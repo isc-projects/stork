@@ -4,7 +4,6 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
 import { provideRouter, withHashLocation } from '@angular/router'
-import { of } from 'rxjs'
 
 let mockGetAppsWithCommunicationIssues = {
     items: [
@@ -216,7 +215,7 @@ let mockGetAppsWithCommunicationIssues = {
                     id: 6,
                     monitored: true,
                     name: 'named',
-                        daemonCommErrors: 4,
+                    daemonCommErrors: 4,
                 },
             },
             id: 6,
@@ -250,7 +249,7 @@ let mockGetAppsWithCommunicationIssues = {
                     monitored: true,
                     name: 'named',
                     statsCommErrors: 7,
-            getDaemonsWithCommunicationIssues: () => of(mockGetAppsWithCommunicationIssues),
+                },
             },
             id: 7,
             machine: {

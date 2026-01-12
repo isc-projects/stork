@@ -1,10 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { DaemonStatusComponent } from './daemon-status.component'
-import { TooltipModule } from 'primeng/tooltip'
-import { RouterTestingModule } from '@angular/router/testing'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
-import { Tooltip } from 'chart.js'
 import { provideRouter } from '@angular/router'
 
 class Daemon {

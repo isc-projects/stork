@@ -125,18 +125,18 @@ describe('HostTabComponent', () => {
         // HW address should remain in hexadecimal form.
         expect(hostIdsFieldset.nativeElement.textContent).toContain('51:52:53:54:55:56')
 
-    const daemonsFieldset = fieldsets[0]
-    expect(daemonsFieldset).toBeTruthy()
+        const daemonsFieldset = fieldsets[0]
+        expect(daemonsFieldset).toBeTruthy()
 
-    const daemonLinks = daemonsFieldset.queryAll(By.css('a'))
-    expect(daemonLinks.length).toBe(2)
-    expect(daemonLinks[0].attributes.href).toBe('/daemons/1')
-    expect(daemonLinks[1].attributes.href).toBe('/daemons/2')
+        const daemonLinks = daemonsFieldset.queryAll(By.css('a'))
+        expect(daemonLinks.length).toBe(2)
+        expect(daemonLinks[0].attributes.href).toBe('/daemons/1')
+        expect(daemonLinks[1].attributes.href).toBe('/daemons/2')
 
-    let datasourceLabel = daemonsFieldset.query(By.css('.datasource--config'))
+        let datasourceLabel = daemonsFieldset.query(By.css('.datasource--config'))
         expect(datasourceLabel).toBeTruthy()
         expect(datasourceLabel.nativeElement.innerText).toBe('config')
-    datasourceLabel = daemonsFieldset.query(By.css('.datasource--hostcmds'))
+        datasourceLabel = daemonsFieldset.query(By.css('.datasource--hostcmds'))
         expect(datasourceLabel).toBeTruthy()
         expect(datasourceLabel.nativeElement.innerText).toBe('host_cmds')
 
@@ -1247,14 +1247,14 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 22,
-                    dataSource: 'api'
+                    dataSource: 'api',
                 },
                 {
                     daemonId: 11,
                 },
                 {
                     daemonId: 22,
-                    dataSource: 'config'
+                    dataSource: 'config',
                 },
             ],
         } as Host
@@ -1332,10 +1332,10 @@ describe('HostTabComponent', () => {
                 case 3:
                 case 5:
                     expect(group.length).toBe(1)
-                    break;
+                    break
                 case 4:
                     expect(group.length).toBe(2)
-                    break;
+                    break
             }
         }
     })
@@ -1386,10 +1386,10 @@ describe('HostTabComponent', () => {
                 case 3:
                 case 5:
                     expect(group.length).toBe(1)
-                    break;
+                    break
                 case 4:
                     expect(group.length).toBe(2)
-                    break;
+                    break
             }
         }
     })
@@ -1440,10 +1440,10 @@ describe('HostTabComponent', () => {
                 case 3:
                 case 5:
                     expect(group.length).toBe(1)
-                    break;
+                    break
                 case 4:
                     expect(group.length).toBe(2)
-                    break;
+                    break
             }
         }
     })
@@ -1524,10 +1524,10 @@ describe('HostTabComponent', () => {
                 case 2:
                 case 4:
                     expect(group.length).toBe(1)
-                    break;
+                    break
                 case 3:
                     expect(group.length).toBe(2)
-                    break;
+                    break
             }
         }
     })
@@ -1573,10 +1573,10 @@ describe('HostTabComponent', () => {
                 case 3:
                 case 4:
                     expect(group.length).toBe(1)
-                    break;
+                    break
                 case 2:
                     expect(group.length).toBe(2)
-                    break;
+                    break
             }
         }
     })

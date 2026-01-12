@@ -1,8 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { DashboardComponent } from './dashboard.component'
-import { PanelModule } from 'primeng/panel'
-import { ButtonModule } from 'primeng/button'
 import {
     AppsVersions,
     DaemonsStats,
@@ -10,8 +8,6 @@ import {
     DHCPService,
     DNSService,
     ServicesService,
-    SettingsService,
-    UsersService,
     ZoneInventoryStates,
 } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
@@ -127,7 +123,7 @@ describe('DashboardComponent', () => {
                         localSubnets: [
                             {
                                 daemonId: 27,
-                                daemonName: "dhcp4",
+                                daemonName: 'dhcp4',
                                 id: 41,
                                 pools: [
                                     {
@@ -156,7 +152,7 @@ describe('DashboardComponent', () => {
                         localSubnets: [
                             {
                                 daemonId: 27,
-                                daemonName: "dhcp4",
+                                daemonName: 'dhcp4',
                                 pools: [
                                     {
                                         pool: '10.3::1-10.3::100',
@@ -180,13 +176,13 @@ describe('DashboardComponent', () => {
         }
 
         spyOn(dhcpService, 'getDhcpOverview').and.returnValues(of({} as any), of(fakeOverview as any))
-            spyOn(dataService, 'getDaemonsStats').and.returnValue(
-                of({
-                    dhcpDaemonsTotal: 2,
-                    dnsDaemonsTotal: 1,
-                    dhcpDaemonsNotOk: 1,
-                    dnsDaemonsNotOk: 0,
-                } as DaemonsStats)
+        spyOn(dataService, 'getDaemonsStats').and.returnValue(
+            of({
+                dhcpDaemonsTotal: 2,
+                dnsDaemonsTotal: 1,
+                dhcpDaemonsNotOk: 1,
+                dnsDaemonsNotOk: 0,
+            } as DaemonsStats)
         )
 
         const zonesFetchStatusResponse: ZoneInventoryStates = {
@@ -202,34 +198,34 @@ describe('DashboardComponent', () => {
             ],
             total: 1,
         }
-            spyOn(dnsService, 'getZonesFetch').and.returnValue(of(zonesFetchStatusResponse as any))
-            const daemonsResponse = {
-                items: [
-                    {
-                        accessPoints: [
-                            { address: '127.0.0.1', port: 953, type: 'control' },
-                            { address: '127.0.0.1', port: 8053, type: 'statistics' },
-                        ],
-                        active: true,
-                        agentCommErrors: 200,
-                        autoZoneCount: 200,
-                        id: 27,
-                        monitored: true,
-                        name: 'bind9',
-                        reloadedAt: '2025-04-12T11:58:41.000Z',
-                        uptime: 5356,
-                        version: 'BIND 9.18.35 (Extended Support Version) <id:f506f80>',
-                        views: [
-                            { name: 'guest', queryHits: 0, queryMisses: 0 },
-                            { name: 'trusted', queryHits: 0, queryMisses: 0 },
-                        ],
-                        zoneCount: 4,
-                        machine: { address: 'agent-bind9', hostname: 'agent-bind9', id: 15 },
-                    },
-                ],
-                total: 1,
-            }
-            spyOn(servicesApi, 'getDaemons').and.returnValue(of(daemonsResponse as any))
+        spyOn(dnsService, 'getZonesFetch').and.returnValue(of(zonesFetchStatusResponse as any))
+        const daemonsResponse = {
+            items: [
+                {
+                    accessPoints: [
+                        { address: '127.0.0.1', port: 953, type: 'control' },
+                        { address: '127.0.0.1', port: 8053, type: 'statistics' },
+                    ],
+                    active: true,
+                    agentCommErrors: 200,
+                    autoZoneCount: 200,
+                    id: 27,
+                    monitored: true,
+                    name: 'bind9',
+                    reloadedAt: '2025-04-12T11:58:41.000Z',
+                    uptime: 5356,
+                    version: 'BIND 9.18.35 (Extended Support Version) <id:f506f80>',
+                    views: [
+                        { name: 'guest', queryHits: 0, queryMisses: 0 },
+                        { name: 'trusted', queryHits: 0, queryMisses: 0 },
+                    ],
+                    zoneCount: 4,
+                    machine: { address: 'agent-bind9', hostname: 'agent-bind9', id: 15 },
+                },
+            ],
+            total: 1,
+        }
+        spyOn(servicesApi, 'getDaemons').and.returnValue(of(daemonsResponse as any))
 
         fixture = TestBed.createComponent(DashboardComponent)
         component = fixture.componentInstance

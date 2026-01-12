@@ -12,15 +12,12 @@
         <td class="word-break-all">
             {{ formatAddress(ap.address) }}:{{ ap.port }}
             <span
-                *ngIf="ap.protocol === 'https' || (ap.protocol === 'rndc' && !!ap.key ); else unsecure"
+                *ngIf="ap.protocol === 'https' || (ap.protocol === 'rndc' && !!ap.key); else unsecure"
                 class="access-point-list__icon--secured pi pi-lock"
                 pTooltip="secured connection"
             ></span>
             <ng-template #unsecure>
-                <span
-                    class="access-point-list__icon--unsecured pi pi-lock-open"
-                    pTooltip="unsecured connection"
-                ></span>
+                <span class="access-point-list__icon--unsecured pi pi-lock-open" pTooltip="unsecured connection"></span>
             </ng-template>
             <br class="block lg:hidden" />
             <span

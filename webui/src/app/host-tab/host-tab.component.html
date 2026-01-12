@@ -86,7 +86,7 @@
                         <tr>
                             <td class="border-none w-10rem">
                                 <a routerLink="/daemons/{{ ls[0].daemonId }}">
-                                    {{ ls[0].daemonName || ('Daemon ' + ls[0].daemonId) }}
+                                    {{ ls[0].daemonName || 'Daemon ' + ls[0].daemonId }}
                                 </a>
                                 <app-host-data-source-label
                                     class="ml-2"
@@ -331,7 +331,7 @@
         {{ title }}&nbsp;/&nbsp;
         <ng-container *ngIf="!all">
             <a class="mr-1" routerLink="/daemons/{{ localHosts[0].daemonId }}">
-                {{ localHosts[0].daemonName || ('Daemon ' + localHosts[0].daemonId) }}
+                {{ localHosts[0].daemonName || 'Daemon ' + localHosts[0].daemonId }}
             </a>
             <app-host-data-source-label
                 *ngFor="let localHost of localHosts"

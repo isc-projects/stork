@@ -79,20 +79,20 @@
                             ></p-tag>
                             <app-help-tip subject="Filtering" id="filtering-help-button">
                                 <p>
-                                        Daemons in the table below can be filtered by entering text in the search box; the
-                                        table shows all daemons matching the filter text. The currently supported fields for
+                                    Daemons in the table below can be filtered by entering text in the search box; the
+                                    table shows all daemons matching the filter text. The currently supported fields for
                                     filtering are:
                                 </p>
                                 <ul>
-                                        <li>Daemon Type</li>
-                                        <li>Daemon Name</li>
-                                        <li>Daemon Version</li>
+                                    <li>Daemon Type</li>
+                                    <li>Daemon Name</li>
+                                    <li>Daemon Version</li>
                                     <li>Machine Address</li>
                                     <li>Machine Hostname</li>
                                 </ul>
                                 <p>
-                                        Daemons can also be filtered by an explicitly selected Daemon Type, using the multiselect
-                                    filter.
+                                    Daemons can also be filtered by an explicitly selected Daemon Type, using the
+                                    multiselect filter.
                                 </p>
                             </app-help-tip>
                         </div>
@@ -106,27 +106,27 @@
                             [disabled]="!tableHasFilter(table)"
                         ></p-button>
                         <div class="flex-auto"></div>
-                            <p-columnFilter field="daemons" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                        <p-columnFilter field="daemons" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
                                     <p-floatlabel variant="on">
                                         <p-multiSelect
-                                                id="daemons-input"
+                                            id="daemons-input"
                                             [ngModel]="value"
                                             [options]="[
-                                                    { label: 'BIND9', value: 'named' },
-                                                    { label: 'Kea DHCPv4', value: 'dhcp4' },
-                                                    { label: 'Kea DHCPv6', value: 'dhcp6' },
-                                                    { label: 'Kea D2', value: 'd2' },
-                                                    { label: 'Kea CA', value: 'ca' },
-                                                    { label: 'Kea NETCONF', value: 'netconf' },
-                                                    { label: 'PowerDNS', value: 'pdns' },
+                                                { label: 'BIND9', value: 'named' },
+                                                { label: 'Kea DHCPv4', value: 'dhcp4' },
+                                                { label: 'Kea DHCPv6', value: 'dhcp6' },
+                                                { label: 'Kea D2', value: 'd2' },
+                                                { label: 'Kea CA', value: 'ca' },
+                                                { label: 'Kea NETCONF', value: 'netconf' },
+                                                { label: 'PowerDNS', value: 'pdns' },
                                             ]"
                                             (onChange)="filterTable($event.value, filterConstraint)"
                                             class="w-10rem"
                                         >
                                         </p-multiSelect>
-                                            <label for="daemons-input">Daemon Type</label>
+                                        <label for="daemons-input">Daemon Type</label>
                                     </p-floatlabel>
                                     <p-button
                                         icon="pi pi-filter-slash"
@@ -139,7 +139,7 @@
                                 </div>
                             </ng-template>
                         </p-columnFilter>
-                            <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                        <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex">
                                     <p-iconfield iconPosition="left">
@@ -152,7 +152,7 @@
                                             type="text"
                                             (input)="filterTable($event.target.value, filterConstraint)"
                                             [ngModel]="value"
-                                                placeholder="Search daemons"
+                                            placeholder="Search daemons"
                                         />
                                     </p-iconfield>
                                     <p-button

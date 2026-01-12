@@ -179,12 +179,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     fetchInProgress: boolean = false
 
     /**
-    * Keeps count of DNS daemons for which zones fetch was completed. This number comes from backend.
+     * Keeps count of DNS daemons for which zones fetch was completed. This number comes from backend.
      */
     fetchDaemonsCompletedCount: number = 0
 
     /**
-    * Keeps total count of DNS daemons for which zones fetch is currently in progress. This number comes from backend.
+     * Keeps total count of DNS daemons for which zones fetch is currently in progress. This number comes from backend.
      */
     fetchTotalDaemonsCount: number = 0
 
@@ -204,7 +204,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     putZonesFetchLocked: boolean = false
 
     /**
-    * Column names for tables which display local zones.
+     * Column names for tables which display local zones.
      */
     localZoneColumns: string[] = ['Daemon Name', 'Daemon ID', 'View', 'Zone Type', 'Serial', 'Class', 'Loaded At']
 

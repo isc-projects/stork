@@ -29,8 +29,7 @@ export class DaemonOverviewComponent {
      *          surrounded by [ ].
      */
     formatAddress(addr: string): string {
-        if (addr.length === 0 || !addr.includes(':') || (addr.startsWith('[') && addr.endsWith(']')))
-            return addr
+        if (addr.length === 0 || !addr.includes(':') || (addr.startsWith('[') && addr.endsWith(']'))) return addr
 
         return `[${addr}]`
     }

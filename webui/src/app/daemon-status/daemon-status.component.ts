@@ -5,7 +5,7 @@ import { AnyDaemon } from '../backend'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { RouterLink } from '@angular/router'
 import { NgStyle } from '@angular/common'
-import { Tooltip, TooltipModule } from 'primeng/tooltip'
+import { Tooltip } from 'primeng/tooltip'
 
 @Component({
     selector: 'app-daemon-status',

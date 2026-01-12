@@ -34,7 +34,7 @@ import { InputIcon } from 'primeng/inputicon'
 import { InputText } from 'primeng/inputtext'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { DaemonTabComponent } from '../daemon-tab/daemon-tab.component'
-import { Tooltip, TooltipModule } from 'primeng/tooltip'
+import { Tooltip } from 'primeng/tooltip'
 
 /**
  * Sets boolean flag indicating if there are communication errors with

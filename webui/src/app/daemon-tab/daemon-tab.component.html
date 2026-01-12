@@ -53,10 +53,7 @@
                 <div class="col-12 md:col-6">
                     <div class="font-medium">Status</div>
                     <div class="flex align-items-center gap-2">
-                        <i
-                            class="{{ daemonStatusIconName }}"
-                            [style.color]="daemonStatusIconColor"
-                        ></i>
+                        <i class="{{ daemonStatusIconName }}" [style.color]="daemonStatusIconColor"></i>
                         <span>{{ daemonStatusIconTooltip }}</span>
                     </div>
                 </div>
@@ -72,7 +69,16 @@
         </p-panel>
     </div>
 
-    <div class="col-12" *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6' || daemon.name === 'ca' || daemon.name === 'd2' || daemon.name === 'netconf'">
+    <div
+        class="col-12"
+        *ngIf="
+            daemon.name === 'dhcp4' ||
+            daemon.name === 'dhcp6' ||
+            daemon.name === 'ca' ||
+            daemon.name === 'd2' ||
+            daemon.name === 'netconf'
+        "
+    >
         <app-kea-daemon [daemon]="daemon"></app-kea-daemon>
     </div>
 

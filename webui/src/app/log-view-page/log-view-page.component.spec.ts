@@ -4,7 +4,6 @@ import { provideRouter } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { LogViewPageComponent } from './log-view-page.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LogViewPageComponent', () => {

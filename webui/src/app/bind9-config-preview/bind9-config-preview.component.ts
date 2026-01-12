@@ -1,13 +1,12 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core'
-import { CommonModule } from '@angular/common'
 import { Bind9FormattedConfig } from '../backend'
-import { Checkbox, CheckboxChangeEvent, CheckboxModule } from 'primeng/checkbox'
+import { Checkbox, CheckboxChangeEvent } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
-import { ProgressSpinner, ProgressSpinnerModule } from 'primeng/progressspinner'
-import { Dialog, DialogModule } from 'primeng/dialog'
+import { ProgressSpinner } from 'primeng/progressspinner'
+import { Dialog } from 'primeng/dialog'
 import { Bind9ConfigViewFeederComponent } from '../bind9-config-view-feeder/bind9-config-view-feeder.component'
-import { Button, ButtonModule } from 'primeng/button'
-import { Tooltip, TooltipModule } from 'primeng/tooltip'
+import { Button } from 'primeng/button'
+import { Tooltip } from 'primeng/tooltip'
 
 /**
  * A component that displays BIND 9 configuration file in a dialog.
@@ -17,15 +16,7 @@ import { Tooltip, TooltipModule } from 'primeng/tooltip'
  */
 @Component({
     selector: 'app-bind9-config-preview',
-    imports: [
-        Bind9ConfigViewFeederComponent,
-        Button,
-        Checkbox,
-        Dialog,
-        FormsModule,
-        ProgressSpinner,
-        Tooltip,
-    ],
+    imports: [Bind9ConfigViewFeederComponent, Button, Checkbox, Dialog, FormsModule, ProgressSpinner, Tooltip],
     templateUrl: './bind9-config-preview.component.html',
     styleUrl: './bind9-config-preview.component.sass',
 })
