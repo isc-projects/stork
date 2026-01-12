@@ -17,7 +17,7 @@ GEM
     addressable (2.8.8)
       public_suffix (>= 2.0.2, < 8.0)
     base64 (0.3.0)
-    bigdecimal (3.3.1)
+    bigdecimal (4.0.1)
     claide (1.1.0)
     claide-plugins (0.9.2)
       cork
@@ -68,7 +68,7 @@ GEM
       base64
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
-    httparty (0.23.2)
+    httparty (0.24.0)
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -82,8 +82,8 @@ GEM
     logger (1.7.0)
     mini_mime (1.1.5)
     minitest (5.26.2)
-    multi_xml (0.7.2)
-      bigdecimal (~> 3.1)
+    multi_xml (0.8.0)
+      bigdecimal (>= 3.1, < 5)
     nap (1.1.0)
     net-http (0.8.0)
       uri (>= 0.11.1)
