@@ -1,5 +1,5 @@
 <div *ngIf="inline" class="ml-2 inline-flex" [class]="styleClass">
-    <span *ngIf="showAppName" class="mr-1">{{ appName }} {{ version }}</span>
+    <span *ngIf="showDaemonName" class="mr-1">{{ daemonDisplayName }} {{ version }}</span>
     <a *ngIf="iscApp" routerLink="/versions">
         <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
     </a>

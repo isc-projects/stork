@@ -337,7 +337,7 @@
                                 <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                             </td>
                             <td>
-                                <app-version-status [daemonName]="d.name" [version]="d.version" [showAppName]="true"></app-version-status>
+                                <app-version-status [daemonName]="d.name" [version]="d.version" [showDaemonName]="true"></app-version-status>
                             </td>
                             <td>
                                 <a routerLink="/daemons/{{ d.id }}">{{ d.name }} | daemonNiceName</a>
@@ -467,7 +467,7 @@
                                     ><app-version-status
                                         [daemonName]="d.name"
                                         [version]="d.version"
-                                        [showAppName]="true"
+                                        [showDaemonName]="true"
                                     ></app-version-status
                                 ></a>
                             </td>

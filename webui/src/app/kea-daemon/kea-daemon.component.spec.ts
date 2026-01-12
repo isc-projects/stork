@@ -317,7 +317,7 @@ describe('KeaDaemonComponent', () => {
         expect(versionStatus.length).toEqual(1)
         // Stubbed success icon for kea 1.9.4 is expected.
         expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).toContain('1.9.4')
-        expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).toContain('Kea')
+        expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).toContain('DHCPv4')
         expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).toContain('text-green-500')
         expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).toContain('test feedback')
     })

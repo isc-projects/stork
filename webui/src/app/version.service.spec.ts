@@ -245,8 +245,8 @@ describe('VersionService', () => {
         service.setStorkServerVersion('1.15.0') // set mismatching server vs agent version on purpose
         // Act
         const securityUpdateFound = service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
-        const stableUpdateFound = service.getSoftwareVersionFeedback('9.18.10', 'bind9', fakeResponse)
-        const devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'kea', fakeResponse)
+        const stableUpdateFound = service.getSoftwareVersionFeedback('9.18.10', 'named', fakeResponse)
+        const devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'dhcp6', fakeResponse)
 
         // Assert
         expect(securityUpdateFound).toBeTruthy()
@@ -277,8 +277,8 @@ describe('VersionService', () => {
         // Arrange
         // Act
         const devNoStableCheck = service.getSoftwareVersionFeedback('1.19.0', 'stork', fakeResponse)
-        const stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'bind9', fakeResponse)
-        const devCheck = service.getSoftwareVersionFeedback('2.7.3', 'kea', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'named', fakeResponse)
+        const devCheck = service.getSoftwareVersionFeedback('2.7.3', 'ca', fakeResponse)
 
         // Assert
         expect(devNoStableCheck).toBeTruthy()
@@ -302,8 +302,8 @@ describe('VersionService', () => {
         // Arrange
         // Act
         const devNoStableCheck = service.getSoftwareVersionFeedback('1.19.5', 'stork', fakeResponse)
-        const stableCheck = service.getSoftwareVersionFeedback('9.20.22', 'bind9', fakeResponse)
-        const devCheck = service.getSoftwareVersionFeedback('2.9.3', 'kea', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('9.20.22', 'named', fakeResponse)
+        const devCheck = service.getSoftwareVersionFeedback('2.9.3', 'dhcp4', fakeResponse)
 
         // Assert
         expect(devNoStableCheck).toBeTruthy()
@@ -338,7 +338,7 @@ describe('VersionService', () => {
     it('should return software version feedback for newer stable not matching known ranges', () => {
         // Arrange
         // Act
-        const stableCheck = service.getSoftwareVersionFeedback('4.0.0', 'kea', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('4.0.0', 'd2', fakeResponse)
 
         // Assert
         expect(stableCheck).toBeTruthy()
@@ -352,7 +352,7 @@ describe('VersionService', () => {
     it('should return software version feedback for older stable not matching known ranges', () => {
         // Arrange
         // Act
-        const stableCheck = service.getSoftwareVersionFeedback('1.0.0', 'kea', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('1.0.0', 'dhcp6', fakeResponse)
 
         // Assert
         expect(stableCheck).toBeTruthy()
@@ -366,7 +366,7 @@ describe('VersionService', () => {
         // Act
         // Assert
         expect(() => {
-            service.getSoftwareVersionFeedback('a.b.c', 'kea', fakeResponse)
+            service.getSoftwareVersionFeedback('a.b.c', 'd2', fakeResponse)
         }).toThrowError("Couldn't parse valid semver from given a.b.c version!")
     })
 
@@ -381,22 +381,22 @@ describe('VersionService', () => {
         // Act
         // Assert
         expect(() => {
-            service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
-        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+            service.getSoftwareVersionFeedback('2.7.1', 'dhcp4', data)
+        }).toThrowError("Couldn't asses the software version for DHCPv4 2.7.1!")
 
         // Stable release metadata is there, but sortedStableVersions is missing.
         // It is expected to throw an error here as well.
         data.kea = { currentStable: [{ version: '2.6.1', releaseDate: '2024-02-01', eolDate: '2026-02-01' }] }
         expect(() => {
-            service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
-        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+            service.getSoftwareVersionFeedback('2.7.1', 'dhcp6', data)
+        }).toThrowError("Couldn't asses the software version for DHCPv6 2.7.1!")
 
         // Stable release metadata is missing.
         // It is expected to throw an error here as well.
         data.kea = { currentStable: [], sortedStableVersions: ['2.6.1'] }
         expect(() => {
-            service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
-        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+            service.getSoftwareVersionFeedback('2.7.1', 'd2', data)
+        }).toThrowError("Couldn't asses the software version for DDNS 2.7.1!")
     })
 
     it('should throw error for version check for incomplete AppVersions data', () => {
@@ -433,7 +433,7 @@ describe('VersionService', () => {
         // Act
         // Assert
         expect(() => {
-            service.getSoftwareVersionFeedback('4.0.0', 'kea', data)
+            service.getSoftwareVersionFeedback('4.0.0', 'ca', data)
         }).toThrowError('Invalid syntax of the software versions metadata JSON file received from Stork server.')
     })
 
@@ -463,7 +463,7 @@ describe('VersionService', () => {
         expect(resp).toBeTruthy()
         expect(resp.detected).toBeFalse()
         expect(resp.severity).toBe(Severity.success)
-        service.getSoftwareVersionFeedback('2.7.0', 'kea', fakeResponse)
+        service.getSoftwareVersionFeedback('2.7.0', 'netconf', fakeResponse)
         expect(resp.detected).toBeTrue()
         expect(resp.severity).toBe(Severity.warn)
         service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
@@ -481,11 +481,11 @@ describe('VersionService', () => {
         expect(resp).toBeTruthy()
         expect(resp.detected).toBeFalse()
         expect(resp.severity).toBe(Severity.success)
-        service.getSoftwareVersionFeedback('2.7.0', 'kea', fakeResponse)
+        service.getSoftwareVersionFeedback('2.7.0', 'dhcp4', fakeResponse)
         expect(resp.detected).toBeTrue()
         expect(resp.severity).toBe(Severity.warn)
         // success severity expected
-        const f = service.getSoftwareVersionFeedback('2.4.1', 'kea', fakeResponse)
+        const f = service.getSoftwareVersionFeedback('2.4.1', 'd2', fakeResponse)
         expect(f.severity).toBe(Severity.success)
         // however this shouldn't change the alert severity
         expect(resp.detected).toBeTrue()
@@ -500,7 +500,7 @@ describe('VersionService', () => {
         service.getVersionAlert().subscribe((d) => (resp2 = d))
         expect(resp2).toBeUndefined()
         // Detecting warning severity after the alert was dismissed should not enable the alert again.
-        service.getSoftwareVersionFeedback('2.7.0', 'kea', fakeResponse)
+        service.getSoftwareVersionFeedback('2.7.0', 'dhcp6', fakeResponse)
         expect(resp.detected).toBeFalse()
         expect(resp.severity).toBe(Severity.success)
         expect(resp2).toBeUndefined()
@@ -591,9 +591,9 @@ describe('VersionService', () => {
         // There is no stable stork release in fakeResponse data, so true is expected.
         expect(service.isDevMoreRecentThanStable('stork', fakeResponse)).toBeTrue()
         // Kea has more recent dev release than a stable release.
-        expect(service.isDevMoreRecentThanStable('kea', fakeResponse)).toBeTrue()
+        expect(service.isDevMoreRecentThanStable('dhcp6', fakeResponse)).toBeTrue()
         // BIND9 has more recent dev release than a stable release.
-        expect(service.isDevMoreRecentThanStable('bind9', fakeResponse)).toBeTrue()
+        expect(service.isDevMoreRecentThanStable('named', fakeResponse)).toBeTrue()
         const data = deepCopy(fakeResponse)
         data.stork.currentStable = [
             {
@@ -611,7 +611,7 @@ describe('VersionService', () => {
         // In this data, Stork stable is more recent than the dev release, so false is expected.
         expect(service.isDevMoreRecentThanStable('stork', data)).toBeFalse()
         // In this data, Kea has no dev release, so false is expected.
-        expect(service.isDevMoreRecentThanStable('kea', data)).toBeFalse()
+        expect(service.isDevMoreRecentThanStable('dhcp4', data)).toBeFalse()
     })
 
     it('should return software version feedback for security updates available', () => {
@@ -624,10 +624,10 @@ describe('VersionService', () => {
         ]
 
         // Act
-        const securityCheckCurrentStable1 = service.getSoftwareVersionFeedback('2.4.1', 'kea', data)
-        const securityCheckCurrentStable2 = service.getSoftwareVersionFeedback('2.6.1', 'kea', data)
-        const securityCheckCurrentDev = service.getSoftwareVersionFeedback('2.7.5', 'kea', data)
-        const securityCheckOlderDev = service.getSoftwareVersionFeedback('2.5.15', 'kea', data)
+        const securityCheckCurrentStable1 = service.getSoftwareVersionFeedback('2.4.1', 'dhcp4', data)
+        const securityCheckCurrentStable2 = service.getSoftwareVersionFeedback('2.6.1', 'ca', data)
+        const securityCheckCurrentDev = service.getSoftwareVersionFeedback('2.7.5', 'dhcp6', data)
+        const securityCheckOlderDev = service.getSoftwareVersionFeedback('2.5.15', 'ca', data)
 
         // Assert
         // Matches latestSecure range and is older.
@@ -669,12 +669,12 @@ describe('VersionService', () => {
         data.kea.latestDev.version = '2.7.10'
 
         // Act
-        const securityCheckCurrentStable1 = service.getSoftwareVersionFeedback('2.4.10', 'kea', data)
-        const securityCheckCurrentStable2 = service.getSoftwareVersionFeedback('2.6.10', 'kea', data)
-        const securityCheckOlderStable = service.getSoftwareVersionFeedback('2.2.1', 'kea', data)
-        const securityCheckCurrentDev = service.getSoftwareVersionFeedback('2.7.10', 'kea', data)
-        const securityCheckNewerDev1 = service.getSoftwareVersionFeedback('3.1.0', 'kea', data)
-        const securityCheckNewerDev2 = service.getSoftwareVersionFeedback('2.7.11', 'kea', data)
+        const securityCheckCurrentStable1 = service.getSoftwareVersionFeedback('2.4.10', 'dhcp6', data)
+        const securityCheckCurrentStable2 = service.getSoftwareVersionFeedback('2.6.10', 'dhcp4', data)
+        const securityCheckOlderStable = service.getSoftwareVersionFeedback('2.2.1', 'd2', data)
+        const securityCheckCurrentDev = service.getSoftwareVersionFeedback('2.7.10', 'netconf', data)
+        const securityCheckNewerDev1 = service.getSoftwareVersionFeedback('3.1.0', 'ca', data)
+        const securityCheckNewerDev2 = service.getSoftwareVersionFeedback('2.7.11', 'ca', data)
 
         // Assert
         // Matches latestSecure range and it is equal to latest stable release.
@@ -732,7 +732,7 @@ describe('VersionService', () => {
         data.kea.latestDev = null
 
         // Act
-        const devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
+        const devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'dhcp4', data)
 
         // Assert
         expect(devUpdateFound).toBeTruthy()

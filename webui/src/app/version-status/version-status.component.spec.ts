@@ -118,27 +118,27 @@ describe('VersionStatusComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should return app name', () => {
+    it('should return daemon display name', () => {
         // Arrange
         setCorrectInputs()
 
         // Act & Assert
-        expect(component.appName).toBe('Kea')
+        expect(component.daemonDisplayName).toBe('DHCPv4')
 
         fixture.componentRef.setInput('daemonName', 'stork')
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.appName).toBe('Stork agent')
+        expect(component.daemonDisplayName).toBe('Stork agent')
 
         fixture.componentRef.setInput('daemonName', 'named')
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.appName).toBe('BIND9')
+        expect(component.daemonDisplayName).toBe('named')
 
         fixture.componentRef.setInput('daemonName', 'pdns')
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.appName).toBe('PowerDNS')
+        expect(component.daemonDisplayName).toBe('pdns_server')
     })
 
     it('should get current versions data', () => {
@@ -147,7 +147,7 @@ describe('VersionStatusComponent', () => {
 
         // Act & Assert
         expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
-        expect(getSoftwareVersionFeedbackSpy).toHaveBeenCalledOnceWith('2.6.1', 'kea', fakeResponse)
+        expect(getSoftwareVersionFeedbackSpy).toHaveBeenCalledOnceWith('2.6.1', 'dhcp4', fakeResponse)
         expect(component.severity).toBe(Severity.success)
         expect(component.feedbackMessages).toBeTruthy()
         expect(component.feedbackMessages.length).toBeGreaterThan(0)
@@ -195,18 +195,18 @@ describe('VersionStatusComponent', () => {
         expect(Object.keys(component.iconClasses).length).toBe(0)
     })
 
-    it('should display app name', () => {
+    it('should display daemon name', () => {
         // Arrange
-        fixture.componentRef.setInput('showAppName', true)
+        fixture.componentRef.setInput('showDaemonName', true)
 
         // Act & Assert
         setCorrectInputs()
         const span = fixture.nativeElement.querySelector('span')
         expect(span).toBeTruthy()
-        expect(span.textContent).toContain('Kea 2.6.1')
+        expect(span.textContent).toContain('DHCPv4 2.6.1')
     })
 
-    it('should not display app name', () => {
+    it('should not display daemon name', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()

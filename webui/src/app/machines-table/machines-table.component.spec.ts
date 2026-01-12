@@ -272,13 +272,13 @@ describe('MachinesTableComponent', () => {
         expect(versionStatus[0].nativeElement.innerHTML).toContain('Stork')
 
         expect(versionStatus[1].nativeElement.innerHTML).toContain('2.2.0')
-        expect(versionStatus[1].nativeElement.innerHTML).toContain('Kea')
+        expect(versionStatus[1].nativeElement.innerHTML).toContain('DHCPv4')
 
         expect(versionStatus[2].nativeElement.innerHTML).toContain('2.2.0')
-        expect(versionStatus[2].nativeElement.innerHTML).toContain('Kea')
+        expect(versionStatus[2].nativeElement.innerHTML).toContain('CA')
 
         expect(versionStatus[3].nativeElement.innerHTML).toContain('9.18.30')
-        expect(versionStatus[3].nativeElement.innerHTML).toContain('BIND9')
+        expect(versionStatus[3].nativeElement.innerHTML).toContain('named')
         
 
         // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub

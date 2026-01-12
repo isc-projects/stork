@@ -1,8 +1,8 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
-import { AppType, getAppTypeFromDaemonName, Severity, VersionFeedback, VersionService } from '../version.service'
+import { DaemonName, isKeaDaemon, Severity, VersionFeedback, VersionService } from '../version.service'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
-import { getErrorMessage, getIconBySeverity } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
 import { NgIf } from '@angular/common'
 import { RouterLink } from '@angular/router'
@@ -30,7 +30,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * Accepts daemon names like 'dhcp4', 'dhcp6', 'd2', 'ca', 'netconf' (Kea daemons),
      * 'named' (BIND9), 'pdns' (PowerDNS), or special value 'stork' for the Stork agent.
      */
-    @Input({ required: true }) daemonName!: string
+    @Input({ required: true }) daemonName!: DaemonName
 
     /**
      * Version of the software for which the check is done. This must contain parsable semver.
@@ -38,11 +38,11 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     @Input({ required: true }) version: string
 
     /**
-     * For inline component version, this flag enables showing the app name with its version on the left side
+     * For inline component version, this flag enables showing the daemon name with its version on the left side
      * of the icon with the tooltip.
      * Defaults to false.
      */
-    @Input() showAppName = false
+    @Input() showDaemonName = false
 
     /**
      * This flag sets whether the component has a form of inline icon with the tooltip,
@@ -78,17 +78,11 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     messages: ToastMessageOptions[] | undefined
 
     /**
-     * Full name of the app. This is either 'Kea', 'BIND9', 'PowerDNS' or 'Stork agent'.
-     * This is computed based on daemonName field.
+     * Friendly display name for the daemon. Computed using daemonNameToFriendlyName.
+     * For 'stork' daemon, it returns 'Stork agent'.
      * @private
      */
-    private _appName: string
-
-    /**
-     * The application type derived from daemon name. Used for version checking.
-     * @private
-     */
-    private _appType: AppType
+    private _daemonDisplayName: string
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
@@ -116,26 +110,11 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
-        // Derive app type from daemon name using helper function
-        this._appType = getAppTypeFromDaemonName(this.daemonName)
-
-        // Set display name based on app type
-        switch (this._appType) {
-            case 'kea':
-                this._appName = 'Kea'
-                break
-            case 'bind9':
-                this._appName = 'BIND9'
-                break
-            case 'pdns':
-                this._appName = 'PowerDNS'
-                break
-            case 'stork':
-                this._appName = 'Stork agent'
-                break
-            default:
-                this._appName = this.daemonName
-                break
+        // Set display name using daemonNameToFriendlyName, with special case for stork
+        if (this.daemonName === 'stork') {
+            this._daemonDisplayName = 'Stork agent'
+        } else {
+            this._daemonDisplayName = daemonNameToFriendlyName(this.daemonName)
         }
         // Mute version checks for non-ISC apps. Version is mandatory. In case it is
         // false (undefined, null, empty string), simply return. No feedback will be displayed.
@@ -151,7 +130,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                     .getCurrentData()
                     .pipe(
                         map((data) => {
-                            return this.versionService.getSoftwareVersionFeedback(sanitizedSemver, this._appType, data)
+                            return this.versionService.getSoftwareVersionFeedback(sanitizedSemver, this.daemonName, data)
                         }),
                         // Use first() operator to unsubscribe after receiving first data.
                         // This is to avoid too many subscriptions for larger Stork deployments.
@@ -192,17 +171,17 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Getter of the full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on the app field.
+     * Getter of the friendly display name for the daemon.
      */
-    get appName() {
-        return this._appName
+    get daemonDisplayName() {
+        return this._daemonDisplayName
     }
 
     /**
      * Returns true if the app is a Kea, BIND9 or Stork agent.
      */
     get iscApp(): boolean {
-        return ['kea', 'bind9', 'stork'].includes(this._appType)
+        return isKeaDaemon(this.daemonName) || ['named', 'stork'].includes(this.daemonName)
     }
 
     /**
@@ -215,7 +194,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         this.feedbackMessages = feedback.messages ?? []
         const m: ToastMessageOptions = {
             severity: Severity[feedback.severity],
-            summary: `${this.appName} ${this.version}`,
+            summary: `${this.daemonDisplayName} ${this.version}`,
             detail: feedback.messages.join('<br><br>'),
         }
 

@@ -3,7 +3,7 @@
     <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
     <div class="col-12 sm:col-9">
         {{ daemon.version }}
-    <app-version-status [showAppName]="true" [daemonName]="daemon.name" [version]="daemon.version"></app-version-status>
+    <app-version-status [showDaemonName]="true" [daemonName]="daemon.name" [version]="daemon.version"></app-version-status>
     </div>
     <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
     <div class="col-12 sm:col-9">{{ daemon.uptime | duration }}</div>

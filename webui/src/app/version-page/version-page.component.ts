@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { AppType, getAppTypeFromDaemonName, Severity, UpdateNotification, VersionService } from '../version.service'
+import { DaemonName, isKeaDaemon, Severity, UpdateNotification, VersionService } from '../version.service'
 import { AppsVersions, Machine, ServicesService, VersionDetails, SimpleMachine, SimpleDaemon } from '../backend'
 import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
@@ -211,7 +211,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
                             if (
                                 data?.kea?.latestDev &&
-                                this.versionService.isDevMoreRecentThanStable('kea', this._processedData)
+                                this.versionService.isDevMoreRecentThanStable('dhcp4', this._processedData)
                             ) {
                                 this.keaVersions.push(data.kea?.latestDev)
                             }
@@ -220,7 +220,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             if (
                                 data.bind9?.latestDev &&
                                 data.bind9.latestDev &&
-                                this.versionService.isDevMoreRecentThanStable('bind9', this._processedData)
+                                this.versionService.isDevMoreRecentThanStable('named', this._processedData)
                             ) {
                                 this.bind9Versions.push(data?.bind9?.latestDev)
                             }
@@ -274,18 +274,17 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             m.daemons
                                 ?.filter((daemon: SimpleDaemon) => daemon?.version)
                                 .forEach((daemon: SimpleDaemon) => {
-                                    const appType: AppType = getAppTypeFromDaemonName(daemon.name)
                                     m.versionCheckSeverity = Math.min(
                                         this.severityMap[
                                             this.versionService.getSoftwareVersionFeedback(
                                                 daemon.version,
-                                                appType,
+                                                daemon.name as DaemonName,
                                                 this._processedData
                                             )?.severity ?? Severity.success
                                         ],
                                         m.versionCheckSeverity
                                     )
-                                    if (appType === 'kea') {
+                                    if (isKeaDaemon(daemon.name)) {
                                         keaDaemons.push(daemon)
                                     }
                                 })
