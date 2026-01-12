@@ -338,6 +338,8 @@
         type: string
       active:
         type: boolean
+      machineId:
+        type: integer
       machine:
         $ref: '#/definitions/SimpleMachine'
 
