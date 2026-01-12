@@ -14,7 +14,7 @@
             type: 'enum',
             matchMode: 'equals',
             arrayType: true,
-            enumValues: ['dhcp4', 'dhcp6', 'd2', 'ca', 'netconf', 'bind9', 'pdns'],
+            enumValues: ['dhcp4', 'dhcp6', 'd2', 'ca', 'netconf', 'named', 'pdns'],
         },
     }"
     [entitiesTable]="daemonsTable"
@@ -195,8 +195,7 @@
                     <td>
                         <span pTooltip="{{ daemonStatusIconTooltip(d) }}">
                             <i
-                                class="{{ daemonStatusIconName(d) }} text-xl"
-                                [style.color]="daemonStatusIconColor(d)"
+                                class="{{ daemonStatusIconClass(d) }} text-xl"
                             ></i>
                         </span>
                     </td>

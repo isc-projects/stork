@@ -7,8 +7,7 @@ import {
     datetimeToLocal,
     durationToString,
     getGrafanaUrl,
-    daemonStatusIconName,
-    daemonStatusIconColor,
+    daemonStatusIconClass,
     daemonStatusIconTooltip,
     getGrafanaSubnetTooltip,
     getErrorMessage,
@@ -358,7 +357,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                             this.zoneInventoryStateMap.set(s.daemonId, s)
                         })
                     }
-                    return this.servicesApi.getDaemons(event?.first ?? 0, event?.rows ?? 5, null, ['bind9', 'pdns'])
+                    return this.servicesApi.getDaemons(event?.first ?? 0, event?.rows ?? 5, null, ['named', 'pdns'])
                 })
             )
         )
@@ -426,7 +425,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Returns the name of the icon to be used in the Status column
+     * Returns the CSS classes to specify the icon to be used in the Status
+     * column.
      *
      * The icon selected depends on whether the daemon is active or not
      * active and whether there is a communication with the daemon or
@@ -434,25 +434,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
      *
      * @param daemon data structure holding the information about the daemon.
      *
-     * @returns ban icon if the daemon is not active, times icon if the daemon
-     *          should be active but the communication with it is broken and
-     *          check icon if the communication with the active daemon is ok.
+     * @returns the CSS classes
      */
-    daemonStatusIconName(daemon) {
-        return daemonStatusIconName(daemon)
-    }
-
-    /**
-     * Returns the color of the icon used in the Status column
-     *
-     * @param daemon data structure holding the information about the daemon.
-     *
-     * @returns grey color if the daemon is not active, red if the daemon is
-     *          active but there are communication issues, green if the
-     *          communication with the active daemon is ok.
-     */
-    daemonStatusIconColor(daemon) {
-        return daemonStatusIconColor(daemon)
+    daemonStatusIconClass(daemon) {
+        return daemonStatusIconClass(daemon)
     }
 
     /**

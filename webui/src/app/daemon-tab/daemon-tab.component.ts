@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { AnyDaemon } from '../backend'
-import { daemonStatusIconColor, daemonStatusIconName, daemonStatusIconTooltip } from '../utils'
+import { daemonStatusIconClass, daemonStatusIconTooltip } from '../utils'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { KeaDaemonComponent } from '../kea-daemon/kea-daemon.component'
@@ -41,12 +41,8 @@ export class DaemonTabComponent {
     @Input() daemon: AnyDaemon
     @Output() refreshDaemon = new EventEmitter<number>()
 
-    get daemonStatusIconName() {
-        return daemonStatusIconName(this.daemon)
-    }
-
-    get daemonStatusIconColor() {
-        return daemonStatusIconColor(this.daemon)
+    get daemonStatusIconClass() {
+        return daemonStatusIconClass(this.daemon)
     }
 
     get daemonStatusIconTooltip() {

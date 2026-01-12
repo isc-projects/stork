@@ -210,7 +210,7 @@ export class AppComponent implements OnInit, OnDestroy {
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/daemons/all',
-                        queryParams: { daemons: ['bind9', 'pdns'] },
+                        queryParams: { daemons: ['named', 'pdns'] },
                     },
                     {
                         label: 'Machines',

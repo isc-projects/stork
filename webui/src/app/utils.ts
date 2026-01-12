@@ -1,7 +1,7 @@
 import moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { gt, lt, valid } from 'semver'
-import { Bind9Daemon, KeaDaemon, PdnsDaemon } from './backend'
+import { AnyDaemon, Bind9Daemon, KeaDaemon, PdnsDaemon } from './backend'
 import { Severity } from './version.service'
 
 /**
@@ -260,7 +260,7 @@ export function daemonStatusErred(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) 
 }
 
 /**
- * Returns the name of the icon to be used to indicate daemon status
+ * Returns the CSS class to display the icon to be used to indicate daemon status
  *
  * The icon selected depends on whether the daemon is active or not
  * active and whether there is a communication with the daemon or
@@ -269,36 +269,21 @@ export function daemonStatusErred(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) 
  * @param daemon data structure holding the information about the daemon.
  *
  * @returns ban icon if the daemon is not active, times icon if the daemon
- *  should be active but the communication with it is broken and
+ *  should be active but the communication with it is broken, the exclamation
+ *  mark if the daemon is active but errors are observed and
  *  check icon if the communication with the active daemon is ok.
  */
-export function daemonStatusIconName(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
+export function daemonStatusIconClass(daemon: AnyDaemon) {
     if (!daemon.monitored) {
         return 'pi pi-ban icon-not-monitored'
     }
     if (!daemon.active) {
-        return 'pi pi-times icon-not-active'
+        return 'pi pi-times text-red-500'
     }
-    return 'pi pi-check icon-ok'
-}
-
-/**
- * Returns the color of the icon used to indicate daemon status
- *
- * @param daemon data structure holding the information about the daemon.
- *
- * @returns grey color if the daemon is not active, red if the daemon is
- *          active but there are communication issues, green if the
- *          communication with the active daemon is ok.
- */
-export function daemonStatusIconColor(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
-    if (!daemon.monitored) {
-        return 'var(--p-gray-400)'
+    if ((daemon.daemonCommErrors ?? 0) + (daemon.agentCommErrors ?? 0) + (daemon.caCommErrors ?? 0) + (daemon.statsCommErrors ?? 0) > 0) {
+        return 'pi pi-exclamation-triangle text-orange-400'
     }
-    if (!daemon.active) {
-        return 'var(--p-red-500)'
-    }
-    return 'var(--p-green-500)'
+    return 'pi pi-check text-green-500'
 }
 
 /**

@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api'
 
 import { ServicesService } from '../backend'
 
-import { durationToString, daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
+import { durationToString, daemonStatusIconClass, daemonStatusIconTooltip } from '../utils'
 import { KeaDaemon, ModelFile } from '../backend'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { NgIf, NgClass, NgFor } from '@angular/common'
@@ -120,29 +120,10 @@ export class KeaDaemonComponent {
     }
 
     /**
-     * Returns the name of the icon to be used when presenting daemon status
-     *
-     * The icon selected depends on whether the daemon is active or not
-     * active and whether there is a communication with the daemon or
-     * not.
-     *
-     * @returns ban icon if the daemon is not active, times icon if the daemon
-     *          should be active but the communication with it is broken and
-     *          check icon if the communication with the active daemon is ok.
+     * Returns the CSS classes of the icon to be used when presenting daemon status.
      */
-    get daemonStatusIconName() {
-        return daemonStatusIconName(this.daemon)
-    }
-
-    /**
-     * Returns the color of the icon used when presenting daemon status
-     *
-     * @returns grey color if the daemon is not active, red if the daemon is
-     *          active but there are communication issues, green if the
-     *          communication with the active daemon is ok.
-     */
-    get daemonStatusIconColor() {
-        return daemonStatusIconColor(this.daemon)
+    get daemonStatusIconClass() {
+        return daemonStatusIconClass(this.daemon)
     }
 
     /**

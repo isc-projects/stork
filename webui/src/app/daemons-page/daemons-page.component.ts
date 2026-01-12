@@ -5,8 +5,7 @@ import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplat
 
 import {
     daemonStatusErred,
-    daemonStatusIconColor as daemonStatusIconColorFn,
-    daemonStatusIconName as daemonStatusIconNameFn,
+    daemonStatusIconClass as daemonStatusIconClassFn,
     daemonStatusIconTooltip as daemonStatusIconTooltipFn,
 } from '../utils'
 import { AnyDaemon, ServicesService } from '../backend'
@@ -342,15 +341,8 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
     /**
      * Returns an CSS icon name to indicate the daemon status.
      */
-    daemonStatusIconName(daemon: AnyDaemon) {
-        return daemonStatusIconNameFn(daemon as any)
-    }
-
-    /**
-     * Returns a color that should be used to display the status icon.
-     */
-    daemonStatusIconColor(daemon: AnyDaemon) {
-        return daemonStatusIconColorFn(daemon as any)
+    daemonStatusIconClass(daemon: AnyDaemon) {
+        return daemonStatusIconClassFn(daemon as any)
     }
 
     /**

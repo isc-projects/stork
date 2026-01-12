@@ -349,10 +349,7 @@
                             <td>
                                 <i
                                     pTooltip="{{ daemonStatusIconTooltip(d) }}"
-                                    class="{{ daemonStatusIconName(d) }} text-2xl"
-                                    [ngStyle]="{
-                                        color: daemonStatusIconColor(d),
-                                    }"
+                                    class="{{ daemonStatusIconClass(d) }} text-2xl"
                                 ></i>
                             </td>
                             <td pTooltip="{{ daemonRpsTooltip(d, 1) }}">{{ d.rps1 | number: '1.0-2' }}</td>
@@ -482,10 +479,7 @@
                                 <i
                                     *ngIf="d"
                                     pTooltip="{{ daemonStatusIconTooltip(d) }}"
-                                    class="{{ daemonStatusIconName(d) }} text-2xl"
-                                    [ngStyle]="{
-                                        color: daemonStatusIconColor(d),
-                                    }"
+                                    class="{{ daemonStatusIconClass(d) }} text-2xl"
                                 ></i>
                             </td>
                             <td>
