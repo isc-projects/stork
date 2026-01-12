@@ -4,7 +4,6 @@
     <div class="col-12 sm:col-9">
         {{ daemon.version }}
         <app-version-status
-            [showDaemonName]="true"
             [daemonName]="daemon.name"
             [version]="daemon.version"
         ></app-version-status>

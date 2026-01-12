@@ -334,7 +334,7 @@
                     <ng-template #body let-d>
                         <tr>
                             <td>
-                                <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
+                                <app-entity-link [showEntityName]="false" entity="machine" [attrs]="d.machine"></app-entity-link>
                             </td>
                             <td>
                                 <app-version-status
@@ -344,7 +344,7 @@
                                 ></app-version-status>
                             </td>
                             <td>
-                                <a routerLink="/daemons/{{ d.id }}">{{ d.name }} | daemonNiceName</a>
+                                <a routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
                             </td>
                             <td>
                                 <i
