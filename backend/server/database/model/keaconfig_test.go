@@ -551,6 +551,41 @@ func TestStoreNilValueInDatabase(t *testing.T) {
 	require.Nil(t, dbDaemon.KeaDaemon.Config)
 }
 
+// Test storing and retrieving a Kea configuration including
+// consecutive single quotes.
+func TestStoreConfigWithQuotesInDatabase(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rawConfig := map[string]any{
+		"Dhcp4": map[string]any{
+			"a": "it''is double quoted",
+			"b": "''",
+		},
+	}
+	config, _ := keaconfig.NewConfigFromMap(rawConfig)
+	keaConfig := newKeaConfig(config)
+
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 3000,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	configJSON, _ := json.Marshal(keaConfig)
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
+	err = daemon.SetKeaConfigFromJSON(configJSON)
+	require.NoError(t, err)
+
+	err = AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	addedDaemon, err := GetDaemonByID(db, daemon.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, keaConfig.Config, addedDaemon.KeaDaemon.Config.Config)
+}
+
 // Test creating a host from a DHCPv4 reservation.
 func TestNewHostFromKeaDHCPv4Reservation(t *testing.T) {
 	reservation := keaconfig.Reservation{
