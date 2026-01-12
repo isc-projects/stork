@@ -505,7 +505,7 @@ describe('DashboardComponent', () => {
         expect(versionStatus.length).toEqual(2)
         // Stubbed success icon for kea 2.0.0 is expected.
         expect(versionStatus[0].nativeElement.innerHTML).toContain('2.0.0')
-        expect(versionStatus[0].nativeElement.innerHTML).toContain('DHCPv4')
+        expect(versionStatus[0].nativeElement.innerHTML).not.toContain('DHCPv4')
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
         expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
     })

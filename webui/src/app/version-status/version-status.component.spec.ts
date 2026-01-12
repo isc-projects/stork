@@ -202,9 +202,10 @@ describe('VersionStatusComponent', () => {
 
         // Act & Assert
         setCorrectInputs()
-        const span = fixture.nativeElement.querySelector('span')
-        expect(span).toBeTruthy()
-        expect(span.textContent).toContain('DHCPv4 2.6.1')
+        const container = fixture.nativeElement.querySelector('div')
+        expect(container).toBeTruthy()
+        expect(container.textContent).toContain('DHCPv4')
+        expect(container.textContent).toContain('2.6.1')
     })
 
     it('should not display daemon name', () => {

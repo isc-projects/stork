@@ -269,16 +269,16 @@ describe('MachinesTableComponent', () => {
 
         // Check if versions and apps match.
         expect(versionStatus[0].nativeElement.innerHTML).toContain('1.19.0')
-        expect(versionStatus[0].nativeElement.innerHTML).toContain('Stork')
+        expect(versionStatus[0].nativeElement.innerHTML).not.toContain('Stork')
 
         expect(versionStatus[1].nativeElement.innerHTML).toContain('2.2.0')
-        expect(versionStatus[1].nativeElement.innerHTML).toContain('DHCPv4')
+        expect(versionStatus[1].nativeElement.innerHTML).not.toContain('DHCPv4')
 
         expect(versionStatus[2].nativeElement.innerHTML).toContain('2.2.0')
-        expect(versionStatus[2].nativeElement.innerHTML).toContain('CA')
+        expect(versionStatus[2].nativeElement.innerHTML).not.toContain('CA')
 
         expect(versionStatus[3].nativeElement.innerHTML).toContain('9.18.30')
-        expect(versionStatus[3].nativeElement.innerHTML).toContain('named')
+        expect(versionStatus[3].nativeElement.innerHTML).not.toContain('named')
 
         // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
