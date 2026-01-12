@@ -4,6 +4,7 @@ import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
 
 import {
+    daemonNameToFriendlyName,
     daemonStatusErred,
     daemonStatusIconClass as daemonStatusIconClassFn,
     daemonStatusIconTooltip as daemonStatusIconTooltipFn,
@@ -139,6 +140,11 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
      */
     filterTable(value: any, filterConstraint: FilterMetadata): void {
         this._tableFilter$.next({ value, filterConstraint })
+    }
+
+    /** Returns a tab title - formatted daemon name. */
+    tabTitleProvider(daemon: AnyDaemon): string {
+        return daemonNameToFriendlyName(daemon.name)
     }
 
     /**

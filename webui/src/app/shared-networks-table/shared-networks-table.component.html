@@ -258,7 +258,7 @@
             </td>
             <td>
                 <div *ngFor="let daemon of getDaemons(net)">
-                    <a routerLink="/daemons/{{ daemon.id }}">{{ daemon.name }}</a>
+                    <a routerLink="/daemons/{{ daemon.id }}">{{ daemon.name | daemonNiceName }}</a>
                 </div>
             </td>
         </tr>

@@ -366,15 +366,10 @@ sudo ./stork-install-agent.sh</textarea
                 <div class="col-12 md:col-6">
                     <h3 class="underlined">Daemons</h3>
                     <div *ngFor="let daemon of machineTab?.daemons">
-                        <h4 *ngIf="['dhcp4', 'dhcp6', 'ca', 'netconf', 'd2'].includes(daemon.name)">
-                            Kea Daemon ({{ daemon.name }})
-                        </h4>
-                        <h4 *ngIf="daemon.name === 'named'">BIND 9 Daemon</h4>
-                        <h4 *ngIf="daemon.name === 'pdns'">PowerDNS App</h4>
-                        <a routerLink="/daemons/{{ daemon.id }}">Version {{ daemon.version }}</a>
-                        <app-version-status [daemonName]="daemon.name" [version]="daemon.version"></app-version-status>
-                        <br />
-                        <app-daemon-status [daemon]="daemon"></app-daemon-status>
+                        <a routerLink="/daemons/{{ daemon.id }}">
+                            <app-daemon-status [daemon]="daemon"></app-daemon-status>
+                        </a>
+                            <app-version-status [daemonName]="daemon.name" [showVersion]="true" [version]="daemon.version"></app-version-status>
                     </div>
                 </div>
             </div>

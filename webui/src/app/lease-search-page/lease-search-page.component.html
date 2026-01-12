@@ -96,7 +96,7 @@
             found for the following Kea servers:
             <ul style="list-style-type: disc">
                 <li *ngFor="let erredDaemon of erredDaemons">
-                    <a routerLink="/daemons/{{ erredDaemon.id }}">{{ erredDaemon.name }}</a>
+                    <a routerLink="/daemons/{{ erredDaemon.id }}">{{ erredDaemon.name | daemonNiceName }}</a>
                 </li>
             </ul>
         </div>
