@@ -69,20 +69,11 @@
         </p-panel>
     </div>
 
-    <div
-        class="col-12"
-        *ngIf="
-            daemon.name === 'dhcp4' ||
-            daemon.name === 'dhcp6' ||
-            daemon.name === 'ca' ||
-            daemon.name === 'd2' ||
-            daemon.name === 'netconf'
-        "
-    >
+    <div class="col-12" *ngIf="isKeaDaemon">
         <app-kea-daemon [daemon]="daemon"></app-kea-daemon>
     </div>
 
-    <div class="col-12" *ngIf="daemon.name === 'bind9'">
+    <div class="col-12" *ngIf="daemon.name === 'named'">
         <app-bind9-daemon [daemon]="daemon"></app-bind9-daemon>
     </div>
 
@@ -94,7 +85,7 @@
         <h3 class="underlined">Events</h3>
         <app-events-panel
             [ui]="'table'"
-            [filter]="{ machine: daemon.machine?.id, appType: appTypeForEvents(daemon), daemonType: daemon.name }"
+            [filter]="{ machine: daemon.machine?.id, daemonId: daemon.id }"
         ></app-events-panel>
     </div>
 </div>

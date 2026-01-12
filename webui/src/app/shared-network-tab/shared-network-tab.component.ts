@@ -1,15 +1,15 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { SharedNetworkWithUniquePools, hasDifferentLocalSharedNetworkOptions } from '../subnets'
 import {
-    NamedCascadedParameters,
     CascadedParametersBoardComponent,
+    NamedCascadedParameters,
 } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, SharedNetwork } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
 import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ConfirmDialog } from 'primeng/confirmdialog'
-import { NgIf, NgFor } from '@angular/common'
+import { NgFor, NgIf } from '@angular/common'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'

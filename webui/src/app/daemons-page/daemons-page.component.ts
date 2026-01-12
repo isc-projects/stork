@@ -4,7 +4,6 @@ import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
 
 import {
-    daemonNameToFriendlyName,
     daemonStatusErred,
     daemonStatusIconColor as daemonStatusIconColorFn,
     daemonStatusIconName as daemonStatusIconNameFn,
@@ -35,6 +34,7 @@ import { InputText } from 'primeng/inputtext'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { DaemonTabComponent } from '../daemon-tab/daemon-tab.component'
 import { Tooltip } from 'primeng/tooltip'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * Sets boolean flag indicating if there are communication errors with
@@ -73,6 +73,7 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         VersionStatusComponent,
         DaemonTabComponent,
         Tooltip,
+        DaemonNiceNamePipe,
     ],
 })
 export class DaemonsPageComponent implements OnInit, OnDestroy {
@@ -338,22 +339,30 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    daemonTypeLabel(daemon: AnyDaemon) {
-        return daemonNameToFriendlyName(daemon?.name)?.toUpperCase() ?? daemon?.name
-    }
-
+    /**
+     * Returns an CSS icon name to indicate the daemon status.
+     */
     daemonStatusIconName(daemon: AnyDaemon) {
         return daemonStatusIconNameFn(daemon as any)
     }
 
+    /**
+     * Returns a color that should be used to display the status icon.
+     */
     daemonStatusIconColor(daemon: AnyDaemon) {
         return daemonStatusIconColorFn(daemon as any)
     }
 
+    /**
+     * Returns a tooltip that should be assigned to the status icon.
+     */
     daemonStatusIconTooltip(daemon: AnyDaemon) {
         return daemonStatusIconTooltipFn(daemon as any)
     }
 
+    /**
+     * Handler called when the refresh button has been clicked.
+     */
     onRefreshDaemon(daemonId: number) {
         this.tabView()?.onUpdateTabEntity(daemonId)
     }

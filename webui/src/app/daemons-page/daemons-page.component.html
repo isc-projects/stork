@@ -182,7 +182,7 @@
             <ng-template #body let-d>
                 <tr>
                     <td>
-                        <a routerLink="/daemons/{{ d.id }}">{{ daemonTypeLabel(d) }}</a>
+                        <a routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
                     </td>
                     <td>
                         <a routerLink="/daemons/{{ d.id }}">{{ d.version }}</a>

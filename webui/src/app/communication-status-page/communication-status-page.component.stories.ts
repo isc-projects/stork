@@ -4,10 +4,10 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { MessageService } from 'primeng/api'
 import { provideRouter, withHashLocation } from '@angular/router'
+import { Daemons } from '../backend'
 
-let mockGetAppsWithCommunicationIssues = {
+let mockGetDaemonsWithCommunicationIssues: Daemons = {
     items: [
-        // Kea app with the communication issues with Stork Agent.
         {
             accessPoints: [
                 {
@@ -16,34 +16,17 @@ let mockGetAppsWithCommunicationIssues = {
                     type: 'control',
                 },
             ],
-            details: {
-                daemons: [
-                    {
-                        active: true,
-                        agentCommErrors: 1,
-                        id: 1,
-                        monitored: true,
-                        name: 'ca',
-                    },
-                    {
-                        active: true,
-                        agentCommErrors: 0,
-                        id: 3,
-                        monitored: true,
-                        name: 'dhcp4',
-                    },
-                ],
-            },
+            active: true,
+            monitored: true,
+            agentCommErrors: 1,
+            name: 'ca',
             id: 1,
             machine: {
                 address: 'agent1',
                 hostname: 'agent1',
                 id: 1,
             },
-            name: 'kea&bind9@agent1',
-            type: 'kea',
         },
-        // Kea app with the communication errors with some daemons.
         {
             accessPoints: [
                 {
@@ -52,213 +35,236 @@ let mockGetAppsWithCommunicationIssues = {
                     type: 'control',
                 },
             ],
-            details: {
-                daemons: [
-                    {
-                        daemonCommErrors: 3,
-                        active: true,
-                        id: 1,
-                        monitored: true,
-                        name: 'ca',
-                    },
-                    {
-                        daemonCommErrors: 2,
-                        id: 2,
-                        name: 'd2',
-                    },
-                    {
-                        active: true,
-                        id: 3,
-                        monitored: true,
-                        name: 'dhcp4',
-                    },
-                    {
-                        daemonCommErrors: 3,
-                        id: 4,
-                        name: 'dhcp6',
-                    },
-                ],
-            },
-            id: 2,
-            machine: {
-                address: 'agent2',
-                hostname: 'agent2',
-                id: 2,
-            },
-            name: 'kea@agent2',
-            type: 'kea',
-        },
-        // Kea app with the communication issues with the Kea Control Agent.
-        {
-            accessPoints: [
-                {
-                    address: '127.0.0.1',
-                    port: 8000,
-                    type: 'control',
-                },
-            ],
-            details: {
-                daemons: [
-                    {
-                        active: true,
-                        caCommErrors: 1,
-                        id: 1,
-                        monitored: true,
-                        name: 'ca',
-                    },
-                    {
-                        active: true,
-                        agentCommErrors: 0,
-                        id: 3,
-                        monitored: true,
-                        name: 'dhcp4',
-                    },
-                ],
-            },
+            active: true,
+            monitored: true,
+            agentCommErrors: 0,
+            name: 'dhcp4',
             id: 3,
-            machine: {
-                address: 'agent3',
-                hostname: 'agent3',
-                id: 3,
-            },
-            name: 'kea@agent3',
-            type: 'kea',
-        },
-        // Kea app with the communication issues at all levels.
-        {
-            accessPoints: [
-                {
-                    address: '127.0.0.1',
-                    port: 8000,
-                    type: 'control',
-                },
-            ],
-            details: {
-                daemons: [
-                    {
-                        active: true,
-                        caCommErrors: 1,
-                        id: 1,
-                        monitored: true,
-                        name: 'ca',
-                    },
-                    {
-                        active: true,
-                        agentCommErrors: 5,
-                        daemonCommErrors: 4,
-                        id: 3,
-                        monitored: true,
-                        name: 'dhcp4',
-                    },
-                ],
-            },
-            id: 4,
-            machine: {
-                address: 'agent4',
-                hostname: 'agent4',
-                id: 4,
-            },
-            name: 'kea@agent4',
-            type: 'kea',
-        },
-        // Bind9 app with the communication issues with the Stork Agent.
-        {
-            accessPoints: [
-                {
-                    address: '127.0.0.1',
-                    port: 953,
-                    type: 'control',
-                },
-                {
-                    address: '127.0.0.1',
-                    port: 8053,
-                    type: 'statistics',
-                },
-            ],
-            details: {
-                daemons: [],
-                daemon: {
-                    active: true,
-                    id: 6,
-                    monitored: true,
-                    name: 'named',
-                    agentCommErrors: 5,
-                },
-            },
-            id: 5,
-            machine: {
-                address: 'agent5',
-                hostname: 'agent5',
-                id: 5,
-            },
-            name: 'bind9@agent5',
-            type: 'bind9',
-        },
-        // Bind9 app with the communication issues over RNDC.
-        {
-            accessPoints: [
-                {
-                    address: '127.0.0.1',
-                    port: 953,
-                    type: 'control',
-                },
-                {
-                    address: '127.0.0.1',
-                    port: 8053,
-                    type: 'statistics',
-                },
-            ],
-            details: {
-                daemons: [],
-                daemon: {
-                    active: true,
-                    id: 6,
-                    monitored: true,
-                    name: 'named',
-                    daemonCommErrors: 4,
-                },
-            },
-            id: 6,
-            machine: {
-                address: 'agent6',
-                hostname: 'agent6',
-                id: 6,
-            },
-            name: 'bind9@agent6',
-            type: 'bind9',
-        },
-        // Bind9 app with the communication issues over stats. It runs
-        // on the same machine as first Kea.
-        {
-            accessPoints: [
-                {
-                    address: '127.0.0.1',
-                    port: 953,
-                    type: 'control',
-                },
-                {
-                    address: '127.0.0.1',
-                    port: 8053,
-                    type: 'statistics',
-                },
-            ],
-            details: {
-                daemon: {
-                    active: true,
-                    id: 6,
-                    monitored: true,
-                    name: 'named',
-                    statsCommErrors: 7,
-                },
-            },
-            id: 7,
             machine: {
                 address: 'agent1',
                 hostname: 'agent1',
                 id: 1,
             },
-            name: 'kea&bind9@agent1',
-            type: 'bind9',
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            daemonCommErrors: 3,
+            active: true,
+            monitored: true,
+            name: 'ca',
+            id: 21,
+            machine: {
+                address: 'agent2',
+                hostname: 'agent2',
+                id: 2,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            daemonCommErrors: 2,
+            name: 'd2',
+            id: 22,
+            machine: {
+                address: 'agent2',
+                hostname: 'agent2',
+                id: 2,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            active: true,
+            monitored: true,
+            name: 'dhcp4',
+            id: 23,
+            machine: {
+                address: 'agent2',
+                hostname: 'agent2',
+                id: 2,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            daemonCommErrors: 3,
+            name: 'dhcp6',
+            id: 24,
+            machine: {
+                address: 'agent2',
+                hostname: 'agent2',
+                id: 2,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            active: true,
+            monitored: true,
+            caCommErrors: 1,
+            name: 'ca',
+            id: 31,
+            machine: {
+                address: 'agent3',
+                hostname: 'agent3',
+                id: 3,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            active: true,
+            monitored: true,
+            agentCommErrors: 0,
+            name: 'dhcp4',
+            id: 33,
+            machine: {
+                address: 'agent3',
+                hostname: 'agent3',
+                id: 3,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            active: true,
+            monitored: true,
+            caCommErrors: 1,
+            name: 'ca',
+            id: 41,
+            machine: {
+                address: 'agent4',
+                hostname: 'agent4',
+                id: 4,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 8000,
+                    type: 'control',
+                },
+            ],
+            active: true,
+            monitored: true,
+            agentCommErrors: 5,
+            daemonCommErrors: 4,
+            name: 'dhcp4',
+            id: 43,
+            machine: {
+                address: 'agent4',
+                hostname: 'agent4',
+                id: 4,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 953,
+                    type: 'control',
+                },
+                {
+                    address: '127.0.0.1',
+                    port: 8053,
+                    type: 'statistics',
+                },
+            ],
+            active: true,
+            monitored: true,
+            agentCommErrors: 5,
+            name: 'named',
+            id: 56,
+            machine: {
+                address: 'agent5',
+                hostname: 'agent5',
+                id: 5,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 953,
+                    type: 'control',
+                },
+                {
+                    address: '127.0.0.1',
+                    port: 8053,
+                    type: 'statistics',
+                },
+            ],
+            active: true,
+            monitored: true,
+            daemonCommErrors: 4,
+            name: 'named',
+            id: 66,
+            machine: {
+                address: 'agent6',
+                hostname: 'agent6',
+                id: 6,
+            },
+        },
+        {
+            accessPoints: [
+                {
+                    address: '127.0.0.1',
+                    port: 953,
+                    type: 'control',
+                },
+                {
+                    address: '127.0.0.1',
+                    port: 8053,
+                    type: 'statistics',
+                },
+            ],
+            active: true,
+            monitored: true,
+            statsCommErrors: 7,
+            name: 'named',
+            id: 76,
+            machine: {
+                address: 'agent1',
+                hostname: 'agent1',
+                id: 1,
+            },
         },
     ],
 }
@@ -283,7 +289,7 @@ export default {
                 method: 'GET',
                 status: 200,
                 delay: 2000,
-                response: mockGetAppsWithCommunicationIssues,
+                response: mockGetDaemonsWithCommunicationIssues,
             },
         ],
     },

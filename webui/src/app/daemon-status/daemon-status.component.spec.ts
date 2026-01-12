@@ -3,11 +3,6 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { DaemonStatusComponent } from './daemon-status.component'
 import { provideRouter } from '@angular/router'
 
-class Daemon {
-    id = 1
-    name = 'dhcp4'
-}
-
 describe('DaemonStatusComponent', () => {
     let component: DaemonStatusComponent
     let fixture: ComponentFixture<DaemonStatusComponent>

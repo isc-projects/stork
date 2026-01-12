@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, provideRouter } from '@angular/router'
+import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
 
-import { AppsVersions, KeaDaemon, ServicesService } from '../backend'
+import { AppsVersions, KeaDaemon } from '../backend'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
@@ -14,55 +14,9 @@ import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { KeaDaemonComponent } from './kea-daemon.component'
 
-const dhcp4Daemon: KeaDaemon = {
-    id: 1,
-    pid: 1234,
-    name: 'dhcp4',
-    active: false,
-    monitored: true,
-    version: '1.9.4',
-    extendedVersion: '1.9.4-extended',
-    uptime: 100,
-    reloadedAt: '2025-01-01T12:00:00Z',
-    hooks: [],
-    files: [
-        {
-            filetype: 'Lease file',
-            filename: '/tmp/kea-leases4.csv',
-        },
-    ],
-    backends: [
-        {
-            backendType: 'mysql',
-            database: 'kea',
-            host: 'localhost',
-            dataTypes: ['Leases', 'Host Reservations'],
-        },
-    ],
-    machine: { id: 1 },
-}
-
-const dhcp6Daemon: KeaDaemon = {
-    id: 2,
-    pid: 2345,
-    name: 'dhcp6',
-    active: false,
-    monitored: true,
-    version: '1.9.5',
-    extendedVersion: '1.9.5-extended',
-    uptime: 100,
-    reloadedAt: '2025-01-01T12:00:00Z',
-    hooks: [],
-    files: [],
-    backends: [],
-    machine: { id: 1 },
-}
-
 describe('KeaDaemonComponent', () => {
     let component: KeaDaemonComponent
     let fixture: ComponentFixture<KeaDaemonComponent>
-    let servicesApi: ServicesService
-    let route: ActivatedRoute
     let versionServiceStub: Partial<VersionService>
 
     beforeEach(waitForAsync(() => {
@@ -117,8 +71,6 @@ describe('KeaDaemonComponent', () => {
 
         fixture = TestBed.createComponent(KeaDaemonComponent)
         component = fixture.componentInstance
-        servicesApi = fixture.debugElement.injector.get(ServicesService)
-        route = fixture.debugElement.injector.get(ActivatedRoute)
         fixture.debugElement.injector.get(VersionService)
         component.daemon = dhcp4Daemon
         fixture.detectChanges()
