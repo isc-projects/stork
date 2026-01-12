@@ -54,7 +54,7 @@ export class DaemonFilterComponent implements OnInit {
         const selectedDaemon = this.daemonSuggestions
             ?.map((d: SimpleDaemon) => ({
                 ...d,
-                label: `${d.name}@${d.machine.address}`,
+                label: this.constructDaemonLabel(d),
             }))
             .find((d) => d.id == currentValue)
         this.daemon = selectedDaemon || null
@@ -76,7 +76,7 @@ export class DaemonFilterComponent implements OnInit {
                     const selectedDaemon = this.daemonSuggestions
                         .map((d: SimpleDaemon) => ({
                             ...d,
-                            label: `${d.name}@${d.machine.address}`,
+                            label: this.constructDaemonLabel(d),
                         }))
                         .find((d) => d.id == this.daemonID())
                     this.daemon = selectedDaemon || null
@@ -97,7 +97,7 @@ export class DaemonFilterComponent implements OnInit {
         if (!query) {
             this.currentSuggestions = this.daemonSuggestions.map((d: SimpleDaemon) => ({
                 ...d,
-                label: `${d.name}@${d.machine.address}`,
+                label: this.constructDaemonLabel(d),
             }))
             return
         }
@@ -107,14 +107,14 @@ export class DaemonFilterComponent implements OnInit {
                 const _daemonSuggestions = response.items ?? []
                 this.currentSuggestions = _daemonSuggestions.map((d: SimpleDaemon) => ({
                     ...d,
-                    label: `${d.name}@${d.machine.address}`,
+                    label: this.constructDaemonLabel(d),
                 }))
             })
             .catch(() => {
                 this.errorOccurred.emit('Failed to retrieve daemons from Stork server.')
                 this.currentSuggestions = this.daemonSuggestions.map((d: SimpleDaemon) => ({
                     ...d,
-                    label: `${d.name}@${d.machine.address}`,
+                    label: this.constructDaemonLabel(d),
                 }))
             })
     }
@@ -126,5 +126,27 @@ export class DaemonFilterComponent implements OnInit {
     onValueChange(d: LabeledSimpleDaemon) {
         console.log('value changed', d)
         this.daemonID.set(d?.id ?? null)
+    }
+
+    /**
+     * Constructs a label for the daemon.
+     * @param d daemon
+     * @private
+     */
+    private constructDaemonLabel(d: SimpleDaemon) : string {
+        // TODO: This could be user defined label, once backend supports it.
+        // if (d?.machine.label) {
+        //     return `${d.name}@${d.machine.label}`
+        // }
+
+        if (d?.machine.hostname) {
+            return `${d.name}@${d.machine.hostname}`
+        }
+
+        if (d?.machine.address) {
+            return `${d.name}@${d.machine.address}`
+        }
+
+        return `${d.name}@machine ID ${d.machineId}`
     }
 }
