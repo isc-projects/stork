@@ -33,22 +33,15 @@
         </p-panel>
     </div>
 
-    <div class="col-12" *ngIf="isKeaDaemon">
-        <app-kea-daemon [daemon]="daemon"></app-kea-daemon>
+    <div class="col-12 md:col-7">
+        <app-kea-daemon *ngIf="isKeaDaemon" [daemon]="daemon"></app-kea-daemon>
+        <app-bind9-daemon *ngIf="daemon.name === 'named'" [daemon]="daemon"></app-bind9-daemon>
+        <app-pdns-daemon *ngIf="daemon.name === 'pdns'" [daemon]="daemon"></app-pdns-daemon>
     </div>
 
-    <div class="col-12" *ngIf="daemon.name === 'named'">
-        <app-bind9-daemon [daemon]="daemon"></app-bind9-daemon>
-    </div>
-
-    <div class="col-12" *ngIf="daemon.name === 'pdns'">
-        <app-pdns-daemon [daemon]="daemon"></app-pdns-daemon>
-    </div>
-
-    <div class="col-12">
+    <div class="col-12 md:col-5">
         <h3 class="underlined">Events</h3>
         <app-events-panel
-            [ui]="'table'"
             [filter]="{ machine: daemon.machine?.id, daemonId: daemon.id }"
         ></app-events-panel>
     </div>
