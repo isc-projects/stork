@@ -38,6 +38,33 @@ export interface UpdateNotification {
 export type AppType = 'kea' | 'bind9' | 'pdns' | 'stork'
 
 /**
+ * Daemon names for Kea daemons.
+ */
+const KEA_DAEMON_NAMES = ['dhcp4', 'dhcp6', 'd2', 'ca', 'netconf']
+
+/**
+ * Derives the application type from a daemon name.
+ * @param daemonName The daemon name (e.g., 'dhcp4', 'named', 'pdns', 'stork')
+ * @returns The corresponding AppType
+ */
+export function getAppTypeFromDaemonName(daemonName: string): AppType {
+    if (KEA_DAEMON_NAMES.includes(daemonName)) {
+        return 'kea'
+    }
+    if (daemonName === 'named') {
+        return 'bind9'
+    }
+    if (daemonName === 'pdns') {
+        return 'pdns'
+    }
+    if (daemonName === 'stork') {
+        return 'stork'
+    }
+    // Default to daemon name as AppType for unknown daemons
+    return daemonName as AppType
+}
+
+/**
  * Severity assigned after assessment of software version is done.
  */
 export enum Severity {

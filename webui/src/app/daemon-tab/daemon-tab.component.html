@@ -40,7 +40,7 @@
                     <div>
                         {{ daemon.version }}
                         <app-version-status
-                            [app]="appTypeForEvents(daemon) || daemon.name"
+                            [daemonName]="daemon.name"
                             [version]="daemon.version"
                             [styleClass]="'pl-2'"
                         ></app-version-status>

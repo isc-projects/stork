@@ -508,10 +508,10 @@ describe('DashboardComponent', () => {
         expect(versionStatus).toBeTruthy()
         expect(versionStatus.length).toEqual(2)
         // Stubbed success icon for kea 2.0.0 is expected.
-        expect(versionStatus[0].properties.outerHTML).toContain('2.0.0')
-        expect(versionStatus[0].properties.outerHTML).toContain('kea')
-        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
-        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('2.0.0')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('Kea')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
     })
 
     it('should return whether both dhcp and dns daemons exist', () => {

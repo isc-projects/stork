@@ -230,7 +230,7 @@
                         </ng-container>
                         <ng-container *ngFor="let d of m.daemons">
                             <app-version-status
-                                [app]="d.name?.toLowerCase().includes('bind') ? 'bind9' : 'kea'"
+                                [daemonName]="d.name"
                                 [version]="d.version"
                                 [showAppName]="true"
                                 [inline]="false"
@@ -238,7 +238,7 @@
                             ></app-version-status>
                         </ng-container>
                         <app-version-status
-                            app="stork"
+                            daemonName="stork"
                             [version]="m.agentVersion"
                             [showAppName]="true"
                             [inline]="false"

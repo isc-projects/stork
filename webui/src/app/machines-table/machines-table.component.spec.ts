@@ -50,7 +50,7 @@ describe('MachinesTableComponent', () => {
     beforeEach(async () => {
         // VersionService stub
         versionServiceStub = {
-            sanitizeSemver: () => '1.2.3',
+            sanitizeSemver: (version: string) => version,
             getCurrentData: () => of({} as AppsVersions),
             getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
         }
@@ -265,25 +265,29 @@ describe('MachinesTableComponent', () => {
         // One VersionStatus for Stork agent + one for Kea + one for BIND9.
         const versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
         expect(versionStatus).toBeTruthy()
-        expect(versionStatus.length).toEqual(3)
+        expect(versionStatus.length).toEqual(4) // 3 daemons + Stork agent
 
         // Check if versions and apps match.
-        expect(versionStatus[0].properties.outerHTML).toContain('1.19.0')
-        expect(versionStatus[0].properties.outerHTML).toContain('stork')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('1.19.0')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('Stork')
 
-        expect(versionStatus[1].properties.outerHTML).toContain('2.2.0')
-        expect(versionStatus[1].properties.outerHTML).toContain('kea')
+        expect(versionStatus[1].nativeElement.innerHTML).toContain('2.2.0')
+        expect(versionStatus[1].nativeElement.innerHTML).toContain('Kea')
 
-        expect(versionStatus[2].properties.outerHTML).toContain('9.18.30')
-        expect(versionStatus[2].properties.outerHTML).toContain('bind9')
+        expect(versionStatus[2].nativeElement.innerHTML).toContain('2.2.0')
+        expect(versionStatus[2].nativeElement.innerHTML).toContain('Kea')
+
+        expect(versionStatus[3].nativeElement.innerHTML).toContain('9.18.30')
+        expect(versionStatus[3].nativeElement.innerHTML).toContain('BIND9')
+        
 
         // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
-        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
-        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
-        expect(versionStatus[1].properties.outerHTML).toContain('text-green-500')
-        expect(versionStatus[1].properties.outerHTML).toContain('test feedback')
-        expect(versionStatus[2].properties.outerHTML).toContain('text-green-500')
-        expect(versionStatus[2].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
+        expect(versionStatus[1].nativeElement.innerHTML).toContain('text-green-500')
+        expect(versionStatus[1].nativeElement.innerHTML).toContain('test feedback')
+        expect(versionStatus[2].nativeElement.innerHTML).toContain('text-green-500')
+        expect(versionStatus[2].nativeElement.innerHTML).toContain('test feedback')
     })
 
     it('should set data loading state', () => {

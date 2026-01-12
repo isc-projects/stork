@@ -262,7 +262,7 @@ sudo ./stork-install-agent.sh</textarea
                                 {{ machineTab?.agentVersion }}
                                 <app-version-status
                                     *ngIf="machineTab?.authorized"
-                                    app="stork"
+                                    daemonName="stork"
                                     [version]="machineTab?.agentVersion"
                                 ></app-version-status>
                             </td>
@@ -370,7 +370,7 @@ sudo ./stork-install-agent.sh</textarea
                         <h4 *ngIf="daemon.name === 'named'">BIND 9 Daemon</h4>
                         <h4 *ngIf="daemon.name === 'pdns'">PowerDNS App</h4>
                         <a routerLink="/daemons/{{ daemon.id }}">Version {{ daemon.version }}</a>
-                        <app-version-status [app]="daemon.type" [version]="daemon.version"></app-version-status>
+                        <app-version-status [daemonName]="daemon.name" [version]="daemon.version"></app-version-status>
                         <br />
                         <app-daemon-status [daemon]="daemon"></app-daemon-status>
                     </div>

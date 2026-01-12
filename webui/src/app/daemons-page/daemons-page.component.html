@@ -187,7 +187,7 @@
                     <td>
                         <a routerLink="/daemons/{{ d.id }}">{{ d.version }}</a>
                         <app-version-status
-                            [app]="versionAppType(d)"
+                            [daemonName]="d.name"
                             [version]="d.version"
                             [styleClass]="'inline-block pl-2'"
                         ></app-version-status>

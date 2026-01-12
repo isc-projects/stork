@@ -58,9 +58,9 @@ describe('Bind9DaemonComponent', () => {
         expect(versionStatus).toBeTruthy()
         expect(versionStatus.length).toEqual(1)
         // Stubbed success icon for BIND 9.18.30 is expected.
-        expect(versionStatus[0].properties.outerHTML).toContain('9.18.30')
-        expect(versionStatus[0].properties.outerHTML).toContain('bind9')
-        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
-        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('9.18.30')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('BIND9')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
+        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
     })
 })

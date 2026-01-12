@@ -140,7 +140,8 @@
                                 <div class="col-12 sm:col-9">
                                     {{ daemon.version }}
                                     <app-version-status
-                                        app="kea"
+                                        [showAppName]="true"
+                                        [daemonName]="daemon.name"
                                         [version]="daemon.version"
                                     ></app-version-status>
                                 </div>

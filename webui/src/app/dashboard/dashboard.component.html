@@ -337,7 +337,7 @@
                                 <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                             </td>
                             <td>
-                                <app-version-status app="kea" [version]="d.version" [showAppName]="true"></app-version-status>
+                                <app-version-status [daemonName]="d.name" [version]="d.version" [showAppName]="true"></app-version-status>
                             </td>
                             <td>
                                 <a routerLink="/daemons/{{ d.id }}">{{ d.name }} | daemonNiceName</a>
@@ -465,7 +465,7 @@
                             <td>
                                 <a *ngIf="d.id" routerLink="/daemons/{{ d.id }}"
                                     ><app-version-status
-                                        [app]="d.type"
+                                        [daemonName]="d.name"
                                         [version]="d.version"
                                         [showAppName]="true"
                                     ></app-version-status

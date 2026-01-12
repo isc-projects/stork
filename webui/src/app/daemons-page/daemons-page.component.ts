@@ -338,19 +338,6 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    versionAppType(daemon: AnyDaemon) {
-        if (!daemon?.name) {
-            return undefined
-        }
-
-        const keaDaemons = ['dhcp4', 'dhcp6', 'd2', 'ca', 'netconf']
-        if (keaDaemons.includes(daemon.name)) {
-            return 'kea'
-        }
-
-        return daemon.name
-    }
-
     daemonTypeLabel(daemon: AnyDaemon) {
         return daemonNameToFriendlyName(daemon?.name)?.toUpperCase() ?? daemon?.name
     }

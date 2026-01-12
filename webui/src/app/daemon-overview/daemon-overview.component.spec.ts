@@ -62,7 +62,7 @@ describe('DaemonOverviewComponent', () => {
                     type: 'statistics',
                     address: '2001:db8:1::1',
                     port: 2345,
-                    protocol: 'https',
+                    protocol: 'http',
                 },
             ],
         }

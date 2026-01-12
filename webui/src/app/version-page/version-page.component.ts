@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { AppType, Severity, UpdateNotification, VersionService } from '../version.service'
+import { AppType, getAppTypeFromDaemonName, Severity, UpdateNotification, VersionService } from '../version.service'
 import { AppsVersions, Machine, ServicesService, VersionDetails, SimpleMachine, SimpleDaemon } from '../backend'
 import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
@@ -274,9 +274,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             m.daemons
                                 ?.filter((daemon: SimpleDaemon) => daemon?.version)
                                 .forEach((daemon: SimpleDaemon) => {
-                                    const appType: AppType = daemon.name?.toLowerCase().includes('bind')
-                                        ? 'bind9'
-                                        : 'kea'
+                                    const appType: AppType = getAppTypeFromDaemonName(daemon.name)
                                     m.versionCheckSeverity = Math.min(
                                         this.severityMap[
                                             this.versionService.getSoftwareVersionFeedback(
