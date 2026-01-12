@@ -217,13 +217,8 @@ namespace :unittest do
                     'backend/server/restservice/middleware.go:Authorizer',
                     'backend/server/restservice/restservice.go:Listen',
                     'backend/server/restservice/restservice.go:Shutdown',
-                    'backend/util/util.go:SetupLogging',
                     'backend/util/util.go:UTCNow',
                     'backend/server/restservice/restservice.go:prepareTLS',
-
-                    # Test function is currently no-op for Kea and thus it is sometimes reported
-                    # as untested even though the actual test exists.
-                    'backend/agent/kea.go:StopZoneInventory',
 
                     # The Output method of the "systemCommandExecutor" structure encapsulates the
                     # "exec.Command" call to allow mocking of the system response in unit tests. The
