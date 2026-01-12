@@ -53,8 +53,6 @@ import { SkeletonModule } from 'primeng/skeleton'
 import { FloatLabelModule } from 'primeng/floatlabel'
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { InputNumberModule } from 'primeng/inputnumber'
-import { IconField } from 'primeng/iconfield'
-import { InputIcon } from 'primeng/inputicon'
 import { AppComponent } from './app/app.component'
 
 if (environment.production) {
@@ -110,9 +108,7 @@ bootstrapApplication(AppComponent, {
             SkeletonModule,
             FloatLabelModule,
             AutoCompleteModule,
-            InputNumberModule,
-            IconField,
-            InputIcon
+            InputNumberModule
         ),
         {
             provide: HTTP_INTERCEPTORS,
