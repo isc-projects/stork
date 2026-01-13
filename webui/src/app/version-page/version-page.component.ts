@@ -256,7 +256,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         )
                     }),
                     map((data) => {
-                        data.items?.map(
+                        // Filter out machines that have been registered but
+                        // never fetched.
+                        data.items = data.items.filter((m: SimpleMachine) => !!m.agentVersion)
+                        data.items.map(
                             (m: SimpleMachine & { versionCheckSeverity: Severity; mismatchingDaemons: boolean }) => {
                                 m.versionCheckSeverity = Severity.success
                                 m.versionCheckSeverity = Math.min(
