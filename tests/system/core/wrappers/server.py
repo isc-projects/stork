@@ -382,11 +382,13 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         response = api_instance.get_machines_server_token()
         return response.token
 
-    def read_access_point_key(self, app_id) -> str:
+    def read_access_point_key(self, daemon_id) -> str:
         """Read the access point key."""
         api_instance = ServicesApi(self._api_client)
         # Currently, only the control access points support the key.
-        response = api_instance.get_access_point_key(app_id=app_id, type="control")
+        response = api_instance.get_access_point_key(
+            daemon_id=daemon_id, type="control"
+        )
         return response
 
     def get_zone_inventory_states(self) -> ZoneInventoryStates:
