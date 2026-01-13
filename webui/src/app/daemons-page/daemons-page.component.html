@@ -185,12 +185,13 @@
                         <a routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
                     </td>
                     <td>
-                        <a routerLink="/daemons/{{ d.id }}">{{ d.version }}</a>
-                        <app-version-status
-                            [daemonName]="d.name"
-                            [version]="d.version"
-                            [styleClass]="'inline-block pl-2'"
-                        ></app-version-status>
+                        <a routerLink="/daemons/{{ d.id }}">
+                            <app-version-status
+                                [showVersion]="true"
+                                [daemonName]="d.name"
+                                [version]="d.version"
+                            ></app-version-status>
+                        </a>
                     </td>
                     <td>
                         <span pTooltip="{{ daemonStatusIconTooltip(d) }}">
