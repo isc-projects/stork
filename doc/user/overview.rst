@@ -103,7 +103,7 @@ verification by Kea, which means that Kea must be configured not to verify the c
 Stork's connection to BIND 9 utilizes multiple protocols: RNDC (control channel, connection no. 9 on the diagram),
 HTTP (statistics channel, connection no. 7 on the diagram), and DNS (zone transfer, connection no. 17 on the diagram).
 The RNDC protocol may be secured by using RNDC keys; this is especially recommended if the BIND 9 daemon listens on
-non-localhost interfaces. The Stork agent retries the RNDC key from the BIND 9 configuration file; the agent must have
+non-localhost interfaces. The Stork agent tries the RNDC key from the BIND 9 configuration file; the agent must have
 the necessary permissions to read this file and use the ``rndc`` and ``named-checkconf`` commands.
 The statistics channel is served over the HTTP protocol and is not secured. In typical configurations, this channel
 is exposed on the localhost interface to the Stork agent. The agent uses DNS zone transfer (AXFR) to fetch the zone
