@@ -73,31 +73,24 @@ describe('DaemonOverviewComponent', () => {
         expect(tableElement).toBeTruthy()
 
         const rows = tableElement.queryAll(By.css('tr'))
-        expect(rows.length).toBe(3)
+        expect(rows.length).toBe(2)
 
         let tds = rows[0].queryAll(By.css('td'))
-        expect(tds.length).toBe(2)
-        expect(tds[0].nativeElement.innerText.trim()).toContain('Hosted on machine:')
-        const machineLinkElement = tds[1].query(By.css('a'))
-        expect(machineLinkElement).toBeTruthy()
-        expect(machineLinkElement.attributes.href).toBe('/machines/1')
-
-        tds = rows[1].queryAll(By.css('td'))
-        expect(tds.length).toBe(2)
+        expect(tds.length).toBe(4)
         expect(tds[0].nativeElement.innerText.trim()).toContain('Control access point:')
         expect(tds[1].nativeElement.innerText.trim()).toContain('192.0.3.1:1234')
 
-        let iconSpan = tds[1].query(By.css('span'))
+        let iconSpan = tds[2].query(By.css('span'))
         expect(iconSpan).toBeTruthy()
         expect(iconSpan.classes.hasOwnProperty('pi-lock')).toBeTruthy()
         expect(iconSpan.attributes.pTooltip).toBe('secured connection')
 
-        tds = rows[2].queryAll(By.css('td'))
-        expect(tds.length).toBe(2)
+        tds = rows[1].queryAll(By.css('td'))
+        expect(tds.length).toBe(4)
         expect(tds[0].nativeElement.innerText.trim()).toContain('Statistics access point:')
         expect(tds[1].nativeElement.innerText.trim()).toContain('[2001:db8:1::1]:2345')
 
-        iconSpan = tds[1].query(By.css('span'))
+        iconSpan = tds[2].query(By.css('span'))
         expect(iconSpan).toBeTruthy()
         expect(iconSpan.classes.hasOwnProperty('pi-lock-open')).toBeTruthy()
         expect(iconSpan.attributes.pTooltip).toBe('unsecured connection')
@@ -116,7 +109,7 @@ describe('DaemonOverviewComponent', () => {
         fixture.componentRef.setInput('daemon', {
             name: 'named',
             machine: { id: 1, address: '192.0.2.1:8080' },
-            accessPoints: [{ address: '192.0.2.1', port: 8080, protocol: 'https', type: 'control' }],
+            accessPoints: [{ address: '192.0.2.1', port: 8080, protocol: 'rndc', type: 'control' }],
             id: 1,
         } as AnyDaemon)
         fixture.detectChanges()
@@ -136,7 +129,7 @@ describe('DaemonOverviewComponent', () => {
         fixture.componentRef.setInput('daemon', {
             name: 'named',
             machine: { id: 1, address: '192.0.2.1:8080' },
-            accessPoints: [{ address: '192.0.2.1', port: 8080, protocol: 'https', type: 'control' }],
+            accessPoints: [{ address: '192.0.2.1', port: 8080, protocol: 'rndc', type: 'control' }],
             id: 1,
         } as AnyDaemon)
         fixture.detectChanges()

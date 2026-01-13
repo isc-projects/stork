@@ -63,7 +63,6 @@ describe('EventsPanelComponent', () => {
     it('should establish SSE connection with correct filtering rules', () => {
         component.filter.level = 1
         component.filter.machine = 2
-        component.filter.appType = 'kea'
         component.filter.daemonType = 'dhcp4'
         component.filter.user = 3
 
@@ -123,11 +122,6 @@ describe('EventsPanelComponent', () => {
         event.value.id = 1
         component.onMachineSelect(event)
         expect(component.filter.machine).toBe(1)
-        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
-
-        event.value.value = 'kea'
-        component.onAppTypeSelect(event)
-        expect(component.filter.appType).toBe('kea')
         expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'dhcp4'
