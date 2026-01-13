@@ -37,7 +37,7 @@ This section describes the solutions for some common issues with the Stork agent
               3. Try to parse the output of the ``named -V`` command;
               4. Try to find the named.conf file in the default locations.
 
-              Stork attempts the next four actions to detect `pdns_server` configuration, in order:
+              Stork attempts the next three actions to detect `pdns_server` configuration, in order:
               1. Try to parse the `--config-dir` parameter of the running process;
               2. Use the STORK_AGENT_POWERDNS_CONFIG environment variable;
               3. Try to find the `pdns.conf` file (or a file having a name resulting from the use of the `--config-name` parameter) in the default locations.
