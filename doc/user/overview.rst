@@ -112,7 +112,7 @@ the BIND 9 configuration file. Currently, Stork agent does not support DoT (DNS 
 the BIND 9 server is not secured. Therefore, to limit the access to the zone transfer, it is recommended to allow
 it over the localhost interface, and secure using non-permissive `allow-transfer` configuration settings.
 
-Stork agent communicates with the PowerDNS server over the webserver API (connnection no. 16). The agent determines the
+The Stork agent communicates with the PowerDNS server over its webserver API (connection no. 16). The agent determines the
 API key to use from the PowerDNS configuration file. The PowerDNS authoritative webserver does not natively support TLS
 to secure this channel. New versions of PowerDNS recursor natively support TLS, but the Stork agent does not use it.
 Therefore, since the Stork agent and PowerDNS are running on the same machine, it is recommended to expose the webserver
