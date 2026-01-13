@@ -463,9 +463,11 @@
                     <ng-template #body let-d>
                         <tr>
                             <td>
-                                <a *ngIf="d.machine?.id" routerLink="/machines/{{ d.machine.id }}">{{
-                                    d.machine?.hostname ?? 'unknown'
-                                }}</a>
+                                <app-entity-link
+                                    [showEntityName]="false"
+                                    entity="machine"
+                                    [attrs]="d.machine"
+                                ></app-entity-link>
                             </td>
                             <td>
                                 <a *ngIf="d.id" routerLink="/daemons/{{ d.id }}"
