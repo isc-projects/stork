@@ -214,7 +214,8 @@
                     </td>
                     <td>
                         <span class="p-datatable-column-title">Daemons</span>
-                        <app-version-status *ngFor="let d of m.daemons"
+                        <app-version-status
+                            *ngFor="let d of m.daemons"
                             [inline]="true"
                             [daemonName]="d.name"
                             [showVersion]="true"

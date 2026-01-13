@@ -1,11 +1,7 @@
 <table *ngIf="daemon" class="access-point-list">
     <tr *ngFor="let ap of daemon.accessPoints">
-        <td class="access-point-list__label capitalize-first p-1">
-            {{ ap.type }} access point:
-        </td>
-        <td class="word-break-all">
-            {{ formatAddress(ap.address) }}:{{ ap.port }}
-        </td>
+        <td class="access-point-list__label capitalize-first p-1">{{ ap.type }} access point:</td>
+        <td class="word-break-all">{{ formatAddress(ap.address) }}:{{ ap.port }}</td>
         <td class="p-1">
             <span
                 *ngIf="ap.protocol === 'https' || (ap.protocol === 'rndc' && !!ap.key); else unsecure"
