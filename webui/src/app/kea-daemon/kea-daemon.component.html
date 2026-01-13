@@ -123,7 +123,7 @@
             <div class="grid">
                 <div class="col-12 lg:col-7">
                     <p-fieldset legend="Daemon Information">
-                        <div class="grid">
+                        <div class="grid grid-nogutter">
                             <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
                             <div class="col-12 sm:col-9">
                                 <app-version-status
@@ -147,7 +147,7 @@
                 </div>
                 <div class="col-12 lg:col-5">
                     <p-fieldset id="hooks-fieldset" legend="Hooks">
-                        <ol class="pl-3">
+                        <ol>
                             <li *ngFor="let hook of daemon.hooks" class="word-break-all">
                                 <div class="flex flex-wrap">
                                     <div
