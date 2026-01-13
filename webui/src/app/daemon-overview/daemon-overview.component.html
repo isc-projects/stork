@@ -4,7 +4,7 @@
         <td class="word-break-all">{{ formatAddress(ap.address) }}:{{ ap.port }}</td>
         <td class="p-1">
             <span
-                *ngIf="ap.protocol === 'https' || (ap.protocol === 'rndc' && !!ap.key); else unsecure"
+                *ngIf="ap.protocol === 'https' || ap.protocol === 'rndc'; else unsecure"
                 class="access-point-list__icon--secured pi pi-lock"
                 pTooltip="secured connection"
             ></span>
@@ -16,7 +16,7 @@
             <br class="block lg:hidden" />
             <span
                 id="access-point-key"
-                *ngIf="daemon.name === 'named'"
+                *ngIf="daemon.name === 'named' && ap.protocol === 'rndc'"
                 appAccessType="read"
                 appAccessEntity="app-access-point-key"
                 [appHideIfNoAccess]="true"
