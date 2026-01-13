@@ -25,21 +25,6 @@
         </div>
 
         <div class="flex align-items-center gap-2 flex-none">
-            <div>App Type:</div>
-            <p-select
-                [options]="appTypes"
-                [(ngModel)]="selectedAppType"
-                optionLabel="name"
-                id="app-events"
-                placeholder="any"
-                showClear="true"
-                tooltip="Show events related to selected app type"
-                styleClass="max-w-14rem w-10rem"
-                (onChange)="onAppTypeSelect($event)"
-            ></p-select>
-        </div>
-
-        <div class="flex align-items-center gap-2 flex-none">
             <div>Daemon:</div>
             <p-select
                 [options]="daemonTypes"
