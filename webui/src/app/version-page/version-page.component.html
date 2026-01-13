@@ -159,8 +159,8 @@
                 <tr>
                     <th class="w-6rem lg:w-10rem">Hostname</th>
                     <th class="w-6rem lg:w-10rem">Location</th>
-                    <th class="w-6rem lg:w-10rem">Agent Version</th>
-                    <th class="w-6rem lg:w-10rem">App(s) Version</th>
+                    <th class="w-6rem lg:w-10rem">Agent</th>
+                    <th class="w-6rem lg:w-10rem">Daemons</th>
                     <th>Summary</th>
                 </tr>
             </ng-template>
@@ -204,14 +204,22 @@
                     </td>
                     <td><span class="p-datatable-column-title">Location</span>{{ m.address }}:{{ m.agentPort }}</td>
                     <td>
-                        <span class="p-datatable-column-title">Agent Version</span>
-                        {{ m.agentVersion }}
+                        <span class="p-datatable-column-title">Agent</span>
+                        <app-version-status
+                            [inline]="true"
+                            daemonName="stork"
+                            [showVersion]="true"
+                            [version]="m.agentVersion"
+                        ></app-version-status>
                     </td>
                     <td>
-                        <span class="p-datatable-column-title">App(s) Version</span>
-                        <ng-container *ngFor="let d of m.daemons; let i = index">
-                            <br *ngIf="i > 0" />{{ d.name | daemonNiceName }} {{ d.version }}
-                        </ng-container>
+                        <span class="p-datatable-column-title">Daemons</span>
+                        <app-version-status *ngFor="let d of m.daemons"
+                            [inline]="true"
+                            [daemonName]="d.name"
+                            [showVersion]="true"
+                            [version]="d.version"
+                        ></app-version-status>
                     </td>
                     <td>
                         <span class="p-datatable-column-title">Summary</span>

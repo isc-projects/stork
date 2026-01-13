@@ -1,4 +1,4 @@
-<div *ngIf="inline" class="inline-flex" [class]="styleClass">
+<div *ngIf="inline" [class]="styleClass">
     <span *ngIf="showName" class="mr-1">{{ daemonDisplayName }}</span>
     <span *ngIf="showVersion" class="mr-1">{{ version }}</span>
     <a *ngIf="iscApp" routerLink="/versions">
