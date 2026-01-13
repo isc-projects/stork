@@ -1486,7 +1486,7 @@ If BIND 9 listens on non-localhost interfaces, it is recommended to:
 Monitoring PowerDNS
 ~~~~~~~~~~~~~~~~~~~
 
-- The Stork agent must have rights to read the PowerDNS configuration files (e.g., ``/etc/powerdns/pdns.conf``) and its references.
+- The Stork agent must have rights to read the PowerDNS configuration file (e.g., ``/etc/powerdns/pdns.conf``) and any files it references.
 - The PowerDNS webserver should be configured to server the API over the localhost interface.
 - The PowerDNS server should be configured to allow zone transfer over the localhost interface.
 
