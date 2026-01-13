@@ -1,16 +1,12 @@
 <table *ngIf="daemon" class="access-point-list">
-    <tr>
-        <td class="access-point-list__label w-7rem lg:w-15rem">Hosted on machine:</td>
-        <td>
-            <a routerLink="/machines/{{ daemon.machine.id }}">{{ daemon.machine.address }}</a>
-        </td>
-    </tr>
     <tr *ngFor="let ap of daemon.accessPoints">
-        <td class="access-point-list__label capitalize-first vertical-align-bottom w-7rem lg:w-15rem">
+        <td class="access-point-list__label capitalize-first p-1">
             {{ ap.type }} access point:
         </td>
         <td class="word-break-all">
             {{ formatAddress(ap.address) }}:{{ ap.port }}
+        </td>
+        <td class="p-1">
             <span
                 *ngIf="ap.protocol === 'https' || (ap.protocol === 'rndc' && !!ap.key); else unsecure"
                 class="access-point-list__icon--secured pi pi-lock"
@@ -19,6 +15,8 @@
             <ng-template #unsecure>
                 <span class="access-point-list__icon--unsecured pi pi-lock-open" pTooltip="unsecured connection"></span>
             </ng-template>
+        </td>
+        <td class="p-1">
             <br class="block lg:hidden" />
             <span
                 id="access-point-key"
