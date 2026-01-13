@@ -119,7 +119,8 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 
 	for _, lsn := range sn.LocalSharedNetworks {
 		localSharedNetwork := &models.LocalSharedNetwork{
-			DaemonID: lsn.Daemon.ID,
+			DaemonID:   lsn.Daemon.ID,
+			DaemonName: string(lsn.Daemon.Name),
 		}
 		keaParameters := lsn.KeaParameters
 		if keaParameters != nil {
