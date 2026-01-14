@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -339,6 +340,12 @@ func GetAllMachinesWithRelations(db *pg.DB, authorized *bool, relations ...Machi
 		for _, daemon := range machine.Daemons {
 			daemon.Machine = &machine
 		}
+		sort.Slice(machine.Daemons, func(i, j int) bool {
+			if machine.Daemons[i].Name == machine.Daemons[j].Name {
+				return machine.Daemons[i].ID < machine.Daemons[j].ID
+			}
+			return machine.Daemons[i].Name < machine.Daemons[j].Name
+		})
 	}
 
 	return machines, nil
