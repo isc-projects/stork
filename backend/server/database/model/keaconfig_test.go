@@ -554,36 +554,68 @@ func TestStoreNilValueInDatabase(t *testing.T) {
 // Test storing and retrieving a Kea configuration including
 // consecutive single quotes.
 func TestStoreConfigWithQuotesInDatabase(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	rawConfig := map[string]any{
-		"Dhcp4": map[string]any{
-			"a": "it''is double quoted",
-			"b": "''",
+	testCases := []struct {
+		name      string
+		rawConfig string
+	}{
+		{
+			name: "quotes in side the text",
+			rawConfig: `{
+				"Dhcp4": {
+					"a": "it''is double quoted",
+				},
+			}`,
+		},
+		{
+			name: "only quotes",
+			rawConfig: `{
+				"Dhcp4": {
+					"a": "''",
+				},
+			}`,
+		},
+		{
+			name: "client-class expression",
+			rawConfig: `{
+				"Dhcp4": {
+					"client-classes": [
+						{
+							"name": "fingerprint",
+							"template-test": "ifelse(hexstring(option[55].hex,':') == '', 'NOPRL', hexstring(option[55].hex,':'))",
+						},
+					],
+				},
+			}`,
 		},
 	}
-	config, _ := keaconfig.NewConfigFromMap(rawConfig)
-	keaConfig := newKeaConfig(config)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+			defer teardown()
 
-	machine := &Machine{
-		Address:   "localhost",
-		AgentPort: 3000,
+			config, _ := keaconfig.NewConfig([]byte(tc.rawConfig))
+			keaConfig := newKeaConfig(config)
+
+			machine := &Machine{
+				Address:   "localhost",
+				AgentPort: 3000,
+			}
+			err := AddMachine(db, machine)
+			require.NoError(t, err)
+
+			configJSON, _ := json.Marshal(keaConfig)
+			daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
+			err = daemon.SetKeaConfigFromJSON(configJSON)
+			require.NoError(t, err)
+
+			err = AddDaemon(db, daemon)
+			require.NoError(t, err)
+
+			addedDaemon, err := GetDaemonByID(db, daemon.ID)
+			require.NoError(t, err)
+			require.EqualValues(t, keaConfig.Config, addedDaemon.KeaDaemon.Config.Config)
+		})
 	}
-	err := AddMachine(db, machine)
-	require.NoError(t, err)
-
-	configJSON, _ := json.Marshal(keaConfig)
-	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
-	err = daemon.SetKeaConfigFromJSON(configJSON)
-	require.NoError(t, err)
-
-	err = AddDaemon(db, daemon)
-	require.NoError(t, err)
-
-	addedDaemon, err := GetDaemonByID(db, daemon.ID)
-	require.NoError(t, err)
-	require.EqualValues(t, keaConfig.Config, addedDaemon.KeaDaemon.Config.Config)
 }
 
 // Test creating a host from a DHCPv4 reservation.
