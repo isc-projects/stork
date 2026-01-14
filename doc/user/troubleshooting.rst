@@ -121,10 +121,10 @@ This section describes the solutions for some common issues with the Stork agent
 
               Note that in the configuration example above, the ``listen-on`` parameter explicitly enables
               the DNS service on the local loopback address. The agent will therefore try to perform the
-              zone transfer using this address. It implies that the ``allow-transfer`` parameter must allow
-              zone transfer from the local loopback address. Using the keyword ``any`` in the ``listen-on`` and
-              ``allow-transfer`` parameters is supported by the Stork agent. The agent will use the local loopback
-              addresses in this case.
+              zone transfer using this address. The BIND 9 configuration must also set the ``allow-transfer``
+              parameter to permit zone transfers from the local loopback address, otherwise the aforementioned error
+              will result. Alternatively, the Stork agent supports using the keyword ``any`` in the ``listen-on`` and
+              ``allow-transfer`` parameters; it will attempt zone transfers using the local loopback addresses.
 
 :Explanation: Stork agent uses DNS zone transfer (AXFR) to retrieve the zone data from the monitored DNS servers.
               If the DNS server configuration does not allow zone transfer, or restricts the zone transfer,
