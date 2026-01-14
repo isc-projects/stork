@@ -4607,7 +4607,7 @@ CREATE INDEX zone_rname_idx ON public.zone USING btree (rname);
 -- Name: log_target log_target_before_insert_update; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER log_target_before_insert_update BEFORE INSERT OR UPDATE ON public.log_target FOR EACH ROW EXECUTE FUNCTION public.log_target_lower_severity();
+CREATE TRIGGER log_target_before_insert_update BEFORE INSERT OR UPDATE ON public.log_target FOR EACH ROW EXECUTE PROCEDURE public.log_target_lower_severity();
 
 
 --
@@ -4615,7 +4615,7 @@ CREATE TRIGGER log_target_before_insert_update BEFORE INSERT OR UPDATE ON public
 -- Name: service service_before_insert; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER service_before_insert BEFORE INSERT OR UPDATE ON public.service FOR EACH ROW EXECUTE FUNCTION public.service_name_gen();
+CREATE TRIGGER service_before_insert BEFORE INSERT OR UPDATE ON public.service FOR EACH ROW EXECUTE PROCEDURE public.service_name_gen();
 
 
 --
@@ -4623,7 +4623,7 @@ CREATE TRIGGER service_before_insert BEFORE INSERT OR UPDATE ON public.service F
 -- Name: subnet subnet_network_family_check; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER subnet_network_family_check BEFORE INSERT OR UPDATE ON public.subnet FOR EACH ROW EXECUTE FUNCTION public.match_subnet_network_family();
+CREATE TRIGGER subnet_network_family_check BEFORE INSERT OR UPDATE ON public.subnet FOR EACH ROW EXECUTE PROCEDURE public.match_subnet_network_family();
 
 
 --
@@ -4631,7 +4631,7 @@ CREATE TRIGGER subnet_network_family_check BEFORE INSERT OR UPDATE ON public.sub
 -- Name: system_user system_user_before_delete; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER system_user_before_delete BEFORE DELETE ON public."system_user" FOR EACH ROW EXECUTE FUNCTION public.system_user_check_last_user();
+CREATE TRIGGER system_user_before_delete BEFORE DELETE ON public."system_user" FOR EACH ROW EXECUTE PROCEDURE public.system_user_check_last_user();
 
 
 --
@@ -4639,7 +4639,7 @@ CREATE TRIGGER system_user_before_delete BEFORE DELETE ON public."system_user" F
 -- Name: system_user_password system_user_password_before_insert_update; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER system_user_password_before_insert_update BEFORE INSERT OR UPDATE ON public.system_user_password FOR EACH ROW EXECUTE FUNCTION public.system_user_hash_password();
+CREATE TRIGGER system_user_password_before_insert_update BEFORE INSERT OR UPDATE ON public.system_user_password FOR EACH ROW EXECUTE PROCEDURE public.system_user_hash_password();
 
 
 --
@@ -4647,7 +4647,7 @@ CREATE TRIGGER system_user_password_before_insert_update BEFORE INSERT OR UPDATE
 -- Name: app trigger_create_default_app_name; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trigger_create_default_app_name BEFORE INSERT OR UPDATE ON public.app FOR EACH ROW EXECUTE FUNCTION public.create_default_app_name();
+CREATE TRIGGER trigger_create_default_app_name BEFORE INSERT OR UPDATE ON public.app FOR EACH ROW EXECUTE PROCEDURE public.create_default_app_name();
 
 
 --
@@ -4655,7 +4655,7 @@ CREATE TRIGGER trigger_create_default_app_name BEFORE INSERT OR UPDATE ON public
 -- Name: daemon trigger_delete_daemon_config_reports; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trigger_delete_daemon_config_reports BEFORE DELETE ON public.daemon FOR EACH ROW EXECUTE FUNCTION public.delete_daemon_config_reports();
+CREATE TRIGGER trigger_delete_daemon_config_reports BEFORE DELETE ON public.daemon FOR EACH ROW EXECUTE PROCEDURE public.delete_daemon_config_reports();
 
 
 --
@@ -4663,7 +4663,7 @@ CREATE TRIGGER trigger_delete_daemon_config_reports BEFORE DELETE ON public.daem
 -- Name: machine trigger_replace_app_name; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trigger_replace_app_name AFTER UPDATE ON public.machine FOR EACH ROW EXECUTE FUNCTION public.replace_app_name();
+CREATE TRIGGER trigger_replace_app_name AFTER UPDATE ON public.machine FOR EACH ROW EXECUTE PROCEDURE public.replace_app_name();
 
 
 --
@@ -4671,7 +4671,7 @@ CREATE TRIGGER trigger_replace_app_name AFTER UPDATE ON public.machine FOR EACH 
 -- Name: access_point trigger_update_machine_id; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trigger_update_machine_id BEFORE INSERT OR UPDATE ON public.access_point FOR EACH ROW EXECUTE FUNCTION public.update_machine_id();
+CREATE TRIGGER trigger_update_machine_id BEFORE INSERT OR UPDATE ON public.access_point FOR EACH ROW EXECUTE PROCEDURE public.update_machine_id();
 
 
 --
@@ -4679,7 +4679,7 @@ CREATE TRIGGER trigger_update_machine_id BEFORE INSERT OR UPDATE ON public.acces
 -- Name: app trigger_validate_app_name; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trigger_validate_app_name BEFORE INSERT OR UPDATE ON public.app FOR EACH ROW EXECUTE FUNCTION public.validate_app_name();
+CREATE TRIGGER trigger_validate_app_name BEFORE INSERT OR UPDATE ON public.app FOR EACH ROW EXECUTE PROCEDURE public.validate_app_name();
 
 
 --
@@ -4687,7 +4687,7 @@ CREATE TRIGGER trigger_validate_app_name BEFORE INSERT OR UPDATE ON public.app F
 -- Name: daemon_to_service trigger_wipe_dangling_service; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trigger_wipe_dangling_service AFTER DELETE ON public.daemon_to_service FOR EACH ROW EXECUTE FUNCTION public.wipe_dangling_service();
+CREATE TRIGGER trigger_wipe_dangling_service AFTER DELETE ON public.daemon_to_service FOR EACH ROW EXECUTE PROCEDURE public.wipe_dangling_service();
 
 
 --

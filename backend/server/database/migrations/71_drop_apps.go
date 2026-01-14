@@ -9,7 +9,7 @@ func init() {
 		_, err := db.Exec(`
 			-- Drop the obsolete trigger and function.
 			DROP TRIGGER trigger_update_machine_id ON access_point;
-			DROP FUNCTION update_machine_id();
+			DROP FUNCTION update_machine_id;
 
 			-- Add a column in the access point table to store a new foreign key
 			-- to the daemon table.
@@ -178,10 +178,10 @@ func init() {
 			$function$;
 
 			CREATE TRIGGER trigger_create_default_app_name BEFORE INSERT OR UPDATE
-			ON public.app FOR EACH ROW EXECUTE FUNCTION create_default_app_name();
+			ON public.app FOR EACH ROW EXECUTE PROCEDURE create_default_app_name();
 
 			CREATE TRIGGER trigger_validate_app_name BEFORE INSERT OR UPDATE
-			ON public.app FOR EACH ROW EXECUTE FUNCTION validate_app_name();
+			ON public.app FOR EACH ROW EXECUTE PROCEDURE validate_app_name();
 
 			CREATE TRIGGER trigger_replace_app_name AFTER UPDATE
 			ON machine FOR EACH ROW EXECUTE PROCEDURE replace_app_name();
