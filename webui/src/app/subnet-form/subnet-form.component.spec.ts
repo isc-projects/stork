@@ -70,6 +70,9 @@ describe('SubnetFormComponent', () => {
                             optionsHash: '123',
                         },
                     },
+                    userContext: {
+                        'subnet-name': 'server 1',
+                    },
                 },
                 {
                     id: 123,
@@ -113,6 +116,9 @@ describe('SubnetFormComponent', () => {
                             ],
                             optionsHash: '234',
                         },
+                    },
+                    userContext: {
+                        'subnet-name': 'server 2',
                     },
                 },
             ],
@@ -249,6 +255,9 @@ describe('SubnetFormComponent', () => {
                             optionsHash: '123',
                         },
                     },
+                    userContext: {
+                        'subnet-name': 'server 1',
+                    },
                 },
                 {
                     id: 345,
@@ -299,6 +308,9 @@ describe('SubnetFormComponent', () => {
                             ],
                             optionsHash: '123',
                         },
+                    },
+                    userContext: {
+                        'subnet-name': 'server 2',
                     },
                 },
             ],
@@ -657,7 +669,9 @@ describe('SubnetFormComponent', () => {
                             ],
                         },
                     },
-                    userContext: null,
+                    userContext: {
+                        'subnet-name': 'server 1',
+                    },
                 },
                 {
                     id: 123,
@@ -696,7 +710,9 @@ describe('SubnetFormComponent', () => {
                             ],
                         },
                     },
-                    userContext: null,
+                    userContext: {
+                        'subnet-name': 'server 2',
+                    },
                 },
             ],
         }
@@ -770,7 +786,6 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
-                    userContext: null,
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'random',
@@ -790,6 +805,9 @@ describe('SubnetFormComponent', () => {
                                 },
                             ],
                         },
+                    },
+                    userContext: {
+                        'subnet-name': 'server 1',
                     },
                 },
                 {
@@ -817,7 +835,6 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
-                    userContext: null,
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             pdAllocator: 'iterative',
@@ -837,6 +854,9 @@ describe('SubnetFormComponent', () => {
                                 },
                             ],
                         },
+                    },
+                    userContext: {
+                        'subnet-name': 'server 2',
                     },
                 },
             ],
@@ -888,6 +908,22 @@ describe('SubnetFormComponent', () => {
         expect(data.length).toBe(2)
         expect(data.get('0.0.optionCode')?.value).toBe(5)
         expect(data.get('1.0.optionCode')?.value).toBe(5)
+
+        const userContextsNames = component.state.group.get('userContexts.names') as UntypedFormArray
+        expect(userContextsNames).toBeTruthy()
+        expect(userContextsNames.length).toBe(2)
+        expect(userContextsNames.get('0').value).toBe('server 1')
+        expect(userContextsNames.get('1').value).toBe('server 2')
+
+        const userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
+        expect(userContexts).toBeTruthy()
+        expect(userContexts.length).toBe(2)
+        expect(userContexts.get('0').value).toEqual({
+            'subnet-name': 'server 1',
+        })
+        expect(userContexts.get('1').value).toEqual({
+            'subnet-name': 'server 2',
+        })
     }))
 
     it('should initialize the form controls for an IPv6 subnet', fakeAsync(() => {
@@ -932,6 +968,22 @@ describe('SubnetFormComponent', () => {
         expect(data?.length).toBe(2)
         expect(data.get('0.0.optionCode')?.value).toBe(23)
         expect(data.get('1.0.optionCode')?.value).toBe(23)
+
+        const userContextsNames = component.state.group.get('userContexts.names') as UntypedFormArray
+        expect(userContextsNames).toBeTruthy()
+        expect(userContextsNames.length).toBe(2)
+        expect(userContextsNames.get('0').value).toBe('server 1')
+        expect(userContextsNames.get('1').value).toBe('server 2')
+
+        const userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
+        expect(userContexts).toBeTruthy()
+        expect(userContexts.length).toBe(2)
+        expect(userContexts.get('0').value).toEqual({
+            'subnet-name': 'server 1',
+        })
+        expect(userContexts.get('1').value).toEqual({
+            'subnet-name': 'server 2',
+        })
     }))
 
     it('should return a valid pool header', fakeAsync(() => {
@@ -1029,6 +1081,18 @@ describe('SubnetFormComponent', () => {
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(1)
         expect(parameters.get('allocator.values.0')?.value).toBe('iterative')
 
+        const userContextsNames = component.state.group.get('userContexts.names') as UntypedFormArray
+        expect(userContextsNames).toBeTruthy()
+        expect(userContextsNames.length).toBe(1)
+        expect(userContextsNames.get('0').value).toBe('server 2')
+
+        const userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
+        expect(userContexts).toBeTruthy()
+        expect(userContexts.length).toBe(1)
+        expect(userContexts.get('0').value).toEqual({
+            'subnet-name': 'server 2',
+        })
+
         expect(component.state.servers.length).toBe(1)
         expect(component.state.servers[0]).toBe('second/dhcp4')
 
@@ -1075,6 +1139,16 @@ describe('SubnetFormComponent', () => {
         expect(parameters.get('pdAllocator.values.0')?.value).toBeFalsy()
         expect(parameters.get('pdAllocator.values.1')?.value).toBe('iterative')
         expect(parameters.get('pdAllocator.values.2')?.value).toBeFalsy()
+
+        const userContextsNames = component.state.group.get('userContexts.names') as UntypedFormArray
+        expect(userContextsNames).toBeTruthy()
+        expect(userContextsNames.length).toBe(3)
+        expect(userContextsNames.get('0').value).toBe('server 1')
+        expect(userContextsNames.get('1').value).toBe('server 2')
+        expect(userContextsNames.get('2').value).toBe('server 1')
+
+        const userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
+        expect(userContexts).toBeTruthy()
     }))
 
     it('should revert the changes in the form', fakeAsync(() => {
@@ -1097,6 +1171,15 @@ describe('SubnetFormComponent', () => {
         let parameters = component.state.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
         parameters.get('allocator.values.0')?.setValue('flq')
 
+        let userContextsNames = component.state.group.get('userContexts.names') as UntypedFormArray
+        userContextsNames.get('0')?.setValue('server 10')
+
+        let userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
+        userContexts.get('0')?.setValue({
+            'subnet-name': 'server 10',
+            foo: 'bar',
+        })
+
         component.onRevert()
 
         options = component.state.group.get('options.data') as UntypedFormArray
@@ -1109,6 +1192,20 @@ describe('SubnetFormComponent', () => {
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(2)
         expect(parameters.get('allocator.values.0')?.value).toBe('random')
         expect(parameters.get('allocator.values.1')?.value).toBe('iterative')
+
+        userContextsNames = component.state.group.get('userContexts.names') as UntypedFormArray
+        expect(userContextsNames.length).toBe(2)
+        expect(userContextsNames.get('0').value).toBe('server 1')
+        expect(userContextsNames.get('1').value).toBe('server 2')
+
+        userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
+        expect(userContexts.length).toBe(2)
+        expect(userContexts.get('0').value).toEqual({
+            'subnet-name': 'server 1',
+        })
+        expect(userContexts.get('1').value).toEqual({
+            'subnet-name': 'server 2',
+        })
 
         flush()
         // TODO: this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.

@@ -1377,9 +1377,9 @@ export class SubnetSetFormService {
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
             userContexts: new FormGroup({
-                unlocked: new FormControl(false),
-                contexts: new FormArray([]),
-                names: new FormArray([]),
+                unlocked: new FormControl({ value: false, disabled: true }),
+                contexts: new FormArray([new FormControl({})]),
+                names: new FormArray([new FormControl(null)]),
             }),
         })
         return formGroup
@@ -1460,7 +1460,9 @@ export class SubnetSetFormService {
                 delete context['subnet-name']
             }
 
-            subnet.localSubnets[i].userContext = context
+            if (context && Object.keys(context).length > 0) {
+                subnet.localSubnets[i].userContext = context
+            }
         }
         return subnet
     }
@@ -1975,6 +1977,44 @@ export class SubnetSetFormService {
             } else {
                 if (data.controls.length > 0 && data.controls.length < selectedDaemons.length) {
                     data.push(this.optionService.cloneControl(data.controls[0]))
+                    unlocked?.enable()
+                }
+            }
+        }
+
+        // Handle the daemons selection change for the user contexts.
+        const userContextsNames = formGroup.get('userContexts.names') as UntypedFormArray
+        const userContextsContexts = formGroup.get('userContexts.contexts') as UntypedFormArray
+        if (userContextsNames?.controls?.length > 0) {
+            const unlocked = formGroup.get('userContexts')?.get('unlocked') as UntypedFormControl
+            if (selectedDaemons.length < prevSelectedDaemonsNum) {
+                // If we have the index of the removed daemon let's remove the
+                // controls appropriate for this daemon. This will preserve the
+                // values specified for any other daemons. Otherwise, let's remove
+                // the last control.
+                if (
+                    toggledDaemonIndex >= 0 &&
+                    toggledDaemonIndex < userContextsNames.controls.length &&
+                    unlocked.value
+                ) {
+                    userContextsNames.controls.splice(toggledDaemonIndex, 1)
+                    userContextsContexts.controls.splice(toggledDaemonIndex, 1)
+                } else {
+                    userContextsNames.controls.splice(selectedDaemons.length)
+                    userContextsContexts.controls.splice(selectedDaemons.length)
+                }
+                // Clear the unlock flag when there is only one server left.
+                if (userContextsNames.controls.length < 2) {
+                    unlocked?.setValue(false)
+                    unlocked?.disable()
+                }
+            } else {
+                if (
+                    userContextsNames.controls.length > 0 &&
+                    userContextsNames.controls.length < selectedDaemons.length
+                ) {
+                    userContextsNames.push(this.genericFormService.cloneControl(userContextsNames.controls[0]))
+                    userContextsContexts.push(this.genericFormService.cloneControl(userContextsContexts.controls[0]))
                     unlocked?.enable()
                 }
             }

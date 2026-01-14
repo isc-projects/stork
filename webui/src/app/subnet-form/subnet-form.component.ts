@@ -435,6 +435,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             // The breaking change puts us at risk of having irrelevant form contents.
             this.resetOptionsArray()
             this.resetParametersArray()
+            this.resetUserContextsArray()
             return
         }
         // If the number of selected daemons has changed we must update selected servers list.
@@ -683,6 +684,21 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         this.state.group.get('options.unlocked').setValue(false)
         this.getOptionsData().clear()
         this.getOptionsData().push(new UntypedFormArray([]))
+    }
+
+    /**
+     * Resets the part of the form comprising user contexts.
+     *
+     * It removes all existing user context names and contexts and re-creates the default one.
+     */
+    private resetUserContextsArray() {
+        this.state.group.get('userContexts.unlocked').setValue(false)
+        const names = this.state.group.get('userContexts.names') as UntypedFormArray
+        names.clear()
+        names.push(new UntypedFormControl(null))
+        const contexts = this.state.group.get('userContexts.contexts') as UntypedFormArray
+        contexts.clear()
+        contexts.push(new UntypedFormControl({}))
     }
 
     /**

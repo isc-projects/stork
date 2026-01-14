@@ -39,13 +39,16 @@ describe('FormProcessor', () => {
                 ),
             }),
             formBuilder.control('aaa'),
+            formBuilder.control({
+                foo: 'bar',
+            }),
         ])
         formArray.get('0.foo').markAsTouched()
 
         let clonedArray = processor.cloneControl(formArray)
 
         expect(clonedArray).toBeTruthy()
-        expect(clonedArray.length).toBe(2)
+        expect(clonedArray.length).toBe(3)
 
         expect(clonedArray.at(0)).toBeInstanceOf(UntypedFormGroup)
         expect(clonedArray.at(1)).toBeInstanceOf(UntypedFormControl)
@@ -80,5 +83,10 @@ describe('FormProcessor', () => {
         expect(zab.value).not.toBe(formArray.get('0.bar.zab').value)
 
         expect(clonedArray.at(1).value).toBe('aaa')
+
+        expect(clonedArray.at(2).value).toEqual({
+            foo: 'bar',
+        })
+        expect(clonedArray.at(2).value).not.toBe(formArray.get('0.foo').value)
     })
 })
