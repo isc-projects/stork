@@ -120,6 +120,15 @@ Therefore, since the Stork agent and PowerDNS are running on the same machine, i
 API to the Stork agent on the localhost interface. Similarly to BIND 9, Stork agent uses DNS zone transfer (AXFR) to
 fetch the zone data from the PowerDNS (connection no. 18). This communication is local and not secured.
 
+The Stork agent acts as a Prometheus exporter for the Kea and BIND 9 statistics. The Prometheus server scrapes the
+metrics from the agent over the HTTP protocol (connection no. 6 on the diagram); this connection is unsecure and does not
+support TLS. The metrics channel is expected not to be exposed to the public network. It is recommended to configure any
+firewall to limit access to the metrics endpoint only to the Prometheus server.
+
+The Stork server supports hooks that may be loaded to provide new authentication methods. If these authentication methods
+use a dedicated authentication service, we recommend securing the connection to this service with the SSL/TLS
+certificate if the service and hook support it. In particular, the LDAP hook may be configured to use the SSL/TLS (LDAPS)
+protocol.
 
 Databases
 =========
