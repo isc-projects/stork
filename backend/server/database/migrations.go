@@ -82,7 +82,7 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 		var newVer int64
 		for i := oldVer; i > toVer; i-- {
 			if oldVer, newVer, err = migrations.Run(db, "down"); err != nil {
-				return oldVer, oldVer, errors.Wrapf(err, "problem checking database version")
+				return oldVer, oldVer, errors.Wrapf(err, "migration down failed at version %d", i)
 			}
 		}
 		return startVer, newVer, nil
