@@ -256,6 +256,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 	// We should have three log files recorded from the returned configurations.
 	// One from CA, one from DHCPv4 and one from DHCPv6.
 	agentManager.EXPECT().allowLog(gomock.Any()).Times(3)
+	agentManager.EXPECT().allowLeaseTracking().Return(false).AnyTimes()
 
 	monitor.refreshDaemons(t.Context(), agentManager)
 
@@ -396,6 +397,7 @@ func TestKeaAllowedLogsOutputOptionsWithDash(t *testing.T) {
 	// We should have three log files recorded from the returned configurations.
 	// One from CA, one from DHCPv4 and one from DHCPv6.
 	agentManager.EXPECT().allowLog(gomock.Any()).Times(3)
+	agentManager.EXPECT().allowLeaseTracking().Return(false).AnyTimes()
 
 	monitor.refreshDaemons(t.Context(), agentManager)
 

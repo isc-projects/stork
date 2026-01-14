@@ -119,6 +119,7 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 		daemonMonitor,
 		bind9StatsClient,
 		hookManager,
+		settings.EnableLeaseTracking,
 	)
 
 	// Let's start the daemon monitor.
@@ -339,6 +340,7 @@ type generalSettings struct {
 	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory" default:"/usr/lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`
 	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is uncommon. See stork-agent(8) for a list of locations where Stork can automatically find BIND 9 configs." env:"STORK_AGENT_BIND9_CONFIG"`
 	PowerDNSPath                        string `long:"powerdns-path" description:"Specify the path to PowerDNS config file. Does not need to be specified, unless the location is uncommon. See stork-agent(8) for a list of locations where Stork can automatically find PowerDNS configs." env:"STORK_AGENT_POWERDNS_CONFIG"`
+	EnableLeaseTracking                 bool   `long:"enable-lease-tracking" description:"Enable the agent to watch the Kea lease memfile and send lease change updates to the Stork Server. This feature is unfinished and may fill your RAM." env:"STORK_AGENT_ENABLE_LEASE_TRACKING"`
 }
 
 // Register command settings.

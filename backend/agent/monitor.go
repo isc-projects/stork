@@ -19,6 +19,7 @@ import (
 // Operations provided by the Stork agent to set up daemon-related configuration.
 type agentManager interface {
 	allowLog(path string)
+	allowLeaseTracking() bool
 }
 
 // An access point for an application to retrieve information such

@@ -63,27 +63,35 @@ type StorkAgent struct {
 	shutdownOnce        sync.Once
 	hookManager         *HookManager
 
+	// Permit the agent run the Lease Tracking code.
+	allowLeaseTrackingFlag bool
+
 	agentapi.UnimplementedAgentServer
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager) *StorkAgent {
+func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager, allowLeaseTracking bool) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Host:             host,
-		Port:             port,
-		Monitor:          monitor,
-		bind9StatsClient: bind9StatsClient,
-		pdnsClient:       newPDNSClient(),
-		logTailer:        logTailer,
-		keaInterceptor:   newKeaInterceptor(),
-		hookManager:      hookManager,
+		Host:                   host,
+		Port:                   port,
+		Monitor:                monitor,
+		bind9StatsClient:       bind9StatsClient,
+		pdnsClient:             newPDNSClient(),
+		logTailer:              logTailer,
+		keaInterceptor:         newKeaInterceptor(),
+		hookManager:            hookManager,
+		allowLeaseTrackingFlag: allowLeaseTracking,
 	}
 
 	registerKeaInterceptFns(sa)
 
 	return sa
+}
+
+func (sa *StorkAgent) allowLeaseTracking() bool {
+	return sa.allowLeaseTrackingFlag
 }
 
 // Creates the GRPC server callback using the provided cert store. The callback
@@ -969,6 +977,9 @@ func writeLease(writer io.Writer, sizeBuf []byte, lease *keadata.Lease) error {
 
 // Return a point-in-time snapshot of all the active leases that all monitored Kea daemons know about.
 func (sa *StorkAgent) GetKeaLeases(ctx context.Context, req *agentapi.GetKeaLeasesReq) (*agentapi.GetKeaLeasesRsp, error) {
+	if !sa.allowLeaseTrackingFlag {
+		return nil, errors.New("This feature is not enabled. Pass `--enable-lease-tracking` or set `STORK_AGENT_ENABLE_LEASE_TRACKING` when starting the agent.")
+	}
 	daemons := sa.Monitor.GetDaemons()
 	leaseCount := 0
 	var encodedLeases bytes.Buffer

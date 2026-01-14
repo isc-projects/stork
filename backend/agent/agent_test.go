@@ -181,7 +181,7 @@ func TestNewStorkAgent(t *testing.T) {
 	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClientConfig := HTTPClientConfig{}
 	sa := NewStorkAgent(
-		"foo", 42, fdm, bind9StatsClient, NewHookManager(),
+		"foo", 42, fdm, bind9StatsClient, NewHookManager(), false,
 	)
 	require.NotNil(t, sa.Monitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
@@ -2996,6 +2996,13 @@ func TestAllowLog(t *testing.T) {
 	require.True(t, sa.logTailer.allowed("test/log/path"))
 }
 
+func TestAllowLeaseTracking(t *testing.T) {
+	sa := StorkAgent{
+		allowLeaseTrackingFlag: true,
+	}
+	require.True(t, sa.allowLeaseTracking())
+}
+
 // Make a "happy path" keaDaemon structure with a mocked MemfileSnooper.
 // keaDaemon will have `name` as its name, and the snooper will provide
 // snapshots containing single-element lists with each element of `addrs`.
@@ -3062,6 +3069,7 @@ func checkLeasesEncoded(t *testing.T, inputBuffer []byte, expectedIPs []string) 
 // e.g. Bind9.
 func TestGetKeaLeasesHappyPath(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
+	sa.allowLeaseTrackingFlag = true
 	defer teardown()
 
 	expectedAll := []string{
@@ -3117,6 +3125,16 @@ func TestGetKeaLeasesHappyPath(t *testing.T) {
 	checkLeasesEncoded(t, rspFiltered.LeasesPacked, expectedFiltered)
 }
 
+// Test to ensure that the GetKeaLeases handler returns an error if lease tracking is not enabled in the agent.
+func TestGetKeaLeasesDisabled(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+	rsp, err := sa.GetKeaLeases(t.Context(), &agentapi.GetKeaLeasesReq{})
+
+	require.ErrorContains(t, err, "STORK_AGENT_ENABLE_LEASE_TRACKING")
+	require.Nil(t, rsp)
+}
+
 // Test for GetKeaLeases correctly handling various error conditions (documented within).
 func TestGetKeaLeasesErrorConditions(t *testing.T) {
 	// Ensure that GetKeaLeases responds correctly (don't count that lease in the
@@ -3124,6 +3142,7 @@ func TestGetKeaLeasesErrorConditions(t *testing.T) {
 	// the leases fails to encode as protobuf.
 	t.Run("failed to encode protobuf", func(t *testing.T) {
 		sa, _, teardown := setupAgentTest()
+		sa.allowLeaseTrackingFlag = true
 		defer teardown()
 
 		// 0xF5 is 0b11110101. This represents the most significant byte of a 4-byte
@@ -3158,6 +3177,7 @@ func TestGetKeaLeasesErrorConditions(t *testing.T) {
 	// Ensure that GetKeaLeases responds appropriately when the serialized form of a lease is too long to be encoded in the binary format that we use (uint16 length followed by that many bytes of protobuf data).
 	t.Run("serialized data too long", func(t *testing.T) {
 		sa, _, teardown := setupAgentTest()
+		sa.allowLeaseTrackingFlag = true
 		defer teardown()
 
 		// 65,536 copies of the letter 'a', which will make the encoded protobuf value

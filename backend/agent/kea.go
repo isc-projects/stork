@@ -491,9 +491,11 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 		return errors.WithMessage(err, "cannot fetch Kea configuration")
 	}
 	paths := collectKeaAllowedLogs(config)
-	err = d.ensureWatchingLeasefile(ctx, config)
-	if err != nil {
-		return err
+	if agent.allowLeaseTracking() {
+		err = d.ensureWatchingLeasefile(ctx, config)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, p := range paths {
