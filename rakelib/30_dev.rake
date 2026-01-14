@@ -976,7 +976,7 @@ namespace :db do
             "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname_pattern}'"
         ], [
             # Drop databases in parallel.
-            "xargs", "--null", "-P", "16", "-n", "1", "-r", DROPDB, *psql_access_opts
+            "xargs", "-0", "-P", "16", "-n", "1", "-r", DROPDB, *psql_access_opts
         ])
 
         Open3.pipeline([
