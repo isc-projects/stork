@@ -30,7 +30,9 @@ def test_fetch_machine_state(kea_service: Kea, server_service: Server):
     server_service.authorize_all_machines()
     machine, *_ = server_service.wait_for_next_machine_states()
     daemon: KeaDaemon
-    dhcp4_daemons = [d for a in machine.apps for d in a.details.daemons if d.name == "dhcp4"]
+    dhcp4_daemons = [
+        d for a in machine.apps for d in a.details.daemons if d.name == "dhcp4"
+    ]
     assert len(dhcp4_daemons) == 1
     daemon = dhcp4_daemons[0]
 
