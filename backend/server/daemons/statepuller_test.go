@@ -1,9 +1,11 @@
 package daemons
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
@@ -15,6 +17,8 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
+
+//go:generate mockgen -package=daemons -destination=dispatchermock_test.go isc.org/stork/server/configreview Dispatcher
 
 // Check creating and shutting down StatePuller.
 func TestStatsPullerBasic(t *testing.T) {
@@ -104,8 +108,20 @@ func TestStatePullerPullData(t *testing.T) {
 	// prepare fake event center
 	fec := &storktest.FakeEventCenter{}
 
-	// fake config review dispatcher
-	fd := &storktest.FakeDispatcher{}
+	// Ensure that the puller initiated configuration review for the Kea daemons.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	fd := NewMockDispatcher(ctrl)
+
+	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.CA
+	}), gomock.Any(), gomock.Any())
+	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "1.1.1.1"
+	}), gomock.Any(), gomock.Any())
+	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "1.2.3.4"
+	}), gomock.Any(), gomock.Any())
 
 	// add one machine with one kea daemon
 	m := &dbmodel.Machine{
@@ -152,21 +168,26 @@ func TestStatePullerPullData(t *testing.T) {
 	// check if daemons have been updated correctly
 	daemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, daemons, 4)
+	require.Len(t, daemons, 5)
 
-	var keaDaemon dbmodel.Daemon
+	var keaDaemons []*dbmodel.Daemon
 	for _, daemon := range daemons {
 		if daemon.Name == daemonname.DHCPv4 {
-			keaDaemon = daemon
+			keaDaemons = append(keaDaemons, &daemon)
 		}
 	}
-	require.Len(t, keaDaemon.AccessPoints, 1)
-	require.EqualValues(t, keaDaemon.AccessPoints[0].Address, "1.2.3.4")
+	sort.Slice(keaDaemons, func(i, j int) bool {
+		return keaDaemons[i].ID < keaDaemons[j].ID
+	})
 
-	// Ensure that the puller initiated configuration review for the Kea daemons.
-	require.Len(t, fd.CallLog, 2)
-	require.Equal(t, "BeginReview", fd.CallLog[0].CallName)
-	require.Equal(t, "BeginReview", fd.CallLog[1].CallName)
+	require.Len(t, keaDaemons, 2)
+	// The daemon with access point before change. It's no longer active but
+	// should still be in the database.
+	require.Len(t, keaDaemons[0].AccessPoints, 1)
+	require.EqualValues(t, keaDaemons[0].AccessPoints[0].Address, "1.1.1.1")
+	// The daemon with updated access point.
+	require.Len(t, keaDaemons[1].AccessPoints, 1)
+	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "1.2.3.4")
 }
 
 // Check if puller correctly pulls data from an agent that can communicate only
@@ -335,17 +356,12 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 			require.EqualValues(t, daemon.AccessPoints[0].Address, "1.2.3.4")
 		}
 	}
-
-	// Ensure that the puller initiated configuration review for the Kea daemon.
-	require.Len(t, fd.CallLog, 2)
-	require.Equal(t, "BeginReview", fd.CallLog[0].CallName)
-	require.Equal(t, "BeginReview", fd.CallLog[0].CallName)
 }
 
 // Check daemonCompare.
 func TestDaemonCompare(t *testing.T) {
 	// no access points so equal
-	var dbDaemon dbmodel.Daemon
+	dbDaemon := &dbmodel.Daemon{}
 	daemon := &agentcomm.Daemon{}
 	require.True(t, daemonCompare(dbDaemon, daemon))
 

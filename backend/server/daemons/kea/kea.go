@@ -199,18 +199,18 @@ func findChangesAndRaiseEvents(daemonOld, daemonNew *dbmodel.Daemon, err error) 
 
 	if daemonOld.Active && !daemonNew.Active {
 		// Kea daemon was not found in the response or it is inactive.
-		ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", err, daemonOld.Machine, daemonOld)
+		ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", err, daemonOld)
 		meta.Events = append(meta.Events, ev)
 	} else if !daemonOld.Active && daemonNew.Active {
 		// Kea daemon is now active.
-		ev := eventcenter.CreateEvent(dbmodel.EvInfo, "{daemon} is reachable now", daemonNew.Machine, daemonNew)
+		ev := eventcenter.CreateEvent(dbmodel.EvInfo, "{daemon} is reachable now", daemonNew)
 		meta.Events = append(meta.Events, ev)
 	}
 
 	if daemonOld.Uptime > daemonNew.Uptime {
 		// Check if daemon has been restarted.
 		text := "{daemon} has been restarted"
-		ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, daemonNew.Machine, daemonNew)
+		ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, daemonNew)
 		meta.Events = append(meta.Events, ev)
 	}
 
@@ -218,7 +218,7 @@ func findChangesAndRaiseEvents(daemonOld, daemonNew *dbmodel.Daemon, err error) 
 		// Check if daemon version has changed.
 		text := fmt.Sprintf("{daemon} version changed from %s to %s",
 			daemonOld.Version, daemonNew.Version)
-		ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, daemonNew.Machine, daemonNew)
+		ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, daemonNew)
 		meta.Events = append(meta.Events, ev)
 	}
 
@@ -227,7 +227,7 @@ func findChangesAndRaiseEvents(daemonOld, daemonNew *dbmodel.Daemon, err error) 
 			// Raise this event only if we're certain that the configuration has
 			// changed based on the comparison of the hash values.
 			text := "Configuration change detected for {daemon}"
-			ev := eventcenter.CreateEvent(dbmodel.EvInfo, text, daemonNew.Machine, daemonNew)
+			ev := eventcenter.CreateEvent(dbmodel.EvInfo, text, daemonNew)
 			meta.Events = append(meta.Events, ev)
 		} else {
 			log.Infof("Configuration of Kea: machine %d, daemon: %d has not changed since last fetch; skipping database update for that daemon", daemonNew.MachineID, daemonNew.ID)

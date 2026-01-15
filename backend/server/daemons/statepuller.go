@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	keaconfig "isc.org/stork/daemoncfg/kea"
