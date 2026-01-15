@@ -1373,16 +1373,23 @@ func TestGetDaemonsByPage(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	for i := 0; i < 5; i++ {
+		d := NewDaemon(m, daemonname.DHCPv6, true, []*AccessPoint{})
+		d.Version = "2.0"
+		err = AddDaemon(db, d)
+		require.NoError(t, err)
+	}
+
 	// Test pagination
 	daemons, total, err := GetDaemonsByPage(db, 0, 5, nil, "id", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, daemons, 5)
-	require.EqualValues(t, 10, total)
+	require.EqualValues(t, 15, total)
 
 	daemons, total, err = GetDaemonsByPage(db, 5, 5, nil, "id", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, daemons, 5)
-	require.EqualValues(t, 10, total)
+	require.EqualValues(t, 15, total)
 
 	// Test filtering
 	filter := "1.0"
@@ -1407,6 +1414,18 @@ func TestGetDaemonsByPage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, daemons, 0)
 	require.EqualValues(t, 0, total)
+
+	filter = "non-existent"
+	daemons, total, err = GetDaemonsByPage(db, 0, 10, &filter, "id", SortDirAsc, daemonname.DHCPv4, daemonname.DHCPv6, daemonname.CA)
+	require.NoError(t, err)
+	require.Len(t, daemons, 0)
+	require.EqualValues(t, 0, total)
+
+	filter = "2.0"
+	daemons, total, err = GetDaemonsByPage(db, 0, 10, &filter, "id", SortDirAsc, daemonname.DHCPv4, daemonname.DHCPv6, daemonname.CA)
+	require.NoError(t, err)
+	require.Len(t, daemons, 5)
+	require.EqualValues(t, 5, total)
 }
 
 // Test getting DHCP daemons.
