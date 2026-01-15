@@ -20,6 +20,7 @@ def test_delete_machine_with_config_reports(kea_service: Kea, server_service: Se
     assert machines.total is None
     assert len(machines.items) == 0
 
+@kea_parametrize("agent-kea-premium-host-database")
 def test_fetch_machine_state(kea_service: Kea, server_service: Server):
     """Test that the machine state is fetched properly and all daemon info
     are stored in the database."""
@@ -31,3 +32,9 @@ def test_fetch_machine_state(kea_service: Kea, server_service: Server):
 
     assert daemon.log_targets is not None
     assert len(daemon.log_targets) > 0
+    assert daemon.hooks is not None
+    assert len(daemon.hooks) > 0
+    assert daemon.files is not None
+    assert len(daemon.files) > 0
+    assert daemon.backends is not None
+    assert len(daemon.backends) > 0
