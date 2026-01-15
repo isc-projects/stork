@@ -336,26 +336,29 @@ func GetDaemonsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *stri
 		Relation(DaemonRelationMachine).
 		Relation(DaemonRelationLogTargets)
 
-	for _, daemonName := range daemonNames {
-		q = q.WhereOr("name = ?", daemonName)
-		switch daemonName {
-		case daemonname.DHCPv4, daemonname.DHCPv6:
-			q = q.Relation(DaemonRelationHAService)
-			q = q.Relation(DaemonRelationKeaDHCPDaemon)
-		case daemonname.CA, daemonname.D2, daemonname.NetConf:
-			q = q.Relation(DaemonRelationKeaDaemon)
-		case daemonname.Bind9:
-			q = q.Relation(DaemonRelationBind9Daemon)
-		case daemonname.PDNS:
-			q = q.Relation(DaemonRelationPDNSDaemon)
-		}
-	}
-
 	if len(daemonNames) == 0 {
 		q = q.Relation(DaemonRelationHAService).
 			Relation(DaemonRelationKeaDHCPDaemon).
 			Relation(DaemonRelationBind9Daemon).
 			Relation(DaemonRelationPDNSDaemon)
+	} else {
+		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
+			for _, daemonName := range daemonNames {
+				qq = qq.WhereOr("name = ?", daemonName)
+				switch daemonName {
+				case daemonname.DHCPv4, daemonname.DHCPv6:
+					qq = qq.Relation(DaemonRelationHAService)
+					qq = qq.Relation(DaemonRelationKeaDHCPDaemon)
+				case daemonname.CA, daemonname.D2, daemonname.NetConf:
+					qq = qq.Relation(DaemonRelationKeaDaemon)
+				case daemonname.Bind9:
+					qq = qq.Relation(DaemonRelationBind9Daemon)
+				case daemonname.PDNS:
+					qq = qq.Relation(DaemonRelationPDNSDaemon)
+				}
+			}
+			return qq, nil
+		})
 	}
 
 	if filterText != nil {
