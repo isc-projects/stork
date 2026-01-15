@@ -1,6 +1,6 @@
 from core.wrappers import Server, Kea
 from core.fixtures import kea_parametrize
-
+from openapi_client.models.kea_daemon import KeaDaemon
 
 @kea_parametrize("agent-kea-config-review")
 def test_delete_machine_with_config_reports(kea_service: Kea, server_service: Server):
@@ -19,3 +19,15 @@ def test_delete_machine_with_config_reports(kea_service: Kea, server_service: Se
     machines = server_service.list_machines()
     assert machines.total is None
     assert len(machines.items) == 0
+
+def test_fetch_machine_state(kea_service: Kea, server_service: Server):
+    """Test that the machine state is fetched properly and all daemon info
+    are stored in the database."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    machine, *_ = server_service.wait_for_next_machine_states()
+    daemon: KeaDaemon
+    daemon = [d for a in machine.apps for d in a.details.daemons if d.name == "dhcp4"][0]
+
+    assert daemon.log_targets is not None
+    assert len(daemon.log_targets) > 0
