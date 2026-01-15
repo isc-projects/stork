@@ -109,7 +109,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 // daemonCompare compares two daemons for equality. Two daemons are considered
 // equal if their type matches and if they have the same control port. Return
 // true if equal, false otherwise.
-func daemonCompare(dbDaemon dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool {
+func daemonCompare(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool {
 	if dbDaemon.Name != grpcDaemon.Name {
 		return false
 	}
@@ -137,14 +137,14 @@ func daemonCompare(dbDaemon dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool {
 
 // For each provided discovered daemon, try to find a matching daemon in the
 // database. If it is found, use it, otherwise create a new daemon.
-func mergeNewAndOldDaemons(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredDaemons []*agentcomm.Daemon) (existing, deleted []dbmodel.Daemon, err error) {
-	oldDaemons, err := dbmodel.GetDaemonsByMachine(db, dbMachine.ID)
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "cannot get machine's daemons from db")
-	}
-
-	matchedDaemons := make([]dbmodel.Daemon, 0, len(discoveredDaemons))
-	oldMatchedIndices := make(map[int]bool)
+func mergeNewAndOldDaemons(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredDaemons []*agentcomm.Daemon) ([]*dbmodel.Daemon, error) {
+	oldDaemons := dbMachine.Daemons
+	oldMatchedIndices := map[int]struct{}{}
+	// We preserve all old daemons. Some of them may not be discovered anymore
+	// if they are temporarily or permanently down. There is not simple and
+	// reliable way to distinguish between these two cases, so we keep the old
+	// daemons until they are explicitly deleted by the administrator.
+	mergedDaemons := oldDaemons[:]
 
 DISCOVERED_LOOP:
 	for _, discoveredDaemon := range discoveredDaemons {
@@ -156,8 +156,8 @@ DISCOVERED_LOOP:
 			}
 
 			if daemonCompare(oldDaemon, discoveredDaemon) {
-				matchedDaemons = append(matchedDaemons, oldDaemon)
-				oldMatchedIndices[i] = true
+				mergedDaemons = append(mergedDaemons, oldDaemon)
+				oldMatchedIndices[i] = struct{}{}
 				continue DISCOVERED_LOOP
 			}
 		}
@@ -175,17 +175,10 @@ DISCOVERED_LOOP:
 		}
 
 		newDaemon := dbmodel.NewDaemon(dbMachine, discoveredDaemon.Name, true, accessPoints)
-		matchedDaemons = append(matchedDaemons, *newDaemon)
+		mergedDaemons = append(mergedDaemons, newDaemon)
 	}
 
-	var deletedDaemons []dbmodel.Daemon
-	for i, oldDaemon := range oldDaemons {
-		if _, ok := oldMatchedIndices[i]; !ok {
-			deletedDaemons = append(deletedDaemons, oldDaemon)
-		}
-	}
-
-	return matchedDaemons, deletedDaemons, nil
+	return mergedDaemons, nil
 }
 
 // Retrieve remotely machine and its daemons state, and store it in the database.
@@ -250,27 +243,9 @@ func UpdateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 
 	// take old daemons from db and new daemons fetched from the machine
 	// and match them and prepare a list of all daemons
-	existingDaemons, deletedDaemons, err := mergeNewAndOldDaemons(db, dbMachine, state.Daemons)
+	mergedDaemons, err := mergeNewAndOldDaemons(db, dbMachine, state.Daemons)
 	if err != nil {
 		return "Cannot merge new and old daemons: " + err.Error()
-	}
-
-	// Delete the daemons that are no longer exist.
-	err = db.RunInTransaction(ctx2, func(tx *pg.Tx) error {
-		for _, daemon := range deletedDaemons {
-			err := dbmodel.DeleteDaemon(tx, &daemon)
-			if err != nil {
-				return err
-			}
-
-			eventCenter.AddInfoEvent("removed {daemon} from {machine}", daemon, daemon.Machine)
-		}
-		return nil
-	})
-	if err != nil {
-		msg := "Cannot delete old daemons"
-		log.WithError(err).Error(msg)
-		// Continue processing.
 	}
 
 	// Group daemons by Kea, BIND 9, PowerDNS, etc.
@@ -285,34 +260,34 @@ func UpdateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 		daemonname.PDNS:   "pdns",
 	}
 
-	existingDaemonsByType := storkutil.NewOrderedMap[string, []*dbmodel.Daemon]()
-	for _, daemon := range existingDaemons {
+	mergedDaemonsByType := storkutil.NewOrderedMap[string, []*dbmodel.Daemon]()
+	for _, daemon := range mergedDaemons {
 		daemonType, ok := nameToTypeMapping[daemon.Name]
 		if !ok {
 			log.Warnf("Unknown daemon type %s", daemon.Name)
 			continue
 		}
 
-		typeDaemons, ok := existingDaemonsByType.Get(daemonType)
+		typeDaemons, ok := mergedDaemonsByType.Get(daemonType)
 		if !ok {
 			typeDaemons = []*dbmodel.Daemon{}
 		}
-		typeDaemons = append(typeDaemons, &daemon)
-		existingDaemonsByType.Set(daemonType, typeDaemons)
+		typeDaemons = append(typeDaemons, daemon)
+		mergedDaemonsByType.Set(daemonType, typeDaemons)
 	}
 	// List of all daemons belonging to the machine with updated state.
-	allDaemons := make([]*dbmodel.Daemon, 0, len(existingDaemons))
+	allDaemons := make([]*dbmodel.Daemon, 0, len(mergedDaemons))
 	// go through all daemons and store their changes in database
-	for _, entry := range existingDaemonsByType.GetEntries() {
+	for _, entry := range mergedDaemonsByType.GetEntries() {
 		daemonType := entry.Key
-		existingDaemons := entry.Value
+		mergedDaemons := entry.Value
 
 		// get daemon state from the machine
 		switch daemonType {
 		case "kea":
 			var states []kea.DaemonStateMeta
 			var enhancedDaemons []*dbmodel.Daemon
-			for _, daemon := range existingDaemons {
+			for _, daemon := range mergedDaemons {
 				enhancedDaemon, state := kea.GetDaemonWithRefreshedState(ctx2, agents, daemon)
 				enhancedDaemons = append(enhancedDaemons, enhancedDaemon)
 				states = append(states, state)
@@ -330,7 +305,7 @@ func UpdateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 				}
 			}
 		case "bind9":
-			for _, daemon := range existingDaemons {
+			for _, daemon := range mergedDaemons {
 				bind9.GetDaemonState(ctx2, agents, daemon, eventCenter)
 				err = bind9.CommitDaemonIntoDB(db, daemon, eventCenter)
 				if err != nil {
@@ -339,7 +314,7 @@ func UpdateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 				allDaemons = append(allDaemons, daemon)
 			}
 		case "pdns":
-			for _, daemon := range existingDaemons {
+			for _, daemon := range mergedDaemons {
 				pdns.GetDaemonState(ctx2, agents, daemon, eventCenter)
 				err = pdns.CommitDaemonIntoDB(db, daemon, eventCenter)
 				if err != nil {
