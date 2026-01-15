@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/pkg/errors"
@@ -226,134 +227,130 @@ func TestClearFinishedMigrations(t *testing.T) {
 // Test that the migration is started and executed asynchronously.
 // The errors should be aggregated.
 func TestStartAndExecuteMigration(t *testing.T) {
-	// Arrange
-	manager := NewMigrationManager()
+	synctest.Test(t, func(t *testing.T) {
+		// Arrange
+		manager := NewMigrationManager()
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	migrator := NewMockMigrator(ctrl)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		migrator := NewMockMigrator(ctrl)
 
-	gomock.InOrder(
-		migrator.EXPECT().CountTotal().Return(int64(250), nil),
-		migrator.EXPECT().Begin(),
-		migrator.EXPECT().LoadItems().Return(int64(100), nil),
-		migrator.EXPECT().LoadItems().Return(int64(100), nil),
-		migrator.EXPECT().LoadItems().Return(int64(50), nil),
-		migrator.EXPECT().LoadItems().Return(int64(0), nil),
-		migrator.EXPECT().End(),
-	)
+		gomock.InOrder(
+			migrator.EXPECT().CountTotal().Return(int64(250), nil),
+			migrator.EXPECT().Begin(),
+			migrator.EXPECT().LoadItems().Return(int64(100), nil),
+			migrator.EXPECT().LoadItems().Return(int64(100), nil),
+			migrator.EXPECT().LoadItems().Return(int64(50), nil),
+			migrator.EXPECT().LoadItems().Return(int64(0), nil),
+			migrator.EXPECT().End(),
+		)
 
-	// Blocks the migration runner until the assertion of a particular chunk is
-	// finished.
-	assertionFinishedChan := make(chan struct{})
-	defer close(assertionFinishedChan)
-	callIndex := int64(0)
+		// Blocks the migration runner until the assertion of a particular chunk is
+		// finished.
+		assertionFinishedChan := make(chan struct{})
+		defer close(assertionFinishedChan)
+		callIndex := int64(0)
 
-	migrator.EXPECT().Migrate().DoAndReturn(func() []MigrationError {
-		// The migrator will wait for the assertion to finish before it
-		// continues. Also, the assertion will wait for the migrator to finish
-		// migrating the chunk before it continues.
-		<-assertionFinishedChan
-		// The runner does additional processing after the migrator does its
-		// job. So, we cannot immediately run the assertions after the channel
-		// is empty. We need to wait for the runner to finish its job by
-		// calling t.Eventually.
+		migrator.EXPECT().Migrate().DoAndReturn(func() []MigrationError {
+			// The migrator will wait for the assertion to finish before it
+			// continues. Also, the assertion will wait for the migrator to finish
+			// migrating the chunk before it continues.
+			<-assertionFinishedChan
+			// The runner does additional processing after the migrator does its
+			// job. So, we cannot immediately run the assertions after the channel
+			// is empty. We need to wait for the runner to finish its job by
+			// calling t.Eventually.
 
-		// Return some errors.
-		callIndex++
-		return []MigrationError{
-			{ID: callIndex*100 + 1, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1), CauseEntity: ErrorCauseEntityHost},
-			{ID: callIndex*100 + 2, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2), CauseEntity: ErrorCauseEntityHost},
-			{ID: callIndex*100 + 3, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3), CauseEntity: ErrorCauseEntityHost},
-		}
-	}).Times(3)
+			// Return some errors.
+			callIndex++
+			return []MigrationError{
+				{ID: callIndex*100 + 1, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1), CauseEntity: ErrorCauseEntityHost},
+				{ID: callIndex*100 + 2, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2), CauseEntity: ErrorCauseEntityHost},
+				{ID: callIndex*100 + 3, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3), CauseEntity: ErrorCauseEntityHost},
+			}
+		}).Times(3)
 
-	type contextKey string
-	ctx := context.WithValue(context.Background(), contextKey("key"), "value")
+		type contextKey string
+		ctx := context.WithValue(context.Background(), contextKey("key"), "value")
 
-	// Act & Assert
-	initialStatus, err := manager.StartMigration(ctx, migrator)
-	require.NoError(t, err)
+		// Act & Assert
+		initialStatus, err := manager.StartMigration(ctx, migrator)
+		require.NoError(t, err)
 
-	// Check the initial status.
-	require.NotEmpty(t, initialStatus.ID)
-	require.False(t, initialStatus.Canceling)
-	require.Equal(t, "value", initialStatus.Context.Value(contextKey("key")))
-	require.Zero(t, initialStatus.EndDate)
-	require.Zero(t, initialStatus.GeneralError)
-	require.Zero(t, initialStatus.ProcessedItemsCount)
-	require.EqualValues(t, 250, initialStatus.TotalItemsCount)
-	require.Zero(t, initialStatus.EstimatedLeftTime)
-	require.Empty(t, initialStatus.Errors)
+		// Check the initial status.
+		require.NotEmpty(t, initialStatus.ID)
+		require.False(t, initialStatus.Canceling)
+		require.Equal(t, "value", initialStatus.Context.Value(contextKey("key")))
+		require.Zero(t, initialStatus.EndDate)
+		require.Zero(t, initialStatus.GeneralError)
+		require.Zero(t, initialStatus.ProcessedItemsCount)
+		require.EqualValues(t, 250, initialStatus.TotalItemsCount)
+		require.Zero(t, initialStatus.EstimatedLeftTime)
+		require.Empty(t, initialStatus.Errors)
 
-	// Wait for the first chunk to be processed.
-	assertionFinishedChan <- struct{}{}
-	require.Eventually(t, func() bool {
-		status := manager.GetMigration(initialStatus.ID)
-		return status.ProcessedItemsCount == 100
-	}, 100*time.Millisecond, 10*time.Millisecond)
+		// Wait for the first chunk to be processed.
+		time.Sleep(1 * time.Minute)
+		assertionFinishedChan <- struct{}{}
+		synctest.Wait()
 
-	// Check the status after the first chunk is migrated.
-	firstChunkStatus := manager.GetMigration(initialStatus.ID)
-	require.NotNil(t, firstChunkStatus)
-	require.Equal(t, initialStatus.ID, firstChunkStatus.ID)
-	require.False(t, firstChunkStatus.Canceling)
-	require.Equal(t, "value", firstChunkStatus.Context.Value(contextKey("key")))
-	require.Zero(t, firstChunkStatus.EndDate)
-	require.Zero(t, firstChunkStatus.GeneralError)
-	require.EqualValues(t, 100, firstChunkStatus.ProcessedItemsCount)
-	require.NotZero(t, firstChunkStatus.EstimatedLeftTime)
-	require.NotZero(t, firstChunkStatus.ElapsedTime)
-	require.Len(t, firstChunkStatus.Errors, 3)
-	require.EqualValues(t, 101, firstChunkStatus.Errors[0].ID)
-	require.EqualValues(t, 102, firstChunkStatus.Errors[1].ID)
-	require.EqualValues(t, 103, firstChunkStatus.Errors[2].ID)
+		// Check the status after the first chunk is migrated.
+		firstChunkStatus := manager.GetMigration(initialStatus.ID)
+		require.NotNil(t, firstChunkStatus)
+		require.Equal(t, initialStatus.ID, firstChunkStatus.ID)
+		require.False(t, firstChunkStatus.Canceling)
+		require.Equal(t, "value", firstChunkStatus.Context.Value(contextKey("key")))
+		require.Zero(t, firstChunkStatus.EndDate)
+		require.Zero(t, firstChunkStatus.GeneralError)
+		require.EqualValues(t, 100, firstChunkStatus.ProcessedItemsCount)
+		require.Equal(t, 90*time.Second, firstChunkStatus.EstimatedLeftTime)
+		require.Equal(t, 1*time.Minute, firstChunkStatus.ElapsedTime)
+		require.Len(t, firstChunkStatus.Errors, 3)
+		require.EqualValues(t, 101, firstChunkStatus.Errors[0].ID)
+		require.EqualValues(t, 102, firstChunkStatus.Errors[1].ID)
+		require.EqualValues(t, 103, firstChunkStatus.Errors[2].ID)
 
-	// Wait for the second chunk to be processed.
-	assertionFinishedChan <- struct{}{}
-	require.Eventually(t, func() bool {
-		status := manager.GetMigration(initialStatus.ID)
-		return status.ProcessedItemsCount == 200
-	}, 100*time.Millisecond, 10*time.Millisecond)
+		// Wait for the second chunk to be processed.
+		time.Sleep(15 * time.Second)
+		assertionFinishedChan <- struct{}{}
+		synctest.Wait()
 
-	// Check the status after the second chunk is migrated.
-	secondChunkStatus := manager.GetMigration(initialStatus.ID)
-	require.NotNil(t, secondChunkStatus)
-	require.Equal(t, initialStatus.ID, secondChunkStatus.ID)
-	require.False(t, secondChunkStatus.Canceling)
-	require.Equal(t, "value", secondChunkStatus.Context.Value(contextKey("key")))
-	require.Zero(t, secondChunkStatus.EndDate)
-	require.Zero(t, secondChunkStatus.GeneralError)
-	require.EqualValues(t, 200, secondChunkStatus.ProcessedItemsCount)
-	require.NotZero(t, secondChunkStatus.EstimatedLeftTime)
-	require.NotZero(t, secondChunkStatus.ElapsedTime)
-	require.Len(t, secondChunkStatus.Errors, 6)
-	require.EqualValues(t, 201, secondChunkStatus.Errors[3].ID)
-	require.EqualValues(t, 202, secondChunkStatus.Errors[4].ID)
-	require.EqualValues(t, 203, secondChunkStatus.Errors[5].ID)
+		// Check the status after the second chunk is migrated.
+		secondChunkStatus := manager.GetMigration(initialStatus.ID)
+		require.NotNil(t, secondChunkStatus)
+		require.Equal(t, initialStatus.ID, secondChunkStatus.ID)
+		require.False(t, secondChunkStatus.Canceling)
+		require.Equal(t, "value", secondChunkStatus.Context.Value(contextKey("key")))
+		require.Zero(t, secondChunkStatus.EndDate)
+		require.Zero(t, secondChunkStatus.GeneralError)
+		require.EqualValues(t, 200, secondChunkStatus.ProcessedItemsCount)
+		require.Equal(t, 18750*time.Millisecond, secondChunkStatus.EstimatedLeftTime)
+		require.Equal(t, 75*time.Second, secondChunkStatus.ElapsedTime)
+		require.Len(t, secondChunkStatus.Errors, 6)
+		require.EqualValues(t, 201, secondChunkStatus.Errors[3].ID)
+		require.EqualValues(t, 202, secondChunkStatus.Errors[4].ID)
+		require.EqualValues(t, 203, secondChunkStatus.Errors[5].ID)
 
-	// Wait for the third chunk to be processed.
-	assertionFinishedChan <- struct{}{}
-	require.Eventually(t, func() bool {
-		status := manager.GetMigration(initialStatus.ID)
-		return status.ProcessedItemsCount == 250
-	}, 100*time.Millisecond, 10*time.Millisecond)
+		// Wait for the third chunk to be processed.
+		time.Sleep(30 * time.Second)
+		assertionFinishedChan <- struct{}{}
+		synctest.Wait()
 
-	// Check the status after the third chunk is migrated.
-	thirdChunkStatus := manager.GetMigration(initialStatus.ID)
-	require.NotNil(t, thirdChunkStatus)
-	require.Equal(t, initialStatus.ID, thirdChunkStatus.ID)
-	require.False(t, thirdChunkStatus.Canceling)
-	require.Equal(t, "value", thirdChunkStatus.Context.Value(contextKey("key")))
-	require.NotZero(t, thirdChunkStatus.EndDate)
-	require.Zero(t, thirdChunkStatus.GeneralError)
-	require.EqualValues(t, 250, thirdChunkStatus.ProcessedItemsCount)
-	require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
-	require.NotZero(t, thirdChunkStatus.ElapsedTime)
-	require.Len(t, thirdChunkStatus.Errors, 9)
-	require.EqualValues(t, 301, thirdChunkStatus.Errors[6].ID)
-	require.EqualValues(t, 302, thirdChunkStatus.Errors[7].ID)
-	require.EqualValues(t, 303, thirdChunkStatus.Errors[8].ID)
+		// Check the status after the third chunk is migrated.
+		thirdChunkStatus := manager.GetMigration(initialStatus.ID)
+		require.NotNil(t, thirdChunkStatus)
+		require.Equal(t, initialStatus.ID, thirdChunkStatus.ID)
+		require.False(t, thirdChunkStatus.Canceling)
+		require.Equal(t, "value", thirdChunkStatus.Context.Value(contextKey("key")))
+		require.NotZero(t, thirdChunkStatus.EndDate)
+		require.Zero(t, thirdChunkStatus.GeneralError)
+		require.EqualValues(t, 250, thirdChunkStatus.ProcessedItemsCount)
+		require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
+		require.EqualValues(t, 105*time.Second, thirdChunkStatus.ElapsedTime)
+		require.Len(t, thirdChunkStatus.Errors, 9)
+		require.EqualValues(t, 301, thirdChunkStatus.Errors[6].ID)
+		require.EqualValues(t, 302, thirdChunkStatus.Errors[7].ID)
+		require.EqualValues(t, 303, thirdChunkStatus.Errors[8].ID)
+	})
 }
 
 // Test that the migration is not started if an error occurs in the initial
