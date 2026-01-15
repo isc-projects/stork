@@ -147,6 +147,7 @@ func GetMachineByAddressAndAccessPointPort(db *pg.DB, machineAddress string, acc
 // Get a machine by its ID with default relations.
 func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	return GetMachineByIDWithRelations(db, id,
+		MachineRelationDaemonLogTargets,
 		MachineRelationDaemonAccessPoints,
 		MachineRelationBind9Daemons,
 		MachineRelationKeaDHCPConfigs,
@@ -230,6 +231,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	// prepare query
 	q := db.Model(&machines)
 	q = q.Relation(string(MachineRelationDaemonAccessPoints))
+	q = q.Relation(string(MachineRelationDaemonLogTargets))
 	q = q.Relation(string(MachineRelationKeaDHCPConfigs))
 	q = q.Relation(string(MachineRelationBind9Daemons))
 	q = q.Relation(string(MachineRelationPDNSDaemons))
@@ -305,6 +307,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 // Get all machines from database. It can be filtered by authorized field.
 func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 	return GetAllMachinesWithRelations(db, authorized,
+		MachineRelationDaemonLogTargets,
 		MachineRelationDaemonAccessPoints,
 		MachineRelationKeaDHCPConfigs,
 		MachineRelationBind9Daemons,

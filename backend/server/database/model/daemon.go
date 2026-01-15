@@ -207,6 +207,7 @@ func GetDaemonByIDWithRelations(dbi pg.DBI, id int64, relations ...DaemonRelatio
 func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 	return GetDaemonByIDWithRelations(
 		dbi, id,
+		DaemonRelationLogTargets,
 		DaemonRelationAccessPoints, DaemonRelationMachine,
 		DaemonRelationKeaDHCPDaemon, DaemonRelationBind9Daemon,
 		DaemonRelationPDNSDaemon,
@@ -218,6 +219,7 @@ func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 func GetKeaDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 	return GetDaemonByIDWithRelations(
 		dbi, id,
+		DaemonRelationLogTargets,
 		DaemonRelationAccessPoints, DaemonRelationMachine,
 		DaemonRelationKeaDHCPDaemon,
 	)
@@ -237,6 +239,7 @@ func GetDNSDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 // It doesn't validate that the daemons are indeed Kea daemons.
 func GetKeaDaemonsByIDs(dbi pg.DBI, ids []int64) (daemons []Daemon, err error) {
 	err = dbi.Model(&daemons).
+		Relation(DaemonRelationLogTargets).
 		Relation(DaemonRelationAccessPoints).
 		Relation(DaemonRelationMachine).
 		Relation(DaemonRelationKeaDHCPDaemon).
@@ -260,6 +263,7 @@ func GetKeaDaemonsByIDs(dbi pg.DBI, ids []int64) (daemons []Daemon, err error) {
 // Get daemons by their machine ID.
 func GetDaemonsByMachine(dbi pg.DBI, machineID int64) (daemons []Daemon, err error) {
 	err = dbi.Model(&daemons).
+		Relation(DaemonRelationLogTargets).
 		Relation(DaemonRelationAccessPoints).
 		Relation(DaemonRelationMachine).
 		Relation(DaemonRelationKeaDaemon).
@@ -435,6 +439,7 @@ func GetDNSDaemons(dbi pg.DBI) (daemons []Daemon, err error) {
 // Get all Kea DHCP daemons.
 func GetKeaDHCPDaemons(dbi pg.DBI) (daemons []Daemon, err error) {
 	err = dbi.Model(&daemons).
+		Relation(DaemonRelationLogTargets).
 		Relation(DaemonRelationMachine).
 		Relation(DaemonRelationKeaDHCPDaemon).
 		// TODO: Code implemented in below line is a temporary solution for virtual applications.
@@ -883,6 +888,7 @@ func (d *Daemon) setKeaConfigWithHash(config *keaconfig.Config, configHash strin
 						targets[i].ID = existingTarget.ID
 						targets[i].DaemonID = d.ID
 						targets[i].CreatedAt = existingTarget.CreatedAt
+						break
 					}
 				}
 				d.LogTargets = append(d.LogTargets, targets[i])

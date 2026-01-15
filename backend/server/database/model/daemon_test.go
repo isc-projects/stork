@@ -90,7 +90,11 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	daemon.Version = "2.0.0"
 	err = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
-            "valid-lifetime": 1234
+            "valid-lifetime": 1234,
+			"loggers": [{
+				"name": "kea-dhcp4",
+				"output_options": [{ "output": "/var/log/kea/kea-dhcp4-ha1.log"}]
+			}]
         }
     }`))
 	require.NoError(t, err)
@@ -110,6 +114,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.Equal(t, daemonname.DHCPv6, updatedDaemon.Name)
 	require.False(t, updatedDaemon.Active)
 	require.Equal(t, "2.0.0", updatedDaemon.Version)
+	require.Len(t, updatedDaemon.LogTargets, 1)
 	require.NotNil(t, updatedDaemon.KeaDaemon)
 	require.NotNil(t, updatedDaemon.KeaDaemon.Config)
 	require.NotNil(t, updatedDaemon.KeaDaemon.KeaDHCPDaemon)
@@ -351,6 +356,7 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotNil(t, dmn.KeaDaemon.Config)
 	require.NotNil(t, dmn.Machine)
 	require.Len(t, dmn.AccessPoints, 1)
+	require.Len(t, dmn.LogTargets, 1)
 }
 
 // Test getting multiple Kea daemons by IDs.
@@ -386,6 +392,10 @@ func TestGetKeaDaemonsByIDs(t *testing.T) {
 	var daemons []*Daemon
 	for _, daemonName := range []daemonname.Name{daemonname.DHCPv4, daemonname.DHCPv6, daemonname.D2, daemonname.CA} {
 		daemon := NewDaemon(m, daemonName, true, accessPoints)
+		daemon.LogTargets = []*LogTarget{{
+			Name:   "kea-dhcp4",
+			Output: "/var/log/kea/kea-dhcp4-ha1.log",
+		}}
 		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
 		daemons = append(daemons, daemon)
@@ -404,6 +414,7 @@ func TestGetKeaDaemonsByIDs(t *testing.T) {
 		require.EqualValues(t, m.ID, rd.Machine.ID)
 		require.NotNil(t, rd.KeaDaemon)
 		require.NotNil(t, rd.KeaDaemon.KeaDHCPDaemon)
+		require.Len(t, rd.LogTargets, 1)
 	}
 	require.ElementsMatch(t, ids, selectedDaemons)
 }
@@ -440,6 +451,10 @@ func TestGetKeaDHCPDaemons(t *testing.T) {
 	daemonNames := []daemonname.Name{daemonname.DHCPv4, daemonname.DHCPv6, daemonname.CA, daemonname.D2}
 	for _, dn := range daemonNames {
 		daemon := NewDaemon(m, dn, true, accessPoints)
+		daemon.LogTargets = []*LogTarget{{
+			Name:   "kea-dhcp4",
+			Output: "/var/log/kea/kea-dhcp4-ha1.log",
+		}}
 		err = AddDaemon(db, daemon)
 		require.NoError(t, err)
 	}
@@ -462,6 +477,7 @@ func TestGetKeaDHCPDaemons(t *testing.T) {
 		require.NotNil(t, d.KeaDaemon)
 		require.Equal(t, d.ID, d.KeaDaemon.DaemonID)
 		require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
+		require.Len(t, d.LogTargets, 1)
 	}
 	require.Contains(t, names, daemonname.DHCPv4)
 	require.Contains(t, names, daemonname.DHCPv6)
@@ -1313,6 +1329,10 @@ func TestGetDaemonsByMachine(t *testing.T) {
 	require.NoError(t, err)
 
 	d1 := NewDaemon(m1, daemonname.DHCPv4, true, []*AccessPoint{})
+	d1.LogTargets = []*LogTarget{{
+		Name:   "kea-dhcp4",
+		Output: "/var/log/kea/kea-dhcp4-ha1.log",
+	}}
 	err = AddDaemon(db, d1)
 	require.NoError(t, err)
 	d2 := NewDaemon(m1, daemonname.Bind9, true, []*AccessPoint{})
@@ -1329,6 +1349,7 @@ func TestGetDaemonsByMachine(t *testing.T) {
 	ids := []int64{daemons[0].ID, daemons[1].ID}
 	require.Contains(t, ids, d1.ID)
 	require.Contains(t, ids, d2.ID)
+	require.Len(t, daemons[0].LogTargets, 1)
 
 	daemons, err = GetDaemonsByMachine(db, m2.ID)
 	require.NoError(t, err)
@@ -1447,6 +1468,10 @@ func TestGetKeaDaemonByID(t *testing.T) {
 
 	// Add Kea DHCPv4 daemon
 	kea4 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{})
+	kea4.LogTargets = []*LogTarget{{
+		Name:   "kea-dhcp4",
+		Output: "/var/log/kea/kea-dhcp4-ha1.log",
+	}}
 	err = AddDaemon(db, kea4)
 	require.NoError(t, err)
 
@@ -1462,6 +1487,7 @@ func TestGetKeaDaemonByID(t *testing.T) {
 	require.Equal(t, daemonname.DHCPv4, d.Name)
 	require.NotNil(t, d.KeaDaemon)
 	require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
+	require.Len(t, d.LogTargets, 1)
 
 	// Get BIND9 (should return daemon but without this daemon specific fields
 	// populated).
@@ -1471,6 +1497,7 @@ func TestGetKeaDaemonByID(t *testing.T) {
 	require.Equal(t, daemonname.Bind9, d.Name)
 	require.Nil(t, d.KeaDaemon)
 	require.Nil(t, d.Bind9Daemon)
+	require.Len(t, d.LogTargets, 0)
 
 	// Get non-existing daemon
 	d, err = GetKeaDaemonByID(db, 12345)
