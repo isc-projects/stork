@@ -481,6 +481,24 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    delete:
+      summary: Delete daemon by Id
+      operationId: deleteDaemon
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID.
+      responses:
+        200:
+          description: Delete successful
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"  
 
   /machine-stats:
     get:

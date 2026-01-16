@@ -20,6 +20,7 @@ import (
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
+	"isc.org/stork/hooks/server/authenticationcallouts"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -27,6 +28,7 @@ import (
 	"isc.org/stork/server/daemons/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -2795,6 +2797,88 @@ func TestUpdateDaemon(t *testing.T) {
 	okRsp = rsp.(*services.GetDaemonOK)
 	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
 	require.False(t, okRsp.Payload.Monitored) // now it is false
+}
+
+// Test that the daemon is removed and its entities are cascade deleted.
+func TestDeleteDaemon(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(dbSettings, db, fec)
+	require.NoError(t, err)
+
+	subnet1 := &dbmodel.Subnet{
+		Prefix: "10.0.1.0/24",
+	}
+	_ = dbmodel.AddSubnet(db, subnet1)
+	subnet2 := &dbmodel.Subnet{
+		Prefix: "10.0.2.0/24",
+	}
+	_ = dbmodel.AddSubnet(db, subnet2)
+
+	machine, _ := dbmodeltest.NewMachine(db)
+	daemon1Wrapper, _ := machine.NewKeaDHCPv4Server()
+	daemon1, _ := daemon1Wrapper.GetDaemon()
+	_ = dbmodel.AddDaemonToSubnet(db, subnet1, daemon1)
+	_ = dbmodel.AddDaemonToSubnet(db, subnet2, daemon1)
+
+	daemon2Wrapper, _ := machine.NewKeaDHCPv4Server()
+	daemon2, _ := daemon2Wrapper.GetDaemon()
+	_ = dbmodel.AddDaemonToSubnet(db, subnet2, daemon2)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	t.Run("unauthorized user", func(t *testing.T) {
+		// Act
+		resp := rapi.DeleteDaemon(ctx, services.DeleteDaemonParams{
+			ID: daemon1.ID,
+		})
+
+		// Assert
+		require.IsType(t, &services.DeleteDaemonDefault{}, resp)
+		defaultRsp := resp.(*services.DeleteDaemonDefault)
+		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+	})
+
+	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
+		ID: 42, Groups: []*dbmodel.SystemGroup{
+			{ID: int(authenticationcallouts.UserGroupIDSuperAdmin)},
+		},
+	})
+
+	t.Run("authorized user", func(t *testing.T) {
+		// Act
+		resp := rapi.DeleteDaemon(ctx, services.DeleteDaemonParams{
+			ID: daemon1.ID,
+		})
+
+		// Assert
+		require.IsType(t, &services.DeleteDaemonOK{}, resp)
+
+		count, err := dbmodel.DeleteOrphanedSubnets(db)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, count)
+		subnets, _ := dbmodel.GetAllSubnets(db, 0)
+		require.Len(t, subnets, 1)
+		subnet := subnets[0]
+		require.Equal(t, "10.0.2.0/24", subnet.Prefix)
+		require.Len(t, subnet.LocalSubnets, 1)
+		require.Equal(t, daemon2.ID, subnet.LocalSubnets[0].DaemonID)
+	})
+
+	t.Run("unknown daemon", func(t *testing.T) {
+		// Act
+		resp := rapi.DeleteDaemon(ctx, services.DeleteDaemonParams{
+			ID: 42,
+		})
+
+		// Assert
+		require.IsType(t, &services.DeleteDaemonDefault{}, resp)
+		defaultRsp := resp.(*services.DeleteDaemonDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
 }
 
 // Check if generating and getting server token works.

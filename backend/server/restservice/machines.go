@@ -1811,6 +1811,49 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 	return rsp
 }
 
+// Delete a daemon. Only superadmin can do it.
+func (r *RestAPI) DeleteDaemon(ctx context.Context, params services.DeleteDaemonParams) middleware.Responder {
+	ok, dbUser := r.SessionManager.Logged(ctx)
+	if !ok || !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		msg := "User is forbidden to delete daemon"
+		rsp := services.NewDeleteDaemonDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	if err != nil {
+		msg := fmt.Sprintf("Cannot get daemon with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
+		rsp := services.NewDeleteDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbDaemon == nil {
+		msg := fmt.Sprintf("Cannot find daemon with ID %d", params.ID)
+		rsp := services.NewDeleteDaemonDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	err = dbmodel.DeleteDaemon(r.DB, dbDaemon)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to delete daemon with ID %d", params.ID)
+		rsp := services.NewDeleteDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	r.EventCenter.AddInfoEvent("{user} deleted {daemon} of {machine}", dbUser, dbDaemon, dbDaemon.Machine)
+
+	rsp := services.NewDeleteDaemonOK()
+	return rsp
+}
+
 // Returns the authentication key assigned to the given access point.
 // If there is no authentication key assigned, returns an empty string.
 func (r *RestAPI) GetAccessPointKey(ctx context.Context, params services.GetAccessPointKeyParams) middleware.Responder {
