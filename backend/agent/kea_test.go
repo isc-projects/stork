@@ -256,7 +256,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 	// We should have three log files recorded from the returned configurations.
 	// One from CA, one from DHCPv4 and one from DHCPv6.
 	agentManager.EXPECT().allowLog(gomock.Any()).Times(3)
-	agentManager.EXPECT().allowLeaseTracking().Return(false).AnyTimes()
+	agentManager.EXPECT().allowLeaseTracking().Return(false, 0).AnyTimes()
 
 	monitor.refreshDaemons(t.Context(), agentManager)
 
@@ -397,7 +397,7 @@ func TestKeaAllowedLogsOutputOptionsWithDash(t *testing.T) {
 	// We should have three log files recorded from the returned configurations.
 	// One from CA, one from DHCPv4 and one from DHCPv6.
 	agentManager.EXPECT().allowLog(gomock.Any()).Times(3)
-	agentManager.EXPECT().allowLeaseTracking().Return(false).AnyTimes()
+	agentManager.EXPECT().allowLeaseTracking().Return(false, 0).AnyTimes()
 
 	monitor.refreshDaemons(t.Context(), agentManager)
 
@@ -1966,7 +1966,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 
 		require.NoError(t, err)
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2019,7 +2019,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 
 		require.NoError(t, err)
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2078,9 +2078,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.NoError(t, err)
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.NoError(t, err)
 
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2144,9 +2144,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config1)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config1, 10)
 		require.NoError(t, err)
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config2)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config2, 10)
 		require.NoError(t, err)
 
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2202,7 +2202,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.NoError(t, err)
 
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2258,7 +2258,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.NoError(t, err)
 
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2307,7 +2307,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.ErrorContains(t, err, "500")
 
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2361,7 +2361,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.ErrorContains(t, err, "status API did not return the path to the lease memfile")
 
 		require.False(t, gock.HasUnmatchedRequest())

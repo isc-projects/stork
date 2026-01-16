@@ -32,21 +32,21 @@ const (
 type Lease struct {
 	IPVersion         LeaseIPVersion
 	ClientID          string         `json:"client-id,omitempty"`
-	CLTT              uint64         `json:"cltt,omitempty"`
-	DUID              string         `json:"duid,omitempty"`
-	FqdnFwd           bool           `json:"fqdn-fwd,omitempty"`
-	FqdnRev           bool           `json:"fqdn-rev,omitempty"`
 	Hostname          string         `json:"hostname,omitempty"`
 	HWAddress         string         `json:"hw-address,omitempty"`
-	IAID              uint32         `json:"iaid,omitempty"`
+	DUID              string         `json:"duid,omitempty"`
 	IPAddress         string         `json:"ip-address,omitempty"`
-	PreferredLifetime uint32         `json:"preferred-lft,omitempty"`
-	PrefixLength      uint8          `json:"prefix-len,omitempty"`
-	State             int            `json:"state,omitempty"`
-	SubnetID          uint32         `json:"subnet-id,omitempty"`
 	Type              string         `json:"type,omitempty"`
+	CLTT              uint64         `json:"cltt,omitempty"`
+	State             int            `json:"state,omitempty"`
 	UserContext       map[string]any `json:"user-context,omitempty"`
 	ValidLifetime     uint32         `json:"valid-lft,omitempty"`
+	IAID              uint32         `json:"iaid,omitempty"`
+	PreferredLifetime uint32         `json:"preferred-lft,omitempty"`
+	SubnetID          uint32         `json:"subnet-id,omitempty"`
+	FqdnFwd           bool           `json:"fqdn-fwd,omitempty"`
+	FqdnRev           bool           `json:"fqdn-rev,omitempty"`
+	PrefixLength      uint8          `json:"prefix-len,omitempty"`
 }
 
 // Create a new Lease, filling in all the fields which are appropriate for a

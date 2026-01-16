@@ -181,7 +181,7 @@ func TestNewStorkAgent(t *testing.T) {
 	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClientConfig := HTTPClientConfig{}
 	sa := NewStorkAgent(
-		"foo", 42, fdm, bind9StatsClient, NewHookManager(), false,
+		"foo", 42, fdm, bind9StatsClient, NewHookManager(), false, 0,
 	)
 	require.NotNil(t, sa.Monitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
@@ -2999,8 +2999,11 @@ func TestAllowLog(t *testing.T) {
 func TestAllowLeaseTracking(t *testing.T) {
 	sa := StorkAgent{
 		allowLeaseTrackingFlag: true,
+		maxLeaseUpdateCount:    1,
 	}
-	require.True(t, sa.allowLeaseTracking())
+	allowed, max := sa.allowLeaseTracking()
+	require.True(t, allowed)
+	require.Equal(t, 1, max)
 }
 
 // Make a "happy path" keaDaemon structure with a mocked MemfileSnooper.

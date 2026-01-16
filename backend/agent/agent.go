@@ -65,12 +65,14 @@ type StorkAgent struct {
 
 	// Permit the agent run the Lease Tracking code.
 	allowLeaseTrackingFlag bool
+	// Limit the maximum number of leases that each daemon will retain in memory.
+	maxLeaseUpdateCount int
 
 	agentapi.UnimplementedAgentServer
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager, allowLeaseTracking bool) *StorkAgent {
+func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager, allowLeaseTracking bool, maxLeaseUpdateCount int) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -83,6 +85,7 @@ func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bin
 		keaInterceptor:         newKeaInterceptor(),
 		hookManager:            hookManager,
 		allowLeaseTrackingFlag: allowLeaseTracking,
+		maxLeaseUpdateCount:    maxLeaseUpdateCount,
 	}
 
 	registerKeaInterceptFns(sa)
@@ -90,8 +93,8 @@ func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bin
 	return sa
 }
 
-func (sa *StorkAgent) allowLeaseTracking() bool {
-	return sa.allowLeaseTrackingFlag
+func (sa *StorkAgent) allowLeaseTracking() (bool, int) {
+	return sa.allowLeaseTrackingFlag, sa.maxLeaseUpdateCount
 }
 
 // Creates the GRPC server callback using the provided cert store. The callback

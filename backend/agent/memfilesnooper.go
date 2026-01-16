@@ -35,6 +35,11 @@ const (
 	v6State         = 13
 )
 
+// The maximum number of lease updates that a MemfileSnooper will store.  As
+// of writing this, the Lease structure is 152 bytes.  100,000 updates limits
+// each MemfileSnooper to consuming ~15 MB of RAM.
+const LeaseUpdateCountLimit = 100_000
+
 // How does this module work?
 // Users of this module are expected to create a RowSource, then feed its output one-at-a-time into ParseRowAsLease4 or ParseRowAsLease6.
 // This creates a pipeline of goroutines connected with channels which looks like this:
@@ -389,24 +394,26 @@ type MemfileSnooper interface {
 
 // The underlying real type for MemfileSnooper, which does actual work (as distinct from a mock one, generated for tests).
 type RealMemfileSnooper struct {
-	kind         daemonname.Name
-	rs           RowSource
-	lastCLTT     uint64
-	leaseUpdates []*keadata.Lease
-	running      bool
-	stop         chan bool
-	mutex        sync.Mutex
-	parser       func([]string, uint64) (*keadata.Lease, error)
+	kind                daemonname.Name
+	rs                  RowSource
+	lastCLTT            uint64
+	leaseUpdates        []*keadata.Lease
+	leaseUpdateCountMax int
+	running             bool
+	stop                chan bool
+	mutex               sync.Mutex
+	parser              func([]string, uint64) (*keadata.Lease, error)
 }
 
 // Create a new MemfileSnooper (the Real kind) for a given daemon and using a
 // given RowSource.
-func NewMemfileSnooper(kind daemonname.Name, rs RowSource) (MemfileSnooper, error) {
+func NewMemfileSnooper(updateLimit int, kind daemonname.Name, rs RowSource) (MemfileSnooper, error) {
 	ms := RealMemfileSnooper{
-		kind:         kind,
-		rs:           rs,
-		leaseUpdates: make([]*keadata.Lease, 0),
-		stop:         make(chan bool),
+		kind:                kind,
+		rs:                  rs,
+		leaseUpdates:        make([]*keadata.Lease, 0),
+		leaseUpdateCountMax: updateLimit,
+		stop:                make(chan bool),
 	}
 	switch kind {
 	case daemonname.DHCPv4:
@@ -427,9 +434,12 @@ type leaseKey struct {
 	ID string
 }
 
-// Retrieve a snapshot of the current leases (ignoring older lease updates which
-// have been followed by new data).
-func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
+// Retrieve a snapshot of the current leases (ignoring older lease updates
+// which have been followed by new data) without taking any locks. The caller
+// is responsible for ensuring that the mutex is locked for whatever duration is
+// appropriate (which may be longer than a call of this function if it needs
+// to use the result to make another change to leaseUpdates).
+func (ms *RealMemfileSnooper) getSnapshotLockless() []*keadata.Lease {
 	snapshot := make([]*keadata.Lease, 0)
 	index := map[leaseKey]int{}
 	var getID func(*keadata.Lease) string
@@ -447,7 +457,6 @@ func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
 		log.Warn("GetSnapshot was called on a MemfileSnooper with an invalid daemonname. This is a programming error that must be corrected.")
 		return []*keadata.Lease{}
 	}
-	ms.mutex.Lock()
 	for _, lease := range ms.leaseUpdates {
 		key := leaseKey{
 			IP: lease.IPAddress,
@@ -463,6 +472,14 @@ func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
 			index[key] = len(snapshot) - 1
 		}
 	}
+	return snapshot
+}
+
+// Retrieve a snapshot of the current leases (ignoring older lease updates which
+// have been followed by new data).
+func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
+	ms.mutex.Lock()
+	snapshot := ms.getSnapshotLockless()
 	ms.mutex.Unlock()
 	return snapshot
 }
@@ -483,6 +500,30 @@ func (ms *RealMemfileSnooper) Stop() {
 	close(ms.stop)
 	ms.rs.Stop()
 	ms.running = false
+}
+
+func (ms *RealMemfileSnooper) appendLease(lease *keadata.Lease) {
+	ms.mutex.Lock()
+	defer ms.mutex.Unlock()
+	currentLen := len(ms.leaseUpdates)
+	if currentLen < ms.leaseUpdateCountMax {
+		ms.leaseUpdates = append(ms.leaseUpdates, lease)
+		ms.lastCLTT = lease.CLTT
+		return
+	}
+	snapshot := ms.getSnapshotLockless()
+	log.WithField("snapshot", snapshot).Info("snapshot during append")
+	if len(snapshot) == currentLen {
+		// Log an error and intentionally do not update the data.  Stale data will prompt an administrator to investigate, and find the log messages indicating the problem.
+		log.Errorf("The number of stored lease updates has exceeded the configured memory limit. Set STORK_AGENT_LEASE_TRACKING_MAX_UPDATE_COUNT to a larger number than %d", ms.leaseUpdateCountMax)
+		// Future enhancement: remove all defunct leases next, then only fail if the list hasn't shrunk after that.
+		// Future enhancement: check whether this lease update obviates a prior one. If it does, remove the old one and insert the new one.
+		return
+	} else {
+		ms.leaseUpdates = snapshot
+	}
+	ms.leaseUpdates = append(ms.leaseUpdates, lease)
+	ms.lastCLTT = lease.CLTT
 }
 
 // Begin collecting leases.  The MemfileSnooper takes care of starting the
@@ -510,10 +551,7 @@ func (ms *RealMemfileSnooper) Start() {
 					// This is normal; it happens when the row is older than the most recent CLTT.
 					continue
 				}
-				ms.mutex.Lock()
-				ms.leaseUpdates = append(ms.leaseUpdates, parsed)
-				ms.lastCLTT = parsed.CLTT
-				ms.mutex.Unlock()
+				ms.appendLease(parsed)
 			}
 		}
 	}()

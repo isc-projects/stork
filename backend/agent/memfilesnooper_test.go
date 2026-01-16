@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -953,7 +954,7 @@ func TestMemfileSnooperCollectsLeases(t *testing.T) {
 	}
 	rowSource, wg := makeMockRowSource(ctrl, rows)
 
-	memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+	memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
 	require.NoError(t, err)
 
 	// Act
@@ -978,7 +979,7 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		}
 		rowSource, wg := makeMockRowSource(ctrl, rows)
 
-		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
 		require.NoError(t, err)
 
 		// Act
@@ -1001,7 +1002,7 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		}
 		rowSource, wg := makeMockRowSource(ctrl, rows)
 
-		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
 		require.NoError(t, err)
 
 		// Act
@@ -1031,7 +1032,7 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 			return c
 		})
 		rowSource.EXPECT().Stop()
-		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv6, rowSource)
+		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv6, rowSource)
 		require.NoError(t, err)
 
 		// Act
@@ -1046,7 +1047,7 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 	// The snooper should return an error if it is asked to snoop for anything other
 	// than kea-dhcp4 or kea-dhcp6.
 	t.Run("invalid daemon name", func(t *testing.T) {
-		ms1, err := NewMemfileSnooper(daemonname.CA, nil)
+		ms1, err := NewMemfileSnooper(10, daemonname.CA, nil)
 		require.Nil(t, ms1)
 		require.ErrorContains(t, err, "daemons other than DHCPv4 and DHCPv6")
 
@@ -1062,7 +1063,7 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 	// The snooper should not error or panic if .Stop() is called when it is already
 	// stopped.
 	t.Run(".Stop() on stopped snooper", func(t *testing.T) {
-		snooper, err := NewMemfileSnooper(daemonname.DHCPv4, nil)
+		snooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, nil)
 		require.NoError(t, err)
 
 		snooper.Stop()
@@ -1075,7 +1076,7 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		rows := [][]string{}
 		rowSource, _ := makeMockRowSource(ctrl, rows)
 
-		memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv4, rowSource)
+		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
 		require.NoError(t, err)
 
 		memfileSnooper.Start()
@@ -1084,6 +1085,58 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		memfileSnooper.Start()
 		grCount2 := runtime.NumGoroutine()
 		require.Equal(t, grCount, grCount2, "the number of goroutines running changed after calling .Start() a second time")
+	})
+	t.Run("needs lease compacting to fit in limit", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		expected0 := uint64(1761257858)
+		expected1 := uint64(1761257859)
+		rows := [][]string{
+			{"192.168.1.4", "00:00:00:00:00:03", "01:03:00:00:00:00:03", "3600", "1761257852", "123", "0", "0", "", "0", "", "0"},
+			{"192.168.1.4", "00:00:00:00:00:03", "01:03:00:00:00:00:03", "3600", strconv.FormatUint(expected0, 10), "123", "0", "0", "", "2", "", "0"},
+			{"192.168.1.5", "00:00:00:00:00:04", "01:03:00:00:00:00:04", "3600", strconv.FormatUint(expected1, 10), "123", "0", "0", "", "0", "", "0"},
+		}
+		rowSource, wg := makeMockRowSource(ctrl, rows)
+
+		memfileSnooper, err := NewMemfileSnooper(2, daemonname.DHCPv4, rowSource)
+		require.NoError(t, err)
+
+		// Act
+		memfileSnooper.Start()
+		wg.Wait()
+		memfileSnooper.Stop()
+
+		// Assert
+		snapshot := memfileSnooper.GetSnapshot()
+		require.Len(t, snapshot, 2)
+		require.Equal(t, expected0-3600, snapshot[0].CLTT)
+		require.Equal(t, expected1-3600, snapshot[1].CLTT)
+	})
+	t.Run("cannot fit in limit, doesn't update", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		expected0 := uint64(1761257851)
+		expected1 := uint64(1761257852)
+		rows := [][]string{
+			{"192.168.1.3", "00:00:00:00:00:02", "01:03:00:00:00:00:02", "3600", strconv.FormatUint(expected0, 10), "123", "0", "0", "", "0", "", "0"},
+			{"192.168.1.4", "00:00:00:00:00:03", "01:03:00:00:00:00:03", "3600", strconv.FormatUint(expected1, 10), "123", "0", "0", "", "0", "", "0"},
+			{"192.168.1.5", "00:00:00:00:00:04", "01:03:00:00:00:00:04", "3600", "1761257853", "123", "0", "0", "", "0", "", "0"},
+		}
+		rowSource, wg := makeMockRowSource(ctrl, rows)
+
+		memfileSnooper, err := NewMemfileSnooper(2, daemonname.DHCPv4, rowSource)
+		require.NoError(t, err)
+
+		// Act
+		memfileSnooper.Start()
+		wg.Wait()
+		memfileSnooper.Stop()
+
+		// Assert
+		snapshot := memfileSnooper.GetSnapshot()
+		require.Len(t, snapshot, 2)
+		require.Equal(t, expected0-3600, snapshot[0].CLTT)
+		require.Equal(t, expected1-3600, snapshot[1].CLTT)
 	})
 }
 
@@ -1156,7 +1209,7 @@ func TestMemfileSnooperGetSnapshotDeduplicates(t *testing.T) {
 	}
 	rowSource, wg := makeMockRowSource(ctrl, rows)
 
-	memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv6, rowSource)
+	memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv6, rowSource)
 	require.NoError(t, err)
 
 	// Act
@@ -1176,7 +1229,7 @@ func TestMemfileSnooperEnsureWatchingCallsRowSource(t *testing.T) {
 	defer ctrl.Finish()
 	rowSource := NewMockRowSource(ctrl)
 	rowSource.EXPECT().EnsureWatching("foo").Times(1)
-	memfileSnooper, err := NewMemfileSnooper(daemonname.DHCPv6, rowSource)
+	memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv6, rowSource)
 	require.NoError(t, err)
 
 	// Act

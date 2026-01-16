@@ -491,8 +491,9 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 		return errors.WithMessage(err, "cannot fetch Kea configuration")
 	}
 	paths := collectKeaAllowedLogs(config)
-	if agent.allowLeaseTracking() {
-		err = d.ensureWatchingLeasefile(ctx, config)
+	allowed, maxLeaseUpdates := agent.allowLeaseTracking()
+	if allowed {
+		err = d.ensureWatchingLeasefile(ctx, config, maxLeaseUpdates)
 		if err != nil {
 			return err
 		}
@@ -508,7 +509,7 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 // watching.  This function will use the get-status API to ask Kea for the
 // current lease file path (so that we don't have to guess based on defaults and
 // whatever's in the config).
-func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconfig.Config) error {
+func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconfig.Config, maxLeaseUpdates int) error {
 	var leaseDBType string
 	var persist bool
 
@@ -556,7 +557,7 @@ func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconf
 			if err != nil {
 				return err
 			}
-			d.snooper, err = NewMemfileSnooper(d.Name, rs)
+			d.snooper, err = NewMemfileSnooper(maxLeaseUpdates, d.Name, rs)
 			if err != nil {
 				return err
 			}
