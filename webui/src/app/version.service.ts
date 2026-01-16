@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
-import { AnyDaemon, AppsVersions, GeneralService } from './backend'
+import { AppsVersions, GeneralService, SimpleMachine } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable, tap } from 'rxjs'
-import { daemonNameToFriendlyName } from './utils'
 
 /**
  * Interface defining fields for an object which is returned after
@@ -34,10 +33,18 @@ export interface UpdateNotification {
 }
 
 /**
+ * Type for all possible apps that may be monitored by Stork.
+ */
+export type AppType = 'kea' | 'bind9' | 'pdns' | 'stork'
+
+/**
  * Daemon names for Kea daemons.
  */
 const KEA_DAEMON_NAMES = ['dhcp4', 'dhcp6', 'd2', 'ca', 'netconf']
 
+/**
+ * Type for all possible daemon names that may be monitored by Stork.
+ */
 export type DaemonName = 'dhcp4' | 'dhcp6' | 'd2' | 'ca' | 'netconf' | 'named' | 'pdns' | 'stork'
 
 /**
@@ -47,6 +54,47 @@ export type DaemonName = 'dhcp4' | 'dhcp6' | 'd2' | 'ca' | 'netconf' | 'named' |
  */
 export function isKeaDaemon(daemonName: string): boolean {
     return KEA_DAEMON_NAMES.includes(daemonName)
+}
+
+/**
+ * Returns true if the daemon is ISC s/w daemon.
+ * @param daemonName The daemon name to check
+ * @returns true if it's either Kea, BIND9 or Stork daemon
+ */
+export function isIscDaemon(daemonName: DaemonName): boolean {
+    switch (daemonName) {
+        case 'stork':
+        case 'dhcp4':
+        case 'dhcp6':
+        case 'd2':
+        case 'ca':
+        case 'netconf':
+        case 'named':
+            return true
+    }
+
+    return false
+}
+
+/**
+ * Returns the app type for given daemon name.
+ * @param daemonName The daemon name to check
+ */
+export function getDaemonAppType(daemonName: DaemonName): AppType {
+    switch (daemonName) {
+        case 'stork':
+            return 'stork'
+        case 'dhcp4':
+        case 'dhcp6':
+        case 'ca':
+        case 'd2':
+        case 'netconf':
+            return 'kea'
+        case 'named':
+            return 'bind9'
+        case 'pdns':
+            return 'pdns'
+    }
 }
 
 /**
@@ -202,8 +250,15 @@ export class VersionService {
      * @return assessment result as a VersionFeedback object; it contains severity and messages to be displayed to the user
      * @throws Error when the assessment fails for any reason
      */
-    getSoftwareVersionFeedback(version: string, daemon: DaemonName, data: AppsVersions): VersionFeedback {
-        const cacheKey = version + daemon
+    getSoftwareVersionFeedback(version: string, daemonName: DaemonName, data: AppsVersions): VersionFeedback {
+        if (!isIscDaemon(daemonName) || !version) {
+            return {
+                severity: Severity.secondary,
+                messages: ["Couldn't asses the software version."],
+            }
+        }
+        const app = getDaemonAppType(daemonName)
+        const cacheKey = version + app
         const cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
             this.detectAlertingSeverity(cachedFeedback.severity)
@@ -212,14 +267,14 @@ export class VersionService {
 
         let response: VersionFeedback = { severity: Severity.success, messages: [] }
         const sanitizedSemver = this.sanitizeSemver(version)
-        let daemonName = ''
+        let appName = ''
         if (sanitizedSemver) {
-            daemonName = daemonNameToFriendlyName(daemon)
-            const isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, daemon)
+            appName = app === 'bind9' ? app.toUpperCase() : app[0].toUpperCase() + app.slice(1)
+            appName += app === 'stork' ? ' agent' : ''
+            const isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
             // check security releases first
-            const daemonType = this.getDaemonType(daemon)
-            const latestSecureVersionDetails = data?.[daemonType]?.latestSecure || null
+            const latestSecureVersionDetails = data?.[app]?.latestSecure || null
             if (
                 latestSecureVersionDetails &&
                 Array.isArray(latestSecureVersionDetails) &&
@@ -228,7 +283,7 @@ export class VersionService {
                 let isSecure = false
                 const secureDevVersions = []
                 for (const details of latestSecureVersionDetails) {
-                    if (this.isDevelopmentVersion(details.version, daemon)) {
+                    if (this.isDevelopmentVersion(details.version, app)) {
                         secureDevVersions.push(details.version)
                     }
 
@@ -237,12 +292,12 @@ export class VersionService {
                             response = {
                                 severity: Severity.error,
                                 messages: [
-                                    `Security update ${details.version} was released for ${daemonName}. Please update as soon as possible!`,
+                                    `Security update ${details.version} was released for ${appName}. Please update as soon as possible!`,
                                 ],
                                 update: details.version,
                             }
 
-                            response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                            response = this.getStorkFeedback(app, sanitizedSemver, response)
                             return this.setCacheAndReturnResponse(cacheKey, response)
                         }
 
@@ -258,21 +313,21 @@ export class VersionService {
                         response = {
                             severity: Severity.error,
                             messages: [
-                                `Security update ${minDevSecure} was released for ${daemonName}. Please update as soon as possible!`,
+                                `Security update ${minDevSecure} was released for ${appName}. Please update as soon as possible!`,
                             ],
                             update: minDevSecure,
                         }
 
-                        response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                        response = this.getStorkFeedback(app, sanitizedSemver, response)
                         return this.setCacheAndReturnResponse(cacheKey, response)
                     }
                 }
             }
 
-            const currentStableVersionDetails = data?.[daemonType]?.currentStable || null
+            const currentStableVersionDetails = data?.[app]?.currentStable || null
             const currentStableMetadataAvailable =
                 Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length > 0
-            const sortedCurrentStableVersions = this.getVersion(daemon, 'currentStable', data)
+            const sortedCurrentStableVersions = this.getVersion(app, 'currentStable', data)
             const sortedCurrentStablesAvailable =
                 Array.isArray(sortedCurrentStableVersions) && sortedCurrentStableVersions.length > 0
             const dataDate = data?.date || 'unknown'
@@ -283,11 +338,11 @@ export class VersionService {
                     response = {
                         severity: Severity.secondary,
                         messages: [
-                            `As of ${dataDate}, the ${daemonName} ${sanitizedSemver} stable version is not known yet.`,
+                            `As of ${dataDate}, the ${appName} ${sanitizedSemver} stable version is not known yet.`,
                         ],
                     }
 
-                    response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                    response = this.getStorkFeedback(app, sanitizedSemver, response)
                     return this.setCacheAndReturnResponse(cacheKey, response)
                 }
 
@@ -298,7 +353,7 @@ export class VersionService {
                                 response = {
                                     severity: Severity.info,
                                     messages: [
-                                        `Stable ${daemonName} version update (${details.version}) is available (known as of ${dataDate}).`,
+                                        `Stable ${appName} version update (${details.version}) is available (known as of ${dataDate}).`,
                                     ],
                                     update: details.version,
                                 }
@@ -306,19 +361,19 @@ export class VersionService {
                                 response = {
                                     severity: Severity.secondary,
                                     messages: [
-                                        `Current stable ${daemonName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${sanitizedSemver}.`,
+                                        `Current stable ${appName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${sanitizedSemver}.`,
                                     ],
                                 }
                             } else {
                                 response = {
                                     severity: Severity.success,
                                     messages: [
-                                        `${sanitizedSemver} is current ${daemonName} stable version (known as of ${dataDate}).`,
+                                        `${sanitizedSemver} is current ${appName} stable version (known as of ${dataDate}).`,
                                     ],
                                 }
                             }
 
-                            response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                            response = this.getStorkFeedback(app, sanitizedSemver, response)
                             return this.setCacheAndReturnResponse(cacheKey, response)
                         }
                     }
@@ -331,7 +386,7 @@ export class VersionService {
                             response = {
                                 severity: Severity.warn,
                                 messages: [
-                                    `${daemonName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
+                                    `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
                                 ],
                                 update: sortedCurrentStableVersions[0],
                             }
@@ -340,12 +395,12 @@ export class VersionService {
                             response = {
                                 severity: Severity.secondary,
                                 messages: [
-                                    `${daemonName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
+                                    `${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
                                 ],
                             }
                         }
 
-                        response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                        response = this.getStorkFeedback(app, sanitizedSemver, response)
                         return this.setCacheAndReturnResponse(cacheKey, response)
                     }
                 }
@@ -357,14 +412,14 @@ export class VersionService {
             }
 
             // case - development version
-            const latestDevVersion = this.getVersion(daemon, 'latestDev', data)
+            const latestDevVersion = this.getVersion(app, 'latestDev', data)
             if (isDevelopmentVersion) {
                 if (latestDevVersion) {
                     if (lt(sanitizedSemver, latestDevVersion as string)) {
                         response = {
                             severity: Severity.warn,
                             messages: [
-                                `Development ${daemonName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
+                                `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
                             ],
                             update: latestDevVersion as string,
                         }
@@ -372,14 +427,14 @@ export class VersionService {
                         response = {
                             severity: Severity.secondary,
                             messages: [
-                                `Current development ${daemonName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
+                                `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
                             ],
                         }
                     } else {
                         response = {
                             severity: Severity.success,
                             messages: [
-                                `${sanitizedSemver} is current ${daemonName} development version (known as of ${dataDate}).`,
+                                `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
                             ],
                         }
                     }
@@ -390,7 +445,7 @@ export class VersionService {
                         )
                     }
 
-                    response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                    response = this.getStorkFeedback(app, sanitizedSemver, response)
                     return this.setCacheAndReturnResponse(cacheKey, response)
                 } else if (currentStableMetadataAvailable && sortedCurrentStablesAvailable) {
                     // There is no metadata for development release, but there is metadata for stable releases.
@@ -398,7 +453,7 @@ export class VersionService {
                     response = {
                         severity: Severity.secondary,
                         messages: [
-                            `${daemonName} has current stable version/s ${sortedCurrentStableVersions.join(', ')} available (known as of ${dataDate}).`,
+                            `${appName} has current stable version/s ${sortedCurrentStableVersions.join(', ')} available (known as of ${dataDate}).`,
                         ],
                     }
 
@@ -406,12 +461,12 @@ export class VersionService {
                         'Please be advised that using development version in production is not recommended.'
                     )
 
-                    response = this.getStorkFeedback(daemon, sanitizedSemver, response)
+                    response = this.getStorkFeedback(app, sanitizedSemver, response)
                     return this.setCacheAndReturnResponse(cacheKey, response)
                 }
             }
 
-            throw new Error(`Couldn't asses the software version for ${daemonName} ${version}!`)
+            throw new Error(`Couldn't asses the software version for ${appName} ${version}!`)
         }
 
         // fail case
@@ -421,16 +476,16 @@ export class VersionService {
     /**
      * Returns true when the latest development release version is more recent than
      * the latest stable version or when there are no stable releases; false otherwise.
-     * @param daemon daemon name or stork
+     * @param app either stork, kea or bind9 app
      * @param data versions data used to determine returned value
      */
-    isDevMoreRecentThanStable(daemon: DaemonName, data: AppsVersions): boolean {
-        const stables = this.getVersion(daemon, 'currentStable', data)
+    isDevMoreRecentThanStable(app: AppType, data: AppsVersions): boolean {
+        const stables = this.getVersion(app, 'currentStable', data)
         if (!stables || stables?.length < 1) {
             return true
         }
 
-        const devVersion = this.getVersion(daemon, 'latestDev', data) as string
+        const devVersion = this.getVersion(app, 'latestDev', data) as string
         if (!devVersion) {
             return false
         }
@@ -496,19 +551,16 @@ export class VersionService {
     }
 
     /**
-     * Checks whether all daemons for provided Kea app have the exact same version.
-     * @param app Kea app to be checked
+     * Checks whether all Kea daemons in provided Machine have the exact same version.
+     * @param machine machine where Kea server is expected
      * @return true if any daemon version mismatch is found; falsy (may also return undefined) otherwise
      * (in case all Kea daemons have the same version or when provided app wasn't the Kea app, or it couldn't be determined)
      */
-    /**
-     * Checks whether all provided Kea daemons have the exact same version.
-     * @param daemons Kea daemons to be checked
-     * @return true if mismatch found (daemons have different versions); false otherwise
-     */
-    areVersionsMismatching(daemons?: AnyDaemon[]): boolean {
-        daemons = daemons?.filter((daemon) => daemon?.version)
-        return daemons?.slice(1)?.some((daemon) => daemon.version !== daemons?.[0]?.version)
+    areKeaDaemonsVersionsMismatching(machine: SimpleMachine): boolean {
+        const daemons = (machine?.daemons ?? []).filter((d) => isKeaDaemon(d.name) && d.version)
+        if (daemons.length) {
+            return daemons?.slice(1)?.some((daemon) => daemon.version !== daemons?.[0]?.version)
+        }
 
         return false
     }
@@ -517,13 +569,13 @@ export class VersionService {
      * Returns true if provided app version is a development release.
      * For stable release, false is returned.
      * @param version app version
-     * @param daemon daemon name or 'stork'
+     * @param app either kea, bind9 or stork
      * @return true if provided app version is a development release; false otherwise
      * @private
      */
-    private isDevelopmentVersion(version: string, daemon: DaemonName): boolean {
+    private isDevelopmentVersion(version: string, app: AppType): boolean {
         // Stork versions are all dev until 2.0.0.
-        if (daemon === 'stork' && lt(version, '2.0.0')) {
+        if (app === 'stork' && lt(version, '2.0.0')) {
             return true
         }
 
@@ -532,50 +584,33 @@ export class VersionService {
     }
 
     /**
-     * Returns the versions key (daemon type) for a given daemon name.
-     * @return "kea", "bind9", or "stork" types.
-     */
-    private getDaemonType(daemon: DaemonName): 'kea' | 'bind9' | 'stork' | 'unsupported' {
-        if (isKeaDaemon(daemon)) {
-            return 'kea'
-        } else if (daemon === 'named') {
-            return 'bind9'
-        } else if (daemon === 'stork') {
-            return 'stork'
-        } else {
-            return 'unsupported'
-        }
-    }
-
-    /**
      * Returns software version for given app and type.
-     * @param daemon daemon for which the version lookup is done; accepted values: daemon names or 'stork'
+     * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
      * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
      * @param data
      * @return version as either string (in case of latestDev) or array of strings (in case of currentStable or latestSecure)
      * @private
      */
-    private getVersion(daemon: DaemonName, swType: ReleaseType, data: AppsVersions): string | string[] | null {
-        const daemonType = this.getDaemonType(daemon)
+    private getVersion(app: AppType, swType: ReleaseType, data: AppsVersions): string | string[] | null {
         return swType === 'currentStable'
-            ? data?.[daemonType]?.sortedStableVersions || null
+            ? data?.[app]?.sortedStableVersions || null
             : swType === 'latestDev'
-              ? data?.[daemonType]?.[swType]?.version || null
-              : data?.[daemonType]?.latestSecure?.map((details) => details.version) || null
+              ? data?.[app]?.[swType]?.version || null
+              : data?.[app]?.latestSecure?.map((details) => details.version) || null
     }
 
     /**
      * Checks if Stork Server and Stork Agent versions match.
      * In case of mismatch, given response is modified. Warning severity is set
      * and feedback message is added to existing messages.
-     * @param daemon stork (expected) or daemon name
+     * @param app either Stork, Kea or Bind9 app
      * @param version software version to be checked
      * @param currentResponse current VersionFeedback response
      * @return Modified currentResponse in case of mismatch. In case mismatch was not found, currentResponse returned is not modified.
      * @private
      */
-    private getStorkFeedback(daemon: DaemonName, version: string, currentResponse: VersionFeedback): VersionFeedback {
-        if (daemon === 'stork' && this._storkServerVersion && this._storkServerVersion !== version) {
+    private getStorkFeedback(app: AppType, version: string, currentResponse: VersionFeedback): VersionFeedback {
+        if (app === 'stork' && this._storkServerVersion && this._storkServerVersion !== version) {
             const addMsg = `Stork server ${this._storkServerVersion} and Stork agent ${version} versions do not match! Please install matching versions!`
             return {
                 severity: Math.min(Severity.warn, currentResponse.severity),

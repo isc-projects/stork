@@ -186,11 +186,7 @@
                     </td>
                     <td>
                         <a routerLink="/daemons/{{ d.id }}">
-                            <app-version-status
-                                [showVersion]="true"
-                                [daemonName]="d.name"
-                                [version]="d.version"
-                            ></app-version-status>
+                            <app-version-status [daemonName]="d.name" [version]="d.version"></app-version-status>
                         </a>
                     </td>
                     <td>

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing'
 
 import { Severity, UpdateNotification, VersionAlert, VersionService } from './version.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { AnyDaemon, AppsVersions, GeneralService, VersionDetails } from './backend'
+import { AppsVersions, GeneralService, VersionDetails } from './backend'
 import { of } from 'rxjs'
 import { deepCopy } from './utils'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -382,21 +382,21 @@ describe('VersionService', () => {
         // Assert
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'dhcp4', data)
-        }).toThrowError("Couldn't asses the software version for DHCPv4 2.7.1!")
+        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
 
         // Stable release metadata is there, but sortedStableVersions is missing.
         // It is expected to throw an error here as well.
         data.kea = { currentStable: [{ version: '2.6.1', releaseDate: '2024-02-01', eolDate: '2026-02-01' }] }
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'dhcp6', data)
-        }).toThrowError("Couldn't asses the software version for DHCPv6 2.7.1!")
+        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
 
         // Stable release metadata is missing.
         // It is expected to throw an error here as well.
         data.kea = { currentStable: [], sortedStableVersions: ['2.6.1'] }
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'd2', data)
-        }).toThrowError("Couldn't asses the software version for DDNS 2.7.1!")
+        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
     })
 
     it('should throw error for version check for incomplete AppVersions data', () => {
@@ -509,39 +509,51 @@ describe('VersionService', () => {
     it('should detect mismatching kea daemons', () => {
         // Arrange & Act & Assert
         // Test some cases with incomplete data.
-        expect(service.areVersionsMismatching(null)).toBeFalsy()
-        expect(service.areVersionsMismatching(undefined)).toBeFalsy()
-        expect(service.areVersionsMismatching([])).toBeFalsy()
-        expect(service.areVersionsMismatching([{ id: 1 }, { id: 2 } as AnyDaemon])).toBeFalsy()
-        expect(service.areVersionsMismatching([{ id: 1 }, { id: 2, version: '2.6.1' } as AnyDaemon])).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching(null)).toBeFalse()
+        expect(service.areKeaDaemonsVersionsMismatching(undefined)).toBeFalse()
+        let m = { daemons: [] }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeFalse()
+        m = { daemons: [{ id: 1 }, { id: 2 }] }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeFalse()
+        m = {
+            daemons: [
+                { id: 1, name: 'dhcp4' },
+                { id: 2, version: '2.6.1', name: 'dhcp4' },
+            ],
+        }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeFalsy()
         // Test valid data.
-        expect(
-            service.areVersionsMismatching([
-                { id: 1, version: '2.6.1' } as AnyDaemon,
-                { id: 2, version: '2.6.1' } as AnyDaemon,
-            ])
-        ).toBeFalsy()
-        expect(
-            service.areVersionsMismatching([
-                { id: 1 } as AnyDaemon,
-                { id: 2, version: '2.6.1' } as AnyDaemon,
-                { id: 3, version: '2.6.1' } as AnyDaemon,
-            ])
-        ).toBeFalsy()
-        expect(
-            service.areVersionsMismatching([
-                { id: 1, version: '2.6.1' } as AnyDaemon,
-                { id: 2, version: '2.6.1' } as AnyDaemon,
-                { id: 3, version: '2.6.0' } as AnyDaemon,
-            ])
-        ).toBeTrue()
-        expect(
-            service.areVersionsMismatching([
-                { id: 1 } as AnyDaemon,
-                { id: 2, version: '2.6.1' } as AnyDaemon,
-                { id: 3, version: '2.6.0' } as AnyDaemon,
-            ])
-        ).toBeTrue()
+        m = {
+            daemons: [
+                { id: 1, version: '2.6.1', name: 'dhcp4' },
+                { id: 2, version: '2.6.1', name: 'dhcp4' },
+            ],
+        }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeFalsy()
+        m = {
+            daemons: [
+                { id: 1, name: 'dhcp4' },
+                { id: 2, version: '2.6.1', name: 'dhcp4' },
+                { id: 3, version: '2.6.1', name: 'dhcp4' },
+            ],
+        }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeFalsy()
+        m = {
+            daemons: [
+                { id: 1, version: '2.6.1', name: 'dhcp4' },
+                { id: 2, version: '2.6.1', name: 'dhcp4' },
+                { id: 3, version: '2.6.0', name: 'dhcp4' },
+            ],
+        }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeTrue()
+        m = {
+            daemons: [
+                { id: 1, name: 'dhcp4' },
+                { id: 2, version: '2.6.1', name: 'dhcp4' },
+                { id: 3, version: '2.6.0', name: 'dhcp4' },
+            ],
+        }
+        expect(service.areKeaDaemonsVersionsMismatching(m)).toBeTrue()
     })
 
     it('should detect alerting severity', () => {
@@ -591,9 +603,9 @@ describe('VersionService', () => {
         // There is no stable stork release in fakeResponse data, so true is expected.
         expect(service.isDevMoreRecentThanStable('stork', fakeResponse)).toBeTrue()
         // Kea has more recent dev release than a stable release.
-        expect(service.isDevMoreRecentThanStable('dhcp6', fakeResponse)).toBeTrue()
+        expect(service.isDevMoreRecentThanStable('kea', fakeResponse)).toBeTrue()
         // BIND9 has more recent dev release than a stable release.
-        expect(service.isDevMoreRecentThanStable('named', fakeResponse)).toBeTrue()
+        expect(service.isDevMoreRecentThanStable('bind9', fakeResponse)).toBeTrue()
         const data = deepCopy(fakeResponse)
         data.stork.currentStable = [
             {
@@ -611,7 +623,7 @@ describe('VersionService', () => {
         // In this data, Stork stable is more recent than the dev release, so false is expected.
         expect(service.isDevMoreRecentThanStable('stork', data)).toBeFalse()
         // In this data, Kea has no dev release, so false is expected.
-        expect(service.isDevMoreRecentThanStable('dhcp4', data)).toBeFalse()
+        expect(service.isDevMoreRecentThanStable('kea', data)).toBeFalse()
     })
 
     it('should return software version feedback for security updates available', () => {

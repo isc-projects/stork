@@ -271,10 +271,10 @@ describe('VersionPageComponent', () => {
     it('should get daemons versions', () => {
         // Arrange
         apisWorkingFine()
-        const daemons = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0].daemons
+        const machine = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0]
 
         // Act & Assert
-        expect(component.getDaemonsVersions(daemons)).toEqual('dhcp4 2.7.2, ca 2.7.2')
+        expect(component.getDaemonsVersions(machine)).toEqual('DHCPv4 2.7.2, CA 2.7.2')
     })
 
     it('should display offline data info message', () => {

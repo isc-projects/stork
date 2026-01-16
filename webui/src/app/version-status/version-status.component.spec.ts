@@ -212,7 +212,7 @@ describe('VersionStatusComponent', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()
-        const span = fixture.nativeElement.querySelector('span')
+        const span = fixture.nativeElement.querySelector('span[data-testid=daemon-name]')
         expect(span).toBeNull()
     })
 

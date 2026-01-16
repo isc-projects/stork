@@ -259,11 +259,7 @@
             <ng-container *ngIf="authorizedMachinesDisplayed()">
                 <td class="text-right">
                     <ng-container *ngIf="m.authorized">
-                        <app-version-status
-                            [showVersion]="true"
-                            daemonName="stork"
-                            [version]="m.agentVersion"
-                        ></app-version-status>
+                        <app-version-status daemonName="stork" [version]="m.agentVersion"></app-version-status>
                     </ng-container>
                 </td>
                 <td>
@@ -279,7 +275,6 @@
                             <app-version-status
                                 *ngFor="let d of m.daemons"
                                 [daemonName]="d.name"
-                                [showVersion]="true"
                                 [version]="d.version"
                             ></app-version-status>
                         </div>

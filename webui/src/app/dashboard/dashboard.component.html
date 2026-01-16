@@ -341,11 +341,7 @@
                                 ></app-entity-link>
                             </td>
                             <td>
-                                <app-version-status
-                                    [daemonName]="d.name"
-                                    [version]="d.version"
-                                    [showVersion]="true"
-                                ></app-version-status>
+                                <app-version-status [daemonName]="d.name" [version]="d.version"></app-version-status>
                             </td>
                             <td>
                                 <a routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
@@ -474,7 +470,6 @@
                                     ><app-version-status
                                         [daemonName]="d.name"
                                         [version]="d.version"
-                                        [showVersion]="true"
                                     ></app-version-status
                                 ></a>
                             </td>

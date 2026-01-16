@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { DaemonName, isKeaDaemon, Severity, UpdateNotification, VersionService } from '../version.service'
-import { AppsVersions, ServicesService, VersionDetails, SimpleMachine, SimpleDaemon } from '../backend'
-import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
+import { DaemonName, isIscDaemon, isKeaDaemon, Severity, UpdateNotification, VersionService } from '../version.service'
+import { AppsVersions, ServicesService, VersionDetails, SimpleMachine, SimpleMachines, SimpleDaemon } from '../backend'
+import { daemonNameToFriendlyName, deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
@@ -210,7 +210,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
                             if (
                                 data?.kea?.latestDev &&
-                                this.versionService.isDevMoreRecentThanStable('dhcp4', this._processedData)
+                                this.versionService.isDevMoreRecentThanStable('kea', this._processedData)
                             ) {
                                 this.keaVersions.push(data.kea?.latestDev)
                             }
@@ -219,7 +219,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             if (
                                 data.bind9?.latestDev &&
                                 data.bind9.latestDev &&
-                                this.versionService.isDevMoreRecentThanStable('named', this._processedData)
+                                this.versionService.isDevMoreRecentThanStable('bind9', this._processedData)
                             ) {
                                 this.bind9Versions.push(data?.bind9?.latestDev)
                             }
@@ -251,14 +251,15 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     life: 10000,
                                 })
                                 this.summaryDataLoading = false
-                                return of({ items: [] })
+                                return of({ items: [] } as SimpleMachines)
                             })
                         )
                     }),
                     map((data) => {
                         // Filter out machines that have been registered but
                         // never fetched.
-                        data.items = data.items.filter((m: SimpleMachine) => !!m.agentVersion)
+                        const machines = (data.items ?? []).filter((m: SimpleMachine) => !!m.agentVersion)
+                        data.items = [...machines]
                         data.items.map(
                             (m: SimpleMachine & { versionCheckSeverity: Severity; mismatchingDaemons: boolean }) => {
                                 m.versionCheckSeverity = Severity.success
@@ -272,27 +273,22 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     ],
                                     m.versionCheckSeverity
                                 )
-
-                                let keaDaemons: SimpleDaemon[] = []
                                 m.daemons
-                                    ?.filter((daemon: SimpleDaemon) => daemon?.version)
-                                    .forEach((daemon: SimpleDaemon) => {
+                                    .filter((d) => isIscDaemon(d.name as DaemonName) && d.version)
+                                    .forEach((d) => {
                                         m.versionCheckSeverity = Math.min(
                                             this.severityMap[
                                                 this.versionService.getSoftwareVersionFeedback(
-                                                    daemon.version,
-                                                    daemon.name as DaemonName,
+                                                    d.version,
+                                                    d.name as DaemonName,
                                                     this._processedData
                                                 )?.severity ?? Severity.success
                                             ],
                                             m.versionCheckSeverity
                                         )
-                                        if (isKeaDaemon(daemon.name)) {
-                                            keaDaemons.push(daemon)
-                                        }
                                     })
-
-                                if (keaDaemons.length > 0 && this.versionService.areVersionsMismatching(keaDaemons)) {
+                                // daemons version match check
+                                if (this.versionService.areKeaDaemonsVersionsMismatching(m)) {
                                     m.versionCheckSeverity = Severity.error
                                     m.mismatchingDaemons = true
                                     this.versionService.detectAlertingSeverity(m.versionCheckSeverity)
@@ -360,18 +356,41 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Returns concatenated list of Kea daemons versions for given machine.
-     * @param daemons machine daemons list
+     * Returns concatenated list of daemons versions for given machine.
+     * @param m machine with daemons
      */
-    getDaemonsVersions(daemons?: SimpleDaemon[]): string {
-        const versions: string[] = []
-        for (const d of daemons ?? []) {
+    getDaemonsVersions(m: SimpleMachine): string {
+        const daemons: string[] = []
+        for (const d of m?.daemons ?? []) {
             if (d.name && d.version) {
-                versions.push(`${d.name} ${d.version}`)
+                daemons.push(`${daemonNameToFriendlyName(d.name)} ${d.version}`)
             }
         }
 
-        return versions.join(', ')
+        return daemons.join(', ')
+    }
+
+    /**
+     * If given machine has more than one ISC s/w daemon,
+     * it returns an array with only first found Kea daemon and first
+     * found BIND9 daemon. Returned array may contain only one daemon.
+     * In case no ISC daemon was found, an empty array is returned.
+     * @param m machine with daemons
+     */
+    getFlattenedIscDaemons(m: SimpleMachine): SimpleDaemon[] {
+        const daemons = m.daemons ?? []
+        const kea = daemons.find((d) => isKeaDaemon(d.name))
+        const bind9 = daemons.find((d) => d.name == 'named')
+        const results: SimpleDaemon[] = []
+        if (kea) {
+            results.push(kea)
+        }
+
+        if (bind9) {
+            results.push(bind9)
+        }
+
+        return results
     }
 
     /**
@@ -379,4 +398,20 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly getIconBySeverity = getIconBySeverity
+
+    /**
+     * Reference to the function so it can be used in the html template.
+     * @protected
+     */
+    protected readonly daemonNameToFriendlyName = daemonNameToFriendlyName
+
+    /**
+     * Sanitizes given version string and returns valid semver if it could be parsed.
+     * If valid semver couldn't be found, it returns null.
+     * @param version version string to look for semver
+     * @return sanitized semver or null in case semver was not parsed
+     */
+    sanitizeSemver(version: string) {
+        return this.versionService.sanitizeSemver(version)
+    }
 }
