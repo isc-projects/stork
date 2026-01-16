@@ -210,7 +210,23 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 					}
 				}
 			} }`)
+		case 1:
+			// Call to old Kea DHCP to retrieve its state.
+			versionResponse := response[0].(*kea.VersionGetResponse)
+			versionResponse.Result = keactrl.ResponseError
+			versionResponse.Text = "server is likely to be offline"
+			configGetResponse := response[1].(*keactrl.Response)
+			configGetResponse.Result = keactrl.ResponseError
+			configGetResponse.Text = "server is likely to be offline"
 		case 2:
+			// Call to old Kea CA to retrieve its state.
+			versionResponse := response[0].(*kea.VersionGetResponse)
+			versionResponse.Result = keactrl.ResponseError
+			versionResponse.Text = "server is likely to be offline"
+			configGetResponse := response[1].(*keactrl.Response)
+			configGetResponse.Result = keactrl.ResponseError
+			configGetResponse.Text = "server is likely to be offline"
+		case 3:
 			// Call to Kea CA to retrieve its state.
 			versionResponse := response[0].(*kea.VersionGetResponse)
 			versionResponse.Result = keactrl.ResponseSuccess
@@ -218,7 +234,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 			configGetResponse := response[1].(*keactrl.Response)
 			configGetResponse.Result = keactrl.ResponseSuccess
 			configGetResponse.Arguments = []byte(`{ "Control-agent": {} }`)
-		case 3:
+		case 4:
 			// Call to Kea DHCPv4 to retrieve its state.
 			versionResponse := response[0].(*kea.VersionGetResponse)
 			versionResponse.Result = keactrl.ResponseSuccess
@@ -338,24 +354,22 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	// check if daemons have been updated correctly
 	daemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
-	require.Len(t, daemons, 4)
+	require.Len(t, daemons, 6)
+	sort.Slice(daemons, func(i, j int) bool {
+		return daemons[i].ID < daemons[j].ID
+	})
 
 	// Check the detected daemons.
-	var daemonNames []daemonname.Name
-	for _, daemon := range daemons {
-		daemonNames = append(daemonNames, daemon.Name)
-	}
-	require.Contains(t, daemonNames, daemonname.DHCPv4)
-	require.Contains(t, daemonNames, daemonname.CA)
-	require.Contains(t, daemonNames, daemonname.Bind9)
-	require.Contains(t, daemonNames, daemonname.PDNS)
-
-	for _, daemon := range daemons {
-		if daemon.Name.IsKea() {
-			require.Len(t, daemon.AccessPoints, 1)
-			require.EqualValues(t, daemon.AccessPoints[0].Address, "1.2.3.4")
-		}
-	}
+	require.Equal(t, daemons[0].Name, daemonname.DHCPv4)
+	require.Equal(t, daemons[0].AccessPoints[0].Address, "1.1.1.1")
+	require.Equal(t, daemons[1].Name, daemonname.CA)
+	require.Equal(t, daemons[1].AccessPoints[0].Address, "1.1.1.1")
+	require.Equal(t, daemons[2].Name, daemonname.CA)
+	require.Equal(t, daemons[2].AccessPoints[0].Address, "1.2.3.4")
+	require.Equal(t, daemons[3].Name, daemonname.DHCPv4)
+	require.Equal(t, daemons[3].AccessPoints[0].Address, "1.2.3.4")
+	require.Equal(t, daemons[4].Name, daemonname.Bind9)
+	require.Equal(t, daemons[5].Name, daemonname.PDNS)
 }
 
 // Check daemonCompare.
