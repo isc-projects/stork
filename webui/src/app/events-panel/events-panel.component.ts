@@ -101,10 +101,11 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     daemonTypes = [
         { value: 'dhcp4', name: 'DHCPv4', id: 'kea4-events' },
         { value: 'dhcp6', name: 'DHCPv6', id: 'kea6-events' },
-        { value: 'named', name: 'named', id: 'named-events' },
         { value: 'd2', name: 'DDNS', id: 'ddns-events' },
         { value: 'ca', name: 'CA', id: 'ca-events' },
         { value: 'netconf', name: 'NETCONF', id: 'netconf-events' },
+        { value: 'named', name: 'named', id: 'named-events' },
+        { value: "pdns", name: "PowerDNS", id: "pdns-events" }
     ]
     selectedMachine: any
     selectedDaemonType: any
