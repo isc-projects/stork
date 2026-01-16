@@ -271,7 +271,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     m.versionCheckSeverity
                                 )
                                 m.daemons
-                                    .filter((d) => isIscDaemon(d.name as DaemonName) && d.version)
+                                    ?.filter((d) => isIscDaemon(d.name as DaemonName) && d.version)
                                     .forEach((d) => {
                                         m.versionCheckSeverity = Math.min(
                                             this.severityMap[
