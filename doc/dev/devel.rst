@@ -1092,6 +1092,43 @@ The example of the expected call package manager in the Dockerfile:
         rake=13.* \
         wget=1.21.*
 
+Testing Stork with legacy Postgres versions
+-------------------------------------------
+
+The build system provides two commands to run the local Stork binaries with
+Postgres running in a Docker container. They accept an optional Postgres version
+in the ``POSTGRES_VERSION`` environment variable. The value must be a valid
+tag of the `official Postgres Docker image <https://hub.docker.com/_/postgres/tags>`_.
+It allows testing Stork with different Postgres versions without installing
+them locally.
+
+- ``rake unittest:backend_db`` - runs the Stork backend unit tests with Postgres
+                                 running in Docker.
+- ``rake run:server_db`` - runs the Stork server with Postgres running in Docker.
+
+Postgres compatibility considerations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stork is not aim to a specific Postgres version. It should work with all
+maintained Postgres versions and some older ones. We would like to keep the
+compatibility with Postgres 10 as it is available in some popular Linux
+distributions (e.g., Ubuntu 18.04 LTS). However, we don't test Stork with all
+these versions regularly. It means that code changes may accidentally break
+compatibility with some Postgres versions. Below is a list of known
+incompatibilities and workarounds.
+
+- The ``FUNCTION`` keyword in the ``CREATE TRIGGER`` statement is not supported
+  in Postgres versions older than 11. Use the ``PROCEDURE`` keyword instead.
+  It is equivalent and supported in all Postgres versions.
+- The ``DROP FUNCTION`` statement should not be called with parentheses after
+  the function name in Postgres versions. Omit the parentheses to support all
+  Postgres versions. For example: ``DROP FUNCTION foo;`` instead of
+  ``DROP FUNCTION foo();``.
+- In older Postgres versions, there is no guarantee that the primary key will
+  immediately cluster the table. Use the ``ORDER BY`` clause in the ``SELECT``
+  queries to ensure a specific order of the returned rows to avoid unit test
+  instability.
+
 Packaging
 =========
 
