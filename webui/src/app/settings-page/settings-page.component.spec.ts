@@ -49,7 +49,7 @@ describe('SettingsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
-        expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('statePullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('grafanaUrl')?.value).toBe('')
         expect(component.settingsForm.get('grafanaDhcp4DashboardId')?.value).toBe('hRf18FvWz')
@@ -81,7 +81,7 @@ describe('SettingsPageComponent', () => {
 
     it('should init the form', fakeAsync(() => {
         const settings: any = {
-            appsStatePullerInterval: 28,
+            statePullerInterval: 28,
             bind9StatsPullerInterval: 29,
             grafanaUrl: 'http://localhost:1234',
             grafanaDhcp4DashboardId: 'dhcp4',
@@ -98,7 +98,7 @@ describe('SettingsPageComponent', () => {
         tick()
 
         expect(settingsApi.getSettings).toHaveBeenCalled()
-        expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(28)
+        expect(component.settingsForm.get('statePullerInterval')?.value).toBe(28)
         expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(29)
         expect(component.settingsForm.get('grafanaUrl')?.value).toBe('http://localhost:1234')
         expect(component.settingsForm.get('grafanaDhcp4DashboardId')?.value).toBe('dhcp4')
@@ -136,7 +136,7 @@ describe('SettingsPageComponent', () => {
 
     it('should submit the form', fakeAsync(() => {
         const settings: any = {
-            appsStatePullerInterval: 28,
+            statePullerInterval: 28,
             bind9StatsPullerInterval: 29,
             grafanaUrl: 'http://localhost:1234',
             grafanaDhcp4DashboardId: 'dhcp4',
@@ -148,7 +148,7 @@ describe('SettingsPageComponent', () => {
             enableOnlineSoftwareVersions: true,
         }
         const updatedSettings: any = {
-            appsStatePullerInterval: 13,
+            statePullerInterval: 13,
             bind9StatsPullerInterval: 13,
             grafanaUrl: 'http://localhost:4234',
             grafanaDhcp4DashboardId: 'dhcp4',
@@ -174,7 +174,7 @@ describe('SettingsPageComponent', () => {
 
     it('should validate the form', fakeAsync(() => {
         const settings: any = {
-            appsStatePullerInterval: null,
+            statePullerInterval: null,
             bind9StatsPullerInterval: null,
             keaHostsPullerInterval: null,
             keaStatsPullerInterval: null,

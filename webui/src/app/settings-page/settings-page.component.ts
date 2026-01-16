@@ -22,7 +22,7 @@ import { ProgressSpinner } from 'primeng/progressspinner'
  * An interface specifying the form controls for the server settings.
  */
 interface SettingsForm {
-    appsStatePullerInterval: FormControl<number>
+    statePullerInterval: FormControl<number>
     bind9StatsPullerInterval: FormControl<number>
     keaHostsPullerInterval: FormControl<number>
     keaStatsPullerInterval: FormControl<number>
@@ -87,9 +87,9 @@ export class SettingsPageComponent implements OnInit {
      */
     intervalSettings: SettingsItem[] = [
         {
-            title: 'Apps State Puller Interval',
-            formControlName: 'appsStatePullerInterval',
-            help: 'This puller refreshes the state of the apps running on the monitored machines.',
+            title: 'State Puller Interval',
+            formControlName: 'statePullerInterval',
+            help: 'This puller refreshes the state of the daemons running on the monitored machines.',
         },
         {
             title: 'BIND 9 Statistics Puller Interval',
@@ -169,7 +169,7 @@ export class SettingsPageComponent implements OnInit {
         private msgSrv: MessageService
     ) {
         this.settingsForm = this.fb.group({
-            appsStatePullerInterval: [0, [Validators.required, Validators.min(0)]],
+            statePullerInterval: [0, [Validators.required, Validators.min(0)]],
             bind9StatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaHostsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],

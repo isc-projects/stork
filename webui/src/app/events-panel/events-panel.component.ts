@@ -105,7 +105,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         { value: 'ca', name: 'CA', id: 'ca-events' },
         { value: 'netconf', name: 'NETCONF', id: 'netconf-events' },
         { value: 'named', name: 'named', id: 'named-events' },
-        { value: "pdns", name: "PowerDNS", id: "pdns-events" }
+        { value: 'pdns', name: 'PowerDNS', id: 'pdns-events' },
     ]
     selectedMachine: any
     selectedDaemonType: any
