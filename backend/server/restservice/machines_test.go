@@ -226,14 +226,22 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 	require.NoError(t, err)
 
 	// add BIND 9 daemon
-	bind9AccessPoint := &dbmodel.AccessPoint{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "1.2.3.4",
-		Port:     124,
-		Key:      "abcd",
-		Protocol: protocoltype.HTTPS,
+	bind9AccessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "1.2.3.4",
+			Port:     124,
+			Key:      "abcd",
+			Protocol: protocoltype.RNDC,
+		},
+		{
+			Type:     dbmodel.AccessPointStatistics,
+			Address:  "1.2.3.4",
+			Port:     125,
+			Protocol: protocoltype.HTTP,
+		},
 	}
-	bind9Daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{bind9AccessPoint})
+	bind9Daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, bind9AccessPoints)
 	err = dbmodel.AddDaemon(db, bind9Daemon)
 	require.NoError(t, err)
 

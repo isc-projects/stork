@@ -156,7 +156,6 @@ DISCOVERED_LOOP:
 			}
 
 			if daemonCompare(oldDaemon, discoveredDaemon) {
-				mergedDaemons = append(mergedDaemons, oldDaemon)
 				oldMatchedIndices[i] = struct{}{}
 				continue DISCOVERED_LOOP
 			}
