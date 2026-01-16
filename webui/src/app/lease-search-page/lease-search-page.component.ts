@@ -21,6 +21,7 @@ import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.componen
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { Lease, LeasesSearchErredDaemon } from '../backend'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * Enumeration specifying the status of the leases search.
@@ -74,6 +75,7 @@ enum LeasesSearchStatus {
         JsonTreeRootComponent,
         ProgressSpinner,
         LocaltimePipe,
+        DaemonNiceNamePipe,
     ],
 })
 export class LeaseSearchPageComponent implements OnInit {

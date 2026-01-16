@@ -14,7 +14,7 @@ let mockGetSettingsResponse: Settings = {
     keaHostsPullerInterval: 12,
     keaStatsPullerInterval: 15,
     keaStatusPullerInterval: 23,
-    appsStatePullerInterval: 44,
+    statePullerInterval: 44,
     enableMachineRegistration: true,
 }
 

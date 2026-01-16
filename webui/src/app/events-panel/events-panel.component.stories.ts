@@ -1,7 +1,7 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { Events } from '../backend'
 import { toastDecorator } from '../utils-stories'
 import { EventsPanelComponent } from './events-panel.component'
@@ -16,6 +16,7 @@ export default {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideRouter([{ path: '**', component: EventsPanelComponent }], withHashLocation()),
+                ConfirmationService,
             ],
         }),
         toastDecorator,

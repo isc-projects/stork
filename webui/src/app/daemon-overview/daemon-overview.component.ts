@@ -1,7 +1,6 @@
 import { Component, Input } from '@angular/core'
 import { AnyDaemon } from '../backend'
 import { NgIf, NgFor } from '@angular/common'
-import { RouterLink } from '@angular/router'
 import { Tooltip } from 'primeng/tooltip'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
@@ -15,7 +14,7 @@ import { AccessPointKeyComponent } from '../access-point-key/access-point-key.co
     selector: 'app-daemon-overview',
     templateUrl: './daemon-overview.component.html',
     styleUrls: ['./daemon-overview.component.sass'],
-    imports: [NgIf, RouterLink, NgFor, Tooltip, ManagedAccessDirective, AccessPointKeyComponent],
+    imports: [NgIf, NgFor, Tooltip, ManagedAccessDirective, AccessPointKeyComponent],
 })
 export class DaemonOverviewComponent {
     /** Pointer to the structure holding the daemon information. */

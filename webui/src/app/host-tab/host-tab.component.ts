@@ -30,6 +30,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 enum HostReservationUsage {
     Conflicted = 1,
@@ -91,6 +92,7 @@ interface LeaseInfo {
         DhcpOptionSetViewComponent,
         Tag,
         Tooltip,
+        DaemonNiceNamePipe,
     ],
 })
 export class HostTabComponent {

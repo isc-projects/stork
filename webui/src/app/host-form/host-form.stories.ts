@@ -58,37 +58,22 @@ const mockCreateHostBeginData: CreateHostBeginResponse = {
         {
             id: 1,
             name: 'dhcp4',
-            app: {
-                name: 'first',
-            },
         },
         {
             id: 3,
             name: 'dhcp6',
-            app: {
-                name: 'first',
-            },
         },
         {
             id: 2,
             name: 'dhcp4',
-            app: {
-                name: 'second',
-            },
         },
         {
             id: 4,
             name: 'dhcp6',
-            app: {
-                name: 'second',
-            },
         },
         {
             id: 5,
             name: 'dhcp6',
-            app: {
-                name: 'third',
-            },
         },
     ],
     clientClasses: ['router', 'cable-modem', 'access-point'],
