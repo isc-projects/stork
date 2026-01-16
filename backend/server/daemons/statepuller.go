@@ -136,14 +136,15 @@ func daemonCompare(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool 
 
 // For each provided discovered daemon, try to find a matching daemon in the
 // database. If it is found, use it, otherwise create a new daemon.
-func mergeNewAndOldDaemons(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredDaemons []*agentcomm.Daemon) ([]*dbmodel.Daemon, error) {
+func mergeNewAndOldDaemons(dbMachine *dbmodel.Machine, discoveredDaemons []*agentcomm.Daemon) []*dbmodel.Daemon {
 	oldDaemons := dbMachine.Daemons
 	oldMatchedIndices := map[int]struct{}{}
 	// We preserve all old daemons. Some of them may not be discovered anymore
 	// if they are temporarily or permanently down. There is not simple and
 	// reliable way to distinguish between these two cases, so we keep the old
 	// daemons until they are explicitly deleted by the administrator.
-	mergedDaemons := oldDaemons[:]
+	var mergedDaemons []*dbmodel.Daemon
+	mergedDaemons = append(mergedDaemons, dbMachine.Daemons...)
 
 DISCOVERED_LOOP:
 	for _, discoveredDaemon := range discoveredDaemons {
@@ -177,7 +178,7 @@ DISCOVERED_LOOP:
 		mergedDaemons = append(mergedDaemons, newDaemon)
 	}
 
-	return mergedDaemons, nil
+	return mergedDaemons
 }
 
 // Retrieve remotely machine and its daemons state, and store it in the database.
@@ -242,10 +243,7 @@ func UpdateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 
 	// take old daemons from db and new daemons fetched from the machine
 	// and match them and prepare a list of all daemons
-	mergedDaemons, err := mergeNewAndOldDaemons(db, dbMachine, state.Daemons)
-	if err != nil {
-		return "Cannot merge new and old daemons: " + err.Error()
-	}
+	mergedDaemons := mergeNewAndOldDaemons(dbMachine, state.Daemons)
 
 	// Group daemons by Kea, BIND 9, PowerDNS, etc.
 	// It is ordered map because some existing unit tests depend on the order
