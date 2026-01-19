@@ -1,33 +1,25 @@
-<div class="grid m-0" *ngIf="daemon">
-    <div class="col-12">
-        <p-panel>
-            <ng-template #header>
-                <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
-                    <div class="daemon-header">
-                        <i class="{{ daemonStatusIconClass }} text-xl" pTooltip="{{ daemonStatusIconTooltip }}"></i>
-                        <div>
-                            <div class="text-xl font-bold">{{ daemon.name | daemonNiceName }}</div>
-                            <div class="daemon-meta">
-                                Machine:
-                                <ng-container *ngIf="daemon.machine; else unknownMachine">
-                                    <a routerLink="/machines/{{ daemon.machine.id }}">
-                                        {{ daemon.machine.hostname || daemon.machine.address }}
-                                    </a>
-                                </ng-container>
-                                <ng-template #unknownMachine>Unknown</ng-template>
-                            </div>
-                        </div>
-                    </div>
-                    <p-button
-                        label="Refresh"
-                        icon="pi pi-refresh"
-                        (onClick)="refresh()"
-                        [disabled]="daemon.id === undefined"
-                    ></p-button>
-                </div>
-            </ng-template>
-            <app-daemon-overview [daemon]="daemon"></app-daemon-overview>
-        </p-panel>
+<div class="mx-1 grid" *ngIf="daemon">
+    <div class="my-4 col-12">
+        <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
+            <div class="daemon-header">
+                <div class="text-xl text-primary">
+                    <i class="fa fa-server pr-2"></i>
+                    <app-entity-link
+                        [showEntityName]="false"
+                        entity="daemon"
+                        [attrs]="daemon"
+                    ></app-entity-link>
+                    <i class="{{ daemonStatusIconClass }} text-xl" pTooltip="{{ daemonStatusIconTooltip }}"></i>
+                </div>  
+            </div>
+            <p-button
+                label="Refresh"
+                icon="pi pi-refresh"
+                (onClick)="refresh()"
+                [disabled]="daemon.id === undefined"
+            ></p-button>
+        </div>
+        <app-daemon-overview [daemon]="daemon"></app-daemon-overview>
     </div>
 
     <div class="col-12 md:col-7">
