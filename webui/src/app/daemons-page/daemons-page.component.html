@@ -182,7 +182,11 @@
             <ng-template #body let-d>
                 <tr>
                     <td>
-                        <a routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
+                        <app-entity-link
+                            entity="daemon"
+                            [showEntityName]="false"
+                            [attrs]="{ id: d.id, name: d.name }"
+                        ></app-entity-link>
                     </td>
                     <td>
                         <a routerLink="/daemons/{{ d.id }}">

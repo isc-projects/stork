@@ -5,6 +5,7 @@ import { SelectableDaemon } from './selectable-daemon'
 import { SharedNetworkForm } from './subnet-set-form.service'
 import { IPType } from '../iptype'
 import { FormState } from '../tab-view/tab-view.component'
+import { daemonNameToFriendlyName } from '../utils'
 
 /**
  * Holds the state of the form created by the SharedNetworkFormComponent.
@@ -258,7 +259,7 @@ export class SharedNetworkFormState implements FormState {
                 id: d.id,
                 name: d.name,
                 version: d.version,
-                label: d.name,
+                label: `[${d.id}] ${daemonNameToFriendlyName(d.name)}`,
             }
         })
         // Initially, list all daemons.

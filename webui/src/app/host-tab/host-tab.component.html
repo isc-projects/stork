@@ -72,7 +72,11 @@
                 found for the following Kea daemons:
                 <ul style="list-style-type: disc">
                     <li *ngFor="let erredDaemon of erredDaemons">
-                        <a routerLink="/daemons/{{ erredDaemon.id }}">{{ erredDaemon.name | daemonNiceName }}</a>
+                        <app-entity-link
+                            entity="daemon"
+                            [showEntityName]="false"
+                            [attrs]="{ id: erredDaemon.id, name: erredDaemon.name }"
+                        ></app-entity-link>
                     </li>
                 </ul>
             </div>

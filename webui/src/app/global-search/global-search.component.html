@@ -47,7 +47,7 @@
         <div id="daemons-div" *ngIf="searchResults.daemons.items.length > 0" style="margin-right: 20px; min-width: 9em">
             <h4>Daemons</h4>
             <div *ngFor="let d of searchResults.daemons.items">
-                <a routerLink="/daemons/{{ d.id }}">{{ d.name | daemonNiceName }}</a>
+                <app-entity-link entity="daemon" [attrs]="{ id: d.id, name: d.name }"></app-entity-link>
             </div>
             <!-- TODO: not supported yet <div style="margin-top: 10px;"><a >more</a></div> -->
         </div>

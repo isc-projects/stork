@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
 import { CreateSubnetBeginResponse, DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
-import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
 import {
     FormArray,
@@ -216,7 +216,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 id: d.id,
                 name: d.name,
                 version: d.version,
-                label: d.name,
+                label: `[${d.id}] ${daemonNameToFriendlyName(d.name)}`,
             })
         }
         // Initially, list all daemons.

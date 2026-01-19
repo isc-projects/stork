@@ -319,7 +319,11 @@
             </td>
             <td>
                 <div *ngFor="let lsn of sn.localSubnets">
-                    <a routerLink="/daemons/{{ lsn.daemonId }}" class="block">{{ lsn.daemonName }}</a>
+                    <app-entity-link
+                        entity="daemon"
+                        [showEntityName]="false"
+                        [attrs]="{ id: lsn.daemonId, name: lsn.daemonName }"
+                    ></app-entity-link>
                 </div>
             </td>
             <td>
