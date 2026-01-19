@@ -206,7 +206,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * Column names for tables which display local zones.
      */
-    localZoneColumns: string[] = ['Daemon Name', 'Daemon ID', 'View', 'Zone Type', 'Serial', 'Class', 'Loaded At']
+    localZoneColumns: string[] = ['Daemon', 'View', 'Zone Type', 'Serial', 'Class', 'Loaded At']
 
     /**
      * Reference to Array ctor to be used in the HTML template.

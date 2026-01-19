@@ -79,10 +79,11 @@
 
 <ng-template #localZoneCells let-localZone let-serialInfo="serialInfo">
     <td>
-        <a routerLink="/daemons/{{ localZone.daemonId }}">{{ localZone.daemonName }}</a>
-    </td>
-    <td>
-        <a routerLink="/dns/zones" [queryParams]="{ daemonId: localZone.daemonId }">{{ localZone.daemonId }}</a>
+        <app-entity-link
+            entity="daemon"
+            [showEntityName]="false"
+            [attrs]="{ id: localZone.daemonId, name: localZone.daemonName }"
+        ></app-entity-link>
     </td>
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ text: localZone.view }">{{ localZone.view }}</a>
@@ -146,8 +147,7 @@
     >
         <ng-template #header>
             <tr>
-                <th>Daemon Name</th>
-                <th>Daemon ID</th>
+                <th>Daemon</th>
                 <th
                     pTooltip="Zone config is a zone specification in the BIND9 view.
 If the zone appears in several views, this count is increased
@@ -183,9 +183,12 @@ to the number of configured zones.
         <ng-template #body let-state>
             <tr>
                 <td>
-                    <a routerLink="/daemons/{{ state.daemonId }}">{{ state.daemonName }}</a>
+                    <app-entity-link
+                        entity="daemon"
+                        [showEntityName]="false"
+                        [attrs]="{ id: state.daemonId, name: state.daemonName }"
+                    ></app-entity-link>
                 </td>
-                <td>{{ state.daemonId }}</td>
                 <td>{{ state.zoneConfigsCount || 'n/a' }}</td>
                 <td>{{ state.distinctZonesCount || 'n/a' }}</td>
                 <td>{{ state.builtinZonesCount || 'n/a' }}</td>

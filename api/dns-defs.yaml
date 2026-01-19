@@ -18,6 +18,8 @@
         format: date-time
       daemonId:
         type: integer
+      daemonName:
+        type: string
       error:
         type: string
         x-nullable: true
