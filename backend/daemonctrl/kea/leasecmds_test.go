@@ -120,3 +120,35 @@ func TestNewCommandLease6GetByHostname(t *testing.T) {
 		}
 	}`, string(bytes))
 }
+
+// Tests lease4-get-by-hostname command.
+func TestNewCommandLease4GetByState(t *testing.T) {
+	command := NewCommandLease4GetByState("declined")
+	require.NotNil(t, command)
+	require.Len(t, command.Daemons, 1)
+	bytes, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "lease4-get-by-state",
+		"service": ["dhcp4"],
+		"arguments": {
+			"state": "declined"
+		}
+	}`, string(bytes))
+}
+
+// Tests lease6-get-by-hostname command.
+func TestNewCommandLease6GetByState(t *testing.T) {
+	command := NewCommandLease6GetByState("declined")
+	require.NotNil(t, command)
+	require.Len(t, command.Daemons, 1)
+	bytes, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "lease6-get-by-state",
+		"service": ["dhcp6"],
+		"arguments": {
+			"state": "declined"
+		}
+	}`, string(bytes))
+}

@@ -18,6 +18,8 @@ const (
 	Lease4GetByHostname  CommandName = "lease4-get-by-hostname"
 	Lease6GetByHostname  CommandName = "lease6-get-by-hostname"
 	Lease4GetByHWAddress CommandName = "lease4-get-by-hw-address"
+	Lease4GetByState     CommandName = "lease4-get-by-state"
+	Lease6GetByState     CommandName = "lease6-get-by-state"
 )
 
 // Creates lease4-get command.
@@ -56,4 +58,18 @@ func NewCommandLease4GetByHostname(hostname string) *Command {
 // Creates lease6-get-by-hostname command.
 func NewCommandLease6GetByHostname(hostname string) *Command {
 	return newCommand(Lease6GetByHostname, daemonname.DHCPv6, map[string]any{"hostname": hostname})
+}
+
+// Create lease4-get-by-state command.
+func NewCommandLease4GetByState(state string) *Command {
+	return newCommand(Lease4GetByState, daemonname.DHCPv4, map[string]any{
+		"state": state,
+	})
+}
+
+// Create lease6-get-by-state command.
+func NewCommandLease6GetByState(state string) *Command {
+	return newCommand(Lease6GetByState, daemonname.DHCPv6, map[string]any{
+		"state": state,
+	})
 }

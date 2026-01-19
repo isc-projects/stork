@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"reflect"
+	"slices"
 
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -161,6 +162,10 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, daemon *dbmodel.Dae
 			command = keactrl.NewCommandLease4GetByHostname(propertyValue)
 		case keactrl.Lease6GetByHostname:
 			command = keactrl.NewCommandLease6GetByHostname(propertyValue)
+		case keactrl.Lease4GetByState:
+			command = keactrl.NewCommandLease4GetByState(propertyValue)
+		case keactrl.Lease6GetByState:
+			command = keactrl.NewCommandLease6GetByState(propertyValue)
 		default:
 			continue
 		}
@@ -391,17 +396,20 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 	return leases, erredDaemons, nil
 }
 
-// Attempts to find declined leases on the Kea servers. Kea provides no
-// API to search the leases by state but the declined leases have HW address
-// and DUID empty. Thus, this function sends lease4-get-by-hw-address and
-// lease6-get-by-duid with empty hw-address and empty duid parameters
-// respectively. Next, it removes the leases which are not in the declined
-// state from the result. The Kea servers that returned an error response
-// are returned in the second value. Such failures do not preclude the function
-// from returning leases found on other servers, but the caller becomes
-// aware that some leases may not be included due to the communication
-// errors with some servers. The third returned value indicates a general
-// error, e.g. issues with Stork database communication.
+// Attempts to find declined leases on the Kea servers. Prior to v3.1.5, Kea
+// provided no API to search the leases by state. However, the declined leases
+// were stored with HW address and DUID empty. Thus, for Kea 3.1.4 and earlier,
+// this function sends lease4-get-by-hw-address and lease6-get-by-duid with
+// empty hw-address and empty duid parameters respectively. Next, it removes the
+// leases which are not in the declined state from the result. The Kea servers
+// that returned an error response are returned in the second value. Such
+// failures do not preclude the function from returning leases found on other
+// servers, but the caller becomes aware that some leases may not be included
+// due to the communication errors with some servers. The third returned value
+// indicates a general error, e.g. issues with Stork database communication.
+//
+// For daemons running Kea 3.1.5 or newer, it sends the "lease[46]-get-by-state"
+// comman and returns the results.
 func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (leases []dbmodel.Lease, erredDaemons []*dbmodel.Daemon, err error) {
 	// Get all Kea daemons.
 	daemons, err := dbmodel.GetDHCPDaemons(db)
@@ -409,6 +417,10 @@ func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (lease
 		err = errors.WithMessagef(err, "failed to fetch Kea daemons while searching for declined leases")
 		return leases, erredDaemons, err
 	}
+
+	// Kea version with leases[46]-get-by-state.
+	keaVerWithState := storkutil.NewSemanticVersion(3, 1, 5)
+	keaVerWhereBroken := storkutil.NewSemanticVersion(3, 1, 0)
 
 	// Send appropriate commands to each daemon.
 	for i := range daemons {
@@ -422,24 +434,60 @@ func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (lease
 		}
 
 		var commands []keactrl.CommandName
-		if daemon.Name == daemonname.DHCPv4 {
-			commands = append(commands, "lease4-get-by-hw-address")
+
+		// Future enhancement: remove all of the version checks and preserve only the
+		// supportsGetByState code once Kea 3.1.4 is no longer supported (April 2026).
+		daemonVer, err := storkutil.ParseSemanticVersion(daemon.Version)
+		supportsGetByState := true
+		if err != nil {
+			supportsGetByState = false
 		}
-		if daemon.Name == daemonname.DHCPv6 {
-			commands = append(commands, "lease6-get-by-duid")
+		if daemonVer.LessThan(keaVerWithState) {
+			supportsGetByState = false
+			if daemonVer.GreaterThan(keaVerWhereBroken) {
+				log.WithField("version", daemon.Version).
+					Warn("Kea versions 3.1.1 through 3.1.4 do not support any method of querying for declined leases.  Please downgrade to the previous stable version or upgrade to 3.1.5 (or newer) if you rely on this feature.")
+				erredDaemons = append(erredDaemons, daemon)
+				continue
+			}
 		}
 
-		// Send these commands with empty hw-address and empty duid.
-		leasesByProperties, warns, err := getLeasesByProperties(agents, daemon, "", commands...)
-		daemonError = warns
-		if err != nil {
-			daemonError = true
-			log.WithError(err).Warnf("Failed to fetch leases from Kea [%d] %s daemon", daemon.ID, daemon.Name)
+		if supportsGetByState {
+			if daemon.Name == daemonname.DHCPv4 {
+				commands = append(commands, "lease4-get-by-state")
+			}
+			if daemon.Name == daemonname.DHCPv6 {
+				commands = append(commands, "lease6-get-by-state")
+			}
+
+			leasesByState, warns, err := getLeasesByProperties(agents, daemon, "declined", commands...)
+			daemonError = warns
+			if err != nil {
+				daemonError = true
+				log.WithError(err).Warnf("Failed to fetch leases from Kea [%d] %s daemon", daemon.ID, daemon.Name)
+			} else {
+				leases = slices.Concat(leases, leasesByState)
+			}
 		} else {
-			for j := range leasesByProperties {
-				// Only return the leases in the declined state.
-				if leasesByProperties[j].State == keadata.LeaseStateDeclined {
-					leases = append(leases, leasesByProperties[j])
+			if daemon.Name == daemonname.DHCPv4 {
+				commands = append(commands, "lease4-get-by-hw-address")
+			}
+			if daemon.Name == daemonname.DHCPv6 {
+				commands = append(commands, "lease6-get-by-duid")
+			}
+
+			// Send these commands with empty hw-address and empty duid.
+			leasesByProperties, warns, err := getLeasesByProperties(agents, daemon, "", commands...)
+			daemonError = warns
+			if err != nil {
+				daemonError = true
+				log.WithError(err).Warnf("Failed to fetch leases from Kea [%d] %s daemon", daemon.ID, daemon.Name)
+			} else {
+				for j := range leasesByProperties {
+					// Only return the leases in the declined state.
+					if leasesByProperties[j].State == keadata.LeaseStateDeclined {
+						leases = append(leases, leasesByProperties[j])
+					}
 				}
 			}
 		}

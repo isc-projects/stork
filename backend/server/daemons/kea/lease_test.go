@@ -400,6 +400,70 @@ func mockLeasesGetDeclined(callNo int, responses []any) {
 	}
 }
 
+// Generates responses to declined leases search. First response comprises
+// one in the declined state. The second response contains two declined DHCPv6
+// leases.
+func mockLeasesGetByStatusDeclined(callNo int, responses []any) {
+	switch callNo {
+	case 0:
+		bytes := []byte(`
+			{
+				"result": 0,
+				"text": "Leases found",
+				"arguments": {
+					"leases": [
+						{
+							"cltt": 12345678,
+							"hw-address": "",
+							"ip-address": "192.0.2.2",
+							"state": 1,
+							"subnet-id": 44,
+							"valid-lft": 3600
+						}
+					]
+				}
+			}
+		`)
+		_ = json.Unmarshal(bytes, responses[0])
+	case 1:
+		bytes := []byte(`
+        {
+            "result": 0,
+            "text": "Leases found",
+            "arguments": {
+                "leases": [
+                    {
+                        "cltt": 12345678,
+                        "duid": "",
+                        "hw-address": "",
+                        "iaid": 1,
+                        "ip-address": "2001:db8:2::1",
+                        "preferred-lft": 500,
+                        "state": 1,
+                        "subnet-id": 44,
+                        "type": "IA_NA",
+                        "valid-lft": 3600
+                    },
+                    {
+                        "cltt": 12345678,
+                        "duid": "",
+                        "hw-address": "08:08:08:08:08:08",
+                        "iaid": 1,
+                        "ip-address": "2001:db8:2::2",
+                        "preferred-lft": 500,
+                        "state": 1,
+                        "subnet-id": 44,
+                        "type": "IA_NA",
+                        "valid-lft": 3600
+                    }
+                ]
+            }
+        }
+    `)
+		_ = json.Unmarshal(bytes, responses[0])
+	}
+}
+
 func mockLeasesGetDeclinedErrors(callNo int, responses []any) {
 	switch callNo {
 	case 0:
@@ -1264,14 +1328,15 @@ func TestFindLeasesTooShortDUID(t *testing.T) {
 	require.Equal(t, keactrl.Lease6GetByHostname, agents.RecordedCommands[1].GetCommand())
 }
 
-// Test declined leases search mechanism. It verifies a positive scenario in which
-// the DHCPv4 server returns two leases (one is in a default state and one is in the
-// declined state), and the DHCPv6 server returns two declined leases. The DHCPv4 lease
-// in the default state should be ignored. The remaining three leases should be
-// returned. The test also verifies that the commands sent to Kea are formatted
-// correctly, i.e. contain empty MAC address and empty DUID. Finally, the test
-// verifies that erred apps are returned if any of the commands returns an error.
-func TestFindDeclinedLeases(t *testing.T) {
+// Test declined leases search mechanism for Kea versions 3.1.0 and before. It
+// verifies a positive scenario in which the DHCPv4 server returns two leases
+// (one is in a default state and one is in the declined state), and the DHCPv6
+// server returns two declined leases. The DHCPv4 lease in the default state
+// should be ignored. The remaining three leases should be returned. The test
+// also verifies that the commands sent to Kea are formatted correctly, i.e.
+// contain empty MAC address and empty DUID. Finally, the test verifies that
+// erred apps are returned if any of the commands returns an error.
+func TestFindDeclinedLeasesUsingStatusHack(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1296,6 +1361,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 
 	// Create DHCPv4 daemon
 	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	daemon4.Version = "3.1.0"
 	err = daemon4.SetKeaConfigFromJSON([]byte(`{
 		"Dhcp4": {
 			"hooks-libraries": [
@@ -1311,6 +1377,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 
 	// Create DHCPv6 daemon
 	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	daemon6.Version = "3.1.0"
 	err = daemon6.SetKeaConfigFromJSON([]byte(`{
 		"Dhcp6": {
 			"hooks-libraries": [
@@ -1510,6 +1577,7 @@ func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 
 	// Create DHCPv4 daemon without lease_cmds hooks
 	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	daemon4.Version = "3.1.5"
 	err = daemon4.SetKeaConfigFromJSON([]byte(`{
 		"Dhcp4": {}
 	}`))
@@ -1519,6 +1587,7 @@ func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 
 	// Create DHCPv6 daemon without lease_cmds hooks
 	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	daemon4.Version = "3.1.5"
 	err = daemon6.SetKeaConfigFromJSON([]byte(`{
 		"Dhcp6": {}
 	}`))
@@ -1532,6 +1601,178 @@ func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, erredDaemons)
 	require.Empty(t, leases)
+}
+
+// Ensure the FindDeclinedLeases call reports an error for Kea 3.1.1 through 3.1.4, where the "send a zero/emptystr hardware address/DUID" method was identified as a bug and fixed, and before the get-by-status API was added.
+func TestFindDeclinedLeasesWithBrokenVersions(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine with the Kea daemons including both DHCPv4 and DHCPv6
+	// daemon with the lease_cmds hooks library loaded.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Protocol: protocoltype.HTTPS,
+		},
+	}
+
+	// Create DHCPv4 daemon representing Kea 3.1.3 (broken zero-hwaddr method)
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	daemon4.Version = "3.1.1"
+	err = daemon4.SetKeaConfigFromJSON([]byte(`{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon4)
+	require.NoError(t, err)
+
+	// Create DHCPv6 daemon
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	daemon6.Version = "3.1.4"
+	err = daemon6.SetKeaConfigFromJSON([]byte(`{
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon6)
+	require.NoError(t, err)
+
+	// Simulate Kea returning 4 leases, one in the default state and three
+	// in the declined state.
+	agents := agentcommtest.NewFakeAgents(mockLeasesGetByStatusDeclined, nil)
+
+	leases, erredDaemons, err := FindDeclinedLeases(db, agents)
+	require.NoError(t, err)
+
+	// Ensure that Stork has sent no commands (because they won't work anyway).
+	require.Len(t, agents.RecordedCommands, 0)
+
+	// Ensure that both daemons are reported as errored.
+	require.Len(t, erredDaemons, 2)
+
+	// Ensure that Stork did not find any leases from daemons that can't answer.
+	require.Len(t, leases, 0)
+}
+
+// Ensure the FindDeclinedLeases call works with Kea 3.1.5 and above, when the lease[46]-get-by-status API was added.
+func TestFindDeclinedLeasesWithGetByStatusAPI(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine with the Kea daemons including both DHCPv4 and DHCPv6
+	// daemon with the lease_cmds hooks library loaded.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8000,
+			Protocol: protocoltype.HTTPS,
+		},
+	}
+
+	// Create DHCPv4 daemon representing Kea 3.1.5
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	daemon4.Version = "3.1.5"
+	err = daemon4.SetKeaConfigFromJSON([]byte(`{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon4)
+	require.NoError(t, err)
+
+	// Create DHCPv6 daemon
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	daemon6.Version = "3.1.5"
+	err = daemon6.SetKeaConfigFromJSON([]byte(`{
+		"Dhcp6": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_lease_cmds.so"
+				}
+			]
+		}
+	}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemon6)
+	require.NoError(t, err)
+
+	// Simulate Kea returning 4 leases, one in the default state and three
+	// in the declined state.
+	agents := agentcommtest.NewFakeAgents(mockLeasesGetByStatusDeclined, nil)
+
+	leases, erredDaemons, err := FindDeclinedLeases(db, agents)
+	require.NoError(t, err)
+	require.Empty(t, erredDaemons)
+
+	// One lease should be ignored and three returned.
+	require.Len(t, leases, 3)
+
+	// Basic checks if expected leases were returned.
+	for i, ipAddress := range []string{"192.0.2.2", "2001:db8:2::1", "2001:db8:2::2"} {
+		expectedDaemon := daemon4
+		if i > 0 {
+			expectedDaemon = daemon6
+		}
+
+		require.EqualValues(t, expectedDaemon.ID, leases[i].DaemonID)
+		require.NotNil(t, leases[i].Daemon)
+		require.Equal(t, ipAddress, leases[i].IPAddress)
+		require.EqualValues(t, keadata.LeaseStateDeclined, leases[i].State)
+	}
+
+	// Ensure that Stork has sent two commands, one to the DHCPv4 server and one
+	// to the DHCPv6 server.
+	require.Len(t, agents.RecordedCommands, 2)
+	require.Equal(t, keactrl.Lease4GetByState, agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, keactrl.Lease6GetByState, agents.RecordedCommands[1].GetCommand())
+
+	// Ensure that the state in the command is "declined".
+	arguments := agents.GetCommandArguments(0)
+	require.NotNil(t, arguments)
+	require.Contains(t, arguments, "state")
+	require.Equal(t, "declined", arguments["state"])
+
+	// Ensure that the state in the second command is "declined".
+	arguments = agents.GetCommandArguments(1)
+	require.NotNil(t, arguments)
+	require.Contains(t, arguments, "state")
+	require.Equal(t, "declined", arguments["state"])
 }
 
 // Test searching leases associated with a host reservation.
