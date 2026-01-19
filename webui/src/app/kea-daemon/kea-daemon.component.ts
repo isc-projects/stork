@@ -23,6 +23,8 @@ import { ConfigReviewPanelComponent } from '../config-review-panel/config-review
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { AccessPointsComponent } from '../access-points/access-points.component'
 
 @Component({
     selector: 'app-kea-daemon',
@@ -47,6 +49,8 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
         HaStatusComponent,
         LocaltimePipe,
         PlaceholderPipe,
+        EventsPanelComponent,
+        AccessPointsComponent,
     ],
 })
 export class KeaDaemonComponent {

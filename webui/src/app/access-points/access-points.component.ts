@@ -6,17 +6,15 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 
 /**
- * A component that displays daemon overview.
- *
- * It comprises the information about the daemon and machine access points.
+ * A component that displays daemon access points.
  */
 @Component({
-    selector: 'app-daemon-overview',
-    templateUrl: './daemon-overview.component.html',
-    styleUrls: ['./daemon-overview.component.sass'],
+    selector: 'app-access-points',
+    templateUrl: './access-points.component.html',
+    styleUrls: ['./access-points.component.sass'],
     imports: [NgIf, NgFor, Tooltip, ManagedAccessDirective, AccessPointKeyComponent],
 })
-export class DaemonOverviewComponent {
+export class AccessPointsComponent {
     /** Pointer to the structure holding the daemon information. */
     @Input() daemon: AnyDaemon
 

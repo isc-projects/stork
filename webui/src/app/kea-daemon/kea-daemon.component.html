@@ -117,166 +117,176 @@
             </p-message>
         </div>
 
-        <!-- Overview -->
-        <div [ngClass]="{ disabled: !daemon.active }">
-            <h3 class="underlined">Overview</h3>
-            <div class="grid">
-                <div class="col-12 lg:col-7">
-                    <p-fieldset legend="Daemon Information">
-                        <div class="grid grid-nogutter">
-                            <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
-                            <div class="col-12 sm:col-9">
-                                <app-version-status
-                                    [daemonName]="daemon.name"
-                                    [version]="daemon.version"
-                                ></app-version-status>
-                            </div>
-                            <div class="col-12 sm:col-3 pb-0 font-medium">Version Ext</div>
-                            <div class="col-12 sm:col-9 white-space-preline">
-                                {{ daemon.extendedVersion }}
-                            </div>
-                            <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
-                            <div class="col-12 sm:col-9">{{ showDuration(daemon.uptime) }}</div>
-                            <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
-                            <div class="col-12 sm:col-9">
-                                {{ daemon.reloadedAt | localtime | placeholder: 'never' }}
-                            </div>
-                        </div>
-                    </p-fieldset>
-                </div>
-                <div class="col-12 lg:col-5">
-                    <p-fieldset id="hooks-fieldset" legend="Hooks">
-                        <ol>
-                            <li *ngFor="let hook of daemon.hooks" class="word-break-all">
-                                <div class="flex flex-wrap">
-                                    <div
-                                        class="flex flex-auto hook-name"
-                                        pTooltip="Click to copy the hook path to the clipboard"
-                                        (click)="copyHookPathToClipboard(hook)"
-                                    >
-                                        {{ basename(hook) }}
-                                    </div>
-                                    <div class="flex flex-none">
-                                        <a
-                                            *ngIf="docAnchorFromHookLibrary(basename(hook), daemon.version)"
-                                            href="https://kea.readthedocs.io/en/{{
-                                                docAnchorFromHookLibrary(basename(hook), daemon.version)
-                                            }}"
-                                            target="_blank"
-                                        >
-                                            [doc]
-                                        </a>
-                                    </div>
-                                </div>
-                            </li>
-                        </ol>
-                        <div *ngIf="daemon.hooks.length === 0" class="text-gray-400">No hooks</div>
-                    </p-fieldset>
-                </div>
-            </div>
-
-            <!-- Database Configurations -->
-            <div
-                id="data-storage-div"
-                *ngIf="(daemon.files && daemon.files.length > 0) || (daemon.backends && daemon.backends.length > 0)"
-                class="mt-4"
-            >
-                <h3 class="underlined">Data Storage</h3>
+        <div class="grid">
+            <!-- Overview -->
+            <div class="col-12 md:col-6" [ngClass]="{ disabled: !daemon.active }">
+                <h3 class="underlined">Overview</h3>
                 <div class="grid">
-                    <ng-container *ngIf="daemon.files">
-                        <div class="col-12 lg:col-6">
-                            <p-fieldset id="data-storage-files-fieldset" legend="Files">
-                                <table style="width: 100%">
-                                    <tr *ngFor="let file of daemon.files">
-                                        <td style="width: 8rem">{{ file.filetype }}:</td>
-                                        <td>
-                                            <i>{{ filenameFromFile(file) }}</i>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </p-fieldset>
-                        </div>
-                    </ng-container>
-                    <div *ngIf="daemon.backends" class="col-12 lg:col-6">
-                        <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
-                            <div *ngFor="let backend of daemon.backends">
-                                <i class="fa fa-database text-gray-400"></i>
-                                {{ databaseNameFromType(backend.backendType) }} ({{ backend.database }}&#64;{{
-                                    backend.host
-                                }}) with:
-                                <ul class="word-break-all" style="list-style-type: disc">
-                                    <li *ngFor="let dataType of backend.dataTypes">
-                                        <i>{{ dataType }}</i>
-                                    </li>
-                                </ul>
+                    <div class="col-12 lg:col-7">
+                        <p-fieldset legend="Daemon Information">
+                            <div class="grid grid-nogutter">
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
+                                <div class="col-12 sm:col-9">
+                                    <app-version-status
+                                        [daemonName]="daemon.name"
+                                        [version]="daemon.version"
+                                    ></app-version-status>
+                                </div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Version Ext</div>
+                                <div class="col-12 sm:col-9 white-space-preline">
+                                    {{ daemon.extendedVersion }}
+                                </div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
+                                <div class="col-12 sm:col-9">{{ showDuration(daemon.uptime) }}</div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
+                                <div class="col-12 sm:col-9">
+                                    {{ daemon.reloadedAt | localtime | placeholder: 'never' }}
+                                </div>
                             </div>
                         </p-fieldset>
                     </div>
+                    <div class="col-12 lg:col-5">
+                        <p-fieldset id="hooks-fieldset" legend="Hooks">
+                            <ol>
+                                <li *ngFor="let hook of daemon.hooks" class="word-break-all">
+                                    <div class="flex flex-wrap">
+                                        <div
+                                            class="flex flex-auto hook-name"
+                                            pTooltip="Click to copy the hook path to the clipboard"
+                                            (click)="copyHookPathToClipboard(hook)"
+                                        >
+                                            {{ basename(hook) }}
+                                        </div>
+                                        <div class="flex flex-none">
+                                            <a
+                                                *ngIf="docAnchorFromHookLibrary(basename(hook), daemon.version)"
+                                                href="https://kea.readthedocs.io/en/{{
+                                                    docAnchorFromHookLibrary(basename(hook), daemon.version)
+                                                }}"
+                                                target="_blank"
+                                            >
+                                                [doc]
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ol>
+                            <div *ngIf="daemon.hooks.length === 0" class="text-gray-400">No hooks</div>
+                        </p-fieldset>
+                        <p-fieldset id="hooks-fieldset" legend="Access points">
+                            <app-access-points [daemon]="daemon"></app-access-points>
+                        </p-fieldset>
+                    </div>
+                </div>
+
+                <!-- Database Configurations -->
+                <div
+                    id="data-storage-div"
+                    *ngIf="(daemon.files && daemon.files.length > 0) || (daemon.backends && daemon.backends.length > 0)"
+                    class="mt-4"
+                >
+                    <h3 class="underlined">Data Storage</h3>
+                    <div class="grid">
+                        <ng-container *ngIf="daemon.files">
+                            <div class="col-12 lg:col-6">
+                                <p-fieldset id="data-storage-files-fieldset" legend="Files">
+                                    <table style="width: 100%">
+                                        <tr *ngFor="let file of daemon.files">
+                                            <td style="width: 8rem">{{ file.filetype }}:</td>
+                                            <td>
+                                                <i>{{ filenameFromFile(file) }}</i>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </p-fieldset>
+                            </div>
+                        </ng-container>
+                        <div *ngIf="daemon.backends" class="col-12 lg:col-6">
+                            <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
+                                <div *ngFor="let backend of daemon.backends">
+                                    <i class="fa fa-database text-gray-400"></i>
+                                    {{ databaseNameFromType(backend.backendType) }} ({{ backend.database }}&#64;{{
+                                        backend.host
+                                    }}) with:
+                                    <ul class="word-break-all" style="list-style-type: disc">
+                                        <li *ngFor="let dataType of backend.dataTypes">
+                                            <i>{{ dataType }}</i>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </p-fieldset>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loggers -->
+                <div class="mt-4">
+                    <h3 class="underlined">Loggers</h3>
+                    <p-table [value]="daemon.logTargets">
+                        <ng-template #header>
+                            <tr>
+                                <th style="width: 10rem">Logger</th>
+                                <th style="width: 7rem">Severity</th>
+                                <th>Output Location</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template #body let-logTarget>
+                            <tr>
+                                <td>{{ logTarget.name }}</td>
+                                <td align="center">{{ logTarget.severity }}</td>
+                                <td>
+                                    <i *ngIf="!logTargetViewable(logTarget.output)">{{ logTarget.output }}</i>
+                                    <p-button
+                                        *ngIf="logTargetViewable(logTarget.output)"
+                                        routerLink="/logs/{{ logTarget.id }}"
+                                        appAccessEntity="logs"
+                                        [text]="true"
+                                        ><i>{{ logTarget.output }}</i></p-button
+                                    >
+                                </td>
+                            </tr>
+                        </ng-template>
+                        <ng-template #emptymessage let-columns>
+                            <tr>
+                                <td [attr.colspan]="3">No loggers found</td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+
+                <div id="config-review-reports-div" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
+                    <h3 class="underlined">
+                        Configuration Review Reports
+                        <app-help-tip subject="daemon configuration review section">
+                            <p>
+                                The Stork server reviews the monitored servers' configurations, flags potential
+                                configuration issues, and suggests changes to these configurations to improve Stork's
+                                monitoring capabilities. The review is performed using different checkers built into the
+                                Stork server. Each checker is responsible for examining a different part or aspect of
+                                the configuration. Each checker has a unique name, which is shown in the blue badge
+                                before the text of each issue in the list below.
+                            </p>
+                            <p>
+                                Each checker can be disabled if its review report is not desired in a particular
+                                deployment.
+                            </p>
+                            <p>
+                                By default, only reports that discover an issue are visible. Use the toggle button to
+                                display reports from all executed checkers for a given daemon.
+                            </p>
+                        </app-help-tip>
+                    </h3>
+                    <app-config-review-panel [daemonId]="daemon.id"></app-config-review-panel>
+                </div>
+
+                <!-- High Availability -->
+                <div *ngIf="isDhcpDaemon" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
+                    <app-ha-status [daemonId]="daemon.id" [daemonName]="daemon.name"></app-ha-status>
                 </div>
             </div>
-
-            <!-- Loggers -->
-            <div class="mt-4">
-                <h3 class="underlined">Loggers</h3>
-                <p-table [value]="daemon.logTargets">
-                    <ng-template #header>
-                        <tr>
-                            <th style="width: 10rem">Logger</th>
-                            <th style="width: 7rem">Severity</th>
-                            <th>Output Location</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template #body let-logTarget>
-                        <tr>
-                            <td>{{ logTarget.name }}</td>
-                            <td align="center">{{ logTarget.severity }}</td>
-                            <td>
-                                <i *ngIf="!logTargetViewable(logTarget.output)">{{ logTarget.output }}</i>
-                                <p-button
-                                    *ngIf="logTargetViewable(logTarget.output)"
-                                    routerLink="/logs/{{ logTarget.id }}"
-                                    appAccessEntity="logs"
-                                    [text]="true"
-                                    ><i>{{ logTarget.output }}</i></p-button
-                                >
-                            </td>
-                        </tr>
-                    </ng-template>
-                    <ng-template #emptymessage let-columns>
-                        <tr>
-                            <td [attr.colspan]="3">No loggers found</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            </div>
-
-            <div id="config-review-reports-div" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
-                <h3 class="underlined">
-                    Configuration Review Reports
-                    <app-help-tip subject="daemon configuration review section">
-                        <p>
-                            The Stork server reviews the monitored servers' configurations, flags potential
-                            configuration issues, and suggests changes to these configurations to improve Stork's
-                            monitoring capabilities. The review is performed using different checkers built into the
-                            Stork server. Each checker is responsible for examining a different part or aspect of the
-                            configuration. Each checker has a unique name, which is shown in the blue badge before the
-                            text of each issue in the list below.
-                        </p>
-                        <p>
-                            Each checker can be disabled if its review report is not desired in a particular deployment.
-                        </p>
-                        <p>
-                            By default, only reports that discover an issue are visible. Use the toggle button to
-                            display reports from all executed checkers for a given daemon.
-                        </p>
-                    </app-help-tip>
-                </h3>
-                <app-config-review-panel [daemonId]="daemon.id"></app-config-review-panel>
-            </div>
-
-            <!-- High Availability -->
-            <div *ngIf="isDhcpDaemon" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
-                <app-ha-status [daemonId]="daemon.id" [daemonName]="daemon.name"></app-ha-status>
+            <div class="col-12 md:col-6">
+                <h3 class="underlined">Events</h3>
+                <app-events-panel [filter]="{ machine: daemon.machine?.id, daemonId: daemon.id }"></app-events-panel>
             </div>
         </div>
     </div>

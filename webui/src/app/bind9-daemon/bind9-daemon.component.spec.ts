@@ -5,9 +5,11 @@ import { AppsVersions, Bind9DaemonView } from '../backend'
 import { By } from '@angular/platform-browser'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 import { provideRouter } from '@angular/router'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 class Daemon {
     id = 1
@@ -27,7 +29,14 @@ describe('Bind9DaemonComponent', () => {
             getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
         }
         await TestBed.configureTestingModule({
-            providers: [{ provide: VersionService, useValue: versionServiceStub }, MessageService, provideRouter([])],
+            providers: [
+                { provide: VersionService, useValue: versionServiceStub },
+                MessageService,
+                ConfirmationService,
+                provideRouter([]),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(Bind9DaemonComponent)

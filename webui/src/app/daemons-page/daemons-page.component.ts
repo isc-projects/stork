@@ -34,7 +34,7 @@ import { InputText } from 'primeng/inputtext'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { DaemonTabComponent } from '../daemon-tab/daemon-tab.component'
 import { Tooltip } from 'primeng/tooltip'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
  * Sets boolean flag indicating if there are communication errors with
@@ -73,7 +73,7 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         VersionStatusComponent,
         DaemonTabComponent,
         Tooltip,
-        DaemonNiceNamePipe,
+        EntityLinkComponent,
     ],
 })
 export class DaemonsPageComponent implements OnInit, OnDestroy {

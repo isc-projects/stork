@@ -8,11 +8,11 @@ import { AnyDaemon } from '../backend'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter } from '@angular/router'
-import { DaemonOverviewComponent } from './daemon-overview.component'
+import { AccessPointsComponent } from './access-points.component'
 
-describe('DaemonOverviewComponent', () => {
-    let component: DaemonOverviewComponent
-    let fixture: ComponentFixture<DaemonOverviewComponent>
+describe('AccessPointsComponent', () => {
+    let component: AccessPointsComponent
+    let fixture: ComponentFixture<AccessPointsComponent>
     let authService: AuthService
 
     beforeEach(async () => {
@@ -36,8 +36,9 @@ describe('DaemonOverviewComponent', () => {
     })
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DaemonOverviewComponent)
+        fixture = TestBed.createComponent(AccessPointsComponent)
         component = fixture.componentInstance
+        component.daemon = { accessPoints: [] }
         fixture.detectChanges()
     })
 
@@ -45,8 +46,62 @@ describe('DaemonOverviewComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should display access points', () => {
-        const fakeDaemon: AnyDaemon = {
+    it('should display control access point', () => {
+        component.daemon = {
+            machine: {
+                id: 1,
+                address: '192.0.2.1:8080',
+            },
+            accessPoints: [
+                {
+                    type: 'control',
+                    address: '192.0.3.1',
+                    port: 1234,
+                    protocol: 'https',
+                },
+            ],
+        }
+        fixture.detectChanges()
+
+        const content = (fixture.nativeElement as HTMLElement).innerText
+
+        expect(content).toContain('control')
+        expect(content).toContain('192.0.3.1:1234')
+
+        const icon = fixture.debugElement.query(By.css('.pi-lock'))
+        expect(icon).toBeTruthy()
+        expect(icon.attributes.pTooltip).toBe('secured connection')
+    })
+
+    it('should display statistics access point', () => {
+        component.daemon = {
+            machine: {
+                id: 1,
+                address: '192.0.2.1:8080',
+            },
+            accessPoints: [
+                {
+                    type: 'statistics',
+                    address: '2001:db8:1::1',
+                    port: 2345,
+                    protocol: 'http',
+                },
+            ],
+        }
+        fixture.detectChanges()
+
+        const content = (fixture.nativeElement as HTMLElement).innerText
+
+        expect(content).toContain('statistics')
+        expect(content).toContain('[2001:db8:1::1]:2345')
+
+        const icon = fixture.debugElement.query(By.css('.pi-lock-open'))
+        expect(icon).toBeTruthy()
+        expect(icon.attributes.pTooltip).toBe('unsecured connection')
+    })
+
+    it('should display multiple access points', () => {
+        component.daemon = {
             machine: {
                 id: 1,
                 address: '192.0.2.1:8080',
@@ -66,34 +121,12 @@ describe('DaemonOverviewComponent', () => {
                 },
             ],
         }
-        component.daemon = fakeDaemon
         fixture.detectChanges()
 
-        const tableElement = fixture.debugElement.query(By.css('table'))
-        expect(tableElement).toBeTruthy()
+        const content = (fixture.nativeElement as HTMLElement).innerText
 
-        const rows = tableElement.queryAll(By.css('tr'))
-        expect(rows.length).toBe(2)
-
-        let tds = rows[0].queryAll(By.css('td'))
-        expect(tds.length).toBe(4)
-        expect(tds[0].nativeElement.innerText.trim()).toContain('Control access point:')
-        expect(tds[1].nativeElement.innerText.trim()).toContain('192.0.3.1:1234')
-
-        let iconSpan = tds[2].query(By.css('span'))
-        expect(iconSpan).toBeTruthy()
-        expect(iconSpan.classes.hasOwnProperty('pi-lock')).toBeTruthy()
-        expect(iconSpan.attributes.pTooltip).toBe('secured connection')
-
-        tds = rows[1].queryAll(By.css('td'))
-        expect(tds.length).toBe(4)
-        expect(tds[0].nativeElement.innerText.trim()).toContain('Statistics access point:')
-        expect(tds[1].nativeElement.innerText.trim()).toContain('[2001:db8:1::1]:2345')
-
-        iconSpan = tds[2].query(By.css('span'))
-        expect(iconSpan).toBeTruthy()
-        expect(iconSpan.classes.hasOwnProperty('pi-lock-open')).toBeTruthy()
-        expect(iconSpan.attributes.pTooltip).toBe('unsecured connection')
+        expect(content).toContain('control')
+        expect(content).toContain('statistics')
     })
 
     it('should format address', () => {

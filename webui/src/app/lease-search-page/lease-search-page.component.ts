@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { Router, ActivatedRoute, RouterLink } from '@angular/router'
+import { Router, ActivatedRoute } from '@angular/router'
 import { map } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
@@ -21,7 +21,7 @@ import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.componen
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { Lease, LeasesSearchErredDaemon } from '../backend'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
  * Enumeration specifying the status of the leases search.
@@ -68,14 +68,13 @@ enum LeasesSearchStatus {
         NgIf,
         Message,
         NgFor,
-        RouterLink,
         NgClass,
         Fieldset,
         IdentifierComponent,
         JsonTreeRootComponent,
         ProgressSpinner,
         LocaltimePipe,
-        DaemonNiceNamePipe,
+        EntityLinkComponent,
     ],
 })
 export class LeaseSearchPageComponent implements OnInit {

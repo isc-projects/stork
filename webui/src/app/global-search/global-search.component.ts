@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms'
 import { InputText } from 'primeng/inputtext'
 import { NgIf, NgFor } from '@angular/common'
 import { RouterLink } from '@angular/router'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'daemons', 'users', 'groups']
 
@@ -19,7 +19,7 @@ const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'daemons'
     selector: 'app-global-search',
     templateUrl: './global-search.component.html',
     styleUrls: ['./global-search.component.sass'],
-    imports: [FormsModule, InputText, Popover, NgIf, NgFor, RouterLink, DaemonNiceNamePipe],
+    imports: [FormsModule, InputText, Popover, NgIf, NgFor, RouterLink, EntityLinkComponent],
 })
 export class GlobalSearchComponent implements OnInit {
     @ViewChild('searchResultsBox') searchResultsBox: Popover

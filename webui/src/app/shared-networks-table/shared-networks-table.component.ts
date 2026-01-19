@@ -32,7 +32,6 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * Component for presenting shared networks in a table.
@@ -64,7 +63,6 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
         SubnetBarComponent,
         DecimalPipe,
         PluralizePipe,
-        DaemonNiceNamePipe,
     ],
 })
 export class SharedNetworksTableComponent implements OnInit, OnDestroy {

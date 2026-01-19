@@ -1,16 +1,19 @@
-<div class="mx-1 grid" *ngIf="daemon">
-    <div class="my-4 col-12">
+<div class="mx-1 flex flex-column" *ngIf="daemon">
+    <div class="my-4">
         <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
             <div class="daemon-header">
                 <div class="text-xl text-primary">
                     <i class="fa fa-server pr-2"></i>
                     Daemon
-                    <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon"
-                    ></app-entity-link>
+                    <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon"></app-entity-link>
                     <i class="{{ daemonStatusIconClass }} text-xl" pTooltip="{{ daemonStatusIconTooltip }}"></i>
                     on machine
-                    <app-entity-link [showEntityName]="false" [attrs]="daemon.machine" entity="machine"></app-entity-link>
-                </div>  
+                    <app-entity-link
+                        [showEntityName]="false"
+                        [attrs]="daemon.machine"
+                        entity="machine"
+                    ></app-entity-link>
+                </div>
             </div>
             <p-button
                 label="Refresh"
@@ -19,17 +22,9 @@
                 [disabled]="daemon.id === undefined"
             ></p-button>
         </div>
-        <app-daemon-overview [daemon]="daemon"></app-daemon-overview>
     </div>
 
-    <div class="col-12 md:col-7">
-        <app-kea-daemon *ngIf="isKeaDaemon" [daemon]="daemon"></app-kea-daemon>
-        <app-bind9-daemon *ngIf="daemon.name === 'named'" [daemon]="daemon"></app-bind9-daemon>
-        <app-pdns-daemon *ngIf="daemon.name === 'pdns'" [daemon]="daemon"></app-pdns-daemon>
-    </div>
-
-    <div class="col-12 md:col-5">
-        <h3 class="underlined">Events</h3>
-        <app-events-panel [filter]="{ machine: daemon.machine?.id, daemonId: daemon.id }"></app-events-panel>
-    </div>
+    <app-kea-daemon *ngIf="isKeaDaemon" [daemon]="daemon"></app-kea-daemon>
+    <app-bind9-daemon *ngIf="daemon.name === 'named'" [daemon]="daemon"></app-bind9-daemon>
+    <app-pdns-daemon *ngIf="daemon.name === 'pdns'" [daemon]="daemon"></app-pdns-daemon>
 </div>

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { ServicesService } from '../backend/api/api'
-import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
+import { getErrorMessage } from '../utils'
 import { NgIf, NgFor } from '@angular/common'
 import { Message } from 'primeng/message'
 import { Panel } from 'primeng/panel'
@@ -10,6 +10,7 @@ import { Tooltip } from 'primeng/tooltip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { SharedModule } from 'primeng/api'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * Component providing a simple log viewer for remote log files.
@@ -37,6 +38,7 @@ import { SharedModule } from 'primeng/api'
         NgFor,
         ProgressSpinner,
         SharedModule,
+        DaemonNiceNamePipe,
     ],
 })
 export class LogViewPageComponent implements OnInit {

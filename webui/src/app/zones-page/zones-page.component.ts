@@ -61,8 +61,9 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ZoneTypeAliasPipe } from '../pipes/zone-type-alias.pipe'
-import { ToastModule } from 'primeng/toast'
-import { CheckboxModule } from 'primeng/checkbox'
+import { Toast } from 'primeng/toast'
+import { Checkbox } from 'primeng/checkbox'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -112,8 +113,9 @@ interface ExtendedLocalZone extends LocalZone {
         UnrootPipe,
         ZoneViewerComponent,
         ZoneTypeAliasPipe,
-        ToastModule,
-        CheckboxModule,
+        Toast,
+        Checkbox,
+        EntityLinkComponent,
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {

@@ -2,34 +2,19 @@ import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { AnyDaemon } from '../backend'
 import { daemonStatusIconClass, daemonStatusIconTooltip } from '../utils'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { KeaDaemonComponent } from '../kea-daemon/kea-daemon.component'
 import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
-import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { Button } from 'primeng/button'
 import { Tooltip } from 'primeng/tooltip'
-import { Panel } from 'primeng/panel'
-import { RouterLink } from '@angular/router'
 import { isKeaDaemon } from '../version.service'
-import { DaemonOverviewComponent } from '../daemon-overview/daemon-overview.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 @Component({
     selector: 'app-daemon-tab',
     templateUrl: './daemon-tab.component.html',
     styleUrl: './daemon-tab.component.sass',
-    imports: [
-        Panel,
-        Tooltip,
-        Button,
-        DaemonNiceNamePipe,
-        KeaDaemonComponent,
-        Bind9DaemonComponent,
-        PdnsDaemonComponent,
-        EventsPanelComponent,
-        RouterLink,
-        DaemonOverviewComponent,
-    ],
+    imports: [Tooltip, Button, KeaDaemonComponent, Bind9DaemonComponent, PdnsDaemonComponent, EntityLinkComponent],
 })
 export class DaemonTabComponent {
     @Input() daemon: AnyDaemon

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
@@ -30,6 +30,7 @@ describe('KeaDaemonComponent', () => {
             providers: [
                 MessageService,
                 MockLocationStrategy,
+                ConfirmationService,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
                 provideHttpClient(withInterceptorsFromDi()),

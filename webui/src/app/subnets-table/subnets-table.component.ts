@@ -34,6 +34,7 @@ import { HumanCountComponent } from '../human-count/human-count.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { Message } from 'primeng/message'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 @Component({
     selector: 'app-subnets-table',
@@ -64,6 +65,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
         Message,
         DecimalPipe,
         PluralizePipe,
+        EntityLinkComponent,
     ],
 })
 export class SubnetsTableComponent implements OnInit, OnDestroy {

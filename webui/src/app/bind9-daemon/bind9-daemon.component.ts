@@ -7,6 +7,8 @@ import { Tooltip } from 'primeng/tooltip'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
+import { AccessPointsComponent } from '../access-points/access-points.component'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
 
 /**
  * Component for displaying information about a BIND9 daemon.
@@ -15,7 +17,18 @@ import { DurationPipe } from '../pipes/duration.pipe'
     selector: 'app-bind9-daemon',
     templateUrl: './bind9-daemon.component.html',
     styleUrl: './bind9-daemon.component.sass',
-    imports: [VersionStatusComponent, RouterLink, NgFor, NgIf, Tooltip, LocaltimePipe, PlaceholderPipe, DurationPipe],
+    imports: [
+        VersionStatusComponent,
+        RouterLink,
+        NgFor,
+        NgIf,
+        Tooltip,
+        LocaltimePipe,
+        PlaceholderPipe,
+        DurationPipe,
+        AccessPointsComponent,
+        EventsPanelComponent,
+    ],
 })
 export class Bind9DaemonComponent {
     /**

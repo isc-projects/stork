@@ -34,7 +34,6 @@ import { Tag } from 'primeng/tag'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 type DhcpOverviewParsed = ModifyDeep<
     DhcpOverview,
@@ -108,7 +107,6 @@ type DhcpOverviewParsed = ModifyDeep<
         TitleCasePipe,
         HumanCountPipe,
         SurroundPipe,
-        DaemonNiceNamePipe,
     ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {

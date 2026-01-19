@@ -11,6 +11,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { NgIf } from '@angular/common'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { ProgressSpinner } from 'primeng/progressspinner'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * A component that displays global configuration parameter for Kea.
@@ -26,6 +27,7 @@ import { ProgressSpinner } from 'primeng/progressspinner'
         KeaGlobalConfigurationFormComponent,
         KeaGlobalConfigurationViewComponent,
         ProgressSpinner,
+        DaemonNiceNamePipe,
     ],
 })
 export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
