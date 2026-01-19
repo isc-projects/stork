@@ -6,7 +6,7 @@
 <div class="mt-2 mb-4">
     <a *ngIf="daemonId" routerLink="/daemons/{{ daemonId }}">
         <span class="fa fa-arrow-left"></span>
-        <span class="ml-2">Back to {{ daemonName ?? 'Daemon' }}</span>
+        <span class="ml-2">Back to {{ (daemonName ?? 'Daemon') | daemonNiceName }}</span>
     </a>
 </div>
 <div *ngIf="loaded; else showSpinner">

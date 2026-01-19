@@ -1,7 +1,7 @@
 <div style="margin-top: 20px">
     <a *ngIf="daemonId" routerLink="/daemons/{{ daemonId }}">
         <span class="fa fa-arrow-left"></span>
-        <span style="margin-left: 5px">Back to {{ daemonLabel }} daemon</span>
+        <span style="margin-left: 5px">Back to {{ daemonName | daemonNiceName }}</span>
     </a>
 </div>
 

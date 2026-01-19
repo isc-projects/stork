@@ -45,7 +45,6 @@ export class LogViewPageComponent implements OnInit {
 
     daemonId: number
     daemonName: string
-    daemonLabel: string
     private _logId: number
     contents: string[]
     data: any
@@ -101,7 +100,6 @@ export class LogViewPageComponent implements OnInit {
                 // Set other data.
                 this.daemonId = data.daemonId
                 this.daemonName = data.daemonName
-                this.daemonLabel = daemonNameToFriendlyName(data.daemonName)
                 // Fill the text box with the log contents.
                 this.contents = data.contents
 

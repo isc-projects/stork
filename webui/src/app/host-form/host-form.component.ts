@@ -514,7 +514,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 id: d.id,
                 name: d.name,
                 version: d.version,
-                label: daemonNameToFriendlyName(d.name),
+                label: `[${d.id}] ${daemonNameToFriendlyName(d.name)}`,
             }
             daemons.push(daemon)
         }
