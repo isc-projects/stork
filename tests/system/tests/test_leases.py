@@ -57,25 +57,35 @@ def test_search_leases(kea_service: Kea, server_service: Server):
     # All generated declined leases have the "00:00:00" DUID, so the old Kea
     # DHCP daemon doesn't recognize them as declined. I didn't find a
     # workaround without completely rewriting the lease generation.
-    assert data.total == 20 if version >= (2, 3, 8) else 10
+    # Kea versions 3.1.1 through 3.1.4 do not support the state:declined query.
+    # The method described above was identified as a bug and fixed in 3.1.1,
+    # and a replacement API (leases[46]-get-by-state) was not added until 3.1.5.
+    if version > (3, 1, 0) and version < (3, 1, 5):
+        assert data.total is None
+        assert len(data.erred_apps) == 2
+    elif version >= (2, 3, 8):
+        assert data.total == 20
+    else:
+        assert data.total == 10
 
-    for lease in data.items:
-        # Declined leases should lack identifiers.
-        assert lease.hw_address is None
-        assert lease.client_id is None
-        assert lease.ip_address is not None
-        if ipaddress.ip_address(lease.ip_address).version == 6:
-            assert lease.duid == "00:00:00"
-        else:
-            assert lease.duid is None
-        # The state is declined.
-        assert lease.state == 1
+    if data.items is not None:
+        for lease in data.items:
+            # Declined leases should lack identifiers.
+            assert lease.hw_address is None
+            assert lease.client_id is None
+            assert lease.ip_address is not None
+            if ipaddress.ip_address(lease.ip_address).version == 6:
+                assert lease.duid == "00:00:00"
+            else:
+                assert lease.duid is None
+            # The state is declined.
+            assert lease.state == 1
 
-    # Sanity checks of leases.
-    assert data.items[0].ip_address == "192.0.2.1"
-    if version >= (2, 3, 8):
-        assert data.items[10].ip_address == "3001:db8:1:42::1"
-    assert data.conflicts is None
+        # Sanity checks of leases.
+        assert data.items[0].ip_address == "192.0.2.1"
+        if version >= (2, 3, 8):
+            assert data.items[10].ip_address == "3001:db8:1:42::1"
+        assert data.conflicts is None
 
     # Blank search text should return none leases
     data = server_service.list_leases()

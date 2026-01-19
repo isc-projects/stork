@@ -277,7 +277,11 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             params["host_id"] = host_id
 
         api_instance = DHCPApi(self._api_client)
-        return api_instance.get_leases(**params)
+        results = api_instance.get_leases(**params)
+        if results.items is not None:
+            items = sorted(results.items, key=lambda i: i.ip_address)
+            results.items = items
+        return results
 
     def list_hosts(self, text=None, limit=100, start=0) -> Hosts:
         """Lists the hosts based on the host identifier."""
