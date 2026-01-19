@@ -616,7 +616,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         this.fetchAppsCompletedCount = 0
 
         lastValueFrom(
-            this.dnsService.putZonesFetch(forcePopulateZoneInventory || undefined).pipe(
+            this.dnsService.putZonesFetch(forcePopulateZoneInventory).pipe(
                 tap(() => (this.fetchInProgress = true)),
                 delay(500), // Trigger refreshFetchStatusTable() with small delay - smaller deployments will likely have 200 Ok ZoneInventoryStates response there.
                 concatMap((resp) => {
