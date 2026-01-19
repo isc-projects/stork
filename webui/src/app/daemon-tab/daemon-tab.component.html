@@ -4,12 +4,12 @@
             <div class="daemon-header">
                 <div class="text-xl text-primary">
                     <i class="fa fa-server pr-2"></i>
-                    <app-entity-link
-                        [showEntityName]="false"
-                        entity="daemon"
-                        [attrs]="daemon"
+                    Daemon
+                    <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon"
                     ></app-entity-link>
                     <i class="{{ daemonStatusIconClass }} text-xl" pTooltip="{{ daemonStatusIconTooltip }}"></i>
+                    on machine
+                    <app-entity-link [showEntityName]="false" [attrs]="daemon.machine" entity="machine"></app-entity-link>
                 </div>  
             </div>
             <p-button

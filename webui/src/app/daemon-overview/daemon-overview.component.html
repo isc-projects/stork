@@ -1,10 +1,4 @@
 <table *ngIf="daemon" class="access-point-list">
-    <tr>
-        <td class="p-1">Machine:</td>
-        <td>
-            <app-entity-link [showEntityName]="false" [attrs]="daemon.machine" entity="machine"></app-entity-link>
-        </td>
-    </tr>
     <tr *ngFor="let ap of daemon.accessPoints">
         <td class="access-point-list__label capitalize-first p-1">{{ ap.type }} access point:</td>
         <td class="word-break-all">{{ formatAddress(ap.address) }}:{{ ap.port }}</td>
