@@ -55,8 +55,10 @@ describe('GlobalSearchComponent', () => {
         expect(daemonsDiv.children.length).toBe(2)
         const daemonDiv = daemonsDiv.children[1]
         expect(daemonDiv.children.length).toBe(1)
-        const daemonAnchor = daemonDiv.children[0]
-        expect(daemonAnchor.nativeElement.innerText).toBe('dhcp-server')
-        expect(daemonAnchor.attributes.href).toBe('/daemons/1')
+        // Entity link component wraps the daemon display
+        const daemonLink = daemonDiv.query(By.css('#daemon-link-1'))
+        expect(daemonLink).toBeTruthy()
+        expect(daemonLink.nativeElement.innerText).toBe('[1] dhcp-server')
+        expect(daemonLink.attributes.href).toBe('/daemons/1')
     })
 })

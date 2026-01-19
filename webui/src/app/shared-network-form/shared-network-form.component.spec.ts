@@ -677,7 +677,7 @@ describe('SharedNetworkFormComponent', () => {
         expect(parameters.get('allocator.values.0')?.value).toBe('iterative')
 
         expect(component.state.servers.length).toBe(1)
-        expect(component.state.servers[0]).toBe('dhcp4')
+        expect(component.state.servers[0]).toBe('[2] DHCPv4')
     })
 
     it('should create the form for the selected server', async () => {
