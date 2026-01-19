@@ -37,11 +37,6 @@ export class Bind9DaemonComponent {
     @Input() daemon: Bind9Daemon
 
     /**
-     * All zone types except builtin type.
-     */
-    configuredZoneTypes: string[] = Object.values(DNSZoneType).filter((t) => t !== DNSZoneType.Builtin)
-
-    /**
      * Get cache effectiveness based on stats for a BIND9 view.
      *
      * @param view is a data structure holding the information about the BIND9 view.
