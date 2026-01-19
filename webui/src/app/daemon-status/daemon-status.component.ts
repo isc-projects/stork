@@ -15,10 +15,16 @@ import { Tooltip } from 'primeng/tooltip'
 export class DaemonStatusComponent {
     @Input({ required: true }) daemon: AnyDaemon
 
+    /**
+     * Returns tooltip for the icon presented for the daemon status
+     */
     get daemonStatusIconTooltip() {
         return daemonStatusIconTooltip(this.daemon)
     }
 
+    /**
+     * Returns the CSS class to display the icon to be used to indicate daemon status
+     */
     get daemonStatusIconClass() {
         return daemonStatusIconClass(this.daemon)
     }
