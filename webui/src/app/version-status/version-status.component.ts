@@ -106,9 +106,8 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Friendly display name for the daemon. Computed using daemonNameToFriendlyName.
      * For 'stork' daemon, it returns 'Stork agent'.
-     * @private
      */
-    private _daemonDisplayName: string
+    daemonDisplayName: string
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
@@ -157,9 +156,9 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         }
         // Set display name using daemonNameToFriendlyName, with special case for stork
         if (this.daemonName === 'stork') {
-            this._daemonDisplayName = 'Stork agent'
+            this.daemonDisplayName = 'Stork agent'
         } else {
-            this._daemonDisplayName = daemonNameToFriendlyName(this.daemonName)
+            this.daemonDisplayName = daemonNameToFriendlyName(this.daemonName)
         }
         // Mute version checks for non-ISC apps. Version is mandatory. In case it is
         // false (undefined, null, empty string), simply return. No feedback will be displayed.
@@ -217,13 +216,6 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      */
     ngOnDestroy(): void {
         this._subscriptions.unsubscribe()
-    }
-
-    /**
-     * Getter of the friendly display name for the daemon.
-     */
-    get daemonDisplayName() {
-        return this._daemonDisplayName
     }
 
     /**

@@ -6,11 +6,11 @@
                     <i class="fa fa-server pr-2"></i>
                     Daemon
                     <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon"></app-entity-link>
-                    <i class="{{ daemonStatusIconClass }} text-xl" pTooltip="{{ daemonStatusIconTooltip }}"></i>
+                    <i class="{{ daemonStatusIconClass() }} text-xl" pTooltip="{{ daemonStatusIconTooltip() }}"></i>
                     on machine
                     <app-entity-link
                         [showEntityName]="false"
-                        [attrs]="daemon.machine"
+                        [attrs]="daemon().machine"
                         entity="machine"
                     ></app-entity-link>
                 </div>
@@ -19,12 +19,12 @@
                 label="Refresh"
                 icon="pi pi-refresh"
                 (onClick)="refresh()"
-                [disabled]="daemon.id === undefined"
+                [disabled]="daemon().id === undefined"
             ></p-button>
         </div>
     </div>
 
-    <app-kea-daemon *ngIf="isKeaDaemon" [daemon]="daemon"></app-kea-daemon>
-    <app-bind9-daemon *ngIf="daemon.name === 'named'" [daemon]="daemon"></app-bind9-daemon>
-    <app-pdns-daemon *ngIf="daemon.name === 'pdns'" [daemon]="daemon"></app-pdns-daemon>
+    <app-kea-daemon *ngIf="isKeaDaemon()" [daemon]="daemon()"></app-kea-daemon>
+    <app-bind9-daemon *ngIf="daemon().name === 'named'" [daemon]="daemon()"></app-bind9-daemon>
+    <app-pdns-daemon *ngIf="daemon().name === 'pdns'" [daemon]="daemon()"></app-pdns-daemon>
 </div>

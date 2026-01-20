@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core'
+import { Component, computed, input } from '@angular/core'
 
 import { daemonStatusIconClass, daemonStatusIconTooltip } from '../utils'
 import { AnyDaemon } from '../backend'
@@ -13,19 +13,15 @@ import { Tooltip } from 'primeng/tooltip'
     imports: [RouterLink, DaemonNiceNamePipe, Tooltip],
 })
 export class DaemonStatusComponent {
-    @Input({ required: true }) daemon: AnyDaemon
+    daemon = input<AnyDaemon>(null)
 
     /**
-     * Returns tooltip for the icon presented for the daemon status
+     * Tooltip for the icon presented for the daemon status
      */
-    get daemonStatusIconTooltip() {
-        return daemonStatusIconTooltip(this.daemon)
-    }
+    daemonStatusIconTooltip = computed(() => daemonStatusIconTooltip(this.daemon()))
 
     /**
-     * Returns the CSS class to display the icon to be used to indicate daemon status
+     * The CSS class to display the icon to be used to indicate daemon status
      */
-    get daemonStatusIconClass() {
-        return daemonStatusIconClass(this.daemon)
-    }
+    daemonStatusIconClass = computed(() => daemonStatusIconClass(this.daemon()))
 }

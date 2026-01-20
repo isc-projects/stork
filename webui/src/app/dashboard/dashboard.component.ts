@@ -171,7 +171,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     zoneInventoryStateMap: Map<number, ZoneInventoryState> = new Map()
 
     /**
-     * Returns true when no kea and no DNS daemons exist among authorized machines;
+     * Indicates when no kea and no DNS daemons exist among authorized machines;
      * false otherwise.
      */
     get noDaemons(): boolean {

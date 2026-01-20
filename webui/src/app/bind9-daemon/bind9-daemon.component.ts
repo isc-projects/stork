@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { Bind9Daemon, Bind9DaemonView, DNSZoneType } from '../backend'
+import { Bind9Daemon, Bind9DaemonView } from '../backend'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { RouterLink } from '@angular/router'
 import { NgFor, NgIf } from '@angular/common'

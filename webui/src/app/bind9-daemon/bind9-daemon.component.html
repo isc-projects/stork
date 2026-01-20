@@ -14,9 +14,7 @@
             </div>
             <div class="col-12 sm:col-3 pb-0 font-medium">Zone Configs Count</div>
             <div class="col-12 sm:col-9">
-                <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemon.id }">{{
-                    daemon.zoneCount
-                }}</a>
+                <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemon.id }">{{ daemon.zoneCount }}</a>
             </div>
             <span class="col-12 mt-2 mb-2 pl-1 pb-2 border-bottom-1 surface-border font-bold text-lg">
                 Access points
