@@ -3,7 +3,7 @@
     "ignorePatterns": ["projects/**/*", "src/app/backend/**/*"],
     "overrides": [
         {
-            "plugins": ["jsdoc", "unused-imports"],
+            "plugins": ["jsdoc", "unused-imports", "@typescript-eslint"],
             "files": ["*.ts"],
             "parserOptions": {
                 "project": ["tsconfig.json"],
@@ -12,6 +12,8 @@
             "extends": [
                 "plugin:@angular-eslint/recommended",
                 "plugin:@angular-eslint/template/process-inline-templates"
+                // TODO: Uncomment when there is time to fix all TS linting issues.
+                // "plugin:@typescript-eslint/recommended"
             ],
             "rules": {
                 "@angular-eslint/component-selector": [
@@ -43,8 +45,9 @@
                         "checkSetters": false
                     }
                 ],
-                "unused-imports/no-unused-imports": "error",
-                "unused-imports/no-unused-vars": [
+                "unused-imports/no-unused-imports": "off",
+                "unused-imports/no-unused-vars": "off",
+                "@typescript-eslint/no-unused-vars": [
                     "error",
                     {
                         "args": "all",
