@@ -71,9 +71,9 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         InputText,
         RouterLink,
         VersionStatusComponent,
-        DaemonTabComponent,
         Tooltip,
         EntityLinkComponent,
+        DaemonTabComponent,
     ],
 })
 export class DaemonsPageComponent implements OnInit, OnDestroy {
