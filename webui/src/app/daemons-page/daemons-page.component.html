@@ -189,9 +189,7 @@
                         ></app-entity-link>
                     </td>
                     <td>
-                        <a routerLink="/daemons/{{ d.id }}">
-                            <app-version-status [daemonName]="d.name" [version]="d.version"></app-version-status>
-                        </a>
+                        <app-version-status [daemonName]="d.name" [version]="d.version"></app-version-status>
                     </td>
                     <td>
                         <span pTooltip="{{ daemonStatusIconTooltip(d) }}">

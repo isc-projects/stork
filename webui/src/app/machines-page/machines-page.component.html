@@ -365,9 +365,8 @@ sudo ./stork-install-agent.sh</textarea
                 <div class="col-12 md:col-6">
                     <h3 class="underlined">Daemons</h3>
                     <div class="inline-flex flex-column gap-1">
-                        <a
+                        <div
                             *ngFor="let daemon of machineTab?.daemons"
-                            routerLink="/daemons/{{ daemon.id }}"
                             class="flex flex-row justify-content-between"
                         >
                             <app-daemon-status [daemon]="daemon"></app-daemon-status>
@@ -375,7 +374,7 @@ sudo ./stork-install-agent.sh</textarea
                                 [daemonName]="daemon.name"
                                 [version]="daemon.version"
                             ></app-version-status>
-                        </a>
+                        </div>
                     </div>
                 </div>
             </div>
