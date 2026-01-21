@@ -123,7 +123,7 @@ func TestNewCommandLease6GetByHostname(t *testing.T) {
 
 // Tests lease4-get-by-hostname command.
 func TestNewCommandLease4GetByState(t *testing.T) {
-	command := NewCommandLease4GetByState("declined")
+	command := NewCommandLease4GetByState(LeaseStateDeclined)
 	require.NotNil(t, command)
 	require.Len(t, command.Daemons, 1)
 	bytes, err := command.Marshal()
@@ -132,14 +132,14 @@ func TestNewCommandLease4GetByState(t *testing.T) {
 		"command": "lease4-get-by-state",
 		"service": ["dhcp4"],
 		"arguments": {
-			"state": "declined"
+			"state": 1
 		}
 	}`, string(bytes))
 }
 
 // Tests lease6-get-by-hostname command.
 func TestNewCommandLease6GetByState(t *testing.T) {
-	command := NewCommandLease6GetByState("declined")
+	command := NewCommandLease6GetByState(LeaseStateDeclined)
 	require.NotNil(t, command)
 	require.Len(t, command.Daemons, 1)
 	bytes, err := command.Marshal()
@@ -148,7 +148,67 @@ func TestNewCommandLease6GetByState(t *testing.T) {
 		"command": "lease6-get-by-state",
 		"service": ["dhcp6"],
 		"arguments": {
-			"state": "declined"
+			"state": 1
 		}
 	}`, string(bytes))
+}
+
+// Tests ParseLeaseState to ensure it handles all valid lease state names.
+func TestParseLeaseState(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		input                 string
+		expectedOutput        LeaseState
+		expectedErrorContains string
+	}{
+		{
+			LeaseStateAssignedStr,
+			LeaseStateAssigned,
+			"",
+		},
+		{
+			LeaseStateDeclinedStr,
+			LeaseStateDeclined,
+			"",
+		},
+		{
+			LeaseStateExpiredReclaimedStr,
+			LeaseStateExpiredReclaimed,
+			"",
+		},
+		{
+			LeaseStateReleasedStr,
+			LeaseStateReleased,
+			"",
+		},
+		{
+			LeaseStateRegisteredStr,
+			LeaseStateRegistered,
+			"",
+		},
+		{
+			"foo",
+			LeaseStateAssigned,
+			"foo",
+		},
+		// spelling error
+		{
+			"declnied",
+			LeaseStateAssigned,
+			"declnied",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			t.Parallel()
+			result, err := ParseLeaseState(test.input)
+			require.Equal(t, test.expectedOutput, result)
+			if test.expectedErrorContains != "" {
+				require.ErrorContains(t, err, test.expectedErrorContains)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }

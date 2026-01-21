@@ -1,6 +1,10 @@
 package keactrl
 
-import "isc.org/stork/datamodel/daemonname"
+import (
+	errors "github.com/pkg/errors"
+
+	"isc.org/stork/datamodel/daemonname"
+)
 
 // Lease type specified in the commands.
 type LeaseType string
@@ -20,6 +24,24 @@ const (
 	Lease4GetByHWAddress CommandName = "lease4-get-by-hw-address"
 	Lease4GetByState     CommandName = "lease4-get-by-state"
 	Lease6GetByState     CommandName = "lease6-get-by-state"
+)
+
+type LeaseState int
+
+const (
+	LeaseStateAssigned         = 0
+	LeaseStateDeclined         = 1
+	LeaseStateExpiredReclaimed = 2
+	LeaseStateReleased         = 3
+	LeaseStateRegistered       = 4
+)
+
+const (
+	LeaseStateAssignedStr         = "assigned"
+	LeaseStateDeclinedStr         = "declined"
+	LeaseStateExpiredReclaimedStr = "expired-reclaimed"
+	LeaseStateReleasedStr         = "released"
+	LeaseStateRegisteredStr       = "registered"
 )
 
 // Creates lease4-get command.
@@ -61,15 +83,34 @@ func NewCommandLease6GetByHostname(hostname string) *Command {
 }
 
 // Create lease4-get-by-state command.
-func NewCommandLease4GetByState(state string) *Command {
+func NewCommandLease4GetByState(state LeaseState) *Command {
 	return newCommand(Lease4GetByState, daemonname.DHCPv4, map[string]any{
-		"state": state,
+		"state": int(state),
 	})
 }
 
 // Create lease6-get-by-state command.
-func NewCommandLease6GetByState(state string) *Command {
+func NewCommandLease6GetByState(state LeaseState) *Command {
 	return newCommand(Lease6GetByState, daemonname.DHCPv6, map[string]any{
-		"state": state,
+		"state": int(state),
 	})
+}
+
+func ParseLeaseState(input string) (LeaseState, error) {
+	switch input {
+	case LeaseStateAssignedStr:
+		return LeaseStateAssigned, nil
+	case LeaseStateDeclinedStr:
+		return LeaseStateDeclined, nil
+	case LeaseStateExpiredReclaimedStr:
+		return LeaseStateExpiredReclaimed, nil
+	case LeaseStateReleasedStr:
+		return LeaseStateReleased, nil
+	case LeaseStateRegisteredStr:
+		return LeaseStateRegistered, nil
+	default:
+		return LeaseStateAssigned, errors.Errorf(
+			"invalid lease state string: '%s'", input,
+		)
+	}
 }

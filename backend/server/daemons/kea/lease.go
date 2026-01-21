@@ -163,9 +163,17 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, daemon *dbmodel.Dae
 		case keactrl.Lease6GetByHostname:
 			command = keactrl.NewCommandLease6GetByHostname(propertyValue)
 		case keactrl.Lease4GetByState:
-			command = keactrl.NewCommandLease4GetByState(propertyValue)
+			state, err := keactrl.ParseLeaseState(propertyValue)
+			if err != nil {
+				return nil, false, err
+			}
+			command = keactrl.NewCommandLease4GetByState(state)
 		case keactrl.Lease6GetByState:
-			command = keactrl.NewCommandLease6GetByState(propertyValue)
+			state, err := keactrl.ParseLeaseState(propertyValue)
+			if err != nil {
+				return nil, false, err
+			}
+			command = keactrl.NewCommandLease6GetByState(state)
 		default:
 			continue
 		}

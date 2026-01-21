@@ -1762,17 +1762,17 @@ func TestFindDeclinedLeasesWithGetByStatusAPI(t *testing.T) {
 	require.Equal(t, keactrl.Lease4GetByState, agents.RecordedCommands[0].GetCommand())
 	require.Equal(t, keactrl.Lease6GetByState, agents.RecordedCommands[1].GetCommand())
 
-	// Ensure that the state in the command is "declined".
+	// Ensure that the state in the command is "declined" (1).
 	arguments := agents.GetCommandArguments(0)
 	require.NotNil(t, arguments)
 	require.Contains(t, arguments, "state")
-	require.Equal(t, "declined", arguments["state"])
+	require.Equal(t, 1, arguments["state"])
 
-	// Ensure that the state in the second command is "declined".
+	// Ensure that the state in the second command is "declined" (1).
 	arguments = agents.GetCommandArguments(1)
 	require.NotNil(t, arguments)
 	require.Contains(t, arguments, "state")
-	require.Equal(t, "declined", arguments["state"])
+	require.Equal(t, 1, arguments["state"])
 }
 
 // Test searching leases associated with a host reservation.
