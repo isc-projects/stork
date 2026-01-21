@@ -608,6 +608,7 @@ system_test:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare:systemtest
   variables:
+    KEA_VERSION: latest-stable
     # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
     # binary fetched by the Rake script. Additionally, the binaries for alpine
     # are missing on the NodeJS page. We cannot use the image based on Debian
@@ -628,10 +629,19 @@ system_test:
     reports:
       junit: tests/system/test-results/junit.xml
 
-system_test_kea_2.6:
+system_test_old_stable_kea:
   extends: system_test
   variables:
-    KEA_VERSION: 2.6.4-isc20250717094354
+    KEA_VERSION: old-stable
+    ONLY_KEA_TESTS: "true"
+  script:
+    - rake systemtest
+  artifacts: {}
+
+system_test_latest_dev_kea:
+  extends: system_test
+  variables:
+    KEA_VERSION: latest-dev
     ONLY_KEA_TESTS: "true"
   script:
     - rake systemtest

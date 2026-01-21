@@ -67,6 +67,36 @@ def check_hosts_and_print_hint(compose_files)
     return unknown_hostnames.empty?
 end
 
+# Get released versions for BIND, Kea, or Stork, using the ISC-hosted versions.json file.
+#
+# Includes stable releases and the latest dev version.
+#
+# app - String name of the app ("bind9", "kea", or "stork").
+#
+# Example:
+#   get_versions("kea")
+#   # => { "latest-dev" => "3.1.4", "latest-stable" => "3.0.2", "old-stable" => "2.6.4" }
+#
+# Returns a hash with the three relevant versions.
+def get_versions(app)
+    require "net/http"
+    require "json"
+
+    uri = URI("https://www.isc.org/versions.json")
+    response = Net::HTTP.get_response(uri)
+    data = JSON.parse(response.body)
+    entries = data[app]
+
+    stable_versions = entries["currentStable"].map { |i| i["version"] }.sort
+    dev_version = entries["latestDev"]["version"]
+
+    {
+        "latest-dev" => dev_version,
+        "latest-stable" => stable_versions[1],
+        "old-stable" => stable_versions[0]
+    }
+end
+
 #############
 ### Files ###
 #############
@@ -184,6 +214,7 @@ desc 'Run system tests
             - MAJOR.MINOR
             - MAJOR.MINOR.PATCH
             - MAJOR.MINOR.PATCH-REVISION
+            - specific keywords: latest-dev, latest-stable, old-stable
     BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
     POSTGRES_VERSION - use specific Postgres database version - optional
     EXIT_FIRST - exit on the first error - optional, default: false
@@ -228,95 +259,92 @@ namespace :systemtest do
     # Sets up the environment variables with Kea and Bind9 versions. Internal task.
     task :setup_version_envvars do
         # Parse Kea version
-        if !ENV["KEA_VERSION"].nil?
-            kea_version = ENV["KEA_VERSION"]
+        kea_version = ENV["KEA_VERSION"].nil? ? "latest-stable" : ENV["KEA_VERSION"]
+        kea_version = get_versions("kea")[kea_version] if %w[latest-dev latest-stable old-stable].include?(kea_version)
+        puts "Running system tests with Kea version #{kea_version}"
 
-            # Reject packages for Kea prior to 2.0.0
-            kea_eol_major=1
-            kea_eol_minor=9
+        # Reject packages for Kea prior to 2.0.0
+        kea_eol_major=1
+        kea_eol_minor=9
 
-            # Split the version on dash and get the first part. Split it by dots.
-            components = kea_version.split('-')[0].split('.')
-            if components.length < 2
-                fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable"
-            end
-            if components.length >= 3
-                kea_version_patch = components[2]
-            end
-            if components.length > 3
-                warn "KEA_VERSION variable contains more than 3 components - ignoring the rest"
-            end
-
-            components.each do |c|
-                if c.nil?
-                    next
-                end
-                if c == ""
-                    fail "KEA_VERSION variable contains an empty component"
-                end
-                if c !~ /^\d+$/
-                    fail "KEA_VERSION variable contains a non-numeric component"
-                end
-            end
-
-            # Enhance the Kea version with wildcard if the full package is not provided.
-            if components.length == 2
-                # Add patch wildcard if not provided.
-                kea_version += ".*"
-            elsif !kea_version.include? '-'
-                # Add revision wildcard if the full package name is not provided.
-                kea_version += "-*"
-            end
-
-            kea_version_info = components.map { |x| x.to_i }
-            if kea_version_info.length == 2
-                # If the patch is not provided explicitly, the recent patch
-                # version is used. We assume it is always bigger than the
-                # version thresholds below.
-                kea_version_info.append 1000
-            end
-
-            # Set the environment variables indicating the versions that
-            # changed the package structure.
-            if (kea_version_info <=> [kea_eol_major, kea_eol_minor]) <= 0  then
-                fail "You need to specify a newer version than #{kea_eol_major}.#{kea_eol_minor} which is EOL."
-            end
-
-            kea_prior_2_3_0 = false
-            kea_prior_2_7_5 = false
-            kea_prior_2_7_7 = false
-
-            if (kea_version_info <=> [2, 7, 7]) < 0 then
-                kea_prior_2_7_7 = true
-            end
-
-            if (kea_version_info <=> [2, 7, 5]) < 0 then
-                kea_prior_2_7_5 = true
-            end
-
-            if (kea_version_info <=> [2, 3, 0]) < 0 then
-                kea_prior_2_3_0 = true
-            end
-
-            # Use single development repository for Kea 2.7.0 and newer.
-            directory = "isc/kea-#{kea_version_info[0]}-#{kea_version_info[1]}"
-            is_development_version = kea_version_info[1] % 2 == 1
-            if is_development_version &&
-                (kea_version_info <=> [2, 7]) >= 0 then
-                directory = "isc/kea-dev"
-            end
-
-            ENV["KEA_PUBLIC_REPO"] = "public/#{directory}"
-            ENV["KEA_PREMIUM_REPO"] = "#{ENV["CS_REPO_ACCESS_TOKEN"]}/#{directory}-prv"
-            if !kea_prior_2_7_7 then
-                ENV["KEA_PREMIUM_REPO"] = ENV["KEA_PUBLIC_REPO"]
-            end
-
-            ENV["KEA_VERSION"] = kea_version
-            ENV["KEA_PRIOR_2_3_0"] = kea_prior_2_3_0 ? "true" : "false"
-            ENV["KEA_PRIOR_2_7_5"] = kea_prior_2_7_5 ? "true" : "false"
-            ENV["KEA_PRIOR_2_7_7"] = kea_prior_2_7_7 ? "true" : "false"
+        # Split the version on dash and get the first part. Split it by dots.
+        components = kea_version.split('-')[0].split('.')
+        if components.length < 2
+            fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable"
         end
+        if components.length > 3
+            warn "KEA_VERSION variable contains more than 3 components - ignoring the rest"
+        end
+
+        components.each do |c|
+            if c.nil?
+                next
+            end
+            if c == ""
+                fail "KEA_VERSION variable contains an empty component"
+            end
+            if c !~ /^\d+$/
+                fail "KEA_VERSION variable contains a non-numeric component"
+            end
+        end
+
+        # Enhance the Kea version with wildcard if the full package is not provided.
+        if components.length == 2
+            # Add patch wildcard if not provided.
+            kea_version += ".*"
+        elsif !kea_version.include? '-'
+            # Add revision wildcard if the full package name is not provided.
+            kea_version += "-*"
+        end
+
+        kea_version_info = components.map { |x| x.to_i }
+        if kea_version_info.length == 2
+            # If the patch is not provided explicitly, the recent patch
+            # version is used. We assume it is always bigger than the
+            # version thresholds below.
+            kea_version_info.append 1000
+        end
+
+        # Set the environment variables indicating the versions that
+        # changed the package structure.
+        if (kea_version_info <=> [kea_eol_major, kea_eol_minor]) <= 0  then
+            fail "You need to specify a newer version than #{kea_eol_major}.#{kea_eol_minor} which is EOL."
+        end
+
+        kea_prior_2_3_0 = false
+        kea_prior_2_7_5 = false
+        kea_prior_2_7_7 = false
+
+        if (kea_version_info <=> [2, 7, 7]) < 0 then
+            kea_prior_2_7_7 = true
+        end
+
+        if (kea_version_info <=> [2, 7, 5]) < 0 then
+            kea_prior_2_7_5 = true
+        end
+
+        if (kea_version_info <=> [2, 3, 0]) < 0 then
+            kea_prior_2_3_0 = true
+        end
+
+        # Use single development repository for Kea 2.7.0 and newer.
+        directory = "isc/kea-#{kea_version_info[0]}-#{kea_version_info[1]}"
+        is_development_version = kea_version_info[1] % 2 == 1
+        if is_development_version &&
+            (kea_version_info <=> [2, 7]) >= 0 then
+            directory = "isc/kea-dev"
+        end
+
+        ENV["KEA_PUBLIC_REPO"] = "public/#{directory}"
+        ENV["KEA_PREMIUM_REPO"] = "#{ENV["CS_REPO_ACCESS_TOKEN"]}/#{directory}-prv"
+        if !kea_prior_2_7_7 then
+            ENV["KEA_PREMIUM_REPO"] = ENV["KEA_PUBLIC_REPO"]
+        end
+
+        ENV["KEA_VERSION"] = kea_version
+        ENV["KEA_PRIOR_2_3_0"] = kea_prior_2_3_0 ? "true" : "false"
+        ENV["KEA_PRIOR_2_7_5"] = kea_prior_2_7_5 ? "true" : "false"
+        ENV["KEA_PRIOR_2_7_7"] = kea_prior_2_7_7 ? "true" : "false"
     end
 
     desc 'List the test cases'
@@ -367,6 +395,7 @@ namespace :systemtest do
                 - MAJOR.MINOR
                 - MAJOR.MINOR.PATCH
                 - MAJOR.MINOR.PATCH-REVISION
+                - specific keywords: latest-dev, latest-stable, old-stable
         BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
     '
     task :sh => volume_files + [DOCKER_COMPOSE, :setup_version_envvars] do |t, args|
