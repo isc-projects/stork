@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
-import { AppsVersions, GeneralService, SimpleMachine } from './backend'
+import { AppsVersions, Daemon, DNSDaemonName, GeneralService, SimpleMachine } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable, tap } from 'rxjs'
+import { daemonNameToFriendlyName } from './utils'
 
 /**
  * Interface defining fields for an object which is returned after
@@ -38,22 +39,25 @@ export interface UpdateNotification {
 export type AppType = 'kea' | 'bind9' | 'pdns' | 'stork'
 
 /**
- * Daemon names for Kea daemons.
- */
-const KEA_DAEMON_NAMES = ['dhcp4', 'dhcp6', 'd2', 'ca', 'netconf']
-
-/**
  * Type for all possible daemon names that may be monitored by Stork.
  */
-export type DaemonName = 'dhcp4' | 'dhcp6' | 'd2' | 'ca' | 'netconf' | 'named' | 'pdns' | 'stork'
+export type DaemonName = Daemon.NameEnum | 'stork'
 
 /**
  * Returns true if the daemon name is a Kea daemon.
  * @param daemonName The daemon name to check
  * @returns true if it's a Kea daemon (dhcp4, dhcp6, d2, ca, netconf)
  */
-export function isKeaDaemon(daemonName: string): boolean {
-    return KEA_DAEMON_NAMES.includes(daemonName)
+export function isKeaDaemon(daemonName: DaemonName): boolean {
+    switch (daemonName) {
+        case Daemon.NameEnum.Ca:
+        case Daemon.NameEnum.Dhcp4:
+        case Daemon.NameEnum.Dhcp6:
+        case Daemon.NameEnum.D2:
+        case Daemon.NameEnum.Netconf:
+            return true
+    }
+    return false
 }
 
 /**
@@ -64,12 +68,12 @@ export function isKeaDaemon(daemonName: string): boolean {
 export function isIscDaemon(daemonName: DaemonName): boolean {
     switch (daemonName) {
         case 'stork':
-        case 'dhcp4':
-        case 'dhcp6':
-        case 'd2':
-        case 'ca':
-        case 'netconf':
-        case 'named':
+        case Daemon.NameEnum.Dhcp4:
+        case Daemon.NameEnum.Dhcp6:
+        case Daemon.NameEnum.D2:
+        case Daemon.NameEnum.Ca:
+        case Daemon.NameEnum.Netconf:
+        case Daemon.NameEnum.Named:
             return true
     }
 
@@ -80,19 +84,19 @@ export function isIscDaemon(daemonName: DaemonName): boolean {
  * Returns the app type for given daemon name.
  * @param daemonName The daemon name to check
  */
-export function getDaemonAppType(daemonName: DaemonName): AppType {
+function getDaemonAppType(daemonName: DaemonName): AppType {
     switch (daemonName) {
         case 'stork':
             return 'stork'
-        case 'dhcp4':
-        case 'dhcp6':
-        case 'ca':
-        case 'd2':
-        case 'netconf':
+        case Daemon.NameEnum.Dhcp4:
+        case Daemon.NameEnum.Dhcp6:
+        case Daemon.NameEnum.Ca:
+        case Daemon.NameEnum.D2:
+        case Daemon.NameEnum.Netconf:
             return 'kea'
-        case 'named':
+        case Daemon.NameEnum.Named:
             return 'bind9'
-        case 'pdns':
+        case Daemon.NameEnum.Pdns:
             return 'pdns'
     }
 }
@@ -257,6 +261,9 @@ export class VersionService {
                 messages: ["Couldn't asses the software version."],
             }
         }
+
+        const formattedDaemonName = daemonName === 'stork' ? 'Stork agent' : daemonNameToFriendlyName(daemonName)
+
         const app = getDaemonAppType(daemonName)
         const cacheKey = version + app
         const cachedFeedback = this._checkedVersionCache?.get(cacheKey)

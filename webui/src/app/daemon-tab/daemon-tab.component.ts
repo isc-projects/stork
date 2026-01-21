@@ -17,7 +17,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
     imports: [Tooltip, Button, KeaDaemonComponent, Bind9DaemonComponent, PdnsDaemonComponent, EntityLinkComponent],
 })
 export class DaemonTabComponent {
-    daemon = input<AnyDaemon>()
+    daemon = input<AnyDaemon>(null)
     @Output() refreshDaemon = new EventEmitter<number>()
 
     /**
