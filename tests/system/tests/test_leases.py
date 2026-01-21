@@ -5,7 +5,7 @@ import ipaddress
 from core.wrappers import Server, Kea
 
 
-def helper_declined_leases(version: (int, int, int), server_service: Server):
+def fetch_and_assert_declined_leases(version: (int, int, int), server_service: Server):
     """Test the declined leases search query specifically.
 
     This is a helper function for test_search_leases because that function got
@@ -97,7 +97,7 @@ def test_search_leases(kea_service: Kea, server_service: Server):
     assert data.conflicts is None
 
     # Search declined leases.
-    helper_declined_leases(version, server_service)
+    fetch_and_assert_declined_leases(version, server_service)
 
     # Blank search text should return none leases
     data = server_service.list_leases()

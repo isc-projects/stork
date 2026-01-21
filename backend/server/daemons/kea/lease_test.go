@@ -1336,7 +1336,7 @@ func TestFindLeasesTooShortDUID(t *testing.T) {
 // also verifies that the commands sent to Kea are formatted correctly, i.e.
 // contain empty MAC address and empty DUID. Finally, the test verifies that
 // erred apps are returned if any of the commands returns an error.
-func TestFindDeclinedLeasesUsingStatusHack(t *testing.T) {
+func TestFindDeclinedLeasesUsingStatusLegacy(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
