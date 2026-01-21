@@ -212,7 +212,10 @@ desc 'Run system tests
             - MAJOR.MINOR.PATCH
             - MAJOR.MINOR.PATCH-REVISION
             - specific keywords: latest-dev, latest-stable, old-stable
-    BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
+    BIND9_VERSION - use specific BIND9 version - optional
+        Supported version formats:
+            - MAJOR.MINOR
+            - specific keywords: latest-dev, latest-stable, old-stable
     POSTGRES_VERSION - use specific Postgres database version - optional
     EXIT_FIRST - exit on the first error - optional, default: false
     ONLY_KEA_TESTS - run only Kea-related tests - optional, default: false'
@@ -255,10 +258,13 @@ end
 namespace :systemtest do
     # Sets up the environment variables with Kea and Bind9 versions. Internal task.
     task :setup_version_envvars do
-        # Parse Kea version
+        # Parse BIND9 and Kea versions.
+        bind9_version = ENV["BIND9_VERSION"].nil? ? "latest-stable" : ENV["BIND9_VERSION"]
+        bind9_version = get_versions("bind9")[bind9_version] if %w[latest-dev latest-stable old-stable].include?(bind9_version)
+        bind9_version = bind9_version.split(".").slice(0, 2).join(".")  # Keep only major.minor.
         kea_version = ENV["KEA_VERSION"].nil? ? "latest-stable" : ENV["KEA_VERSION"]
         kea_version = get_versions("kea")[kea_version] if %w[latest-dev latest-stable old-stable].include?(kea_version)
-        puts "Running system tests with Kea version #{kea_version}"
+        puts "Running system tests with BIND9 version #{bind9_version} and Kea version #{kea_version}"
 
         # Reject packages for Kea prior to 2.0.0
         kea_eol_major=1
@@ -338,6 +344,7 @@ namespace :systemtest do
             ENV["KEA_PREMIUM_REPO"] = ENV["KEA_PUBLIC_REPO"]
         end
 
+        ENV["BIND9_VERSION"] = bind9_version
         ENV["KEA_VERSION"] = kea_version
         ENV["KEA_PRIOR_2_3_0"] = kea_prior_2_3_0 ? "true" : "false"
         ENV["KEA_PRIOR_2_7_5"] = kea_prior_2_7_5 ? "true" : "false"
@@ -393,7 +400,10 @@ namespace :systemtest do
                 - MAJOR.MINOR.PATCH
                 - MAJOR.MINOR.PATCH-REVISION
                 - specific keywords: latest-dev, latest-stable, old-stable
-        BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
+        BIND9_VERSION - use specific BIND9 version - optional
+            Supported version formats:
+                - MAJOR.MINOR
+                - specific keywords: latest-dev, latest-stable, old-stable
     '
     task :sh => volume_files + [DOCKER_COMPOSE, :setup_version_envvars] do |t, args|
         if ENV["USE_BUILD_KIT"] != "false"
