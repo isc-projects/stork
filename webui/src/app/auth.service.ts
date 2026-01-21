@@ -31,7 +31,7 @@ export enum UserGroup {
 export type ManagedAccessEntity =
     | 'machines-server-token'
     | 'kea-config-hashes'
-    | 'app'
+    | 'daemon'
     | 'global-config-checkers'
     | 'daemon-config-checkers'
     | 'host-reservation'
@@ -40,7 +40,7 @@ export type ManagedAccessEntity =
     | 'shared-network'
     | 'subnet'
     | 'zones'
-    | 'app-access-point-key'
+    | 'access-point-key'
     | 'machine-address'
     | 'machine-authorization'
     | 'machine'
@@ -275,7 +275,7 @@ export class AuthService {
             return true
         } else if (this.isAdmin()) {
             switch (entityKey) {
-                case 'app-access-point-key': // Admin role is not enough to see Access Point Key (it is secret).
+                case 'access-point-key': // Admin role is not enough to see Access Point Key (it is secret).
                 case 'machines-server-token': // Admin role is not enough to see server token (it is secret).
                 case 'machine-authorization': // Admin role is not enough to authorize or unauthorize machine.
                 case 'users': // Admin role can't even read all users.
@@ -292,7 +292,7 @@ export class AuthService {
             }
         } else if (this.isInReadOnlyGroup()) {
             switch (entityKey) {
-                case 'app-access-point-key':
+                case 'access-point-key':
                 case 'machines-server-token':
                 case 'users':
                 case 'json-config-secret':
