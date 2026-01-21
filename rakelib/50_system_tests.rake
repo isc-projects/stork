@@ -67,7 +67,7 @@ def check_hosts_and_print_hint(compose_files)
     return unknown_hostnames.empty?
 end
 
-# Get released versions for BIND, Kea, or Stork, using the ISC-hosted versions.json file.
+# Get released versions for BIND, Kea, or Stork, using the local versions.json file.
 #
 # Includes stable releases and the latest dev version.
 #
@@ -79,12 +79,9 @@ end
 #
 # Returns a hash with the three relevant versions.
 def get_versions(app)
-    require "net/http"
     require "json"
 
-    uri = URI("https://www.isc.org/versions.json")
-    response = Net::HTTP.get_response(uri)
-    data = JSON.parse(response.body)
+    data = JSON.parse(File.read("etc/versions.json"))
     entries = data[app]
 
     stable_versions = entries["currentStable"].map { |i| i["version"] }.sort
