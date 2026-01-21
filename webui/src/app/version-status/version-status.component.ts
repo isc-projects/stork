@@ -1,7 +1,6 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import {
     DaemonName,
-    getDaemonAppType,
     isIscDaemon,
     Severity,
     VersionFeedback,
@@ -45,27 +44,6 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     @Input({ required: true }) version: string
 
     /**
-     * For inline component version, this flag enables showing the daemon name on the left side
-     * of the icon with the tooltip.
-     * Defaults to false.
-     */
-    @Input() showName = false
-
-    /**
-     * For inline component version, this flag enables showing the daemon version on the left side
-     * of the icon with the tooltip.
-     * Defaults to true.
-     */
-    @Input() showVersion = true
-
-    /**
-     * For inline component version, this flag enables showing the server app name on the left side
-     * of the icon with the tooltip.
-     * Defaults to false.
-     */
-    @Input() showAppName = false
-
-    /**
      * This flag sets whether the component has a form of inline icon with the tooltip,
      * or block message.
      * Defaults to true.
@@ -97,11 +75,6 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * Holds PrimeNG Message value for the block message.
      */
     messages: ToastMessageOptions[] | undefined
-
-    /**
-     * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on daemon name.
-     */
-    appName: string
 
     /**
      * Friendly display name for the daemon. Computed using daemonNameToFriendlyName.
@@ -136,24 +109,6 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      */
     ngOnInit(): void {
         this.iscApp = isIscDaemon(this.daemonName)
-        const app = getDaemonAppType(this.daemonName) as string
-        switch (app) {
-            case 'bind9':
-                this.appName = 'BIND9'
-                break
-            case 'pdns':
-                this.appName = 'PowerDNS'
-                break
-            case 'stork':
-                this.appName = 'Stork agent'
-                break
-            case 'kea':
-                this.appName = 'Kea'
-                break
-            default:
-                this.appName = app?.length ? app[0].toUpperCase() + app.slice(1) : ''
-                break
-        }
         // Set display name using daemonNameToFriendlyName, with special case for stork
         if (this.daemonName === 'stork') {
             this.daemonDisplayName = 'Stork agent'
@@ -233,7 +188,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         this.feedbackMessages = feedback.messages ?? []
         const m: ToastMessageOptions = {
             severity: Severity[feedback.severity],
-            summary: `${this.appName} ${this.version}`,
+            summary: `${this.daemonDisplayName} ${this.version}`,
             detail: feedback.messages.join('<br><br>'),
         }
 

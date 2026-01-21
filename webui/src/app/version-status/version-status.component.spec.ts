@@ -196,15 +196,9 @@ describe('VersionStatusComponent', () => {
     })
 
     it('should display daemon name and version', () => {
-        // Arrange
-        fixture.componentRef.setInput('showName', true)
-        fixture.componentRef.setInput('showVersion', true)
-
-        // Act & Assert
         setCorrectInputs()
         const container = fixture.nativeElement.querySelector('div')
         expect(container).toBeTruthy()
-        expect(container.textContent).toContain('DHCPv4')
         expect(container.textContent).toContain('2.6.1')
     })
 
