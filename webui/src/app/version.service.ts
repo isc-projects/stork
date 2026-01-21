@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
-import { AppsVersions, Daemon, DNSDaemonName, GeneralService, SimpleMachine } from './backend'
+import { AppsVersions, Daemon, GeneralService, SimpleMachine } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable, tap } from 'rxjs'
-import { daemonNameToFriendlyName } from './utils'
 
 /**
  * Interface defining fields for an object which is returned after
@@ -261,8 +260,6 @@ export class VersionService {
                 messages: ["Couldn't asses the software version."],
             }
         }
-
-        const formattedDaemonName = daemonName === 'stork' ? 'Stork agent' : daemonNameToFriendlyName(daemonName)
 
         const app = getDaemonAppType(daemonName)
         const cacheKey = version + app

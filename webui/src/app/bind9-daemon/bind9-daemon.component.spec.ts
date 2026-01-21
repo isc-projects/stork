@@ -39,7 +39,7 @@ describe('Bind9DaemonComponent', () => {
         const daemon: Daemon = {
             id: 1,
             name: Daemon.NameEnum.Named,
-            version: '9.18.30'
+            version: '9.18.30',
         }
         component.daemon = daemon
         fixture.detectChanges()

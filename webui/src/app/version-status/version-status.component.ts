@@ -1,11 +1,5 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
-import {
-    DaemonName,
-    isIscDaemon,
-    Severity,
-    VersionFeedback,
-    VersionService,
-} from '../version.service'
+import { DaemonName, isIscDaemon, Severity, VersionFeedback, VersionService } from '../version.service'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
