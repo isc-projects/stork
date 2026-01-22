@@ -5,7 +5,7 @@
                 <div class="text-xl text-primary">
                     <i class="fa fa-server pr-2"></i>
                     Daemon
-                    <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon"></app-entity-link>
+                    <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon()"></app-entity-link>
                     <i class="{{ daemonStatusIconClass() }} text-xl" pTooltip="{{ daemonStatusIconTooltip() }}"></i>
                     on machine
                     <app-entity-link
