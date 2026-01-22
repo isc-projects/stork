@@ -651,6 +651,13 @@ To search all declined leases, type ``state:declined`` in the search box. Be awa
 return a large result if there are many declined leases, and thus the query
 processing time may also increase.
 
+.. note::
+
+    Kea versions 3.1.1 through 3.1.4 do not support ``state:declined`` queries.
+    Prior to Kea 3.1.1, this kind of query was implemented using a mechanism
+    which exposed a Kea implementation detail.  In Kea 3.1.1, this exposure was
+    corrected. A suitable replacement API was not available until Kea 3.1.5.
+
 Searching using partial text is currently unsupported. For example, searching by
 partial IPv4 address ``192.0.2`` is not accepted by the search box. Partial MAC
 address ``01:02:03`` is accepted but will return no results. Specify the complete
