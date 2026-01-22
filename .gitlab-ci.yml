@@ -638,7 +638,6 @@ system_test_old_stables:
     ONLY_KEA_TESTS: "true"
   script:
     - rake systemtest
-  artifacts: {}
 
 system_test_latest_devs:
   extends: system_test
@@ -648,7 +647,6 @@ system_test_latest_devs:
     ONLY_KEA_TESTS: "true"
   script:
     - rake systemtest
-  artifacts: {}
 
 ### hooks ###
 build_hooks_amd64:
