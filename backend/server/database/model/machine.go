@@ -106,6 +106,10 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 		return nil, pkgerrors.Wrapf(err, "problem getting machine %s:%d", address, agentPort)
 	}
 
+	for _, daemon := range machine.Daemons {
+		daemon.Machine = &machine
+	}
+
 	return &machine, nil
 }
 
@@ -129,6 +133,10 @@ func GetMachineByAddressAndAccessPointPort(db *pg.DB, machineAddress string, acc
 		return nil, nil
 	} else if err != nil {
 		return nil, pkgerrors.Wrapf(err, "problem getting machine by the '%s' machine address and the '%d' access point port", machineAddress, accessPointPort)
+	}
+
+	for _, daemon := range machine.Daemons {
+		daemon.Machine = &machine
 	}
 
 	return &machine, nil
@@ -167,6 +175,10 @@ func getMachineByID(db *pg.DB, id int64, relations []string) (*Machine, error) {
 		return nil, pkgerrors.Wrapf(err, "problem getting machine %v", id)
 	}
 
+	for _, daemon := range machine.Daemons {
+		daemon.Machine = &machine
+	}
+
 	return &machine, nil
 }
 
@@ -178,6 +190,10 @@ func RefreshMachineFromDB(db *pg.DB, machine *Machine) error {
 	err := q.Select()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem getting machine %v", machine.ID)
+	}
+
+	for _, daemon := range machine.Daemons {
+		daemon.Machine = machine
 	}
 
 	return nil
@@ -274,6 +290,12 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 		return nil, 0, pkgerrors.Wrapf(err, "problem getting machines")
 	}
 
+	for _, machine := range machines {
+		for _, daemon := range machine.Daemons {
+			daemon.Machine = &machine
+		}
+	}
+
 	return machines, int64(total), nil
 }
 
@@ -305,6 +327,12 @@ func GetAllMachinesWithRelations(db *pg.DB, authorized *bool, relations ...Machi
 	err := q.Select()
 	if err != nil && errors.Is(err, pg.ErrNoRows) {
 		return nil, pkgerrors.Wrapf(err, "problem getting machines")
+	}
+
+	for _, machine := range machines {
+		for _, daemon := range machine.Daemons {
+			daemon.Machine = &machine
+		}
 	}
 
 	return machines, nil

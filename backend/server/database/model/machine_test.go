@@ -123,6 +123,7 @@ func TestGetMachineByAddress(t *testing.T) {
 	require.Equal(t, "localhost", m.Daemons[0].AccessPoints[0].Address)
 	require.EqualValues(t, 1234, m.Daemons[0].AccessPoints[0].Port)
 	require.Empty(t, m.Daemons[0].AccessPoints[0].Key)
+	require.Equal(t, m, m.Daemons[0].Machine)
 
 	// delete machine
 	err = DeleteMachine(db, m)
@@ -178,6 +179,7 @@ func TestGetMachineByID(t *testing.T) {
 	require.Equal(t, "abcd", m.Daemons[0].AccessPoints[0].Key)
 	require.Equal(t, daemonname.DHCPv4, m.Daemons[0].Name)
 	require.True(t, m.LastVisitedAt.IsZero())
+	require.Equal(t, m, m.Daemons[0].Machine)
 
 	// delete machine
 	err = DeleteMachine(db, m)
@@ -292,30 +294,39 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	sortMachineDaemonsByName(machineDaemons)
 	require.Nil(t, machineDaemons.Daemons[0].LogTargets)
 	require.Nil(t, machineDaemons.Daemons[0].KeaDaemon)
+	require.Equal(t, machineDaemons, machineDaemons.Daemons[0].Machine)
 	require.Nil(t, machineDaemons.Daemons[1].Bind9Daemon)
+	require.Equal(t, machineDaemons, machineDaemons.Daemons[1].Machine)
 	// Machine with kea daemons
 	require.Len(t, machineKeaDaemons.Daemons, 2)
 	sortMachineDaemonsByName(machineKeaDaemons)
 	require.Nil(t, machineKeaDaemons.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.Nil(t, machineKeaDaemons.Daemons[0].LogTargets)
+	require.Equal(t, machineKeaDaemons, machineKeaDaemons.Daemons[0].Machine)
 	require.Nil(t, machineKeaDaemons.Daemons[1].Bind9Daemon)
+	require.Equal(t, machineKeaDaemons, machineKeaDaemons.Daemons[1].Machine)
 	// Machine with Bind9 daemons
 	require.Len(t, machineBind9Daemons.Daemons, 2)
 	sortMachineDaemonsByName(machineBind9Daemons)
 	require.Nil(t, machineBind9Daemons.Daemons[0].KeaDaemon)
 	require.Nil(t, machineBind9Daemons.Daemons[0].LogTargets)
+	require.Equal(t, machineBind9Daemons, machineBind9Daemons.Daemons[0].Machine)
 	require.NotNil(t, machineBind9Daemons.Daemons[1].Bind9Daemon)
+	require.Equal(t, machineBind9Daemons, machineBind9Daemons.Daemons[1].Machine)
 	// Machine with daemon log targets
 	require.Len(t, machineDaemonLogTargets.Daemons, 2)
 	sortMachineDaemonsByName(machineDaemonLogTargets)
 	require.Nil(t, machineDaemonLogTargets.Daemons[0].KeaDaemon)
 	require.Len(t, machineDaemonLogTargets.Daemons[0].LogTargets, 2)
 	require.Nil(t, machineDaemonLogTargets.Daemons[0].Bind9Daemon)
+	require.Equal(t, machineDaemonLogTargets, machineDaemonLogTargets.Daemons[0].Machine)
 	// Machine with the access points
 	require.Len(t, machineDaemonAccessPoints.Daemons, 2)
 	sortMachineDaemonsByName(machineDaemonAccessPoints)
 	require.Len(t, machineDaemonAccessPoints.Daemons[0].AccessPoints, 1)
+	require.Equal(t, machineDaemonAccessPoints, machineDaemonAccessPoints.Daemons[0].Machine)
 	require.Empty(t, machineDaemonAccessPoints.Daemons[1].AccessPoints)
+	require.Equal(t, machineDaemonAccessPoints, machineDaemonAccessPoints.Daemons[1].Machine)
 	// Machine with Kea DHCP configurations
 	require.Len(t, machineKeaDHCPConfigs.Daemons, 2)
 	sortMachineDaemonsByName(machineKeaDHCPConfigs)
@@ -325,12 +336,15 @@ func TestGetMachineByIDWithRelations(t *testing.T) {
 	sortMachineDaemonsByName(machineDaemonAccessPointsKeaDHCPConfigs)
 	require.NotNil(t, machineDaemonAccessPointsKeaDHCPConfigs.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.Len(t, machineDaemonAccessPointsKeaDHCPConfigs.Daemons[0].AccessPoints, 1)
+	require.Equal(t, machineDaemonAccessPointsKeaDHCPConfigs, machineDaemonAccessPointsKeaDHCPConfigs.Daemons[0].Machine)
 	// Machine with the HA services
 	require.Len(t, machineDaemonHAServices.Daemons, 2)
 	sortMachineDaemonsByName(machineDaemonHAServices)
 	require.Len(t, machineDaemonHAServices.Daemons[0].Services, 1)
 	require.NotNil(t, machineDaemonHAServices.Daemons[0].Services[0].HAService)
 	require.Empty(t, machineDaemonHAServices.Daemons[1].Services)
+	require.Equal(t, machineDaemonHAServices, machineDaemonHAServices.Daemons[0].Machine)
+	require.Equal(t, machineDaemonHAServices, machineDaemonHAServices.Daemons[1].Machine)
 }
 
 // Test that the machine is selected by the address and port of an access point.
@@ -379,6 +393,9 @@ func TestGetMachineByAddressAndAccessPointPort(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, machine)
 	require.EqualValues(t, m1.ID, machine.ID)
+	require.Len(t, machine.Daemons, 2)
+	require.Equal(t, machine, machine.Daemons[0].Machine)
+	require.Equal(t, machine, machine.Daemons[1].Machine)
 }
 
 // Test that the machine is selected by the address, port, and type of an
@@ -491,6 +508,8 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
+	require.Len(t, ms[5].Daemons, 1)
+	require.Equal(t, ms[5].Daemons[0].Machine, &ms[5])
 
 	// get 2 machines out of 10, from 0
 	ms, total, err = GetMachinesByPage(db, 0, 2, nil, nil, "", SortDirAny)
@@ -703,6 +722,8 @@ func TestDeleteMachineWithDaemons(t *testing.T) {
 	// reload machine from db to get daemons relation loaded
 	err = RefreshMachineFromDB(db, m)
 	require.Nil(t, err)
+	require.Len(t, m.Daemons, 1)
+	require.Equal(t, m, m.Daemons[0].Machine)
 
 	// delete machine
 	err = DeleteMachine(db, m)
@@ -1006,6 +1027,8 @@ func TestGetAllMachines(t *testing.T) {
 	require.EqualValues(t, 4, machines[0].State.Cpus)
 	require.EqualValues(t, 4, machines[19].State.Cpus)
 	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
+	require.Len(t, machines[10].Daemons, 1)
+	require.Equal(t, &machines[10], machines[10].Daemons[0].Machine)
 
 	// Ensure that we fetched daemons and config reviews too.
 	require.Len(t, machines[0].Daemons, 1)
@@ -1145,6 +1168,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.Nil(t, machines[0].Daemons[0].KeaDaemon)
 		require.Nil(t, machines[0].Daemons[0].ConfigReview)
 		require.Empty(t, machines[0].Daemons[0].Services)
+		require.Equal(t, &machines[0], machines[0].Daemons[0].Machine)
 		require.Equal(t, daemonname.Bind9, machines[0].Daemons[1].Name)
 		require.Nil(t, machines[0].Daemons[1].Bind9Daemon)
 		require.Nil(t, machines[0].Daemons[1].ConfigReview)
