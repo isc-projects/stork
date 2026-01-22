@@ -8,11 +8,12 @@ import {
     daemonStatusErred,
     daemonStatusIconClass as daemonStatusIconClassFn,
     daemonStatusIconTooltip as daemonStatusIconTooltipFn,
+    getErrorMessage,
 } from '../utils'
 import { AnyDaemon, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Menu } from 'primeng/menu'
-import { distinctUntilChanged, finalize, map } from 'rxjs/operators'
+import { distinctUntilChanged, finalize, last, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router, RouterLink } from '@angular/router'
@@ -166,6 +167,11 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
                 id: 'refresh-single-daemon',
                 icon: 'pi pi-refresh',
             },
+            {
+                label: 'Delete',
+                id: 'delete-single-daemon',
+                icon: 'pi pi-trash',
+            },
         ]
 
         this._restoreTableRowsPerPage()
@@ -228,10 +234,8 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
      * @param daemonId daemon identifier
      */
     showDaemonMenu(event: Event, daemonId: number) {
-        // connect method to refresh machine state
-        this.daemonMenuItems[0].command = () => {
-            this.tabView()?.onUpdateTabEntity(daemonId)
-        }
+        this.daemonMenuItems[0].command = this.onRefreshDaemon.bind(this, daemonId)
+        this.daemonMenuItems[1].command = this.onConfirmDeleteDaemon.bind(this, daemonId)
 
         this.daemonMenu.toggle(event)
     }
@@ -363,5 +367,52 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
      */
     onRefreshDaemon(daemonId: number) {
         this.tabView()?.onUpdateTabEntity(daemonId)
+    }
+
+    /**
+     * Displays a dialog to confirm daemon deletion.
+     */
+    onConfirmDeleteDaemon(daemonId: number) {
+        this.confirmService.confirm({
+            message:
+                'Are you sure that you want to delete this daemon? <br/> Please note that the active daemon will be redetected automatically soon.',
+            header: 'Delete Daemon',
+            icon: 'pi pi-exclamation-triangle',
+            rejectButtonProps: { text: true, icon: 'pi pi-times', label: 'Cancel' },
+            acceptButtonProps: {
+                icon: 'pi pi-check',
+                label: 'Delete',
+            },
+            accept: () => {
+                this.onDeleteDaemon(daemonId)
+            },
+        })
+    }
+
+    /**
+     * Emits the delete daemon event.
+     */
+    onDeleteDaemon(daemonId: number) {
+        this.servicesApi
+            .deleteDaemon(daemonId)
+            .pipe(last())
+            .subscribe({
+                next: () => {
+                    this.msgSrv.add({
+                        severity: 'success',
+                        summary: 'Daemon successfully deleted',
+                    })
+                    this.tabView()?.onDeleteEntity(daemonId)
+                },
+                error: (err) => {
+                    const msg = getErrorMessage(err)
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Cannot delete the daemon',
+                        detail: 'Failed to delete the daemon: ' + msg,
+                        life: 10000,
+                    })
+                },
+            })
     }
 }

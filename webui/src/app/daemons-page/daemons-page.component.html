@@ -233,7 +233,11 @@
             </ng-template>
         </p-table>
     </ng-template>
-    <ng-template #entityTab let-daemon let-onRefreshDaemon="updateTabEntityFn">
-        <app-daemon-tab [daemon]="daemon" (refreshDaemon)="onRefreshDaemon($event)"></app-daemon-tab>
+    <ng-template #entityTab let-daemon let-onRefreshDaemon="updateTabEntityFn" let-onDeleteDaemon="deleteEntityFn">
+        <app-daemon-tab
+            [daemon]="daemon"
+            (refreshDaemon)="onRefreshDaemon($event)"
+            (deleteDaemon)="onDeleteDaemon($event)"
+        ></app-daemon-tab>
     </ng-template>
 </app-tab-view>
