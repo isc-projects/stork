@@ -358,7 +358,12 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	})
 
 	mockAgents.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, daemon agentcomm.ControlledDaemon) (*pdnsdata.ServerInfo, error) {
-		require.EqualValues(t, pdnsDaemon.ID, daemon.GetMachineTag().GetID())
+		require.EqualValues(t, pdnsDaemon.Name, daemon.GetName())
+		expectedAccessPoint, err := pdnsDaemon.GetAccessPoint(dbmodel.AccessPointControl)
+		require.NoError(t, err)
+		actualAccessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+		require.NoError(t, err)
+		require.EqualValues(t, *expectedAccessPoint, *actualAccessPoint)
 		return &pdnsdata.ServerInfo{
 			Type:             "PowerDNS",
 			ID:               "127.0.0.1",
