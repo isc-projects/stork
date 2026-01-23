@@ -267,15 +267,15 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 		return nil, errors.WithMessagef(err, "invalid Kea %s config: %s", daemonName, configPath)
 	}
 
-	var accessPoints []AccessPoint
-	var connector keaConnector
 	controlSockets := config.GetListeningControlSockets()
-	if len(controlSockets) != 0 {
-		controlSocket := controlSockets[0]
+	var accessPoints []AccessPoint
+	var httpClientConfigs []HTTPClientConfig
 
+	for _, controlSocket := range controlSockets {
 		// Credentials
 		// Key is a user name that Stork uses to authenticate with Kea.
 		var key string
+		httpClientConfig := sm.keaHTTPClientConfig
 		if controlSocket.Authentication != nil {
 			allCredentials, err := readClientCredentials(controlSocket.Authentication)
 			if err != nil {
@@ -294,7 +294,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 					}
 				}
 
-				sm.keaHTTPClientConfig.BasicAuth = basicAuthCredentials(credentials)
+				httpClientConfig.BasicAuth = basicAuthCredentials(credentials)
 				key = credentials.User
 			}
 		}
@@ -307,15 +307,26 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			Key:      key,
 		}
 		accessPoints = append(accessPoints, accessPoint)
-		connector = newKeaConnector(accessPoint, sm.keaHTTPClientConfig)
+		httpClientConfigs = append(httpClientConfigs, httpClientConfig)
+	}
+
+	// TODO: Handle multiple access points on the server side.
+	// The server expects only one access point with a given type per daemon.
+	// This rule is enforced by the database constraints, so handling it
+	// requires deep changes in the server code. For now, we share only the
+	// first access point for the daemon and use other quietly.
+	// See #2237.
+	var daemonAccessPoints []AccessPoint
+	if len(accessPoints) > 0 {
+		daemonAccessPoints = []AccessPoint{accessPoints[0]}
 	}
 
 	thisDaemon := &keaDaemon{
 		daemon: daemon{
 			Name:         daemonName,
-			AccessPoints: accessPoints,
+			AccessPoints: daemonAccessPoints,
 		},
-		connector: connector,
+		connector: newMultiConnector(accessPoints, httpClientConfigs),
 	}
 
 	detectedDaemons := []Daemon{thisDaemon}
@@ -340,7 +351,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			managedDaemon := &keaDaemon{
 				daemon: daemon{
 					Name:         managedDaemonName,
-					AccessPoints: accessPoints,
+					AccessPoints: daemonAccessPoints,
 				},
 				connector: thisDaemon.connector,
 			}
@@ -562,4 +573,45 @@ func (c *keaHTTPConnector) sendPayload(ctx context.Context, command []byte) ([]b
 	}
 
 	return body, nil
+}
+
+// Handles connections to multiple control sockets of a Kea daemon. It tries
+// each connector in order until one succeeds.
+type multiConnector struct {
+	connectors []keaConnector
+}
+
+// Creates a new multiConnector from the list of access points.
+// It instantiates a keaConnector for each access point.
+// It is expected that all access points belong to the same Kea daemon.
+// The httpClientConfigs should match the accessPoints by index.
+func newMultiConnector(accessPoints []AccessPoint, httpClientConfigs []HTTPClientConfig) *multiConnector {
+	var connectors []keaConnector
+	for i, ap := range accessPoints {
+		httpClientConfig := HTTPClientConfig{}
+		if i < len(httpClientConfigs) {
+			httpClientConfig = httpClientConfigs[i]
+		}
+		connector := newKeaConnector(ap, httpClientConfig)
+		connectors = append(connectors, connector)
+	}
+	return &multiConnector{connectors: connectors}
+}
+
+// Sends the command to Kea via one of the connectors and returns the response.
+func (c *multiConnector) sendPayload(ctx context.Context, command []byte) ([]byte, error) {
+	if len(c.connectors) == 0 {
+		return nil, errors.New("no connectors available to send command to Kea")
+	}
+
+	var lastErr error
+	for i, connector := range c.connectors {
+		response, err := connector.sendPayload(ctx, command)
+		if err == nil {
+			return response, nil
+		}
+		log.WithError(err).WithField("index", i).Debug("Connection to Kea failed, trying another control socket")
+		lastErr = err
+	}
+	return nil, errors.WithMessagef(lastErr, "all connectors failed to send command to Kea")
 }

@@ -1725,9 +1725,7 @@ func TestKeaSocketConnectorSendPayload(t *testing.T) {
 	response := []byte(`{"result":0}`)
 
 	var wgServer sync.WaitGroup
-	wgServer.Add(1)
-
-	go func() {
+	wgServer.Go(func() {
 		// Wait for client connection.
 		conn, err := server.Accept()
 		require.NoError(t, err)
@@ -1744,10 +1742,7 @@ func TestKeaSocketConnectorSendPayload(t *testing.T) {
 		n, err = conn.Write(response)
 		require.NoError(t, err)
 		require.Len(t, response, n)
-
-		// Signal that server work is done.
-		wgServer.Done()
-	}()
+	})
 
 	// Construct a socket connector.
 	connector := newKeaConnector(AccessPoint{
@@ -1796,4 +1791,104 @@ func TestKeaHTTPConnectorSendPayload(t *testing.T) {
 	require.NoError(t, err)
 	// The response is unwrapped from the array.
 	require.Equal(t, []byte(`{"result":0}`), output)
+}
+
+// Test that the multi-connector sends payload and fallback to the next
+// connector if the first one fails.
+func TestKeaMultiConnectorSendPayload(t *testing.T) {
+	// Arrange
+	// The UNIX socket connector will fail as there is no server listening.
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	socketPath := path.Join(sb.BasePath, "kea-socket-test.sock")
+
+	command := []byte(`{"command":"ping"}`)
+
+	// The HTTP connector will succeed.
+	defer gock.Off()
+
+	gock.New("http://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		Post("/").
+		Reply(200).
+		// The server wraps the response into an array.
+		JSON([]map[string]any{{"result": 0}})
+
+	// Act
+	multiConnector := newMultiConnector(
+		[]AccessPoint{
+			{
+				Type:     AccessPointControl,
+				Address:  socketPath,
+				Protocol: protocoltype.Socket,
+			},
+			{
+				Type:     AccessPointControl,
+				Address:  "localhost",
+				Port:     45634,
+				Protocol: protocoltype.HTTP,
+			},
+		},
+		[]HTTPClientConfig{{}, {Interceptor: gock.InterceptClient}},
+	)
+	output, err := multiConnector.sendPayload(t.Context(), command)
+
+	// Assert
+	require.NoError(t, err)
+	// The response is unwrapped from the array.
+	require.Equal(t, []byte(`{"result":0}`), output)
+}
+
+// Test that the multi-connector fails to send payload if all connectors fail.
+func TestKeaMultiConnectorSendPayloadFail(t *testing.T) {
+	// Arrange
+	// The UNIX socket connector will fail as there is no server listening.
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	socketPath := path.Join(sb.BasePath, "kea-socket-test.sock")
+
+	command := []byte(`{"command":"ping"}`)
+
+	// The HTTP connector will fail.
+	defer gock.Off()
+
+	gock.New("http://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		Post("/").
+		Reply(500)
+
+	// Act
+	multiConnector := newMultiConnector(
+		[]AccessPoint{
+			{
+				Type:     AccessPointControl,
+				Address:  socketPath,
+				Protocol: protocoltype.Socket,
+			},
+			{
+				Type:     AccessPointControl,
+				Address:  "localhost",
+				Port:     45634,
+				Protocol: protocoltype.HTTP,
+			},
+		},
+		[]HTTPClientConfig{{}, {Interceptor: gock.InterceptClient}},
+	)
+	_, err := multiConnector.sendPayload(t.Context(), command)
+
+	// Assert
+	require.ErrorContains(t, err, "all connectors failed")
+}
+
+// Test that the multi-connector cannot send payload if there is no connectors.
+func TestKeaMultiConnectorEmpty(t *testing.T) {
+	// Arrange
+	command := []byte(`{"command":"ping"}`)
+	multiConnector := newMultiConnector([]AccessPoint{}, []HTTPClientConfig{})
+
+	// Act
+	_, err := multiConnector.sendPayload(t.Context(), command)
+
+	// Assert
+	require.ErrorContains(t, err, "no connectors available")
 }
