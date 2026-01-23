@@ -66,7 +66,11 @@ const (
 
 type Daemon interface {
 	GetName() daemonname.Name
+	// Returns a first access point of a given type. If the access point is not
+	// found, it returns nil.
 	GetAccessPoint(apType string) *AccessPoint
+	// Returns all access points of the daemon. There may be multiple access
+	// points of the same type.
 	GetAccessPoints() []AccessPoint
 	// Checks if two daemon instances are the same. It is used to determine
 	// whether the newly detected daemon is the same as the previously detected
@@ -142,11 +146,10 @@ func (d *daemon) IsSame(other Daemon) bool {
 		return false
 	}
 
-	for _, otherAccessPoint := range otherAccessPoints {
-		thisAccessPoint := d.GetAccessPoint(otherAccessPoint.Type)
-		if thisAccessPoint == nil {
-			return false
-		}
+	// It is expected that the access points are always detected in the same
+	// order.
+	for i, otherAccessPoint := range otherAccessPoints {
+		thisAccessPoint := d.AccessPoints[i]
 		if !thisAccessPoint.IsEqual(otherAccessPoint) {
 			return false
 		}

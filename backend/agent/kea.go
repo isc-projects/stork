@@ -310,21 +310,10 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 		httpClientConfigs = append(httpClientConfigs, httpClientConfig)
 	}
 
-	// TODO: Handle multiple access points on the server side.
-	// The server expects only one access point with a given type per daemon.
-	// This rule is enforced by the database constraints, so handling it
-	// requires deep changes in the server code. For now, we share only the
-	// first access point for the daemon and use other quietly.
-	// See #2237.
-	var daemonAccessPoints []AccessPoint
-	if len(accessPoints) > 0 {
-		daemonAccessPoints = []AccessPoint{accessPoints[0]}
-	}
-
 	thisDaemon := &keaDaemon{
 		daemon: daemon{
 			Name:         daemonName,
-			AccessPoints: daemonAccessPoints,
+			AccessPoints: accessPoints,
 		},
 		connector: newMultiConnector(accessPoints, httpClientConfigs),
 	}
@@ -351,7 +340,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			managedDaemon := &keaDaemon{
 				daemon: daemon{
 					Name:         managedDaemonName,
-					AccessPoints: daemonAccessPoints,
+					AccessPoints: accessPoints,
 				},
 				connector: thisDaemon.connector,
 			}

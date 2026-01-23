@@ -888,6 +888,25 @@ func TestDaemonIsSame(t *testing.T) {
 			},
 		},
 	}
+	daemon6 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
+			AccessPoints: []AccessPoint{
+				{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
+				{Type: AccessPointControl, Address: "localhost", Port: 1234},
+			},
+		},
+	}
+	daemon7 := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.CA,
+			AccessPoints: []AccessPoint{
+				{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
+				{Type: AccessPointControl, Address: "localhost", Port: 1234},
+				{Type: AccessPointControl, Address: "example.com", Port: 1234},
+			},
+		},
+	}
 
 	// Act & Assert
 	// Same daemon names and access points.
@@ -900,6 +919,11 @@ func TestDaemonIsSame(t *testing.T) {
 	// The second daemon has the same daemon name and includes the access
 	// points from the first daemon but it has an additional access point.
 	require.False(t, daemon1.IsSame(daemon5))
+	// The same daemon names and access points but in different order.
+	require.False(t, daemon5.IsSame(daemon6))
+	// The same daemon names and access points but with an additional access
+	// point with duplicate type.
+	require.False(t, daemon6.IsSame(daemon7))
 }
 
 // Test that the DNS zone inventories are successfully populated.

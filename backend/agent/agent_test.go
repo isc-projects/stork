@@ -296,6 +296,59 @@ func TestGetState(t *testing.T) {
 	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck,deprecated
 }
 
+// Check if GetState works even if the daemon has multiple access points of
+// the same type.
+func TestGetStateMultipleAccessPointsSameType(t *testing.T) {
+	// Arrange
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = nil
+
+	// daemon monitor is empty, no daemons should be returned by GetState
+	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
+	require.NoError(t, err)
+	require.Equal(t, rsp.AgentVersion, stork.Version)
+	require.Empty(t, rsp.Daemons)
+
+	// add some daemons to daemon monitor so GetState should return something
+	var daemons []Daemon
+	daemons = append(daemons, &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.DHCPv4,
+			AccessPoints: []AccessPoint{
+				{
+					Type:     AccessPointControl,
+					Address:  "/var/run/kea/kea-dhcp4.sock",
+					Protocol: protocoltype.Socket,
+				},
+				{
+					Type:     AccessPointControl,
+					Address:  "1.2.3.1",
+					Port:     1234,
+					Protocol: protocoltype.HTTP,
+				},
+			},
+		},
+	})
+	fdm.Daemons = daemons
+
+	// Act
+	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, rsp.AgentVersion, stork.Version)
+	require.Equal(t, stork.Version, rsp.AgentVersion)
+	require.Len(t, rsp.Daemons, 1)
+	daemon := rsp.Daemons[0]
+	require.Len(t, daemon.AccessPoints, 1)
+	accessPoint := daemon.AccessPoints[0]
+	require.Equal(t, AccessPointControl, accessPoint.Type)
+	require.Equal(t, "unix", accessPoint.Protocol)
+	require.Equal(t, "/var/run/kea/kea-dhcp4.sock", accessPoint.Address)
+}
+
 // Test forwarding command to Kea when HTTP 200 status code
 // is returned.
 func TestForwardToKeaOverHTTPSuccess(t *testing.T) {

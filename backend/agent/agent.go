@@ -235,7 +235,19 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 
 	for _, daemon := range sa.Monitor.GetDaemons() {
 		var accessPoints []*agentapi.AccessPoint
+		accessPointTypes := map[string]struct{}{}
+		// TODO: Handle multiple access points on the server side.
+		// The server expects only one access point with a given type per daemon.
+		// This rule is enforced by the database constraints, so handling it
+		// requires deep changes in the server code. For now, we share only the
+		// first access point for the daemon and use other quietly.
+		// See #2237.
 		for _, point := range daemon.GetAccessPoints() {
+			if _, ok := accessPointTypes[point.Type]; ok {
+				continue
+			}
+			accessPointTypes[point.Type] = struct{}{}
+
 			accessPoints = append(accessPoints, &agentapi.AccessPoint{
 				Type:              point.Type,
 				Address:           point.Address,
