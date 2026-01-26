@@ -27,7 +27,15 @@ The Stork agent then reads the following configuration parameters from each file
 - The list of controlled daemons (for CA only -  ``control-sockets``)
 - The HTTP socket authorization credentials (``authentication``)
 
-Stork uses the first listening control socket. It supports both UNIX domain and network sockets.
+The Stork agent uses the first control socket which it is able to connect to. It
+supports both UNIX domain and network sockets.
+
+.. note:: The control socket displayed in the Stork UI may not be the same
+   control socket that the agent is using to communicate with Kea.The UI
+   presents only the first specified control socket from the Kea configuration.
+   If the first socket is not reachable, the agent will try the next one, and
+   so on, until a successful connection is made. The active control socket will
+   be reflected in the UI in a future release.
 
 Subnets and Networks
 ====================
