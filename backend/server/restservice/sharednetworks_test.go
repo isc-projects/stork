@@ -832,9 +832,6 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 	require.Equal(t, "foo", contents.SharedNetworks4[0])
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
-	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.Machine.ID)
-	}
 
 	keaConfigSharedNetworkParameters := &models.KeaConfigSharedNetworkParameters{
 		SharedNetworkLevelParameters: &models.KeaConfigSubnetDerivedParameters{
@@ -1580,9 +1577,6 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 	require.Equal(t, "foo", contents.SharedNetworks4[0])
 	require.Empty(t, contents.SharedNetworks6)
 	require.Len(t, contents.ClientClasses, 2)
-	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.Machine.ID)
-	}
 
 	keaConfigSharedNetworkParameters := &models.KeaConfigSharedNetworkParameters{
 		SharedNetworkLevelParameters: &models.KeaConfigSubnetDerivedParameters{

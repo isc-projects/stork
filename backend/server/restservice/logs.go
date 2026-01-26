@@ -66,13 +66,8 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 
 	// Everything ok. Return the response.
 	tail := &models.LogTail{
-		Machine: &models.SimpleMachine{
-			ID:       dbLogTarget.Daemon.MachineID,
-			Address:  dbLogTarget.Daemon.Machine.Address,
-			Hostname: dbLogTarget.Daemon.Machine.State.Hostname,
-		},
 		DaemonID:        storkutil.Ptr(dbLogTarget.DaemonID),
-		DaemonName:      storkutil.Ptr(string(dbLogTarget.Daemon.Name)),
+		DaemonLabel:     storkutil.Ptr(dbLogTarget.Daemon.GetLabel()),
 		LogTargetOutput: storkutil.Ptr(dbLogTarget.Output),
 		Contents:        contents,
 		Error:           errStr,

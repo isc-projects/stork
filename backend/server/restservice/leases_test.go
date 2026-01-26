@@ -231,8 +231,8 @@ func TestFindLeases4(t *testing.T) {
 	lease := okRsp.Payload.Items[0]
 	require.NotNil(t, lease.DaemonID)
 	require.EqualValues(t, daemon.ID, *lease.DaemonID)
-	require.NotNil(t, lease.DaemonName)
-	require.EqualValues(t, daemon.Name, *lease.DaemonName)
+	require.NotNil(t, lease.DaemonLabel)
+	require.EqualValues(t, daemon.GetLabel(), *lease.DaemonLabel)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
 	require.NotNil(t, lease.Cltt)
 	require.EqualValues(t, 12345678, *lease.Cltt)
@@ -274,8 +274,8 @@ func TestFindLeases4(t *testing.T) {
 	require.Len(t, okRsp.Payload.ErredDaemons, 1)
 	require.NotNil(t, okRsp.Payload.ErredDaemons[0].ID)
 	require.EqualValues(t, daemon.ID, *okRsp.Payload.ErredDaemons[0].ID)
-	require.NotNil(t, okRsp.Payload.ErredDaemons[0].Name)
-	require.EqualValues(t, daemon.Name, *okRsp.Payload.ErredDaemons[0].Name)
+	require.NotNil(t, okRsp.Payload.ErredDaemons[0].Label)
+	require.EqualValues(t, daemon.GetLabel(), *okRsp.Payload.ErredDaemons[0].Label)
 }
 
 // This test verifies that it is possible to search DHCPv6 leases by text
@@ -338,8 +338,8 @@ func TestFindLeases6(t *testing.T) {
 	lease := okRsp.Payload.Items[0]
 	require.NotNil(t, lease.DaemonID)
 	require.EqualValues(t, daemon.ID, *lease.DaemonID)
-	require.NotNil(t, lease.DaemonName)
-	require.EqualValues(t, daemon.Name, *lease.DaemonName)
+	require.NotNil(t, lease.DaemonLabel)
+	require.EqualValues(t, daemon.GetLabel(), *lease.DaemonLabel)
 	require.NotNil(t, lease.Cltt)
 	require.EqualValues(t, 12345678, *lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
@@ -373,8 +373,8 @@ func TestFindLeases6(t *testing.T) {
 	lease = okRsp.Payload.Items[1]
 	require.NotNil(t, lease.DaemonID)
 	require.EqualValues(t, daemon.ID, *lease.DaemonID)
-	require.NotNil(t, lease.DaemonName)
-	require.EqualValues(t, daemon.Name, *lease.DaemonName)
+	require.NotNil(t, lease.DaemonLabel)
+	require.EqualValues(t, daemon.GetLabel(), *lease.DaemonLabel)
 	require.NotNil(t, lease.Cltt)
 	require.EqualValues(t, 12345678, *lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)

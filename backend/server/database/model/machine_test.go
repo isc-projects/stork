@@ -1525,3 +1525,23 @@ func TestGetAllMachinesNoRelations(t *testing.T) {
 		require.True(t, machine.Authorized)
 	}
 }
+
+// Test GetLabel method returns hostname when available.
+func TestGetLabelWithHostname(t *testing.T) {
+	machine := Machine{
+		Address: "2001:db8::1",
+		State: MachineState{
+			Hostname: "myhost.example.org",
+		},
+	}
+	require.Equal(t, "myhost.example.org", machine.GetLabel())
+}
+
+// Test GetLabel method returns address when hostname is empty.
+func TestGetLabelWithoutHostname(t *testing.T) {
+	machine := Machine{
+		Address: "2001:db8::1",
+		State:   MachineState{},
+	}
+	require.Equal(t, "2001:db8::1", machine.GetLabel())
+}

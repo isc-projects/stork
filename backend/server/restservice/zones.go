@@ -44,14 +44,14 @@ func (r *RestAPI) GetZone(ctx context.Context, params dns.GetZoneParams) middlew
 	var restLocalZones []*models.LocalZone
 	for _, localZone := range dbZone.LocalZones {
 		restLocalZones = append(restLocalZones, &models.LocalZone{
-			ZoneClass:  localZone.Class,
-			DaemonID:   localZone.DaemonID,
-			DaemonName: string(localZone.Daemon.Name),
-			LoadedAt:   strfmt.DateTime(localZone.LoadedAt),
-			Serial:     localZone.Serial,
-			Rpz:        localZone.RPZ,
-			View:       localZone.View,
-			ZoneType:   localZone.Type,
+			ZoneClass:   localZone.Class,
+			DaemonID:    localZone.DaemonID,
+			DaemonLabel: localZone.Daemon.GetLabel(),
+			LoadedAt:    strfmt.DateTime(localZone.LoadedAt),
+			Serial:      localZone.Serial,
+			Rpz:         localZone.RPZ,
+			View:        localZone.View,
+			ZoneType:    localZone.Type,
 		})
 	}
 	restZone := models.Zone{
@@ -133,14 +133,14 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 		var restLocalZones []*models.LocalZone
 		for _, localZone := range zone.LocalZones {
 			restLocalZones = append(restLocalZones, &models.LocalZone{
-				ZoneClass:  localZone.Class,
-				DaemonID:   localZone.DaemonID,
-				DaemonName: string(localZone.Daemon.Name),
-				LoadedAt:   strfmt.DateTime(localZone.LoadedAt),
-				Serial:     localZone.Serial,
-				Rpz:        localZone.RPZ,
-				View:       localZone.View,
-				ZoneType:   localZone.Type,
+				ZoneClass:   localZone.Class,
+				DaemonID:    localZone.DaemonID,
+				DaemonLabel: localZone.Daemon.GetLabel(),
+				LoadedAt:    strfmt.DateTime(localZone.LoadedAt),
+				Serial:      localZone.Serial,
+				Rpz:         localZone.RPZ,
+				View:        localZone.View,
+				ZoneType:    localZone.Type,
 			})
 		}
 		restZones = append(restZones, &models.Zone{
@@ -193,7 +193,7 @@ func (r *RestAPI) GetZonesFetch(ctx context.Context, params dns.GetZonesFetchPar
 		restStates = append(restStates, &models.ZoneInventoryState{
 			CreatedAt:          strfmt.DateTime(state.CreatedAt),
 			DaemonID:           state.DaemonID,
-			DaemonName:         string(state.Daemon.Name),
+			DaemonLabel:        state.Daemon.GetLabel(),
 			Error:              state.State.Error,
 			Status:             string(state.State.Status),
 			ZoneConfigsCount:   state.State.ZoneCount,

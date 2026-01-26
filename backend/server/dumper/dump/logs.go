@@ -60,15 +60,8 @@ func (d *LogsDump) Execute() error {
 			}
 
 			tail := &models.LogTail{
-				Machine: &models.SimpleMachine{
-					ID:           d.machine.ID,
-					Address:      d.machine.Address,
-					Hostname:     d.machine.State.Hostname,
-					AgentPort:    d.machine.AgentPort,
-					AgentVersion: d.machine.State.AgentVersion,
-				},
 				DaemonID:        storkutil.Ptr(daemon.ID),
-				DaemonName:      storkutil.Ptr(string(daemon.Name)),
+				DaemonLabel:     storkutil.Ptr(daemon.GetLabel()),
 				LogTargetOutput: storkutil.Ptr(logTarget.Output),
 				Contents:        contents,
 				Error:           errStr,

@@ -9,7 +9,6 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/daemons/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
@@ -79,10 +78,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	// Return leases over the REST API.
 	for i := range keaLeases {
 		l := keaLeases[i]
-		var daemonName daemonname.Name
-		if l.Daemon != nil {
-			daemonName = l.Daemon.Name
-		}
+		daemonLabel := l.Daemon.GetLabel()
 		cltt := int64(l.CLTT)
 		state := int64(l.State)
 		subnetID := int64(l.SubnetID)
@@ -97,7 +93,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		lease := models.Lease{
 			ID:                &l.ID,
 			DaemonID:          &l.DaemonID,
-			DaemonName:        (*string)(&daemonName),
+			DaemonLabel:       &daemonLabel,
 			ClientID:          l.ClientID,
 			Cltt:              &cltt,
 			Duid:              duid,
@@ -124,9 +120,10 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 
 	// Record daemons for which there was an error communicating with the Kea servers.
 	for _, daemon := range erredDaemons {
+		daemonLabel := daemon.GetLabel()
 		leases.ErredDaemons = append(leases.ErredDaemons, &models.LeasesSearchErredDaemon{
-			ID:   &daemon.ID,
-			Name: (*string)(&daemon.Name),
+			ID:    &daemon.ID,
+			Label: &daemonLabel,
 		})
 	}
 

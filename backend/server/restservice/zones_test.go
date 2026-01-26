@@ -568,7 +568,7 @@ func TestGetZonesFetch(t *testing.T) {
 		require.Equal(t, d.DistinctZoneCount, rspOK.Payload.Items[index].DistinctZonesCount)
 		require.Equal(t, d.BuiltinZoneCount, rspOK.Payload.Items[index].BuiltinZonesCount)
 		require.Positive(t, rspOK.Payload.Items[index].DaemonID)
-		require.NotEmpty(t, rspOK.Payload.Items[index].DaemonName)
+		require.NotEmpty(t, rspOK.Payload.Items[index].DaemonLabel)
 		require.NotZero(t, rspOK.Payload.Items[index].CreatedAt)
 	}
 }

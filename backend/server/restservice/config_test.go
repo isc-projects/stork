@@ -100,6 +100,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.JSONEq(t, string(configDHCP4), string(payloadConfig))
 	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
+	require.Equal(t, "DHCPv4@localhost", okRsp.Payload.DaemonLabel)
 	require.True(t, okRsp.Payload.Editable)
 
 	params = services.GetDaemonConfigParams{
@@ -116,6 +117,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.JSONEq(t, string(configDHCP6), string(payloadConfig))
 	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
+	require.Equal(t, "DHCPv6@localhost", okRsp.Payload.DaemonLabel)
 	require.True(t, okRsp.Payload.Editable)
 }
 
@@ -390,6 +392,7 @@ func TestGetDaemonConfigForNonActiveKeaDaemon(t *testing.T) {
 	require.JSONEq(t, string(configDhcp4), string(payloadJSON))
 	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
+	require.Equal(t, "DHCPv4@localhost", okRsp.Payload.DaemonLabel)
 	require.False(t, okRsp.Payload.Editable)
 
 	params = services.GetDaemonConfigParams{
@@ -405,6 +408,7 @@ func TestGetDaemonConfigForNonActiveKeaDaemon(t *testing.T) {
 	require.JSONEq(t, string(configDhcp6), string(payloadJSON))
 	require.NotZero(t, okRsp.Payload.DaemonID)
 	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
+	require.Equal(t, "DHCPv6@localhost", okRsp.Payload.DaemonLabel)
 	require.False(t, okRsp.Payload.Editable)
 }
 
@@ -1679,9 +1683,11 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
 	require.Equal(t, string(daemonname.DHCPv4), contents.Configs[0].DaemonName)
+	require.Contains(t, contents.Configs[0].DaemonLabel, "DHCPv4@machine")
 	require.Equal(t, "3.0.0", contents.Configs[0].DaemonVersion)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
 	require.Equal(t, string(daemonname.DHCPv4), contents.Configs[1].DaemonName)
+	require.Contains(t, contents.Configs[1].DaemonLabel, "DHCPv4@machine")
 	require.Equal(t, "3.0.0", contents.Configs[1].DaemonVersion)
 
 	// Submit transaction.
@@ -1756,12 +1762,10 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 			Configs: []*models.KeaDaemonConfigurableGlobalParameters{
 				{
 					DaemonID:      daemons[0].GetID(),
-					DaemonName:    string(daemonname.DHCPv4),
 					PartialConfig: partialConfig,
 				},
 				{
 					DaemonID:      daemons[1].GetID(),
-					DaemonName:    string(daemonname.DHCPv4),
 					PartialConfig: partialConfig,
 				},
 			},
@@ -1970,10 +1974,12 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
 	require.Equal(t, string(daemonname.DHCPv6), contents.Configs[0].DaemonName)
+	require.Contains(t, contents.Configs[0].DaemonLabel, "DHCPv6@machine")
 	require.Equal(t, "3.0.0", contents.Configs[0].DaemonVersion)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
 	require.Equal(t, string(daemonname.DHCPv6), contents.Configs[1].DaemonName)
-	require.Equal(t, "3.0.0", contents.Configs[0].DaemonVersion)
+	require.Contains(t, contents.Configs[1].DaemonLabel, "DHCPv6@machine")
+	require.Equal(t, "3.0.0", contents.Configs[1].DaemonVersion)
 
 	// Submit transaction.
 
@@ -2046,12 +2052,10 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 			Configs: []*models.KeaDaemonConfigurableGlobalParameters{
 				{
 					DaemonID:      daemons[0].GetID(),
-					DaemonName:    string(daemonname.DHCPv6),
 					PartialConfig: partialConfig,
 				},
 				{
 					DaemonID:      daemons[1].GetID(),
-					DaemonName:    string(daemonname.DHCPv6),
 					PartialConfig: partialConfig,
 				},
 			},
@@ -2311,8 +2315,7 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
 				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
 					{
-						DaemonID:   daemon.GetID(),
-						DaemonName: string(daemonname.DHCPv4),
+						DaemonID: daemon.GetID(),
 						PartialConfig: &models.KeaConfigurableGlobalParameters{
 							KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
 								ValidLifetime: storkutil.Ptr(int64(1111)),
@@ -2352,8 +2355,7 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
 				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
 					{
-						DaemonID:   daemon.GetID(),
-						DaemonName: string(daemonname.DHCPv6),
+						DaemonID: daemon.GetID(),
 						PartialConfig: &models.KeaConfigurableGlobalParameters{
 							DHCPOptions: models.DHCPOptions{
 								Options: []*models.DHCPOption{
@@ -2383,46 +2385,6 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 			*defaultRsp.Payload.Message)
 	})
 
-	t.Run("invalid daemon name", func(t *testing.T) {
-		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
-			ID: transactionID,
-			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
-				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
-					{
-						DaemonID:      daemon.GetID(),
-						DaemonName:    "invalid-daemon-name",
-						PartialConfig: &models.KeaConfigurableGlobalParameters{},
-					},
-				},
-			},
-		}
-		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
-		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
-		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-		require.Equal(t, "Problem with parsing daemon name", *defaultRsp.Payload.Message)
-	})
-
-	t.Run("non-Kea daemon name", func(t *testing.T) {
-		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
-			ID: transactionID,
-			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
-				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
-					{
-						DaemonID:      daemon.GetID(),
-						DaemonName:    string(daemonname.Bind9),
-						PartialConfig: &models.KeaConfigurableGlobalParameters{},
-					},
-				},
-			},
-		}
-		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
-		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
-		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
-		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-		require.Equal(t, "Daemon named is not a Kea daemon", *defaultRsp.Payload.Message)
-	})
-
 	t.Run("commit failure", func(t *testing.T) {
 		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
 			ID: transactionID,
@@ -2430,7 +2392,6 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
 					{
 						DaemonID:      daemon.GetID(),
-						DaemonName:    string(daemonname.DHCPv4),
 						PartialConfig: &models.KeaConfigurableGlobalParameters{},
 					},
 				},
@@ -2537,9 +2498,15 @@ func TestUpdateGlobalParametersBeginCancel(t *testing.T) {
 	require.NotNil(t, contents.Configs)
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
-	require.Equal(t, daemonname.DHCPv6, daemons[0].GetName(), contents.Configs[0].DaemonName)
+	require.Equal(t, daemonname.DHCPv6, daemons[0].GetName())
+	require.Equal(t, string(daemons[0].Name), contents.Configs[0].DaemonName)
+	require.Contains(t, daemons[0].GetLabel(), "DHCPv6@machine")
+	require.Equal(t, daemons[0].GetLabel(), contents.Configs[0].DaemonLabel)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
-	require.Equal(t, daemonname.DHCPv6, daemons[1].GetName(), contents.Configs[1].DaemonName)
+	require.Equal(t, daemonname.DHCPv6, daemons[1].GetName())
+	require.Equal(t, string(daemons[1].Name), contents.Configs[1].DaemonName)
+	require.Contains(t, daemons[1].GetLabel(), "DHCPv6@machine")
+	require.Equal(t, daemons[1].GetLabel(), contents.Configs[1].DaemonLabel)
 
 	// Try to start another session by another user.
 	ctx2, err := rapi.SessionManager.Load(context.Background(), "")

@@ -97,9 +97,10 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	}
 
 	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
-		DaemonID:      dbDaemon.GetID(),
+		DaemonID:      dbDaemon.ID,
 		DaemonVersion: dbDaemon.Version,
 		DaemonName:    string(dbDaemon.Name),
+		DaemonLabel:   dbDaemon.GetLabel(),
 		Editable:      dbDaemon.Monitored && dbDaemon.Active,
 		Config:        rawConfig,
 		Options:       options,
@@ -612,6 +613,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 		configs = append(configs, &models.KeaDaemonConfig{
 			DaemonID:      daemon.ID,
 			DaemonName:    string(daemon.Name),
+			DaemonLabel:   daemon.GetLabel(),
 			DaemonVersion: daemon.Version,
 			Config:        daemon.KeaDaemon.Config,
 			Options:       options,
@@ -657,25 +659,17 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 		receivedConfig := params.Request.Configs[i]
 		var settableConfig *keaconfig.SettableConfig
 
-		daemonName, ok := daemonname.Parse(receivedConfig.DaemonName)
-		if !ok {
-			msg := "Problem with parsing daemon name"
-			log.WithField("name", receivedConfig.DaemonName).Error(msg)
-			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		if !daemonName.IsKea() {
-			msg := fmt.Sprintf("Daemon %s is not a Kea daemon", daemonName)
-			log.Error(msg)
-			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+		daemon, err := dbmodel.GetKeaDaemonByID(r.DB, receivedConfig.DaemonID)
+		if err != nil {
+			msg := fmt.Sprintf("Cannot get daemon with ID %d from db", receivedConfig.DaemonID)
+			log.WithError(err).Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		}
 
-		switch daemonName {
+		switch daemon.Name {
 		case daemonname.DHCPv4:
 			settableConfig = keaconfig.NewSettableDHCPv4Config()
 		case daemonname.DHCPv6:

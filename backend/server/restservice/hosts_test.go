@@ -710,9 +710,6 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.Len(t, contents.Subnets, 2)
 	require.Len(t, contents.ClientClasses, 3)
 	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
-	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.Machine.ID)
-	}
 
 	// Submit transaction.
 	params2 := dhcp.CreateHostSubmitParams{
@@ -729,6 +726,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 			LocalHosts: []*models.LocalHost{
 				{
 					DaemonID:       daemons[0].ID,
+					DaemonLabel:    daemons[0].GetLabel(),
 					DataSource:     dbmodel.HostDataSourceAPI.String(),
 					ClientClasses:  []string{"class1"},
 					NextServer:     "192.2.2.2",
@@ -737,6 +735,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 				},
 				{
 					DaemonID:       daemons[2].ID,
+					DaemonLabel:    daemons[2].GetLabel(),
 					DataSource:     dbmodel.HostDataSourceAPI.String(),
 					ClientClasses:  []string{"class1"},
 					NextServer:     "192.2.2.2",
@@ -1346,9 +1345,6 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	require.Len(t, contents.Subnets, 2)
 	require.Len(t, contents.ClientClasses, 3)
 	require.Equal(t, []string{"class1", "class2", "class3"}, contents.ClientClasses)
-	for _, daemon := range contents.Daemons {
-		require.NotZero(t, daemon.Machine.ID)
-	}
 
 	// Submit transaction.
 	params2 := dhcp.UpdateHostSubmitParams{
@@ -1366,6 +1362,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 			LocalHosts: []*models.LocalHost{
 				{
 					DaemonID:       daemons[0].ID,
+					DaemonLabel:    daemons[0].GetLabel(),
 					DataSource:     dbmodel.HostDataSourceAPI.String(),
 					ClientClasses:  []string{"class1"},
 					NextServer:     "192.2.2.2",
@@ -1387,6 +1384,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 				},
 				{
 					DaemonID:       daemons[2].ID,
+					DaemonLabel:    daemons[2].GetLabel(),
 					DataSource:     dbmodel.HostDataSourceAPI.String(),
 					ClientClasses:  []string{"class1"},
 					NextServer:     "192.2.2.2",

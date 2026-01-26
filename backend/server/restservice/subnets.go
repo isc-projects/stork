@@ -103,7 +103,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	for _, lsn := range sn.LocalSubnets {
 		localSubnet := &models.LocalSubnet{
 			DaemonID:         lsn.Daemon.ID,
-			DaemonName:       string(lsn.Daemon.Name),
+			DaemonLabel:      lsn.Daemon.GetLabel(),
 			ID:               lsn.LocalSubnetID,
 			Stats:            lsn.Stats,
 			StatsCollectedAt: convertToOptionalDatetime(lsn.StatsCollectedAt),

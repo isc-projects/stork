@@ -65,10 +65,8 @@ func TestGetLogTail(t *testing.T) {
 	okRsp := rsp.(*services.GetLogTailOK).Payload
 
 	// Make sure that all values have been set correctly.
-	require.Equal(t, "localhost", okRsp.Machine.Address)
-	require.EqualValues(t, m.ID, okRsp.Machine.ID)
 	require.EqualValues(t, daemon.ID, *okRsp.DaemonID)
-	require.EqualValues(t, daemon.Name, *okRsp.DaemonName)
+	require.EqualValues(t, "DHCPv4@localhost", *okRsp.DaemonLabel)
 	require.Equal(t, "/tmp/filename.log", *okRsp.LogTargetOutput)
 	require.Len(t, okRsp.Contents, 1)
 	require.Equal(t, "lorem ipsum", okRsp.Contents[0])

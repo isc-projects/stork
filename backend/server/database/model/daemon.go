@@ -144,6 +144,38 @@ func (d Daemon) GetMachineTag() MachineTag {
 	return d.Machine
 }
 
+// Return the label of the daemon for identification in the UI and logs.
+func (d Daemon) GetLabel() string {
+	formattedDaemonName := string(d.Name)
+	switch d.Name {
+	case daemonname.CA:
+		formattedDaemonName = "CA"
+	case daemonname.D2:
+		formattedDaemonName = "DDNS"
+	case daemonname.NetConf:
+		formattedDaemonName = "NetConf"
+	case daemonname.DHCPv4:
+		formattedDaemonName = "DHCPv4"
+	case daemonname.DHCPv6:
+		formattedDaemonName = "DHCPv6"
+	case daemonname.Bind9:
+		formattedDaemonName = "BIND9"
+	case daemonname.PDNS:
+		formattedDaemonName = "PowerDNS"
+	}
+
+	if d.Machine != nil {
+		machineLabel := d.Machine.GetLabel()
+		return fmt.Sprintf("%s@%s", formattedDaemonName, machineLabel)
+	}
+
+	accessPoint, err := d.GetAccessPoint(AccessPointControl)
+	if err == nil {
+		return fmt.Sprintf("%s@%s", formattedDaemonName, accessPoint.Address)
+	}
+	return formattedDaemonName
+}
+
 // Structure representing HA service information displayed for the daemon
 // in the dashboard.
 type DaemonServiceOverview struct {

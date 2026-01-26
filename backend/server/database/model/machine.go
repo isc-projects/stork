@@ -412,3 +412,11 @@ func (machine *Machine) GetAgentPort() int64 {
 func (machine *Machine) GetHostname() string {
 	return machine.State.Hostname
 }
+
+// Return the label of the daemon for identification in the UI and logs.
+func (machine *Machine) GetLabel() string {
+	if machine.State.Hostname != "" {
+		return machine.State.Hostname
+	}
+	return machine.Address
+}

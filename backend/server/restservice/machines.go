@@ -1223,14 +1223,7 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 	}
 
 	if dbDaemon.Machine != nil {
-		daemon.Machine = &models.SimpleMachine{
-			Address:      dbDaemon.Machine.Address,
-			AgentPort:    dbDaemon.Machine.AgentPort,
-			AgentVersion: dbDaemon.Machine.State.AgentVersion,
-			Hostname:     dbDaemon.Machine.State.Hostname,
-			ID:           dbDaemon.MachineID,
-		}
-
+		daemon.MachineLabel = dbDaemon.Machine.GetLabel()
 		agentStats := r.Agents.GetConnectedAgentStatsWrapper(dbDaemon.Machine.Address, dbDaemon.Machine.AgentPort)
 		if agentStats != nil {
 			defer agentStats.Close()

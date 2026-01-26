@@ -73,7 +73,7 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 
 		localHost := models.LocalHost{
 			DaemonID:       dbLocalHost.Daemon.ID,
-			DaemonName:     string(dbLocalHost.Daemon.Name),
+			DaemonLabel:    dbLocalHost.Daemon.GetLabel(),
 			DataSource:     dbLocalHost.DataSource.String(),
 			NextServer:     dbLocalHost.NextServer,
 			ServerHostname: dbLocalHost.ServerHostname,
