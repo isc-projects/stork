@@ -4,12 +4,13 @@ import { daemonStatusIconClass, daemonStatusIconTooltip } from '../utils'
 import { AnyDaemon } from '../backend'
 import { RouterLink } from '@angular/router'
 import { Tooltip } from 'primeng/tooltip'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 @Component({
     selector: 'app-daemon-status',
     templateUrl: './daemon-status.component.html',
     styleUrls: ['./daemon-status.component.sass'],
-    imports: [RouterLink, Tooltip],
+    imports: [RouterLink, Tooltip, DaemonNiceNamePipe],
 })
 export class DaemonStatusComponent {
     daemon = input<AnyDaemon>(null)

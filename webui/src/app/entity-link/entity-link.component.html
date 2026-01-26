@@ -3,7 +3,7 @@
     <ng-container *ngSwitchCase="'daemon'">
         {{ showEntityName ? 'daemon' : '' }}
         <a id="daemon-link-{{ attrs.daemonId || attrs.id }}" routerLink="/daemons/{{ attrs.daemonId || attrs.id }}">
-            [{{ attrs.daemonId || attrs.id }}] {{ attrs.daemonLabel || attrs.label || (attrs.name | daemonNiceName) }}
+            [{{ attrs.daemonId || attrs.id }}] {{ attrs.daemonLabel || (attrs.name | daemonNiceName) }}
         </a>
     </ng-container>
 

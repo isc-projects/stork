@@ -261,9 +261,9 @@ describe('MachinesTableComponent', () => {
         // Assert
         const textContent = fixture.nativeElement.innerText
 
-        expect(textContent).toContain('DHCPv4@myhost.example.org')
-        expect(textContent).toContain('CA@myhost.example.org')
-        expect(textContent).toContain('named@myhost.example.org')
+        expect(textContent).toContain('DHCPv4')
+        expect(textContent).toContain('CA')
+        expect(textContent).toContain('named')
 
         // One VersionStatus for Stork agent + one for Kea + one for BIND9.
         const versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))

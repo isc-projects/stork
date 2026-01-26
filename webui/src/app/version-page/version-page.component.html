@@ -157,7 +157,7 @@
         >
             <ng-template #header>
                 <tr>
-                    <th class="w-6rem lg:w-10rem">Hostname</th>
+                    <th class="w-6rem lg:w-10rem">Machine</th>
                     <th class="w-6rem lg:w-10rem">Location</th>
                     <th class="w-6rem lg:w-10rem">Agent Version</th>
                     <th class="w-6rem lg:w-10rem">Daemon(s) Version</th>
@@ -199,8 +199,8 @@
             <ng-template #expandedrow let-m>
                 <tr>
                     <td>
-                        <span class="p-datatable-column-title">Hostname</span>
-                        <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
+                        <span class="p-datatable-column-title">Machine</span>
+                        <app-entity-link [showEntityName]="false" entity="machine" [attrs]="m"></app-entity-link>
                     </td>
                     <td><span class="p-datatable-column-title">Location</span>{{ m.address }}:{{ m.agentPort }}</td>
                     <td>
@@ -208,10 +208,10 @@
                         {{ m.agentVersion }}
                     </td>
                     <td>
-                        <span class="p-datatable-column-title">Daemon(s) Version</span>
+                        <span class="p-datatable-column-title">Daemon(s)</span>
                         <ng-container *ngFor="let d of m.daemons">
                             <div class="flex justify-content-between gap-2">
-                                <div>{{ d.label }}</div>
+                                <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="d"></app-entity-link>
                                 <div>{{ sanitizeSemver(d.version) }}</div>
                             </div>
                         </ng-container>

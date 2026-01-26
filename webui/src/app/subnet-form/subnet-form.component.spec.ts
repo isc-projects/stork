@@ -6,7 +6,7 @@ import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/c
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { Observable, of, throwError } from 'rxjs'
-import { DHCPService, UpdateSubnetBeginResponse } from '../backend'
+import { DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { AddressPoolForm, KeaSubnetParametersForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
 import { By } from '@angular/platform-browser'
 import { provideRouter } from '@angular/router'
@@ -316,20 +316,24 @@ describe('SubnetFormComponent', () => {
                 id: 3,
                 name: 'dhcp6',
                 version: '2.7.4',
+                label: 'DHCPv6@myhost.example.org',
             },
             {
                 id: 2,
                 name: 'dhcp4',
+                label: 'DHCPv4@yourhost.example.org',
             },
             {
                 id: 4,
                 name: 'dhcp6',
                 version: '2.7.3',
+                label: 'DHCPv6@ourhost.example.org',
             },
             {
                 id: 5,
                 name: 'dhcp6',
                 version: '2.7.3',
+                label: 'DHCPv6@theirhost.example.org',
             },
         ],
         sharedNetworks4: [],
@@ -729,7 +733,7 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        const subnet = {
+        const subnet: Subnet = {
             id: 234,
             subnet: '2001:db8:1::/64',
             sharedNetworkId: null,

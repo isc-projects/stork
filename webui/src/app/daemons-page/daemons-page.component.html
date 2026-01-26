@@ -174,8 +174,7 @@
                     <th style="width: 14em">Daemon</th>
                     <th>Version</th>
                     <th>Status</th>
-                    <th>Machine Address</th>
-                    <th>Machine Hostname</th>
+                    <th>Machine</th>
                     <th style="width: 4rem">Action</th>
                 </tr>
             </ng-template>
@@ -193,10 +192,7 @@
                         </span>
                     </td>
                     <td>
-                        <a routerLink="/machines/{{ d.machine?.id }}">{{ d.machine?.address }}</a>
-                    </td>
-                    <td>
-                        <a routerLink="/machines/{{ d.machine?.id }}">{{ d.machine?.hostname }}</a>
+                        <app-entity-link entity="machine" [showEntityName]="false" [attrs]="d"></app-entity-link>
                     </td>
                     <td>
                         <p-button
