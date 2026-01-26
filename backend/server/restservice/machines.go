@@ -1155,6 +1155,7 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 			MachineID:       dbDaemon.MachineID,
 			Monitored:       dbDaemon.Monitored,
 			Name:            string(dbDaemon.Name),
+			Label:           dbDaemon.GetLabel(),
 			Pid:             int64(dbDaemon.Pid),
 			ReloadedAt:      convertToOptionalDatetime(dbDaemon.ReloadedAt),
 			Uptime:          dbDaemon.Uptime,
