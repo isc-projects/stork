@@ -13,7 +13,7 @@
     required:
       - id
       - daemonId
-      - daemonName
+      - daemonLabel
       - cltt
       - ipAddress
       - state
@@ -24,7 +24,7 @@
         type: integer
       daemonId:
         type: integer
-      daemonName:
+      daemonLabel:
         type: string
       clientId:
         type: string
@@ -63,11 +63,11 @@
     type: object
     required:
       - id
-      - name
+      - label
     properties:
       id:
         type: integer
-      name:
+      label:
         type: string
 
   Leases:
@@ -152,7 +152,7 @@
     properties:
       daemonId:
         type: integer
-      daemonName:
+      daemonLabel:
         type: string
       dataSource:
         type: string
@@ -312,7 +312,7 @@
         type: integer
       daemonId:
         type: integer
-      daemonName:
+      daemonLabel:
         type: string
       stats:
         type: object
@@ -441,7 +441,7 @@
     properties:
       daemonId:
         type: integer
-      daemonName:
+      daemonLabel:
         type: string
       keaConfigSharedNetworkParameters:
           $ref: '#/definitions/KeaConfigSharedNetworkParameters'
@@ -549,8 +549,6 @@
     properties:
       daemonId:
         type: integer
-      daemonName:
-        type: string
       partialConfig:
         $ref: '#/definitions/KeaConfigurableGlobalParameters'
 

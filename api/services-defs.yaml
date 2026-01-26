@@ -25,16 +25,14 @@
     required:
       - logTargetOutput
       - daemonId
-      - daemonName
+      - daemonLabel
       - contents
     properties:
       logTargetOutput:
         type: string
-      machine:
-        $ref: '#/definitions/SimpleMachine'
       daemonId:
         type: integer
-      daemonName:
+      daemonLabel:
         type: string
       contents:
         type: array
@@ -254,6 +252,8 @@
         type: integer
       daemonName:
         type: string
+      daemonLabel:
+        type: string
       daemonVersion:
         type: string
       editable:
@@ -295,6 +295,8 @@
           - d2
           - pdns
           - named
+      label:
+        type: string
       active:
         type: boolean
       monitored:
@@ -315,8 +317,8 @@
         type: integer
       machineId:
         type: integer
-      machine:
-        $ref: '#/definitions/SimpleMachine'
+      machineLabel:
+        type: string
       accessPoints:
         type: array
         items:
