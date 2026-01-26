@@ -1266,6 +1266,7 @@ func (r *RestAPI) simpleDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.Simple
 	daemon := &models.SimpleDaemon{
 		ID:      dbDaemon.ID,
 		Name:    string(dbDaemon.Name),
+		Label:   dbDaemon.GetLabel(),
 		Version: dbDaemon.Version,
 		Active:  dbDaemon.Active,
 	}

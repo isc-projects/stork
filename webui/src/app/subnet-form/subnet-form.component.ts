@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
 import { CreateSubnetBeginResponse, DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
-import { daemonNameToFriendlyName, getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
+import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
 import {
     FormArray,
@@ -210,15 +210,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // The server should return new transaction id and a current list of
         // daemons to select.
         this.state.transactionID = response.id
-        this.state.allDaemons = []
-        for (let d of response.daemons) {
-            this.state.allDaemons.push({
-                id: d.id,
-                name: d.name,
-                version: d.version,
-                label: `[${d.id}] ${daemonNameToFriendlyName(d.name)}`,
-            })
-        }
+        this.state.allDaemons = response.daemons as SelectableDaemon[]
         // Initially, list all daemons.
         this.state.filteredDaemons = this.state.allDaemons
         this.state.allSharedNetworks4 = response.sharedNetworks4 || []

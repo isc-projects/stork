@@ -211,7 +211,7 @@
                         <span class="p-datatable-column-title">Daemon(s) Version</span>
                         <ng-container *ngFor="let d of m.daemons">
                             <div class="flex justify-content-between gap-2">
-                                <div>{{ d.name | daemonNiceName }}</div>
+                                <div>{{ d.label }}</div>
                                 <div>{{ sanitizeSemver(d.version) }}</div>
                             </div>
                         </ng-container>

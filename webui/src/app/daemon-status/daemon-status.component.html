@@ -3,5 +3,5 @@
     style="white-space: nowrap; margin: 0 0.5rem 0 0"
     routerLink="/daemons/{{ daemon().id }}"
 >
-    <i class="{{ daemonStatusIconClass() }} text-sm pr-1"></i>{{ daemon().name | daemonNiceName }}
+    <i class="{{ daemonStatusIconClass() }} text-sm pr-1"></i>{{ daemon().label }}
 </a>

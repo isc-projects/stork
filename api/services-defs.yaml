@@ -332,6 +332,8 @@
       name:
         type: string
         enum: *DAEMONNAMES
+      label:
+        type: string
       version:
         type: string
       active:

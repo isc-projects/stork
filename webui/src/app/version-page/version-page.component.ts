@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { DaemonName, isIscDaemon, isKeaDaemon, Severity, UpdateNotification, VersionService } from '../version.service'
 import { AppsVersions, ServicesService, VersionDetails, SimpleMachine, SimpleMachines, SimpleDaemon } from '../backend'
-import { daemonNameToFriendlyName, deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
+import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
@@ -363,9 +363,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     getDaemonsVersions(m: SimpleMachine): string {
         const daemons: string[] = []
         for (const d of m?.daemons ?? []) {
-            if (d.name && d.version) {
-                daemons.push(`${daemonNameToFriendlyName(d.name)} ${d.version}`)
-            }
+            daemons.push(d.label)
         }
 
         return daemons.join(', ')
@@ -399,12 +397,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly getIconBySeverity = getIconBySeverity
-
-    /**
-     * Reference to the function so it can be used in the html template.
-     * @protected
-     */
-    protected readonly daemonNameToFriendlyName = daemonNameToFriendlyName
 
     /**
      * Sanitizes given version string and returns valid semver if it could be parsed.
