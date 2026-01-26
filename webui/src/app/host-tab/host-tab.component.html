@@ -75,7 +75,7 @@
                         <app-entity-link
                             entity="daemon"
                             [showEntityName]="false"
-                            [attrs]="{ id: erredDaemon.id, name: erredDaemon.name }"
+                            [attrs]="erredDaemon"
                         ></app-entity-link>
                     </li>
                 </ul>
@@ -89,9 +89,11 @@
                     <ng-template #body let-ls>
                         <tr>
                             <td class="border-none w-10rem">
-                                <a routerLink="/daemons/{{ ls[0].daemonId }}">
-                                    {{ ls[0].daemonName || 'Daemon ' + ls[0].daemonId }}
-                                </a>
+                                <app-entity-link
+                                    entity="daemon"
+                                    [showEntityName]="false"
+                                    [attrs]="ls[0]"
+                                ></app-entity-link>
                                 <app-host-data-source-label
                                     class="ml-2"
                                     *ngFor="let l of ls"
@@ -334,9 +336,7 @@
     <span class="stork-fieldset-legend-text">
         {{ title }}&nbsp;/&nbsp;
         <ng-container *ngIf="!all">
-            <a class="mr-1" routerLink="/daemons/{{ localHosts[0].daemonId }}">
-                {{ localHosts[0].daemonName || 'Daemon ' + localHosts[0].daemonId }}
-            </a>
+            <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="localHosts[0]"></app-entity-link>
             <app-host-data-source-label
                 *ngFor="let localHost of localHosts"
                 class="ml-2"

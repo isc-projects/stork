@@ -10,14 +10,14 @@
             <ng-container *ngFor="let localSubnet of localSubnets">
                 <div *ngIf="localSubnet.pools?.length > 0" class="min-w-0 overflow-auto">
                     <app-utilization-stats-chart
-                        [title]="localSubnet.daemonName"
+                        [title]="localSubnet.daemonLabel"
                         leaseType="na"
                         [network]="localSubnet"
                     ></app-utilization-stats-chart>
                 </div>
                 <div *ngIf="localSubnet.prefixDelegationPools?.length > 0" class="min-w-0 overflow-auto">
                     <app-utilization-stats-chart
-                        [title]="localSubnet.daemonName"
+                        [title]="localSubnet.daemonLabel"
                         leaseType="pd"
                         [network]="localSubnet"
                     ></app-utilization-stats-chart>

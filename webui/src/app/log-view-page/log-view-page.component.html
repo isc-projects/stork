@@ -1,7 +1,7 @@
 <div style="margin-top: 20px">
-    <a *ngIf="daemonId" routerLink="/daemons/{{ daemonId }}">
+    <a *ngIf="data?.daemonId" routerLink="/daemons/{{ data.daemonId }}">
         <span class="fa fa-arrow-left"></span>
-        <span style="margin-left: 5px">Back to {{ daemonName | daemonNiceName }}</span>
+        <span style="margin-left: 5px">Back to {{ data.daemonLabel }}</span>
     </a>
 </div>
 
@@ -50,16 +50,7 @@
                 <ng-container *ngIf="loaded">
                     Log {{ data.logTargetOutput }}
                     from the
-                    <app-entity-link
-                        id="daemon-link"
-                        entity="daemon"
-                        [attrs]="{ id: daemonId, name: daemonName }"
-                    ></app-entity-link>
-                    on the
-                    <app-entity-link
-                        entity="machine"
-                        [attrs]="{ id: data.machine.id, address: data.machine.address }"
-                    ></app-entity-link>
+                    <app-entity-link id="daemon-link" entity="daemon" [attrs]="data"></app-entity-link>
                 </ng-container>
             </span>
         </div>
@@ -67,7 +58,7 @@
     <div *ngIf="loaded && (!contents || contents.length === 0)">(empty)</div>
     <div *ngIf="contents && contents.length > 1">...</div>
     <div *ngFor="let line of contents; let i = index">
-        <span *ngFor="let block of parseLogLine(line)" style="color:{{ logSeverityColor(block) }}">
+        <span *ngFor="let block of parseLogLine(line)" [style]="{ color: logSeverityColor(block) }">
             {{ i > 0 || contents.length === 1 ? block : '' }}
         </span>
     </div>

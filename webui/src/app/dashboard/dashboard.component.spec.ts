@@ -85,7 +85,7 @@ describe('DashboardComponent', () => {
                     active: true,
                     agentCommErrors: 6,
                     haOverview: [],
-                    machine: { id: 15, address: 'pc' },
+                    machineLabel: 'pc',
                     machineId: 15,
                     monitored: true,
                     name: 'dhcp4',
@@ -123,7 +123,7 @@ describe('DashboardComponent', () => {
                         localSubnets: [
                             {
                                 daemonId: 27,
-                                daemonName: 'dhcp4',
+                                daemonLabel: 'DHCPv4@localhost',
                                 id: 41,
                                 pools: [
                                     {
@@ -152,7 +152,7 @@ describe('DashboardComponent', () => {
                         localSubnets: [
                             {
                                 daemonId: 27,
-                                daemonName: 'dhcp4',
+                                daemonLabel: 'DHCPv4@localhost',
                                 pools: [
                                     {
                                         pool: '10.3::1-10.3::100',

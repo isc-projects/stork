@@ -33,15 +33,18 @@ describe('LogViewPageComponent', () => {
 
     it('should include daemon link', () => {
         component.loaded = true
-        component.data = { logTargetOutput: '/tmp/xyz', machine: { id: 1 } }
-        component.daemonName = 'fantastic-daemon'
-        component.daemonId = 15
+        component.data = {
+            logTargetOutput: '/tmp/xyz',
+            daemonId: 15,
+            daemonLabel: 'fantastic-daemon',
+            contents: [],
+        }
         fixture.detectChanges()
         const daemonLink = fixture.debugElement.query(By.css('#daemon-link'))
         const daemonLinkComponent = daemonLink.componentInstance
         expect(daemonLinkComponent).toBeDefined()
-        expect(daemonLinkComponent.attrs.hasOwnProperty('name')).toBeTrue()
-        expect(daemonLinkComponent.attrs.name).toEqual('fantastic-daemon')
-        expect(daemonLinkComponent.attrs.id).toEqual(15)
+        expect(daemonLinkComponent.attrs.hasOwnProperty('daemonLabel')).toBeTrue()
+        expect(daemonLinkComponent.attrs.daemonLabel).toEqual('fantastic-daemon')
+        expect(daemonLinkComponent.attrs.daemonId).toEqual(15)
     })
 })

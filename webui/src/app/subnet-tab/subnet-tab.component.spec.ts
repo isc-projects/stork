@@ -61,7 +61,7 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     daemonId: 42,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: [
                         {
                             pool: '192.0.2.1-192.0.2.100',
@@ -166,7 +166,7 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     daemonId: 42,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     stats: {
                         'total-addresses': 240,
                         'assigned-addresses': 70,
@@ -212,7 +212,7 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     daemonId: 42,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::786',
@@ -272,7 +272,7 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     daemonId: 42,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::768',
@@ -344,7 +344,7 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 12223,
                     daemonId: 42,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::768',
@@ -391,7 +391,7 @@ describe('SubnetTabComponent', () => {
                 {
                     id: 25432,
                     daemonId: 43,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::768',
@@ -454,7 +454,7 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[0].nativeElement.innerText).toContain('25432')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Pools')
-        expect(fieldsets[1].nativeElement.innerText).toContain('dhcp6')
+        expect(fieldsets[1].nativeElement.innerText).toContain('DHCPv6@localhost')
 
         let poolBar = fieldsets[1].query(By.css('app-address-pool-bar'))
         expect(poolBar).toBeTruthy()
@@ -464,7 +464,7 @@ describe('SubnetTabComponent', () => {
         expect(prefixBars.length).toBe(1)
 
         expect(fieldsets[2].nativeElement.innerText).toContain('Pools')
-        expect(fieldsets[2].nativeElement.innerText).toContain('dhcp6')
+        expect(fieldsets[2].nativeElement.innerText).toContain('DHCPv6@localhost')
 
         poolBar = fieldsets[2].query(By.css('app-address-pool-bar'))
         expect(poolBar).toBeTruthy()
@@ -486,9 +486,9 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[6].nativeElement.innerText).toContain('No parameters configured.')
 
         expect(fieldsets[7].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[7].nativeElement.innerText).toContain('dhcp6')
+        expect(fieldsets[7].nativeElement.innerText).toContain('DHCPv6@localhost')
         expect(fieldsets[8].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[8].nativeElement.innerText).toContain('dhcp6')
+        expect(fieldsets[8].nativeElement.innerText).toContain('DHCPv6@localhost')
     })
 
     it('should return shared network attributes for IPv6 subnet', () => {
@@ -522,7 +522,7 @@ describe('SubnetTabComponent', () => {
             localSubnets: [
                 {
                     id: 12223,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                 },
             ],
         }

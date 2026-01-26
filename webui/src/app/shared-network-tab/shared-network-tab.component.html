@@ -77,11 +77,7 @@
                 <ng-template #body let-l>
                     <tr>
                         <td class="border-none w-15rem">
-                            <app-entity-link
-                                entity="daemon"
-                                [showEntityName]="false"
-                                [attrs]="{ id: l.daemonId, name: l.daemonName }"
-                            ></app-entity-link>
+                            <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="l"></app-entity-link>
                         </td>
                     </tr>
                 </ng-template>
@@ -136,12 +132,12 @@
                 <ng-template #header>
                     <span class="stork-fieldset-legend-text"
                         >DHCP Options&nbsp;/&nbsp;
-                        <a
+                        <app-entity-link
                             *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
-                            routerLink="/daemons/{{ localSharedNetwork.daemonId }}"
-                        >
-                            {{ localSharedNetwork.daemonName }}
-                        </a>
+                            entity="daemon"
+                            [showEntityName]="false"
+                            [attrs]="localSharedNetwork"
+                        ></app-entity-link>
                         <ng-template #equalDhcpOptionsBlock>
                             <span class="font-normal"> All Servers </span>
                         </ng-template>

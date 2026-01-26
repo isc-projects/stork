@@ -48,10 +48,8 @@ describe('AccessPointsComponent', () => {
 
     it('should display control access point', () => {
         component.daemon = {
-            machine: {
-                id: 1,
-                address: '192.0.2.1:8080',
-            },
+            machineId: 1,
+            machineLabel: '192.0.2.1:8080',
             accessPoints: [
                 {
                     type: 'control',
@@ -75,10 +73,8 @@ describe('AccessPointsComponent', () => {
 
     it('should display statistics access point', () => {
         component.daemon = {
-            machine: {
-                id: 1,
-                address: '192.0.2.1:8080',
-            },
+            machineId: 1,
+            machineLabel: '192.0.2.1:8080',
             accessPoints: [
                 {
                     type: 'statistics',
@@ -102,10 +98,8 @@ describe('AccessPointsComponent', () => {
 
     it('should display multiple access points', () => {
         component.daemon = {
-            machine: {
-                id: 1,
-                address: '192.0.2.1:8080',
-            },
+            machineId: 1,
+            machineLabel: '192.0.2.1:8080',
             accessPoints: [
                 {
                     type: 'control',

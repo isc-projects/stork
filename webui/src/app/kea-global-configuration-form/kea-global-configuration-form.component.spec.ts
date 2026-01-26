@@ -260,7 +260,6 @@ describe('KeaGlobalConfigurationFormComponent', () => {
             configs: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
                     partialConfig: {
                         allocator: 'iterative',
                         authoritative: false,
@@ -343,7 +342,6 @@ describe('KeaGlobalConfigurationFormComponent', () => {
             configs: [
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp6',
                     partialConfig: {
                         allocator: 'random',
                         pdAllocator: 'flq',
@@ -394,23 +392,28 @@ describe('KeaGlobalConfigurationFormComponent', () => {
     }))
 
     it('should list the server names', () => {
-        const response = {
+        const response: UpdateKeaDaemonsGlobalParametersBeginResponse = {
             id: 1,
             configs: [
                 {
+                    daemonId: 1,
                     daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     config: { Dhcp4: {} },
                 },
                 {
+                    daemonId: 2,
                     daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@remotehost',
                     config: { Dhcp4: {} },
                 },
             ],
-        } as UpdateKeaDaemonsGlobalParametersBeginResponse
+        }
         component.response = response
 
         expect(component.servers.length).toBe(2)
-        expect(component.servers).toContain('dhcp4')
+        expect(component.servers).toContain('DHCPv4@localhost')
+        expect(component.servers).toContain('DHCPv4@remotehost')
     })
 
     it('should detect IPv6 servers', () => {

@@ -428,11 +428,7 @@
             <td>
                 <div *ngFor="let lhs of localHostsGroupedByDaemon[h.id]" class="flex align-items-baseline">
                     <!-- Hyperlink to the daemon details -->
-                    <app-entity-link
-                        entity="daemon"
-                        [showEntityName]="false"
-                        [attrs]="{ id: lhs[0].daemonId, name: lhs[0].daemonName }"
-                    ></app-entity-link>
+                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lhs[0]"></app-entity-link>
                     <!-- Data source labels -->
                     <app-host-data-source-label
                         *ngFor="let lh of lhs"

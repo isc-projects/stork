@@ -96,11 +96,7 @@
             found for the following Kea servers:
             <ul style="list-style-type: disc">
                 <li *ngFor="let erredDaemon of erredDaemons">
-                    <app-entity-link
-                        entity="daemon"
-                        [showEntityName]="false"
-                        [attrs]="{ id: erredDaemon.id, name: erredDaemon.name }"
-                    ></app-entity-link>
+                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="erredDaemon"></app-entity-link>
                 </li>
             </ul>
         </div>
@@ -133,11 +129,7 @@
                 {{ leaseStateAsText(lease.state) }}
             </td>
             <td>
-                <app-entity-link
-                    entity="daemon"
-                    [showEntityName]="false"
-                    [attrs]="{ id: lease.daemonId, name: lease.daemonName }"
-                ></app-entity-link>
+                <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lease"></app-entity-link>
             </td>
         </tr>
     </ng-template>

@@ -90,7 +90,7 @@ describe('SharedNetworkTabComponent', () => {
             localSharedNetworks: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -215,7 +215,7 @@ describe('SharedNetworkTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -367,7 +367,7 @@ describe('SharedNetworkTabComponent', () => {
             localSharedNetworks: [
                 {
                     daemonId: 10,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                 },
             ],
         }
@@ -432,7 +432,7 @@ describe('SharedNetworkTabComponent', () => {
             localSharedNetworks: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv6@localhost',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             hostnameCharReplacement: 'X',
@@ -456,7 +456,7 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Shared Network')
-        expect(fieldsets[0].nativeElement.innerText).toContain('[1] DHCPv4')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[1] DHCPv6@localhost')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Subnets')
         const subnetBars = fieldsets[1].queryAll(By.css('app-subnet-bar'))
@@ -502,7 +502,7 @@ describe('SharedNetworkTabComponent', () => {
             localSharedNetworks: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv6@localhost',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {},
                     },

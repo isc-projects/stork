@@ -186,13 +186,13 @@ describe('subnets', () => {
     })
 
     it('extracts unique pools', () => {
-        const subnets6 = [
+        const subnets6: Subnet[] = [
             {
                 subnet: '3000::/120',
                 localSubnets: [
                     {
                         daemonId: 1,
-                        daemonName: 'foo',
+                        daemonLabel: 'foo',
                         pools: [
                             {
                                 pool: '3000::1-3000::5',
@@ -232,7 +232,7 @@ describe('subnets', () => {
                     },
                     {
                         daemonId: 2,
-                        daemonName: 'bar',
+                        daemonLabel: 'bar',
                         pools: [
                             {
                                 pool: '3000::1-3000::5',
@@ -283,30 +283,30 @@ describe('subnets', () => {
         expect(convertedSubnets[0].pools[0].localPools?.length).toBe(2)
         expect(convertedSubnets[0].pools[0].localPools[0].daemonId).toBe(1)
         expect(convertedSubnets[0].pools[0].localPools[1].daemonId).toBe(2)
-        expect(convertedSubnets[0].pools[0].localPools[0].daemonName).toBe('foo')
-        expect(convertedSubnets[0].pools[0].localPools[1].daemonName).toBe('bar')
+        expect(convertedSubnets[0].pools[0].localPools[0].daemonLabel).toBe('foo')
+        expect(convertedSubnets[0].pools[0].localPools[1].daemonLabel).toBe('bar')
         expect(convertedSubnets[0].pools[0].localPools[0].keaConfigPoolParameters?.clientClass).toBe('foo')
         expect(convertedSubnets[0].pools[0].localPools[1].keaConfigPoolParameters?.clientClass).toBe('bar')
         expect(convertedSubnets[0].pools[1].pool).toBe('3000::10-3000::15')
         expect(convertedSubnets[0].pools[1].localPools?.length).toBe(2)
         expect(convertedSubnets[0].pools[1].localPools[0].daemonId).toBe(1)
         expect(convertedSubnets[0].pools[1].localPools[1].daemonId).toBe(2)
-        expect(convertedSubnets[0].pools[1].localPools[0].daemonName).toBe('foo')
-        expect(convertedSubnets[0].pools[1].localPools[1].daemonName).toBe('bar')
+        expect(convertedSubnets[0].pools[1].localPools[0].daemonLabel).toBe('foo')
+        expect(convertedSubnets[0].pools[1].localPools[1].daemonLabel).toBe('bar')
         expect(convertedSubnets[0].pools[2].pool).toBe('3000::20-3000::35')
         expect(convertedSubnets[0].pools[2].localPools?.length).toBe(2)
         expect(convertedSubnets[0].pools[2].localPools[0].daemonId).toBe(1)
         expect(convertedSubnets[0].pools[2].localPools[1].daemonId).toBe(2)
-        expect(convertedSubnets[0].pools[2].localPools[0].daemonName).toBe('foo')
-        expect(convertedSubnets[0].pools[2].localPools[1].daemonName).toBe('bar')
+        expect(convertedSubnets[0].pools[2].localPools[0].daemonLabel).toBe('foo')
+        expect(convertedSubnets[0].pools[2].localPools[1].daemonLabel).toBe('bar')
         expect(convertedSubnets[0].pools[3].pool).toBe('3000::40-3000::65')
         expect(convertedSubnets[0].pools[3].localPools?.length).toBe(1)
-        expect(convertedSubnets[0].pools[3].localPools[0].daemonName).toBe('foo')
+        expect(convertedSubnets[0].pools[3].localPools[0].daemonLabel).toBe('foo')
         expect(convertedSubnets[0].pools[3].localPools[0].daemonId).toBe(1)
         expect(convertedSubnets[0].pools[4].pool).toBe('3000::70-3000::85')
         expect(convertedSubnets[0].pools[4].localPools?.length).toBe(1)
         expect(convertedSubnets[0].pools[4].localPools[0].daemonId).toBe(2)
-        expect(convertedSubnets[0].pools[4].localPools[0].daemonName).toBe('bar')
+        expect(convertedSubnets[0].pools[4].localPools[0].daemonLabel).toBe('bar')
 
         expect(convertedSubnets[0].prefixDelegationPools[0].prefix).toBe('3001::/64')
         expect(convertedSubnets[0].prefixDelegationPools[0].localPools?.length).toBe(1)

@@ -9,7 +9,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { DaemonsPageComponent } from '../daemons-page/daemons-page.component'
 import { RouterTestingHarness } from '@angular/router/testing'
 
@@ -53,6 +53,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         validDaemonConfig = {
             daemonId: 1,
             daemonName: 'dhcp4',
+            daemonLabel: 'DHCPv4@localhost',
             editable: true,
             config: {
                 Dhcp4: {
@@ -239,7 +240,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         expect(component.disableEdit).toBeFalse()
 
         expect(component.dhcpParameters.length).toBe(1)
-        expect(component.dhcpParameters.at(0).name).toBe('DHCPv4')
+        expect(component.dhcpParameters.at(0).name).toBe('DHCPv4@localhost')
         expect(component.dhcpParameters.at(0).parameters.length).toBe(1)
         expect(component.dhcpParameters.at(0).parameters[0].hasOwnProperty('allocator'))
         expect(component.dhcpParameters.at(0).parameters[0]['allocator']).toBe('iterative')
@@ -249,8 +250,10 @@ describe('KeaGlobalConfigurationPageComponent', () => {
     }))
 
     it('should disable edit button for global parameters', fakeAsync(() => {
-        const config: any = {
+        const config: KeaDaemonConfig = {
+            daemonId: 1,
             daemonName: 'dhcp4',
+            daemonLabel: 'DHCPv4@localhost',
             editable: false,
             config: {
                 Dhcp4: {
@@ -258,7 +261,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 },
             },
         }
-        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(config))
+        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(config as HttpEvent<KeaDaemonConfig>))
 
         component.daemonId = 1
         component.ngOnInit()
@@ -282,7 +285,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.updateBreadcrumbs).toHaveBeenCalledTimes(2)
-        expect(component.updateBreadcrumbs).toHaveBeenCalledWith(1, 'dhcp4')
+        expect(component.updateBreadcrumbs).toHaveBeenCalledWith(1, 'DHCPv4@localhost')
     }))
 
     it('should display a message on error', fakeAsync(() => {

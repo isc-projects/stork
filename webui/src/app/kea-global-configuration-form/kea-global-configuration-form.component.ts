@@ -119,8 +119,6 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
                 .map((params) => {
                     return {
                         daemonId: this.daemonId,
-                        daemonName: this.response.configs.find((config) => config.daemonId === this.daemonId)
-                            ?.daemonName,
                         partialConfig: params,
                     }
                 }),
@@ -244,7 +242,7 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
      * Returns an array of server names associated with the configs.
      */
     get servers(): string[] {
-        return this.response?.configs?.map((c) => c.daemonName) ?? []
+        return this.response?.configs?.map((c) => c.daemonLabel) ?? []
     }
 
     /**

@@ -319,11 +319,7 @@
             </td>
             <td>
                 <div *ngFor="let lsn of sn.localSubnets">
-                    <app-entity-link
-                        entity="daemon"
-                        [showEntityName]="false"
-                        [attrs]="{ id: lsn.daemonId, name: lsn.daemonName }"
-                    ></app-entity-link>
+                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lsn"></app-entity-link>
                 </div>
             </td>
             <td>

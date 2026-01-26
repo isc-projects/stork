@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { MenuItem, MessageService } from 'primeng/api'
-import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
+import { getErrorMessage } from '../utils'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
@@ -11,7 +11,6 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { NgIf } from '@angular/common'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { ProgressSpinner } from 'primeng/progressspinner'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * A component that displays global configuration parameter for Kea.
@@ -27,7 +26,6 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
         KeaGlobalConfigurationFormComponent,
         KeaGlobalConfigurationViewComponent,
         ProgressSpinner,
-        DaemonNiceNamePipe,
     ],
 })
 export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
@@ -49,9 +47,9 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     daemonId: number
 
     /**
-     * Daemon name fetched from the server.
+     * Daemon label fetched from the server.
      */
-    daemonName: string
+    daemonLabel: string
 
     /**
      * Holds fetched configuration. It always contains one (or zero) element.
@@ -175,13 +173,12 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
         lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
             .then((data: KeaDaemonConfig) => {
                 // Update daemon and app identifiers.
-                this.daemonName = data.daemonName
-                const friendlyDaemonName = daemonNameToFriendlyName(data.daemonName)
+                this.daemonLabel = data.daemonLabel
 
                 // Update DHCP parameters.
                 this.dhcpParameters = [
                     {
-                        name: friendlyDaemonName,
+                        name: data.daemonLabel,
                         parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
                     },
                 ]
@@ -190,7 +187,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 this.dhcpOptions = data.options ? [data.options.options] : []
 
                 // Update breadcrumbs.
-                this.updateBreadcrumbs(this.daemonId, data.daemonName)
+                this.updateBreadcrumbs(this.daemonId, data.daemonLabel)
             })
             .catch((err) => {
                 let msg = getErrorMessage(err)
@@ -207,15 +204,15 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     /** Updates the breadcrumbs links and labels. */
-    updateBreadcrumbs(daemonId: number, daemonName?: string): void {
+    updateBreadcrumbs(daemonId: number, daemonLabel?: string): void {
         const breadcrumb = [...this.breadcrumbs]
 
         if (daemonId != null) {
             breadcrumb[2].routerLink = `/daemons/${daemonId}`
         }
 
-        if (daemonName != null) {
-            breadcrumb[2].label = daemonNameToFriendlyName(daemonName)
+        if (daemonLabel != null) {
+            breadcrumb[2].label = daemonLabel
         }
 
         this.breadcrumbs = breadcrumb

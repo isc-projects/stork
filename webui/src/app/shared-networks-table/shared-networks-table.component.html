@@ -258,11 +258,7 @@
             </td>
             <td>
                 <div *ngFor="let daemon of getDaemons(net)">
-                    <app-entity-link
-                        entity="daemon"
-                        [showEntityName]="false"
-                        [attrs]="{ id: daemon.id, name: daemon.name }"
-                    ></app-entity-link>
+                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="daemon"></app-entity-link>
                 </div>
             </td>
         </tr>

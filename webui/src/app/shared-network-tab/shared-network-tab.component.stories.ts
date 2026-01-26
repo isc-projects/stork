@@ -63,7 +63,7 @@ export const SharedNetwork4: Story = {
             localSharedNetworks: [
                 {
                     daemonId: 1,
-                    daemonName: 'foo@192.0.2.1',
+                    daemonLabel: 'foo@192.0.2.1',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -188,7 +188,7 @@ export const SharedNetwork4: Story = {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'foo@192.0.2.2',
+                    daemonLabel: 'foo@192.0.2.2',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -320,7 +320,7 @@ export const SharedNetwork6: Story = {
             localSharedNetworks: [
                 {
                     daemonId: 1,
-                    daemonName: 'foo@192.0.2.1',
+                    daemonLabel: 'foo@192.0.2.1',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             hostnameCharReplacement: 'X',

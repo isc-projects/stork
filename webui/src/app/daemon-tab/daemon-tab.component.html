@@ -8,11 +8,7 @@
                     <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon()"></app-entity-link>
                     <i class="{{ daemonStatusIconClass() }} text-xl" pTooltip="{{ daemonStatusIconTooltip() }}"></i>
                     on machine
-                    <app-entity-link
-                        [showEntityName]="false"
-                        [attrs]="daemon().machine"
-                        entity="machine"
-                    ></app-entity-link>
+                    <app-entity-link [showEntityName]="false" [attrs]="daemon()" entity="machine"></app-entity-link>
                 </div>
             </div>
             <div class="flex gap-2">

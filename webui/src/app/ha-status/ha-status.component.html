@@ -33,9 +33,9 @@
                         <span *ngIf="column.daemonId && column.daemonName">
                             at
                             <app-entity-link
-                                entity="app"
+                                entity="daemon"
                                 [showEntityName]="false"
-                                [attrs]="{ id: column.daemonId, name: column.daemonName }"
+                                [attrs]="column"
                             ></app-entity-link>
                         </span>
                         <ng-container [ngSwitch]="column.iconType">
@@ -280,9 +280,9 @@
                         <span *ngIf="column.daemonId && column.daemonName">
                             at
                             <app-entity-link
-                                entity="app"
+                                entity="daemon"
                                 [showEntityName]="false"
-                                [attrs]="{ id: column.daemonId, name: column.daemonName }"
+                                [attrs]="column"
                             ></app-entity-link>
                         </span>
                         <ng-container [ngSwitch]="column.iconType">

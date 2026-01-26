@@ -84,7 +84,7 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     dataSource: 'api',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
@@ -194,7 +194,7 @@ describe('HostTabComponent', () => {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     dataSource: 'config',
                     hostname: 'mouse.example.org',
                     ipReservations: [
@@ -214,7 +214,7 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     dataSource: 'api',
                     hostname: 'mouse.example.org',
                     ipReservations: [
@@ -348,7 +348,7 @@ describe('HostTabComponent', () => {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'frog',
+                    daemonLabel: 'frog',
                     dataSource: 'config',
                     ipReservations: [
                         {
@@ -367,7 +367,7 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'mouse',
+                    daemonLabel: 'mouse',
                     dataSource: 'api',
                     ipReservations: [
                         {
@@ -470,7 +470,7 @@ describe('HostTabComponent', () => {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'frog',
+                    daemonLabel: 'frog',
                     dataSource: 'config',
                     ipReservations: [
                         {
@@ -480,7 +480,7 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'mouse',
+                    daemonLabel: 'mouse',
                     dataSource: 'api',
                     ipReservations: [
                         {
@@ -900,7 +900,7 @@ describe('HostTabComponent', () => {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@localhost',
                     dataSource: 'api',
                     clientClasses: ['foo', 'bar'],
                     nextServer: '192.0.2.1',
@@ -933,7 +933,7 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'lion',
+                    daemonLabel: 'lion',
                     dataSource: 'api',
                     clientClasses: ['baz'],
                     nextServer: '192.0.2.2',
@@ -981,7 +981,7 @@ describe('HostTabComponent', () => {
             let link = fieldsets[i].query(By.css('a:not([aria-expanded])'))
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
-                expect(link.properties.innerText).toContain('dhcp6')
+                expect(link.properties.innerText).toContain('DHCPv6@localhost')
                 expect(link.properties.pathname).toBe('/daemons/1')
             } else {
                 expect(link.properties.innerText).toContain('lion')
@@ -1015,7 +1015,7 @@ describe('HostTabComponent', () => {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     dataSource: 'api',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
@@ -1042,7 +1042,7 @@ describe('HostTabComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     dataSource: 'api',
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',

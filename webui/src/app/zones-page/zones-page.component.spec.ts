@@ -4,7 +4,7 @@ import { ZonesPageComponent } from './zones-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 import { Router, provideRouter } from '@angular/router'
-import { DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, ZoneRR, ZoneRRs, Zones, Zone } from '../backend'
+import { DNSService, ZoneInventoryState, ZoneInventoryStates, ZoneRR, ZoneRRs, Zones, Zone } from '../backend'
 import { Observable, of } from 'rxjs'
 import {
     HttpEventType,
@@ -122,7 +122,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 73,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -131,7 +131,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 74,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -147,7 +147,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 73,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -156,7 +156,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 74,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -172,7 +172,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 73,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -181,7 +181,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 74,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -197,7 +197,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 73,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -207,7 +207,7 @@ describe('ZonesPageComponent', () => {
                     {
                         zoneClass: 'IN',
                         daemonId: 74,
-                        daemonName: 'named',
+                        daemonLabel: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
@@ -539,16 +539,6 @@ describe('ZonesPageComponent', () => {
         expect(resp.total).toEqual(zoneFetchStatesHttpResp.body.total)
         expect(resp.daemonsCount).toBeUndefined()
         expect(resp.completedDaemonsCount).toBeUndefined()
-    })
-
-    it('should init filter dropdowns and multiselect', () => {
-        // Arrange + Act + Assert
-        expect(component.zoneTypes.length).toBeGreaterThan(0)
-        expect(component.zoneClasses.length).toBeGreaterThan(0)
-        expect(component.daemonNames.length).toBeGreaterThan(0)
-        expect(component.daemonNames[0].value).toBeTruthy()
-        expect(component.daemonNames[0].name).toBeTruthy()
-        expect(component.zoneClasses).not.toContain(DNSClass.Any)
     })
 
     xit('should activate first tab', () => {

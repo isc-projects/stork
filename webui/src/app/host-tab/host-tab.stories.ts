@@ -65,7 +65,7 @@ export const ViewDhcpv4Host: Story = {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'dhcp4@localhost',
                     dataSource: 'config',
                     clientClasses: ['access-point', 'router', 'cable-modem'],
                     nextServer: '192.0.2.2',
@@ -74,7 +74,7 @@ export const ViewDhcpv4Host: Story = {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'dhcp4@localhost',
                     dataSource: 'api',
                     clientClasses: ['access-point', 'router', 'cable-modem'],
                     nextServer: '192.0.2.2',
@@ -122,13 +122,13 @@ export const ViewDhcpv6Host: Story = {
             localHosts: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'dhcp6@localhost',
                     dataSource: 'config',
                     clientClasses: ['access-point', 'router', 'cable-modem'],
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'dhcp6@localhost',
                     dataSource: 'api',
                     clientClasses: ['access-point', 'router', 'cable-modem'],
                 },

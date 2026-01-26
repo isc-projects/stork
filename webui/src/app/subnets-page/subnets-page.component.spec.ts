@@ -790,7 +790,7 @@ describe('SubnetsPageComponent', () => {
                 {
                     id: 123,
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: [],
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {

@@ -182,11 +182,7 @@
             <ng-template #body let-d>
                 <tr>
                     <td>
-                        <app-entity-link
-                            entity="daemon"
-                            [showEntityName]="false"
-                            [attrs]="{ id: d.id, name: d.name }"
-                        ></app-entity-link>
+                        <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="d"></app-entity-link>
                     </td>
                     <td>
                         <app-version-status [daemon]="d" [includeAnchor]="false"></app-version-status>

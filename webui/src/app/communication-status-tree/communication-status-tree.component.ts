@@ -81,8 +81,8 @@ export class CommunicationStatusTreeComponent implements OnInit {
      */
     ngOnInit(): void {
         for (const daemon of this.daemons) {
-            const machineId = daemon.machine?.id
-            let machineNode = this.nodes.find((node) => node.data?.attrs?.id === machineId)
+            const machineId = daemon.machineId
+            let machineNode = this.nodes.find((node) => node.data?.attrs?.machineId === machineId)
             if (!machineNode) {
                 machineNode = {
                     icon: 'pi pi-server',
@@ -91,10 +91,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
                     styleClass: this.getStyleClassForErrors(true, daemon.agentCommErrors ?? 0),
                     expanded: true,
                     data: {
-                        attrs: {
-                            id: machineId,
-                            address: daemon.machine?.address,
-                        },
+                        attrs: daemon,
                     },
                 }
                 this.nodes.push(machineNode)
@@ -125,10 +122,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
                 type: isKeaDaemon ? 'kea' : 'other',
                 expanded: true,
                 data: {
-                    attrs: {
-                        id: daemon.id,
-                        name: daemon.name,
-                    },
+                    attrs: daemon,
                     daemonCommErrors: daemon.daemonCommErrors,
                     caCommErrors: daemon.caCommErrors,
                     monitored: !!daemon.monitored,
@@ -177,10 +171,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
             ),
             data: {
                 channelName: channelType === 'rndc' ? 'Control' : 'Statistics',
-                attrs: {
-                    id: daemon.id,
-                    name: daemon.name,
-                },
+                attrs: daemon,
                 channelCommErrors: channelType === 'rndc' ? daemon.daemonCommErrors : daemon.statsCommErrors,
                 monitored: !!daemon.monitored,
             },

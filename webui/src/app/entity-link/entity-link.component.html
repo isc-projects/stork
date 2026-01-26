@@ -2,15 +2,17 @@
     <!-- daemon -->
     <ng-container *ngSwitchCase="'daemon'">
         {{ showEntityName ? 'daemon' : '' }}
-        <a [id]="'daemon-link-' + attrs.id" routerLink="/daemons/{{ attrs.id }}">
-            [{{ attrs.id }}] {{ attrs.name | daemonNiceName }}
+        <a id="daemon-link-{{ attrs.daemonId || attrs.id }}" routerLink="/daemons/{{ attrs.daemonId || attrs.id }}">
+            [{{ attrs.daemonId || attrs.id }}] {{ attrs.daemonLabel || attrs.label || (attrs.name | daemonNiceName) }}
         </a>
     </ng-container>
 
     <!-- machine -->
     <ng-container *ngSwitchCase="'machine'">
         {{ showEntityName ? 'machine' : '' }}
-        <a id="machine-link" routerLink="/machines/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.address }} </a>
+        <a id="machine-link" routerLink="/machines/{{ attrs.machineId || attrs.id }}">
+            [{{ attrs.machineId || attrs.id }}] {{ attrs.machineLabel || attrs.label || attrs.address }}
+        </a>
     </ng-container>
 
     <!-- subnet -->

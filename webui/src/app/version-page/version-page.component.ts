@@ -15,6 +15,7 @@ import { Badge } from 'primeng/badge'
 import { RouterLink } from '@angular/router'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
  * This component displays current known released versions of ISC Kea, BIND 9, and Stork.
@@ -42,6 +43,7 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
         AsyncPipe,
         DatePipe,
         DaemonNiceNamePipe,
+        EntityLinkComponent,
     ],
 })
 export class VersionPageComponent implements OnInit, OnDestroy {

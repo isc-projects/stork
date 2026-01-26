@@ -10,7 +10,7 @@ import { Tooltip } from 'primeng/tooltip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { SharedModule } from 'primeng/api'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { LogTail } from '../backend'
 
 /**
  * Component providing a simple log viewer for remote log files.
@@ -38,18 +38,15 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
         NgFor,
         ProgressSpinner,
         SharedModule,
-        DaemonNiceNamePipe,
     ],
 })
 export class LogViewPageComponent implements OnInit {
     maxLengthChunk = 4000
     maxLength = this.maxLengthChunk
 
-    daemonId: number
-    daemonName: string
     private _logId: number
     contents: string[]
-    data: any
+    data: LogTail
 
     /**
      * Indicates if the new request for data has been sent and the
@@ -99,9 +96,6 @@ export class LogViewPageComponent implements OnInit {
                 // store received data
                 this.data = data
 
-                // Set other data.
-                this.daemonId = data.daemonId
-                this.daemonName = data.daemonName
                 // Fill the text box with the log contents.
                 this.contents = data.contents
 

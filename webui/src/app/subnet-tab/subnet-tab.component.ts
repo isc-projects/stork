@@ -17,7 +17,6 @@ import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { Fieldset } from 'primeng/fieldset'
 import { TableModule } from 'primeng/table'
-import { RouterLink } from '@angular/router'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
@@ -40,7 +39,6 @@ import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-
         Fieldset,
         TableModule,
         NgFor,
-        RouterLink,
         PoolBarsComponent,
         UtilizationStatsChartsComponent,
         JsonTreeRootComponent,
@@ -114,7 +112,7 @@ export class SubnetTabComponent implements OnInit {
         if (this.subnet?.localSubnets) {
             for (let ls of this.subnet.localSubnets) {
                 this.dhcpParameters.push({
-                    name: ls.daemonName,
+                    name: ls.daemonLabel,
                     parameters:
                         this.subnet.sharedNetwork?.length > 0
                             ? [

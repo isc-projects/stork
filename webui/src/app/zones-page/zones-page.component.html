@@ -80,7 +80,7 @@
 <ng-template #localZoneCells let-localZone let-serialInfo="serialInfo">
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ daemonId: localZone.daemonId }"
-            >[{{ localZone.daemonId }}] {{ localZone.daemonName | daemonNiceName }}</a
+            >[{{ localZone.daemonId }}] {{ localZone.daemonLabel }}</a
         >
     </td>
     <td>
@@ -181,11 +181,7 @@ to the number of configured zones.
         <ng-template #body let-state>
             <tr>
                 <td>
-                    <app-entity-link
-                        entity="daemon"
-                        [showEntityName]="false"
-                        [attrs]="{ id: state.daemonId, name: state.daemonName }"
-                    ></app-entity-link>
+                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="state"></app-entity-link>
                 </td>
                 <td>{{ state.zoneConfigsCount || 'n/a' }}</td>
                 <td>{{ state.distinctZonesCount || 'n/a' }}</td>
@@ -813,9 +809,11 @@ to the number of configured zones.
                                                     <span class="font-bold text-2xl">{{ zone.name | unroot }}</span>
                                                     <span class="text-lg">
                                                         for
-                                                        <a routerLink="/daemons/{{ localZone.daemonId }}">{{
-                                                            localZone.daemonName
-                                                        }}</a
+                                                        <app-entity-link
+                                                            [showEntityName]="false"
+                                                            entity="daemon"
+                                                            [attrs]="localZone"
+                                                        ></app-entity-link
                                                         >, view:
                                                         <a
                                                             routerLink="/dns/zones"

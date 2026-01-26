@@ -67,7 +67,7 @@ describe('KeaDaemonComponent', () => {
                     dataTypes: ['Leases', 'Host Reservations'],
                 },
             ],
-            machine: { id: 1 },
+            machineId: 1,
         }
 
         fixture = TestBed.createComponent(KeaDaemonComponent)

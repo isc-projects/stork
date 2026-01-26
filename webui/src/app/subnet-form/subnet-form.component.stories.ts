@@ -11,26 +11,31 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
         {
             id: 1,
             name: 'dhcp4',
+            label: 'dhcp4@localhost',
             version: '2.7.8',
         },
         {
             id: 3,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
         {
             id: 2,
             name: 'dhcp4',
+            label: 'dhcp4@localhost',
             version: '2.6.0',
         },
         {
             id: 4,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
         {
             id: 5,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
     ],
@@ -80,7 +85,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             {
                 id: 123,
                 daemonId: 1,
-                daemonName: 'dhcp4',
+                daemonLabel: 'dhcp4@localhost',
                 pools: [
                     {
                         pool: '192.0.2.10-192.0.2.100',
@@ -134,7 +139,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             {
                 id: 123,
                 daemonId: 2,
-                daemonName: 'dhcp4',
+                daemonLabel: 'dhcp4@localhost',
                 pools: [
                     {
                         pool: '192.0.2.10-192.0.2.100',
@@ -174,26 +179,31 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
         {
             id: 1,
             name: 'dhcp4',
+            label: 'dhcp4@localhost',
             version: '2.7.8',
         },
         {
             id: 3,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
         {
             id: 2,
             name: 'dhcp4',
+            label: 'dhcp4@localhost',
             version: '2.6.0',
         },
         {
             id: 4,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
         {
             id: 5,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
     ],
@@ -204,6 +214,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             localSharedNetworks: [
                 {
                     daemonId: 1,
+                    daemonLabel: 'dhcp4@192.0.2.1',
                 },
             ],
         },
@@ -242,7 +253,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             {
                 id: 234,
                 daemonId: 3,
-                daemonName: 'dhcp4',
+                daemonLabel: 'dhcp4@localhost',
                 pools: [
                     {
                         pool: '2001:db8:1::10-2001:db8:1::100',
@@ -286,7 +297,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             {
                 id: 345,
                 daemonId: 4,
-                daemonName: 'dhcp4',
+                daemonLabel: 'dhcp4@localhost',
                 pools: [
                     {
                         pool: '2001:db8:1::10-2001:db8:1::100',
@@ -333,26 +344,31 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
         {
             id: 1,
             name: 'dhcp4',
+            label: 'dhcp4@localhost',
             version: '2.7.8',
         },
         {
             id: 3,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
         {
             id: 2,
             name: 'dhcp4',
+            label: 'dhcp4@localhost',
             version: '2.5.0',
         },
         {
             id: 4,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
         {
             id: 5,
             name: 'dhcp6',
+            label: 'dhcp6@localhost',
             version: '2.7.8',
         },
     ],

@@ -7,7 +7,6 @@ import {
 import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, SharedNetwork } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
-import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ConfirmDialog } from 'primeng/confirmdialog'
 import { NgFor, NgIf } from '@angular/common'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -19,8 +18,8 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
-import { RouterLink } from '@angular/router'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { getErrorMessage } from '../utils'
 
 @Component({
     selector: 'app-shared-network-tab',
@@ -40,7 +39,6 @@ import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-
         PoolBarsComponent,
         UtilizationStatsChartsComponent,
         CascadedParametersBoardComponent,
-        RouterLink,
         DhcpOptionSetViewComponent,
     ],
 })
@@ -107,7 +105,7 @@ export class SharedNetworkTabComponent implements OnInit {
         if (this.sharedNetwork?.localSharedNetworks) {
             for (let ls of this.sharedNetwork.localSharedNetworks) {
                 this.dhcpParameters.push({
-                    name: daemonNameToFriendlyName(ls.daemonName),
+                    name: ls.daemonLabel,
                     parameters: [
                         ls.keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters,
                         ls.keaConfigSharedNetworkParameters?.globalParameters,

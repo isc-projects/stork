@@ -21,11 +21,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             agentCommErrors: 1,
             name: 'ca',
             id: 1,
-            machine: {
-                address: 'agent1',
-                hostname: 'agent1',
-                id: 1,
-            },
+            machineId: 1,
+            machineLabel: 'agent1',
         },
         {
             accessPoints: [
@@ -40,11 +37,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             agentCommErrors: 0,
             name: 'dhcp4',
             id: 3,
-            machine: {
-                address: 'agent1',
-                hostname: 'agent1',
-                id: 1,
-            },
+            machineId: 1,
+            machineLabel: 'agent1',
         },
         {
             accessPoints: [
@@ -59,11 +53,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             monitored: true,
             name: 'ca',
             id: 21,
-            machine: {
-                address: 'agent2',
-                hostname: 'agent2',
-                id: 2,
-            },
+            machineId: 2,
+            machineLabel: 'agent2',
         },
         {
             accessPoints: [
@@ -76,11 +67,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             daemonCommErrors: 2,
             name: 'd2',
             id: 22,
-            machine: {
-                address: 'agent2',
-                hostname: 'agent2',
-                id: 2,
-            },
+            machineId: 2,
+            machineLabel: 'agent2',
         },
         {
             accessPoints: [
@@ -94,11 +82,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             monitored: true,
             name: 'dhcp4',
             id: 23,
-            machine: {
-                address: 'agent2',
-                hostname: 'agent2',
-                id: 2,
-            },
+            machineId: 2,
+            machineLabel: 'agent2',
         },
         {
             accessPoints: [
@@ -111,11 +96,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             daemonCommErrors: 3,
             name: 'dhcp6',
             id: 24,
-            machine: {
-                address: 'agent2',
-                hostname: 'agent2',
-                id: 2,
-            },
+            machineId: 2,
+            machineLabel: 'agent2',
         },
         {
             accessPoints: [
@@ -130,11 +112,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             caCommErrors: 1,
             name: 'ca',
             id: 31,
-            machine: {
-                address: 'agent3',
-                hostname: 'agent3',
-                id: 3,
-            },
+            machineId: 3,
+            machineLabel: 'agent3',
         },
         {
             accessPoints: [
@@ -149,11 +128,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             agentCommErrors: 0,
             name: 'dhcp4',
             id: 33,
-            machine: {
-                address: 'agent3',
-                hostname: 'agent3',
-                id: 3,
-            },
+            machineId: 3,
+            machineLabel: 'agent3',
         },
         {
             accessPoints: [
@@ -168,11 +144,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             caCommErrors: 1,
             name: 'ca',
             id: 41,
-            machine: {
-                address: 'agent4',
-                hostname: 'agent4',
-                id: 4,
-            },
+            machineId: 4,
+            machineLabel: 'agent4',
         },
         {
             accessPoints: [
@@ -188,11 +161,7 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             daemonCommErrors: 4,
             name: 'dhcp4',
             id: 43,
-            machine: {
-                address: 'agent4',
-                hostname: 'agent4',
-                id: 4,
-            },
+            machineLabel: 'agent4',
         },
         {
             accessPoints: [
@@ -212,11 +181,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             agentCommErrors: 5,
             name: 'named',
             id: 56,
-            machine: {
-                address: 'agent5',
-                hostname: 'agent5',
-                id: 5,
-            },
+            machineId: 5,
+            machineLabel: 'agent5',
         },
         {
             accessPoints: [
@@ -236,11 +202,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             daemonCommErrors: 4,
             name: 'named',
             id: 66,
-            machine: {
-                address: 'agent6',
-                hostname: 'agent6',
-                id: 6,
-            },
+            machineId: 6,
+            machineLabel: 'agent6',
         },
         {
             accessPoints: [
@@ -260,11 +223,8 @@ let mockGetDaemonsWithCommunicationIssues: Daemons = {
             statsCommErrors: 7,
             name: 'named',
             id: 76,
-            machine: {
-                address: 'agent1',
-                hostname: 'agent1',
-                id: 1,
-            },
+            machineId: 1,
+            machineLabel: 'agent1',
         },
     ],
 }

@@ -220,9 +220,9 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
      * The list doesn't contain duplicates.
      *
      * @param net Shared network
-     * @returns List of the daemons (only ID and daemon name)
+     * @returns List of the daemons (only ID and daemon label)
      */
-    getDaemons(net: SharedNetwork) {
+    getDaemons(net: SharedNetwork): { id: number; label: string }[] {
         const daemons = []
         const daemonIds: Record<number, boolean> = {}
 
@@ -231,8 +231,8 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
             if (!id || daemonIds[id]) {
                 return
             }
-            const name = lsn.daemonName
-            daemons.push({ id, name })
+            const label = lsn.daemonLabel
+            daemons.push({ id, label })
             daemonIds[id] = true
         })
 

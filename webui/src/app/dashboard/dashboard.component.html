@@ -337,18 +337,14 @@
                                 <app-entity-link
                                     [showEntityName]="false"
                                     entity="machine"
-                                    [attrs]="d.machine"
+                                    [attrs]="d"
                                 ></app-entity-link>
                             </td>
                             <td>
                                 <app-version-status [daemon]="d"></app-version-status>
                             </td>
                             <td>
-                                <app-entity-link
-                                    [showEntityName]="false"
-                                    entity="daemon"
-                                    [attrs]="{ id: d.id, name: d.name }"
-                                ></app-entity-link>
+                                <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="d"></app-entity-link>
                             </td>
                             <td>
                                 <i
@@ -466,16 +462,12 @@
                                 <app-entity-link
                                     [showEntityName]="false"
                                     entity="machine"
-                                    [attrs]="d.machine"
+                                    [attrs]="d"
                                 ></app-entity-link>
                             </td>
                             <td><app-version-status [daemon]="d"></app-version-status></td>
                             <td>
-                                <app-entity-link
-                                    [showEntityName]="false"
-                                    entity="daemon"
-                                    [attrs]="{ id: d.id, name: d.name }"
-                                ></app-entity-link>
+                                <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="d"></app-entity-link>
                             </td>
                             <td>
                                 <i
