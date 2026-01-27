@@ -341,6 +341,7 @@ to the number of configured zones.
                                     <li>Daemon ID - the ID of the DNS Daemon.</li>
                                     <li>Serial - partial or exact zone serial.</li>
                                     <li>Zone Class - exact zone class.</li>
+                                    <li>Daemon Name - name of the DNS Daemon.</li>
                                 </ul>
                                 <p>
                                     Zones can also be filtered by entering text in the search box; the table shows all
@@ -519,6 +520,38 @@ to the number of configured zones.
                                             styleClass="w-10rem"
                                         ></p-select>
                                         <label for="zone-class">Zone Class</label>
+                                    </p-floatlabel>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter
+                            field="daemonName"
+                            matchMode="equals"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <p-floatlabel variant="on">
+                                        <p-select
+                                            inputId="daemon-name"
+                                            [options]="daemonNames"
+                                            optionLabel="name"
+                                            optionValue="value"
+                                            (onChange)="filterZonesTable($event.value, filterConstraint)"
+                                            [ngModel]="value"
+                                            styleClass="w-10rem"
+                                        ></p-select>
+                                        <label for="daemon-name">Daemon Name</label>
                                     </p-floatlabel>
                                     <ng-container
                                         *ngTemplateOutlet="

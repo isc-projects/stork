@@ -661,7 +661,7 @@ export function deepCopy<T>(obj: T): T {
  * @returns Friendly daemon name.
  */
 export function daemonNameToFriendlyName(daemonName: string): string {
-    switch (daemonName) {
+    switch (daemonName?.toLowerCase()) {
         case 'dhcp4':
             return 'DHCPv4'
         case 'dhcp6':
