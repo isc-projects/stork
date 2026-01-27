@@ -189,7 +189,7 @@
                         ></app-entity-link>
                     </td>
                     <td>
-                        <app-version-status [daemonName]="d.name" [version]="d.version"></app-version-status>
+                        <app-version-status [daemon]="d" [includeAnchor]="false"></app-version-status>
                     </td>
                     <td>
                         <span pTooltip="{{ daemonStatusIconTooltip(d) }}">

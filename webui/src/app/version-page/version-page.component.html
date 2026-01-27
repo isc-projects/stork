@@ -233,15 +233,13 @@
                         </ng-container>
                         <ng-container *ngFor="let d of getFlattenedIscDaemons(m)">
                             <app-version-status
-                                [daemonName]="d.name"
-                                [version]="d.version"
+                                [daemon]="d"
                                 [inline]="false"
                                 styleClass="max-w-50rem"
                             ></app-version-status>
                         </ng-container>
                         <app-version-status
-                            daemonName="stork"
-                            [version]="m.agentVersion"
+                            [daemon]="{ name: 'stork', version: m.agentVersion }"
                             [inline]="false"
                             styleClass="max-w-50rem"
                         ></app-version-status>

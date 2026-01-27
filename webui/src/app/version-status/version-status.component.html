@@ -1,18 +1,26 @@
-<div *ngIf="inline" class="ml-2 inline-flex" [class]="styleClass">
-    <span class="mr-1" data-testid="daemonVersion">{{ version }}</span>
-    <a *ngIf="iscApp" routerLink="/versions">
-        <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
-    </a>
-</div>
-@if (!inline && iscApp) {
-    @for (message of messages; track message.summary) {
-        <p-message
-            [styleClass]="styleClass"
-            [severity]="message.severity"
-            [text]="message.summary"
-            [icon]="getIconBySeverity(Severity[message.severity])"
-            class="custom-message wrap-message"
-            ><div [innerHTML]="message.detail"></div>
-        </p-message>
+@if (version) {
+    <div *ngIf="inline" class="inline-flex" [class]="styleClass">
+        <span class="mr-1" data-testid="daemonVersion">
+            @if (includeAnchor && daemon.id) {
+                <a routerLink="/daemons/{{ daemon.id }}">{{ version }}</a>
+            } @else {
+                {{ version }}
+            }
+        </span>
+        <a *ngIf="iscApp" routerLink="/versions">
+            <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
+        </a>
+    </div>
+    @if (!inline && iscApp) {
+        @for (message of messages; track message.summary) {
+            <p-message
+                [styleClass]="styleClass"
+                [severity]="message.severity"
+                [text]="message.summary"
+                [icon]="getIconBySeverity(Severity[message.severity])"
+                class="custom-message wrap-message"
+                ><div [innerHTML]="message.detail"></div>
+            </p-message>
+        }
     }
 }

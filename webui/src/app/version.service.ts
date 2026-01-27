@@ -83,7 +83,7 @@ export function isIscDaemon(daemonName: DaemonName): boolean {
  * Returns the app type for given daemon name.
  * @param daemonName The daemon name to check
  */
-function getDaemonAppType(daemonName: DaemonName): AppType {
+export function getDaemonAppType(daemonName: DaemonName): AppType {
     switch (daemonName) {
         case 'stork':
             return 'stork'

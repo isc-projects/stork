@@ -341,7 +341,7 @@
                                 ></app-entity-link>
                             </td>
                             <td>
-                                <app-version-status [daemonName]="d.name" [version]="d.version"></app-version-status>
+                                <app-version-status [daemon]="d"></app-version-status>
                             </td>
                             <td>
                                 <app-entity-link
@@ -469,14 +469,7 @@
                                     [attrs]="d.machine"
                                 ></app-entity-link>
                             </td>
-                            <td>
-                                <a *ngIf="d.id" routerLink="/daemons/{{ d.id }}"
-                                    ><app-version-status
-                                        [daemonName]="d.name"
-                                        [version]="d.version"
-                                    ></app-version-status
-                                ></a>
-                            </td>
+                            <td><app-version-status [daemon]="d"></app-version-status></td>
                             <td>
                                 <app-entity-link
                                     [showEntityName]="false"

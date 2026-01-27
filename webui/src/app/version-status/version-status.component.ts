@@ -1,8 +1,15 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
-import { DaemonName, isIscDaemon, Severity, VersionFeedback, VersionService } from '../version.service'
+import {
+    DaemonName,
+    getDaemonAppType,
+    isIscDaemon,
+    Severity,
+    VersionFeedback,
+    VersionService,
+} from '../version.service'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
-import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
+import { getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
 import { NgIf } from '@angular/common'
 import { RouterLink } from '@angular/router'
@@ -26,16 +33,26 @@ import { Message } from 'primeng/message'
 })
 export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
-     * Daemon name for which the version check is done.
-     * Accepts daemon names like 'dhcp4', 'dhcp6', 'd2', 'ca', 'netconf' (Kea daemons),
-     * 'named' (BIND9), 'pdns' (PowerDNS), or special value 'stork' for the Stork agent.
+     * Daemon for which the version check is done.
+     * The daemon object should contain its name ('dhcp4', 'dhcp6', 'd2', 'ca', 'netconf' (Kea daemons),
+     * 'named' (BIND9), 'pdns' (PowerDNS), or special value 'stork' for the Stork agent).
+     * The daemon object should also contain version string.
+     * It may also contain numeric daemon ID.
      */
-    @Input({ required: true }) daemonName!: DaemonName
+    @Input({ required: true }) daemon!: { id?: number; name?: DaemonName; version?: string }
 
     /**
-     * Version of the software for which the check is done. This must contain parsable semver.
+     * This flag sets whether the component should display the version as a clickable link to
+     * the daemon details tab view. It is relevant only when the inline mode is used.
+     * Defaults to true.
      */
-    @Input({ required: true }) version: string
+    @Input() includeAnchor = true
+
+    /**
+     * Version of the software for which the check is done.
+     * It is a semver sanitized from provided version string in the input daemon object.
+     */
+    version: string
 
     /**
      * This flag sets whether the component has a form of inline icon with the tooltip,
@@ -71,10 +88,9 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     messages: ToastMessageOptions[] | undefined
 
     /**
-     * Friendly display name for the daemon. Computed using daemonNameToFriendlyName.
-     * For 'stork' daemon, it returns 'Stork agent'.
+     * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on daemon name.
      */
-    daemonDisplayName: string
+    appName: string
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
@@ -102,22 +118,38 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
-        this.iscApp = isIscDaemon(this.daemonName)
-        // Set display name using daemonNameToFriendlyName, with special case for stork
-        if (this.daemonName === 'stork') {
-            this.daemonDisplayName = 'Stork agent'
-        } else {
-            this.daemonDisplayName = daemonNameToFriendlyName(this.daemonName)
+        const sanitizedSemver = this.versionService.sanitizeSemver(this.daemon.version)
+        if (sanitizedSemver) {
+            this.version = sanitizedSemver
         }
+
         // Mute version checks for non-ISC apps. Version is mandatory. In case it is
-        // false (undefined, null, empty string), simply return. No feedback will be displayed.
-        if (!this.iscApp || !this.version) {
+        // falsy (undefined, null, empty string), simply return. No feedback will be displayed.
+        this.iscApp = isIscDaemon(this.daemon.name)
+        if (!this.iscApp || !this.daemon.version) {
             return
         }
 
-        const sanitizedSemver = this.versionService.sanitizeSemver(this.version)
+        const app = getDaemonAppType(this.daemon.name) as string
+        switch (app) {
+            case 'bind9':
+                this.appName = 'BIND9'
+                break
+            case 'pdns':
+                this.appName = 'PowerDNS'
+                break
+            case 'stork':
+                this.appName = 'Stork agent'
+                break
+            case 'kea':
+                this.appName = 'Kea'
+                break
+            default:
+                this.appName = app?.length ? app[0].toUpperCase() + app.slice(1) : ''
+                break
+        }
+
         if (sanitizedSemver) {
-            this.version = sanitizedSemver
             this._subscriptions.add(
                 this.versionService
                     .getCurrentData()
@@ -125,7 +157,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                         map((data) => {
                             return this.versionService.getSoftwareVersionFeedback(
                                 sanitizedSemver,
-                                this.daemonName,
+                                this.daemon.name,
                                 data
                             )
                         }),
@@ -154,7 +186,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error parsing software version',
-                detail: `Couldn't parse valid semver from given ${this.version} version!`,
+                detail: `Couldn't parse valid semver from given ${this.daemon.version} version!`,
                 life: 10000,
             })
         }
@@ -182,7 +214,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         this.feedbackMessages = feedback.messages ?? []
         const m: ToastMessageOptions = {
             severity: Severity[feedback.severity],
-            summary: `${this.daemonDisplayName} ${this.version}`,
+            summary: `${this.appName} ${this.version}`,
             detail: feedback.messages.join('<br><br>'),
         }
 

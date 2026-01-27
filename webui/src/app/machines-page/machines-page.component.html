@@ -261,8 +261,7 @@ sudo ./stork-install-agent.sh</textarea
                             <td>
                                 <app-version-status
                                     *ngIf="machineTab?.authorized"
-                                    daemonName="stork"
-                                    [version]="machineTab?.agentVersion"
+                                    [daemon]="{ name: 'stork', version: machineTab?.agentVersion }"
                                 ></app-version-status>
                             </td>
                         </tr>
@@ -367,10 +366,7 @@ sudo ./stork-install-agent.sh</textarea
                     <div class="inline-flex flex-column gap-1">
                         <div *ngFor="let daemon of machineTab?.daemons" class="flex flex-row justify-content-between">
                             <app-daemon-status [daemon]="daemon"></app-daemon-status>
-                            <app-version-status
-                                [daemonName]="daemon.name"
-                                [version]="daemon.version"
-                            ></app-version-status>
+                            <app-version-status [daemon]="daemon"></app-version-status>
                         </div>
                     </div>
                 </div>

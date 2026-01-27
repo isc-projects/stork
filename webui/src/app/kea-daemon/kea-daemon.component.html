@@ -132,8 +132,8 @@
                                 <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
                                 <div class="col-12 sm:col-9">
                                     <app-version-status
-                                        [daemonName]="daemon().name"
-                                        [version]="daemon().version"
+                                        [daemon]="daemon()"
+                                        [includeAnchor]="false"
                                     ></app-version-status>
                                 </div>
                                 <div class="col-12 sm:col-3 pb-0 font-medium">Version Ext</div>

@@ -108,37 +108,13 @@ describe('VersionStatusComponent', () => {
      * Sets correct values of required input properties.
      */
     function setCorrectInputs() {
-        fixture.componentRef.setInput('daemonName', 'dhcp4')
-        fixture.componentRef.setInput('version', '2.6.1')
+        fixture.componentRef.setInput('daemon', { name: 'dhcp4', version: '2.6.1' })
         fixture.detectChanges()
     }
 
     it('should create', () => {
         setCorrectInputs()
         expect(component).toBeTruthy()
-    })
-
-    it('should return daemon display name', () => {
-        // Arrange
-        setCorrectInputs()
-
-        // Act & Assert
-        expect(component.daemonDisplayName).toBe('DHCPv4')
-
-        fixture.componentRef.setInput('daemonName', 'stork')
-        component.ngOnInit()
-        fixture.detectChanges()
-        expect(component.daemonDisplayName).toBe('Stork agent')
-
-        fixture.componentRef.setInput('daemonName', 'named')
-        component.ngOnInit()
-        fixture.detectChanges()
-        expect(component.daemonDisplayName).toBe('named')
-
-        fixture.componentRef.setInput('daemonName', 'pdns')
-        component.ngOnInit()
-        fixture.detectChanges()
-        expect(component.daemonDisplayName).toBe('pdns_server')
     })
 
     it('should get current versions data', () => {
@@ -156,8 +132,7 @@ describe('VersionStatusComponent', () => {
 
     it('should not get current versions data for invalid semver', () => {
         // Arrange
-        fixture.componentRef.setInput('daemonName', 'dhcp4')
-        fixture.componentRef.setInput('version', 'a.b.c')
+        fixture.componentRef.setInput('daemon', { name: 'dhcp4', version: 'a.b.c' })
         fixture.detectChanges()
 
         // Act & Assert
@@ -202,11 +177,13 @@ describe('VersionStatusComponent', () => {
         expect(container.textContent).toContain('2.6.1')
     })
 
-    it('should not display daemon name', () => {
+    it('should not display daemon version span when inline mode is not used', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()
-        const span = fixture.nativeElement.querySelector('span[data-testid=daemon-name]')
+        fixture.componentRef.setInput('inline', false)
+        fixture.detectChanges()
+        const span = fixture.nativeElement.querySelector('span[data-testid=daemonVersion]')
         expect(span).toBeNull()
     })
 
@@ -230,8 +207,7 @@ describe('VersionStatusComponent', () => {
 
     it('should not display feedback when version undefined', () => {
         // Arrange
-        fixture.componentRef.setInput('version', undefined)
-        fixture.componentRef.setInput('daemonName', 'dhcp4')
+        fixture.componentRef.setInput('daemon', { name: 'dhcp4', version: undefined })
         fixture.detectChanges()
 
         // Act & Assert
@@ -243,7 +219,7 @@ describe('VersionStatusComponent', () => {
 
     it('should skip version checks for non-ISC apps', () => {
         // Arrange
-        fixture.componentRef.setInput('daemonName', 'pdns')
+        fixture.componentRef.setInput('daemon', { name: 'pdns', version: '12.6.1' })
         fixture.detectChanges()
 
         // Act & Assert
