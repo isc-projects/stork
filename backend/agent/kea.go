@@ -584,6 +584,7 @@ func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
 func (d *keaDaemon) Cleanup() error {
 	if d.snooper != nil {
 		d.snooper.Stop()
+        d.snooper = nil
 	}
 	return nil
 }

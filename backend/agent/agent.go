@@ -989,12 +989,10 @@ func (sa *StorkAgent) GetKeaLeases(ctx context.Context, req *agentapi.GetKeaLeas
 	for _, daemon := range daemons {
 		name := daemon.GetName()
 		switch name {
-		case daemonname.DHCPv4:
-			fallthrough
-		case daemonname.DHCPv6:
+		case daemonname.DHCPv4, daemonname.DHCPv6:
 			keadaemon, ok := daemon.(*keaDaemon)
 			if !ok {
-				log.Info("Answering GetKeaLeases; found a daemon with DHCP daemonname, but which could not be cast to keaDaemon")
+				log.Warn("Answering GetKeaLeases; found a daemon with DHCP daemonname, but which could not be cast to keaDaemon")
 				continue
 			}
 			recvSizeBuf := make([]byte, 2)

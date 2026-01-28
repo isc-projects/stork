@@ -3185,7 +3185,7 @@ func TestGetKeaLeasesErrorConditions(t *testing.T) {
 
 		// 65,536 copies of the letter 'a', which will make the encoded protobuf value
 		// longer than 1 << 16 bytes.
-		badAddr := strings.Repeat("aaaaaaaaaaaaaaaa", 4096)
+		badAddr := strings.Repeat("a", 65536)
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		daemons := []Daemon{

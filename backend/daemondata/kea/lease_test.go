@@ -81,5 +81,5 @@ func TestToGRPC(t *testing.T) {
 	require.Equal(t, input.SubnetID, result.SubnetID)
 	require.Equal(t, uint32(input.State), result.State)
 	require.Equal(t, uint32(input.PrefixLength), result.PrefixLen)
-	require.Equal(t, "", result.HwAddress)
+	require.Empty(t, result.HwAddress)
 }

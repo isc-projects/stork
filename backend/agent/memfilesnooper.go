@@ -35,8 +35,8 @@ const (
 	v6State         = 13
 )
 
-// The maximum number of lease updates that a MemfileSnooper will store.  As
-// of writing this, the Lease structure is 152 bytes.  100,000 updates limits
+// The maximum number of lease updates that a MemfileSnooper will store. As
+// of writing this, the Lease structure is 152 bytes. 100,000 updates limit
 // each MemfileSnooper to consuming ~15 MB of RAM.
 const LeaseUpdateCountLimit = 100_000
 
@@ -271,8 +271,8 @@ func (rs *FSNotifyRowSource) Stop() {
 	rs.running = false
 }
 
-// Ensure that the RowSource is watching the named file.  If this is the same
-// file as it was already watching, no state is changed.  If it is a different
+// Ensure that the RowSource is watching the named file. If this is the same
+// file as it was already watching, no state is changed. If it is a different
 // file, the RowSource is stopped, reset to examine the new file, and then
 // started again.
 func (rs *FSNotifyRowSource) EnsureWatching(path string) error {
@@ -526,7 +526,7 @@ func (ms *RealMemfileSnooper) appendLease(lease *keadata.Lease) {
 	ms.lastCLTT = lease.CLTT
 }
 
-// Begin collecting leases.  The MemfileSnooper takes care of starting the
+// Begin collecting leases. The MemfileSnooper takes care of starting the
 // RowSource; the caller does not need to do that too.
 func (ms *RealMemfileSnooper) Start() {
 	if ms.running {
