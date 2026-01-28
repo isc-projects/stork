@@ -135,7 +135,7 @@ func (d *keaDaemon) fetchConfig(ctx context.Context) (*keaconfig.Config, error) 
 }
 
 // Fetches the status of Kea from the daemon by sending the status-get command.
-func (d *keaDaemon) fetchStatus(ctx context.Context) (*keaconfig.Status, error) {
+func (d *keaDaemon) fetchStatus(ctx context.Context) (*keactrl.Status, error) {
 	command := keactrl.NewCommandBase(keactrl.StatusGet, d.GetName())
 	response := keactrl.Response{}
 	err := d.sendCommand(ctx, command, &response)
@@ -152,7 +152,7 @@ func (d *keaDaemon) fetchStatus(ctx context.Context) (*keaconfig.Status, error) 
 	if response.Arguments == nil {
 		return nil, errors.New("status-get response has no arguments")
 	}
-	status, err := keaconfig.NewStatus(response.Arguments)
+	status, err := keactrl.NewStatus(response.Arguments)
 	if err != nil {
 		return nil, errors.WithMessage(err, "status-get response contains arguments which could not be parsed")
 	}
@@ -584,7 +584,7 @@ func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
 func (d *keaDaemon) Cleanup() error {
 	if d.snooper != nil {
 		d.snooper.Stop()
-        d.snooper = nil
+		d.snooper = nil
 	}
 	return nil
 }

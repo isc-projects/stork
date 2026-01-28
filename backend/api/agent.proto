@@ -40,7 +40,7 @@ service Agent {
   rpc ReceiveBind9Config(ReceiveBind9ConfigReq) returns (stream ReceiveBind9ConfigRsp) {}
 
   // Retrieves a snapshot of all current DHCP leases from the agent.
-  rpc GetKeaLeases(GetKeaLeasesReq) returns (GetKeaLeasesRsp) {}
+  rpc ReceiveKeaLeases(ReceiveKeaLeasesReq) returns (stream ReceiveKeaLeasesRsp) {}
 }
 
 
@@ -359,13 +359,12 @@ message ReceiveBind9ConfigRsp {
   }
 }
 
-message GetKeaLeasesReq {
+message ReceiveKeaLeasesReq {
   optional uint64 minCLTT = 1;
 }
 
-message GetKeaLeasesRsp {
-  uint32 leaseCount = 1;
-  bytes leasesPacked = 2;
+message ReceiveKeaLeasesRsp {
+  Lease lease = 1;
 }
 
 message Lease {

@@ -19,6 +19,7 @@ import (
 
 	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
+	storkutil "isc.org/stork/util"
 )
 
 //go:generate mockgen -source memfilesnooper.go -package=agent -destination=memfilesnoopermock_test.go -mock_names=RowSource=MockRowSource,MemfileSnooper=MockMemfileSnooper isc.org/agent RowSource,MemfileSnooper
@@ -71,9 +72,9 @@ func slowlyWriteToLeasefileWithSwapAndDelay(input1 string, input2 string, output
 }
 
 var (
-	ErrInvalidLimit = errors.New("invalid limit parameter; it is not possible to read a negative number of items from the channel")
-	ErrChanClosed   = errors.New("channel closed unexpectedly")
-	ErrTimedOut     = errors.New("timed out while waiting for enough rows")
+	errInvalidLimit = errors.New("invalid limit parameter; it is not possible to read a negative number of items from the channel")
+	errChanClosed   = errors.New("channel closed unexpectedly")
+	errTimedOut     = errors.New("timed out while waiting for enough rows")
 )
 
 // Read up to `limit` rows from `c`, stopping after the provided timeout.  If
@@ -83,7 +84,7 @@ func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context,
 	timeoutCtx, cancelFn := context.WithTimeout(ctx, timeout)
 	defer cancelFn()
 	if limit < 0 {
-		return nil, ErrInvalidLimit
+		return nil, errInvalidLimit
 	}
 	results := make([][]string, 0, limit)
 	var didTimeOut error = nil
@@ -91,12 +92,12 @@ func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context,
 		select {
 		case row, ok := <-c:
 			if !ok {
-				didTimeOut = ErrChanClosed
+				didTimeOut = errChanClosed
 				break
 			}
 			results = append(results, row)
 		case <-timeoutCtx.Done():
-			didTimeOut = ErrTimedOut
+			didTimeOut = errTimedOut
 		}
 	}
 	return results, didTimeOut
@@ -497,7 +498,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			0,
 			&keadata.Lease{
-				IPVersion:     keadata.LeaseIPv4,
+				IPVersion:     storkutil.IPv4,
 				IPAddress:     "192.110.111.2",
 				HWAddress:     "03:00:00:00:00:00",
 				CLTT:          1761254249,
@@ -727,7 +728,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			0,
 			&keadata.Lease{
-				IPVersion:     keadata.LeaseIPv6,
+				IPVersion:     storkutil.IPv6,
 				IPAddress:     "51a4:14ec:1::",
 				DUID:          "01:00:00:00:00:00",
 				CLTT:          1761669049,
@@ -917,12 +918,6 @@ func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 			for _, row := range rows {
 				channel <- row
 			}
-			// This is a load-bearing sleep.  Without it, this goroutine exits promptly and
-			// control is almost always transferred back to the main test, rather than to
-			// the MemfileSnooper's goroutine.  If the MemfileSnooper doesn't run again
-			// before the GetSnapshot call, the fifth lease will not be appended before
-			// GetSnapshot takes the lock.
-			time.Sleep(time.Millisecond)
 			wg.Done()
 		}()
 		return channel
@@ -930,7 +925,8 @@ func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 }
 
 // Create a mock RowSource which will emit the list of rows, one at a time, into
-// the channel when started.  It will signal the wait group when this is complete.
+// the channel when started.  It will signal the wait group when this is
+// complete.
 func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sync.WaitGroup) {
 	rowSource := NewMockRowSource(ctrl)
 	wg := sync.WaitGroup{}
@@ -1031,14 +1027,13 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 			}()
 			return c
 		})
-		rowSource.EXPECT().Stop()
 		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv6, rowSource)
 		require.NoError(t, err)
 
 		// Act
 		memfileSnooper.Start()
 		wg.Wait()
-		memfileSnooper.Stop()
+		// Don't call stop; it will block forever trying to send to the channel.
 
 		// Assert
 		snapshot := memfileSnooper.GetSnapshot()

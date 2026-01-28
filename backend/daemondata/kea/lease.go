@@ -1,6 +1,9 @@
 package keadata
 
-import agentapi "isc.org/stork/api"
+import (
+	agentapi "isc.org/stork/api"
+	storkutil "isc.org/stork/util"
+)
 
 // Constants representing various lease states in Kea. A valid
 // (non-expired) lease is in the default state. A lease for
@@ -21,39 +24,32 @@ const (
 	LeaseStateReleased         = 3
 )
 
-type LeaseIPVersion int
-
-const (
-	LeaseIPv4 LeaseIPVersion = iota
-	LeaseIPv6
-)
-
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
-	IPVersion         LeaseIPVersion
-	ClientID          string         `json:"client-id,omitempty"`
-	Hostname          string         `json:"hostname,omitempty"`
-	HWAddress         string         `json:"hw-address,omitempty"`
-	DUID              string         `json:"duid,omitempty"`
-	IPAddress         string         `json:"ip-address,omitempty"`
-	Type              string         `json:"type,omitempty"`
-	CLTT              uint64         `json:"cltt,omitempty"`
-	State             int            `json:"state,omitempty"`
-	UserContext       map[string]any `json:"user-context,omitempty"`
-	ValidLifetime     uint32         `json:"valid-lft,omitempty"`
-	IAID              uint32         `json:"iaid,omitempty"`
-	PreferredLifetime uint32         `json:"preferred-lft,omitempty"`
-	SubnetID          uint32         `json:"subnet-id,omitempty"`
-	FqdnFwd           bool           `json:"fqdn-fwd,omitempty"`
-	FqdnRev           bool           `json:"fqdn-rev,omitempty"`
-	PrefixLength      uint8          `json:"prefix-len,omitempty"`
+	IPVersion         storkutil.IPType `json:"-"`
+	ClientID          string           `json:"client-id,omitempty"`
+	Hostname          string           `json:"hostname,omitempty"`
+	HWAddress         string           `json:"hw-address,omitempty"`
+	DUID              string           `json:"duid,omitempty"`
+	IPAddress         string           `json:"ip-address,omitempty"`
+	Type              string           `json:"type,omitempty"`
+	CLTT              uint64           `json:"cltt,omitempty"`
+	State             int              `json:"state,omitempty"`
+	UserContext       map[string]any   `json:"user-context,omitempty"`
+	ValidLifetime     uint32           `json:"valid-lft,omitempty"`
+	IAID              uint32           `json:"iaid,omitempty"`
+	PreferredLifetime uint32           `json:"preferred-lft,omitempty"`
+	SubnetID          uint32           `json:"subnet-id,omitempty"`
+	FqdnFwd           bool             `json:"fqdn-fwd,omitempty"`
+	FqdnRev           bool             `json:"fqdn-rev,omitempty"`
+	PrefixLength      uint8            `json:"prefix-len,omitempty"`
 }
 
 // Create a new Lease, filling in all the fields which are appropriate for a
 // DHCPv4 lease.
 func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, subnetID uint32, state int) Lease {
 	return Lease{
-		IPVersion:     LeaseIPv4,
+		IPVersion:     storkutil.IPv4,
 		IPAddress:     ip,
 		HWAddress:     hwAddress,
 		CLTT:          cltt,
@@ -67,7 +63,7 @@ func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, s
 // DHCPv6 lease.
 func NewLease6(ip string, duid string, cltt uint64, validLifetime uint32, subnetID uint32, state int, prefixLen uint32) Lease {
 	return Lease{
-		IPVersion:     LeaseIPv6,
+		IPVersion:     storkutil.IPv6,
 		IPAddress:     ip,
 		DUID:          duid,
 		CLTT:          cltt,

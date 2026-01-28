@@ -431,7 +431,7 @@ type leaseKey struct {
 	// The IPv[46] address that was leased.
 	IP string
 	// The MAC address or DUID of the client which requested the lease.
-	ID string
+	Identifier string
 }
 
 // Retrieve a snapshot of the current leases (ignoring older lease updates
@@ -442,14 +442,14 @@ type leaseKey struct {
 func (ms *RealMemfileSnooper) getSnapshotLockless() []*keadata.Lease {
 	snapshot := make([]*keadata.Lease, 0)
 	index := map[leaseKey]int{}
-	var getID func(*keadata.Lease) string
+	var getIdentifier func(*keadata.Lease) string
 	switch ms.kind {
 	case daemonname.DHCPv4:
-		getID = func(lease *keadata.Lease) string {
+		getIdentifier = func(lease *keadata.Lease) string {
 			return lease.HWAddress
 		}
 	case daemonname.DHCPv6:
-		getID = func(lease *keadata.Lease) string {
+		getIdentifier = func(lease *keadata.Lease) string {
 			return lease.DUID
 		}
 	default:
@@ -459,8 +459,8 @@ func (ms *RealMemfileSnooper) getSnapshotLockless() []*keadata.Lease {
 	}
 	for _, lease := range ms.leaseUpdates {
 		key := leaseKey{
-			IP: lease.IPAddress,
-			ID: getID(lease),
+			IP:         lease.IPAddress,
+			Identifier: getIdentifier(lease),
 		}
 		if snapIdx, exists := index[key]; exists {
 			snapLease := snapshot[snapIdx]
@@ -497,7 +497,7 @@ func (ms *RealMemfileSnooper) Stop() {
 	if !ms.running {
 		return
 	}
-	close(ms.stop)
+	ms.stop <- true
 	ms.rs.Stop()
 	ms.running = false
 }
@@ -512,7 +512,6 @@ func (ms *RealMemfileSnooper) appendLease(lease *keadata.Lease) {
 		return
 	}
 	snapshot := ms.getSnapshotLockless()
-	log.WithField("snapshot", snapshot).Info("snapshot during append")
 	if len(snapshot) == currentLen {
 		// Log an error and intentionally do not update the data.  Stale data will prompt an administrator to investigate, and find the log messages indicating the problem.
 		log.Errorf("The number of stored lease updates has exceeded the configured memory limit. Set STORK_AGENT_LEASE_TRACKING_MAX_UPDATE_COUNT to a larger number than %d", ms.leaseUpdateCountMax)

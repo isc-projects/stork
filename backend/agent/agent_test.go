@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	_ "embed"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -26,7 +25,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/security/advancedtls"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"gopkg.in/h2non/gock.v1"
 
 	"isc.org/stork"
@@ -2996,9 +2994,10 @@ func TestAllowLog(t *testing.T) {
 	require.True(t, sa.logTailer.allowed("test/log/path"))
 }
 
+// Verify that allowLeaseTracking() works as expected.
 func TestAllowLeaseTracking(t *testing.T) {
 	sa := StorkAgent{
-		allowLeaseTrackingFlag: true,
+		isLeaseTrackingAllowed: true,
 		maxLeaseUpdateCount:    1,
 	}
 	allowed, max := sa.allowLeaseTracking()
@@ -3009,7 +3008,7 @@ func TestAllowLeaseTracking(t *testing.T) {
 // Make a "happy path" keaDaemon structure with a mocked MemfileSnooper.
 // keaDaemon will have `name` as its name, and the snooper will provide
 // snapshots containing single-element lists with each element of `addrs`.
-func makeHappyDaemon(ctrl *gomock.Controller, version keadata.LeaseIPVersion, name daemonname.Name, addrs []string) Daemon {
+func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name daemonname.Name, addrs []string) Daemon {
 	snooper := NewMockMemfileSnooper(ctrl)
 	for _, addr := range addrs {
 		snooper.EXPECT().GetSnapshot().DoAndReturn(func() ([]*keadata.Lease, error) {
@@ -3029,50 +3028,21 @@ func makeHappyDaemon(ctrl *gomock.Controller, version keadata.LeaseIPVersion, na
 	}
 }
 
-// Read a lease in the encoded format specified in agent.go (network-order
-// uint16 length followed by protobuf data).
-func readEncodedLease(dataBuf []byte, lease *agentapi.Lease) (uint, error) {
-	dataBufLen := len(dataBuf)
-	if dataBufLen < 2 {
-		return 0, errors.New("data buffer too small to contain valid data")
-	}
-	pbufLength := int(binary.BigEndian.Uint16(dataBuf[0:2]))
-	if (dataBufLen + 2) < pbufLength {
-		return 0, errors.New("data buffer contains a truncated lease")
-	}
-	dataSlice := dataBuf[2 : pbufLength+2]
-	// Slice the existing buffer to the right length to avoid allocations.
-	pbuferr := proto.Unmarshal(dataSlice, lease)
-	if pbuferr != nil {
-		return 0, pbuferr
-	}
-	return uint(pbufLength) + 2, nil
-}
-
-// Test helper function to check the next record in the encoded leases buffer
-// for a particular IP address.
-func checkLeasesEncoded(t *testing.T, inputBuffer []byte, expectedIPs []string) {
-	var err error
-	readLength := uint(0)
-	leaseBuffer := inputBuffer
-	leaseBufferLen := len(leaseBuffer)
-	lease := agentapi.Lease{}
-	for _, expectedAddr := range expectedIPs {
-		leaseBuffer = leaseBuffer[readLength:leaseBufferLen]
-		readLength, err = readEncodedLease(leaseBuffer, &lease)
-		require.NoError(t, err)
-		require.Equal(t, expectedAddr, lease.IpAddress)
+// Check that the two lists are the same length, and that the IP address of each
+// lease in `received` matches the one at the same index in `expected`.
+func checkExpectedLeases(t *testing.T, received []*agentapi.Lease, expected []string) {
+	require.Len(t, received, len(expected))
+	for idx, expectedIP := range expected {
+		require.Equal(t, expectedIP, received[idx].IpAddress)
 	}
 }
 
-// Test that GetKeaLeases fetches the leases from the MemfileSnooper, encodes
-// them correctly in the binary format we use (uint16 length followed by that
-// many bytes of protobuf data), correctly counts the number of leases it
-// encoded, works with multiple Kea daemons, and doesn't try to get leases from
-// e.g. Bind9.
+// Test that GetKeaLeases fetches the leases from the MemfileSnooper, streams
+// the leases back to the Stork server, works with multiple Kea daemons, and
+// doesn't try to get leases from e.g. Bind9.
 func TestGetKeaLeasesHappyPath(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
-	sa.allowLeaseTrackingFlag = true
+	sa.isLeaseTrackingAllowed = true
 	defer teardown()
 
 	expectedAll := []string{
@@ -3089,123 +3059,57 @@ func TestGetKeaLeasesHappyPath(t *testing.T) {
 	daemons := []Daemon{
 		makeHappyDaemon(
 			ctrl,
-			keadata.LeaseIPv6,
+			storkutil.IPv6,
 			daemonname.DHCPv6,
 			[]string{expectedAll[0], expectedFiltered[0]},
 		),
 		makeHappyDaemon(
 			ctrl,
-			keadata.LeaseIPv4,
+			storkutil.IPv4,
 			daemonname.DHCPv4,
 			[]string{expectedAll[1], expectedFiltered[1]},
 		),
 		makeHappyDaemon(
 			ctrl,
-			keadata.LeaseIPv6,
+			storkutil.IPv6,
 			daemonname.Bind9,
 			[]string{},
 		),
 	}
 	fdm, _ := sa.Monitor.(*FakeMonitor)
 	fdm.Daemons = daemons
+	sss := NewMockServerStreamingServer[agentapi.ReceiveKeaLeasesRsp](ctrl)
+	receivedLeases := make([]*agentapi.Lease, 0, 2)
+	// Mock the function sending the actual data over the stream. In this mock
+	// we collect the information about the received files and their contents.
+	sss.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveKeaLeasesRsp) error {
+		receivedLeases = append(receivedLeases, rsp.Lease)
+		return nil
+	})
 
-	rspAll, errAll := sa.GetKeaLeases(t.Context(), &agentapi.GetKeaLeasesReq{
+	// Act 1
+	errAll := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
 		MinCLTT: new(uint64),
-	})
-	minCLTT := uint64(2)
-	rspFiltered, errFiltered := sa.GetKeaLeases(t.Context(), &agentapi.GetKeaLeasesReq{
-		MinCLTT: &minCLTT,
-	})
-
+	}, sss)
 	require.NoError(t, errAll)
-	require.NoError(t, errFiltered)
-	require.NotNil(t, rspAll)
-	require.NotNil(t, rspFiltered)
-	require.Equal(t, uint32(2), rspAll.LeaseCount, "mismatch in lease count for rspAll")
-	require.Equal(t, uint32(2), rspFiltered.LeaseCount, "mismatch in lease count for rspFiltered")
+	checkExpectedLeases(t, receivedLeases, expectedAll)
 
-	checkLeasesEncoded(t, rspAll.LeasesPacked, expectedAll)
-	checkLeasesEncoded(t, rspFiltered.LeasesPacked, expectedFiltered)
+	// Act 2
+	receivedLeases = make([]*agentapi.Lease, 0, 2)
+	minCLTT := uint64(2)
+	errFiltered := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT: &minCLTT,
+	}, sss)
+
+	require.NoError(t, errFiltered)
+	checkExpectedLeases(t, receivedLeases, expectedFiltered)
 }
 
 // Test to ensure that the GetKeaLeases handler returns an error if lease tracking is not enabled in the agent.
 func TestGetKeaLeasesDisabled(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
-	rsp, err := sa.GetKeaLeases(t.Context(), &agentapi.GetKeaLeasesReq{})
+	err := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{}, nil)
 
 	require.ErrorContains(t, err, "STORK_AGENT_ENABLE_LEASE_TRACKING")
-	require.Nil(t, rsp)
-}
-
-// Test for GetKeaLeases correctly handling various error conditions (documented within).
-func TestGetKeaLeasesErrorConditions(t *testing.T) {
-	// Ensure that GetKeaLeases responds correctly (don't count that lease in the
-	// number of returned leases, don't write anything to the buffer) when one of
-	// the leases fails to encode as protobuf.
-	t.Run("failed to encode protobuf", func(t *testing.T) {
-		sa, _, teardown := setupAgentTest()
-		sa.allowLeaseTrackingFlag = true
-		defer teardown()
-
-		// 0xF5 is 0b11110101. This represents the most significant byte of a 4-byte
-		// UTF-8 encoded string.  Since it is by itself, this is invalid UIF-8. I had to
-		// spelunk through the protobuf code to find something that causes it to produce
-		// an error when marshalling. Invalid UTF-8 was the first condition which
-		// I could easily reproduce.
-		badAddr := []byte{0xF5}
-		badAddrStr := string(badAddr)
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		daemons := []Daemon{
-			makeHappyDaemon(
-				ctrl,
-				keadata.LeaseIPv6,
-				daemonname.DHCPv6,
-				[]string{badAddrStr},
-			),
-		}
-		fdm, _ := sa.Monitor.(*FakeMonitor)
-		fdm.Daemons = daemons
-
-		rsp, err := sa.GetKeaLeases(t.Context(), &agentapi.GetKeaLeasesReq{
-			MinCLTT: new(uint64),
-		})
-
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Equal(t, uint32(0), rsp.LeaseCount, "mismatch in lease count for rsp")
-		require.Len(t, rsp.LeasesPacked, 0)
-	})
-	// Ensure that GetKeaLeases responds appropriately when the serialized form of a lease is too long to be encoded in the binary format that we use (uint16 length followed by that many bytes of protobuf data).
-	t.Run("serialized data too long", func(t *testing.T) {
-		sa, _, teardown := setupAgentTest()
-		sa.allowLeaseTrackingFlag = true
-		defer teardown()
-
-		// 65,536 copies of the letter 'a', which will make the encoded protobuf value
-		// longer than 1 << 16 bytes.
-		badAddr := strings.Repeat("a", 65536)
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		daemons := []Daemon{
-			makeHappyDaemon(
-				ctrl,
-				keadata.LeaseIPv6,
-				daemonname.DHCPv6,
-				[]string{badAddr},
-			),
-		}
-		fdm, _ := sa.Monitor.(*FakeMonitor)
-		fdm.Daemons = daemons
-
-		rsp, err := sa.GetKeaLeases(t.Context(), &agentapi.GetKeaLeasesReq{
-			MinCLTT: new(uint64),
-		})
-
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Equal(t, uint32(0), rsp.LeaseCount, "mismatch in lease count for rsp")
-		require.Len(t, rsp.LeasesPacked, 0)
-	})
 }

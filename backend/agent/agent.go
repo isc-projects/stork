@@ -1,13 +1,10 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"runtime"
 	"slices"
@@ -26,7 +23,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/security/advancedtls"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	// Registers the gzip compression in the internal init() call.
 	// The server chooses the compression algorithm based on the client's request.
@@ -36,7 +32,6 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
@@ -64,7 +59,7 @@ type StorkAgent struct {
 	hookManager         *HookManager
 
 	// Permit the agent run the Lease Tracking code.
-	allowLeaseTrackingFlag bool
+	isLeaseTrackingAllowed bool
 	// Limit the maximum number of leases that each daemon will retain in memory.
 	maxLeaseUpdateCount int
 
@@ -84,7 +79,7 @@ func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bin
 		logTailer:              logTailer,
 		keaInterceptor:         newKeaInterceptor(),
 		hookManager:            hookManager,
-		allowLeaseTrackingFlag: allowLeaseTracking,
+		isLeaseTrackingAllowed: allowLeaseTracking,
 		maxLeaseUpdateCount:    maxLeaseUpdateCount,
 	}
 
@@ -93,8 +88,13 @@ func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bin
 	return sa
 }
 
+// Return whether Lease Tracking is allowed. The boolean return value is true
+// if Lease Tracking is allowed, and false if it isn't. If the boolean return
+// value is true, the integer return value indicates the maximum number of
+// lease updates that any one keaDaemon can retain in memory. The meaning of the
+// integer return value is unspecified when the boolean is false.
 func (sa *StorkAgent) allowLeaseTracking() (bool, int) {
-	return sa.allowLeaseTrackingFlag, sa.maxLeaseUpdateCount
+	return sa.isLeaseTrackingAllowed, sa.maxLeaseUpdateCount
 }
 
 // Creates the GRPC server callback using the provided cert store. The callback
@@ -948,44 +948,13 @@ func (sa *StorkAgent) ReceiveBind9Config(req *agentapi.ReceiveBind9ConfigReq, se
 	return
 }
 
-// Serialize a Lease to Protobuf, then write its length as a network-order uint16 followed by the serialized lease to the provided writer.
-//
-// This function exists because the Protobuf manual recommends against creating
-// very large Protobufs.  I think I have correctly understood and implemented
-// their recommendation.
-// https://protobuf.dev/programming-guides/techniques/#large-data
-func writeLease(writer io.Writer, sizeBuf []byte, lease *keadata.Lease) error {
-	grpcLease := lease.ToGRPC()
-	leaseBin, err := proto.Marshal(&grpcLease)
-	if err != nil {
-		return errors.New("unable to serialize the provided lease to protobuf")
-	}
-	leaseBinLen := len(leaseBin)
-	if leaseBinLen > (1 << 16) {
-		return errors.New("Serialized lease data is too large for the wire format (> 2^16 bytes long)")
-	}
-	if leaseBinLen <= 0 {
-		return errors.New("Serialized lease data is length 0?")
-	}
-	binary.BigEndian.PutUint16(sizeBuf, uint16(len(leaseBin)))
-	// These writes shouldn't ever fail because this is only being called with a
-	// bytes.Buffer, but better safe than sorry.
-	_, err = writer.Write(sizeBuf)
-	if err != nil {
-		return err
-	}
-	_, err = writer.Write(leaseBin)
-	return err
-}
-
-// Return a point-in-time snapshot of all the active leases that all monitored Kea daemons know about.
-func (sa *StorkAgent) GetKeaLeases(ctx context.Context, req *agentapi.GetKeaLeasesReq) (*agentapi.GetKeaLeasesRsp, error) {
-	if !sa.allowLeaseTrackingFlag {
-		return nil, errors.New("This feature is not enabled. Pass `--enable-lease-tracking` or set `STORK_AGENT_ENABLE_LEASE_TRACKING` when starting the agent.")
+// Stream a point-in-time snapshot of all the active leases that all monitored
+// Kea daemons know about.
+func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server grpc.ServerStreamingServer[agentapi.ReceiveKeaLeasesRsp]) error {
+	if !sa.isLeaseTrackingAllowed {
+		return errors.New("This feature is not enabled. Pass `--enable-lease-tracking` or set `STORK_AGENT_ENABLE_LEASE_TRACKING` when starting the agent.")
 	}
 	daemons := sa.Monitor.GetDaemons()
-	leaseCount := 0
-	var encodedLeases bytes.Buffer
 	for _, daemon := range daemons {
 		name := daemon.GetName()
 		switch name {
@@ -995,29 +964,21 @@ func (sa *StorkAgent) GetKeaLeases(ctx context.Context, req *agentapi.GetKeaLeas
 				log.Warn("Answering GetKeaLeases; found a daemon with DHCP daemonname, but which could not be cast to keaDaemon")
 				continue
 			}
-			recvSizeBuf := make([]byte, 2)
 			leases := keadaemon.GetLeaseSnapshot()
-			leaseCount += len(leases)
 			for _, lease := range leases {
-				err := writeLease(&encodedLeases, recvSizeBuf, lease)
+				grpcLease := lease.ToGRPC()
+				err := server.Send(&agentapi.ReceiveKeaLeasesRsp{
+					Lease: &grpcLease,
+				})
 				if err != nil {
-					log.WithError(err).Warn("could not write lease to encoded leases buffer")
-					leaseCount -= 1
-					continue
+					return err
 				}
 			}
 		default:
 			continue
 		}
 	}
-	if leaseCount >= (1 << 32) {
-		return nil, errors.New("Too many leases: the lease snapshot contains more than 4 billion leases, which is too many for this API to handle.")
-	}
-	response := agentapi.GetKeaLeasesRsp{
-		LeaseCount:   uint32(leaseCount),
-		LeasesPacked: encodedLeases.Bytes(),
-	}
-	return &response, nil
+	return nil
 }
 
 // Starts the gRPC and HTTP listeners.
