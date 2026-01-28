@@ -25,11 +25,12 @@
 // "high" is higher priority CSS layer.
 // Put here all rules that overwrite PrimeNG styling.
 @layer high
-  // When the table header has p-panel inside, do not add extra horizontal padding,
-  // because the panel has it's own padding.
-  .p-datatable .p-datatable-header:has(.p-panel)
-    padding-left: 0
-    padding-right: 0
+  // When the table header has p-panel or p-toolbar inside, do not add extra horizontal padding,
+  // because the internal element has it's own padding.
+  .p-datatable
+    .p-datatable-header:has(.p-panel), .p-datatable-header:has(.p-toolbar)
+      padding-left: 0
+      padding-right: 0
 
   // p-panel with .p-panel-icons-hidden class applied has custom toggle show/hide panel button on the left side of the panel,
   // so hide the default PrimeNG toggle button.
