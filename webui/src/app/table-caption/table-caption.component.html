@@ -1,0 +1,36 @@
+<div class="flex flex-wrap-reverse gap-2 row-gap-3 mb-2 align-items-center">
+    <p-toolbar
+        styleClass="flex flex-wrap gap-2 row-gap-3 align-items-center justify-content-start"
+        [hidden]="!filtersShown"
+    >
+        <app-help-tip subject="Filtering" id="filtering-help-button">
+            @if (filteringHelpTip()) {
+                <ng-container *ngTemplateOutlet="filteringHelpTip()"></ng-container>
+            }
+        </app-help-tip>
+        <p-button
+            label="Clear"
+            [severity]="tableHasFilter(tableElement()) ? 'info' : 'secondary'"
+            icon="pi pi-filter-slash"
+            (click)="clearTableFiltering()"
+            [disabled]="!tableHasFilter(tableElement())"
+        />
+        @if (filters()) {
+            <ng-container *ngTemplateOutlet="filters()"></ng-container>
+        }
+    </p-toolbar>
+    <div class="flex gap-2 align-items-center flex-grow-1 flex-shrink-0 justify-content-end">
+        <label for="filtersSwitch" class="font-medium">Show filters</label>
+        <p-toggleswitch [(ngModel)]="filtersShown" inputId="filtersSwitch" />
+        <div class="hidden md:flex gap-2">
+            @if (buttons()) {
+                <ng-container *ngTemplateOutlet="buttons()"></ng-container>
+            }
+        </div>
+        <div class="block md:hidden">
+            @if (splitButton()) {
+                <ng-container *ngTemplateOutlet="splitButton()"></ng-container>
+            }
+        </div>
+    </div>
+</div>
