@@ -1,26 +1,28 @@
-<div class="grid grid-nogutter">
+<div class="flex flex-column gap-3">
     <ng-container *ngFor="let ap of daemon.accessPoints">
-        <span class="col-12 sm:col-3 py-2 font-medium capitalize-first">{{ ap.type }}</span>
-        <div class="col-12 sm:col-9 py-2">
-            <span>{{ formatAddress(ap.address) }}:{{ ap.port }}</span>
-            <span
-                *ngIf="ap.protocol === 'https' || ap.protocol === 'rndc'; else unsecure"
-                class="text-green-500 pi pi-lock pl-1"
-                pTooltip="secured connection"
-            ></span>
-            <ng-template #unsecure>
-                <span class="text-red-500 pi pi-lock-open pl-1" pTooltip="unsecured connection"></span>
-            </ng-template>
-            <span
-                id="access-point-key"
-                *ngIf="daemon.name === 'named' && ap.protocol === 'rndc'"
-                appAccessType="read"
-                appAccessEntity="access-point-key"
-                [appHideIfNoAccess]="true"
-            >
-                Key:
-                <app-access-point-key [accessPointType]="ap.type" [daemonId]="daemon.id"></app-access-point-key>
-            </span>
+        <div class="flex flex-wrap gap-2 align-items-center">
+            <div class="font-medium capitalize-first flex-basis-quarter">{{ ap.type }}</div>
+            <div>
+                <span>{{ formatAddress(ap.address) }}:{{ ap.port }}</span>
+                <span
+                    *ngIf="ap.protocol === 'https' || ap.protocol === 'rndc'; else unsecure"
+                    class="text-green-500 pi pi-lock pl-1"
+                    pTooltip="secured connection"
+                ></span>
+                <ng-template #unsecure>
+                    <span class="text-red-500 pi pi-lock-open pl-1" pTooltip="unsecured connection"></span>
+                </ng-template>
+                <span
+                    id="access-point-key"
+                    *ngIf="daemon.name === 'named' && ap.protocol === 'rndc'"
+                    appAccessType="read"
+                    appAccessEntity="access-point-key"
+                    [appHideIfNoAccess]="true"
+                >
+                    Key:
+                    <app-access-point-key [accessPointType]="ap.type" [daemonId]="daemon.id"></app-access-point-key>
+                </span>
+            </div>
         </div>
     </ng-container>
 </div>
