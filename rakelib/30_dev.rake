@@ -103,11 +103,32 @@ end
 
 namespace :unittest do
     desc 'Run interaction tests for UI written in Storybook Stories.'
-    task :storybook => [NPM, NPX, "build:storybook", "prepare:playwright_browsers"] + WEBUI_CODEBASE do
+    task :storybook => [NPX, STORYBOOK_STATIC_DIRECTORY, CHROME] do
         ENV["STORYBOOK_DISABLE_TELEMETRY"] = "1"
 
         Dir.chdir("webui") do
-            sh NPX, "concurrently", "-k", "-s", "first", "-n", "\"SB,TEST\"", "-c", "\"magenta,blue\"", "\"#{NPX} http-server storybook-static --port 6006 --silent\"", "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPM} run test-storybook\""
+            sh NPX, "concurrently", "-k",
+                "-s", "first",
+                "-n", 'SB,TEST',
+                "-c", 'magenta,blue',
+                "\"#{NPX} http-server storybook-static --port 6006 --silent\"",
+                # The test-storybook can be configured on various levels:
+                #   - The Storybook level
+                #       See https://storybook.js.org/docs/writing-tests/integrations/test-runner#cli-options
+                #       for details.
+                #   - The Jest runner level
+                #       See https://jestjs.io/docs/configuration#testenvironmentoptions-object
+                #       for details. Probably, you don't need to configure anything here.
+                #   - The Playwright for Storybook level
+                #       It can be configured in the
+                #       'webui/test-runner-jest.config.js' file.
+                #       See https://github.com/playwright-community/jest-playwright#configuration
+                #       for details.
+                #
+                # Attention: The "Jest Playwright" repository is not actively maintained,
+                # it is supposed the Jest Playwright functionality will be merged into Storybook
+                # itself in the future. So, the configuration options may change.
+                "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPM} run test-storybook\""
         end
     end
 

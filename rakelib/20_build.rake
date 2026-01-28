@@ -171,6 +171,14 @@ file WEBUI_DEBUG_DIRECTORY => WEBUI_CODEBASE + [NPX] do
     end
 end
 
+file STORYBOOK_STATIC_DIRECTORY = "webui/storybook-static"
+file STORYBOOK_STATIC_DIRECTORY => WEBUI_CODEBASE + [NPX] do
+    Dir.chdir("webui") do
+        sh NPX, "ng", "run", "stork:build-storybook", "--quiet"
+        sh "touch", "-c", STORYBOOK_STATIC_DIRECTORY
+    end
+end
+
 CLEAN.append "webui/dist"
 CLEAN.append "webui/.angular"
 CLEAN.append "webui/storybook-static"
@@ -384,11 +392,7 @@ namespace :build do
     task :code_gen => [CODE_GEN_BINARY_FILE]
 
     desc "Build Storybook"
-    task :storybook => WEBUI_CODEBASE + [NPX] do
-        Dir.chdir("webui") do
-            sh NPX, "ng", "run", "stork:build-storybook", "--quiet"
-        end
-    end
+    task :storybook => [STORYBOOK_STATIC_DIRECTORY]
 end
 
 desc "Build all Stork components (Server, Agent, Tool, UI, doc)"
