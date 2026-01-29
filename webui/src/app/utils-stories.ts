@@ -28,7 +28,11 @@ export interface EntitiesRequest {
  * @param matchingField name of the field inside entity item object that will be matched against searchParam text
  * @return entities object response with items filtered by text
  */
-export function mockedFilterByText<T>(response: EntitiesResponse<T>, request: EntitiesRequest, matchingField: keyof T): EntitiesResponse<T> {
+export function mockedFilterByText<T>(
+    response: EntitiesResponse<T>,
+    request: EntitiesRequest,
+    matchingField: keyof T
+): EntitiesResponse<T> {
     if (request.searchParams?.text && response.items?.length) {
         const filteredItems = response.items.filter((item) => {
             return (<string>item[matchingField] ?? '').includes(request.searchParams.text)
