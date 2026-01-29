@@ -24,6 +24,7 @@ export class TableCaptionComponent {
     tableElement = input<Table>()
     protected readonly tableHasFilter = tableHasFilter
     router = inject(Router)
+    wideHelpTip = input<boolean>(false)
 
     /**
      * Clears the PrimeNG table filtering. As a result, table pagination is also reset.

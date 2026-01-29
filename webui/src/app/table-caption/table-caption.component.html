@@ -3,7 +3,7 @@
         styleClass="flex flex-wrap gap-2 row-gap-3 align-items-center justify-content-start"
         [hidden]="!filtersShown"
     >
-        <app-help-tip subject="Filtering" id="filtering-help-button">
+        <app-help-tip subject="Filtering" id="filtering-help-button" [width]="wideHelpTip() ? '40vw' : '20vw'">
             @if (filteringHelpTip()) {
                 <ng-container *ngTemplateOutlet="filteringHelpTip()"></ng-container>
             }
