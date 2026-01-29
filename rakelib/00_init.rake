@@ -105,11 +105,15 @@ end
 
 # Searches for the prerequisites from the init file in the provided file and
 # invoke them.
-def find_and_prepare_deps(file)
+def find_and_prepare_deps(file, extra_prerequisites=[])
     if file == __FILE__
         prerequisites_tasks = find_tasks(file)
     else
         prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
+    end
+
+    extra_prerequisites.each do |p|
+        prerequisites_tasks.append Rake::Task[p]
     end
 
     prerequisites_tasks.each do |t|
@@ -136,7 +140,7 @@ end
 
 # Searches for the prerequisites from the init file in the provided file and
 # checks if they exist.
-def check_deps(file)
+def check_deps(file, extra_prerequisites=[])
     def print_status(name, path, ok)
         status = "[ OK ]"
         if !ok
@@ -154,6 +158,10 @@ def check_deps(file)
         prerequisites_tasks = find_tasks(file)
     else
         prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
+    end
+
+    extra_prerequisites.each do |p|
+        prerequisites_tasks.append Rake::Task[p]
     end
 
     manual_install_prerequisites_tasks = []
@@ -658,8 +666,6 @@ ruby_tools_bin_dir = File.join(ruby_tools_dir, "bin")
 directory ruby_tools_bin_dir
 ruby_tools_bin_bundle_dir = File.join(ruby_tools_dir, "bin_bundle")
 directory ruby_tools_bin_bundle_dir
-playwright_browsers_dir = File.join(tools_dir, "playwright_browsers")
-directory playwright_browsers_dir
 
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
@@ -678,7 +684,6 @@ ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 ENV["VIRTUAL_ENV"] = python_tools_dir
-ENV["PLAYWRIGHT_BROWSERS_PATH"] = playwright_browsers_dir
 
 ### Detect Chrome
 def detect_chrome_binary()
@@ -838,82 +843,6 @@ file YAMLINC => [NPM] do
     sh YAMLINC, "--version"
 end
 add_version_guard(YAMLINC, yamlinc_ver)
-
-# It is a path to link because Playwright creates versioned directories that
-# are not fixed and cannot be used as prerequisites. The link must be expanded
-# before use because Playwright's Chrome depends on relative paths to its
-# resources. Additionally, MacOS (and maybe other operating systems) blocks
-# running binaries from symlinks.
-# Use File.readlink to get the actual path.
-CHROME_LINK = File.join(playwright_browsers_dir, "chromium")
-file CHROME_LINK => [NPX, playwright_browsers_dir] do
-    # Install Chromium using Playwright. Playwright installs two browsers
-    # (Chromium and custom headless shell). The headless shell is much faster
-    # (2x) than Chrome in headless mode. However, Playwright doesn't support
-    # all platforms. So, we try to install Chromium first through Playwright.
-    # If it fails, we fallback to manually detecting Chrome/Chromium binary.
-    Dir.chdir("webui") do
-        sh NPX, "playwright", "install", "chromium", "--with-deps"
-    end
-
-    # Playwright creates a directory with versioned subdirectory. We create a
-    # symlink to have a stable path to Chromium binary.
-    chrome_dir = Dir.glob(File.join(playwright_browsers_dir, "chromium-*")).max_by { |d| File.mtime(d) }
-    chrome_path = nil
-    if !chrome_dir.nil?
-        chrome_path = Dir.glob(File.join(chrome_dir,
-            "chrome-*", # e.g., chromium-1200
-            "Google Chrome for Testing.app",
-            "Contents",
-            "*", # e.g., MacOS
-            "Google Chrome for Testing"
-        )).min_by { |f| f.length } # Pick the shortest path
-    end
-
-    if chrome_path.nil?
-        # Fallback: try to detect Chrome/Chromium binary in the system.
-        chrome_path = detect_chrome_binary()
-    end
-
-    if chrome_path.nil?
-        fail "Cannot detect Chrome/Chromium binary. Please install it manually."
-    end
-
-    FileUtils.ln_s(chrome_path, CHROME_LINK, force: true)
-    sh "touch", "-c", "-h", CHROME_LINK
-
-    chrome = File.readlink(CHROME_LINK)
-    sh chrome, "--version"
-end
-
-# Specialized headless Chrome version. It is a separate binary from regular
-# Chrome/Chromium if the Playwright installation is used. Otherwise, it
-# points to the same binary as CHROME_LINK.
-# The Playwright's headless browser turns out to be much faster than
-# regular Chrome/Chromium in headless mode. But it is observed only for Playwright's
-# own tests. Other test suites may not benefit from it as much. The reason is
-# unknown.
-CHROME_HEADLESS_LINK = File.join(playwright_browsers_dir, "chromium-headless")
-file CHROME_HEADLESS_LINK => [CHROME_LINK] do
-    chrome_dir = Dir.glob(File.join(playwright_browsers_dir, "chromium_headless_shell-*")).max_by { |d| File.mtime(d) }
-    if !chrome_dir.nil?
-        chrome_path = Dir.glob(File.join(chrome_dir,
-            "chrome-headless-shell-*", # e.g., chrome-headless-shell-mac-x64
-            "chrome-headless-shell"
-        )).min_by { |f| f.length } # Pick the shortest path
-    end
-
-    if chrome_path.nil?
-        # Fallback: use the regular Chrome/Chromium binary.
-        chrome_path = File.readlink CHROME_LINK
-    end
-
-    FileUtils.ln_s(chrome_path, CHROME_HEADLESS_LINK, force: true)
-    sh "touch", "-c", "-h", CHROME_HEADLESS_LINK
-
-    chrome = File.readlink(CHROME_HEADLESS_LINK)
-    sh chrome, "--version"
-end
 
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
 file OPENAPI_GENERATOR => [WGET, tools_dir] do
