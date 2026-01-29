@@ -8,7 +8,7 @@
 
 playwright_browsers_dir = File.join("tools", "playwright_browsers")
 directory playwright_browsers_dir
-ENV["PLAYWRIGHT_BROWSERS_PATH"] = playwright_browsers_dir
+ENV["PLAYWRIGHT_BROWSERS_PATH"] = File.expand_path playwright_browsers_dir
 
 go_codebase = GO_SERVER_CODEBASE +
               GO_AGENT_CODEBASE +
@@ -187,7 +187,7 @@ end
 
 namespace :unittest do
     desc 'Run interaction tests for UI written in Storybook Stories.'
-    task :storybook => [NPX, STORYBOOK_STATIC_DIRECTORY, CHROME_HEADLESS_LINK] do
+    task :storybook => [NPX, NPM, STORYBOOK_STATIC_DIRECTORY, CHROME_HEADLESS_LINK] do
         ENV["STORYBOOK_DISABLE_TELEMETRY"] = "1"
         ENV["CHROME_BIN"] = File.expand_path File.readlink CHROME_HEADLESS_LINK
 
@@ -213,7 +213,8 @@ namespace :unittest do
                 # Attention: The "Jest Playwright" repository is not actively maintained,
                 # it is supposed the Jest Playwright functionality will be merged into Storybook
                 # itself in the future. So, the configuration options may change.
-                "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPX} test-storybook\""
+                "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPM} run test-storybook\""
+
         end
     end
 
