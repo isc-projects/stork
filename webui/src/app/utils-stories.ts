@@ -40,13 +40,6 @@ export function mockedFilterByText<T>(response: EntitiesResponse<T>, request: En
 }
 
 /**
- * Global variables used by MockedAuthService.
- */
-let isSuperAdmin = true
-let isAdmin = false
-let isReadOnly = false
-
-/**
  * Mocks AuthService by extending its normal implementation,
  * with the exception of superAdmin, isAdmin and isInReadOnlyGroup methods.
  * Overridden methods will return values kept in global variables.
@@ -54,24 +47,31 @@ let isReadOnly = false
  */
 export class MockedAuthService extends AuthService {
     /**
+     * Static variables keeping state of selected user role.
+     */
+    static isSuperAdmin = true
+    static isAdmin = false
+    static isReadOnly = false
+
+    /**
      * Returns whether current user belongs to super-admin group.
      */
     superAdmin() {
-        return isSuperAdmin
+        return MockedAuthService.isSuperAdmin
     }
 
     /**
      * Returns whether current user belongs to admin group.
      */
     isAdmin() {
-        return isAdmin
+        return MockedAuthService.isAdmin
     }
 
     /**
      * Returns whether current user belongs to read-only group.
      */
     isInReadOnlyGroup() {
-        return isReadOnly
+        return MockedAuthService.isReadOnly
     }
 }
 
@@ -83,32 +83,32 @@ export const authServiceDecorator = componentWrapperDecorator(
     (story) => story,
     ({ globals }) => {
         if (!globals.role) {
-            isSuperAdmin = true
-            isReadOnly = false
-            isAdmin = false
+            MockedAuthService.isSuperAdmin = true
+            MockedAuthService.isReadOnly = false
+            MockedAuthService.isAdmin = false
             return
         }
 
         switch (globals.role) {
             case 'super-admin':
-                isSuperAdmin = true
-                isAdmin = false
-                isReadOnly = false
+                MockedAuthService.isSuperAdmin = true
+                MockedAuthService.isAdmin = false
+                MockedAuthService.isReadOnly = false
                 break
             case 'admin':
-                isSuperAdmin = false
-                isAdmin = true
-                isReadOnly = false
+                MockedAuthService.isSuperAdmin = false
+                MockedAuthService.isAdmin = true
+                MockedAuthService.isReadOnly = false
                 break
             case 'read-only':
-                isReadOnly = true
-                isSuperAdmin = false
-                isAdmin = false
+                MockedAuthService.isReadOnly = true
+                MockedAuthService.isSuperAdmin = false
+                MockedAuthService.isAdmin = false
                 break
             default:
-                isSuperAdmin = true
-                isReadOnly = false
-                isAdmin = false
+                MockedAuthService.isSuperAdmin = true
+                MockedAuthService.isReadOnly = false
+                MockedAuthService.isAdmin = false
                 break
         }
     }
