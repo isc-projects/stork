@@ -63,9 +63,6 @@ stages:
     - runner-manager
     - amd64
   needs: []
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
 .base_build_debian_arm:
   extends: .base_build_debian
@@ -87,8 +84,6 @@ stages:
     - runner-manager
     - amd64
   before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare
     - rake prepare:deps
 
@@ -112,8 +107,6 @@ stages:
     - runner-manager
     - amd64
   before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare:dist
     - rake prepare:deps
   variables:
@@ -302,8 +295,6 @@ danger:
     - export DANGER_GITLAB_HOST=gitlab.isc.org
     - export DANGER_GITLAB_API_BASE_URL=https://gitlab.isc.org/api/v4
   script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake lint:git
 
 lint_shell:
@@ -442,9 +433,6 @@ install_debs_amd64:
     - runner-manager
     - amd64
   stage: checks
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   variables:
     ARCH: amd64
   script:
@@ -472,9 +460,6 @@ install_debs_amd64_ubuntu_lts:
     - amd64
   stage: checks
   image: ubuntu:20.04
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   variables:
     ARCH: amd64
   script:
@@ -516,9 +501,6 @@ install_rpms_amd64:
   stage: checks
   variables:
     ARCH: x86_64
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
     - "rpm -i isc-stork-*${ARCH}.rpm"
     - "stork-agent --version"
@@ -613,8 +595,6 @@ system_test:
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
   before_script:
     - ip -6 route del default
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare:systemtest
   variables:
     BIND9_VERSION: latest-stable
@@ -959,9 +939,6 @@ upload_packages:
     - packages
   variables:
     COMPONENTS: isc-stork-server,isc-stork-agent
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
     - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
     - rake release:packages:upload
