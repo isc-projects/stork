@@ -13,7 +13,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 let mockedAuthorizedMachines: Machine[]
 let mockedAllMachines: Machine[]
-let mockedAllRespData: EntitiesResponse
+let mockedAllRespData: EntitiesResponse<Machine>
 const mockedUnauthorizedMachines = [
     {
         address: 'agent-kea-large',

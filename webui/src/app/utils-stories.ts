@@ -15,7 +15,11 @@ export const toastDecorator = componentWrapperDecorator(
 /**
  * Type representing typical Stork REST API response with paged data.
  */
-export type EntitiesResponse = { items: any[]; total: number }
+export type EntitiesResponse<T> = { items: T[]; total: number }
+
+export interface EntitiesRequest {
+    searchParams?: { text: string }
+}
 
 /**
  * Mocks entities filtering by matching text that is usually done on backend side.
@@ -24,7 +28,7 @@ export type EntitiesResponse = { items: any[]; total: number }
  * @param matchingField name of the field inside entity item object that will be matched against searchParam text
  * @return entities object response with items filtered by text
  */
-export function mockedFilterByText(response: EntitiesResponse, request: any, matchingField: string): EntitiesResponse {
+export function mockedFilterByText<T>(response: EntitiesResponse<T>, request: EntitiesRequest, matchingField: keyof T): EntitiesResponse<T> {
     if (request.searchParams?.text && response.items?.length) {
         const filteredItems = response.items.filter((item) => {
             return (<string>item[matchingField] ?? '').includes(request.searchParams.text)
