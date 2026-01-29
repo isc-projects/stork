@@ -63,6 +63,13 @@ stages:
     - runner-manager
     - amd64
   needs: []
+  cache:
+    key:
+      files:
+        - webui/package-lock.json
+    paths:
+      - tools/nodejs
+      - webui/node_modules
 
 .base_build_debian_arm:
   extends: .base_build_debian
