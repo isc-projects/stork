@@ -65,7 +65,7 @@ stages:
   needs: []
   cache:
     key:
-     - files:
+      files:
         - webui/package-lock.json
         - .os_arch_metadata
     paths:
