@@ -65,9 +65,9 @@ stages:
   needs: []
   cache:
     key:
-     - debian
      - files:
         - webui/package-lock.json
+        - .os_arch_metadata
     paths:
       - tools/nodejs
       - webui/node_modules
