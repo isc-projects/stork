@@ -74,13 +74,13 @@ stages:
 
 .base_build_debian_arm:
   extends: .base_build_debian
-  cache:
-    key: $CI_PROJECT_NAME-debian-arm-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/nodejs
-      - webui/node_modules/
-    fallback_keys:
-      - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
+  cache: []
+#    key: $CI_PROJECT_NAME-debian-arm-$CI_COMMIT_REF_SLUG
+#    paths:
+#      - tools/nodejs
+#      - webui/node_modules/
+#    fallback_keys:
+#      - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -111,13 +111,13 @@ stages:
 
 .base_build_ubi_arm:
   extends: .base_build_ubi
-  cache:
-    key: $CI_PROJECT_NAME-ubi-arm-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/nodejs
-      - webui/node_modules/
-    fallback_keys:
-      - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
+  cache: []
+#    key: $CI_PROJECT_NAME-ubi-arm-$CI_COMMIT_REF_SLUG
+#    paths:
+#      - tools/nodejs
+#      - webui/node_modules/
+#    fallback_keys:
+#      - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -144,13 +144,13 @@ stages:
 
 .base_build_alpine_arm:
   extends: .base_build_alpine
-  cache:
-    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
-    paths:
-      - tools/nodejs
-      - webui/node_modules/
-    fallback_keys:
-      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
+  cache: []
+#    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
+#    paths:
+#      - tools/nodejs
+#      - webui/node_modules/
+#    fallback_keys:
+#      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -273,6 +273,7 @@ build_backend_amd64:
 
 build_backend_arm64:
   extends: build_backend_amd64
+  cache: []
   tags:
     - linux
     - aws
@@ -307,6 +308,7 @@ build_backend_legacy_amd64:
 
 build_backend_legacy_arm64:
   extends: build_backend_legacy_amd64
+  cache: []
   tags:
     - linux
     - aws
@@ -518,6 +520,7 @@ install_debs_amd64_ubuntu_lts:
 
 install_debs_arm64:
   extends: install_debs_amd64
+  cache: []
   tags:
     - linux
     - aws
@@ -557,6 +560,7 @@ install_rpms_amd64:
 
 install_rpms_arm64:
   extends: install_rpms_amd64
+  cache: []
   tags:
     - linux
     - aws
@@ -601,6 +605,7 @@ install_apks_amd64:
 
 install_apks_arm64:
   extends: install_apks_amd64
+  cache: []
   tags:
     - linux
     - aws
@@ -696,6 +701,7 @@ build_hooks_amd64:
 
 build_hooks_arm64:
   extends: build_hooks_amd64
+  cache: []
   tags:
     - linux
     - aws
@@ -734,6 +740,7 @@ build_hooks_legacy_amd64:
 
 build_hooks_legacy_arm64:
   extends: build_hooks_legacy_amd64
+  cache: []
   tags:
     - linux
     - aws
