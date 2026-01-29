@@ -65,7 +65,8 @@ stages:
   needs: []
   cache:
     key:
-      files:
+     - debian
+     - files:
         - webui/package-lock.json
     paths:
       - tools/nodejs
