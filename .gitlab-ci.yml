@@ -67,13 +67,20 @@ stages:
     key:
       files:
         - webui/package-lock.json
-        - .os_arch_metadata
     paths:
       - tools/nodejs
       - webui/node_modules
+    policy: pull
 
 .base_build_debian_arm:
   extends: .base_build_debian
+  cache:
+    key: $CI_PROJECT_NAME-debian-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/nodejs
+      - webui/node_modules/
+    fallback_keys:
+      - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -85,6 +92,13 @@ stages:
   needs: []
   rules:
     - when: always
+  cache:
+    key: $CI_PROJECT_NAME-ubi-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/nodejs
+      - webui/node_modules/
+    fallback_keys:
+      - $CI_PROJECT_NAME-ubi-$CI_DEFAULT_BRANCH
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
   tags:
     - linux
@@ -97,6 +111,13 @@ stages:
 
 .base_build_ubi_arm:
   extends: .base_build_ubi
+  cache:
+    key: $CI_PROJECT_NAME-ubi-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/nodejs
+      - webui/node_modules/
+    fallback_keys:
+      - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -123,6 +144,13 @@ stages:
 
 .base_build_alpine_arm:
   extends: .base_build_alpine
+  cache:
+    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/nodejs
+      - webui/node_modules/
+    fallback_keys:
+      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
   tags:
     - linux
     - aws
@@ -602,6 +630,12 @@ system_test:
     - when: manual
       allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
+  cache:
+    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
+    paths:
+      - tools/
+    fallback_keys:
+      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
   before_script:
     - ip -6 route del default
     - rake prepare:systemtest
