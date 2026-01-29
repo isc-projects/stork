@@ -21,7 +21,7 @@ module.exports = {
                     // install a separate browser for Storybook.
                     {
                         name: 'chromium',
-                        displayName: 'System Chromium',
+                        displayName: 'Chromium',
                         launchOptions: {
                             executablePath: process.env.CHROME_BIN,
                             headless: true,

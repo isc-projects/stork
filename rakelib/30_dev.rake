@@ -103,8 +103,9 @@ end
 
 namespace :unittest do
     desc 'Run interaction tests for UI written in Storybook Stories.'
-    task :storybook => [NPX, STORYBOOK_STATIC_DIRECTORY, CHROME] do
+    task :storybook => [NPX, STORYBOOK_STATIC_DIRECTORY, CHROME_HEADLESS_LINK] do
         ENV["STORYBOOK_DISABLE_TELEMETRY"] = "1"
+        ENV["CHROME_BIN"] = File.expand_path File.readlink CHROME_HEADLESS_LINK
 
         Dir.chdir("webui") do
             sh NPX, "concurrently", "-k",
@@ -128,7 +129,7 @@ namespace :unittest do
                 # Attention: The "Jest Playwright" repository is not actively maintained,
                 # it is supposed the Jest Playwright functionality will be merged into Storybook
                 # itself in the future. So, the configuration options may change.
-                "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPM} run test-storybook\""
+                "\"#{NPX} wait-on tcp:127.0.0.1:6006 && #{NPX} test-storybook\""
         end
     end
 
@@ -138,7 +139,7 @@ namespace :unittest do
                 when a path to directory is provided, all spec files ending ".spec.@(ts|tsx)" will be included
                 when a path to a file is provided, and a matching spec file exists it will be included instead
         DEBUG - run the tests in debug mode (no headless) - default: false'
-    task :ui => [CHROME, NPX] + WEBUI_CODEBASE do
+    task :ui => WEBUI_CODEBASE + [CHROME_LINK, CHROME_HEADLESS_LINK, NPX] do
         debug = "false"
         if ENV["DEBUG"] == "true"
             debug = "true"
@@ -161,8 +162,10 @@ namespace :unittest do
         opts += ["--browsers"]
         if debug == "true"
             opts += ["Chrome"]
+            ENV["CHROME_BIN"] = File.expand_path File.readlink(CHROME_LINK)
         else
             opts += ["ChromeNoSandboxHeadless"]
+            ENV["CHROME_BIN"] = File.expand_path File.readlink(CHROME_HEADLESS_LINK)
         end
 
         Dir.chdir('webui') do
