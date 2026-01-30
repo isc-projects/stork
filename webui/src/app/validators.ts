@@ -789,4 +789,78 @@ export class StorkValidators {
             return null
         }
     }
+
+    /**
+     * A validator checking if the input contains at least one uppercase letter.
+     * @param control form control instance holding the validated value.
+     * @returns validation errors or null if the input contains at least one uppercase letter.
+     */
+    static hasUppercaseLetter(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+            return null
+        }
+        for (let i = 0; i < control.value.length; i++) {
+            const char = control.value.charAt(i)
+            if (char >= 'A' && char <= 'Z') {
+                return null
+            }
+        }
+        return { hasUppercaseLetter: 'The value must contain at least one uppercase letter.' }
+    }
+
+    /**
+     * A validator checking if the input contains at least one lowercase letter.
+     * @param control form control instance holding the validated value.
+     * @returns validation errors or null if the input contains at least one lowercase letter.
+     */
+    static hasLowercaseLetter(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+            return null
+        }
+        for (let i = 0; i < control.value.length; i++) {
+            const char = control.value.charAt(i)
+            if (char >= 'a' && char <= 'z') {
+                return null
+            }
+        }
+        return { hasLowercaseLetter: 'The value must contain at least one lowercase letter.' }
+    }
+
+    /**
+     * A validator checking if the input contains at least one digit.
+     * @param control form control instance holding the validated value.
+     * @returns validation errors or null if the input contains at least one digit.
+     */
+    static hasDigit(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+            return null
+        }
+        for (let i = 0; i < control.value.length; i++) {
+            const char = control.value.charAt(i)
+            if (char >= '0' && char <= '9') {
+                return null
+            }
+        }
+        return { hasDigit: 'The value must contain at least one digit.' }
+    }
+
+    /**
+     * A validator checking if the input contains at least one special character.
+     * The special characters are considered to be any characters that are not
+     * alphanumeric.
+     * @param control form control instance holding the validated value.
+     * @returns validation errors or null if the input contains at least one special character.
+     */
+    static hasSpecialCharacter(control: AbstractControl): ValidationErrors | null {
+        if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+            return null
+        }
+        for (let i = 0; i < control.value.length; i++) {
+            const char = control.value.charAt(i)
+            if (!(char >= 'A' && char <= 'Z') && !(char >= 'a' && char <= 'z') && !(char >= '0' && char <= '9')) {
+                return null
+            }
+        }
+        return { hasSpecialCharacter: 'The value must contain at least one special character.' }
+    }
 }

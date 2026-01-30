@@ -17,6 +17,7 @@ import { Panel } from 'primeng/panel'
 import { Password } from 'primeng/password'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { StorkValidators } from '../validators'
 
 /**
  * This component allows the logged user to change the password.
@@ -76,7 +77,15 @@ export class PasswordChangePageComponent implements OnInit {
                 oldPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
                 newPassword: [
                     '',
-                    [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
+                    [
+                        Validators.required,
+                        Validators.minLength(12),
+                        Validators.maxLength(this.maxInputLen),
+                        StorkValidators.hasUppercaseLetter,
+                        StorkValidators.hasLowercaseLetter,
+                        StorkValidators.hasDigit,
+                        StorkValidators.hasSpecialCharacter,
+                    ],
                 ],
                 confirmPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
             },

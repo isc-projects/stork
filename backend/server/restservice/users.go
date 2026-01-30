@@ -581,8 +581,8 @@ func validatePassword(password string) []string {
 	var validationErrors []string
 
 	// Check the minimum length.
-	if len(password) < 8 {
-		validationErrors = append(validationErrors, "password must be at least 8 characters long")
+	if len(password) < 12 {
+		validationErrors = append(validationErrors, "password must be at least 12 characters long")
 	}
 
 	// Check the maximum length.
@@ -593,6 +593,43 @@ func validatePassword(password string) []string {
 	// Check for allowed characters.
 	if !validPasswordPattern.MatchString(password) {
 		validationErrors = append(validationErrors, "password contains invalid characters")
+	}
+
+	// The password must include at least:
+	// - one uppercase letter
+	// - one lowercase letter
+	// - one digit
+	// - one special character
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+	for _, ch := range password {
+		isLowerLetter := ch >= 'a' && ch <= 'z'
+		isUpperLetter := ch >= 'A' && ch <= 'Z'
+		isDigit := ch >= '0' && ch <= '9'
+		isSpecial := !isLowerLetter && !isUpperLetter && !isDigit
+
+		switch {
+		case isLowerLetter:
+			hasLower = true
+		case isUpperLetter:
+			hasUpper = true
+		case isDigit:
+			hasDigit = true
+		case isSpecial:
+			hasSpecial = true
+		}
+	}
+
+	if !hasUpper {
+		validationErrors = append(validationErrors, "password must include at least one uppercase letter")
+	}
+	if !hasLower {
+		validationErrors = append(validationErrors, "password must include at least one lowercase letter")
+	}
+	if !hasDigit {
+		validationErrors = append(validationErrors, "password must include at least one digit")
+	}
+	if !hasSpecial {
+		validationErrors = append(validationErrors, "password must include at least one special character")
 	}
 
 	return validationErrors

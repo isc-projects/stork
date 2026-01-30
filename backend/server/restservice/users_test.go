@@ -993,7 +993,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updatedPass")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
@@ -1006,7 +1006,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	params = users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updatedPass")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
@@ -1021,7 +1021,7 @@ func TestUpdateUserPassword(t *testing.T) {
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("short©")),
-			Oldpassword: storkutil.Ptr(models.Password("updatedPass")),
+			Oldpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 		},
 	}
 	rsp = rapi.UpdateUserPassword(ctx, params)
@@ -1029,8 +1029,10 @@ func TestUpdateUserPassword(t *testing.T) {
 	defaultRsp = rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Contains(t, *defaultRsp.Payload.Message, "New password does not meet the password policy")
-	require.Contains(t, *defaultRsp.Payload.Message, "at least 8 characters")
+	require.Contains(t, *defaultRsp.Payload.Message, "at least 12 characters")
 	require.Contains(t, *defaultRsp.Payload.Message, "contains invalid characters")
+	require.Contains(t, *defaultRsp.Payload.Message, "at least one uppercase letter")
+	require.Contains(t, *defaultRsp.Payload.Message, "at least one digit")
 }
 
 // Tests that updating the user password via REST API causes the change
@@ -1062,7 +1064,7 @@ func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updatedPass")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
 		},
 	}
@@ -1102,7 +1104,7 @@ func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
 	params := users.UpdateUserPasswordParams{
 		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
-			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 		},
 	}
 	rsp := rapi.UpdateUserPassword(ctx, params)
@@ -1115,27 +1117,46 @@ func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
 // Test that the password validation function works as expected.
 func TestValidatePassword(t *testing.T) {
 	passwordEmptyProblems := validatePassword("")
-	require.Len(t, passwordEmptyProblems, 1)
-	require.Contains(t, passwordEmptyProblems[0], "at least 8 characters")
+	require.NotEmpty(t, passwordEmptyProblems)
+	require.Contains(t, passwordEmptyProblems[0], "at least 12 characters")
 
 	passwordTooShortProblems := validatePassword("short")
-	require.Len(t, passwordTooShortProblems, 1)
-	require.Contains(t, passwordTooShortProblems[0], "at least 8 characters")
+	require.NotEmpty(t, passwordTooShortProblems)
+	require.Contains(t, passwordTooShortProblems[0], "at least 12 characters")
 
 	passwordTooLong := validatePassword(strings.Repeat("a", 121))
-	require.Len(t, passwordTooLong, 1)
+	require.NotEmpty(t, passwordTooLong)
 	require.Contains(t, passwordTooLong[0], "at most 120 characters")
 
 	passwordWithInvalidChars := validatePassword("®√©∆÷…ĺ„•¶")
-	require.Len(t, passwordWithInvalidChars, 1)
+	require.NotEmpty(t, passwordWithInvalidChars)
 	require.Contains(t, passwordWithInvalidChars[0], "contains invalid characters")
 
-	passwordWithManyProblems := validatePassword("®")
-	require.Len(t, passwordWithManyProblems, 2)
-	require.Contains(t, passwordWithManyProblems[0], "at least 8 characters")
-	require.Contains(t, passwordWithManyProblems[1], "contains invalid characters")
+	passwordHasNoLowerLetters := validatePassword("PASSWORD1234!")
+	require.NotEmpty(t, passwordHasNoLowerLetters)
+	require.Contains(t, passwordHasNoLowerLetters[0], "at least one lowercase letter")
 
-	validPassword := validatePassword("password") // sic!
+	passwordHasNoUpperLetters := validatePassword("password1234!")
+	require.NotEmpty(t, passwordHasNoUpperLetters)
+	require.Contains(t, passwordHasNoUpperLetters[0], "at least one uppercase letter")
+
+	passwordHasNoDigits := validatePassword("Password!!!!")
+	require.NotEmpty(t, passwordHasNoDigits)
+	require.Contains(t, passwordHasNoDigits[0], "at least one digit")
+
+	passwordHasNoSpecialChars := validatePassword("Password1234")
+	require.NotEmpty(t, passwordHasNoSpecialChars)
+	require.Contains(t, passwordHasNoSpecialChars[0], "at least one special character")
+
+	passwordWithManyProblems := validatePassword("®")
+	require.Len(t, passwordWithManyProblems, 5)
+	require.Contains(t, passwordWithManyProblems[0], "at least 12 characters")
+	require.Contains(t, passwordWithManyProblems[1], "contains invalid characters")
+	require.Contains(t, passwordWithManyProblems[2], "at least one uppercase letter")
+	require.Contains(t, passwordWithManyProblems[3], "at least one lowercase letter")
+	require.Contains(t, passwordWithManyProblems[4], "at least one digit")
+
+	validPassword := validatePassword("Password2026!") // sic!
 	require.Empty(t, validPassword)
 }
 

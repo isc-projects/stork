@@ -58,8 +58,8 @@ describe('PasswordChangePageComponent', () => {
     it('should permit spaces in the password', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('oldPassword').setValue('admin')
-        component.passwordChangeForm.get('newPassword').setValue('password with spaces works well')
-        component.passwordChangeForm.get('confirmPassword').setValue('password with spaces works well')
+        component.passwordChangeForm.get('newPassword').setValue('Password with spaces works well in 2026!')
+        component.passwordChangeForm.get('confirmPassword').setValue('Password with spaces works well in 2026!')
 
         fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeTrue()
