@@ -36,7 +36,7 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	"isc.org/stork/daemondata/kea"
+	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
@@ -957,9 +957,14 @@ func writeLease(writer io.Writer, sizeBuf []byte, lease *keadata.Lease) error {
 		return errors.New("Serialized lease data is length 0?")
 	}
 	binary.BigEndian.PutUint16(sizeBuf, uint16(len(leaseBin)))
-	writer.Write(sizeBuf)
-	writer.Write(leaseBin)
-	return nil
+	// These writes shouldn't ever fail because this is only being called with a
+	// bytes.Buffer, but better safe than sorry.
+	_, err = writer.Write(sizeBuf)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(leaseBin)
+	return err
 }
 
 // Return a point-in-time snapshot of all the active leases that all monitored Kea daemons know about.

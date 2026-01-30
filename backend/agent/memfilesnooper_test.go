@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 
-	"isc.org/stork/daemondata/kea"
+	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 )
 

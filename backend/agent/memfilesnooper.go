@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"isc.org/stork/daemondata/kea"
+	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 
 	"github.com/fsnotify/fsnotify"

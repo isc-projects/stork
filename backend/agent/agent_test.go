@@ -30,10 +30,9 @@ import (
 	"gopkg.in/h2non/gock.v1"
 
 	"isc.org/stork"
-	"isc.org/stork/api"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
-	"isc.org/stork/daemondata/kea"
+	keadata "isc.org/stork/daemondata/kea"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
@@ -3022,7 +3021,7 @@ func makeHappyDaemon(ctrl *gomock.Controller, version keadata.LeaseIPVersion, na
 
 // Read a lease in the encoded format specified in agent.go (network-order
 // uint16 length followed by protobuf data).
-func readEncodedLease(dataBuf []byte, lease *api.Lease) (uint, error) {
+func readEncodedLease(dataBuf []byte, lease *agentapi.Lease) (uint, error) {
 	dataBufLen := len(dataBuf)
 	if dataBufLen < 2 {
 		return 0, errors.New("data buffer too small to contain valid data")
@@ -3047,7 +3046,7 @@ func checkLeasesEncoded(t *testing.T, inputBuffer []byte, expectedIPs []string) 
 	readLength := uint(0)
 	leaseBuffer := inputBuffer
 	leaseBufferLen := len(leaseBuffer)
-	lease := api.Lease{}
+	lease := agentapi.Lease{}
 	for _, expectedAddr := range expectedIPs {
 		leaseBuffer = leaseBuffer[readLength:leaseBufferLen]
 		readLength, err = readEncodedLease(leaseBuffer, &lease)

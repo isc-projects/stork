@@ -1894,11 +1894,11 @@ func TestKeaMultiConnectorEmpty(t *testing.T) {
 	require.ErrorContains(t, err, "no connectors available")
 }
 
-// Mock a Kea command HTTP request/response sequence.
+// Mock a Kea status-get command HTTP request/response sequence.
 //
-// Expect the given `command` for the given `service`, exactly `times` times.
+// Expect "status-get" for the given `service`, exactly `times` times.
 // Reply with `response`.
-func makeKeaCommandMock(command, service, response string, times int) error {
+func makeKeaCommandMock(service, response string, times int) error {
 	responseJSON := make([]map[string]any, 1)
 	err := json.Unmarshal([]byte(response), &responseJSON)
 	if err != nil {
@@ -1906,7 +1906,7 @@ func makeKeaCommandMock(command, service, response string, times int) error {
 	}
 	gock.New("http://localhost:45634").
 		MatchHeader("Content-Type", "application/json").
-		JSON(map[string]any{"command": command, "service": []string{service}}).
+		JSON(map[string]any{"command": "status-get", "service": []string{service}}).
 		Times(times).
 		Post("/").
 		Reply(200).
@@ -1942,7 +1942,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				}
 			}
 		]`, leasefile.Name())
-		err = makeKeaCommandMock("status-get", "dhcp4", dhcpV4ResponsesJSON, 1)
+		err = makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
@@ -1995,7 +1995,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				}
 			}
 		]`, leasefile.Name())
-		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON, 1)
+		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
@@ -2052,9 +2052,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		]`
 		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile1.Name())
 		dhcpV6ResponsesJSON2 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile2.Name())
-		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON1, 1)
+		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON1, 1)
 		require.NoError(t, err)
-		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON2, 1)
+		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON2, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
@@ -2120,7 +2120,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			}
 		]`
 		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile.Name())
-		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON1, 2)
+		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON1, 2)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
@@ -2178,7 +2178,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			}
 		]`
 		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile.Name())
-		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON1, 1)
+		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON1, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
@@ -2234,7 +2234,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			}
 		]`
 		dhcpV4ResponsesJSON1 := fmt.Sprintf(dhcpV4ResponsesJSONTemplate, leasefile.Name())
-		err = makeKeaCommandMock("status-get", "dhcp4", dhcpV4ResponsesJSON1, 1)
+		err = makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON1, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
@@ -2337,7 +2337,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				"arguments": {}
 			}
 		]`
-		err = makeKeaCommandMock("status-get", "dhcp4", dhcpV4ResponsesJSON, 1)
+		err = makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
