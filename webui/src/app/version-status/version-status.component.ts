@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, computed, input } from '@angular/core'
 import {
     DaemonName,
     getDaemonAppType,
@@ -39,7 +39,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * The daemon object should also contain version string.
      * It may also contain numeric daemon ID.
      */
-    @Input({ required: true }) daemon!: { id?: number; name?: DaemonName; version?: string }
+    daemon = input.required<{ id?: number; name: DaemonName; version?: string }>()
 
     /**
      * This flag sets whether the component should display the version as a clickable link to
@@ -52,7 +52,9 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * Version of the software for which the check is done.
      * It is a semver sanitized from provided version string in the input daemon object.
      */
-    version: string
+    version = computed(() =>
+        !!this.daemon().version ? this.versionService.sanitizeSemver(this.daemon().version) : undefined
+    )
 
     /**
      * This flag sets whether the component has a form of inline icon with the tooltip,
@@ -90,7 +92,21 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on daemon name.
      */
-    appName: string
+    appName = computed(() => {
+        const app = getDaemonAppType(this.daemon().name)
+        switch (app) {
+            case 'bind9':
+                return 'BIND9'
+            case 'pdns':
+                return 'PowerDNS'
+            case 'stork':
+                return 'Stork agent'
+            case 'kea':
+                return 'Kea'
+            default:
+                return daemonNameToFriendlyName(this.daemon().name)
+        }
+    })
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
@@ -118,48 +134,21 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
-        const sanitizedSemver = this.versionService.sanitizeSemver(this.daemon.version)
-        if (sanitizedSemver) {
-            this.version = sanitizedSemver
-        }
-
-        const app = getDaemonAppType(this.daemon.name)
-        switch (app) {
-            case 'bind9':
-                this.appName = 'BIND9'
-                break
-            case 'pdns':
-                this.appName = 'PowerDNS'
-                break
-            case 'stork':
-                this.appName = 'Stork agent'
-                break
-            case 'kea':
-                this.appName = 'Kea'
-                break
-            default:
-                this.appName = daemonNameToFriendlyName(this.daemon.name)
-                break
-        }
-
         // Mute version checks for non-ISC apps. Version is mandatory. In case it is
         // falsy (undefined, null, empty string), simply return. No feedback will be displayed.
-        this.iscApp = isIscDaemon(this.daemon.name)
-        if (!this.iscApp || !this.daemon.version) {
+        const daemon = this.daemon()
+        if (!this.iscApp() || !daemon.version) {
             return
         }
+        const sanitizedVersion = this.version()
 
-        if (sanitizedSemver) {
+        if (sanitizedVersion) {
             this._subscriptions.add(
                 this.versionService
                     .getCurrentData()
                     .pipe(
                         map((data) => {
-                            return this.versionService.getSoftwareVersionFeedback(
-                                sanitizedSemver,
-                                this.daemon.name,
-                                data
-                            )
+                            return this.versionService.getSoftwareVersionFeedback(sanitizedVersion, daemon.name, data)
                         }),
                         // Use first() operator to unsubscribe after receiving first data.
                         // This is to avoid too many subscriptions for larger Stork deployments.
@@ -186,7 +175,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error parsing software version',
-                detail: `Couldn't parse valid semver from given ${this.daemon.version} version!`,
+                detail: `Couldn't parse valid semver from given ${daemon.version} version!`,
                 life: 10000,
             })
         }
@@ -202,7 +191,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Holds true if the app is a Kea, BIND9 or Stork agent; false otherwise.
      */
-    iscApp: boolean
+    iscApp = computed(() => isIscDaemon(this.daemon().name))
 
     /**
      * Sets the severity and the feedback messages. Icon classes are set based on the severity.
@@ -214,7 +203,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         this.feedbackMessages = feedback.messages ?? []
         const m: ToastMessageOptions = {
             severity: Severity[feedback.severity],
-            summary: `${this.appName} ${this.version}`,
+            summary: `${this.appName()} ${this.version()}`,
             detail: feedback.messages.join('<br><br>'),
         }
 
