@@ -58,20 +58,20 @@ stages:
   key: golang_amd64
   paths:
     - tools/golang/gopath/pkg/mod/
-    - tools/golang/go.tar.gz
-    - tools/golang/protoc.zip
-    - tools/golang/goswagger
-    - tools/golang/golangci-lint.tar.gz
+    # - tools/golang/go.tar.gz
+    # - tools/golang/protoc.zip
+    # - tools/golang/goswagger
+    # - tools/golang/golangci-lint.tar.gz
   policy: pull
 
 .golang_arm64_cache: &golang_arm64_cache
   key: golang_arm64
   paths:
     - tools/golang/gopath/pkg/mod/
-    - tools/golang/go.tar.gz
-    - tools/golang/protoc.zip
-    - tools/golang/goswagger
-    - tools/golang/golangci-lint.tar.gz
+    # - tools/golang/go.tar.gz
+    # - tools/golang/protoc.zip
+    # - tools/golang/goswagger
+    # - tools/golang/golangci-lint.tar.gz
   policy: pull
 
 .nodejs_cache: &nodejs_cache
@@ -253,6 +253,7 @@ lint_python_pylint:
     # - *wget_amd64_cache
     - *golang_amd64_cache
   script:
+    - echo $PIP_CACHE_DIR
     - rake lint:python:pylint
 
 lint_python_flake8:
@@ -360,8 +361,8 @@ build_cache_amd64:
       policy: push
     - <<: *nodejs_cache
       policy: push
-    - <<: *wget_amd64_cache
-      policy: push
+    # - <<: *wget_amd64_cache
+    #   policy: push
   script:
     - rake prepare
     - rake prepare:deps
