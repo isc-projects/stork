@@ -336,7 +336,8 @@ func TestAgentInstallerMiddlewareServerAddressFromConfig(t *testing.T) {
 	// The script should contain the server address from the configuration,
 	// not from the HTTP Host header.
 	require.Contains(t, content, "https://stork.example.com:8443/subdir")
-	require.NotContains(t, content, "http://localhost")
+	require.NotContains(t, content, "localhost")
+	require.NotContains(t, content, "http:")
 }
 
 // Check if metricsMiddleware works and handles requests correctly.
