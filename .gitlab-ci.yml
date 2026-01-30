@@ -50,6 +50,58 @@ stages:
   - hooks
   - deploy
 
+### caches ###
+.golang_amd64_cache: &golang_amd64_cache
+  key: golang_amd64
+  paths:
+    - tools/golang
+  policy: pull
+
+.golang_arm64_cache: &golang_arm64_cache
+  key: golang_arm64
+  paths:
+    - tools/golang
+  policy: pull
+
+.nodejs_cache: &nodejs_cache
+  key:
+    files:
+      - webui/package-lock.json
+  paths:
+    - tools/nodejs
+    - webui/node_modules
+  policy: pull
+
+.ruby_cache: &ruby_cache
+  key: ruby
+  paths:
+    - tools/gems
+  policy: pull-push
+
+.python_amd64_cache: &python_amd64_cache
+  key: python_amd64
+  paths:
+    - tools/python
+  policy: pull
+
+.python_arm64_cache: &python_arm64_cache
+  key: python_arm64
+  paths:
+    - tools/python
+  policy: pull
+
+.openapigen_cache: &openapigen_cache
+  key: openapigen
+  paths:
+    - tools/openapi-generator-cli.jar
+  policy: pull
+
+.shellcheck_cache: &shellcheck_cache
+  key: shellcheck
+  paths:
+    - tools/shellcheck
+  policy: pull-push
+
 ### build jobs ###
 
 # common parts used in build jobs
@@ -63,14 +115,14 @@ stages:
     - runner-manager
     - amd64
   needs: []
-  cache:
-    key:
-      files:
-        - webui/package-lock.json
-    paths:
-      - tools/nodejs
-      - webui/node_modules
-    policy: pull
+#  cache:
+#    key:
+#      files:
+#        - webui/package-lock.json
+#    paths:
+#      - tools/nodejs
+#      - webui/node_modules
+#    policy: pull
 
 .base_build_debian_arm:
   extends: .base_build_debian
@@ -167,6 +219,9 @@ stages:
 lint_backend:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *golang_amd64_cache
+    - *nodejs_cache
   script:
     - rake lint:backend
 
@@ -179,24 +234,35 @@ lint_changelog:
 lint_python_pylint:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *python_amd64_cache
+    - *nodejs_cache
+    - *openapigen_cache
+    - *golang_amd64_cache
   script:
     - rake lint:python:pylint
 
 lint_python_flake8:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *python_amd64_cache
   script:
     - rake lint:python:flake8
 
 lint_python_black:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *python_amd64_cache
   script:
     - rake lint:python:black
 
 unittest_backend:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *golang_amd64_cache
   services:
     - name: postgres:18-alpine
       alias: postgres
@@ -223,12 +289,20 @@ unittest_backend:
 lint_ui:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *nodejs_cache
+    - *openapigen_cache
+    - *golang_amd64_cache
   script:
     - rake lint:ui
 
 unittest_ui:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *nodejs_cache
+    - *openapigen_cache
+    - *golang_amd64_cache
   script:
     - rake unittest:ui
   artifacts:
@@ -250,6 +324,10 @@ storybook_tests:
 
 build_ui:
   extends: .base_build_debian
+  cache:
+    - *nodejs_cache
+    - *openapigen_cache
+    - *golang_amd64_cache
   script:
     - rake build:ui
   artifacts:
@@ -260,6 +338,8 @@ build_ui:
 
 build_doc:
   extends: .base_build_debian
+  cache:
+    - *python_amd64_cache
   script:
     - rake build:doc
   variables:
@@ -272,6 +352,9 @@ build_doc:
 
 build_backend_amd64:
   extends: .base_build_debian
+  cache:
+    - *golang_amd64_cache
+    - *nodejs_cache ## because npm yamlinc is used
   script:
     - rake build:backend
   artifacts:
@@ -280,7 +363,9 @@ build_backend_amd64:
 
 build_backend_arm64:
   extends: build_backend_amd64
-  cache: []
+  cache:
+    - *golang_arm64_cache
+    - *nodejs_cache ## because npm yamlinc is used
   tags:
     - linux
     - aws
@@ -329,6 +414,8 @@ build_backend_legacy_arm64:
 danger:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *ruby_cache
   tags:
     - linux
     - aws
@@ -346,6 +433,8 @@ danger:
 lint_shell:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *shellcheck_cache
   script:
     - rake lint:shell
 
@@ -372,6 +461,11 @@ tarball:
 build_debs_amd64:
   extends: .base_build_debian
   stage: build
+  cache:
+    - *golang_amd64_cache
+    - *python_amd64_cache
+    - *nodejs_cache
+    - *openapigen_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
@@ -387,6 +481,11 @@ build_debs_amd64:
 build_debs_arm64:
   extends: .base_build_debian_arm
   stage: build
+  cache:
+    - *golang_arm64_cache
+    - *python_arm64_cache
+    - *nodejs_cache
+    - *openapigen_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
@@ -402,6 +501,15 @@ build_debs_arm64:
 build_rpms_amd64:
   extends: .base_build_ubi
   stage: build
+  cache:
+    - <<: *golang_amd64_cache
+      policy: pull-push
+    - <<: *python_amd64_cache
+      policy: pull-push
+    - <<: *nodejs_cache
+      policy: pull-push
+    - <<: *openapigen_cache
+      policy: pull-push
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
@@ -417,6 +525,15 @@ build_rpms_amd64:
 build_rpms_arm64:
   extends: .base_build_ubi_arm
   stage: build
+  cache:
+    -   <<: *golang_arm64_cache
+        policy: pull-push
+    -   <<: *python_arm64_cache
+        policy: pull-push
+    -   <<: *nodejs_cache
+        policy: pull-push
+    -   <<: *openapigen_cache
+        policy: pull-push
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
@@ -431,6 +548,11 @@ build_rpms_arm64:
 
 build_apks_amd64:
   extends: .base_build_alpine
+  cache:
+    - *golang_amd64_cache
+    - *python_amd64_cache
+    - *nodejs_cache
+    - *openapigen_cache
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -442,6 +564,11 @@ build_apks_amd64:
 
 build_apks_arm64:
   extends: .base_build_alpine_arm
+  cache:
+    - *golang_arm64_cache
+    - *python_arm64_cache
+    - *nodejs_cache
+    - *openapigen_cache
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
