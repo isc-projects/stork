@@ -33,6 +33,9 @@ variables:
   # SLSA - enable artifact provenance metadata
   RUNNER_GENERATE_ARTIFACTS_METADATA: "true"
 
+  # Download Python packages to cached location.
+  PIP_CACHE_DIR: "tools/python/pip"
+
 
 default:
   # AWS can interrupt the spot instance anytime, so let's retry the job when
@@ -79,13 +82,13 @@ stages:
 .python_amd64_cache: &python_amd64_cache
   key: python_amd64
   paths:
-    - tools/python
+    - tools/python/pip
   policy: pull
 
 .python_arm64_cache: &python_arm64_cache
   key: python_arm64
   paths:
-    - tools/python
+    - tools/python/pip
   policy: pull
 
 .openapigen_cache: &openapigen_cache
