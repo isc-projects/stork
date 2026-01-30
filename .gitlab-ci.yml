@@ -334,6 +334,21 @@ build_ui:
     paths:
       - webui/dist/stork/
 
+build_cache_amd64:
+  extends: .base_build_debian
+  rules:
+    - when: manual
+  cache:
+    - <<: *golang_amd64_cache
+      policy: push
+    - <<: *python_amd64_cache
+      policy: push
+    - <<: *nodejs_cache
+      policy: push
+  script:
+    - rake prepare
+    - rake prepare:deps
+
 build_doc:
   extends: .base_build_debian
   cache:
@@ -500,14 +515,18 @@ build_rpms_amd64:
   extends: .base_build_ubi
   stage: build
   cache:
-    - <<: *golang_amd64_cache
-      policy: pull-push
-    - <<: *python_amd64_cache
-      policy: pull-push
-    - <<: *nodejs_cache
-      policy: pull-push
-    - <<: *openapigen_cache
-      policy: pull-push
+    # - <<: *golang_amd64_cache
+    #   policy: pull-push
+    # - <<: *python_amd64_cache
+    #   policy: pull-push
+    # - <<: *nodejs_cache
+    #   policy: pull-push
+    # - <<: *openapigen_cache
+    #   policy: pull-push
+    - *golang_amd64_cache
+    - *python_amd64_cache
+    - *nodejs_cache
+    - *openapigen_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
@@ -524,14 +543,18 @@ build_rpms_arm64:
   extends: .base_build_ubi_arm
   stage: build
   cache:
-    -   <<: *golang_arm64_cache
-        policy: pull-push
-    -   <<: *python_arm64_cache
-        policy: pull-push
-    -   <<: *nodejs_cache
-        policy: pull-push
-    -   <<: *openapigen_cache
-        policy: pull-push
+    # -   <<: *golang_arm64_cache
+    #     policy: pull-push
+    # -   <<: *python_arm64_cache
+    #     policy: pull-push
+    # -   <<: *nodejs_cache
+    #     policy: pull-push
+    # -   <<: *openapigen_cache
+    #     policy: pull-push
+    - *golang_arm64_cache
+    - *python_arm64_cache
+    - *nodejs_cache
+    - *openapigen_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
