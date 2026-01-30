@@ -250,7 +250,7 @@ lint_python_pylint:
   cache:
     - *python_amd64_cache
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
     - *golang_amd64_cache
   script:
     - rake lint:python:pylint
@@ -304,7 +304,7 @@ lint_ui:
   stage: checks
   cache:
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
     - *golang_amd64_cache
   script:
     - rake lint:ui
@@ -314,7 +314,7 @@ unittest_ui:
   stage: checks
   cache:
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
     - *golang_amd64_cache
   script:
     - rake unittest:ui
@@ -339,7 +339,7 @@ build_ui:
   extends: .base_build_debian
   cache:
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
     - *golang_amd64_cache
   script:
     - rake build:ui
@@ -463,8 +463,8 @@ danger:
 lint_shell:
   extends: .base_build_debian
   stage: checks
-  cache:
-    - *wget_amd64_cache
+  # cache:
+    # - *wget_amd64_cache
   script:
     - rake lint:shell
 
@@ -495,7 +495,7 @@ build_debs_amd64:
     - *golang_amd64_cache
     - *python_amd64_cache
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
@@ -515,7 +515,7 @@ build_debs_arm64:
     - *golang_arm64_cache
     - *python_arm64_cache
     - *nodejs_cache
-    - *wget_arm64_cache
+    # - *wget_arm64_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
@@ -543,7 +543,7 @@ build_rpms_amd64:
     - *golang_amd64_cache
     - *python_amd64_cache
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
@@ -571,7 +571,7 @@ build_rpms_arm64:
     - *golang_arm64_cache
     - *python_arm64_cache
     - *nodejs_cache
-    - *wget_arm64_cache
+    # - *wget_arm64_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
@@ -590,7 +590,7 @@ build_apks_amd64:
     - *golang_amd64_cache
     - *python_amd64_cache
     - *nodejs_cache
-    - *wget_amd64_cache
+    # - *wget_amd64_cache
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -606,7 +606,7 @@ build_apks_arm64:
     - *golang_arm64_cache
     - *python_arm64_cache
     - *nodejs_cache
-    - *wget_arm64_cache
+    # - *wget_arm64_cache
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
