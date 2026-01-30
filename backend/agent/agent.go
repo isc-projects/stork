@@ -937,6 +937,12 @@ func (sa *StorkAgent) ReceiveBind9Config(req *agentapi.ReceiveBind9ConfigReq, se
 	return
 }
 
+// Serialize a Lease to Protobuf, then write its length as a network-order uint16 followed by the serialized lease to the provided writer.
+//
+// This function exists because the Protobuf manual recommends against creating
+// very large Protobufs.  I think I have correctly understood and implemented
+// their recommendation.
+// https://protobuf.dev/programming-guides/techniques/#large-data
 func writeLease(writer io.Writer, sizeBuf []byte, lease *keadata.Lease) error {
 	grpcLease := lease.ToGRPC()
 	leaseBin, err := proto.Marshal(&grpcLease)

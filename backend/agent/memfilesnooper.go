@@ -93,13 +93,14 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 	return &lease, nil
 }
 
+// A thing which produces parsed rows from a CSV file as the file changes.
 type RowSource interface {
 	Start() chan []string
 	EnsureWatching(path string) error
 	Stop()
 }
 
-// A tool to produce rows from a CSV file over time.
+// A tool to produce rows from a CSV file over time, efficiently.
 //
 // RowSource watches a file using the `fsnotify` library and emits string slices
 // as produced by the CSV parser. The slices are provided through the `results`
@@ -372,6 +373,10 @@ func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
 	return lease, nil
 }
 
+// A tool which uses a RowSource to collect rows from a CSV file, parses them as
+// lease updates, and stores them in memory for later querying by the rest of
+// the agent.  This tool must always collect *lease updates*, not just the
+// current state of the leases.
 type MemfileSnooper interface {
 	Start()
 	Stop()
@@ -379,6 +384,7 @@ type MemfileSnooper interface {
 	GetSnapshot() []*keadata.Lease
 }
 
+// The underlying real type for MemfileSnooper, which does actual work (as distinct from a mock one, generated for tests).
 type RealMemfileSnooper struct {
 	kind         daemonname.Name
 	rs           RowSource
@@ -390,6 +396,8 @@ type RealMemfileSnooper struct {
 	parser       func([]string, uint64) (*keadata.Lease, error)
 }
 
+// Create a new MemfileSnooper (the Real kind) for a given daemon and using a
+// given RowSource.
 func NewMemfileSnooper(kind daemonname.Name, rs RowSource) (MemfileSnooper, error) {
 	ms := RealMemfileSnooper{
 		kind:         kind,
@@ -416,6 +424,8 @@ type leaseKey struct {
 	ID string
 }
 
+// Retrieve a snapshot of the current leases (ignoring older lease updates which
+// have been followed by new data).
 func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
 	snapshot := make([]*keadata.Lease, 0)
 	index := map[leaseKey]int{}
@@ -454,10 +464,15 @@ func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
 	return snapshot
 }
 
+// Helper function to ensure the RowSource is watching the right path.  Passes
+// its arguments directly to RowSource.EnsureWatching() and returns the result
+// unmodified.
 func (ms *RealMemfileSnooper) EnsureWatching(path string) error {
 	return ms.rs.EnsureWatching(path)
 }
 
+// Stop collecting leases. The MemfileSnooper cannot be used again after calling
+// this function.
 func (ms *RealMemfileSnooper) Stop() {
 	if !ms.running {
 		return
@@ -467,6 +482,8 @@ func (ms *RealMemfileSnooper) Stop() {
 	ms.running = false
 }
 
+// Begin collecting leases.  The MemfileSnooper takes care of starting the
+// RowSource; the caller does not need to do that too.
 func (ms *RealMemfileSnooper) Start() {
 	if ms.running {
 		return

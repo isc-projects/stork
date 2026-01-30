@@ -2997,6 +2997,9 @@ func TestAllowLog(t *testing.T) {
 	require.True(t, sa.logTailer.allowed("test/log/path"))
 }
 
+// Make a "happy path" keaDaemon structure with a mocked MemfileSnooper.
+// keaDaemon will have `name` as its name, and the snooper will provide
+// snapshots containing single-element lists with each element of `addrs`.
 func makeHappyDaemon(ctrl *gomock.Controller, version keadata.LeaseIPVersion, name daemonname.Name, addrs []string) Daemon {
 	snooper := NewMockMemfileSnooper(ctrl)
 	for _, addr := range addrs {
@@ -3017,6 +3020,8 @@ func makeHappyDaemon(ctrl *gomock.Controller, version keadata.LeaseIPVersion, na
 	}
 }
 
+// Read a lease in the encoded format specified in agent.go (network-order
+// uint16 length followed by protobuf data).
 func readEncodedLease(dataBuf []byte, lease *api.Lease) (uint, error) {
 	dataBufLen := len(dataBuf)
 	if dataBufLen < 2 {
@@ -3035,6 +3040,8 @@ func readEncodedLease(dataBuf []byte, lease *api.Lease) (uint, error) {
 	return uint(pbufLength) + 2, nil
 }
 
+// Test helper function to check the next record in the encoded leases buffer
+// for a particular IP address.
 func checkLeasesEncoded(t *testing.T, inputBuffer []byte, expectedIPs []string) {
 	var err error
 	readLength := uint(0)
@@ -3111,6 +3118,7 @@ func TestGetKeaLeasesHappyPath(t *testing.T) {
 	checkLeasesEncoded(t, rspFiltered.LeasesPacked, expectedFiltered)
 }
 
+// Test for GetKeaLeases correctly handling various error conditions (documented within).
 func TestGetKeaLeasesErrorConditions(t *testing.T) {
 	// Ensure that GetKeaLeases responds correctly (don't count that lease in the
 	// number of returned leases, don't write anything to the buffer) when one of

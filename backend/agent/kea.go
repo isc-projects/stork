@@ -502,6 +502,10 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 	return nil
 }
 
+// Ensure that this keaDaemon is watching the lease file it's supposed to be
+// watching.  This function will use the get-status API to ask Kea for the
+// current lease file path (so that we don't have to guess based on defaults and
+// whatever's in the config).
 func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconfig.Config) error {
 	var leaseDBType string
 	var persist bool
@@ -568,6 +572,7 @@ func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconf
 	return nil
 }
 
+// Get a snapshot of all current leases known for this daemon.
 func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
 	return d.snooper.GetSnapshot()
 }

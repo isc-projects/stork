@@ -49,6 +49,8 @@ type Lease struct {
 	ValidLifetime     uint32         `json:"valid-lft,omitempty"`
 }
 
+// Create a new Lease, filling in all the fields which are appropriate for a
+// DHCPv4 lease.
 func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, subnetID uint32, state int) Lease {
 	return Lease{
 		IPVersion:     LeaseIPv4,
@@ -61,6 +63,8 @@ func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, s
 	}
 }
 
+// Create a new Lease, filling in all the fields which are appropriate for a
+// DHCPv6 lease.
 func NewLease6(ip string, duid string, cltt uint64, validLifetime uint32, subnetID uint32, state int, prefixLen uint32) Lease {
 	return Lease{
 		IPVersion:     LeaseIPv6,
@@ -74,6 +78,8 @@ func NewLease6(ip string, duid string, cltt uint64, validLifetime uint32, subnet
 	}
 }
 
+// Convert the Lease into the Lease Protobuf structure returned by the agent's
+// gRPC API.
 func (lease *Lease) ToGRPC() agentapi.Lease {
 	return agentapi.Lease{
 		IpVersion:     agentapi.Lease_IPVersion(lease.IPVersion),

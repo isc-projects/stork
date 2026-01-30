@@ -907,6 +907,8 @@ func TestParseRowAsLease6(t *testing.T) {
 	}
 }
 
+// Create a mock function which emits the given list of rows, one at a time,
+// into the channel.  It signals the wait group when complete.
 func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 	return func() chan []string {
 		channel := make(chan []string)
@@ -926,6 +928,8 @@ func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 	}
 }
 
+// Create a mock RowSource which will emit the list of rows, one at a time, into
+// the channel when started.  It will signal the wait group when this is complete.
 func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sync.WaitGroup) {
 	rowSource := NewMockRowSource(ctrl)
 	wg := sync.WaitGroup{}
@@ -935,6 +939,7 @@ func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sy
 	return rowSource, &wg
 }
 
+// Ensure that the MemfileSnooper collects all the leases from the RowSource.
 func TestMemfileSnooperCollectsLeases(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
@@ -961,7 +966,10 @@ func TestMemfileSnooperCollectsLeases(t *testing.T) {
 	require.Len(t, snapshot, 5)
 }
 
+// Ensure that the MemfileSnooper responds appropriately in various error
+// conditions, documented within.
 func TestMemfileSnooperErrorConditions(t *testing.T) {
+	// The snooper should skip a header row in the input without complaining (because that's normal and will happen every time it starts fresh).
 	t.Run("header row in input", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -982,6 +990,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		snapshot := memfileSnooper.GetSnapshot()
 		require.Len(t, snapshot, 0)
 	})
+	// The snooper should skip lease updates with CLTTs older than the most recent
+	// one it has seen.
 	t.Run("old CLTT", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -1003,6 +1013,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		snapshot := memfileSnooper.GetSnapshot()
 		require.Len(t, snapshot, 1)
 	})
+	// The snooper should clean itself up appropriately when the input channel from
+	// the RowSource is closed.
 	t.Run("channel closed", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -1031,6 +1043,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		snapshot := memfileSnooper.GetSnapshot()
 		require.Len(t, snapshot, 0)
 	})
+	// The snooper should return an error if it is asked to snoop for anything other
+	// than kea-dhcp4 or kea-dhcp6.
 	t.Run("invalid daemon name", func(t *testing.T) {
 		ms1, err := NewMemfileSnooper(daemonname.CA, nil)
 		require.Nil(t, ms1)
@@ -1045,13 +1059,16 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		snapshot := ms2.GetSnapshot()
 		require.Empty(t, snapshot)
 	})
+	// The snooper should not error or panic if .Stop() is called when it is already
+	// stopped.
 	t.Run(".Stop() on stopped snooper", func(t *testing.T) {
 		snooper, err := NewMemfileSnooper(daemonname.DHCPv4, nil)
 		require.NoError(t, err)
 
 		snooper.Stop()
 	})
-
+	// The snooper should not start a second goroutine if .Start() is called more
+	// than once.
 	t.Run(".Start() on running snooper", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -1070,6 +1087,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 	})
 }
 
+// Ensure that GetSnapshot correctly de-duplicates lease updates by CLTT,
+// discarding older updates in favor of newer ones.
 func TestMemfileSnooperGetSnapshotDeduplicates(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -1151,6 +1170,7 @@ func TestMemfileSnooperGetSnapshotDeduplicates(t *testing.T) {
 	require.Equal(t, 0, snapshot[0].State)
 }
 
+// Ensure that EnsureWatching calls EnsureWatching on the underlying RowSource.
 func TestMemfileSnooperEnsureWatchingCallsRowSource(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
