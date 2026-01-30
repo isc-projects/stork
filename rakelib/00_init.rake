@@ -536,8 +536,6 @@ def fetch_file(url, target)
     if ENV["CI"] == "true"
         # Suppress verbose output on the CI.
         wget.append "--no-verbose"
-        # When downloaded file was cached, do not trigger the download again.
-        wget.append "-nc"
     end
 
     wget.append url
@@ -846,9 +844,7 @@ file node => [TAR, WGET, node_dir] do
         FileUtils.rm_rf(FileList["*"])
         fetch_file "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "node.tar.xz"
         sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
-        if ENV['CI'].nil? || ENV['CI'].empty? || ENV["CI"] != "true"
-            sh "rm", "node.tar.xz"
-        end
+        sh "rm", "node.tar.xz"
     end
     sh "touch", "-c", node
     sh node, "--version"
@@ -911,9 +907,7 @@ file go => [WGET, go_tools_dir] do
         FileUtils.rm_rf("go")
         fetch_file "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "go.tar.gz"
         sh "tar", "-zxf", "go.tar.gz"
-        if ENV['CI'].nil? || ENV['CI'].empty? || ENV["CI"] != "true"
-            sh "rm", "go.tar.gz"
-        end
+        sh "rm", "go.tar.gz"
     end
     sh "touch", "-c", go
     sh go, "version"
@@ -955,9 +949,7 @@ file protoc => [WGET, UNZIP, go_tools_dir] do
     Dir.chdir(go_tools_dir) do
         fetch_file "https://github.com/protocolbuffers/protobuf/releases/download/v#{protoc_ver}/protoc-#{protoc_ver}-#{protoc_suffix}.zip", "protoc.zip"
         sh UNZIP, "-o", "-j", "protoc.zip", "bin/protoc"
-        if ENV['CI'].nil? || ENV['CI'].empty? || ENV["CI"] != "true"
-            sh "rm", "protoc.zip"
-        end
+        sh "rm", "protoc.zip"
     end
     sh protoc, "--version"
     sh "touch", "-c", protoc
@@ -987,9 +979,7 @@ file golangcilint => [WGET, GO, TAR, go_tools_dir] do
         sh TAR, "-zxf", "golangci-lint.tar.gz", "-C", "tmp", "--strip-components=1"
         sh "mv", "tmp/golangci-lint", "."
         sh "rm", "-rf", "tmp"
-        if ENV['CI'].nil? || ENV['CI'].empty? || ENV["CI"] != "true"
-            sh "rm", "-f", "golangci-lint.tar.gz"
-        end
+        sh "rm", "-f", "golangci-lint.tar.gz"
     end
     sh "touch", "-c", golangcilint
     sh golangcilint, "--version"
@@ -1015,9 +1005,7 @@ file shellcheck => [WGET, TAR, tools_dir] do
         sh TAR, "-xf", "shellcheck.tar.xz", "-C", "tmp", "--strip-components=1"
         sh "mv", "tmp/shellcheck", "."
         sh "rm", "-rf", "tmp"
-        if ENV['CI'].nil? || ENV['CI'].empty? || ENV["CI"] != "true"
-            sh "rm", "-f", "shellcheck.tar.xz"
-        end
+        sh "rm", "-f", "shellcheck.tar.xz"
     end
     sh "touch", "-c", shellcheck
     sh shellcheck, "--version"
