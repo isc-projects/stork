@@ -64,9 +64,7 @@ stages:
   policy: pull
 
 .nodejs_cache: &nodejs_cache
-  key:
-    files:
-      - webui/package-lock.json
+  key: nodejs
   paths:
     - tools/nodejs
     - webui/node_modules
