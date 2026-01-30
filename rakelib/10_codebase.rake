@@ -380,7 +380,7 @@ NODE_MODULES = "webui/node_modules"
 file NODE_MODULES => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/package-lock.json"] do
     ci_opts = []
     if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress", "--cache", "tools/nodejs/cache"]
+        ci_opts += ["--no-audit", "--no-progress", "--cache", node_cache_dir]
     end
 
     Dir.chdir("webui") do
