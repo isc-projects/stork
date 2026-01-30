@@ -34,7 +34,7 @@ variables:
   RUNNER_GENERATE_ARTIFACTS_METADATA: "true"
 
   # Download Python packages to cached location.
-  PIP_CACHE_DIR: "tools/python/pip"
+  PIP_CACHE_DIR: "/builds/isc-projects/stork/tools/python/pip"
 
 
 default:
@@ -254,6 +254,7 @@ lint_python_pylint:
     - *golang_amd64_cache
   script:
     - echo $PIP_CACHE_DIR
+    - echo $CI_PROJECT_DIR
     - rake lint:python:pylint
 
 lint_python_flake8:
