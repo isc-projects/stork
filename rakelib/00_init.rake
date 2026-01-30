@@ -856,7 +856,7 @@ npm = File.join(node_bin_dir, "npm")
 file npm => [node] do
     ci_opts = []
     if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress", "--cache", node_cache_dir]
+        ci_opts += ["--no-audit", "--no-progress", "--cache", "#{node_cache_dir}"]
     end
 
     # NPM is initially installed with NodeJS.
@@ -881,7 +881,7 @@ YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", 
 file YAMLINC => [NPM] do
     ci_opts = []
     if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress", "--cache", node_cache_dir]
+        ci_opts += ["--no-audit", "--no-progress", "--cache", "#{node_cache_dir}"]
     end
 
     sh NPM, "install",
