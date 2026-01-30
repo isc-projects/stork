@@ -156,7 +156,7 @@ variables are listed in square brackets, where applicable):
    Specifies the Certificate Authority file to be used with a mutual TLS authority. ``[$STORK_REST_TLS_CA_CERTIFICATE]``
 
 ``--rest-tls-1-2-enabled``
-   Enables TLS 1.2 support for clients that do not support TLS 1.3. Disabled by default. ``[$STORK_REST_TLS_1_2_ENABLED]``
+   Enables TLS 1.2 support for clients that do not support TLS 1.3. By default, only TLS 1.3 connections are permitted. ``[$STORK_REST_TLS_1_2_ENABLED]``
 
 ``--rest-static-files-dir``
    Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``

@@ -61,7 +61,7 @@ type RestAPISettings struct {
 	TLSCertificate    flags.Filename `long:"rest-tls-certificate" description:"The certificate to use for secure connections" env:"STORK_REST_TLS_CERTIFICATE"`
 	TLSCertificateKey flags.Filename `long:"rest-tls-key" description:"The private key to use for secure connections" env:"STORK_REST_TLS_PRIVATE_KEY"`
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"The certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
-	TLS12Enabled      bool           `long:"rest-tls-1-2-enabled" description:"Enable TLS 1.2 support for clients that do not support TLS 1.3" env:"STORK_REST_TLS_1_2_ENABLED"`
+	TLS12Enabled      bool           `long:"rest-tls-1-2-enabled" description:"Enable TLS 1.2 support for clients that do not support TLS 1.3.  By default, only TLS 1.3 connections are permitted." env:"STORK_REST_TLS_1_2_ENABLED"`
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
 	BaseURL        string `long:"rest-base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the rest-base-url" default:"/" env:"STORK_REST_BASE_URL"`
