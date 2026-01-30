@@ -393,16 +393,6 @@ colons between the pairs of hexadecimal digits. For example, the
 reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found
 whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
 
-The filtering mechanism also recognizes a set of keywords that can be
-used in combination with integer values to search host reservations by
-selected properties. For example, type:
-
-   - ``daemonId:2`` to search the host reservations belonging to the daemon with ID 2.
-   - ``subnetId:78`` to search the host reservations in subnet with ID 78. In this
-     case the ID is the one assigned to the subnet by Stork.
-   - ``keaSubnetId:123`` to search the host reservations in subnets with ID 123
-     assigned in the Kea configurations.
-
 
 Host Reservation Usage Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
