@@ -23,6 +23,19 @@ type commonConfigAccessor interface {
 	GetListeningControlSockets() []ControlSocket
 }
 
+type Status struct {
+	CSVLeaseFile *string `json:"csv-lease-file,omitempty"`
+}
+
+func NewStatus(raw []byte) (*Status, error) {
+	var status Status
+	err := json.Unmarshal(raw, &status)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
 // A structure holding a configuration of a single Kea server.
 // It can hold configurations of all Kea daemon types supported by Stork.
 // The Raw field keeps the complete raw configuration as a map of strings.

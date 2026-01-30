@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"path"
 	"path/filepath"
 	"sync"
@@ -1891,4 +1892,454 @@ func TestKeaMultiConnectorEmpty(t *testing.T) {
 
 	// Assert
 	require.ErrorContains(t, err, "no connectors available")
+}
+
+func makeKeaCommandMock(command, service, response string, times int) error {
+	responseJSON := make([]map[string]any, 1)
+	err := json.Unmarshal([]byte(response), &responseJSON)
+	if err != nil {
+		return err
+	}
+	gock.New("http://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		JSON(map[string]any{"command": command, "service": []string{service}}).
+		Times(times).
+		Post("/").
+		Reply(200).
+		JSON(responseJSON)
+	return nil
+}
+
+// Test to ensure that keaDaemon.ensureWatchingLeasefile works correctly.
+func TestEnsureWatchingLeasefile(t *testing.T) {
+	t.Run("dhcpv4 start", func(t *testing.T) {
+		config := keaconfig.Config{
+			DHCPv4Config: &keaconfig.DHCPv4Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type: "memfile",
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases4")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		dhcpV4ResponsesJSON := fmt.Sprintf(`[
+			{
+				"result": 0,
+				"arguments": {
+					"csv-lease-file": "%s"
+				}
+			}
+		]`, leasefile.Name())
+		err = makeKeaCommandMock("status-get", "dhcp4", dhcpV4ResponsesJSON, 1)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv4,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+
+		require.NoError(t, err)
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("dhcpv6 start", func(t *testing.T) {
+		config := keaconfig.Config{
+			DHCPv6Config: &keaconfig.DHCPv6Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type: "memfile",
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases6")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		dhcpV6ResponsesJSON := fmt.Sprintf(`[
+			{
+				"result": 0,
+				"arguments": {
+					"csv-lease-file": "%s"
+				}
+			}
+		]`, leasefile.Name())
+		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON, 1)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv6,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+
+		require.NoError(t, err)
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("dhcp6 change file", func(t *testing.T) {
+		config := keaconfig.Config{
+			DHCPv6Config: &keaconfig.DHCPv6Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type: "memfile",
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile1, err := os.CreateTemp("", "kea-leases6")
+		require.NoError(t, err)
+		defer os.Remove(leasefile1.Name())
+		leasefile2, err := os.CreateTemp("", "kea-leases6")
+		require.NoError(t, err)
+		defer os.Remove(leasefile2.Name())
+
+		dhcpV6ResponsesJSONTemplate := `[
+			{
+				"result": 0,
+				"arguments": {
+					"csv-lease-file": "%s"
+				}
+			}
+		]`
+		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile1.Name())
+		dhcpV6ResponsesJSON2 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile2.Name())
+		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON1, 1)
+		require.NoError(t, err)
+		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON2, 1)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv6,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		require.NoError(t, err)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		require.NoError(t, err)
+
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("dhcp6 stop watching", func(t *testing.T) {
+		config1 := keaconfig.Config{
+			DHCPv6Config: &keaconfig.DHCPv6Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type: "memfile",
+					},
+				},
+			},
+		}
+		config2 := keaconfig.Config{
+			DHCPv6Config: &keaconfig.DHCPv6Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type: "mysql",
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases6")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		dhcpV6ResponsesJSONTemplate := `[
+			{
+				"result": 0,
+				"arguments": {
+					"csv-lease-file": "%s"
+				}
+			}
+		]`
+		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile.Name())
+		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON1, 2)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv6,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config1)
+		require.NoError(t, err)
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config2)
+		require.NoError(t, err)
+
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("dhcp6 persist false", func(t *testing.T) {
+		nopersist := false
+		config := keaconfig.Config{
+			DHCPv6Config: &keaconfig.DHCPv6Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type:    "memfile",
+						Persist: &nopersist,
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases6")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		dhcpV6ResponsesJSONTemplate := `[
+			{
+				"result": 0,
+				"arguments": {
+					"csv-lease-file": "%s"
+				}
+			}
+		]`
+		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile.Name())
+		err = makeKeaCommandMock("status-get", "dhcp6", dhcpV6ResponsesJSON1, 1)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv6,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		require.NoError(t, err)
+
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("dhcp4 persist false", func(t *testing.T) {
+		nopersist := false
+		config := keaconfig.Config{
+			DHCPv4Config: &keaconfig.DHCPv4Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type:    "memfile",
+						Persist: &nopersist,
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases4")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		dhcpV4ResponsesJSONTemplate := `[
+			{
+				"result": 0,
+				"arguments": {
+					"csv-lease-file": "%s"
+				}
+			}
+		]`
+		dhcpV4ResponsesJSON1 := fmt.Sprintf(dhcpV4ResponsesJSONTemplate, leasefile.Name())
+		err = makeKeaCommandMock("status-get", "dhcp4", dhcpV4ResponsesJSON1, 1)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv4,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		require.NoError(t, err)
+
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("fetch error", func(t *testing.T) {
+		config := keaconfig.Config{
+			DHCPv4Config: &keaconfig.DHCPv4Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type: "memfile",
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases4")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		gock.New("http://localhost:45634").
+			MatchHeader("Content-Type", "application/json").
+			JSON(map[string]any{"command": "status-get", "service": []string{"dhcp4"}}).
+			Post("/").
+			Reply(500)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv4,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		require.ErrorContains(t, err, "500")
+
+		require.False(t, gock.HasUnmatchedRequest())
+	})
+	t.Run("dhcp4 persist true but csv-lease-file missing", func(t *testing.T) {
+		persist := true
+		config := keaconfig.Config{
+			DHCPv4Config: &keaconfig.DHCPv4Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type:    "memfile",
+						Persist: &persist,
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		leasefile, err := os.CreateTemp("", "kea-leases4")
+		require.NoError(t, err)
+		defer os.Remove(leasefile.Name())
+
+		dhcpV4ResponsesJSON := `[
+			{
+				"result": 0,
+				"arguments": {}
+			}
+		]`
+		err = makeKeaCommandMock("status-get", "dhcp4", dhcpV4ResponsesJSON, 1)
+		require.NoError(t, err)
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv4,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config)
+		require.ErrorContains(t, err, "status API did not return the path to the lease memfile")
+
+		require.False(t, gock.HasUnmatchedRequest())
+	})
 }

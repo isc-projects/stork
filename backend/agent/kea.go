@@ -18,6 +18,7 @@ import (
 
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
 	storkutil "isc.org/stork/util"
@@ -29,6 +30,7 @@ var _ Daemon = (*keaDaemon)(nil)
 type keaDaemon struct {
 	daemon
 	connector keaConnector // to communicate with Kea daemon
+	snooper   MemfileSnooper
 }
 
 // Interface to a Kea command that allows overriding the daemon list.
@@ -130,6 +132,32 @@ func (d *keaDaemon) fetchConfig(ctx context.Context) (*keaconfig.Config, error) 
 	}
 
 	return config, nil
+}
+
+// Fetches the status of Kea from the daemon by sending the status-get command.
+func (d *keaDaemon) fetchStatus(ctx context.Context) (*keaconfig.Status, error) {
+	command := keactrl.NewCommandBase(keactrl.StatusGet, d.GetName())
+	response := keactrl.Response{}
+	err := d.sendCommand(ctx, command, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := response.GetError(); err != nil {
+		return nil, errors.WithMessagef(
+			err, "unsuccessful response received from Kea to status-get command sent to %s", d,
+		)
+	}
+
+	if response.Arguments == nil {
+		return nil, errors.New("status-get response has no arguments")
+	}
+	status, err := keaconfig.NewStatus(response.Arguments)
+	if err != nil {
+		return nil, errors.WithMessage(err, "status-get response contains arguments which could not be parsed")
+	}
+
+	return status, nil
 }
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
@@ -463,6 +491,10 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 		return errors.WithMessage(err, "cannot fetch Kea configuration")
 	}
 	paths := collectKeaAllowedLogs(config)
+	err = d.ensureWatchingLeasefile(ctx, config)
+	if err != nil {
+		return err
+	}
 
 	for _, p := range paths {
 		agent.allowLog(p)
@@ -470,8 +502,81 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 	return nil
 }
 
+func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconfig.Config) error {
+	var leaseDBType string
+	var persist bool
+
+	switch d.Name {
+	case daemonname.DHCPv4:
+		if config != nil &&
+			config.DHCPv4Config != nil &&
+			config.DHCPv4Config.LeaseDatabase != nil {
+			leaseDBType = config.DHCPv4Config.LeaseDatabase.Type
+			if config.DHCPv4Config.LeaseDatabase.Persist != nil {
+				persist = *config.DHCPv4Config.LeaseDatabase.Persist
+			} else {
+				// The default when persist is unspecified is true, per https://kea.readthedocs.io/en/stable/arm/dhcp4-srv.html#memfile-basic-storage-for-leases.
+				persist = true
+			}
+		}
+	case daemonname.DHCPv6:
+		if config != nil &&
+			config.DHCPv6Config != nil &&
+			config.DHCPv6Config.LeaseDatabase != nil {
+			leaseDBType = config.DHCPv6Config.LeaseDatabase.Type
+			if config.DHCPv6Config.LeaseDatabase.Persist != nil {
+				persist = *config.DHCPv6Config.LeaseDatabase.Persist
+			} else {
+				// The default when persist is unspecified is true, per https://kea.readthedocs.io/en/stable/arm/dhcp6-srv.html#memfile-basic-storage-for-leases.
+				persist = true
+			}
+		}
+	default:
+		// do nothing, the variables should stay nil so that it doesn't try to look at a leasefile from D2 or something.
+	}
+
+	if leaseDBType == "memfile" && persist {
+		// I should likely be watching a leasefile...
+		status, err := d.fetchStatus(ctx)
+		if err != nil {
+			return err
+		}
+		if status.CSVLeaseFile == nil {
+			return errors.New("Kea's configuration says that it is in memfile mode with persistence on, but its status API did not return the path to the lease memfile.")
+		}
+		if d.snooper == nil {
+			// ...but I am currently not.
+			rs, err := NewRowSource(*status.CSVLeaseFile)
+			if err != nil {
+				return err
+			}
+			d.snooper, err = NewMemfileSnooper(d.Name, rs)
+			if err != nil {
+				return err
+			}
+			d.snooper.Start()
+		} else {
+			// ...and I am, but I should make sure I'm looking at the right file.
+			return d.snooper.EnsureWatching(*status.CSVLeaseFile)
+		}
+	} else if d.snooper != nil {
+		// I shouldn't be watching a leasefile, but I currently am, so I should stop.
+		// e.g. Kea was reconfigured to use a lease PostgreSQL lease database.
+		d.snooper.Stop()
+		d.snooper = nil
+	}
+	return nil
+}
+
+func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
+	return d.snooper.GetSnapshot()
+}
+
 // Called once before the daemon is removed.
 func (d *keaDaemon) Cleanup() error {
+	if d.snooper != nil {
+		d.snooper.Stop()
+	}
 	return nil
 }
 
