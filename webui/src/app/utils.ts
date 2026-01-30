@@ -676,8 +676,11 @@ export function daemonNameToFriendlyName(daemonName: string): string {
             return 'named'
         case 'pdns':
             return 'pdns_server'
-        default:
+        case null:
+        case undefined:
             return daemonName
+        default:
+            return !!daemonName ? daemonName[0].toUpperCase() + daemonName.slice(1) : ''
     }
 }
 

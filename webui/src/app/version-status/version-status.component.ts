@@ -9,7 +9,7 @@ import {
 } from '../version.service'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
-import { getErrorMessage, getIconBySeverity } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
 import { NgIf } from '@angular/common'
 import { RouterLink } from '@angular/router'
@@ -123,14 +123,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
             this.version = sanitizedSemver
         }
 
-        // Mute version checks for non-ISC apps. Version is mandatory. In case it is
-        // falsy (undefined, null, empty string), simply return. No feedback will be displayed.
-        this.iscApp = isIscDaemon(this.daemon.name)
-        if (!this.iscApp || !this.daemon.version) {
-            return
-        }
-
-        const app = getDaemonAppType(this.daemon.name) as string
+        const app = getDaemonAppType(this.daemon.name)
         switch (app) {
             case 'bind9':
                 this.appName = 'BIND9'
@@ -145,8 +138,15 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                 this.appName = 'Kea'
                 break
             default:
-                this.appName = app?.length ? app[0].toUpperCase() + app.slice(1) : ''
+                this.appName = daemonNameToFriendlyName(this.daemon.name)
                 break
+        }
+
+        // Mute version checks for non-ISC apps. Version is mandatory. In case it is
+        // falsy (undefined, null, empty string), simply return. No feedback will be displayed.
+        this.iscApp = isIscDaemon(this.daemon.name)
+        if (!this.iscApp || !this.daemon.version) {
+            return
         }
 
         if (sanitizedSemver) {

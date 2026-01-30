@@ -117,6 +117,49 @@ describe('VersionStatusComponent', () => {
         expect(component).toBeTruthy()
     })
 
+    it('should return app name', () => {
+        // Arrange
+        setCorrectInputs()
+
+        // Act & Assert
+        expect(component.appName()).toBe('Kea')
+
+        fixture.componentRef.setInput('daemon', { name: 'stork', version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBe('Stork agent')
+
+        fixture.componentRef.setInput('daemon', { name: 'named', version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBe('BIND9')
+
+        fixture.componentRef.setInput('daemon', { name: 'pdns', version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBe('PowerDNS')
+
+        fixture.componentRef.setInput('daemon', { name: 'new', version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBe('New')
+
+        fixture.componentRef.setInput('daemon', { name: 'a', version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBe('A')
+
+        fixture.componentRef.setInput('daemon', { name: '', version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBe('')
+
+        fixture.componentRef.setInput('daemon', { version: '2.6.1' })
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.appName()).toBeUndefined()
+    })
+
     it('should get current versions data', () => {
         // Arrange
         setCorrectInputs()

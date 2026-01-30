@@ -81,9 +81,10 @@ export function isIscDaemon(daemonName: DaemonName): boolean {
 
 /**
  * Returns the app type for given daemon name.
+ * In case of no match, null is returned.
  * @param daemonName The daemon name to check
  */
-export function getDaemonAppType(daemonName: DaemonName): AppType {
+export function getDaemonAppType(daemonName: DaemonName): AppType | null {
     switch (daemonName) {
         case 'stork':
             return 'stork'
@@ -97,6 +98,8 @@ export function getDaemonAppType(daemonName: DaemonName): AppType {
             return 'bind9'
         case Daemon.NameEnum.Pdns:
             return 'pdns'
+        default:
+            return null
     }
 }
 
