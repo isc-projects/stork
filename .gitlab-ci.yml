@@ -54,13 +54,13 @@ stages:
 .golang_amd64_cache: &golang_amd64_cache
   key: golang_amd64
   paths:
-    - tools/golang
+    - tools/golang/gopath/pkg/mod/
   policy: pull
 
 .golang_arm64_cache: &golang_arm64_cache
   key: golang_arm64
   paths:
-    - tools/golang
+    - tools/golang/gopath/pkg/mod/
   policy: pull
 
 .nodejs_cache: &nodejs_cache
