@@ -79,11 +79,9 @@
 
 <ng-template #localZoneCells let-localZone let-serialInfo="serialInfo">
     <td>
-        <app-entity-link
-            entity="daemon"
-            [showEntityName]="false"
-            [attrs]="{ id: localZone.daemonId, name: localZone.daemonName }"
-        ></app-entity-link>
+        <a routerLink="/dns/zones" [queryParams]="{ daemonId: localZone.daemonId }"
+            >[{{ localZone.daemonId }}] {{ localZone.daemonName | daemonNiceName }}</a
+        >
     </td>
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ text: localZone.view }">{{ localZone.view }}</a>
