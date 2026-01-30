@@ -152,13 +152,13 @@ func (d *keaDaemon) fetchStatus(ctx context.Context) (*keactrl.Status, error) {
 	if response.Arguments == nil {
 		return nil, errors.New("status-get response has no arguments")
 	}
-	var status *keactrl.Status
+	var status keactrl.Status
 	err = json.Unmarshal(response.Arguments, &status)
 	if err != nil {
 		return nil, errors.WithMessage(err, "status-get response contains arguments which could not be parsed")
 	}
 
-	return status, nil
+	return &status, nil
 }
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
