@@ -187,7 +187,7 @@ func (rs *FSNotifyRowSource) reopen() error {
 	} else if err != nil {
 		return err
 	}
-	// According to the documentation, this isn't necessary.  However, at least
+	// According to the documentation, this isn't necessary. However, at least
 	// on macOS, kqueue doesn't seem to add watches for files newly created in an
 	// already-watched directory.
 	err = rs.watcher.Add(rs.path)
@@ -325,7 +325,7 @@ func parseExpireLifetime(record []string, expireIdx, lifetimeIdx int) (uint64, u
 	return expire, lifetime, err
 }
 
-// Parse the provided row as a [Lease4].  If the row's CLTT is less than (older
+// Parse the provided row as a [Lease4]. If the row's CLTT is less than (older
 // than) minCLTT, this parser will return nil and also a nil error.
 func ParseRowAsLease4(record []string, minCLTT uint64) (*keadata.Lease, error) {
 	if len(record) == 0 {
@@ -341,7 +341,7 @@ func ParseRowAsLease4(record []string, minCLTT uint64) (*keadata.Lease, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "the expiry or valid_lifetime values were not valid")
 	}
-	// Infinite-lifetime leases are stored as 0xFFFFFFFF.  This will need to be
+	// Infinite-lifetime leases are stored as 0xFFFFFFFF. This will need to be
 	// refactored come 2038.
 	cltt := expire - uint64(lifetime)
 	if cltt < minCLTT {
@@ -354,7 +354,7 @@ func ParseRowAsLease4(record []string, minCLTT uint64) (*keadata.Lease, error) {
 	return lease, nil
 }
 
-// Parse the provided row as a [Lease6].  If the row's CLTT is less than (older
+// Parse the provided row as a [Lease6]. If the row's CLTT is less than (older
 // than) minCLTT, this parser will return nil and also a nil error.
 func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
 	if len(record) == 0 {
@@ -383,7 +383,7 @@ func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
 
 // A tool which uses a RowSource to collect rows from a CSV file, parses them as
 // lease updates, and stores them in memory for later querying by the rest of
-// the agent.  This tool must always collect *lease updates*, not just the
+// the agent. This tool must always collect *lease updates*, not just the
 // current state of the leases.
 type MemfileSnooper interface {
 	Start()
@@ -484,7 +484,7 @@ func (ms *RealMemfileSnooper) GetSnapshot() []*keadata.Lease {
 	return snapshot
 }
 
-// Helper function to ensure the RowSource is watching the right path.  Passes
+// Helper function to ensure the RowSource is watching the right path. Passes
 // its arguments directly to RowSource.EnsureWatching() and returns the result
 // unmodified.
 func (ms *RealMemfileSnooper) EnsureWatching(path string) error {
@@ -513,7 +513,7 @@ func (ms *RealMemfileSnooper) appendLease(lease *keadata.Lease) {
 	}
 	snapshot := ms.getSnapshotLockless()
 	if len(snapshot) == currentLen {
-		// Log an error and intentionally do not update the data.  Stale data will prompt an administrator to investigate, and find the log messages indicating the problem.
+		// Log an error and intentionally do not update the data. Stale data will prompt an administrator to investigate, and find the log messages indicating the problem.
 		log.Errorf("The number of stored lease updates has exceeded the configured memory limit. Set STORK_AGENT_LEASE_TRACKING_MAX_UPDATE_COUNT to a larger number than %d", ms.leaseUpdateCountMax)
 		// Future enhancement: remove all defunct leases next, then only fail if the list hasn't shrunk after that.
 		// Future enhancement: check whether this lease update obviates a prior one. If it does, remove the old one and insert the new one.

@@ -506,7 +506,7 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 }
 
 // Ensure that this keaDaemon is watching the lease file it's supposed to be
-// watching.  This function will use the get-status API to ask Kea for the
+// watching. This function will use the get-status API to ask Kea for the
 // current lease file path (so that we don't have to guess based on defaults and
 // whatever's in the config).
 func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconfig.Config, maxLeaseUpdates int) error {

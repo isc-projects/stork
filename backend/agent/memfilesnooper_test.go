@@ -77,7 +77,7 @@ var (
 	errTimedOut     = errors.New("timed out while waiting for enough rows")
 )
 
-// Read up to `limit` rows from `c`, stopping after the provided timeout.  If
+// Read up to `limit` rows from `c`, stopping after the provided timeout. If
 // the timeout expires before reading `limit` items, return immediately and signal
 // an error.
 func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context, timeout time.Duration) ([][]string, error) {
@@ -910,7 +910,7 @@ func TestParseRowAsLease6(t *testing.T) {
 }
 
 // Create a mock function which emits the given list of rows, one at a time,
-// into the channel.  It signals the wait group when complete.
+// into the channel. It signals the wait group when complete.
 func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 	return func() chan []string {
 		channel := make(chan []string)
@@ -925,7 +925,7 @@ func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 }
 
 // Create a mock RowSource which will emit the list of rows, one at a time, into
-// the channel when started.  It will signal the wait group when this is
+// the channel when started. It will signal the wait group when this is
 // complete.
 func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sync.WaitGroup) {
 	rowSource := NewMockRowSource(ctrl)

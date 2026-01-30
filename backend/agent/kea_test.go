@@ -1919,7 +1919,7 @@ func makeKeaCommandMock(service, response string, times int) error {
 // Test to ensure that keaDaemon.ensureWatchingLeasefile works correctly in a variety of conditions (documented within).
 func TestEnsureWatchingLeasefile(t *testing.T) {
 	// Call the function once from an empty state to start watching a DHCPv4 lease
-	// file.  There should be no errors.
+	// file. There should be no errors.
 	t.Run("dhcpv4 start", func(t *testing.T) {
 		config := keaconfig.Config{
 			DHCPv4Config: &keaconfig.DHCPv4Config{
@@ -1972,7 +1972,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		require.False(t, gock.HasUnmatchedRequest())
 	})
 	// Call the function once from an empty state to start watching a DHCPv6
-	// lease file.  There should be no errors.
+	// lease file. There should be no errors.
 	t.Run("dhcpv6 start", func(t *testing.T) {
 		config := keaconfig.Config{
 			DHCPv6Config: &keaconfig.DHCPv6Config{
@@ -2024,7 +2024,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, gock.HasUnmatchedRequest())
 	})
-	// Call the function twice, once to start watching a file, and then again to switch to a different file.  There should be no errors.
+	// Call the function twice, once to start watching a file, and then again to switch to a different file. There should be no errors.
 	t.Run("dhcp6 change file", func(t *testing.T) {
 		config := keaconfig.Config{
 			DHCPv6Config: &keaconfig.DHCPv6Config{
@@ -2313,7 +2313,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		require.False(t, gock.HasUnmatchedRequest())
 	})
 	// Call the function once and give it a default configuration, but with the
-	// value returned by get-status pointing to a file which doesn't exist.  It
+	// value returned by get-status pointing to a file which doesn't exist. It
 	// should handle this gracefully, log it, and not take down the agent.
 	t.Run("dhcp4 persist true but csv-lease-file missing", func(t *testing.T) {
 		persist := true
