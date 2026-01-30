@@ -152,7 +152,8 @@ func (d *keaDaemon) fetchStatus(ctx context.Context) (*keactrl.Status, error) {
 	if response.Arguments == nil {
 		return nil, errors.New("status-get response has no arguments")
 	}
-	status, err := keactrl.NewStatus(response.Arguments)
+	var status *keactrl.Status
+	err = json.Unmarshal(response.Arguments, &status)
 	if err != nil {
 		return nil, errors.WithMessage(err, "status-get response contains arguments which could not be parsed")
 	}
