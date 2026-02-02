@@ -57,13 +57,13 @@ stages:
 .golang_amd64_cache: &golang_amd64_cache
   key: golang_amd64
   paths:
-    - tools/golang/gopath/pkg/mod/
+    - tools/golang
   policy: pull
 
 .golang_arm64_cache: &golang_arm64_cache
   key: golang_arm64
   paths:
-    - tools/golang/gopath/pkg/mod/
+    - tools/golang
   policy: pull
 
 .nodejs_cache: &nodejs_cache
@@ -161,9 +161,6 @@ stages:
     - aws
     - runner-manager
     - amd64
-  before_script:
-    - rake prepare
-    - rake prepare:deps
 
 .base_build_ubi_arm:
   extends: .base_build_ubi
@@ -198,9 +195,9 @@ stages:
     - aws
     - runner-manager
     - amd64
-  before_script:
-    - rake prepare:dist
-    - rake prepare:deps
+#  before_script:
+#    - rake prepare:dist
+#    - rake prepare:deps
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
