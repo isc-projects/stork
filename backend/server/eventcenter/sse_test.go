@@ -32,8 +32,12 @@ func TestSSEBroker(t *testing.T) {
 		}, 100*time.Millisecond, 10*time.Millisecond)
 
 		ev := &dbmodel.Event{
-			Text:  "some text",
-			Level: dbmodel.EvInfo,
+			ID:        42,
+			Text:      "some text",
+			Level:     dbmodel.EvWarning,
+			CreatedAt: time.Date(2000, time.February, 3, 4, 5, 6, 7, time.UTC),
+			Relations: &dbmodel.Relations{MachineID: 24},
+			Details:   "detail text",
 		}
 		ec.(*eventCenter).sseBroker.dispatchEvent(ev)
 	}()
@@ -43,7 +47,7 @@ func TestSSEBroker(t *testing.T) {
 	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
-	require.Equal(t, "data: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\",\"SSEStreams\":[\"message\"]}\n\n", string(body))
+	require.Equal(t, "data: {\"createdAt\":\"2000-02-03T04:05:06.000Z\",\"details\":\"detail text\",\"id\":42,\"level\":1,\"text\":\"some text\"}\n\n", string(body))
 }
 
 // Check SSEBroker shutdown.
@@ -104,7 +108,7 @@ func TestSSEBrokerNonMainStream(t *testing.T) {
 	resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
 	require.Contains(t, string(body), "event: connectivity\n")
-	require.Contains(t, string(body), "data: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\",\"SSEStreams\":[\"connectivity\"]}\n\n")
+	require.Contains(t, string(body), "data: {\"createdAt\":\"0001-01-01T00:00:00.000Z\",\"text\":\"some text\"}\n\n")
 }
 
 // Check that SSEBroker dispatches events to multiple streams.
@@ -126,6 +130,7 @@ func TestSSEBrokerWithDifferentStreams(t *testing.T) {
 		}, 100*time.Millisecond, 10*time.Millisecond)
 
 		ev := &dbmodel.Event{
+			ID:         42,
 			Text:       "some text",
 			Level:      dbmodel.EvInfo,
 			SSEStreams: []dbmodel.SSEStream{"connectivity", "ha"},
@@ -138,7 +143,7 @@ func TestSSEBrokerWithDifferentStreams(t *testing.T) {
 	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
-	require.Contains(t, string(body), "data: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\",\"SSEStreams\":[\"message\",\"connectivity\",\"ha\"]}\n\n")
-	require.Contains(t, string(body), "event: connectivity\ndata: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\",\"SSEStreams\":[\"message\",\"connectivity\",\"ha\"]}\n\n")
-	require.Contains(t, string(body), "event: ha\ndata: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\",\"SSEStreams\":[\"message\",\"connectivity\",\"ha\"]}\n\n")
+	require.Contains(t, string(body), "data: {\"createdAt\":\"0001-01-01T00:00:00.000Z\",\"id\":42,\"text\":\"some text\"}\n\n")
+	require.Contains(t, string(body), "event: connectivity\ndata: {\"createdAt\":\"0001-01-01T00:00:00.000Z\",\"id\":42,\"text\":\"some text\"}\n\n")
+	require.Contains(t, string(body), "event: ha\ndata: {\"createdAt\":\"0001-01-01T00:00:00.000Z\",\"id\":42,\"text\":\"some text\"}\n\n")
 }

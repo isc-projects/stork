@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/gen/models"
 )
 
 // SSE Broker. It stores subscribers in a map which is protected by mutex.
@@ -61,7 +63,14 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for {
 		select {
 		case event := <-ch:
-			evJSON, err := json.Marshal(event)
+			eventModel := models.Event{
+				ID:        event.ID,
+				CreatedAt: strfmt.DateTime(event.CreatedAt),
+				Text:      event.Text,
+				Level:     int64(event.Level),
+				Details:   event.Details,
+			}
+			evJSON, err := json.Marshal(eventModel)
 			if err != nil {
 				log.WithError(err).Error("Problem serializing event to json")
 				continue

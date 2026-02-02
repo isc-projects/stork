@@ -308,7 +308,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      * Take an event received via SSE and put it to list of all events
      * so it is presented in events panel.
      */
-    eventHandler(event) {
+    eventHandler(event: Event) {
         // if currently presented page of events is not the first one
         // then do not add new events to the list
         if (this.start !== 0) {
@@ -316,7 +316,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         }
         // decapitalize fields
         const ev = {
-            text: event.Text,
+            text: event.text,
             details: event.Details,
             level: event.Level,
             createdAt: event.CreatedAt,
