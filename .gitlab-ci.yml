@@ -54,16 +54,30 @@ stages:
   - deploy
 
 ### caches ###
+.golang_cache: &golang_cache_paths
+  - tools/golang
+
+.python_cache: &python_cache_paths
+  - tools/python
+
 .golang_amd64_cache: &golang_amd64_cache
   key: golang_amd64
-  paths:
-    - tools/golang
+  paths: *golang_cache_paths
   policy: pull
 
 .golang_arm64_cache: &golang_arm64_cache
   key: golang_arm64
-  paths:
-    - tools/golang
+  paths: *golang_cache_paths
+  policy: pull
+
+.golang_amd64_cache_alpine: &golang_amd64_cache_alpine
+  key: golang_amd64
+  paths: *golang_cache_paths
+  policy: pull
+
+.golang_arm64_cache_alpine: &golang_arm64_cache_alpine
+  key: golang_arm64
+  paths: *golang_cache_paths
   policy: pull
 
 .nodejs_cache: &nodejs_cache
@@ -80,14 +94,22 @@ stages:
 
 .python_amd64_cache: &python_amd64_cache
   key: python_amd64
-  paths:
-    - tools/python
+  paths: *python_cache_paths
   policy: pull
 
 .python_arm64_cache: &python_arm64_cache
   key: python_arm64
-  paths:
-    - tools/python
+  paths: *python_cache_paths
+  policy: pull
+
+.python_amd64_cache_alpine: &python_amd64_cache_alpine
+  key: python_amd64
+  paths: *python_cache_paths
+  policy: pull
+
+.python_arm64_cache_alpine: &python_arm64_cache_alpine
+  key: python_arm64
+  paths: *python_cache_paths
   policy: pull
 
 .wget_amd64_cache: &wget_amd64_cache
@@ -378,6 +400,32 @@ build_cache_arm64:
     - runner-manager
     - aarch64
 
+build_cache_amd64_alpine:
+  extends: .base_build_alpine
+  rules:
+    - when: manual
+  cache:
+    - <<: *golang_amd64_cache_alpine
+      policy: push
+    - <<: *python_amd64_cache_alpine
+      policy: push
+  script:
+    - rake prepare:dist
+    - rake prepare:deps
+
+build_cache_arm64_alpine:
+  extends: .base_build_alpine_arm
+  rules:
+    - when: manual
+  cache:
+    - <<: *golang_arm64_cache_alpine
+      policy: push
+    - <<: *python_arm64_cache_alpine
+      policy: push
+  script:
+    - rake prepare:dist
+    - rake prepare:deps
+
 build_doc:
   extends: .base_build_debian
   cache:
@@ -599,16 +647,13 @@ build_rpms_arm64:
 build_apks_amd64:
   extends: .base_build_alpine
   cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache
+    - *golang_amd64_cache_alpine
+    - *python_amd64_cache_alpine
     - *nodejs_cache
     # - *wget_amd64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_amd64
   script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:agent_pkg
+    - rake build:server_pkg
     - cp dist/pkgs/*.apk ./
   artifacts:
     paths:
@@ -618,16 +663,13 @@ build_apks_amd64:
 build_apks_arm64:
   extends: .base_build_alpine_arm
   cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache
+    - *golang_arm64_cache_alpine
+    - *python_arm64_cache_alpine
     - *nodejs_cache
     # - *wget_arm64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_arm64
   script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:agent_pkg
+    - rake build:server_pkg
     - cp dist/pkgs/*.apk ./
   artifacts:
     paths:
@@ -883,6 +925,8 @@ build_hooks_amd64:
   needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  cache:
+    - *golang_amd64_cache
   script:
     - rake hook:build
   artifacts:
@@ -891,7 +935,8 @@ build_hooks_amd64:
 
 build_hooks_arm64:
   extends: build_hooks_amd64
-  cache: []
+  cache:
+    - *golang_arm64_cache
   tags:
     - linux
     - aws
@@ -1045,6 +1090,9 @@ build_hooks_apks_amd64:
   rules:
     - when: on_success
   needs: []
+  cache:
+    - *golang_amd64_cache_alpine
+    - *python_amd64_cache_alpine
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -1061,6 +1109,9 @@ build_hooks_apks_arm64:
   rules:
     - when: on_success
   needs: []
+  cache:
+    - *golang_arm64_cache_alpine
+    - *python_arm64_cache_alpine
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
