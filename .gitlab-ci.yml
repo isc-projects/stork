@@ -195,9 +195,9 @@ stages:
     - aws
     - runner-manager
     - amd64
-  before_script:
-    - rake prepare:dist
-    - rake prepare:deps
+#  before_script:
+#    - rake prepare:dist
+#    - rake prepare:deps
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
@@ -603,9 +603,12 @@ build_apks_amd64:
     - *python_amd64_cache
     - *nodejs_cache
     # - *wget_amd64_cache
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_amd64
   script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/pkgs/*.apk ./
   artifacts:
     paths:
@@ -619,9 +622,12 @@ build_apks_arm64:
     - *python_arm64_cache
     - *nodejs_cache
     # - *wget_arm64_cache
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_arm64
   script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/pkgs/*.apk ./
   artifacts:
     paths:
