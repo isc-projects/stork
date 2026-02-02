@@ -71,12 +71,12 @@ stages:
   policy: pull
 
 .golang_amd64_cache_alpine: &golang_amd64_cache_alpine
-  key: golang_amd64
+  key: golang_amd64_alpine
   paths: *golang_cache_paths
   policy: pull
 
 .golang_arm64_cache_alpine: &golang_arm64_cache_alpine
-  key: golang_arm64
+  key: golang_arm64_alpine
   paths: *golang_cache_paths
   policy: pull
 
@@ -103,12 +103,12 @@ stages:
   policy: pull
 
 .python_amd64_cache_alpine: &python_amd64_cache_alpine
-  key: python_amd64
+  key: python_amd64_alpine
   paths: *python_cache_paths
   policy: pull
 
 .python_arm64_cache_alpine: &python_arm64_cache_alpine
-  key: python_arm64
+  key: python_arm64_alpine
   paths: *python_cache_paths
   policy: pull
 
