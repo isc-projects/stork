@@ -721,6 +721,7 @@ ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 gobin = File.join(go_tools_dir, "go", "bin")
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
+pip_cache_dir = File.join(python_tools_dir, "pip_cache")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
@@ -733,6 +734,7 @@ ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 ENV["VIRTUAL_ENV"] = python_tools_dir
+ENV["PIP_CACHE_DIR"] = pip_cache_dir
 
 ### Detect Chrome
 def detect_chrome_binary()
