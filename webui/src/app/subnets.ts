@@ -174,7 +174,7 @@ export function extractUniqueSubnetPools(subnets: Subnet[] | Subnet): SubnetWith
                     for (const pool of ls.pools) {
                         const lp: LocalPool = {
                             daemonId: ls.daemonId,
-                            daemonName: ls.daemonName || (ls as any).appName,
+                            daemonName: ls.daemonName,
                             keaConfigPoolParameters: pool.keaConfigPoolParameters,
                         }
                         const existing = pools.find((p) => p.pool === pool.pool)
