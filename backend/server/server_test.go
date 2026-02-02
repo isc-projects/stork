@@ -224,7 +224,7 @@ func TestBootstrap(t *testing.T) {
 	// they appear.
 	var events []dbmodel.Event
 	require.Eventually(t, func() bool {
-		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
 		return len(events) > 0
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 1)
@@ -270,7 +270,7 @@ func TestBootstrap(t *testing.T) {
 
 	// Expect that the new event has been emitted.
 	require.Eventually(t, func() bool {
-		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
 		return len(events) > 1
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 2)
@@ -285,7 +285,7 @@ func TestBootstrap(t *testing.T) {
 
 	// Make sure that the shutdown event has been added.
 	require.Eventually(t, func() bool {
-		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, _, _ = dbmodel.GetEventsByPage(db, 0, 10, dbmodel.EvInfo, nil, nil, nil, nil, "", dbmodel.SortDirAny)
 		return len(events) > 2
 	}, 5*time.Second, time.Second)
 	require.Len(t, events, 3)

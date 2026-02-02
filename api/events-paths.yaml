@@ -18,10 +18,14 @@
           in: query
           description: Machine ID.
           type: integer
-        - name: daemonType
+        - name: daemonName
           in: query
-          description: Daemon types, e.g. 'named', 'dhcp4', 'dhcp6', 'ca'.
+          description: Daemon name, e.g. 'named', 'dhcp4', 'dhcp6', 'ca'.
           type: string
+        - name: daemon
+          in: query
+          description: Daemon ID.
+          type: integer
         - name: user
           in: query
           description: User ID.

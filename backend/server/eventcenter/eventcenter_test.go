@@ -406,7 +406,7 @@ func TestAddEvent(t *testing.T) {
 	var err error
 
 	require.Eventually(t, func() bool {
-		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, 0, nil, nil, nil, "", dbmodel.SortDirAny)
+		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, 0, nil, nil, nil, nil, "", dbmodel.SortDirAny)
 		return total >= 3
 	}, time.Second, 10*time.Millisecond)
 
