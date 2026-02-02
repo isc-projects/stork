@@ -195,9 +195,9 @@ stages:
     - aws
     - runner-manager
     - amd64
-#  before_script:
-#    - rake prepare:dist
-#    - rake prepare:deps
+  before_script:
+    - rake prepare:dist
+    - rake prepare:deps
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
