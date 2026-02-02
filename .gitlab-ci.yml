@@ -58,27 +58,18 @@ stages:
   key: golang_amd64
   paths:
     - tools/golang/gopath/pkg/mod/
-    # - tools/golang/go.tar.gz
-    # - tools/golang/protoc.zip
-    # - tools/golang/goswagger
-    # - tools/golang/golangci-lint.tar.gz
   policy: pull
 
 .golang_arm64_cache: &golang_arm64_cache
   key: golang_arm64
   paths:
     - tools/golang/gopath/pkg/mod/
-    # - tools/golang/go.tar.gz
-    # - tools/golang/protoc.zip
-    # - tools/golang/goswagger
-    # - tools/golang/golangci-lint.tar.gz
   policy: pull
 
 .nodejs_cache: &nodejs_cache
   key: nodejs
   paths:
     - tools/nodejs/cache
-    # - tools/nodejs/node.tar.xz
   policy: pull
 
 .ruby_cache: &ruby_cache
@@ -252,6 +243,9 @@ lint_python_pylint:
     - *nodejs_cache
     # - *wget_amd64_cache
     - *golang_amd64_cache
+  before_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
   script:
     - echo $PIP_CACHE_DIR
     - echo $CI_PROJECT_DIR
@@ -262,6 +256,9 @@ lint_python_flake8:
   stage: checks
   cache:
     - *python_amd64_cache
+  before_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
   script:
     - rake lint:python:flake8
 
@@ -270,6 +267,9 @@ lint_python_black:
   stage: checks
   cache:
     - *python_amd64_cache
+  before_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
   script:
     - rake lint:python:black
 
