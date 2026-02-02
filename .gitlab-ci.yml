@@ -83,7 +83,7 @@ stages:
 .nodejs_cache: &nodejs_cache
   key: nodejs
   paths:
-    - tools/nodejs/cache
+    - tools/nodejs
   policy: pull
 
 .ruby_cache: &ruby_cache
