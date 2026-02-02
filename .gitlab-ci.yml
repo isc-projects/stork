@@ -250,6 +250,9 @@ lint_python_pylint:
     - echo $PIP_CACHE_DIR
     - echo $CI_PROJECT_DIR
     - rake lint:python:pylint
+  after_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
 
 lint_python_flake8:
   extends: .base_build_debian
@@ -261,6 +264,9 @@ lint_python_flake8:
     - ls -al tools/python/pip
   script:
     - rake lint:python:flake8
+  after_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
 
 lint_python_black:
   extends: .base_build_debian
@@ -272,6 +278,9 @@ lint_python_black:
     - ls -al tools/python/pip
   script:
     - rake lint:python:black
+  after_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
 
 unittest_backend:
   extends: .base_build_debian
@@ -367,6 +376,9 @@ build_cache_amd64:
   script:
     - rake prepare
     - rake prepare:deps
+  after_script:
+    - ls -al tools/python
+    - ls -al tools/python/pip
 
 build_cache_arm64:
   extends: .base_build_debian
