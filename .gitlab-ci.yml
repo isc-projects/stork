@@ -34,7 +34,7 @@ variables:
   RUNNER_GENERATE_ARTIFACTS_METADATA: "true"
 
   # Download Python packages to cached location.
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
 
 
 default:
@@ -81,13 +81,13 @@ stages:
 .python_amd64_cache: &python_amd64_cache
   key: python_amd64
   paths:
-    - tools/python/pip
+    - tools/python
   policy: pull
 
 .python_arm64_cache: &python_arm64_cache
   key: python_arm64
   paths:
-    - tools/python/pip
+    - tools/python
   policy: pull
 
 .wget_amd64_cache: &wget_amd64_cache
@@ -244,43 +244,26 @@ lint_python_pylint:
     # - *wget_amd64_cache
     - *golang_amd64_cache
   before_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
+    - tools/python/bin/python -m pip cache dir
+    - tools/python/bin/python -m pip cache list
   script:
-    - echo $PIP_CACHE_DIR
-    - echo $CI_PROJECT_DIR
     - rake lint:python:pylint
-  after_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
 
 lint_python_flake8:
   extends: .base_build_debian
   stage: checks
   cache:
     - *python_amd64_cache
-  before_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
   script:
     - rake lint:python:flake8
-  after_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
 
 lint_python_black:
   extends: .base_build_debian
   stage: checks
   cache:
     - *python_amd64_cache
-  before_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
   script:
     - rake lint:python:black
-  after_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
 
 unittest_backend:
   extends: .base_build_debian
@@ -377,8 +360,8 @@ build_cache_amd64:
     - rake prepare
     - rake prepare:deps
   after_script:
-    - ls -al tools/python
-    - ls -al tools/python/pip
+    - tools/python/bin/python -m pip cache dir
+    - tools/python/bin/python -m pip cache list
 
 build_cache_arm64:
   extends: .base_build_debian
