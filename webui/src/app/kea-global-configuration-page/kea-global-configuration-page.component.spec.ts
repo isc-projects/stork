@@ -250,8 +250,6 @@ describe('KeaGlobalConfigurationPageComponent', () => {
 
     it('should disable edit button for global parameters', fakeAsync(() => {
         const config: any = {
-            appName: 'kea-server',
-            appType: 'kea',
             daemonName: 'dhcp4',
             editable: false,
             config: {

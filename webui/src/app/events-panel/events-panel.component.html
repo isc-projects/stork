@@ -27,15 +27,15 @@
         <div class="flex align-items-center gap-2 flex-none">
             <div>Daemon:</div>
             <p-select
-                [options]="daemonTypes"
-                [(ngModel)]="selectedDaemonType"
+                [options]="daemonNames"
+                [(ngModel)]="selectedDaemonName"
                 optionLabel="name"
                 id="daemon-events"
                 placeholder="any"
                 showClear="true"
-                tooltip="Show events related to selected daemon type"
+                tooltip="Show events related to selected daemon name"
                 styleClass="max-w-14rem w-10rem"
-                (onChange)="onDaemonTypeSelect($event)"
+                (onChange)="onDaemonNameSelect($event)"
             ></p-select>
         </div>
 

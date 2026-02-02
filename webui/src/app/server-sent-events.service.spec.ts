@@ -39,14 +39,13 @@ describe('ServerSentEventsService', () => {
         let filter = {
             level: 1,
             machine: 2,
-            appType: 'kea',
-            daemonType: 'dhcp4',
-            user: 'foo',
+            daemonName: 'dhcp4',
+            user: 3,
         }
         let observable = service.receivePriorityAndMessageEvents(filter)
         expect(observable).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=kea&daemonName=dhcp4&user=foo&level=1&stream=connectivity&stream=registration&stream=message'
+            '/sse?machine=2&daemonName=dhcp4&user=3&level=1&stream=connectivity&stream=registration&stream=message'
         )
     })
 
@@ -94,8 +93,19 @@ describe('ServerSentEventsService', () => {
                 machine: 1,
             })
         ).toBeTruthy()
+        expect(service.addEventListeners).toHaveBeenCalledTimes(1)
         expect(service.addEventListeners).toHaveBeenCalledWith(
             '/sse?machine=1&stream=connectivity&stream=registration&stream=message'
+        )
+
+        expect(
+            service.receivePriorityAndMessageEvents({
+                daemon: 1,
+            })
+        ).toBeTruthy()
+        expect(service.addEventListeners).toHaveBeenCalledTimes(2)
+        expect(service.addEventListeners).toHaveBeenCalledWith(
+            '/sse?daemon=1&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
@@ -103,7 +113,7 @@ describe('ServerSentEventsService', () => {
                 machine: 2,
             })
         ).toBeTruthy()
-        expect(service.addEventListeners).toHaveBeenCalledTimes(2)
+        expect(service.addEventListeners).toHaveBeenCalledTimes(3)
         expect(service.addEventListeners).toHaveBeenCalledWith(
             '/sse?machine=2&stream=connectivity&stream=registration&stream=message'
         )
@@ -111,84 +121,45 @@ describe('ServerSentEventsService', () => {
         expect(
             service.receivePriorityAndMessageEvents({
                 machine: 2,
-                appType: 'kea',
-            })
-        ).toBeTruthy()
-        expect(service.addEventListeners).toHaveBeenCalledTimes(3)
-        expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=kea&stream=connectivity&stream=registration&stream=message'
-        )
-
-        expect(
-            service.receivePriorityAndMessageEvents({
-                machine: 2,
-                appType: 'bind9',
+                daemonName: 'dhcp4',
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(4)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=bind9&stream=connectivity&stream=registration&stream=message'
+            '/sse?machine=2&daemonName=dhcp4&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
                 machine: 2,
-                appType: 'bind9',
-                daemonType: 'bind9',
+                daemonName: 'named',
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(5)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=bind9&daemonName=bind9&stream=connectivity&stream=registration&stream=message'
+            '/sse?machine=2&daemonName=named&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
                 machine: 2,
-                appType: 'bind9',
-                daemonType: 'foo',
+                daemonName: 'named',
+                user: 1,
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(6)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=bind9&daemonName=foo&stream=connectivity&stream=registration&stream=message'
-        )
-
-        expect(
-            service.receivePriorityAndMessageEvents({
-                machine: 2,
-                appType: 'bind9',
-                daemonType: 'foo',
-                user: 'bar',
-            })
-        ).toBeTruthy()
-        expect(service.addEventListeners).toHaveBeenCalledTimes(7)
-        expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=bind9&daemonName=foo&user=bar&stream=connectivity&stream=registration&stream=message'
-        )
-
-        expect(
-            service.receivePriorityAndMessageEvents({
-                machine: 2,
-                appType: 'bind9',
-                daemonType: 'foo',
-                user: 'abc',
-            })
-        ).toBeTruthy()
-        expect(service.addEventListeners).toHaveBeenCalledTimes(8)
-        expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&appType=bind9&daemonName=foo&user=abc&stream=connectivity&stream=registration&stream=message'
+            '/sse?machine=2&daemonName=named&user=1&stream=connectivity&stream=registration&stream=message'
         )
 
         // If the filtering rules don't change there should be no attempt to reconnect.
         expect(
             service.receivePriorityAndMessageEvents({
                 machine: 2,
-                appType: 'bind9',
-                daemonType: 'foo',
-                user: 'abc',
+                daemonName: 'named',
+                user: 1,
             })
         ).toBeTruthy()
-        expect(service.addEventListeners).toHaveBeenCalledTimes(8)
+        expect(service.addEventListeners).toHaveBeenCalledTimes(6)
     })
 })

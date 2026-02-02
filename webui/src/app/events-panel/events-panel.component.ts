@@ -5,9 +5,9 @@ import { LazyLoadEvent, MessageService, ConfirmationService } from 'primeng/api'
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { Subscription, filter, lastValueFrom } from 'rxjs'
-import { getErrorMessage } from '../utils'
-import { Events, EventSortField, Machine } from '../backend'
-import { ServerSentEventsService } from '../server-sent-events.service'
+import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
+import { Daemon, Event, Events, EventSortField, Machine, User } from '../backend'
+import { ServerSentEventsService, SSEFilter } from '../server-sent-events.service'
 import { convertSortingFields } from '../table'
 import { NgIf, NgClass } from '@angular/common'
 import { FormsModule } from '@angular/forms'
@@ -20,6 +20,16 @@ import { EventTextComponent } from '../event-text/event-text.component'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { Tooltip } from 'primeng/tooltip'
+import { SelectChangeEvent } from 'primeng/select'
+
+/**
+ * Option for daemon name selection.
+ */
+interface DaemonNameOption {
+    value: Daemon.NameEnum
+    name: string
+    id: string
+}
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -63,12 +73,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
 
     @Input() ui: 'bare' | 'table' = 'bare'
 
-    @Input() filter = {
-        level: 0,
-        machine: null,
-        daemonType: null,
-        user: null,
-    }
+    @Input() filter: SSEFilter = { level: 0 }
 
     /**
      * When set to true, rowsPerPageOptions will be displayed in the paginator.
@@ -96,20 +101,23 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         },
     ]
 
-    users: any
+    users: User[]
     machines: Machine[] = []
-    daemonTypes = [
-        { value: 'dhcp4', name: 'DHCPv4', id: 'kea4-events' },
-        { value: 'dhcp6', name: 'DHCPv6', id: 'kea6-events' },
-        { value: 'd2', name: 'DDNS', id: 'ddns-events' },
-        { value: 'ca', name: 'CA', id: 'ca-events' },
-        { value: 'netconf', name: 'NETCONF', id: 'netconf-events' },
-        { value: 'named', name: 'named', id: 'named-events' },
-        { value: 'pdns', name: 'PowerDNS', id: 'pdns-events' },
-    ]
-    selectedMachine: any
-    selectedDaemonType: any
-    selectedUser: any
+    daemonNames: DaemonNameOption[] = (() => {
+        const names: DaemonNameOption[] = []
+        for (const dt of Object.values(Daemon.NameEnum)) {
+            names.push({
+                value: dt,
+                name: daemonNameToFriendlyName(dt),
+                id: `${dt}-events`,
+            })
+        }
+        return names
+    })()
+
+    selectedMachine: Machine
+    selectedDaemonName: DaemonNameOption
+    selectedUser: User
 
     /**
      * Indicates if the component was initialized.
@@ -164,10 +172,10 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.eventHandler(event.originalEvent)
             })
 
-        if (this.filter.daemonType) {
-            for (const dt of this.daemonTypes) {
-                if (dt.value === this.filter.daemonType) {
-                    this.selectedDaemonType = dt
+        if (this.filter.daemonName) {
+            for (const dt of this.daemonNames) {
+                if (dt.value === this.filter.daemonName) {
+                    this.selectedDaemonName = dt
                     break
                 }
             }
@@ -281,7 +289,8 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.limit,
                 this.filter.level,
                 this.filter.machine,
-                this.filter.daemonType,
+                this.filter.daemonName,
+                this.filter.daemon,
                 this.filter.user,
                 ...convertSortingFields<EventSortField>(event)
             )
@@ -317,9 +326,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         // decapitalize fields
         const ev = {
             text: event.text,
-            details: event.Details,
-            level: event.Level,
-            createdAt: event.CreatedAt,
+            details: event.details,
+            level: event.level,
+            createdAt: event.createdAt,
         }
 
         // put new event in front of all events
@@ -333,7 +342,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     /** Callback called on selecting a machine in dropdown. */
-    onMachineSelect(event) {
+    onMachineSelect(event: SelectChangeEvent) {
         if (event.value === null) {
             this.filter.machine = null
         } else {
@@ -342,18 +351,18 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.applyFilter()
     }
 
-    /** Callback called on selecting a daemon type in dropdown. */
-    onDaemonTypeSelect(event) {
+    /** Callback called on selecting a daemon name in dropdown. */
+    onDaemonNameSelect(event: SelectChangeEvent) {
         if (event.value === null) {
-            this.filter.daemonType = null
+            this.filter.daemonName = null
         } else {
-            this.filter.daemonType = event.value.value
+            this.filter.daemonName = event.value.value
         }
         this.applyFilter()
     }
 
     /** Callback called on selecting a user in dropdown. */
-    onUserSelect(event) {
+    onUserSelect(event: SelectChangeEvent) {
         if (event.value === null) {
             this.filter.user = null
         } else {

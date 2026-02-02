@@ -18,9 +18,9 @@ export enum EventStream {
 export interface SSEFilter {
     level?: number
     machine?: number
-    appType?: string
-    daemonType?: string
-    user?: string
+    daemon?: number
+    daemonName?: string
+    user?: number
 }
 
 /**
@@ -181,11 +181,11 @@ export class ServerSentEventsService {
             if (messageSubscription.machine) {
                 searchParams.append('machine', String(messageSubscription.machine))
             }
-            if (messageSubscription.appType) {
-                searchParams.append('appType', messageSubscription.appType)
+            if (messageSubscription.daemonName) {
+                searchParams.append('daemonName', messageSubscription.daemonName)
             }
-            if (messageSubscription.daemonType) {
-                searchParams.append('daemonName', messageSubscription.daemonType)
+            if (messageSubscription.daemon) {
+                searchParams.append('daemon', String(messageSubscription.daemon))
             }
             if (messageSubscription.user) {
                 searchParams.append('user', String(messageSubscription.user))

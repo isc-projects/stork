@@ -2,7 +2,6 @@
     pTooltip="{{ daemonStatusIconTooltip() }}"
     style="white-space: nowrap; margin: 0 0.5rem 0 0"
     routerLink="/daemons/{{ daemon().id }}"
-    [queryParams]="{ daemon: daemon().name }"
 >
     <i class="{{ daemonStatusIconClass() }} text-sm pr-1"></i>{{ daemon().name | daemonNiceName }}
 </a>

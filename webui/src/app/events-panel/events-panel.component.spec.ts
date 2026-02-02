@@ -8,6 +8,7 @@ import { EventsPanelComponent } from './events-panel.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { of } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { SelectChangeEvent } from 'primeng/select'
 
 /**
  * Fake event value.
@@ -20,7 +21,8 @@ class TestEventValue {
 /**
  * Fake event object.
  */
-class TestEvent {
+class TestEvent implements SelectChangeEvent {
+    public originalEvent: Event
     public value: TestEventValue
     constructor() {
         this.value = new TestEventValue()
@@ -63,7 +65,7 @@ describe('EventsPanelComponent', () => {
     it('should establish SSE connection with correct filtering rules', () => {
         component.filter.level = 1
         component.filter.machine = 2
-        component.filter.daemonType = 'dhcp4'
+        component.filter.daemonName = 'dhcp4'
         component.filter.user = 3
 
         spyOn(sseService, 'receivePriorityAndMessageEvents').and.returnValue(
@@ -113,7 +115,7 @@ describe('EventsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        // Select specific machine, app type, daemon type and user. In each
+        // Select specific machine, daemon name and user. In each
         // case, the SSE connection should be re-established with appropriate
         // filtering parameters.
 
@@ -125,8 +127,8 @@ describe('EventsPanelComponent', () => {
         expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'dhcp4'
-        component.onDaemonTypeSelect(event)
-        expect(component.filter.daemonType).toBe('dhcp4')
+        component.onDaemonNameSelect(event)
+        expect(component.filter.daemonName).toBe('dhcp4')
         expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.id = 5
