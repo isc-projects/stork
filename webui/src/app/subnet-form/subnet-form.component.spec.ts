@@ -1149,6 +1149,16 @@ describe('SubnetFormComponent', () => {
 
         const userContexts = component.state.group.get('userContexts.contexts') as UntypedFormArray
         expect(userContexts).toBeTruthy()
+        expect(userContexts.length).toBe(3)
+        expect(userContexts.get('0').value).toEqual({
+            'subnet-name': 'server 1',
+        })
+        expect(userContexts.get('1').value).toEqual({
+            'subnet-name': 'server 2',
+        })
+        expect(userContexts.get('2').value).toEqual({
+            'subnet-name': 'server 1',
+        })
     }))
 
     it('should revert the changes in the form', fakeAsync(() => {
