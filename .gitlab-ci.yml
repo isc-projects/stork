@@ -336,6 +336,7 @@ storybook_tests:
   stage: checks
   cache:
     - *nodejs_amd64_cache
+    - *golang_amd64_cache
   allow_failure: true
   script:
     - rake unittest:storybook
