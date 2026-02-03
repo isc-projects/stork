@@ -364,7 +364,8 @@ build_cache_amd64:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - webui/package.json
         - webui/package-lock.json
         - backend/go.mod
@@ -393,7 +394,8 @@ build_cache_arm64:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - webui/package.json
         - webui/package-lock.json
         - backend/go.mod
@@ -421,7 +423,8 @@ build_cache_amd64_alpine:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - backend/go.mod
         - backend/go.sum
         - rakelib/**/*
@@ -440,7 +443,8 @@ build_cache_arm64_alpine:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - backend/go.mod
         - backend/go.sum
         - rakelib/**/*
@@ -459,7 +463,8 @@ build_cache_amd64_redhat:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - rakelib/**/*
   cache:
     -   <<: *python_amd64_cache_redhat
@@ -473,7 +478,8 @@ build_cache_arm64_redhat:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - rakelib/**/*
   cache:
     -   <<: *python_arm64_cache_redhat
