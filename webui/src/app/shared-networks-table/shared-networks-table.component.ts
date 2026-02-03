@@ -1,4 +1,4 @@
-import { Component, computed, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, effect, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import {
     getTotalAddresses,
@@ -13,14 +13,11 @@ import { DHCPService, NetworkSortField, SharedNetwork } from '../backend'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { MessageService, TableState, PrimeTemplate } from 'primeng/api'
+import { MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Panel } from 'primeng/panel'
 import { NgIf, NgFor, DecimalPipe } from '@angular/common'
-import { Tag } from 'primeng/tag'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { FloatLabel } from 'primeng/floatlabel'
 import { InputNumber } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
@@ -32,6 +29,8 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { SplitButton } from 'primeng/splitbutton'
 
 /**
  * Component for presenting shared networks in a table.
@@ -45,10 +44,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
         RouterLink,
         ManagedAccessDirective,
         TableModule,
-        Panel,
         NgIf,
-        Tag,
-        HelpTipComponent,
         PrimeTemplate,
         FloatLabel,
         InputNumber,
@@ -63,6 +59,8 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
         SubnetBarComponent,
         DecimalPipe,
         PluralizePipe,
+        TableCaptionComponent,
+        SplitButton,
     ],
 })
 export class SharedNetworksTableComponent implements OnInit, OnDestroy {
@@ -101,6 +99,44 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
      * @private
      */
     private _subscriptions: Subscription = new Subscription()
+
+    /**
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
+     */
+    toolbarButtons: MenuItem[] = []
+
+    /**
+     * This flag states whether user has privileges to create new shared networks.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canCreateNetwork = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on user privileges changes and triggering update of the splitButton model
+     * inside the filtering toolbar.
+     */
+    privilegesChangeEffect = effect(() => {
+        if (this.canCreateNetwork()) {
+            this._updateToolbarButtons()
+        }
+    })
+
+    /**
+     * Updates filtering toolbar splitButton menu items.
+     * Based on user privileges some menu items may be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons() {
+        const buttons: MenuItem[] = [
+            {
+                label: 'New Shared Network',
+                icon: 'pi pi-plus',
+                routerLink: '/dhcp/shared-networks/new',
+                disabled: !this.canCreateNetwork(),
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
 
     constructor(
         private dhcpApi: DHCPService,
@@ -185,6 +221,8 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
                     this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
                 })
         )
+
+        this._updateToolbarButtons()
     }
 
     /**
