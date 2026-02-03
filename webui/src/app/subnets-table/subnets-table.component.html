@@ -1,18 +1,3 @@
-<div class="mb-2 flex gap-2 flex-wrap justify-content-end">
-    <p-button
-        label="New Subnet"
-        icon="pi pi-plus"
-        routerLink="/dhcp/subnets/new"
-        appAccessEntity="subnet"
-        appAccessType="create"
-    ></p-button>
-    <p-button
-        label="Refresh List"
-        icon="pi pi-refresh"
-        (onClick)="loadData(subnetsTable.createLazyLoadMetadata())"
-    ></p-button>
-</div>
-
 <p-table
     #subnetsTable
     [value]="dataCollection"
@@ -34,60 +19,33 @@
     styleClass="xxl:datatable-responsive"
 >
     <ng-template #caption>
-        <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-            <ng-template #header>
-                <div class="flex align-items-center gap-2">
-                    <p-button
-                        [text]="true"
-                        [rounded]="true"
-                        severity="secondary"
-                        [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                        (click)="filtersPanel.toggle($event)"
-                    />
-                    <i class="pi pi-filter"></i>
-                    <span class="font-bold">Filters</span>
-                    <p-tag
-                        icon="pi pi-check"
-                        value="Filter applied"
-                        severity="success"
-                        *ngIf="tableHasFilter(subnetsTable)"
-                    ></p-tag>
-                    <app-help-tip subject="filtering" id="filtering-help-button">
-                        <p>
-                            The table below can be filtered by entering text in the search box; the table shows all
-                            subnets matching the filter text. The currently supported fields for filtering are:
-                        </p>
-                        <ul>
-                            <li>Subnet Prefix</li>
-                            <li>Lower and Upper Bound of Pools</li>
-                            <li>Shared Network Name</li>
-                            <li>Subnet Name</li>
-                        </ul>
-                        <p>
-                            The table can present subnets that meet certain criteria, e.g. "192.0" will show all subnets
-                            that contain 192.0 octets. You can also filter by shared network name and/or pools.
-                        </p>
-                        <p>
-                            Subnets can also be filtered by an explicitly selected field, using text input and dropdown
-                            filters. The currently supported fields for explicit filtering are:
-                        </p>
-                        <ul>
-                            <li>Daemon ID</li>
-                            <li>Subnet ID - the subnet ID assigned in the Kea DHCP daemon configuration</li>
-                            <li>DHCP Version</li>
-                        </ul>
-                    </app-help-tip>
-                </div>
+        <app-table-caption [tableElement]="subnetsTable" tableKey="subnets-table">
+            <ng-template #helptip>
+                <p>
+                    The table below can be filtered by entering text in the search box; the table shows all subnets
+                    matching the filter text. The currently supported fields for filtering are:
+                </p>
+                <ul>
+                    <li>Subnet Prefix</li>
+                    <li>Lower and Upper Bound of Pools</li>
+                    <li>Shared Network Name</li>
+                    <li>Subnet Name</li>
+                </ul>
+                <p>
+                    The table can present subnets that meet certain criteria, e.g. "192.0" will show all subnets that
+                    contain 192.0 octets. You can also filter by shared network name and/or pools.
+                </p>
+                <p>
+                    Subnets can also be filtered by an explicitly selected field, using text input and dropdown filters.
+                    The currently supported fields for explicit filtering are:
+                </p>
+                <ul>
+                    <li>Daemon ID</li>
+                    <li>Subnet ID - the subnet ID assigned in the Kea DHCP daemon configuration</li>
+                    <li>DHCP Version</li>
+                </ul>
             </ng-template>
-            <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
-                <p-button
-                    label="Clear"
-                    [severity]="tableHasFilter(subnetsTable) ? 'info' : 'secondary'"
-                    icon="pi pi-filter-slash"
-                    (click)="clearTableFiltering()"
-                    [disabled]="!tableHasFilter(subnetsTable)"
-                ></p-button>
-                <div class="flex-auto"></div>
+            <ng-template #filters>
                 <p-columnFilter field="daemonId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <div class="flex align-items-center">
@@ -196,8 +154,32 @@
                         </div>
                     </ng-template>
                 </p-columnFilter>
-            </div>
-        </p-panel>
+            </ng-template>
+            <ng-template #buttons>
+                <p-button
+                    label="New Subnet"
+                    icon="pi pi-plus"
+                    routerLink="/dhcp/subnets/new"
+                    appAccessEntity="subnet"
+                    appAccessType="create"
+                    (appHasAccess)="canCreateSubnet.set($event)"
+                ></p-button>
+                <p-button
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(subnetsTable.createLazyLoadMetadata())"
+                ></p-button>
+            </ng-template>
+            <ng-template #splitbutton>
+                <p-splitbutton
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(subnetsTable.createLazyLoadMetadata())"
+                    [model]="toolbarButtons"
+                    size="small"
+                />
+            </ng-template>
+        </app-table-caption>
     </ng-template>
     <ng-template #header>
         <tr>

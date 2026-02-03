@@ -1,9 +1,9 @@
-import { Component, computed, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, effect, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet, SubnetSortField } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
-import { MessageService, TableState, PrimeTemplate } from 'primeng/api'
+import { MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
@@ -17,10 +17,7 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Panel } from 'primeng/panel'
 import { NgIf, NgFor, DecimalPipe } from '@angular/common'
-import { Tag } from 'primeng/tag'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { FloatLabel } from 'primeng/floatlabel'
 import { InputNumber } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
@@ -35,6 +32,8 @@ import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { Message } from 'primeng/message'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { SplitButton } from 'primeng/splitbutton'
 
 @Component({
     selector: 'app-subnets-table',
@@ -45,10 +44,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
         RouterLink,
         ManagedAccessDirective,
         TableModule,
-        Panel,
         NgIf,
-        Tag,
-        HelpTipComponent,
         PrimeTemplate,
         FloatLabel,
         InputNumber,
@@ -66,6 +62,8 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
         DecimalPipe,
         PluralizePipe,
         EntityLinkComponent,
+        TableCaptionComponent,
+        SplitButton,
     ],
 })
 export class SubnetsTableComponent implements OnInit, OnDestroy {
@@ -120,6 +118,44 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
      * @private
      */
     private _subscriptions: Subscription = new Subscription()
+
+    /**
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
+     */
+    toolbarButtons: MenuItem[] = []
+
+    /**
+     * This flag states whether user has privileges to create new subnets.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canCreateSubnet = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on user privileges changes and triggering update of the splitButton model
+     * inside the filtering toolbar.
+     */
+    privilegesChangeEffect = effect(() => {
+        if (this.canCreateSubnet()) {
+            this._updateToolbarButtons()
+        }
+    })
+
+    /**
+     * Updates filtering toolbar splitButton menu items.
+     * Based on user privileges some menu items may be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons() {
+        const buttons: MenuItem[] = [
+            {
+                label: 'New Subnet',
+                icon: 'pi pi-plus',
+                routerLink: '/dhcp/subnets/new',
+                disabled: !this.canCreateSubnet(),
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
 
     constructor(
         private dhcpApi: DHCPService,
@@ -207,6 +243,8 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
                     this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
                 })
         )
+
+        this._updateToolbarButtons()
     }
 
     /**
