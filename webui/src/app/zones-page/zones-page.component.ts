@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { ChangeDetectorRef, Component, effect, NgZone, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { ConfirmationService, MenuItem, MessageService, TableState, PrimeTemplate } from 'primeng/api'
 import {
     DNSClass,
@@ -44,8 +44,6 @@ import { Tooltip } from 'primeng/tooltip'
 import { Dialog } from 'primeng/dialog'
 import { ConfirmDialog } from 'primeng/confirmdialog'
 import { TabViewComponent } from '../tab-view/tab-view.component'
-import { Panel } from 'primeng/panel'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { FloatLabel } from 'primeng/floatlabel'
 import { MultiSelect } from 'primeng/multiselect'
 import { FormsModule } from '@angular/forms'
@@ -63,6 +61,9 @@ import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ZoneTypeAliasPipe } from '../pipes/zone-type-alias.pipe'
 import { Checkbox } from 'primeng/checkbox'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { SplitButton } from 'primeng/splitbutton'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { AuthService } from '../auth.service'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -93,8 +94,6 @@ interface ExtendedLocalZone extends LocalZone {
         NgTemplateOutlet,
         ConfirmDialog,
         TabViewComponent,
-        Panel,
-        HelpTipComponent,
         PrimeTemplate,
         FloatLabel,
         MultiSelect,
@@ -114,6 +113,8 @@ interface ExtendedLocalZone extends LocalZone {
         ZoneTypeAliasPipe,
         Checkbox,
         EntityLinkComponent,
+        SplitButton,
+        TableCaptionComponent,
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {
@@ -176,7 +177,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * Flag stating whether zones fetch is in progress or not.
      */
-    fetchInProgress: boolean = false
+    fetchInProgress = signal<boolean>(false)
 
     /**
      * Keeps count of DNS daemons for which zones fetch was completed. This number comes from backend.
@@ -201,7 +202,17 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * Flag stating whether Fetch Zones button is locked/disabled or not.
      */
-    putZonesFetchLocked: boolean = false
+    putZonesFetchLocked = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on changes of signals fetchInProgress, putZonesFetchLocked and hasFetchZonesPrivileges.
+     * If any of the signal changes, the effect will be called and update the splitButton model.
+     */
+    zonesFetchDisabledEffect = effect(() =>
+        this._updateToolbarButtons(
+            this.fetchInProgress() || this.putZonesFetchLocked() || !this.hasFetchZonesPrivileges()
+        )
+    )
 
     /**
      * Column names for tables which display local zones.
@@ -219,9 +230,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @private
      */
     private _putZonesFetchGuard = of(null).pipe(
-        tap(() => (this.putZonesFetchLocked = true)),
+        tap(() => this.putZonesFetchLocked.set(true)),
         concatMap(() => timer(5000)),
-        tap(() => (this.putZonesFetchLocked = false)),
+        tap(() => this.putZonesFetchLocked.set(false)),
         share()
     )
 
@@ -260,7 +271,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     private _polling$ = interval(this._pollingInterval).pipe(
         switchMap(() => this.getZonesFetchWithStatus()), // Use switchMap to discard ongoing request from previous interval tick.
-        takeWhile((resp) => this.fetchInProgress && resp.status === HttpStatusCode.Accepted, true),
+        takeWhile((resp) => this.fetchInProgress() && resp.status === HttpStatusCode.Accepted, true),
         tap((resp) => {
             if (resp.status === HttpStatusCode.Accepted) {
                 this.fetchDaemonsCompletedCount = resp.completedDaemonsCount
@@ -270,7 +281,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.fetchDaemonsCompletedCount = this.fetchTotalDaemonsCount
                 this.zonesFetchStates = resp.items ?? []
                 this.zonesFetchStatesTotal = resp.total ?? 0
-                if (this.fetchInProgress) {
+                if (this.fetchInProgress()) {
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Zones fetch complete',
@@ -294,7 +305,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             return of(EMPTY) // In case of any GET /dns-management/zones-fetch error, just display Error feedback in UI and complete this observable.
         }),
         finalize(() => {
-            this.fetchInProgress = false
+            this.fetchInProgress.set(false)
             this._isPolling = false
         })
     )
@@ -335,6 +346,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
      * @param router Angular router service used to navigate when zones table filtering changes
      * @param zone Angular zone to call Router navigation inside the zone
+     * @param authService AuthService used to check user privileges
      */
     constructor(
         private cd: ChangeDetectorRef,
@@ -342,7 +354,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
         private router: Router,
-        private zone: NgZone
+        private zone: NgZone,
+        private authService: AuthService
     ) {}
 
     /**
@@ -391,6 +404,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             arrayType?: boolean
         }
     }
+
+    /**
+     * Flag stating whether user has privileges to trigger fetching zones.
+     */
+    hasFetchZonesPrivileges = signal<boolean>(false)
 
     /**
      * Restores only rows per page count for the zones table from the state stored in user browser storage.
@@ -454,6 +472,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             })
 
         this.refreshFetchStatusTable()
+
+        this.hasFetchZonesPrivileges.set(this.authService.hasPrivilege('zones', 'update'))
     }
 
     /**
@@ -475,7 +495,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             .then((resp) => {
                 switch (resp.status) {
                     case HttpStatusCode.NoContent:
-                        this.fetchInProgress = false
+                        this.fetchInProgress.set(false)
                         this.zonesFetchStates = []
                         this.zonesFetchStatesTotal = 0
                         this.messageService.add({
@@ -486,7 +506,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                         })
                         break
                     case HttpStatusCode.Accepted:
-                        this.fetchInProgress = true
+                        this.fetchInProgress.set(true)
                         this.zonesFetchStates = []
                         this.zonesFetchStatesTotal = 0
 
@@ -504,8 +524,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                         this.zonesFetchStatesTotal = resp.total ?? 0
                         this._resetZoneInventoryStateMap()
 
-                        if (this.fetchInProgress) {
-                            this.fetchInProgress = false
+                        if (this.fetchInProgress()) {
+                            this.fetchInProgress.set(false)
                             this.fetchDaemonsCompletedCount = this.fetchTotalDaemonsCount
                             this.messageService.add({
                                 severity: 'success',
@@ -518,7 +538,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
                         break
                     default:
-                        this.fetchInProgress = false
+                        this.fetchInProgress.set(false)
                         this.messageService.add({
                             severity: 'info',
                             summary: 'Unexpected response',
@@ -601,7 +621,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
         lastValueFrom(
             this.dnsService.putZonesFetch(forcePopulateZoneInventory).pipe(
-                tap(() => (this.fetchInProgress = true)),
+                tap(() => this.fetchInProgress.set(true)),
                 delay(500), // Trigger refreshFetchStatusTable() with small delay - smaller deployments will likely have 200 Ok ZoneInventoryStates response there.
                 concatMap((resp) => {
                     this.refreshFetchStatusTable()
@@ -765,13 +785,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     tabTitleProvider: (entity: Zone) => string = (zone: Zone) => unrootZone(zone.name)
 
     /**
-     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
-     * It doesn't reset the table sorting, if any was applied.
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
      */
-    clearTableFiltering() {
-        this.zonesTable?.clearFilterValues()
-        this.zone.run(() => this.router.navigate([]))
-    }
+    toolbarButtons: MenuItem[] = []
 
     /**
      * Emits next value and filterConstraint for the zones table's filter,
@@ -928,4 +944,27 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly ZoneSortField = ZoneSortField
+
+    /**
+     * Updates filtering toolbar splitButton menu items. "Fetch Zones" menu item state
+     * is dynamic, and may be sometimes disabled/enabled.
+     * @param disableFetchZones boolean stating whether "Fetch Zones" menu item should be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons(disableFetchZones: boolean) {
+        const buttons: MenuItem[] = [
+            {
+                label: 'Fetch Status',
+                command: () => (this.fetchStatusVisible = true),
+                icon: 'pi pi-info-circle',
+            },
+            {
+                label: 'Fetch Zones',
+                command: () => this.sendPutZonesFetch(),
+                icon: 'pi pi-download',
+                disabled: disableFetchZones,
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
 }

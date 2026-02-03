@@ -5,7 +5,7 @@
 </app-breadcrumbs>
 
 <ng-template #emptyMessage let-colspan let-empty="empty">
-    <ng-container *ngIf="fetchInProgress">
+    <ng-container *ngIf="fetchInProgress()">
         <tr>
             <td [attr.colspan]="colspan">
                 <p-message
@@ -35,7 +35,7 @@
         </tr>
     </ng-container>
 
-    <tr *ngIf="!fetchInProgress">
+    <tr *ngIf="!fetchInProgress()">
         <td [attr.colspan]="colspan">
             <ng-container *ngIf="!wasZoneFetchSent()">
                 <p-message
@@ -54,7 +54,7 @@
                     label="Fetch Zones"
                     icon="pi pi-download"
                     (onClick)="sendPutZonesFetch(true)"
-                    [disabled]="fetchInProgress || putZonesFetchLocked"
+                    [disabled]="fetchInProgress() || putZonesFetchLocked()"
                     appAccessEntity="zones"
                     appAccessType="update"
                 />
@@ -248,29 +248,6 @@ to the number of configured zones.
     [entitiesTable]="zonesTable"
 >
     <ng-template #firstTab>
-        <div class="my-2 flex gap-2 flex-wrap justify-content-end">
-            <p-button
-                label="Fetch Status"
-                [icon]="fetchInProgress ? 'pi pi-spin pi-spinner' : 'pi pi-info-circle'"
-                (onClick)="fetchStatusVisible = true"
-                id="fetch-status"
-            />
-            <p-button
-                label="Fetch Zones"
-                icon="pi pi-download"
-                (onClick)="sendPutZonesFetch()"
-                [disabled]="fetchInProgress || putZonesFetchLocked"
-                id="fetch-zones"
-                appAccessEntity="zones"
-                appAccessType="update"
-            />
-            <p-button
-                label="Refresh List"
-                icon="pi pi-refresh"
-                (onClick)="onLazyLoadZones(zonesTable.createLazyLoadMetadata())"
-                id="refresh-zones-data"
-            />
-        </div>
         <p-table
             #zonesTable
             id="zones-table"
@@ -294,73 +271,45 @@ to the number of configured zones.
             class="full-w-table"
         >
             <ng-template #caption>
-                <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-                    <ng-template #header>
-                        <div class="flex align-items-center gap-2">
-                            <p-button
-                                [text]="true"
-                                [rounded]="true"
-                                severity="secondary"
-                                [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                                (click)="filtersPanel.toggle($event)"
-                            />
-                            <i class="pi pi-filter"></i>
-                            <span class="font-bold">Filters</span>
-                            <p-tag
-                                icon="pi pi-check"
-                                value="Filter applied"
-                                severity="success"
-                                *ngIf="tableHasFilter(zonesTable)"
-                            ></p-tag>
-                            <app-help-tip subject="Filtering" id="filtering-help-button">
-                                <p>
-                                    Zones in the table below can be filtered by explicitly selected fields using text,
-                                    dropdown or multiselect input filters. The currently supported fields for explicit
-                                    filtering are:
-                                </p>
-                                <ul>
-                                    <li>
-                                        Zone Type - multiple zone types can be specified. If unspecified, all zone types
-                                        are returned. Next to this filter there is a toggle button that allows to
-                                        quickly filter out builtin zones.
-                                    </li>
-                                    <li>
-                                        RPZ - a response policy zone is a special type of zone in BIND 9 that defines a
-                                        set of rules that are applied to the response to a DNS query. Stork identifies
-                                        these special zones and marks them with the RPZ tag on the zone list. The filter
-                                        allows for selecting whether the response policy zones should be included along
-                                        with other zones, should be excluded (only non-RPZ are listed), or only the RPZ
-                                        should be listed (and regular zones excluded).
-                                    </li>
-                                    <li>Daemon ID - the ID of the DNS Daemon.</li>
-                                    <li>Serial - partial or exact zone serial.</li>
-                                    <li>Zone Class - exact zone class.</li>
-                                    <li>Daemon Name - name of the DNS Daemon.</li>
-                                </ul>
-                                <p>
-                                    Zones can also be filtered by entering text in the search box; the table shows all
-                                    zones matching the exact or partial filter text. The text is matched against the
-                                    zone name or view. For clarity, the
-                                    <span class="font-bold">(root)</span> keyword marks a root zone. Typing
-                                    <span class="font-italic white-space-nowrap">(root)</span> or
-                                    <span class="font-italic white-space-nowrap">root</span> will return the root zone.
-                                </p>
-                                <p>
-                                    Multiple filtering conditions are combined using logical AND (i.e., filtered zones
-                                    match all specified conditions).
-                                </p>
-                            </app-help-tip>
-                        </div>
+                <app-table-caption [tableElement]="zonesTable" [wideHelpTip]="true" tableKey="zones-table">
+                    <ng-template #helptip>
+                        <p>
+                            Zones in the table below can be filtered by explicitly selected fields using text, dropdown
+                            or multiselect input filters. The currently supported fields for explicit filtering are:
+                        </p>
+                        <ul>
+                            <li>
+                                Zone Type - multiple zone types can be specified. If unspecified, all zone types are
+                                returned. Next to this filter there is a toggle button that allows to quickly filter out
+                                builtin zones.
+                            </li>
+                            <li>
+                                RPZ - a response policy zone is a special type of zone in BIND 9 that defines a set of
+                                rules that are applied to the response to a DNS query. Stork identifies these special
+                                zones and marks them with the RPZ tag on the zone list. The filter allows for selecting
+                                whether the response policy zones should be included along with other zones, should be
+                                excluded (only non-RPZ are listed), or only the RPZ should be listed (and regular zones
+                                excluded).
+                            </li>
+                            <li>Daemon ID - the ID of the DNS Daemon.</li>
+                            <li>Serial - partial or exact zone serial.</li>
+                            <li>Zone Class - exact zone class.</li>
+                            <li>Daemon Name - name of the DNS Daemon.</li>
+                        </ul>
+                        <p>
+                            Zones can also be filtered by entering text in the search box; the table shows all zones
+                            matching the exact or partial filter text. The text is matched against the zone name or
+                            view. For clarity, the
+                            <span class="font-bold">(root)</span> keyword marks a root zone. Typing
+                            <span class="font-italic white-space-nowrap">(root)</span> or
+                            <span class="font-italic white-space-nowrap">root</span> will return the root zone.
+                        </p>
+                        <p>
+                            Multiple filtering conditions are combined using logical AND (i.e., filtered zones match all
+                            specified conditions).
+                        </p>
                     </ng-template>
-                    <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
-                        <p-button
-                            label="Clear"
-                            [severity]="tableHasFilter(zonesTable) ? 'info' : 'secondary'"
-                            icon="pi pi-filter-slash"
-                            (click)="clearTableFiltering()"
-                            [disabled]="!tableHasFilter(zonesTable)"
-                        />
-                        <div class="flex-auto"></div>
+                    <ng-template #filters>
                         <p-button
                             icon="pi {{ builtinZonesDisplayed ? 'pi-eye' : 'pi-eye-slash' }}"
                             id="builtin-type-filtered"
@@ -588,8 +537,40 @@ to the number of configured zones.
                                 </div>
                             </ng-template>
                         </p-columnFilter>
-                    </div>
-                </p-panel>
+                    </ng-template>
+                    <ng-template #buttons>
+                        <p-button
+                            label="Fetch Status"
+                            [icon]="fetchInProgress() ? 'pi pi-spin pi-spinner' : 'pi pi-info-circle'"
+                            (onClick)="fetchStatusVisible = true"
+                            id="fetch-status"
+                        />
+                        <p-button
+                            label="Fetch Zones"
+                            icon="pi pi-download"
+                            (onClick)="sendPutZonesFetch()"
+                            [disabled]="fetchInProgress() || putZonesFetchLocked()"
+                            id="fetch-zones"
+                            appAccessEntity="zones"
+                            appAccessType="update"
+                        />
+                        <p-button
+                            label="Refresh List"
+                            icon="pi pi-refresh"
+                            (onClick)="onLazyLoadZones(zonesTable.createLazyLoadMetadata())"
+                            id="refresh-zones-data"
+                        />
+                    </ng-template>
+                    <ng-template #splitbutton>
+                        <p-splitbutton
+                            label="Refresh List"
+                            icon="pi pi-refresh"
+                            (onClick)="onLazyLoadZones(zonesTable.createLazyLoadMetadata())"
+                            [model]="toolbarButtons"
+                            size="small"
+                        />
+                    </ng-template>
+                </app-table-caption>
             </ng-template>
             <ng-template #header>
                 <tr>
