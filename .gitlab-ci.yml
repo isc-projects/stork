@@ -121,8 +121,8 @@ stages:
 .ruby_cache: &ruby_cache
   key: ruby
   paths:
-    - tools/gems
-  policy: pull-push
+    - tools/ruby
+  policy: pull
 
 ### build jobs ###
 
@@ -367,6 +367,8 @@ build_cache_amd64:
     - <<: *python_amd64_cache
       policy: push
     - <<: *nodejs_amd64_cache
+      policy: push
+    - <<: *ruby_cache
       policy: push
   script:
     - rake prepare
