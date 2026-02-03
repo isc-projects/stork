@@ -9,12 +9,13 @@ import { Button } from 'primeng/button'
 import { Tooltip } from 'primeng/tooltip'
 import { isKeaDaemon } from '../version.service'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { NgIf } from '@angular/common'
 
 @Component({
     selector: 'app-daemon-tab',
     templateUrl: './daemon-tab.component.html',
     styleUrl: './daemon-tab.component.sass',
-    imports: [Tooltip, Button, KeaDaemonComponent, Bind9DaemonComponent, PdnsDaemonComponent, EntityLinkComponent],
+    imports: [NgIf, Tooltip, Button, KeaDaemonComponent, Bind9DaemonComponent, PdnsDaemonComponent, EntityLinkComponent],
 })
 export class DaemonTabComponent {
     daemon = input<AnyDaemon>(null)

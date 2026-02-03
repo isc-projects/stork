@@ -1,4 +1,4 @@
-<div class="mx-1 flex flex-column" *ngIf="daemon">
+<div class="mx-1 flex flex-column" *ngIf="daemon()">
     <div class="my-4">
         <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
             <div class="flex align-items-center gap-3">
@@ -23,7 +23,6 @@
             ></p-button>
         </div>
     </div>
-
     <app-kea-daemon *ngIf="isKeaDaemon()" [daemon]="daemon()"></app-kea-daemon>
     <app-bind9-daemon *ngIf="daemon().name === 'named'" [daemon]="daemon()"></app-bind9-daemon>
     <app-pdns-daemon *ngIf="daemon().name === 'pdns'" [daemon]="daemon()"></app-pdns-daemon>
