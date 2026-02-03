@@ -358,11 +358,26 @@ build_ui:
     paths:
       - webui/dist/stork/
 
+test_first_commit:
+  extends: .base_build_debian
+  stage: cache
+  rules:
+    - when: manual
+    - if: $CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"
+  script:
+    - echo $CI_COMMIT_BEFORE_SHA
+
 build_cache_amd64:
   extends: .base_build_debian
   stage: cache
   rules:
     - when: manual
+    - changes:
+        - webui/package.json
+        - webui/package-lock.json
+        - backend/go.mod
+        - backend/go.sum
+        - rakelib/**/*
   cache:
     - <<: *golang_amd64_cache
       policy: push
