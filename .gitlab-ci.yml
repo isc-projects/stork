@@ -67,7 +67,7 @@ stages:
 .nodejs_cache: &nodejs_cache
   paths:
     - tools/nodejs
-    - tools/openapi-generator-cli.jar
+    - tools/playwright_browsers
   policy: pull
 
 .golang_amd64_cache: &golang_amd64_cache
@@ -334,8 +334,9 @@ unittest_ui:
 storybook_tests:
   extends: .base_build_debian
   stage: checks
+  cache:
+    - *nodejs_amd64_cache
   allow_failure: true
-  cache: []
   script:
     - rake unittest:storybook
   rules:
@@ -368,6 +369,7 @@ build_cache_amd64:
       policy: push
   script:
     - rake prepare
+    - rake prepare:dev
     - rake prepare:deps
   after_script:
     - tools/python/bin/python -m pip cache dir

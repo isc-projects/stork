@@ -882,15 +882,14 @@ YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", 
 file YAMLINC => [NPM] do
     ci_opts = []
     if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress", "--cache", File.expand_path(NODE_CACHE), "--verbose"]
+        ci_opts += ["--no-audit", "--no-progress", "--cache", File.expand_path(NODE_CACHE)]
     end
 
     sh NPM, "install",
             "-g",
             *ci_opts,
             "--prefix", "#{node_dir}/node_modules",
-            "yamlinc@#{yamlinc_ver}",
-            "--verbose"
+            "yamlinc@#{yamlinc_ver}"
     sh "touch", "-c", YAMLINC
     sh YAMLINC, "--version"
 end

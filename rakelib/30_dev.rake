@@ -1390,7 +1390,7 @@ end
 
 namespace :prepare do
     desc 'Install the external dependencies related to the development'
-    task :dev do
+    task :dev => [CHROME_LINK] do
         find_and_prepare_deps(__FILE__, [])
     end
 end
