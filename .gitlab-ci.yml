@@ -370,6 +370,7 @@ build_cache_amd64:
         - webui/package-lock.json
         - backend/go.mod
         - backend/go.sum
+        - rakelib/*
         - rakelib/**/*
   cache:
     - <<: *golang_amd64_cache
@@ -400,6 +401,7 @@ build_cache_arm64:
         - webui/package-lock.json
         - backend/go.mod
         - backend/go.sum
+        - rakelib/*
         - rakelib/**/*
   cache:
     - <<: *golang_arm64_cache
@@ -427,6 +429,7 @@ build_cache_amd64_alpine:
       changes:
         - backend/go.mod
         - backend/go.sum
+        - rakelib/*
         - rakelib/**/*
   cache:
     - <<: *golang_amd64_cache_alpine
@@ -447,6 +450,7 @@ build_cache_arm64_alpine:
       changes:
         - backend/go.mod
         - backend/go.sum
+        - rakelib/*
         - rakelib/**/*
   cache:
     - <<: *golang_arm64_cache_alpine
@@ -465,6 +469,7 @@ build_cache_amd64_redhat:
       allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
+        - rakelib/*
         - rakelib/**/*
   cache:
     -   <<: *python_amd64_cache_redhat
@@ -480,6 +485,7 @@ build_cache_arm64_redhat:
       allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
+        - rakelib/*
         - rakelib/**/*
   cache:
     -   <<: *python_arm64_cache_redhat
