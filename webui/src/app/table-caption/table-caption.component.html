@@ -35,12 +35,10 @@
             <div class="block md:hidden">
                 <ng-container *ngTemplateOutlet="splitButton()"></ng-container>
             </div>
-        } @else {
-            @if (buttons()) {
-                <div class="flex gap-2 flex-wrap justify-content-end">
-                    <ng-container *ngTemplateOutlet="buttons()"></ng-container>
-                </div>
-            }
+        } @else if (buttons()) {
+            <div class="flex gap-2 flex-wrap justify-content-end">
+                <ng-container *ngTemplateOutlet="buttons()"></ng-container>
+            </div>
         }
     </div>
 </div>
