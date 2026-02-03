@@ -103,7 +103,7 @@
         ></i>
     </td>
     <td>
-        <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone._class }">{{ localZone._class }}</a>
+        <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone.zoneClass }">{{ localZone.zoneClass }}</a>
     </td>
     <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
 </ng-template>

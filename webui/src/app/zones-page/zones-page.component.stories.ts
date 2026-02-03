@@ -78,7 +78,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 2,
                 daemonName: 'named',
-                _class: 'CH',
+                zoneClass: 'CH',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: '_bind',
@@ -87,7 +87,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'CH',
+                zoneClass: 'CH',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'guest',
@@ -96,7 +96,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'CH',
+                zoneClass: 'CH',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'trusted',
@@ -112,7 +112,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 2,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: '_default',
@@ -121,7 +121,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'guest',
@@ -130,7 +130,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'trusted',
@@ -146,7 +146,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 2,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: '_default',
@@ -155,7 +155,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'guest',
@@ -164,7 +164,7 @@ const builtinZones: Zone[] = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'trusted',
@@ -182,7 +182,7 @@ const rootZone = {
         {
             daemonId: 2,
             daemonName: 'named',
-            _class: 'IN',
+            zoneClass: 'IN',
             loadedAt: '1970-01-01T00:00:00.000Z',
             serial: 0,
             view: '_default',
@@ -193,14 +193,14 @@ const rootZone = {
     rname: '.',
 }
 
-const primaryZones = [
+const primaryZones: Zone[] = [
     {
         id: 1,
         localZones: [
             {
                 daemonId: 1,
                 daemonName: 'pdns@agent-pdns',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -216,7 +216,7 @@ const primaryZones = [
             {
                 daemonId: 1,
                 daemonName: 'pdns',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -232,7 +232,7 @@ const primaryZones = [
             {
                 daemonId: 1,
                 daemonName: 'pdns',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -248,7 +248,7 @@ const primaryZones = [
             {
                 daemonId: 1,
                 daemonName: 'pdns',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -264,7 +264,7 @@ const primaryZones = [
             {
                 daemonId: 2,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-12-23T08:59:19.000Z',
                 rpz: true,
                 serial: 201702121,
@@ -274,7 +274,7 @@ const primaryZones = [
             {
                 daemonId: 4,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-08-14T06:05:51.000Z',
                 rpz: true,
                 serial: 201702122,
@@ -291,7 +291,7 @@ const primaryZones = [
             {
                 daemonId: 2,
                 daemonName: 'named',
-                _class: 'IN',
+                zoneClass: 'IN',
                 loadedAt: '2025-08-14T06:05:51.000Z',
                 rpz: true,
                 serial: 201702121,
@@ -598,7 +598,7 @@ export const ListZones: Story = {
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) => {
-                        return z.localZones.some((lz) => lz._class == req.searchParams?.class)
+                        return z.localZones.some((lz) => lz.zoneClass == req.searchParams?.class)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -610,7 +610,7 @@ export const ListZones: Story = {
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) => {
-                        return z.localZones.some((lz) => lz._class == req.searchParams?.class)
+                        return z.localZones.some((lz) => lz.zoneClass == req.searchParams?.class)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -682,7 +682,7 @@ export const ListZones: Story = {
                                 zoneTypes.includes(lz.zoneType) &&
                                 (!!lz.rpz).toString() == req.searchParams?.rpz &&
                                 lz.serial.toString().includes(req.searchParams?.serial) &&
-                                lz._class == req.searchParams?.class &&
+                                lz.zoneClass == req.searchParams?.class &&
                                 lz.daemonName.indexOf(req.searchParams?.daemonName) == 0
                         )
                     )

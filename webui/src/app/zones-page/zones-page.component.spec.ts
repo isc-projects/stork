@@ -120,7 +120,7 @@ describe('ZonesPageComponent', () => {
                 id: 21320,
                 localZones: [
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 73,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -129,7 +129,7 @@ describe('ZonesPageComponent', () => {
                         zoneType: 'primary',
                     },
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 74,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -145,7 +145,7 @@ describe('ZonesPageComponent', () => {
                 id: 21321,
                 localZones: [
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 73,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -154,7 +154,7 @@ describe('ZonesPageComponent', () => {
                         zoneType: 'primary',
                     },
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 74,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -170,7 +170,7 @@ describe('ZonesPageComponent', () => {
                 id: 21322,
                 localZones: [
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 73,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -179,7 +179,7 @@ describe('ZonesPageComponent', () => {
                         zoneType: 'primary',
                     },
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 74,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -195,7 +195,7 @@ describe('ZonesPageComponent', () => {
                 id: 21323,
                 localZones: [
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 73,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -205,7 +205,7 @@ describe('ZonesPageComponent', () => {
                         rpz: true,
                     },
                     {
-                        _class: 'IN',
+                        zoneClass: 'IN',
                         daemonId: 74,
                         daemonName: 'named',
                         loadedAt: '2025-03-03T17:36:14.000Z',
@@ -227,14 +227,14 @@ describe('ZonesPageComponent', () => {
             {
                 name: 'example.com.',
                 ttl: 3600,
-                rrClass: 'IN',
+                zoneClass: 'IN',
                 rrType: 'SOA',
                 data: 'ns1.example.com. admin.example.com. 2024031501 3600 900 1209600 300',
             } as ZoneRR,
             {
                 name: 'www.example.com.',
                 ttl: 3600,
-                rrClass: 'IN',
+                zoneClass: 'IN',
                 rrType: 'A',
                 data: '192.0.2.1',
             } as ZoneRR,

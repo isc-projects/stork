@@ -15,7 +15,15 @@ import { NgIf } from '@angular/common'
     selector: 'app-daemon-tab',
     templateUrl: './daemon-tab.component.html',
     styleUrl: './daemon-tab.component.sass',
-    imports: [NgIf, Tooltip, Button, KeaDaemonComponent, Bind9DaemonComponent, PdnsDaemonComponent, EntityLinkComponent],
+    imports: [
+        NgIf,
+        Tooltip,
+        Button,
+        KeaDaemonComponent,
+        Bind9DaemonComponent,
+        PdnsDaemonComponent,
+        EntityLinkComponent,
+    ],
 })
 export class DaemonTabComponent {
     daemon = input<AnyDaemon>(null)

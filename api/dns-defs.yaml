@@ -51,7 +51,7 @@
   LocalZone:
     type: object
     properties:
-      class:
+      zoneClass:
         type: string
       daemonId:
         type: integer

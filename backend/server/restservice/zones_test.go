@@ -168,7 +168,7 @@ func TestGetZones(t *testing.T) {
 		require.Len(t, rspOK.Payload.Items, 25)
 		require.EqualValues(t, 25, rspOK.Payload.Total)
 		for _, zone := range rspOK.Payload.Items {
-			require.Equal(t, "CH", zone.LocalZones[0].Class)
+			require.Equal(t, "CH", zone.LocalZones[0].ZoneClass)
 		}
 	})
 
