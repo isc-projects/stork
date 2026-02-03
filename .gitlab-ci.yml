@@ -358,20 +358,12 @@ build_ui:
     paths:
       - webui/dist/stork/
 
-test_first_commit:
-  extends: .base_build_debian
-  stage: cache
-  rules:
-    - when: manual
-    - if: $CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"
-  script:
-    - echo $CI_COMMIT_BEFORE_SHA
-
 build_cache_amd64:
   extends: .base_build_debian
   stage: cache
   rules:
     - when: manual
+      allow_failure: true
     - changes:
         - webui/package.json
         - webui/package-lock.json
@@ -400,6 +392,13 @@ build_cache_arm64:
   stage: cache
   rules:
     - when: manual
+      allow_failure: true
+    - changes:
+        - webui/package.json
+        - webui/package-lock.json
+        - backend/go.mod
+        - backend/go.sum
+        - rakelib/**/*
   cache:
     - <<: *golang_arm64_cache
       policy: push
@@ -421,6 +420,11 @@ build_cache_amd64_alpine:
   stage: cache
   rules:
     - when: manual
+      allow_failure: true
+    - changes:
+        - backend/go.mod
+        - backend/go.sum
+        - rakelib/**/*
   cache:
     - <<: *golang_amd64_cache_alpine
       policy: push
@@ -435,6 +439,11 @@ build_cache_arm64_alpine:
   stage: cache
   rules:
     - when: manual
+      allow_failure: true
+    - changes:
+        - backend/go.mod
+        - backend/go.sum
+        - rakelib/**/*
   cache:
     - <<: *golang_arm64_cache_alpine
       policy: push
@@ -448,7 +457,10 @@ build_cache_amd64_redhat:
   extends: .base_build_ubi
   stage: cache
   rules:
-    -   when: manual
+    - when: manual
+      allow_failure: true
+    - changes:
+        - rakelib/**/*
   cache:
     -   <<: *python_amd64_cache_redhat
         policy: push
@@ -459,7 +471,10 @@ build_cache_arm64_redhat:
   extends: .base_build_ubi_arm
   stage: cache
   rules:
-    -   when: manual
+    - when: manual
+      allow_failure: true
+    - changes:
+        - rakelib/**/*
   cache:
     -   <<: *python_arm64_cache_redhat
         policy: push
