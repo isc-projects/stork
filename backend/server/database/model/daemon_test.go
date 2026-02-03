@@ -1608,63 +1608,37 @@ func TestGetAccessPoint(t *testing.T) {
 
 // Test that the daemon label is well-formatted.
 func TestGetLabel(t *testing.T) {
-	// Arrange
-	daemon := &Daemon{
-		ID: 42,
-		Machine: &Machine{
-			ID: 24,
-			State: MachineState{
-				Hostname: "foobar",
-			},
-		},
+	t.Parallel()
+	cases := []struct {
+		name     daemonname.Name
+		expected string
+	}{
+		{daemonname.DHCPv4, "DHCPv4@foobar"},
+		{daemonname.DHCPv6, "DHCPv6@foobar"},
+		{daemonname.Bind9, "BIND9@foobar"},
+		{daemonname.PDNS, "PowerDNS@foobar"},
+		{daemonname.CA, "CA@foobar"},
+		{daemonname.NetConf, "NetConf@foobar"},
+		{daemonname.D2, "DDNS@foobar"},
 	}
 
-	t.Run("dhcp4", func(t *testing.T) {
-		daemon.Name = daemonname.DHCPv4
+	for _, testcase := range cases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			t.Parallel()
+			// Arrange
+			daemon := &Daemon{
+				Name: testcase.name,
+				ID:   42,
+				Machine: &Machine{
+					ID: 24,
+					State: MachineState{
+						Hostname: "foobar",
+					},
+				},
+			}
 
-		// Act & Assert
-		require.Equal(t, "DHCPv4@foobar", daemon.GetLabel())
-	})
-
-	t.Run("dhcp6", func(t *testing.T) {
-		daemon.Name = daemonname.DHCPv6
-
-		// Act & Assert
-		require.Equal(t, "DHCPv6@foobar", daemon.GetLabel())
-	})
-
-	t.Run("BIND 9", func(t *testing.T) {
-		daemon.Name = daemonname.Bind9
-
-		// Act & Assert
-		require.Equal(t, "BIND9@foobar", daemon.GetLabel())
-	})
-
-	t.Run("pdns", func(t *testing.T) {
-		daemon.Name = daemonname.PDNS
-
-		// Act & Assert
-		require.Equal(t, "PowerDNS@foobar", daemon.GetLabel())
-	})
-
-	t.Run("ca", func(t *testing.T) {
-		daemon.Name = daemonname.CA
-
-		// Act & Assert
-		require.Equal(t, "CA@foobar", daemon.GetLabel())
-	})
-
-	t.Run("netconf", func(t *testing.T) {
-		daemon.Name = daemonname.NetConf
-
-		// Act & Assert
-		require.Equal(t, "NetConf@foobar", daemon.GetLabel())
-	})
-
-	t.Run("d2", func(t *testing.T) {
-		daemon.Name = daemonname.D2
-
-		// Act & Assert
-		require.Equal(t, "DDNS@foobar", daemon.GetLabel())
-	})
+			// Act & Assert
+			require.Equal(t, testcase.expected, daemon.GetLabel())
+		})
+	}
 }
