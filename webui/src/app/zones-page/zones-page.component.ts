@@ -64,6 +64,7 @@ import { ZoneTypeAliasPipe } from '../pipes/zone-type-alias.pipe'
 import { Toast } from 'primeng/toast'
 import { Checkbox } from 'primeng/checkbox'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -116,6 +117,7 @@ interface ExtendedLocalZone extends LocalZone {
         Toast,
         Checkbox,
         EntityLinkComponent,
+        DaemonNiceNamePipe,
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {
@@ -425,16 +427,16 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             this.zoneTypes.push(DNSZoneType[t])
         }
 
-        for (const c in DNSClass) {
-            if (DNSClass[c] === DNSClass.Any) {
+        for (const c of Object.values(DNSClass)) {
+            if (c === DNSClass.Any) {
                 continue
             }
 
-            this.zoneClasses.push(DNSClass[c])
+            this.zoneClasses.push(c)
         }
 
-        for (const n in DNSDaemonName) {
-            this.daemonNames.push({ name: daemonNameToFriendlyName(<any>n), value: DNSDaemonName[n] })
+        for (const n of Object.values(DNSDaemonName)) {
+            this.daemonNames.push({ name: daemonNameToFriendlyName(n), value: n })
         }
 
         this._restoreZonesTableRowsPerPage()

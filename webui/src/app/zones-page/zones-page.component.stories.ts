@@ -3,7 +3,7 @@ import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/an
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ActivatedRoute, convertToParamMap, provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
-import { LocalZone, Zone } from '../backend'
+import { Zone } from '../backend'
 import { expect, userEvent, waitFor, within } from '@storybook/test'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -71,35 +71,32 @@ export const EmptyList: Story = {
     },
 }
 
-const builtinZones = [
+const builtinZones: Zone[] = [
     {
         id: 20,
         localZones: [
             {
-                appId: 2,
-                appName: 'bind9@agent-bind9-2',
-                class: 'CH',
                 daemonId: 2,
+                daemonName: 'named',
+                _class: 'CH',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: '_bind',
                 zoneType: 'builtin',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'CH',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'CH',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'guest',
                 zoneType: 'builtin',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'CH',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'CH',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'trusted',
@@ -113,30 +110,27 @@ const builtinZones = [
         id: 21,
         localZones: [
             {
-                appId: 2,
-                appName: 'bind9@agent-bind9-2',
-                class: 'IN',
                 daemonId: 2,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: '_default',
                 zoneType: 'builtin',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'IN',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'guest',
                 zoneType: 'builtin',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'IN',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'trusted',
@@ -150,30 +144,27 @@ const builtinZones = [
         id: 22,
         localZones: [
             {
-                appId: 2,
-                appName: 'bind9@agent-bind9-2',
-                class: 'IN',
                 daemonId: 2,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: '_default',
                 zoneType: 'builtin',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'IN',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'guest',
                 zoneType: 'builtin',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'IN',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-22T18:31:41.000Z',
                 serial: 0,
                 view: 'trusted',
@@ -189,10 +180,9 @@ const rootZone = {
     id: 15,
     localZones: [
         {
-            appId: 2,
-            appName: 'bind9@agent-bind9-2',
-            class: 'IN',
             daemonId: 2,
+            daemonName: 'named',
+            _class: 'IN',
             loadedAt: '1970-01-01T00:00:00.000Z',
             serial: 0,
             view: '_default',
@@ -208,10 +198,9 @@ const primaryZones = [
         id: 1,
         localZones: [
             {
-                appId: 1,
-                appName: 'pdns@agent-pdns',
-                class: 'IN',
                 daemonId: 1,
+                daemonName: 'pdns@agent-pdns',
+                _class: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -225,10 +214,9 @@ const primaryZones = [
         id: 2,
         localZones: [
             {
-                appId: 1,
-                appName: 'pdns@agent-pdns',
-                class: 'IN',
                 daemonId: 1,
+                daemonName: 'pdns',
+                _class: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -242,10 +230,9 @@ const primaryZones = [
         id: 3,
         localZones: [
             {
-                appId: 1,
-                appName: 'pdns@agent-pdns',
-                class: 'IN',
                 daemonId: 1,
+                daemonName: 'pdns',
+                _class: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -259,10 +246,9 @@ const primaryZones = [
         id: 4,
         localZones: [
             {
-                appId: 1,
-                appName: 'pdns@agent-pdns',
-                class: 'IN',
                 daemonId: 1,
+                daemonName: 'pdns',
+                _class: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
                 view: 'localhost',
@@ -276,10 +262,9 @@ const primaryZones = [
         id: 5,
         localZones: [
             {
-                appId: 2,
-                appName: 'bind9@agent-bind9-2',
-                class: 'IN',
                 daemonId: 2,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-12-23T08:59:19.000Z',
                 rpz: true,
                 serial: 201702121,
@@ -287,10 +272,9 @@ const primaryZones = [
                 zoneType: 'secondary',
             },
             {
-                appId: 4,
-                appName: 'bind9@agent-bind9',
-                class: 'IN',
                 daemonId: 4,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-08-14T06:05:51.000Z',
                 rpz: true,
                 serial: 201702122,
@@ -305,10 +289,9 @@ const primaryZones = [
         id: 6,
         localZones: [
             {
-                appId: 2,
-                appName: 'bind9@agent-bind9-2',
-                class: 'IN',
                 daemonId: 2,
+                daemonName: 'named',
+                _class: 'IN',
                 loadedAt: '2025-08-14T06:05:51.000Z',
                 rpz: true,
                 serial: 201702121,
@@ -320,8 +303,6 @@ const primaryZones = [
         rname: 'local.rpz',
     },
 ]
-
-type TestLocalZone = LocalZone & { class: string }
 
 const allZones: Zone[] = [rootZone, ...builtinZones, ...primaryZones]
 
@@ -347,31 +328,28 @@ export const ListZones: Story = {
                     total: 3,
                     items: [
                         {
-                            appId: 1,
-                            appName: 'pdns@agent-pdns',
+                            daemonId: 1,
+                            daemonName: 'pdns',
                             builtinZonesCount: 0,
                             createdAt: '2025-12-22T17:22:46.009Z',
-                            daemonId: 1,
                             distinctZonesCount: 10,
                             status: 'ok',
                             zoneConfigsCount: 10,
                         },
                         {
-                            appId: 2,
-                            appName: 'bind9@agent-bind9-2',
+                            daemonId: 2,
+                            daemonName: 'named',
                             builtinZonesCount: 104,
                             createdAt: '2025-12-22T17:22:46.022Z',
-                            daemonId: 2,
                             distinctZonesCount: 109,
                             status: 'ok',
                             zoneConfigsCount: 109,
                         },
                         {
-                            appId: 4,
-                            appName: 'bind9@agent-bind9',
+                            daemonId: 4,
+                            daemonName: 'named',
                             builtinZonesCount: 104,
                             createdAt: '2025-12-22T17:22:46.040Z',
-                            daemonId: 5,
                             distinctZonesCount: 107,
                             status: 'ok',
                             zoneConfigsCount: 207,
@@ -542,25 +520,25 @@ export const ListZones: Story = {
                 },
             },
             {
-                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&appId=a',
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&daemonId=13',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) => {
-                        return z.localZones.some((lz) => lz.appId == req.searchParams?.appId)
+                        return z.localZones.some((lz) => lz.daemonId == req.searchParams?.daemonId)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
             },
             {
-                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&appId=a',
+                url: 'api/zones?start=s&limit=l&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13&daemonId=14',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) => {
-                        return z.localZones.some((lz) => lz.appId == req.searchParams?.appId)
+                        return z.localZones.some((lz) => lz.daemonId == req.searchParams?.daemonId)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -620,7 +598,7 @@ export const ListZones: Story = {
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) => {
-                        return z.localZones.some((lz: TestLocalZone) => lz.class == req.searchParams?.class)
+                        return z.localZones.some((lz) => lz._class == req.searchParams?.class)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -632,31 +610,31 @@ export const ListZones: Story = {
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) => {
-                        return z.localZones.some((lz: TestLocalZone) => lz.class == req.searchParams?.class)
+                        return z.localZones.some((lz) => lz._class == req.searchParams?.class)
                     })
                     return { items: filteredZones, total: filteredZones.length }
                 },
             },
             {
-                url: 'api/zones?start=s&limit=l&appType=a&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12',
+                url: 'api/zones?start=s&limit=l&daemonName=named&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) =>
-                        z.localZones.some((lz) => lz.appName.indexOf(req.searchParams?.appType) == 0)
+                        z.localZones.some((lz) => lz.daemonName.indexOf(req.searchParams?.daemonName) == 0)
                     )
                     return { items: filteredZones, total: filteredZones.length }
                 },
             },
             {
-                url: 'api/zones?start=s&limit=l&appType=a&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13',
+                url: 'api/zones?start=s&limit=l&daemonName=named&zoneType=1&zoneType=2&zoneType=3&zoneType=4&zoneType=5&zoneType=6&zoneType=7&zoneType=8&zoneType=9&zoneType=10&zoneType=11&zoneType=12&zoneType=13',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) =>
-                        z.localZones.some((lz) => lz.appName.indexOf(req.searchParams?.appType) == 0)
+                        z.localZones.some((lz) => lz.daemonName.indexOf(req.searchParams?.daemonName) == 0)
                     )
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -688,7 +666,7 @@ export const ListZones: Story = {
                 response: () => primaryZones[0],
             },
             {
-                url: 'api/zones?start=s&limit=l&appType=a&zoneType=t&class=c&text=t&serial=s&rpz=r',
+                url: 'api/zones?start=s&limit=l&daemonName=named&zoneType=t&class=c&text=t&serial=s&rpz=r',
                 method: 'GET',
                 status: 200,
                 response: (req) => {
@@ -700,12 +678,12 @@ export const ListZones: Story = {
                     }
                     const filteredZones = allZones.filter((z) =>
                         z.localZones.some(
-                            (lz: TestLocalZone) =>
+                            (lz) =>
                                 zoneTypes.includes(lz.zoneType) &&
                                 (!!lz.rpz).toString() == req.searchParams?.rpz &&
                                 lz.serial.toString().includes(req.searchParams?.serial) &&
-                                lz.class == req.searchParams?.class &&
-                                lz.appName.indexOf(req.searchParams?.appType) == 0
+                                lz._class == req.searchParams?.class &&
+                                lz.daemonName.indexOf(req.searchParams?.daemonName) == 0
                         )
                     )
                     const resp = {
@@ -748,7 +726,9 @@ export const TestAllZonesShown: Story = {
         const allCells = await canvas.findAllByRole('cell')
         const expandRootZoneRow = await within(allCells[0]).findByRole('button')
         await userEvent.click(expandRootZoneRow)
-        await expect(within(table).getByText(rootZone.localZones[0].appName)).toBeInTheDocument()
+        await expect(
+            within(table).getByText(`[${rootZone.localZones[0].daemonId}] ${rootZone.localZones[0].daemonName}`)
+        ).toBeInTheDocument()
         await expect(within(table).getByText(rootZone.localZones[0].view)).toBeInTheDocument()
         await userEvent.click(expandRootZoneRow)
 
@@ -776,7 +756,7 @@ export const TestZonesFiltering: Story = {
         const body = within(canvasElement.parentElement)
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         const table = await canvas.findByRole('table')
-        let elementID = canvas.getByText('App Type').getAttribute('for')
+        let elementID = canvas.getByText('Daemon Name').getAttribute('for')
         const comboboxes = canvas.getAllByRole('combobox') // PrimeNG p-select component has combobox role.
         let selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
@@ -785,7 +765,7 @@ export const TestZonesFiltering: Story = {
         // Filter only BIND9 zones.
         await userEvent.click(clearFiltersBtn)
         await userEvent.click(selectSpan)
-        const bindOption = await canvas.findByRole('option', { name: 'BIND9' })
+        const bindOption = await canvas.findByRole('option', { name: 'named' })
         await userEvent.click(bindOption)
 
         // Assert
@@ -807,7 +787,7 @@ export const TestZonesFiltering: Story = {
         // Filter only PowerDNS zones.
         await userEvent.click(clearFiltersBtn)
         await userEvent.click(selectSpan)
-        const pdnsOption = await canvas.findByRole('option', { name: 'PDNS' })
+        const pdnsOption = await canvas.findByRole('option', { name: 'pdns_server' })
         await userEvent.click(pdnsOption)
 
         // 4 PowerDNS zones are expected.
@@ -956,7 +936,7 @@ export const TestCorrectQueryParamFilters: Story = {
                         snapshot: {
                             paramMap: convertToParamMap({}),
                             queryParamMap: convertToParamMap({
-                                appType: 'bind9',
+                                daemonName: 'named',
                                 zoneType: 'primary',
                                 zoneClass: 'IN',
                                 rpz: 'only',

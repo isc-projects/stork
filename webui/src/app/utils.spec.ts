@@ -421,7 +421,6 @@ describe('utils', () => {
         expect(daemonNameToFriendlyName('netconf')).toBe('NETCONF')
         expect(daemonNameToFriendlyName('named')).toBe('named')
         expect(daemonNameToFriendlyName('pdns')).toBe('pdns_server')
-        expect(daemonNameToFriendlyName('Pdns')).toBe('pdns_server')
         expect(daemonNameToFriendlyName('unsupported')).toBe('Unsupported')
         expect(daemonNameToFriendlyName('')).toBe('')
         expect(daemonNameToFriendlyName(null)).toBeNull()
