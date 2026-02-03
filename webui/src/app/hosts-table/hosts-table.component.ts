@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
@@ -163,6 +163,16 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * This value comes from ManagedAccess directive which is called in the HTML template.
      */
     canCreateHosts = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on user privileges changes and triggering update of the splitButton model
+     * inside the filtering toolbar.
+     */
+    privilegesChangeEffect = effect(() => {
+        if (this.canStartMigration() || this.canCreateHosts()) {
+            this._updateToolbarButtons()
+        }
+    })
 
     /**
      * Returns all currently displayed host reservations.
