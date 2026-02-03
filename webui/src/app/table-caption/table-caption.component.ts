@@ -70,7 +70,7 @@ export class TableCaptionComponent implements OnInit {
     buttons = contentChild<TemplateRef<any> | undefined>('buttons', { descendants: false })
 
     /**
-     * Defines the template for the PrimeNG splitButton that should be displayed for narrower viewports instead of all buttons provided in `buttons` template.
+     * Defines the template for the PrimeNG splitButton that should be displayed for narrower viewports instead of all buttons provided in "buttons" template.
      */
     splitButton = contentChild<TemplateRef<any> | undefined>('splitbutton', { descendants: false })
 

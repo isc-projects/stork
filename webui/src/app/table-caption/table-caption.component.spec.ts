@@ -13,6 +13,8 @@ describe('TableCaptionComponent', () => {
 
         fixture = TestBed.createComponent(TableCaptionComponent)
         component = fixture.componentInstance
+        fixture.componentRef.setInput('tableElement', {})
+        fixture.componentRef.setInput('tableKey', 'key')
         fixture.detectChanges()
     })
 

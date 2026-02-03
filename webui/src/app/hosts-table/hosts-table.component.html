@@ -32,31 +32,6 @@
         </ng-template>
     </p-confirmDialog>
 </div>
-
-<div class="mb-2 flex gap-2 flex-wrap justify-content-end">
-    <p-button
-        label="Migrate to Database"
-        icon="pi pi-database"
-        [disabled]="!totalRecords || isFilteredByConflict() || !canStartMigration"
-        (onClick)="migrateToDatabaseAsk()"
-        appAccessEntity="migrations-hosts"
-        appAccessType="create"
-        (appHasAccess)="canStartMigration = $event"
-    ></p-button>
-
-    <p-button
-        label="New Host"
-        icon="pi pi-plus"
-        routerLink="/dhcp/hosts/new"
-        appAccessEntity="host-reservation"
-        appAccessType="create"
-    ></p-button>
-    <p-button
-        label="Refresh List"
-        icon="pi pi-refresh"
-        (onClick)="loadData(hostsTable.createLazyLoadMetadata())"
-    ></p-button>
-</div>
 <p-table
     id="hosts-table"
     #hostsTable
@@ -77,85 +52,57 @@
     class="full-w-table"
 >
     <ng-template #caption>
-        <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-            <ng-template #header>
-                <div class="flex align-items-center gap-2">
-                    <p-button
-                        [text]="true"
-                        [rounded]="true"
-                        severity="secondary"
-                        [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                        (click)="filtersPanel.toggle($event)"
-                    />
-                    <i class="pi pi-filter"></i>
-                    <span class="font-bold">Filters</span>
-                    <p-tag
-                        icon="pi pi-check"
-                        value="Filter applied"
-                        severity="success"
-                        *ngIf="tableHasFilter(hostsTable)"
-                    ></p-tag>
-                    <app-help-tip subject="filtering" id="filtering-help-button" width="40vw">
-                        <p>
-                            Hosts in the table below can be filtered by entering text in the search box; the table shows
-                            all hosts matching the filter text. The currently supported fields for filtering are:
-                        </p>
-                        <ul>
-                            <li>Identifier</li>
-                            <li>Identifier Type</li>
-                            <li>Address</li>
-                            <li>Hostname</li>
-                        </ul>
-                        <p>
-                            Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of
-                            the identifier (e.g. the initial three bytes of a MAC address that denotes OUI, a unique
-                            identifier of the vendor, effectively showing all devices produced by the same vendor); or
-                            identifier type (e.g. <b>hw-address</b> to show all reservations made by a MAC address).
-                        </p>
-                        <p>
-                            Hosts can be also filtered by a full or partial IP address. For example, all reservations in
-                            a 192.0.2.0/24 subnet can found by entering
-                            <b>192.0.2</b> as the filter text.
-                        </p>
-                        <p>
-                            The <b>Global</b> checkbox allows users to see global hosts (i.e. the hosts valid for all
-                            subnets), hosts associated with specific subnets, or all hosts. When the box is clicked
-                            once, the results show all DHCP identifiers set at the global level; when clicked a second
-                            time, it excludes the global hosts and shows only hosts that are associated with defined
-                            subnets.
-                        </p>
-                        <p>
-                            Hosts with inconsistent DHCP configurations can be filtered using the
-                            <b>Conflict</b> checkbox. When the box is clicked once, the filter returns all hosts whose
-                            configurations contain conflicts between the configuration file and host database. When
-                            clicked a second time, the results exclude any hosts with configuration conflicts.
-                        </p>
-                        <p>
-                            In addition, hosts can be filtered by an explicitly selected field using text input filters.
-                            The currently supported fields for explicit filtering are:
-                        </p>
-                        <ul>
-                            <li>Machine ID - the ID of the machine used by Stork.</li>
-                            <li>Daemon ID - the ID of the daemon used by Stork.</li>
-                            <li>Subnet ID - the subnet ID used by Stork.</li>
-                            <li>Kea Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
-                        </ul>
-                        <p>
-                            Hosts can be filtered by multiple fields. Currently, all provided filtering conditions are
-                            joined using a logical AND.
-                        </p>
-                    </app-help-tip>
-                </div>
+        <app-table-caption [tableElement]="hostsTable" tableKey="hosts-table" [wideHelpTip]="true">
+            <ng-template #helptip>
+                <p>
+                    Hosts in the table below can be filtered by entering text in the search box; the table shows all
+                    hosts matching the filter text. The currently supported fields for filtering are:
+                </p>
+                <ul>
+                    <li>Identifier</li>
+                    <li>Identifier Type</li>
+                    <li>Address</li>
+                    <li>Hostname</li>
+                </ul>
+                <p>
+                    Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of the
+                    identifier (e.g. the initial three bytes of a MAC address that denotes OUI, a unique identifier of
+                    the vendor, effectively showing all devices produced by the same vendor); or identifier type (e.g.
+                    <b>hw-address</b> to show all reservations made by a MAC address).
+                </p>
+                <p>
+                    Hosts can be also filtered by a full or partial IP address. For example, all reservations in a
+                    192.0.2.0/24 subnet can found by entering
+                    <b>192.0.2</b> as the filter text.
+                </p>
+                <p>
+                    The <b>Global</b> checkbox allows users to see global hosts (i.e. the hosts valid for all subnets),
+                    hosts associated with specific subnets, or all hosts. When the box is clicked once, the results show
+                    all DHCP identifiers set at the global level; when clicked a second time, it excludes the global
+                    hosts and shows only hosts that are associated with defined subnets.
+                </p>
+                <p>
+                    Hosts with inconsistent DHCP configurations can be filtered using the
+                    <b>Conflict</b> checkbox. When the box is clicked once, the filter returns all hosts whose
+                    configurations contain conflicts between the configuration file and host database. When clicked a
+                    second time, the results exclude any hosts with configuration conflicts.
+                </p>
+                <p>
+                    In addition, hosts can be filtered by an explicitly selected field using text input filters. The
+                    currently supported fields for explicit filtering are:
+                </p>
+                <ul>
+                    <li>Machine ID - the ID of the machine used by Stork.</li>
+                    <li>Daemon ID - the ID of the daemon used by Stork.</li>
+                    <li>Subnet ID - the subnet ID used by Stork.</li>
+                    <li>Kea Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
+                </ul>
+                <p>
+                    Hosts can be filtered by multiple fields. Currently, all provided filtering conditions are joined
+                    using a logical AND.
+                </p>
             </ng-template>
-            <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
-                <p-button
-                    label="Clear"
-                    [severity]="tableHasFilter(hostsTable) ? 'info' : 'secondary'"
-                    icon="pi pi-filter-slash"
-                    (click)="clearTableFiltering()"
-                    [disabled]="!tableHasFilter(hostsTable)"
-                ></p-button>
-                <div class="flex-auto"></div>
+            <ng-template #filters>
                 <p-columnFilter field="machineId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <div class="flex align-items-center">
@@ -339,8 +286,41 @@
                         </div>
                     </ng-template>
                 </p-columnFilter>
-            </div>
-        </p-panel>
+            </ng-template>
+            <ng-template #buttons>
+                <p-button
+                    label="Migrate to Database"
+                    icon="pi pi-database"
+                    [disabled]="!totalRecords || isFilteredByConflict() || !canStartMigration()"
+                    (onClick)="migrateToDatabaseAsk()"
+                    appAccessEntity="migrations-hosts"
+                    appAccessType="create"
+                    (appHasAccess)="canStartMigration.set($event)"
+                ></p-button>
+                <p-button
+                    label="New Host"
+                    icon="pi pi-plus"
+                    routerLink="/dhcp/hosts/new"
+                    appAccessEntity="host-reservation"
+                    appAccessType="create"
+                    (appHasAccess)="canCreateHosts.set($event)"
+                ></p-button>
+                <p-button
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(hostsTable.createLazyLoadMetadata())"
+                ></p-button>
+            </ng-template>
+            <ng-template #splitbutton>
+                <p-splitbutton
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(hostsTable.createLazyLoadMetadata())"
+                    [model]="toolbarButtons"
+                    size="small"
+                />
+            </ng-template>
+        </app-table-caption>
     </ng-template>
     <ng-template #header>
         <tr>

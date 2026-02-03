@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
-import { ConfirmationService, MessageService, PrimeTemplate, TableState } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService, PrimeTemplate, TableState } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { debounceTime, last, lastValueFrom, Subject, Subscription } from 'rxjs'
@@ -19,15 +19,15 @@ import { IconField } from 'primeng/iconfield'
 import { InputIcon } from 'primeng/inputicon'
 import { InputNumber } from 'primeng/inputnumber'
 import { InputText } from 'primeng/inputtext'
-import { Panel } from 'primeng/panel'
 import { Tag } from 'primeng/tag'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 import { Tooltip } from 'primeng/tooltip'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { SplitButton } from 'primeng/splitbutton'
 
 /**
  * This component implements a table of hosts reservations.
@@ -48,10 +48,8 @@ import { Tooltip } from 'primeng/tooltip'
         Button,
         RouterLink,
         TableModule,
-        Panel,
         NgIf,
         Tag,
-        HelpTipComponent,
         PrimeTemplate,
         FloatLabel,
         InputNumber,
@@ -65,6 +63,8 @@ import { Tooltip } from 'primeng/tooltip'
         HostDataSourceLabelComponent,
         Tooltip,
         PluralizePipe,
+        TableCaptionComponent,
+        SplitButton,
     ],
 })
 export class HostsTableComponent implements OnInit, OnDestroy {
@@ -156,7 +156,13 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * This flag states whether user has privileges to start the migration.
      * This value comes from ManagedAccess directive which is called in the HTML template.
      */
-    canStartMigration: boolean = false
+    canStartMigration = signal<boolean>(false)
+
+    /**
+     * This flag states whether user has privileges to create new host reservations.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canCreateHosts = signal<boolean>(false)
 
     /**
      * Returns all currently displayed host reservations.
@@ -222,6 +228,11 @@ export class HostsTableComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
+     */
+    toolbarButtons: MenuItem[] = []
+
+    /**
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
@@ -249,6 +260,8 @@ export class HostsTableComponent implements OnInit, OnDestroy {
                     this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
                 })
         )
+
+        this._updateToolbarButtons()
     }
 
     /**
@@ -258,7 +271,7 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * during the migration. User can confirm or abort the migration.
      */
     migrateToDatabaseAsk(): void {
-        if (!this.canStartMigration) {
+        if (!this.canStartMigration()) {
             return
         }
 
@@ -402,4 +415,27 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly HostSortField = HostSortField
+
+    /**
+     * Updates filtering toolbar splitButton menu items.
+     * Based on user privileges some menu items may be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons() {
+        const buttons: MenuItem[] = [
+            {
+                label: 'Migrate to Database',
+                command: () => this.migrateToDatabaseAsk(),
+                icon: 'pi pi-database',
+                disabled: !this.canStartMigration(),
+            },
+            {
+                label: 'New Host',
+                routerLink: '/dhcp/hosts/new',
+                icon: 'pi pi-plus',
+                disabled: !this.canCreateHosts(),
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
 }

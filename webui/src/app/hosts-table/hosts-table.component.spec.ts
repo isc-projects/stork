@@ -170,7 +170,7 @@ describe('HostsTableComponent', () => {
     it('should ask for confirmation before migrating hosts', fakeAsync(() => {
         startMigrationSpy.and.returnValue(of({}) as any)
 
-        component.canStartMigration = true
+        component.canStartMigration.set(true)
 
         component.table.filters = {
             machineId: { value: 5 },
