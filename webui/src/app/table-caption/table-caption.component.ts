@@ -1,4 +1,4 @@
-import { Component, contentChild, inject, input, TemplateRef } from '@angular/core'
+import { Component, computed, contentChild, effect, inject, input, OnInit, signal, TemplateRef } from '@angular/core'
 import { Toolbar } from 'primeng/toolbar'
 import { NgTemplateOutlet } from '@angular/common'
 import { Button } from 'primeng/button'
@@ -22,11 +22,21 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
     templateUrl: './table-caption.component.html',
     styleUrl: './table-caption.component.sass',
 })
-export class TableCaptionComponent {
+export class TableCaptionComponent implements OnInit {
     /**
      * Input PrimeNG table where this component is to be applied.
      */
-    tableElement = input<Table>()
+    tableElement = input.required<Table>()
+
+    /**
+     * A key string to uniquely identify the table.
+     */
+    tableKey = input.required<string>()
+
+    /**
+     * A key for keeping filtering toolbar shown/hidden state in browser's local storage.
+     */
+    storageKey = computed(() => this.tableKey() + '-filters-toolbar-shown')
 
     /**
      * Input flag controlling whether the Filtering Help box should have wider or standard width.
@@ -37,7 +47,12 @@ export class TableCaptionComponent {
     /**
      * Boolean flag controlling the filters toolbar shown/hidden state.
      */
-    filtersShown: boolean = true
+    filtersShown = signal<boolean>(true)
+
+    /**
+     * Effect signal storing the filters toolbar shown/hidden state in local storage of the web browser.
+     */
+    filtersShownEffect = effect(() => this.storeFiltersShown(this.filtersShown()))
 
     /**
      * Defines the template for the text that should be displayed inside the help-tip for the filtering.
@@ -66,6 +81,13 @@ export class TableCaptionComponent {
     private router = inject(Router)
 
     /**
+     * Initiates the component.
+     */
+    ngOnInit() {
+        this.filtersShown.set(this.getFiltersShownFromStorage())
+    }
+
+    /**
      * Reference to tableHasFilter function, so that it can be used in the HTML template.
      * @protected
      */
@@ -78,5 +100,26 @@ export class TableCaptionComponent {
     clearTableFiltering() {
         this.tableElement()?.clearFilterValues()
         this.router.navigate([])
+    }
+
+    /**
+     * Attempts to read shown/hidden state of the filtering toolbar from the browser's local storage.
+     */
+    getFiltersShownFromStorage(): boolean {
+        const storage = localStorage.getItem(this.storageKey())
+        if (!storage) {
+            return true
+        }
+
+        const state = JSON.parse(storage)
+        return state === true
+    }
+
+    /**
+     * Attempts to store shown/hidden state of the filtering toolbar in the browser's local storage.
+     * @param shown true if the toolbar is shown; false otherwise
+     */
+    storeFiltersShown(shown: boolean) {
+        localStorage.setItem(this.storageKey(), JSON.stringify(shown))
     }
 }

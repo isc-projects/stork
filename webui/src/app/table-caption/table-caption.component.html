@@ -1,5 +1,5 @@
 <div class="flex flex-wrap-reverse gap-2 row-gap-3 mb-2 align-items-center">
-    <p-toolbar styleClass="flex flex-wrap gap-2 row-gap-3 justify-content-start" [hidden]="!filtersShown">
+    <p-toolbar styleClass="flex flex-wrap gap-2 row-gap-3 justify-content-start" [hidden]="!filtersShown()">
         <app-help-tip subject="Filtering" id="filtering-help-button" [width]="wideHelpTip() ? '40vw' : '20vw'">
             @if (filteringHelpTip()) {
                 <ng-container *ngTemplateOutlet="filteringHelpTip()"></ng-container>
