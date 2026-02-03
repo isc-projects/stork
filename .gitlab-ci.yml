@@ -48,6 +48,7 @@ default:
 
 # stages order
 stages:
+  - cache
   - build
   - checks
   - hooks
@@ -359,6 +360,7 @@ build_ui:
 
 build_cache_amd64:
   extends: .base_build_debian
+  stage: cache
   rules:
     - when: manual
   cache:
@@ -380,6 +382,7 @@ build_cache_amd64:
 
 build_cache_arm64:
   extends: .base_build_debian
+  stage: cache
   rules:
     - when: manual
   cache:
@@ -400,6 +403,7 @@ build_cache_arm64:
 
 build_cache_amd64_alpine:
   extends: .base_build_alpine
+  stage: cache
   rules:
     - when: manual
   cache:
@@ -413,6 +417,7 @@ build_cache_amd64_alpine:
 
 build_cache_arm64_alpine:
   extends: .base_build_alpine_arm
+  stage: cache
   rules:
     - when: manual
   cache:
@@ -426,6 +431,7 @@ build_cache_arm64_alpine:
 
 build_cache_amd64_redhat:
   extends: .base_build_ubi
+  stage: cache
   rules:
     -   when: manual
   cache:
@@ -436,6 +442,7 @@ build_cache_amd64_redhat:
 
 build_cache_arm64_redhat:
   extends: .base_build_ubi_arm
+  stage: cache
   rules:
     -   when: manual
   cache:
