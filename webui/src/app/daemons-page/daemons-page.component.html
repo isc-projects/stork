@@ -21,25 +21,6 @@
     [entityTitleProvider]="tabTitleProvider"
 >
     <ng-template #firstTab>
-        <div class="my-2 flex gap-2 flex-wrap justify-content-end">
-            <p-button
-                id="daemons-refresh-button"
-                label="Refresh"
-                icon="pi pi-refresh"
-                (click)="refreshDaemonsList()"
-                class="flex-none"
-            ></p-button>
-            <p-button
-                id="sync-kea-configs-button"
-                label="Resynchronize Kea Configs"
-                icon="pi pi-file-import"
-                class="flex-none"
-                severity="warn"
-                (click)="onSyncKeaConfigs()"
-                appAccessEntity="kea-config-hashes"
-                appAccessType="delete"
-            ></p-button>
-        </div>
         <p-menu #daemonMenu [popup]="true" [model]="daemonMenuItems"></p-menu>
         <p-table
             #table
@@ -60,52 +41,25 @@
             class="full-w-table"
         >
             <ng-template #caption>
-                <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-                    <ng-template #header>
-                        <div class="flex align-items-center gap-2">
-                            <p-button
-                                [text]="true"
-                                [rounded]="true"
-                                severity="secondary"
-                                [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                                (click)="filtersPanel.toggle($event)"
-                            />
-                            <i class="pi pi-filter"></i>
-                            <span class="font-bold">Filters</span>
-                            <p-tag
-                                icon="pi pi-check"
-                                value="Filter applied"
-                                severity="success"
-                                *ngIf="tableHasFilter(table)"
-                            ></p-tag>
-                            <app-help-tip subject="Filtering" id="filtering-help-button">
-                                <p>
-                                    Daemons in the table below can be filtered by entering text in the search box; the
-                                    table shows all daemons matching the filter text. The currently supported fields for
-                                    filtering are:
-                                </p>
-                                <ul>
-                                    <li>Daemon Name</li>
-                                    <li>Daemon Version</li>
-                                    <li>Machine Address</li>
-                                    <li>Machine Hostname</li>
-                                </ul>
-                                <p>
-                                    Daemons can also be filtered by an explicitly selected Daemon Name, using the
-                                    multiselect filter.
-                                </p>
-                            </app-help-tip>
-                        </div>
+                <app-table-caption [tableElement]="table" tableKey="daemons-table">
+                    <ng-template #helptip>
+                        <p>
+                            Daemons in the table below can be filtered by entering text in the search box; the table
+                            shows all daemons matching the filter text. The currently supported fields for filtering
+                            are:
+                        </p>
+                        <ul>
+                            <li>Daemon Name</li>
+                            <li>Daemon Version</li>
+                            <li>Machine Address</li>
+                            <li>Machine Hostname</li>
+                        </ul>
+                        <p>
+                            Daemons can also be filtered by an explicitly selected Daemon Name, using the multiselect
+                            filter.
+                        </p>
                     </ng-template>
-                    <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
-                        <p-button
-                            label="Clear"
-                            [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
-                            icon="pi pi-filter-slash"
-                            (click)="clearTableFiltering()"
-                            [disabled]="!tableHasFilter(table)"
-                        ></p-button>
-                        <div class="flex-auto"></div>
+                    <ng-template #filters>
                         <p-columnFilter field="daemons" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
@@ -166,8 +120,37 @@
                                 </div>
                             </ng-template>
                         </p-columnFilter>
-                    </div>
-                </p-panel>
+                    </ng-template>
+                    <ng-template #buttons>
+                        <p-button
+                            id="sync-kea-configs-button"
+                            label="Resynchronize Kea Configs"
+                            icon="pi pi-file-import"
+                            class="flex-none"
+                            severity="warn"
+                            (click)="onSyncKeaConfigs()"
+                            appAccessEntity="kea-config-hashes"
+                            appAccessType="delete"
+                            (appHasAccess)="canResyncConfig.set($event)"
+                        ></p-button>
+                        <p-button
+                            id="daemons-refresh-button"
+                            label="Refresh List"
+                            icon="pi pi-refresh"
+                            (click)="refreshDaemonsList()"
+                            class="flex-none"
+                        ></p-button>
+                    </ng-template>
+                    <ng-template #splitbutton>
+                        <p-splitbutton
+                            label="Refresh List"
+                            icon="pi pi-refresh"
+                            (onClick)="refreshDaemonsList()"
+                            [model]="toolbarButtons"
+                            size="small"
+                        />
+                    </ng-template>
+                </app-table-caption>
             </ng-template>
             <ng-template #header>
                 <tr>

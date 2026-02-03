@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, viewChild, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
@@ -21,10 +21,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Panel } from 'primeng/panel'
 import { NgIf } from '@angular/common'
-import { Tag } from 'primeng/tag'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { FloatLabel } from 'primeng/floatlabel'
 import { MultiSelect } from 'primeng/multiselect'
 import { FormsModule } from '@angular/forms'
@@ -35,6 +32,8 @@ import { VersionStatusComponent } from '../version-status/version-status.compone
 import { DaemonTabComponent } from '../daemon-tab/daemon-tab.component'
 import { Tooltip } from 'primeng/tooltip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { SplitButton } from 'primeng/splitbutton'
 
 /**
  * Sets boolean flag indicating if there are communication errors with
@@ -58,10 +57,7 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         ManagedAccessDirective,
         Menu,
         TableModule,
-        Panel,
         NgIf,
-        Tag,
-        HelpTipComponent,
         PrimeTemplate,
         FloatLabel,
         MultiSelect,
@@ -73,6 +69,8 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         Tooltip,
         EntityLinkComponent,
         DaemonTabComponent,
+        TableCaptionComponent,
+        SplitButton,
     ],
 })
 export class DaemonsPageComponent implements OnInit, OnDestroy {
@@ -155,6 +153,44 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
         this.router.navigate([])
     }
 
+    /**
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
+     */
+    toolbarButtons: MenuItem[] = []
+
+    /**
+     * This flag states whether user has privileges to re-synchronize Kea configs.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canResyncConfig = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on user privileges changes and triggering update of the splitButton model
+     * inside the filtering toolbar.
+     */
+    privilegesChangeEffect = effect(() => {
+        if (this.canResyncConfig()) {
+            this._updateToolbarButtons()
+        }
+    })
+
+    /**
+     * Updates filtering toolbar splitButton menu items.
+     * Based on user privileges some menu items may be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons() {
+        const buttons: MenuItem[] = [
+            {
+                label: 'Resynchronize Kea Configs',
+                icon: 'pi pi-file-import',
+                command: () => this.onSyncKeaConfigs(),
+                disabled: !this.canResyncConfig(),
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
+
     ngOnInit() {
         this.breadcrumbs = [{ label: 'Services' }, { label: 'Daemons' }]
 
@@ -186,6 +222,8 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
                 f.filterConstraint.value = f.value
                 this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.daemonsTable) })
             })
+
+        this._updateToolbarButtons()
     }
 
     ngOnDestroy() {
