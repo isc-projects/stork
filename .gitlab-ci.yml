@@ -67,6 +67,7 @@ stages:
 .nodejs_cache: &nodejs_cache
   paths:
     - tools/nodejs
+    - tools/openapi-generator-cli.jar
   policy: pull
 
 .golang_amd64_cache: &golang_amd64_cache
@@ -107,6 +108,14 @@ stages:
 
 .python_arm64_cache_alpine: &python_arm64_cache_alpine
   key: python_arm64_alpine
+  <<: *python_cache
+
+.python_amd64_cache_redhat: &python_amd64_cache_redhat
+  key: python_amd64_redhat
+  <<: *python_cache
+
+.python_arm64_cache_redhat: &python_arm64_cache_redhat
+  key: python_arm64_redhat
   <<: *python_cache
 
 .ruby_cache: &ruby_cache
@@ -337,6 +346,7 @@ build_ui:
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
+    - *python_amd64_cache
   script:
     - rake build:ui
   artifacts:
@@ -408,6 +418,26 @@ build_cache_arm64_alpine:
   script:
     - rake prepare:dist
     - rake prepare:deps
+
+build_cache_amd64_redhat:
+  extends: .base_build_ubi
+  rules:
+    -   when: manual
+  cache:
+    -   <<: *python_amd64_cache_redhat
+        policy: push
+  script:
+    - rake prepare:sphinx_deps
+
+build_cache_arm64_redhat:
+  extends: .base_build_ubi_arm
+  rules:
+    -   when: manual
+  cache:
+    -   <<: *python_arm64_cache_redhat
+        policy: push
+  script:
+    - rake prepare:sphinx_deps
 
 build_doc:
   extends: .base_build_debian
@@ -572,7 +602,7 @@ build_rpms_amd64:
   stage: build
   cache:
     - *golang_amd64_cache
-    - *python_amd64_cache
+    - *python_amd64_cache_redhat
     - *nodejs_amd64_cache
   needs:
     # Use the binaries compiled by the legacy image.
@@ -591,7 +621,7 @@ build_rpms_arm64:
   stage: build
   cache:
     - *golang_arm64_cache
-    - *python_arm64_cache
+    - *python_arm64_cache_redhat
     - *nodejs_arm64_cache
   needs:
     # Use the binaries compiled by the legacy image.
@@ -950,6 +980,8 @@ unittest_hooks:
   stage: hooks
   when: always
   needs: []
+  cache:
+    - *golang_amd64_cache
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -979,6 +1011,9 @@ build_hooks_debs_amd64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_amd64
+  cache:
+    - *golang_amd64_cache
+    - *python_amd64_cache
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
@@ -997,6 +1032,9 @@ build_hooks_debs_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
+  cache:
+    - *golang_arm64_cache
+    - *python_arm64_cache
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
@@ -1015,6 +1053,9 @@ build_hooks_rpms_amd64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_amd64
+  cache:
+    - *golang_amd64_cache
+    - *python_amd64_cache_redhat
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./
@@ -1033,6 +1074,9 @@ build_hooks_rpms_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
+  cache:
+    - *golang_arm64_cache
+    - *python_arm64_cache_redhat
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./

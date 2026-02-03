@@ -380,7 +380,7 @@ NODE_MODULES = "webui/node_modules"
 file NODE_MODULES => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/package-lock.json"] do
     ci_opts = []
     if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--cache", File.expand_path(NODE_CACHE)]
+        ci_opts += ["--no-audit", "--no-progress", "--cache", File.expand_path(NODE_CACHE), "--verbose"]
     end
 
     Dir.chdir("webui") do
@@ -507,6 +507,9 @@ namespace :prepare do
 
     desc 'Prepare files needed for documentation building'
     task :doc => [hook_doc_directory, hook_man_directory]
+
+    desc 'Prepare Sphinx dependencies needed for documentation building'
+    task :sphinx_deps => [SPHINX_BUILD]
 end
 
 namespace :check do
