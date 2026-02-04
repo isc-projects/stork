@@ -583,7 +583,7 @@ const meta: Meta<MachinesPageComponent> = {
             items: mockedAllMachines,
             total: mockedAllMachines.length,
         }
-        localStorage.clear()
+        localStorage.removeItem('machines-table-filters-toolbar-shown')
     },
 }
 
