@@ -9,7 +9,7 @@
         "lint": "ng lint",
         "storybook": "npm run storybook dev -p 6006",
         "build-storybook": "npm run storybook build",
-        "test-storybook": "test-storybook --url http://localhost:6006"
+        "test-storybook": "test-storybook --url http://localhost:6006 --skipTags=\"no-test-in-ci\""
     },
     "private": true,
     "dependencies": {
