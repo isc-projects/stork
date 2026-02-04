@@ -28,6 +28,7 @@ import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-check
 import { Tooltip } from 'primeng/tooltip'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
+import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
 
 /**
  * This component implements a table of hosts reservations.
@@ -65,6 +66,7 @@ import { SplitButton } from 'primeng/splitbutton'
         PluralizePipe,
         TableCaptionComponent,
         SplitButton,
+        DaemonFilterComponent,
     ],
 })
 export class HostsTableComponent implements OnInit, OnDestroy {
