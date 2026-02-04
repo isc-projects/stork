@@ -8,13 +8,11 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { ActivatedRoute, provideRouter, Router, RouterModule } from '@angular/router'
+import { provideRouter, Router } from '@angular/router'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
     let fixture: ComponentFixture<EventsPageComponent>
-    let route: ActivatedRoute
     let router: Router
 
     beforeEach(waitForAsync(() => {
@@ -34,7 +32,6 @@ describe('EventsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(EventsPageComponent)
         router = fixture.debugElement.injector.get(Router)
-        route = fixture.debugElement.injector.get(ActivatedRoute)
         component = fixture.componentInstance
         fixture.detectChanges()
     })
