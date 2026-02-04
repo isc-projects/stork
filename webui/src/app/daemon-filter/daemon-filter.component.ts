@@ -211,7 +211,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @param d daemon
      * @private
      */
-    private constructDaemonLabel(d: SimpleDaemon) : string {
+    private constructDaemonLabel(d: SimpleDaemon): string {
         // TODO: This could be user defined label, once backend supports it.
         // if (d.machine?.label) {
         //     return `${d.name}@${d.machine.label}`
