@@ -34,6 +34,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
+import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
 
 @Component({
     selector: 'app-subnets-table',
@@ -64,6 +65,7 @@ import { SplitButton } from 'primeng/splitbutton'
         EntityLinkComponent,
         TableCaptionComponent,
         SplitButton,
+        DaemonFilterComponent,
     ],
 })
 export class SubnetsTableComponent implements OnInit, OnDestroy {
