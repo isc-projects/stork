@@ -49,7 +49,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
         localSharedNetworks: [
             {
                 daemonId: 1,
-                daemonLabel: 'dhcp4@agent1',
+                daemonLabel: 'DHCPv4@agent1',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'random',
@@ -74,7 +74,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
             },
             {
                 daemonId: 2,
-                daemonLabel: 'dhcp4@agent2',
+                daemonLabel: 'DHCPv4@agent2',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'iterative',
@@ -140,7 +140,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
         localSharedNetworks: [
             {
                 daemonId: 4,
-                daemonLabel: 'dhcp4@agent4',
+                daemonLabel: 'DHCPv4@agent4',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'random',
@@ -165,7 +165,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
             },
             {
                 daemonId: 5,
-                daemonLabel: 'dhcp4@agent5',
+                daemonLabel: 'DHCPv4@agent5',
                 keaConfigSharedNetworkParameters: {
                     sharedNetworkLevelParameters: {
                         allocator: 'random',

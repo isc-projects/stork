@@ -2,16 +2,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedNetworkFormComponent } from './shared-network-form.component'
 import { MessageService } from 'primeng/api'
-import { of, throwError } from 'rxjs'
-import { DHCPService } from '../backend'
+import { Observable, of, throwError } from 'rxjs'
+import { DHCPService, UpdateSharedNetworkBeginResponse } from '../backend'
 import { IPType } from '../iptype'
 import { FormGroup, UntypedFormArray } from '@angular/forms'
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
 import { By } from '@angular/platform-browser'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
 import { provideRouter } from '@angular/router'
+
+/**
+ * Wraps response in HttpEvent type.
+ */
+function wrapInHttpResponse<T>(body: T): Observable<HttpEvent<T>> {
+    return of(body as any)
+}
 
 describe('SharedNetworkFormComponent', () => {
     let component: SharedNetworkFormComponent
@@ -19,7 +26,7 @@ describe('SharedNetworkFormComponent', () => {
     let dhcpApi: DHCPService
     let messageService: MessageService
 
-    let cannedResponseBeginSharedNetwork4: any = {
+    let cannedResponseBeginSharedNetwork4: UpdateSharedNetworkBeginResponse = {
         id: 123,
         sharedNetwork: {
             id: 123,
@@ -28,7 +35,7 @@ describe('SharedNetworkFormComponent', () => {
             localSharedNetworks: [
                 {
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@myhost.example.org',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'random',
@@ -53,7 +60,7 @@ describe('SharedNetworkFormComponent', () => {
                 },
                 {
                     daemonId: 2,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@yourhost.example.org',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'iterative',
@@ -87,12 +94,12 @@ describe('SharedNetworkFormComponent', () => {
                         {
                             id: 123,
                             daemonId: 1,
-                            daemonName: 'dhcp4',
+                            daemonLabel: 'DHCPv4@myhost.example.org',
                         },
                         {
                             id: 234,
                             daemonId: 2,
-                            daemonName: 'dhcp4',
+                            daemonLabel: 'DHCPv4@yourhost.example.org',
                         },
                     ],
                 },
@@ -102,26 +109,32 @@ describe('SharedNetworkFormComponent', () => {
             {
                 id: 1,
                 name: 'dhcp4',
+                label: 'DHCPv4@myhost.example.org',
             },
             {
                 id: 3,
                 name: 'dhcp6',
+                label: 'DHCPv6@myhost.example.org',
             },
             {
                 id: 2,
                 name: 'dhcp4',
+                label: 'DHCPv4@yourhost.example.org',
             },
             {
                 id: 4,
                 name: 'dhcp6',
+                label: 'DHCPv6@yourhost.example.com',
             },
             {
                 id: 5,
                 name: 'dhcp6',
+                label: 'DHCPv6@theirhost.example.com',
             },
             {
                 id: 6,
                 name: 'dhcp4',
+                label: 'DHCPv4@theirhost.example.com',
             },
         ],
         sharedNetworks4: ['floor1', 'floor2', 'floor3', 'stanza'],
@@ -129,7 +142,7 @@ describe('SharedNetworkFormComponent', () => {
         clientClasses: ['foo', 'bar'],
     }
 
-    let cannedResponseBeginSharedNetwork6: any = {
+    let cannedResponseBeginSharedNetwork6: UpdateSharedNetworkBeginResponse = {
         id: 234,
         sharedNetwork: {
             id: 234,
@@ -138,7 +151,7 @@ describe('SharedNetworkFormComponent', () => {
             localSharedNetworks: [
                 {
                     daemonId: 4,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@yourhost.example.org',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'random',
@@ -163,7 +176,7 @@ describe('SharedNetworkFormComponent', () => {
                 },
                 {
                     daemonId: 5,
-                    daemonName: 'dhcp6',
+                    daemonLabel: 'DHCPv6@theirhost.example.com',
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'random',
@@ -193,37 +206,32 @@ describe('SharedNetworkFormComponent', () => {
             {
                 id: 1,
                 name: 'dhcp4',
-                app: {
-                    name: 'first',
-                },
+                label: 'DHCPv4@myhost.example.org',
             },
             {
                 id: 3,
                 name: 'dhcp6',
-                app: {
-                    name: 'first',
-                },
+                label: 'DHCPv6@myhost.example.org',
             },
             {
                 id: 2,
                 name: 'dhcp4',
-                app: {
-                    name: 'second',
-                },
+                label: 'DHCPv4@yourhost.example.org',
             },
             {
                 id: 4,
                 name: 'dhcp6',
-                app: {
-                    name: 'second',
-                },
+                label: 'DHCPv6@yourhost.example.com',
             },
             {
                 id: 5,
                 name: 'dhcp6',
-                app: {
-                    name: 'third',
-                },
+                label: 'DHCPv6@theirhost.example.com',
+            },
+            {
+                id: 6,
+                name: 'dhcp4',
+                label: 'DHCPv4@theirhost.example.com',
             },
         ],
         sharedNetworks4: [],
@@ -254,7 +262,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should open a form for creating an IPv4 shared network', async () => {
-        spyOn(dhcpApi, 'createSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
+        spyOn(dhcpApi, 'createSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
+        )
         component.ngOnInit()
         await fixture.whenStable()
         fixture.detectChanges()
@@ -318,7 +328,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should open a form for creating an IPv6 shared network', async () => {
-        spyOn(dhcpApi, 'createSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
+        spyOn(dhcpApi, 'createSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork6)
+        )
         component.ngOnInit()
         await fixture.whenStable()
         fixture.detectChanges()
@@ -382,7 +394,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should open a form for updating IPv4 shared network', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
+        )
         component.sharedNetworkId = 123
         component.ngOnInit()
         await fixture.whenStable()
@@ -491,7 +505,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should open a form for updating IPv6 shared network', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork6)
+        )
         component.sharedNetworkId = 234
         component.ngOnInit()
         await fixture.whenStable()
@@ -580,7 +596,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should initialize the form controls for an IPv4 shared network', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
+        )
         component.sharedNetworkId = 123
         component.ngOnInit()
         await fixture.whenStable()
@@ -613,7 +631,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should initialize the form controls for an IPv6 subnet', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork6)
+        )
         component.sharedNetworkId = 234
         component.ngOnInit()
         await fixture.whenStable()
@@ -653,7 +673,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should remove the form for the unselected server', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
+        )
         component.sharedNetworkId = 123
         component.ngOnInit()
         await fixture.whenStable()
@@ -677,11 +699,13 @@ describe('SharedNetworkFormComponent', () => {
         expect(parameters.get('allocator.values.0')?.value).toBe('iterative')
 
         expect(component.state.servers.length).toBe(1)
-        expect(component.state.servers[0]).toBe('[2] DHCPv4')
+        expect(component.state.servers[0]).toBe('DHCPv4@yourhost.example.org')
     })
 
     it('should create the form for the selected server', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork6)
+        )
         component.sharedNetworkId = 234
         component.ngOnInit()
         await fixture.whenStable()
@@ -709,7 +733,9 @@ describe('SharedNetworkFormComponent', () => {
     })
 
     it('should revert the changes in the form', async () => {
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
+        )
         component.sharedNetworkId = 123
         component.ngOnInit()
         await fixture.whenStable()
@@ -751,7 +777,7 @@ describe('SharedNetworkFormComponent', () => {
     it('should present an error message when begin transaction fails', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValues(
             throwError(() => new Error('status: 404')),
-            of(cannedResponseBeginSharedNetwork4)
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
         )
         spyOn(messageService, 'add')
         component.sharedNetworkId = 123

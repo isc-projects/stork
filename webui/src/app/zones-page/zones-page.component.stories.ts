@@ -3,7 +3,7 @@ import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/an
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ActivatedRoute, convertToParamMap, provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
-import { Zone } from '../backend'
+import { Daemon, LocalZone, Zone } from '../backend'
 import { expect, userEvent, waitFor, within } from '@storybook/test'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -199,7 +199,7 @@ const primaryZones: Zone[] = [
         localZones: [
             {
                 daemonId: 1,
-                daemonLabel: 'pdns@agent-pdns',
+                daemonLabel: 'pdns_server@agent-pdns',
                 zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
@@ -215,7 +215,7 @@ const primaryZones: Zone[] = [
         localZones: [
             {
                 daemonId: 1,
-                daemonLabel: 'pdns@agent-pdns',
+                daemonLabel: 'pdns_server@agent-pdns',
                 zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
@@ -231,7 +231,7 @@ const primaryZones: Zone[] = [
         localZones: [
             {
                 daemonId: 1,
-                daemonLabel: 'pdns@agent-pdns',
+                daemonLabel: 'pdns_server@agent-pdns',
                 zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
@@ -247,7 +247,7 @@ const primaryZones: Zone[] = [
         localZones: [
             {
                 daemonId: 1,
-                daemonLabel: 'pdns@agent-pdns',
+                daemonLabel: 'pdns_server@agent-pdns',
                 zoneClass: 'IN',
                 loadedAt: '2025-12-22T17:59:38.000Z',
                 serial: 2024031501,
@@ -315,6 +315,34 @@ const filterByZoneType = (url: string) => {
     }
 
     return allZones.filter((z) => z.localZones.some((lz) => zoneTypes.includes(lz.zoneType)))
+}
+
+/**
+ * Returns a function that compares the daemon label and daemon name for
+ * filtering.
+ * It is not intended to be used in the actual application code.
+ */
+function matchDaemonLabel(daemonName: Daemon.NameEnum): (lz: LocalZone) => boolean {
+    return (lz: LocalZone) => {
+        switch (daemonName) {
+            case Daemon.NameEnum.Ca:
+                return lz.daemonLabel.startsWith('CA@')
+            case Daemon.NameEnum.D2:
+                return lz.daemonLabel.startsWith('DDNS@')
+            case Daemon.NameEnum.Dhcp4:
+                return lz.daemonLabel.startsWith('DHCPv4@')
+            case Daemon.NameEnum.Dhcp6:
+                return lz.daemonLabel.startsWith('DHCPv6@')
+            case Daemon.NameEnum.Pdns:
+                return lz.daemonLabel.startsWith('pdns_server@')
+            case Daemon.NameEnum.Named:
+                return lz.daemonLabel.startsWith('named@')
+            case Daemon.NameEnum.Netconf:
+                return lz.daemonLabel.startsWith('NetConf@')
+            default:
+                return lz.daemonLabel.startsWith(daemonName + '@')
+        }
+    }
 }
 
 export const ListZones: Story = {
@@ -622,7 +650,7 @@ export const ListZones: Story = {
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) =>
-                        z.localZones.some((lz) => lz.daemonLabel.startsWith(req.searchParams?.daemonName))
+                        z.localZones.some(matchDaemonLabel(req.searchParams?.daemonName))
                     )
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -634,7 +662,7 @@ export const ListZones: Story = {
                 response: (req) => {
                     let filteredZones = filterByZoneType(req.url)
                     filteredZones = filteredZones.filter((z) =>
-                        z.localZones.some((lz) => lz.daemonLabel.startsWith(req.searchParams?.daemonName))
+                        z.localZones.some(matchDaemonLabel(req.searchParams?.daemonName))
                     )
                     return { items: filteredZones, total: filteredZones.length }
                 },
@@ -677,14 +705,15 @@ export const ListZones: Story = {
                         zoneTypes.push('master')
                     }
                     const filteredZones = allZones.filter((z) =>
-                        z.localZones.some(
-                            (lz) =>
-                                zoneTypes.includes(lz.zoneType) &&
-                                (!!lz.rpz).toString() == req.searchParams?.rpz &&
-                                lz.serial.toString().includes(req.searchParams?.serial) &&
-                                lz.zoneClass == req.searchParams?.class &&
-                                lz.daemonLabel.startsWith(req.searchParams?.daemonName)
-                        )
+                        z.localZones
+                            .filter(matchDaemonLabel(req.searchParams?.daemonName))
+                            .some(
+                                (lz) =>
+                                    zoneTypes.includes(lz.zoneType) &&
+                                    (!!lz.rpz).toString() == req.searchParams?.rpz &&
+                                    lz.serial.toString().includes(req.searchParams?.serial) &&
+                                    lz.zoneClass == req.searchParams?.class
+                            )
                     )
                     const resp = {
                         items: filteredZones,

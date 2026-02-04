@@ -2,14 +2,21 @@ import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core
 
 import { SubnetFormComponent } from './subnet-form.component'
 import { FormArray, FormGroup, UntypedFormArray } from '@angular/forms'
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
-import { of, throwError } from 'rxjs'
-import { DHCPService } from '../backend'
+import { Observable, of, throwError } from 'rxjs'
+import { DHCPService, UpdateSubnetBeginResponse } from '../backend'
 import { AddressPoolForm, KeaSubnetParametersForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
 import { By } from '@angular/platform-browser'
 import { provideRouter } from '@angular/router'
+
+/**
+ * Wraps response in HttpEvent type.
+ */
+function wrapInHttpResponse<T>(body: T): Observable<HttpEvent<T>> {
+    return of(body as any)
+}
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -18,7 +25,7 @@ describe('SubnetFormComponent', () => {
     let messageService: MessageService
 
     // TODO: This structure doesn't implement CreateSubnetBeginResponse.
-    let cannedResponseBeginSubnet4: any = {
+    let cannedResponseBeginSubnet4: UpdateSubnetBeginResponse = {
         id: 123,
         subnet: {
             id: 123,
@@ -29,9 +36,7 @@ describe('SubnetFormComponent', () => {
                 {
                     id: 123,
                     daemonId: 1,
-                    daemonName: 'dhcp4',
-                    machineAddress: '10.1.1.1.',
-                    machineHostname: 'myhost.example.org',
+                    daemonLabel: 'DHCPv4@myhost.example.org',
                     pools: [
                         {
                             pool: '192.0.2.10-192.0.2.100',
@@ -77,9 +82,7 @@ describe('SubnetFormComponent', () => {
                 {
                     id: 123,
                     daemonId: 2,
-                    daemonName: 'dhcp4',
-                    machineAddress: '10.1.1.1.',
-                    machineHostname: 'myhost.example.org',
+                    daemonLabel: 'DHCPv4@remotehost.example.org',
                     pools: [
                         {
                             pool: '192.0.2.10-192.0.2.100',
@@ -126,24 +129,29 @@ describe('SubnetFormComponent', () => {
             {
                 id: 1,
                 name: 'dhcp4',
+                label: 'DHCPv4@myhost.example.org',
                 version: '2.7.4',
             },
             {
                 id: 3,
                 name: 'dhcp6',
+                label: 'DHCPv6@myhost.example.org',
             },
             {
                 id: 2,
                 name: 'dhcp4',
+                label: 'DHCPv4@yourhost.example.org',
                 version: '2.7.3',
             },
             {
                 id: 4,
                 name: 'dhcp6',
+                label: 'DHCPv6@yourhost.example.com',
             },
             {
                 id: 5,
                 name: 'dhcp6',
+                label: 'DHCPv6@theirhost.example.com',
             },
         ],
         sharedNetworks4: [
@@ -153,6 +161,7 @@ describe('SubnetFormComponent', () => {
                 localSharedNetworks: [
                     {
                         daemonId: 1,
+                        daemonLabel: 'DHCPv4@myhost.example.org',
                     },
                 ],
             },
@@ -162,6 +171,7 @@ describe('SubnetFormComponent', () => {
                 localSharedNetworks: [
                     {
                         daemonId: 2,
+                        daemonLabel: 'DHCPv4@yourhost.example.org',
                     },
                 ],
             },
@@ -171,9 +181,11 @@ describe('SubnetFormComponent', () => {
                 localSharedNetworks: [
                     {
                         daemonId: 1,
+                        daemonLabel: 'DHCPv4@myhost.example.org',
                     },
                     {
                         daemonId: 2,
+                        daemonLabel: 'DHCPv4@yourhost.example.org',
                     },
                 ],
             },
@@ -182,7 +194,7 @@ describe('SubnetFormComponent', () => {
     }
 
     // TODO: This structure doesn't implement CreateSubnetBeginResponse.
-    let cannedResponseBeginSubnet6: any = {
+    let cannedResponseBeginSubnet6: UpdateSubnetBeginResponse = {
         id: 345,
         subnet: {
             id: 234,
@@ -191,9 +203,7 @@ describe('SubnetFormComponent', () => {
                 {
                     id: 234,
                     daemonId: 3,
-                    daemonName: 'dhcp6',
-                    machineAddress: '10.1.1.1',
-                    machineHostname: 'myhost.example.org',
+                    daemonLabel: 'DHCPv6@myhost.example.org',
                     pools: [
                         {
                             pool: '2001:db8:1::10-2001:db8:1::100',
@@ -246,9 +256,7 @@ describe('SubnetFormComponent', () => {
                 {
                     id: 345,
                     daemonId: 4,
-                    daemonName: 'dhcp6',
-                    machineAddress: '10.1.1.1.',
-                    machineHostname: 'myhost.example.org',
+                    daemonLabel: 'DHCPv6@yourhost.example.org',
                     pools: [
                         {
                             pool: '2001:db8:1::10-2001:db8:1::100',
@@ -302,6 +310,7 @@ describe('SubnetFormComponent', () => {
             {
                 id: 1,
                 name: 'dhcp4',
+                label: 'DHCPv4@myhost.example.org',
             },
             {
                 id: 3,
@@ -379,7 +388,7 @@ describe('SubnetFormComponent', () => {
     })
 
     it('should open a form for creating an IPv4 subnet', fakeAsync(() => {
-        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = undefined
         component.ngOnInit()
         tick()
@@ -476,7 +485,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should open a form for creating an IPv6 subnet', fakeAsync(() => {
-        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = undefined
         component.ngOnInit()
         tick()
@@ -567,7 +576,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should open a form for updating IPv4 subnet', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
         component.ngOnInit()
         tick()
@@ -695,7 +704,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should open a form for updating IPv6 subnet', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -840,7 +849,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should initialize the form controls for an IPv4 subnet', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
         component.ngOnInit()
         tick()
@@ -895,7 +904,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should initialize the form controls for an IPv6 subnet', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -955,7 +964,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should return a valid pool header', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -964,7 +973,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should return a valid prefix pool header', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -973,7 +982,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should present the pool in accordion', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
         component.ngOnInit()
         tick()
@@ -989,7 +998,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should present the prefix pool in accordion', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -1013,7 +1022,7 @@ describe('SubnetFormComponent', () => {
     })
 
     it('should remove the form for the unselected server', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
         component.ngOnInit()
         tick()
@@ -1062,14 +1071,14 @@ describe('SubnetFormComponent', () => {
         })
 
         expect(component.state.servers.length).toBe(1)
-        expect(component.state.servers[0]).toBe('[2] DHCPv4')
+        expect(component.state.servers[0]).toBe('DHCPv4@yourhost.example.org')
 
         flush()
         // TODO: this test should be probably moved away from Karma tests. flush() is saving us from: Error: 11 timer(s) still in the queue.
     }))
 
     it('should create the form for the selected server', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -1130,7 +1139,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should revert the changes in the form', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet4))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
         component.ngOnInit()
         tick()
@@ -1190,7 +1199,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should add and remove the pool', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -1231,7 +1240,7 @@ describe('SubnetFormComponent', () => {
     }))
 
     it('should add and remove the prefix pool', fakeAsync(() => {
-        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(of(cannedResponseBeginSubnet6))
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
         component.ngOnInit()
         tick()
@@ -1281,7 +1290,7 @@ describe('SubnetFormComponent', () => {
     it('should present an error message when begin transaction fails', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValues(
             throwError({ status: 404 }),
-            of(cannedResponseBeginSubnet4)
+            wrapInHttpResponse(cannedResponseBeginSubnet4)
         )
         component.subnetId = 123
         component.ngOnInit()

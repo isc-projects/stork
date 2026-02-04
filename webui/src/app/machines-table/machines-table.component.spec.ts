@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'
-import { AppsVersions, ServicesService } from '../backend'
+import { AppsVersions, Machines, ServicesService } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
@@ -27,7 +27,7 @@ describe('MachinesTableComponent', () => {
     let authService: AuthService
 
     // prepare responses for api calls
-    const getUnauthorizedMachinesResp: any = {
+    const getUnauthorizedMachinesResp: Machines = {
         items: [
             { hostname: 'aaa', id: 1, address: 'addr1', authorized: false },
             { hostname: 'bbb', id: 2, address: 'addr2', authorized: false },
@@ -35,10 +35,10 @@ describe('MachinesTableComponent', () => {
         ],
         total: 3,
     }
-    const getAuthorizedMachinesResp: any = {
+    const getAuthorizedMachinesResp: Machines = {
         items: [
-            { hostname: 'zzz', id: 4, authorized: true },
-            { hostname: 'xxx', id: 5, authorized: true },
+            { hostname: 'zzz', id: 4, address: 'addr4', authorized: true },
+            { hostname: 'xxx', id: 5, address: 'addr5', authorized: true },
         ],
         total: 2,
     }
@@ -221,6 +221,7 @@ describe('MachinesTableComponent', () => {
                             extendedVersion: '2.2.0',
                             id: 1,
                             name: 'dhcp4',
+                            label: 'DHCPv4@myhost.example.org',
                             version: '2.2.0',
                         },
                         {
@@ -228,12 +229,14 @@ describe('MachinesTableComponent', () => {
                             extendedVersion: '2.3.0',
                             id: 2,
                             name: 'ca',
+                            label: 'CA@myhost.example.org',
                             version: '2.2.0',
                         },
                         {
                             active: true,
                             id: 3,
                             name: 'named',
+                            label: 'named@myhost.example.org',
                             version: '9.18.30',
                         },
                     ],
@@ -258,9 +261,9 @@ describe('MachinesTableComponent', () => {
         // Assert
         const textContent = fixture.nativeElement.innerText
 
-        expect(textContent).toContain('DHCPv4')
-        expect(textContent).toContain('CA')
-        expect(textContent).toContain('named')
+        expect(textContent).toContain('DHCPv4@myhost.example.org')
+        expect(textContent).toContain('CA@myhost.example.org')
+        expect(textContent).toContain('named@myhost.example.org')
 
         // One VersionStatus for Stork agent + one for Kea + one for BIND9.
         const versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))

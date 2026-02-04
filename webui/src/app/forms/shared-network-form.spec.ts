@@ -14,9 +14,11 @@ describe('SharedNetworkFormState', () => {
                 localSharedNetworks: [
                     {
                         daemonId: 1,
+                        daemonLabel: 'DHCPv4@myhost.example.org',
                     },
                     {
                         daemonId: 2,
+                        daemonLabel: 'DHCPv4@yourhost.example.org',
                     },
                 ],
             },
@@ -24,26 +26,31 @@ describe('SharedNetworkFormState', () => {
                 {
                     id: 1,
                     name: 'dhcp4',
+                    label: 'DHCPv4@myhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 3,
                     name: 'dhcp6',
+                    label: 'DHCPv6@myhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 2,
                     name: 'dhcp4',
+                    label: 'DHCPv4@yourhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 4,
                     name: 'dhcp6',
+                    label: 'DHCPv6@yourhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 5,
                     name: 'dhcp6',
+                    label: 'DHCPv6@theirhost.example.org',
                     version: '3.0.0',
                 },
             ],
@@ -90,31 +97,31 @@ describe('SharedNetworkFormState', () => {
             id: 1,
             name: 'dhcp4',
             version: '3.0.0',
-            label: '[1] DHCPv4',
+            label: 'DHCPv4@myhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 3,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[3] DHCPv6',
+            label: 'DHCPv6@myhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 2,
             name: 'dhcp4',
             version: '3.0.0',
-            label: '[2] DHCPv4',
+            label: 'DHCPv4@yourhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 4,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[4] DHCPv6',
+            label: 'DHCPv6@yourhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 5,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[5] DHCPv6',
+            label: 'DHCPv6@theirhost.example.org',
         })
 
         // Form group.
@@ -128,7 +135,7 @@ describe('SharedNetworkFormState', () => {
         expect(state.savedSharedNetworkBeginData).toBeFalsy()
 
         // Servers selection.
-        expect(state.servers).toEqual(['[1] DHCPv4', '[2] DHCPv4'])
+        expect(state.servers).toEqual(['DHCPv4@myhost.example.org', 'DHCPv4@yourhost.example.org'])
 
         // Identifiers.
         expect(state.sharedNetworkId).toBe(123)
@@ -155,26 +162,31 @@ describe('SharedNetworkFormState', () => {
                 {
                     id: 1,
                     name: 'dhcp4',
+                    label: 'DHCPv4@myhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 3,
                     name: 'dhcp6',
+                    label: 'DHCPv6@myhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 2,
                     name: 'dhcp4',
+                    label: 'DHCPv4@yourhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 4,
                     name: 'dhcp6',
+                    label: 'DHCPv6@yourhost.example.org',
                     version: '3.0.0',
                 },
                 {
                     id: 5,
                     name: 'dhcp6',
+                    label: 'DHCPv6@theirhost.example.com',
                     version: '3.0.0',
                 },
             ],
@@ -202,31 +214,31 @@ describe('SharedNetworkFormState', () => {
             id: 1,
             name: 'dhcp4',
             version: '3.0.0',
-            label: '[1] DHCPv4',
+            label: 'DHCPv4@myhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 3,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[3] DHCPv6',
+            label: 'DHCPv6@myhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 2,
             name: 'dhcp4',
             version: '3.0.0',
-            label: '[2] DHCPv4',
+            label: 'DHCPv4@yourhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 4,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[4] DHCPv6',
+            label: 'DHCPv6@yourhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 5,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[5] DHCPv6',
+            label: 'DHCPv6@theirhost.example.com',
         })
 
         // Form group.
@@ -240,7 +252,7 @@ describe('SharedNetworkFormState', () => {
         expect(state.savedSharedNetworkBeginData).toBeFalsy()
 
         // Servers selection.
-        expect(state.servers).toEqual(['[3] DHCPv6', '[4] DHCPv6'])
+        expect(state.servers).toEqual(['DHCPv6@myhost.example.org', 'DHCPv6@yourhost.example.org'])
 
         // Identifiers.
         expect(state.sharedNetworkId).toBe(234)
@@ -258,9 +270,9 @@ describe('SharedNetworkFormState', () => {
         let state = new SharedNetworkFormState()
         state.sharedNetworkId = 123
         state.initStateFromServerResponse(response)
-        expect(state.servers).toEqual(['[1] DHCPv4', '[2] DHCPv4'])
+        expect(state.servers).toEqual(['DHCPv4@myhost.example.org', 'DHCPv4@yourhost.example.org'])
         state.updateServers([2])
-        expect(state.servers).toEqual(['[2] DHCPv4'])
+        expect(state.servers).toEqual(['DHCPv4@yourhost.example.org'])
     })
 
     it('should update universe for selected daemons', () => {
@@ -279,19 +291,19 @@ describe('SharedNetworkFormState', () => {
             id: 3,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[3] DHCPv6',
+            label: 'DHCPv6@myhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 4,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[4] DHCPv6',
+            label: 'DHCPv6@yourhost.example.org',
         })
         expect(state.filteredDaemons).toContain({
             id: 5,
             name: 'dhcp6',
             version: '3.0.0',
-            label: '[5] DHCPv6',
+            label: 'DHCPv6@theirhost.example.org',
         })
     })
 })

@@ -363,7 +363,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     getDaemonsVersions(m: SimpleMachine): string {
         const daemons: string[] = []
         for (const d of m?.daemons ?? []) {
-            daemons.push(d.label)
+            if (!d.version) {
+                continue
+            }
+            daemons.push(`${d.label} ${d.version}`)
         }
 
         return daemons.join(', ')

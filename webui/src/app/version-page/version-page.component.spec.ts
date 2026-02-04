@@ -95,8 +95,24 @@ describe('VersionPageComponent', () => {
                 agentPort: 8888,
                 agentVersion: '1.19.0',
                 daemons: [
-                    { backends: null, files: null, hooks: null, id: 12, logTargets: null, name: 'd2' },
-                    { backends: null, files: null, hooks: null, id: 14, logTargets: null, name: 'dhcp6' },
+                    {
+                        backends: null,
+                        files: null,
+                        hooks: null,
+                        id: 12,
+                        logTargets: null,
+                        name: 'd2',
+                        label: 'DDNS@agent-kea',
+                    },
+                    {
+                        backends: null,
+                        files: null,
+                        hooks: null,
+                        id: 14,
+                        logTargets: null,
+                        name: 'dhcp6',
+                        label: 'DHCPv6@agent-kea',
+                    },
                     {
                         active: true,
                         backends: null,
@@ -105,6 +121,7 @@ describe('VersionPageComponent', () => {
                         id: 13,
                         logTargets: null,
                         name: 'dhcp4',
+                        label: 'DHCPv4@agent-kea',
                         version: '2.7.2',
                     },
                     {
@@ -115,6 +132,7 @@ describe('VersionPageComponent', () => {
                         id: 11,
                         logTargets: null,
                         name: 'ca',
+                        label: 'CA@agent-kea',
                         version: '2.7.2',
                     },
                 ],
@@ -130,6 +148,7 @@ describe('VersionPageComponent', () => {
                         accessPoints: null,
                         id: 9,
                         name: 'named',
+                        label: 'named@agent-bind9',
                         version: '9.18.30',
                         extendedVersion: 'BIND 9.18.30 (Extended Support Version) <id:cdc8d69>',
                     },
@@ -142,8 +161,24 @@ describe('VersionPageComponent', () => {
                 agentPort: 8885,
                 agentVersion: '1.19.0',
                 daemons: [
-                    { backends: null, files: null, hooks: null, id: 23, logTargets: null, name: 'd2' },
-                    { backends: null, files: null, hooks: null, id: 25, logTargets: null, name: 'dhcp6' },
+                    {
+                        backends: null,
+                        files: null,
+                        hooks: null,
+                        id: 23,
+                        logTargets: null,
+                        name: 'd2',
+                        label: 'DDNS@agent-kea-ha2',
+                    },
+                    {
+                        backends: null,
+                        files: null,
+                        hooks: null,
+                        id: 25,
+                        logTargets: null,
+                        name: 'dhcp6',
+                        label: 'DHCPv6@agent-kea-ha2',
+                    },
                     {
                         active: true,
                         backends: null,
@@ -152,6 +187,7 @@ describe('VersionPageComponent', () => {
                         id: 24,
                         logTargets: null,
                         name: 'dhcp4',
+                        label: 'DHCPv4@agent-kea-ha2',
                         version: '2.6.0',
                     },
                     {
@@ -162,6 +198,7 @@ describe('VersionPageComponent', () => {
                         id: 26,
                         logTargets: null,
                         name: 'ca',
+                        label: 'CA@agent-kea-ha2',
                         version: '2.6.0',
                     },
                 ],
@@ -181,6 +218,7 @@ describe('VersionPageComponent', () => {
                         id: 2,
                         logTargets: null,
                         name: 'dhcp6',
+                        label: 'DHCPv6@agent-kea6',
                         version: '2.7.0',
                     },
                     {
@@ -191,6 +229,7 @@ describe('VersionPageComponent', () => {
                         id: 1,
                         logTargets: null,
                         name: 'ca',
+                        label: 'CA@agent-kea6',
                         version: '2.7.1',
                     },
                 ],
@@ -274,7 +313,7 @@ describe('VersionPageComponent', () => {
         const machine = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0]
 
         // Act & Assert
-        expect(component.getDaemonsVersions(machine)).toEqual('DHCPv4 2.7.2, CA 2.7.2')
+        expect(component.getDaemonsVersions(machine)).toEqual('DHCPv4@agent-kea 2.7.2, CA@agent-kea 2.7.2')
     })
 
     it('should display offline data info message', () => {

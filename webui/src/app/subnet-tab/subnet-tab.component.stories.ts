@@ -46,7 +46,7 @@ export const Subnet4: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp4@localhost',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: [
                         {
                             pool: '192.0.2.1-192.0.2.100',
@@ -237,7 +237,7 @@ export const Subnet4: Story = {
                 },
                 {
                     id: 1,
-                    daemonLabel: 'dhcp4@localhost',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: [
                         {
                             pool: '192.0.2.1-192.0.2.100',
@@ -420,7 +420,7 @@ export const Subnet4NoPools: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp4@localhost',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: null,
                 },
             ],
@@ -444,12 +444,12 @@ export const Subnet4NoPoolsInOneServer: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp4@localhost',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: null,
                 },
                 {
                     id: 2,
-                    daemonLabel: 'dhcp4@localhost',
+                    daemonLabel: 'DHCPv4@localhost',
                     pools: [
                         {
                             pool: '192.0.2.10-192.0.2.20',
@@ -475,7 +475,7 @@ export const Subnet6Address: Story = {
             statsCollectedAt: '2023-06-05',
             localSubnets: [
                 {
-                    daemonLabel: 'dhcp6@localhost',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::786',
@@ -501,7 +501,7 @@ export const Subnet6Prefix: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp6@localhost',
+                    daemonLabel: 'DHCPv6@localhost',
                     prefixDelegationPools: [
                         {
                             prefix: '3000::',
@@ -532,7 +532,7 @@ export const Subnet6AddressPrefix: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp6@localhost',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::768',
@@ -568,7 +568,7 @@ export const Subnet6DifferentPoolsOnDifferentServers: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp6@localhost',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::768',
@@ -590,7 +590,7 @@ export const Subnet6DifferentPoolsOnDifferentServers: Story = {
                 },
                 {
                     id: 2,
-                    daemonLabel: 'dhcp6@localhost',
+                    daemonLabel: 'DHCPv6@localhost',
                     pools: [
                         {
                             pool: '2001:db8:1::2-2001:db8:1::768',
@@ -637,7 +637,7 @@ export const Subnet6NoPools: Story = {
             localSubnets: [
                 {
                     id: 1,
-                    daemonLabel: 'dhcp6@localhost',
+                    daemonLabel: 'DHCPv6@localhost',
                 },
             ],
         },

@@ -586,7 +586,7 @@ describe('HostsTableComponent', () => {
         // The last one includes the daemon name and link.
         const daemonTd = row.children[5]
         const daemonLink = daemonTd.query(By.css('a'))
-        expect(daemonLink.nativeElement.textContent).toContain('Frog')
+        expect(daemonLink.nativeElement.textContent).toContain('[1] frog')
         expect(daemonLink.properties.hasOwnProperty('pathname')).toBeTrue()
         expect(daemonLink.properties.pathname).toBe('/daemons/1')
         // Data source labels are still rendered.
