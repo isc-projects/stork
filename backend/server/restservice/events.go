@@ -69,7 +69,7 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 	}
 
 	// get events from db
-	eventRecs, err := r.getEvents(start, limit, level, params.DaemonName, params.Machine, params.Daemon, params.User, sortField, sortDir)
+	eventRecs, err := r.getEvents(start, limit, level, params.DaemonName, params.MachineID, params.DaemonID, params.UserID, sortField, sortDir)
 	if err != nil {
 		msg := "Problem fetching events from the database"
 		log.WithError(err).Error(msg)

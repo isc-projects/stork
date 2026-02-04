@@ -17,10 +17,10 @@ export enum EventStream {
  */
 export interface SSEFilter {
     level?: number
-    machine?: number
-    daemon?: number
+    machineId?: number
+    daemonId?: number
     daemonName?: string
-    user?: number
+    userId?: number
 }
 
 /**
@@ -178,17 +178,17 @@ export class ServerSentEventsService {
         // special handling.
         const messageSubscription = this.subscriptions.get(EventStream.Message)
         if (messageSubscription) {
-            if (messageSubscription.machine) {
-                searchParams.append('machine', String(messageSubscription.machine))
+            if (messageSubscription.machineId) {
+                searchParams.append('machineId', String(messageSubscription.machineId))
             }
             if (messageSubscription.daemonName) {
                 searchParams.append('daemonName', messageSubscription.daemonName)
             }
-            if (messageSubscription.daemon) {
-                searchParams.append('daemon', String(messageSubscription.daemon))
+            if (messageSubscription.daemonId) {
+                searchParams.append('daemonId', String(messageSubscription.daemonId))
             }
-            if (messageSubscription.user) {
-                searchParams.append('user', String(messageSubscription.user))
+            if (messageSubscription.userId) {
+                searchParams.append('userId', String(messageSubscription.userId))
             }
             if (messageSubscription.level) {
                 searchParams.append('level', String(messageSubscription.level))

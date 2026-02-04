@@ -38,14 +38,14 @@ describe('ServerSentEventsService', () => {
 
         let filter = {
             level: 1,
-            machine: 2,
+            machineId: 2,
             daemonName: 'dhcp4',
-            user: 3,
+            userId: 3,
         }
         let observable = service.receivePriorityAndMessageEvents(filter)
         expect(observable).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&daemonName=dhcp4&user=3&level=1&stream=connectivity&stream=registration&stream=message'
+            '/sse?machineId=2&daemonName=dhcp4&userId=3&level=1&stream=connectivity&stream=registration&stream=message'
         )
     })
 
@@ -90,74 +90,74 @@ describe('ServerSentEventsService', () => {
 
         expect(
             service.receivePriorityAndMessageEvents({
-                machine: 1,
+                machineId: 1,
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(1)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=1&stream=connectivity&stream=registration&stream=message'
+            '/sse?machineId=1&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
-                daemon: 1,
+                daemonId: 1,
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(2)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?daemon=1&stream=connectivity&stream=registration&stream=message'
+            '/sse?daemonId=1&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
-                machine: 2,
+                machineId: 2,
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(3)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&stream=connectivity&stream=registration&stream=message'
+            '/sse?machineId=2&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
-                machine: 2,
+                machineId: 2,
                 daemonName: 'dhcp4',
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(4)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&daemonName=dhcp4&stream=connectivity&stream=registration&stream=message'
+            '/sse?machineId=2&daemonName=dhcp4&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
-                machine: 2,
+                machineId: 2,
                 daemonName: 'named',
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(5)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&daemonName=named&stream=connectivity&stream=registration&stream=message'
+            '/sse?machineId=2&daemonName=named&stream=connectivity&stream=registration&stream=message'
         )
 
         expect(
             service.receivePriorityAndMessageEvents({
-                machine: 2,
+                machineId: 2,
                 daemonName: 'named',
-                user: 1,
+                userId: 1,
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(6)
         expect(service.addEventListeners).toHaveBeenCalledWith(
-            '/sse?machine=2&daemonName=named&user=1&stream=connectivity&stream=registration&stream=message'
+            '/sse?machineId=2&daemonName=named&userId=1&stream=connectivity&stream=registration&stream=message'
         )
 
         // If the filtering rules don't change there should be no attempt to reconnect.
         expect(
             service.receivePriorityAndMessageEvents({
-                machine: 2,
+                machineId: 2,
                 daemonName: 'named',
-                user: 1,
+                userId: 1,
             })
         ).toBeTruthy()
         expect(service.addEventListeners).toHaveBeenCalledTimes(6)

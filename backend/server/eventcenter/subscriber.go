@@ -74,7 +74,7 @@ func newSubscriber(serverURL *url.URL, subscriberAddress string) *Subscriber {
 }
 
 // Populates filters from URL. In a simplest case, a caller provides ids of the
-// objects to filter by, e.g. machine=1, indicating that only events associated
+// objects to filter by, e.g. machineId=1, indicating that only events associated
 // with machine id of 1 should be returned. However, there are also other
 // parameters, such as daemonName, which can't be directly used to
 // filter events. In order to map these parameters to the event relations this
@@ -109,16 +109,16 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 
 	// Check if direct event relations are specified in the URL. All of them
 	// are IDs pointing to some specific objects in the database.
-	if f.MachineID, err = getQueryValueAsInt64("machine", queryValues); err != nil {
+	if f.MachineID, err = getQueryValueAsInt64("machineId", queryValues); err != nil {
 		return err
 	}
-	if f.SubnetID, err = getQueryValueAsInt64("subnet", queryValues); err != nil {
+	if f.SubnetID, err = getQueryValueAsInt64("subnetId", queryValues); err != nil {
 		return err
 	}
-	if f.DaemonID, err = getQueryValueAsInt64("daemon", queryValues); err != nil {
+	if f.DaemonID, err = getQueryValueAsInt64("daemonId", queryValues); err != nil {
 		return err
 	}
-	if f.UserID, err = getQueryValueAsInt64("user", queryValues); err != nil {
+	if f.UserID, err = getQueryValueAsInt64("userId", queryValues); err != nil {
 		return err
 	}
 

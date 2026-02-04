@@ -14,7 +14,7 @@
           in: query
           description: Show all levels (0), warning and errors (1), errors only (2).
           type: integer
-        - name: machine
+        - name: machineId
           in: query
           description: Machine ID.
           type: integer
@@ -22,11 +22,11 @@
           in: query
           description: Daemon name, e.g. 'named', 'dhcp4', 'dhcp6', 'ca'.
           type: string
-        - name: daemon
+        - name: daemonId
           in: query
           description: Daemon ID.
           type: integer
-        - name: user
+        - name: userId
           in: query
           description: User ID.
           type: integer

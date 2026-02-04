@@ -64,9 +64,9 @@ describe('EventsPanelComponent', () => {
 
     it('should establish SSE connection with correct filtering rules', () => {
         component.filter.level = 1
-        component.filter.machine = 2
+        component.filter.machineId = 2
         component.filter.daemonName = 'dhcp4'
-        component.filter.user = 3
+        component.filter.userId = 3
 
         spyOn(sseService, 'receivePriorityAndMessageEvents').and.returnValue(
             of({
@@ -123,7 +123,7 @@ describe('EventsPanelComponent', () => {
 
         event.value.id = 1
         component.onMachineSelect(event)
-        expect(component.filter.machine).toBe(1)
+        expect(component.filter.machineId).toBe(1)
         expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'dhcp4'
@@ -133,7 +133,7 @@ describe('EventsPanelComponent', () => {
 
         event.value.id = 5
         component.onUserSelect(event)
-        expect(component.filter.user).toBe(5)
+        expect(component.filter.userId).toBe(5)
         expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
     })
 

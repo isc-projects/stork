@@ -45,7 +45,7 @@ func TestSetFilterValues(t *testing.T) {
 
 	// Use an URL with all parameters set.
 	url, err := url.Parse(fmt.Sprintf(
-		"http://example.org/sse?stream=connectivity&stream=message&machine=1&&subnet=3&daemon=%d&user=5&level=1",
+		"http://example.org/sse?stream=connectivity&stream=message&machineId=1&&subnetId=3&daemonId=%d&userId=5&level=1",
 		daemon.ID,
 	))
 	require.NoError(t, err)
@@ -74,7 +74,7 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	testCases := []string{"machine", "subnet", "daemon", "user"}
+	testCases := []string{"machineId", "subnetId", "daemonId", "userId"}
 	for i := range testCases {
 		tc := testCases[i]
 		t.Run(tc, func(t *testing.T) {
@@ -97,13 +97,13 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 				Relations: &dbmodel.Relations{},
 			}
 			switch tc {
-			case "machine":
+			case "machineId":
 				ev.Relations.MachineID = 123
-			case "subnet":
+			case "subnetId":
 				ev.Relations.SubnetID = 123
-			case "daemon":
+			case "daemonId":
 				ev.Relations.DaemonID = 123
-			case "user":
+			case "userId":
 				ev.Relations.UserID = 123
 			}
 			// Event should be accepted.
@@ -129,7 +129,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 
 	// Create a filtering rule by machine ID, daemon ID and warning event level.
 	url, err := url.Parse(fmt.Sprintf(
-		"http://example.org/sse?stream=message&machine=%d&daemon=%d&level=%d",
+		"http://example.org/sse?stream=message&machineId=%d&daemonId=%d&level=%d",
 		daemon.MachineID, daemon.ID, dbmodel.EvWarning,
 	))
 	require.NoError(t, err)
@@ -205,7 +205,7 @@ func TestIndirectRelationsDaemonName(t *testing.T) {
 	daemon, err := server.GetDaemon()
 	require.NoError(t, err)
 
-	url, err := url.Parse("http://example.org/sse?stream=message&machine=1&daemonName=dhcp4&level=1")
+	url, err := url.Parse("http://example.org/sse?stream=message&machineId=1&daemonName=dhcp4&level=1")
 	require.NoError(t, err)
 
 	subscriber := newSubscriber(url, "localhost:8080")
@@ -259,7 +259,7 @@ func TestIndirectRelationsWrongParams(t *testing.T) {
 
 	t.Run("daemon ID and daemon name", func(t *testing.T) {
 		// Daemon ID with daemon name are mutually exclusive.
-		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machine=1&daemon=%d&daemonName=dhcp4",
+		rawURL := fmt.Sprintf("http://example.org/sse?stream=message&machineId=1&daemonId=%d&daemonName=dhcp4",
 			daemon.ID)
 		url, err := url.Parse(rawURL)
 		require.NoError(t, err)

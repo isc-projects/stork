@@ -24,7 +24,7 @@ export class EventsPageComponent implements OnInit {
     constructor(private route: ActivatedRoute) {}
 
     ngOnInit(): void {
-        const machineId = this.route.snapshot.queryParams.machine
+        const machineId = this.route.snapshot.queryParams.machineId
         if (machineId) {
             this.machineId = parseInt(machineId, 10)
         }
@@ -34,7 +34,7 @@ export class EventsPageComponent implements OnInit {
             this.daemonName = daemonName as Daemon.NameEnum
         }
 
-        const userId = this.route.snapshot.queryParams.user
+        const userId = this.route.snapshot.queryParams.userId
         if (userId) {
             this.userId = parseInt(userId, 10)
         }

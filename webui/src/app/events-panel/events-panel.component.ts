@@ -211,9 +211,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 .then((data) => {
                     this.users = data.items
 
-                    if (this.filter.user) {
+                    if (this.filter.userId) {
                         for (const u of this.users) {
-                            if (u.id === this.filter.user) {
+                            if (u.id === this.filter.userId) {
                                 this.selectedUser = u
                             }
                         }
@@ -233,9 +233,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             .then((data) => {
                 this.machines = data.items ?? []
 
-                if (this.filter.machine) {
+                if (this.filter.machineId) {
                     for (const m of this.machines) {
-                        if (m.id === this.filter.machine) {
+                        if (m.id === this.filter.machineId) {
                             this.selectedMachine = m
                         }
                     }
@@ -288,10 +288,10 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.start,
                 this.limit,
                 this.filter.level,
-                this.filter.machine,
+                this.filter.machineId,
                 this.filter.daemonName,
-                this.filter.daemon,
-                this.filter.user,
+                this.filter.daemonId,
+                this.filter.userId,
                 ...convertSortingFields<EventSortField>(event)
             )
         )
@@ -344,9 +344,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     /** Callback called on selecting a machine in dropdown. */
     onMachineSelect(event: SelectChangeEvent) {
         if (event.value === null) {
-            this.filter.machine = null
+            this.filter.machineId = null
         } else {
-            this.filter.machine = event.value.id
+            this.filter.machineId = event.value.id
         }
         this.applyFilter()
     }
@@ -364,9 +364,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     /** Callback called on selecting a user in dropdown. */
     onUserSelect(event: SelectChangeEvent) {
         if (event.value === null) {
-            this.filter.user = null
+            this.filter.userId = null
         } else {
-            this.filter.user = event.value.id
+            this.filter.userId = event.value.id
         }
         this.applyFilter()
     }
