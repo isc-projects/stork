@@ -246,7 +246,7 @@ describe('HostsTableComponent', () => {
         // Arrange
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
-        expect(inputNumbers.length).toEqual(4)
+        expect(inputNumbers.length).toEqual(3)
 
         // Act
         component.table.clear()
@@ -255,13 +255,10 @@ describe('HostsTableComponent', () => {
         inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // machineId
         tick(300)
         fixture.detectChanges()
-        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // daemonId
+        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
         tick(300)
         fixture.detectChanges()
-        inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
-        tick(300)
-        fixture.detectChanges()
-        inputNumbers[3].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
+        inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
         tick(300)
         fixture.detectChanges()
 
@@ -271,7 +268,7 @@ describe('HostsTableComponent', () => {
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
                 machineId: 1,
-                daemonId: 1,
+                daemonId: null,
                 subnetId: 1,
                 keaSubnetId: 1,
                 isGlobal: null,

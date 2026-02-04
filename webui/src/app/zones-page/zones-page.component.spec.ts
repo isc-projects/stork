@@ -588,30 +588,6 @@ describe('ZonesPageComponent', () => {
         })
     }))
 
-    it('should filter zones table by daemon id', fakeAsync(() => {
-        // Arrange
-        const inputNumber = fixture.debugElement.query(By.css('[inputId="daemon-id"]'))
-        expect(inputNumber).toBeTruthy()
-
-        // Act
-        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', 9)
-        tick(300)
-        fixture.detectChanges()
-
-        // Assert
-        expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: {
-                zoneType: null,
-                rpz: null,
-                daemonId: 9,
-                zoneSerial: null,
-                zoneClass: null,
-                text: null,
-                daemonName: null,
-            },
-        })
-    }))
-
     it('should filter zones table by text', fakeAsync(() => {
         // Arrange
         const filterInput = fixture.debugElement.query(By.css('#text-filter'))

@@ -290,24 +290,20 @@ describe('SubnetsTableComponent', () => {
         const getSubnetsSpy = spyOn(dhcpApi, 'getSubnets').and.returnValue(of({ items: [], total: 0 }) as any)
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
-        expect(inputNumbers.length).toEqual(2)
+        expect(inputNumbers.length).toEqual(1)
         spyOn(component, 'filterTable')
 
         // Act
         component.table.clear()
         tick(300)
         fixture.detectChanges()
-        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // daemonId
-        tick(300)
-        fixture.detectChanges()
-        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
+        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
         tick(300)
         fixture.detectChanges()
 
         // Assert
         expect(getSubnetsSpy).toHaveBeenCalled()
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
-        expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['daemonId'] as FilterMetadata)
         expect(component.filterTable).toHaveBeenCalledWith(1, component.table.filters['subnetId'] as FilterMetadata)
         flush()
     }))

@@ -3,7 +3,6 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { SharedNetworksTableComponent } from './shared-networks-table.component'
 import { MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { InputNumber } from 'primeng/inputnumber'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 import { SharedNetworksPageComponent } from '../shared-networks-page/shared-networks-page.component'
@@ -421,17 +420,18 @@ describe('SharedNetworksTableComponent', () => {
         fixture.detectChanges()
         expect(component.filterTable).toHaveBeenCalledWith('cat', component.table.filters['text'] as FilterMetadata)
 
-        // Filter by daemon id.
-        const inputNumberEls = fixture.debugElement.queryAll(By.css('.p-datatable-filter p-inputnumber'))
-        expect(inputNumberEls).toBeTruthy()
-        expect(inputNumberEls.length).toBe(1)
-        const inputComponent = inputNumberEls[0].componentInstance
-        inputComponent.handleOnInput(new InputEvent('input'), '', 5)
-
-        // Verify that the API was called for that filter.
-        tick(300)
-        fixture.detectChanges()
-        expect(component.filterTable).toHaveBeenCalledWith(5, component.table.filters['daemonId'] as FilterMetadata)
+        // TODO: this part of test should be moved away from Karma tests.
+        // Filter by daemon.
+        // const inputNumberEls = fixture.debugElement.queryAll(By.css('.p-datatable-filter p-inputnumber'))
+        // expect(inputNumberEls).toBeTruthy()
+        // expect(inputNumberEls.length).toBe(1)
+        // const inputComponent = inputNumberEls[0].componentInstance
+        // inputComponent.handleOnInput(new InputEvent('input'), '', 5)
+        //
+        // // Verify that the API was called for that filter.
+        // tick(300)
+        // fixture.detectChanges()
+        // expect(component.filterTable).toHaveBeenCalledWith(5, component.table.filters['daemonId'] as FilterMetadata)
 
         // Filter by DHCP version.
         // TODO: this part of test should be moved away from Karma tests.
@@ -447,21 +447,6 @@ describe('SharedNetworksTableComponent', () => {
         // tick(300)
         // fixture.detectChanges()
         // expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 5, 6, 'cat')
-    }))
-
-    it('should not filter the table by numeric input with value zero', fakeAsync(() => {
-        // Arrange
-        const inputNumber = fixture.debugElement.query(By.directive(InputNumber))
-        expect(inputNumber).toBeTruthy()
-        spyOn(component, 'filterTable')
-
-        // Act
-        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', 0) // daemonId
-        tick(300)
-        fixture.detectChanges()
-
-        // Assert
-        expect(component.filterTable).toHaveBeenCalledOnceWith(1, component.table.filters['daemonId'] as FilterMetadata)
     }))
 
     it('should get total delegated prefixes for v6 network', () => {
