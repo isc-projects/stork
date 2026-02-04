@@ -2884,6 +2884,20 @@ func TestDeleteDaemon(t *testing.T) {
 		defaultRsp := resp.(*services.DeleteDaemonDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	})
+
+	teardown()
+
+	t.Run("database unavailable", func(t *testing.T) {
+		// Act
+		resp := rapi.DeleteDaemon(ctx, services.DeleteDaemonParams{
+			ID: daemon1.ID,
+		})
+
+		// Assert
+		require.IsType(t, &services.DeleteDaemonDefault{}, resp)
+		defaultRsp := resp.(*services.DeleteDaemonDefault)
+		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	})
 }
 
 // Check if generating and getting server token works.
