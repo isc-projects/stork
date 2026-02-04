@@ -13,9 +13,12 @@ import { catchError } from 'rxjs/operators'
 type LabeledSimpleDaemon = SimpleDaemon & { label: string }
 
 /**
- * This component provides PrimeNG Autocomplete form element with a list of all DHCP and DNS daemons known to Stork server.
- * It supports either selecting the daemon from a dropdown list or searching the daemon by name, machines hostname, machines address.
- * Selected daemon ID can be accessed via daemonID input/output property. Parent component may also inject the ID so the
+ * This component provides PrimeNG Autocomplete form element with a list
+ * of all DHCP and DNS daemons known to Stork server.
+ * It supports either selecting the daemon from a dropdown list or
+ * searching the daemon by name, machines hostname, machines address.
+ * Selected daemon ID can be accessed via daemonID input/output property.
+ * Parent component may also inject the ID so the
  * component will display it as selected.
  */
 @Component({
