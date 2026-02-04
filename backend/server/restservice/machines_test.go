@@ -218,7 +218,7 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 	// add kea daemon
 	keaAccessPoint := &dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
-		Address:  "1.2.3.4",
+		Address:  "203.0.113.123",
 		Port:     123,
 		Key:      "",
 		Protocol: protocoltype.HTTP,
@@ -231,14 +231,14 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 	bind9AccessPoints := []*dbmodel.AccessPoint{
 		{
 			Type:     dbmodel.AccessPointControl,
-			Address:  "1.2.3.4",
+			Address:  "203.0.113.123",
 			Port:     124,
 			Key:      "abcd",
 			Protocol: protocoltype.RNDC,
 		},
 		{
 			Type:     dbmodel.AccessPointStatistics,
-			Address:  "1.2.3.4",
+			Address:  "203.0.113.123",
 			Port:     125,
 			Protocol: protocoltype.HTTP,
 		},
@@ -254,7 +254,7 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 				Name: daemonname.CA,
 				AccessPoints: []dbmodel.AccessPoint{{
 					Type:     dbmodel.AccessPointControl,
-					Address:  "1.2.3.4",
+					Address:  "203.0.113.123",
 					Port:     123,
 					Key:      "",
 					Protocol: protocoltype.HTTP,
@@ -266,14 +266,14 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 				AccessPoints: []dbmodel.AccessPoint{
 					{
 						Type:     dbmodel.AccessPointControl,
-						Address:  "1.2.3.4",
+						Address:  "203.0.113.123",
 						Port:     124,
 						Key:      "abcd",
 						Protocol: protocoltype.RNDC,
 					},
 					{
 						Type:     dbmodel.AccessPointStatistics,
-						Address:  "1.2.3.4",
+						Address:  "203.0.113.123",
 						Port:     125,
 						Protocol: protocoltype.HTTP,
 					},
@@ -313,7 +313,7 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	// Add PowerDNS daemon to db.
 	accessPoint := &dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
-		Address:  "1.2.3.4",
+		Address:  "203.0.113.123",
 		Port:     124,
 		Protocol: protocoltype.HTTP,
 	}
@@ -326,10 +326,10 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	pdnsDaemon.Uptime = 1000
 	pdnsDaemon.PDNSDaemon = &dbmodel.PDNSDaemon{
 		Details: dbmodel.PDNSDaemonDetails{
-			URL:              "http://1.2.3.4:123",
-			ConfigURL:        "http://1.2.3.4:123/config",
-			ZonesURL:         "http://1.2.3.4:123/zones",
-			AutoprimariesURL: "http://1.2.3.4:123/autoprimaries",
+			URL:              "http://203.0.113.123:123",
+			ConfigURL:        "http://203.0.113.123:123/config",
+			ZonesURL:         "http://203.0.113.123:123/zones",
+			AutoprimariesURL: "http://203.0.113.123:123/autoprimaries",
 		},
 	}
 	err = dbmodel.AddDaemon(db, pdnsDaemon)
@@ -347,7 +347,7 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 					Name: daemonname.PDNS,
 					AccessPoints: []dbmodel.AccessPoint{{
 						Type:     dbmodel.AccessPointControl,
-						Address:  "1.2.3.4",
+						Address:  "203.0.113.123",
 						Port:     124,
 						Key:      "",
 						Protocol: protocoltype.HTTP,
@@ -393,7 +393,7 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 
 	require.EqualValues(t, pdnsDaemon.ID, returnedDaemon.ID)
 	require.EqualValues(t, pdnsDaemon.Name, returnedDaemon.Name)
-	require.Equal(t, "1.2.3.4", returnedDaemon.AccessPoints[0].Address)
+	require.Equal(t, "203.0.113.123", returnedDaemon.AccessPoints[0].Address)
 	require.Len(t, returnedDaemon.AccessPoints, 1)
 	require.EqualValues(t, 124, returnedDaemon.AccessPoints[0].Port)
 
@@ -449,7 +449,7 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
 	// prepare request arguments
-	addr := "1.2.3.4"
+	addr := "203.0.113.123"
 	port := int64(8080)
 	serverToken := "serverToken" // it will be corrected later when server cert is generated
 	agentToken := "agentToken"
@@ -788,7 +788,7 @@ func TestCreateMachineForbidden(t *testing.T) {
 	// Send a request to register new machine while the registration is disabled.
 	params := services.CreateMachineParams{
 		Machine: &models.NewMachineReq{
-			Address:     storkutil.Ptr("1.2.3.4"),
+			Address:     storkutil.Ptr("203.0.113.123"),
 			AgentPort:   8080,
 			AgentCSR:    &agentCSR,
 			ServerToken: string(dbServerToken),
@@ -834,7 +834,7 @@ func TestReregisterCreatedMachineNotForbidden(t *testing.T) {
 	// Send a request to register new machine while the registration is enabled.
 	params := services.CreateMachineParams{
 		Machine: &models.NewMachineReq{
-			Address:     storkutil.Ptr("1.2.3.4"),
+			Address:     storkutil.Ptr("203.0.113.123"),
 			AgentPort:   8080,
 			AgentCSR:    &agentCSR,
 			ServerToken: string(dbServerToken),

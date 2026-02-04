@@ -62,10 +62,10 @@ func TestStatePullerPullData(t *testing.T) {
 		Daemons: []*agentcomm.Daemon{
 			{
 				Name: daemonname.DHCPv4,
-				// access point is changing from 1.1.1.1 to 1.2.3.4
+				// access point is changing from 203.0.113.111 to 203.0.113.123
 				AccessPoints: []dbmodel.AccessPoint{{
 					Type:    dbmodel.AccessPointControl,
-					Address: "1.2.3.4",
+					Address: "203.0.113.123",
 					Port:    1234,
 				}},
 			},
@@ -74,13 +74,13 @@ func TestStatePullerPullData(t *testing.T) {
 				AccessPoints: []dbmodel.AccessPoint{
 					{
 						Type:    dbmodel.AccessPointControl,
-						Address: "1.2.3.4",
+						Address: "203.0.113.123",
 						Port:    124,
 						Key:     "abcd",
 					},
 					{
 						Type:    dbmodel.AccessPointStatistics,
-						Address: "1.2.3.4",
+						Address: "203.0.113.123",
 						Port:    5678,
 					},
 				},
@@ -89,7 +89,7 @@ func TestStatePullerPullData(t *testing.T) {
 				Name: daemonname.PDNS,
 				AccessPoints: []dbmodel.AccessPoint{{
 					Type:    dbmodel.AccessPointControl,
-					Address: "1.2.3.4",
+					Address: "203.0.113.123",
 					Port:    134,
 					Key:     "abcd",
 				}},
@@ -98,7 +98,7 @@ func TestStatePullerPullData(t *testing.T) {
 				Name: daemonname.CA,
 				AccessPoints: []dbmodel.AccessPoint{{
 					Type:    dbmodel.AccessPointControl,
-					Address: "1.1.1.1",
+					Address: "203.0.113.111",
 					Port:    5678,
 				}},
 			},
@@ -117,10 +117,10 @@ func TestStatePullerPullData(t *testing.T) {
 		return daemon.Name == daemonname.CA
 	}), gomock.Any(), gomock.Any())
 	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
-		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "1.1.1.1"
+		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "203.0.113.111"
 	}), gomock.Any(), gomock.Any())
 	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
-		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "1.2.3.4"
+		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "203.0.113.123"
 	}), gomock.Any(), gomock.Any())
 
 	// add one machine with one kea daemon
@@ -136,7 +136,7 @@ func TestStatePullerPullData(t *testing.T) {
 
 	d := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{{
 		Type:    dbmodel.AccessPointControl,
-		Address: "1.1.1.1",
+		Address: "203.0.113.111",
 		Port:    1234,
 		Key:     "",
 	}})
@@ -184,10 +184,10 @@ func TestStatePullerPullData(t *testing.T) {
 	// The daemon with access point before change. It's no longer active but
 	// should still be in the database.
 	require.Len(t, keaDaemons[0].AccessPoints, 1)
-	require.EqualValues(t, keaDaemons[0].AccessPoints[0].Address, "1.1.1.1")
+	require.EqualValues(t, keaDaemons[0].AccessPoints[0].Address, "203.0.113.111")
 	// The daemon with updated access point.
 	require.Len(t, keaDaemons[1].AccessPoints, 1)
-	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "1.2.3.4")
+	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "203.0.113.123")
 }
 
 // Check if puller correctly pulls data from an agent that can communicate only
@@ -258,13 +258,13 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 				AccessPoints: []dbmodel.AccessPoint{
 					{
 						Type:    dbmodel.AccessPointControl,
-						Address: "1.2.3.4",
+						Address: "203.0.113.123",
 						Port:    124,
 						Key:     "abcd",
 					},
 					{
 						Type:    dbmodel.AccessPointStatistics,
-						Address: "1.2.3.4",
+						Address: "203.0.113.123",
 						Port:    5678,
 					},
 				},
@@ -273,7 +273,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 				Name: daemonname.PDNS,
 				AccessPoints: []dbmodel.AccessPoint{{
 					Type:    dbmodel.AccessPointControl,
-					Address: "1.2.3.4",
+					Address: "203.0.113.123",
 					Port:    134,
 					Key:     "abcd",
 				}},
@@ -282,7 +282,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 				Name: daemonname.CA,
 				AccessPoints: []dbmodel.AccessPoint{{
 					Type:    dbmodel.AccessPointControl,
-					Address: "1.2.3.4",
+					Address: "203.0.113.123",
 					Port:    1234,
 				}},
 			},
@@ -309,7 +309,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	// DHCPv4 daemon.
 	d := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{{
 		Type:    dbmodel.AccessPointControl,
-		Address: "1.1.1.1",
+		Address: "203.0.113.111",
 		Port:    1234,
 		Key:     "",
 	}})
@@ -322,7 +322,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	// CA daemon.
 	d = dbmodel.NewDaemon(m, daemonname.CA, true, []*dbmodel.AccessPoint{{
 		Type:    dbmodel.AccessPointControl,
-		Address: "1.1.1.1",
+		Address: "203.0.113.111",
 		Port:    1234,
 		Key:     "",
 	}})
@@ -361,13 +361,13 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 
 	// Check the detected daemons.
 	require.Equal(t, daemons[0].Name, daemonname.DHCPv4)
-	require.Equal(t, daemons[0].AccessPoints[0].Address, "1.1.1.1")
+	require.Equal(t, daemons[0].AccessPoints[0].Address, "203.0.113.111")
 	require.Equal(t, daemons[1].Name, daemonname.CA)
-	require.Equal(t, daemons[1].AccessPoints[0].Address, "1.1.1.1")
+	require.Equal(t, daemons[1].AccessPoints[0].Address, "203.0.113.111")
 	require.Equal(t, daemons[2].Name, daemonname.CA)
-	require.Equal(t, daemons[2].AccessPoints[0].Address, "1.2.3.4")
+	require.Equal(t, daemons[2].AccessPoints[0].Address, "203.0.113.123")
 	require.Equal(t, daemons[3].Name, daemonname.DHCPv4)
-	require.Equal(t, daemons[3].AccessPoints[0].Address, "1.2.3.4")
+	require.Equal(t, daemons[3].AccessPoints[0].Address, "203.0.113.123")
 	require.Equal(t, daemons[4].Name, daemonname.Bind9)
 	require.Equal(t, daemons[5].Name, daemonname.PDNS)
 }
@@ -382,7 +382,7 @@ func TestDaemonCompare(t *testing.T) {
 	// access point only in dbDaemon so not equal
 	dbDaemon.AccessPoints = []*dbmodel.AccessPoint{{
 		Type:     dbmodel.AccessPointControl,
-		Address:  "1.1.1.1",
+		Address:  "203.0.113.111",
 		Port:     1234,
 		Key:      "abcd",
 		Protocol: protocoltype.HTTPS,
@@ -392,7 +392,7 @@ func TestDaemonCompare(t *testing.T) {
 	// the same access points so equal
 	daemon.AccessPoints = []dbmodel.AccessPoint{{
 		Type:     dbmodel.AccessPointControl,
-		Address:  "1.1.1.1",
+		Address:  "203.0.113.111",
 		Port:     1234,
 		Key:      "abcd",
 		Protocol: protocoltype.HTTPS,
