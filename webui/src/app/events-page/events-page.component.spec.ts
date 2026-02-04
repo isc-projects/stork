@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page.component'
@@ -8,11 +8,14 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { provideRouter } from '@angular/router'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { ActivatedRoute, provideRouter, Router, RouterModule } from '@angular/router'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
     let fixture: ComponentFixture<EventsPageComponent>
+    let route: ActivatedRoute
+    let router: Router
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -23,13 +26,15 @@ describe('EventsPageComponent', () => {
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([]),
+                provideRouter([{ path: 'events', component: EventsPageComponent }]),
             ],
         }).compileComponents()
     }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EventsPageComponent)
+        router = fixture.debugElement.injector.get(Router)
+        route = fixture.debugElement.injector.get(ActivatedRoute)
         component = fixture.componentInstance
         fixture.detectChanges()
     })
@@ -47,4 +52,14 @@ describe('EventsPageComponent', () => {
         expect(breadcrumbsComponent.items[0].label).toEqual('Monitoring')
         expect(breadcrumbsComponent.items[1].label).toEqual('Events')
     })
+
+    it('should retrieve filter parameters from route', fakeAsync(() => {
+        router.navigate(['events'], { queryParams: { level: '2', machineId: '3', daemonName: 'dhcp4', userId: '4' } })
+        tick()
+        component.ngOnInit()
+
+        expect(component.machineId).toBe(3)
+        expect(component.daemonName).toBe('dhcp4')
+        expect(component.userId).toBe(4)
+    }))
 })

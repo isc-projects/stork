@@ -17,7 +17,6 @@ import { EventsPanelComponent } from '../events-panel/events-panel.component'
 export class EventsPageComponent implements OnInit {
     machineId: number = null
     daemonName: Daemon.NameEnum = null
-    daemonId: number = null
     userId: number = null
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Events' }]
 
