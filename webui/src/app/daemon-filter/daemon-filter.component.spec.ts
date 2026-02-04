@@ -99,6 +99,19 @@ describe('DaemonFilterComponent', () => {
         expect(component.daemon).toBeFalsy()
     })
 
+    it('should set daemon to null when input daemonID changes and daemon name is not supported', () => {
+        const resp: SimpleDaemons = {
+            items: [...differentDaemons.items, { id: 4, name: 'ca', machineId: 7 }],
+            total: 4,
+        }
+        spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(resp as any))
+        component.ngOnInit()
+        fixture.componentRef.setInput('daemonID', 4)
+        fixture.detectChanges()
+
+        expect(component.daemon).toBeFalsy()
+    })
+
     it('should query all domains by default', () => {
         spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
         component.ngOnInit()
