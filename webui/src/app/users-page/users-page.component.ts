@@ -205,6 +205,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         )
 
         firstValueFrom(this.serverData.getGroups()).then((groups) => (this.groups = groups.items ?? []))
+        this._updateToolbarButtons()
     }
 
     ngOnDestroy() {

@@ -474,6 +474,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         this.refreshFetchStatusTable()
 
         this.hasFetchZonesPrivileges.set(this.authService.hasPrivilege('zones', 'update'))
+        this._updateToolbarButtons(
+            this.fetchInProgress() || this.putZonesFetchLocked() || !this.hasFetchZonesPrivileges()
+        )
     }
 
     /**
