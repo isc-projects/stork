@@ -192,6 +192,13 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, 0, total)
 	require.NotNil(t, events)
 	require.Empty(t, events)
+
+	unknownDaemonID := int64(9999)
+	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, nil, &unknownDaemonID, &u, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, total)
+	require.NotNil(t, events)
+	require.Empty(t, events)
 }
 
 // Test that TestGetEventsByPage returns results with correct sorting.
