@@ -48,7 +48,10 @@ var app = new Vue({
                 attempts: application.attempts,
                 qname: application.qname,
                 qtype: application.qtype,
-                transport: application.transport
+                transport: application.transport,
+                rate: application.rate,
+                clients: application.clients
+
             }
             axios.put('/query/' + idx, data).then(function (response) {
                 this.applications.length = 0;
@@ -62,7 +65,9 @@ var app = new Vue({
                 attempts: application.attempts,
                 qname: application.qname,
                 qtype: application.qtype,
-                transport: application.transport
+                transport: application.transport,
+                rate: application.rate,
+                clients: application.clients
             }
             axios.put('/perf/' + idx, data).then(function (response) {
                 this.applications.length = 0;
