@@ -291,7 +291,10 @@ to the number of configured zones.
                                 excluded (only non-RPZ are listed), or only the RPZ should be listed (and regular zones
                                 excluded).
                             </li>
-                            <li>Daemon ID - the ID of the DNS Daemon.</li>
+                            <li>
+                                Daemon - pick a daemon from the dropdown list or type to search the daemon by machine's
+                                hostname, address, or the daemon name itself.
+                            </li>
                             <li>Serial - partial or exact zone serial.</li>
                             <li>Zone Class - exact zone class.</li>
                             <li>Daemon Name - name of the DNS Daemon.</li>
@@ -386,23 +389,12 @@ to the number of configured zones.
                         >
                             <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <div class="flex align-items-center">
-                                    <p-floatlabel variant="on">
-                                        <p-inputNumber
-                                            inputId="daemon-id"
-                                            mode="decimal"
-                                            [useGrouping]="false"
-                                            (onInput)="
-                                                filterZonesTable(
-                                                    $event.value === 0 ? 1 : $event.value,
-                                                    filterConstraint
-                                                )
-                                            "
-                                            [ngModel]="value"
-                                            min="1"
-                                            styleClass="w-8rem"
-                                        ></p-inputNumber>
-                                        <label for="daemon-id">Daemon ID</label>
-                                    </p-floatlabel>
+                                    <app-daemon-filter
+                                        [daemonID]="value"
+                                        (daemonIDChange)="filterZonesTable($event, filterConstraint)"
+                                        domain="dns"
+                                        label="Daemon"
+                                    />
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;

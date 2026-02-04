@@ -309,6 +309,48 @@ const primaryZones: Zone[] = [
 
 const allZones: Zone[] = [rootZone, ...builtinZones, ...primaryZones]
 
+const daemonsMachineAddresses = [
+    {
+        active: true,
+        id: 1,
+        machine: {
+            address: '3001:db8:1::cafe',
+            agentPort: 8891,
+            agentVersion: '2.3.2',
+            id: 29,
+        },
+        name: 'pdns',
+        version: '4.7.3',
+    },
+    {
+        active: true,
+        id: 2,
+        machine: {
+            address: '10.0.0.222',
+            agentPort: 8883,
+            agentVersion: '2.3.2',
+            daemons: [],
+            hostname: 'agent-bind9',
+            id: 31,
+        },
+        name: 'named',
+        version: 'BIND 9.20.16 (Stable Release) <id:c97aa2d>',
+    },
+    {
+        active: true,
+        id: 4,
+        machine: {
+            address: '10.17.0.201',
+            agentPort: 8882,
+            agentVersion: '2.3.2',
+            daemons: [],
+            id: 32,
+        },
+        name: 'named',
+        version: 'BIND 9.20.16 (Stable Release) <id:c97aa2d>',
+    },
+]
+
 const filterByZoneType = (url: string) => {
     const search = new URL(url, 'http://localhost').search
     const searchParams = new URLSearchParams(search)
@@ -725,6 +767,15 @@ export const ListZones: Story = {
                     return mockedFilterByText(resp, req, 'name')
                 },
             },
+            {
+                url: 'api/daemons/directory?domain=d',
+                method: 'GET',
+                status: 200,
+                response: () => {
+                    return { items: daemonsMachineAddresses, total: daemonsMachineAddresses.length }
+                },
+                delay: 500,
+            },
         ],
     },
 }
@@ -885,6 +936,21 @@ export const TestZonesFiltering: Story = {
         // 2 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(3)) // All rows in tbody + one row in the thead.
         await expect(within(table).queryAllByText('RPZ')).toHaveLength(2)
+
+        // Check filtering by daemon.
+        await userEvent.click(clearFiltersBtn)
+        elementID = canvas.getByText('Daemon').getAttribute('for')
+        selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
+        await expect(selectSpan).toBeTruthy()
+
+        await userEvent.click(selectSpan)
+        await userEvent.keyboard('pdns')
+
+        const daemon = await canvas.findByRole('option')
+        await userEvent.click(daemon)
+
+        // 4 zones are expected.
+        await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(5)) // All rows in tbody + one row in the thead.
 
         // Check filtering by zone type.
         await userEvent.click(clearFiltersBtn)

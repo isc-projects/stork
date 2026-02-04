@@ -64,6 +64,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { SplitButton } from 'primeng/splitbutton'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { AuthService } from '../auth.service'
+import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
 
 /**
  * An interface extending the LocalZone with the properties useful
@@ -115,6 +116,7 @@ interface ExtendedLocalZone extends LocalZone {
         EntityLinkComponent,
         SplitButton,
         TableCaptionComponent,
+        DaemonFilterComponent,
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {
