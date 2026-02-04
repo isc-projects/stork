@@ -315,10 +315,10 @@ func addOnCommitSubnetEvents(daemon *dbmodel.Daemon, addedSubnets []*dbmodel.Sub
 		// add event per subnet only if there is not more than 10 subnets
 		if len(addedSubnets) < 10 {
 			for _, sn := range addedSubnets {
-				eventCenter.AddInfoEvent("added {subnet} to {daemon} in {machine}", sn, daemon, daemon.Machine)
+				eventCenter.AddInfoEvent("added {subnet} to {daemon} on {machine}", sn, daemon, daemon.Machine)
 			}
 		}
-		t := fmt.Sprintf("added %d subnets to {daemon} in {machine}", len(addedSubnets))
+		t := fmt.Sprintf("added %d subnets to {daemon} on {machine}", len(addedSubnets))
 		eventCenter.AddInfoEvent(t, daemon, daemon.Machine)
 	}
 }
