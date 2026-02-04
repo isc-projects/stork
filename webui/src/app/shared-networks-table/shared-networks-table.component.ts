@@ -31,6 +31,7 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
+import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
 
 /**
  * Component for presenting shared networks in a table.
@@ -61,6 +62,7 @@ import { SplitButton } from 'primeng/splitbutton'
         PluralizePipe,
         TableCaptionComponent,
         SplitButton,
+        DaemonFilterComponent,
     ],
 })
 export class SharedNetworksTableComponent implements OnInit, OnDestroy {

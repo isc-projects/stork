@@ -35,7 +35,10 @@
                     filters. The currently supported fields for explicit filtering are:
                 </p>
                 <ul>
-                    <li>Daemon ID</li>
+                    <li>
+                        Daemon - pick a daemon from the dropdown list or type to search the daemon by machine's
+                        hostname, address, or the daemon name itself.
+                    </li>
                     <li>DHCP Version</li>
                 </ul>
             </ng-template>
@@ -43,18 +46,12 @@
                 <p-columnFilter field="daemonId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <div class="flex align-items-center">
-                            <p-floatlabel variant="on">
-                                <p-inputNumber
-                                    inputId="daemon-id"
-                                    mode="decimal"
-                                    [useGrouping]="false"
-                                    min="1"
-                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
-                                    [ngModel]="value"
-                                    class="max-w-8rem"
-                                ></p-inputNumber>
-                                <label for="daemon-id">Daemon ID</label>
-                            </p-floatlabel>
+                            <app-daemon-filter
+                                [daemonID]="value"
+                                (daemonIDChange)="filterTable($event, filterMetadata)"
+                                domain="dhcp"
+                                label="Daemon"
+                            />
                             <p-button
                                 icon="pi pi-filter-slash"
                                 [rounded]="true"
