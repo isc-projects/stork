@@ -583,6 +583,7 @@ const meta: Meta<MachinesPageComponent> = {
             items: mockedAllMachines,
             total: mockedAllMachines.length,
         }
+        localStorage.clear()
     },
 }
 

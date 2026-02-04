@@ -35,6 +35,9 @@ const meta: Meta<ZonesPageComponent> = {
         }),
         toastDecorator,
     ],
+    async beforeEach() {
+        localStorage.clear()
+    },
 }
 
 export default meta
@@ -1041,5 +1044,92 @@ export const TestIncorrectQueryParamFilters: Story = {
         await waitFor(
             () => expect(within(table).getAllByRole('row')).toHaveLength(allZones.length + 1 - builtinZones.length) // All rows in tbody + one row in the thead.
         )
+    },
+}
+
+export const TestFiltersToolbar: Story = {
+    globals: {
+        role: 'super-admin',
+        viewport: undefined, // Overwrite user viewport preference to have large viewport when testing.
+    },
+    parameters: ListZones.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
+
+        // Act + Assert
+        const showFiltersToolbarToggle = await canvas.findByLabelText('Show Filters')
+        await waitFor(() => expect(showFiltersToolbarToggle).toBeTruthy())
+        const filtersVisible = showFiltersToolbarToggle.getAttribute('aria-checked')
+        if (filtersVisible != 'true') {
+            // If filters were hidden, make them visible again.
+            await userEvent.click(showFiltersToolbarToggle)
+        }
+
+        const toolbar = await canvas.findByRole('toolbar')
+        await expect(toolbar).toBeInTheDocument()
+        await waitFor(() => expect(toolbar).toBeVisible())
+
+        await userEvent.click(showFiltersToolbarToggle)
+        await waitFor(() => expect(toolbar).not.toBeVisible())
+        await userEvent.click(showFiltersToolbarToggle)
+        await waitFor(() => expect(toolbar).toBeVisible())
+
+        const refreshButton = await canvas.findByRole('button', { name: 'Refresh List' })
+        const internalButtonElements = await within(refreshButton.parentElement).findAllByRole('button')
+        await expect(internalButtonElements).toHaveLength(1) // This verifies that normal buttons are displayed instead of PrimeNG splitButton. SplitButton would have two or more buttons inside.
+
+        const fetchButton = await canvas.findByRole('button', { name: 'Fetch Zones' })
+        await expect(fetchButton).toBeEnabled()
+
+        const toolbarButtons = await within(toolbar).findAllByRole('button')
+        await userEvent.click(toolbarButtons[0])
+        const dialog = await body.findByRole('dialog')
+        await expect(within(dialog).getByText('Help for Filtering')).toBeInTheDocument()
+    },
+}
+
+export const TestFiltersToolbarResponsive: Story = {
+    globals: {
+        role: 'read-only', // Check if user privileges work.
+        viewport: 'mobile2', // Overwrite user viewport preference to have large mobile viewport when testing.
+    },
+    parameters: ListZones.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const body = within(canvasElement.parentElement)
+
+        // Act + Assert
+        const showFiltersToolbarToggle = await canvas.findByLabelText('Show Filters')
+        await waitFor(() => expect(showFiltersToolbarToggle).toBeTruthy())
+        const filtersVisible = showFiltersToolbarToggle.getAttribute('aria-checked')
+        if (filtersVisible != 'true') {
+            // If filters were hidden, make them visible again.
+            await userEvent.click(showFiltersToolbarToggle)
+        }
+
+        const toolbar = await canvas.findByRole('toolbar')
+        await expect(toolbar).toBeInTheDocument()
+        await waitFor(() => expect(toolbar).toBeVisible())
+
+        await userEvent.click(showFiltersToolbarToggle)
+        await waitFor(() => expect(toolbar).not.toBeVisible())
+        await userEvent.click(showFiltersToolbarToggle)
+        await waitFor(() => expect(toolbar).toBeVisible())
+
+        const refreshButton = await canvas.findByRole('button', { name: 'Refresh List' })
+
+        const internalButtonElements = await within(refreshButton.parentElement).findAllByRole('button')
+        await expect(internalButtonElements).toHaveLength(2)
+
+        await userEvent.click(internalButtonElements[1])
+        const dropdownOptions = await body.findAllByRole('menuitem')
+        await expect(dropdownOptions).toHaveLength(2)
+
+        // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
+        await expect(dropdownOptions[0]).not.toHaveAttribute('aria-disabled', 'true')
+        await expect(dropdownOptions[1]).toHaveAttribute('aria-disabled', 'true')
     },
 }
