@@ -1,6 +1,6 @@
-import { Component, OnDestroy, OnInit, viewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
 import { UntypedFormGroup, FormsModule } from '@angular/forms'
-import { ConfirmationService, MessageService, TableState, PrimeTemplate } from 'primeng/api'
+import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
@@ -19,16 +19,16 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Panel } from 'primeng/panel'
 import { NgIf } from '@angular/common'
 import { Tag } from 'primeng/tag'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { IconField } from 'primeng/iconfield'
 import { InputIcon } from 'primeng/inputicon'
 import { InputText } from 'primeng/inputtext'
 import { Checkbox } from 'primeng/checkbox'
 import { UserFormComponent } from '../user-form/user-form.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { SplitButton } from 'primeng/splitbutton'
 
 /**
  * Form validator verifying if the confirmed password matches the password
@@ -105,10 +105,8 @@ export function isInternalUser(user: User) {
         RouterLink,
         ManagedAccessDirective,
         TableModule,
-        Panel,
         NgIf,
         Tag,
-        HelpTipComponent,
         PrimeTemplate,
         IconField,
         InputIcon,
@@ -117,6 +115,8 @@ export function isInternalUser(user: User) {
         Checkbox,
         UserFormComponent,
         PlaceholderPipe,
+        TableCaptionComponent,
+        SplitButton,
     ],
 })
 export class UsersPageComponent implements OnInit, OnDestroy {
@@ -138,6 +138,44 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     tabTitleProvider: (user: User) => string = (user: User) => user.login || user.email
 
     private _subscriptions: Subscription = new Subscription()
+
+    /**
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
+     */
+    toolbarButtons: MenuItem[] = []
+
+    /**
+     * This flag states whether user has privileges to create new user account.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canCreateUser = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on user privileges changes and triggering update of the splitButton model
+     * inside the filtering toolbar.
+     */
+    privilegesChangeEffect = effect(() => {
+        if (this.canCreateUser()) {
+            this._updateToolbarButtons()
+        }
+    })
+
+    /**
+     * Updates filtering toolbar splitButton menu items.
+     * Based on user privileges some menu items may be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons() {
+        const buttons: MenuItem[] = [
+            {
+                label: 'Create User Account',
+                icon: 'pi pi-plus',
+                routerLink: '/users/new',
+                disabled: !this.canCreateUser(),
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
 
     constructor(
         private usersApi: UsersService,
