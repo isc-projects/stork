@@ -21,4 +21,34 @@ describe('TableCaptionComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
+
+    it('should set storage key', () => {
+        expect(component.storageKey()).toEqual('key-filters-toolbar-shown')
+    })
+
+    it('should support storing shown-hidden state to local storage', () => {
+        // At first clear the storage.
+        localStorage.clear()
+        expect(localStorage.getItem(component.storageKey())).toBeFalsy()
+
+        // It should be true by default.
+        component.ngOnInit()
+        expect(component.filtersShown()).toBeTrue()
+
+        // Check if state is read from local storage.
+        localStorage.setItem(component.storageKey(), JSON.stringify(false))
+        component.ngOnInit()
+
+        expect(component.getFiltersShownFromStorage()).toBeFalse()
+        expect(component.filtersShown()).toBeFalse()
+
+        // Check if state is stored in local storage.
+        component.storeFiltersShown(true)
+
+        expect(localStorage.getItem(component.storageKey())).toEqual('true')
+        expect(component.getFiltersShownFromStorage()).toBeTrue()
+
+        component.ngOnInit()
+        expect(component.filtersShown()).toBeTrue()
+    })
 })
