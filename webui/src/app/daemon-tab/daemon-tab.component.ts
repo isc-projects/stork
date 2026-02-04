@@ -74,7 +74,7 @@ export class DaemonTabComponent {
     confirmDelete() {
         this.confirmService.confirm({
             message:
-                'Are you sure that you want to delete this daemon? <br/> Please note that the active daemon will be redetected automatically soon.',
+                'Are you sure that you want to delete this daemon? <br/> If the daemon becomes active again, Stork will re-detect it.',
             header: 'Delete Daemon',
             icon: 'pi pi-exclamation-triangle',
             rejectButtonProps: { text: true, icon: 'pi pi-times', label: 'Cancel' },

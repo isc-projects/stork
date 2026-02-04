@@ -16,13 +16,13 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <p-button label="Delete" icon="pi pi-trash" (onClick)="confirmDelete()"></p-button>
                 <p-button
                     label="Refresh"
                     icon="pi pi-refresh"
                     (onClick)="refresh()"
                     [disabled]="daemon().id === undefined"
                 ></p-button>
+                <p-button label="Delete" severity="danger" icon="pi pi-trash" (onClick)="confirmDelete()"></p-button>
             </div>
         </div>
     </div>
