@@ -1,16 +1,3 @@
-<div class="mb-2 flex gap-2 flex-wrap justify-content-end">
-    <p-button
-        *ngIf="unauthorizedMachinesDisplayed()"
-        [disabled]="selectedMachines?.length === 0"
-        label="Authorize selected"
-        icon="pi pi-lock"
-        (onClick)="onAuthorizeSelectedMachinesClicked(selectedMachines)"
-        id="authorize-selected-button"
-        appAccessEntity="machine-authorization"
-        appAccessType="update"
-    ></p-button>
-    <p-button label="Refresh List" icon="pi pi-refresh" (onClick)="loadData(table.createLazyLoadMetadata())"></p-button>
-</div>
 <p-table
     #table
     [value]="dataCollection"
@@ -35,60 +22,32 @@
     styleClass="xxl:datatable-responsive"
 >
     <ng-template #caption>
-        <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-            <ng-template #header>
-                <div class="flex align-items-center gap-2">
-                    <p-button
-                        [text]="true"
-                        [rounded]="true"
-                        severity="secondary"
-                        [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                        (click)="filtersPanel.toggle($event)"
-                    />
-                    <i class="pi pi-filter"></i>
-                    <span class="font-bold">Filters</span>
-                    <p-tag
-                        icon="pi pi-check"
-                        value="Filter applied"
-                        severity="success"
-                        *ngIf="tableHasFilter(table)"
-                    ></p-tag>
-                    <app-help-tip subject="Filtering" id="filtering-help-button">
-                        <p>
-                            Machines in the table below can be filtered by entering text in the search box; the table
-                            shows all machines matching the filter text. The currently supported fields for filtering
-                            are:
-                        </p>
-                        <ul>
-                            <li>Address</li>
-                            <li>Agent Version</li>
-                            <li>Hostname</li>
-                            <li>OS</li>
-                            <li>Platform</li>
-                            <li>Platform Family</li>
-                            <li>Platform Version</li>
-                            <li>Kernel Version</li>
-                            <li>Kernel Arch</li>
-                            <li>Virtualization System</li>
-                            <li>Virtualization Role</li>
-                            <li>Host ID</li>
-                        </ul>
-                        <p>
-                            Authorized and unauthorized machines can be filtered out by using
-                            <b>Authorized machines checkbox</b> filter.
-                        </p>
-                    </app-help-tip>
-                </div>
+        <app-table-caption [tableElement]="table" tableKey="machines-table">
+            <ng-template #helptip>
+                <p>
+                    Machines in the table below can be filtered by entering text in the search box; the table shows all
+                    machines matching the filter text. The currently supported fields for filtering are:
+                </p>
+                <ul>
+                    <li>Address</li>
+                    <li>Agent Version</li>
+                    <li>Hostname</li>
+                    <li>OS</li>
+                    <li>Platform</li>
+                    <li>Platform Family</li>
+                    <li>Platform Version</li>
+                    <li>Kernel Version</li>
+                    <li>Kernel Arch</li>
+                    <li>Virtualization System</li>
+                    <li>Virtualization Role</li>
+                    <li>Host ID</li>
+                </ul>
+                <p>
+                    Authorized and unauthorized machines can be filtered out by using
+                    <b>Authorized machines checkbox</b> filter.
+                </p>
             </ng-template>
-            <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
-                <p-button
-                    label="Clear"
-                    [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
-                    icon="pi pi-filter-slash"
-                    (click)="clearTableFiltering()"
-                    [disabled]="!tableHasFilter(table)"
-                ></p-button>
-                <div class="flex-auto"></div>
+            <ng-template #filters>
                 <p-columnFilter
                     type="boolean"
                     field="authorized"
@@ -142,8 +101,35 @@
                         </div>
                     </ng-template>
                 </p-columnFilter>
-            </div>
-        </p-panel>
+            </ng-template>
+            <ng-template #buttons>
+                <p-button
+                    *ngIf="unauthorizedMachinesDisplayed()"
+                    [disabled]="selectedMachines().length === 0"
+                    label="Authorize selected"
+                    icon="pi pi-lock"
+                    (onClick)="onAuthorizeSelectedMachinesClicked(selectedMachines())"
+                    id="authorize-selected-button"
+                    appAccessEntity="machine-authorization"
+                    appAccessType="update"
+                    (appHasAccess)="canAuthorizeMachine.set($event)"
+                ></p-button>
+                <p-button
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(table.createLazyLoadMetadata())"
+                ></p-button>
+            </ng-template>
+            <ng-template #splitbutton>
+                <p-splitbutton
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(table.createLazyLoadMetadata())"
+                    [model]="toolbarButtons"
+                    size="small"
+                />
+            </ng-template>
+        </app-table-caption>
     </ng-template>
     <ng-template #header>
         <tr>

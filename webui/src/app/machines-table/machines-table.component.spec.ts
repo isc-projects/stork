@@ -175,11 +175,13 @@ describe('MachinesTableComponent', () => {
         expect(component.dataLoading).toBeFalse()
     })
 
-    it('should return authorized machines displayed', () => {
+    it('should return authorized machines displayed', async () => {
         // Arrange
-        component.dataCollection = getAllMachinesResp.items
+        component.loadData({ first: 0, rows: 10, filters: {} })
 
         // Act & Assert
+        await fixture.whenStable()
+        fixture.detectChanges()
         expect(component.authorizedMachinesDisplayed()).toBeTrue()
     })
 
@@ -191,11 +193,13 @@ describe('MachinesTableComponent', () => {
         expect(component.authorizedMachinesDisplayed()).toBeFalse()
     })
 
-    it('should return unauthorized machines displayed', () => {
+    it('should return unauthorized machines displayed', async () => {
         // Arrange
-        component.dataCollection = getAllMachinesResp.items
+        component.loadData({ first: 0, rows: 10, filters: {} })
 
         // Act & Assert
+        await fixture.whenStable()
+        fixture.detectChanges()
         expect(component.unauthorizedMachinesDisplayed()).toBeTrue()
     })
 
@@ -302,14 +306,14 @@ describe('MachinesTableComponent', () => {
 
     it('should clear selected machines', () => {
         // Arrange
-        component.selectedMachines = getUnauthorizedMachinesResp.items
-        expect(component.selectedMachines.length).toEqual(getUnauthorizedMachinesResp.items.length)
+        component.selectedMachines.set(getUnauthorizedMachinesResp.items)
+        expect(component.selectedMachines().length).toEqual(getUnauthorizedMachinesResp.items.length)
 
         // Act
         component.clearSelection()
 
         // Assert
-        expect(component.selectedMachines.length).toEqual(0)
+        expect(component.selectedMachines().length).toEqual(0)
     })
 
     it('should emit on machine menu display', async () => {

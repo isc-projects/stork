@@ -1,9 +1,9 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
+import { Component, effect, EventEmitter, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Machine, MachineSortField, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule, TableSelectAllChangeEvent } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
-import { MessageService, PrimeTemplate, TableState } from 'primeng/api'
+import { MenuItem, MessageService, PrimeTemplate, TableState } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
@@ -12,8 +12,6 @@ import { Message } from 'primeng/message'
 import { NgFor, NgIf } from '@angular/common'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Panel } from 'primeng/panel'
-import { Tag } from 'primeng/tag'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
 import { IconField } from 'primeng/iconfield'
@@ -26,6 +24,8 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
+import { SplitButton } from 'primeng/splitbutton'
 
 /**
  * This component is dedicated to display the table of Machines. It supports
@@ -40,8 +40,6 @@ import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
         Button,
         ManagedAccessDirective,
         TableModule,
-        Panel,
-        Tag,
         HelpTipComponent,
         PrimeTemplate,
         TriStateCheckboxComponent,
@@ -58,6 +56,8 @@ import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
         PlaceholderPipe,
         PluralizePipe,
         DaemonStatusComponent,
+        TableCaptionComponent,
+        SplitButton,
     ],
 })
 export class MachinesTableComponent implements OnInit, OnDestroy {
@@ -79,7 +79,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
     /**
      * Array of selected machines.
      */
-    selectedMachines: Machine[] = []
+    selectedMachines = signal<Machine[]>([])
 
     /**
      * This counter is used to indicate in UI that there are some
@@ -143,6 +143,47 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Menu items of the splitButton which appears only for narrower viewports in the filtering toolbar.
+     */
+    toolbarButtons: MenuItem[] = []
+
+    /**
+     * This flag states whether user has privileges to authorize machines.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canAuthorizeMachine = signal<boolean>(false)
+
+    /**
+     * Effect signal reacting on user privileges changes and triggering update of the splitButton model
+     * inside the filtering toolbar.
+     */
+    privilegesChangeEffect = effect(() => {
+        if (this.canAuthorizeMachine() || this.unauthorizedMachinesDisplayed() || this.selectedMachines().length) {
+            this._updateToolbarButtons()
+        }
+    })
+
+    /**
+     * Updates filtering toolbar splitButton menu items.
+     * Based on user privileges some menu items may be disabled or not.
+     * @private
+     */
+    private _updateToolbarButtons() {
+        const buttons: MenuItem[] = [
+            {
+                label: 'Authorize selected',
+                icon: 'pi pi-lock',
+                command: () => this.onAuthorizeSelectedMachinesClicked(this.selectedMachines()),
+                disabled:
+                    !this.canAuthorizeMachine() ||
+                    !this.unauthorizedMachinesDisplayed() ||
+                    !this.selectedMachines().length,
+            },
+        ]
+        this.toolbarButtons = [...buttons]
+    }
+
+    /**
      * Component constructor.
      * @param servicesApi Services API used to fetch machines from backend.
      * @param messageService Message service used to display feedback messages in UI.
@@ -181,6 +222,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
                     this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.machinesTable) })
                 })
         )
+        this._updateToolbarButtons()
     }
 
     /**
@@ -211,6 +253,8 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         )
             .then((data) => {
                 this.dataCollection = data.items ?? []
+                this.authorizedMachinesDisplayed.set(this.dataCollection.some((m) => m.authorized) || false)
+                this.unauthorizedMachinesDisplayed.set(this.dataCollection.some((m) => !m.authorized) || false)
                 this.totalRecords = data.total ?? 0
                 this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
                 if (
@@ -223,7 +267,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
                     this.fetchUnauthorizedMachinesCount()
                 }
 
-                if (this.selectedMachines.length > 0) {
+                if (this.selectedMachines().length > 0) {
                     // Clear selection on any lazy data load.
                     // This is to prevent confusion when selected machines could be out of filtered results.
                     this.clearSelection()
@@ -246,16 +290,12 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
     /**
      * Returns true if the table's data collection contains any authorized machine; false otherwise.
      */
-    authorizedMachinesDisplayed(): boolean {
-        return this.dataCollection?.some((m) => m.authorized) || false
-    }
+    authorizedMachinesDisplayed = signal<boolean>(false)
 
     /**
      * Returns true if the table's data collection contains any unauthorized machine; false otherwise.
      */
-    unauthorizedMachinesDisplayed(): boolean {
-        return this.dataCollection?.some((m) => !m.authorized) || false
-    }
+    unauthorizedMachinesDisplayed = signal<boolean>(false)
 
     /**
      * Fetches Unauthorized Machines Count via getUnauthorizedMachinesCount API.
@@ -281,7 +321,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
      * Clears the machines selection.
      */
     clearSelection() {
-        this.selectedMachines = []
+        this.selectedMachines.set([])
         this.selectAll = false
     }
 
@@ -309,7 +349,7 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         if (event.checked) {
             this.selectAll = true
             // Custom select all behavior: select only unauthorized machines visible on current table page.
-            this.selectedMachines = this.dataCollection.filter((m) => !m.authorized)
+            this.selectedMachines.set(this.dataCollection.filter((m) => !m.authorized))
             return
         }
 
