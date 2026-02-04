@@ -111,6 +111,8 @@ webui/src/app/std-dhcpv6-option-defs.ts
 
 # Compiled Python requirement files
 rakelib/init_deps/*.*.txt
+!rakelib/init_deps/*.3_9.txt
+!rakelib/init_deps/*.3_10.txt
 !rakelib/init_deps/*.3_11.txt
 !rakelib/init_deps/*.3_12.txt
 !rakelib/init_deps/*.3_13.txt
