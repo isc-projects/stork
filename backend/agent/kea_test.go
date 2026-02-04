@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"path"
 	"path/filepath"
 	"sync"
@@ -1921,6 +1920,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 	// Call the function once from an empty state to start watching a DHCPv4 lease
 	// file. There should be no errors.
 	t.Run("dhcpv4 start", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
 		config := keaconfig.Config{
 			DHCPv4Config: &keaconfig.DHCPv4Config{
 				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
@@ -1932,9 +1934,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases4")
+		leasefile, err := sb.Join("kea-leases4")
 		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
 
 		dhcpV4ResponsesJSON := fmt.Sprintf(`[
 			{
@@ -1943,7 +1944,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 					"csv-lease-file": "%s"
 				}
 			}
-		]`, leasefile.Name())
+		]`, leasefile)
 		err = makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON, 1)
 		require.NoError(t, err)
 
@@ -1974,6 +1975,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 	// Call the function once from an empty state to start watching a DHCPv6
 	// lease file. There should be no errors.
 	t.Run("dhcpv6 start", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
 		config := keaconfig.Config{
 			DHCPv6Config: &keaconfig.DHCPv6Config{
 				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
@@ -1985,9 +1988,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases6")
+		leasefile, err := sb.Join("kea-leases6")
 		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
 
 		dhcpV6ResponsesJSON := fmt.Sprintf(`[
 			{
@@ -1996,7 +1998,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 					"csv-lease-file": "%s"
 				}
 			}
-		]`, leasefile.Name())
+		]`, leasefile)
 		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON, 1)
 		require.NoError(t, err)
 
@@ -2026,6 +2028,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 	})
 	// Call the function twice, once to start watching a file, and then again to switch to a different file. There should be no errors.
 	t.Run("dhcp6 change file", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
 		config := keaconfig.Config{
 			DHCPv6Config: &keaconfig.DHCPv6Config{
 				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
@@ -2037,12 +2042,10 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile1, err := os.CreateTemp("", "kea-leases6")
+		leasefile1, err := sb.Join("kea-leases6")
 		require.NoError(t, err)
-		defer os.Remove(leasefile1.Name())
-		leasefile2, err := os.CreateTemp("", "kea-leases6")
+		leasefile2, err := sb.Join("kea-leases6")
 		require.NoError(t, err)
-		defer os.Remove(leasefile2.Name())
 
 		dhcpV6ResponsesJSONTemplate := `[
 			{
@@ -2052,8 +2055,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				}
 			}
 		]`
-		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile1.Name())
-		dhcpV6ResponsesJSON2 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile2.Name())
+		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile1)
+		dhcpV6ResponsesJSON2 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile2)
 		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON1, 1)
 		require.NoError(t, err)
 		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON2, 1)
@@ -2089,6 +2092,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 	// stop watching it (because Kea was switched to a SQL database lease backend).
 	// There should be no errors.
 	t.Run("dhcp6 stop watching", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
 		config1 := keaconfig.Config{
 			DHCPv6Config: &keaconfig.DHCPv6Config{
 				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
@@ -2109,9 +2115,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases6")
+		leasefile, err := sb.Join("kea-leases6")
 		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
 
 		dhcpV6ResponsesJSONTemplate := `[
 			{
@@ -2121,7 +2126,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				}
 			}
 		]`
-		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile.Name())
+		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile)
 		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON1, 2)
 		require.NoError(t, err)
 
@@ -2154,6 +2159,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 	// Call the function once with memfile mode on, but persist set to false, to
 	// ensure that nothing breaks when you turn off persistence.
 	t.Run("dhcp6 persist false", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
 		nopersist := false
 		config := keaconfig.Config{
 			DHCPv6Config: &keaconfig.DHCPv6Config{
@@ -2167,9 +2175,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases6")
+		leasefile, err := sb.Join("kea-leases6")
 		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
 
 		dhcpV6ResponsesJSONTemplate := `[
 			{
@@ -2179,7 +2186,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				}
 			}
 		]`
-		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile.Name())
+		dhcpV6ResponsesJSON1 := fmt.Sprintf(dhcpV6ResponsesJSONTemplate, leasefile)
 		err = makeKeaCommandMock("dhcp6", dhcpV6ResponsesJSON1, 1)
 		require.NoError(t, err)
 
@@ -2210,6 +2217,9 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 	// Call the function once with memfile mode on, but persist set to false, to
 	// ensure that nothing breaks when you turn off persistence.
 	t.Run("dhcp4 persist false", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
 		nopersist := false
 		config := keaconfig.Config{
 			DHCPv4Config: &keaconfig.DHCPv4Config{
@@ -2223,9 +2233,8 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases4")
+		leasefile, err := sb.Join("kea-leases4")
 		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
 
 		dhcpV4ResponsesJSONTemplate := `[
 			{
@@ -2235,7 +2244,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 				}
 			}
 		]`
-		dhcpV4ResponsesJSON1 := fmt.Sprintf(dhcpV4ResponsesJSONTemplate, leasefile.Name())
+		dhcpV4ResponsesJSON1 := fmt.Sprintf(dhcpV4ResponsesJSONTemplate, leasefile)
 		err = makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON1, 1)
 		require.NoError(t, err)
 
@@ -2278,10 +2287,6 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases4")
-		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
-
 		gock.New("http://localhost:45634").
 			MatchHeader("Content-Type", "application/json").
 			JSON(map[string]any{"command": "status-get", "service": []string{"dhcp4"}}).
@@ -2307,7 +2312,7 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 			connector: connector,
 		}
 
-		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
+		err := daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
 		require.ErrorContains(t, err, "500")
 
 		require.False(t, gock.HasUnmatchedRequest())
@@ -2329,17 +2334,13 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		}
 		defer gock.Off()
 
-		leasefile, err := os.CreateTemp("", "kea-leases4")
-		require.NoError(t, err)
-		defer os.Remove(leasefile.Name())
-
 		dhcpV4ResponsesJSON := `[
 			{
 				"result": 0,
 				"arguments": {}
 			}
 		]`
-		err = makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON, 1)
+		err := makeKeaCommandMock("dhcp4", dhcpV4ResponsesJSON, 1)
 		require.NoError(t, err)
 
 		accessPoint := AccessPoint{
