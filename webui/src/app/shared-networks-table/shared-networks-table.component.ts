@@ -19,7 +19,6 @@ import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { NgIf, NgFor, DecimalPipe } from '@angular/common'
 import { FloatLabel } from 'primeng/floatlabel'
-import { InputNumber } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { Select } from 'primeng/select'
 import { IconField } from 'primeng/iconfield'
@@ -48,7 +47,6 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
         NgIf,
         PrimeTemplate,
         FloatLabel,
-        InputNumber,
         FormsModule,
         Select,
         IconField,

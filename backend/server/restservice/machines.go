@@ -1348,11 +1348,11 @@ func (r *RestAPI) GetDaemonsDirectory(ctx context.Context, params services.GetDa
 	daemons := &models.SimpleDaemons{}
 	for _, dbDaemon := range dbDaemons {
 		daemon := &models.SimpleDaemon{
-			ID:      dbDaemon.ID,
-			Name:    string(dbDaemon.Name),
-			Version: dbDaemon.Version,
-			Active:  dbDaemon.Active,
-			Machine: r.simpleMachineToRestAPI(*dbDaemon.Machine),
+			ID:        dbDaemon.ID,
+			Name:      string(dbDaemon.Name),
+			Version:   dbDaemon.Version,
+			Active:    dbDaemon.Active,
+			Machine:   r.simpleMachineToRestAPI(*dbDaemon.Machine),
 			MachineID: dbDaemon.MachineID,
 		}
 		daemons.Items = append(daemons.Items, daemon)

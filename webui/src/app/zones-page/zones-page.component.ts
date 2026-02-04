@@ -48,7 +48,6 @@ import { FloatLabel } from 'primeng/floatlabel'
 import { MultiSelect } from 'primeng/multiselect'
 import { FormsModule } from '@angular/forms'
 import { Select } from 'primeng/select'
-import { InputNumber } from 'primeng/inputnumber'
 import { InputText } from 'primeng/inputtext'
 import { IconField } from 'primeng/iconfield'
 import { InputIcon } from 'primeng/inputicon'
@@ -100,7 +99,6 @@ interface ExtendedLocalZone extends LocalZone {
         MultiSelect,
         FormsModule,
         Select,
-        InputNumber,
         InputText,
         IconField,
         InputIcon,
