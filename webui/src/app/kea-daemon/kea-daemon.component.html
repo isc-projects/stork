@@ -12,7 +12,7 @@
             <label for="monitored-switch" class="ml-2 my-auto">Monitoring</label>
         </div>
         <p-button
-            *ngIf="isDhcpDaemon"
+            *ngIf="isDhcpDaemon()"
             routerLink="/dhcp/hosts"
             [queryParams]="{ daemonId: daemon().id }"
             label="Host Reservations"
@@ -22,7 +22,7 @@
             appAccessEntity="host-reservation"
         ></p-button>
         <p-button
-            *ngIf="isDhcpDaemon"
+            *ngIf="isDhcpDaemon()"
             routerLink="/dhcp/subnets"
             [queryParams]="{ daemonId: daemon().id }"
             label="Subnets"
@@ -32,7 +32,7 @@
             appAccessEntity="subnet"
         ></p-button>
         <p-button
-            *ngIf="isDhcpDaemon"
+            *ngIf="isDhcpDaemon()"
             routerLink="/dhcp/shared-networks"
             [queryParams]="{ daemonId: daemon().id }"
             label="Shared Networks"
@@ -42,7 +42,7 @@
             appAccessEntity="shared-network"
         ></p-button>
         <p-button
-            *ngIf="isDhcpDaemon"
+            *ngIf="isDhcpDaemon()"
             routerLink="/daemons/{{ daemon().id }}/global-config"
             label="Global Configuration"
             icon="fa-solid fa-globe"
