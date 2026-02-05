@@ -970,4 +970,17 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         ]
         this.toolbarButtons = [...buttons]
     }
+
+    /**
+     * Callback called when autocomplete form emits any error message.
+     * @param message error message
+     */
+    onAutocompleteError(message: string) {
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Cannot get daemons directory',
+            detail: message,
+            life: 10000,
+        })
+    }
 }

@@ -360,4 +360,17 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly NetworkSortField = NetworkSortField
+
+    /**
+     * Callback called when autocomplete form emits any error message.
+     * @param message error message
+     */
+    onAutocompleteError(message: string) {
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Cannot get daemons directory',
+            detail: message,
+            life: 10000,
+        })
+    }
 }

@@ -394,6 +394,7 @@ to the number of configured zones.
                                         (daemonIDChange)="filterZonesTable($event, filterConstraint)"
                                         domain="dns"
                                         label="Daemon"
+                                        (errorOccurred)="onAutocompleteError($event)"
                                     />
                                     <ng-container
                                         *ngTemplateOutlet="

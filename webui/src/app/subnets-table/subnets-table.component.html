@@ -57,6 +57,7 @@
                                 (daemonIDChange)="filterTable($event, filterMetadata)"
                                 domain="dhcp"
                                 label="Daemon"
+                                (errorOccurred)="onAutocompleteError($event)"
                             />
                             <p-button
                                 icon="pi pi-filter-slash"
