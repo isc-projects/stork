@@ -375,7 +375,10 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
     onConfirmDeleteDaemon(daemonId: number) {
         this.confirmService.confirm({
             message:
-                'Are you sure that you want to delete this daemon? <br/> If the daemon becomes active again, Stork will re-detect it.',
+                'Are you sure that you want to delete this daemon? <br/> If ' +
+                'the daemon becomes active again, Stork will re-detect it. ' +
+                'Any adjusted settings for the Configuration Review Reports ' +
+                'tool will be permanently deleted and cannot be recovered.',
             header: 'Delete Daemon',
             icon: 'pi pi-exclamation-triangle',
             rejectButtonProps: { text: true, icon: 'pi pi-times', label: 'Cancel' },
