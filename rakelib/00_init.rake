@@ -612,7 +612,7 @@ protoc_ver = '31.1'
 protoc_gen_go_ver = 'v1.36.11'
 protoc_gen_go_grpc_ver = 'v1.6.1'
 nfpm_ver = 'v2.45.0'
-golangcilint_ver = '2.7.1'
+golangcilint_ver = '2.8.0'
 
 # UI-related
 node_ver = '20.19.6'
