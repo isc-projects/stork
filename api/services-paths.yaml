@@ -379,6 +379,8 @@
           type: array
           items:
             type: string
+        - $ref: '#/parameters/daemonSortField'
+        - $ref: '#/parameters/sortDir'
       responses:
         200:
           description: List of daemons

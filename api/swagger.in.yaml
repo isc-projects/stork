@@ -332,6 +332,14 @@ definitions:
       - serial
       - type
 
+  DaemonSortField:
+    type: string
+    enum: &DAEMONSORTFIELD
+      - name
+      - version
+      - machine_address
+      - machine_hostname
+
   SortDir:
     type: string
     enum: &SORTDIR
@@ -479,6 +487,13 @@ parameters:
     description: Field name by which returned results shall be sorted.
     type: string
     enum: *ZONESORTFIELD
+
+  daemonSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *DAEMONSORTFIELD
 
   sortDir:
     name: sortDir
