@@ -100,7 +100,7 @@ stages:
   needs: []
   rules:
     - when: always
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:12
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
   tags:
     - linux
     - aws
@@ -532,7 +532,7 @@ install_rpms_arm64:
     - build_rpms_arm64
 
 install_apks_amd64:
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:11
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
   tags:
     - linux
     - aws
