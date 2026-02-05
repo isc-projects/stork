@@ -37,12 +37,10 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
         Panel,
         TableModule,
         Badge,
-        RouterLink,
         NgFor,
         VersionStatusComponent,
         AsyncPipe,
         DatePipe,
-        DaemonNiceNamePipe,
         EntityLinkComponent,
     ],
 })

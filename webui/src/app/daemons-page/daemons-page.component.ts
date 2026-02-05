@@ -69,7 +69,6 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         IconField,
         InputIcon,
         InputText,
-        RouterLink,
         VersionStatusComponent,
         Tooltip,
         EntityLinkComponent,
