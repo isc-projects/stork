@@ -345,6 +345,17 @@ func GetAllDaemonsWithRelations(dbi dbops.DBI, relations ...DaemonRelation) ([]D
 	return daemons, nil
 }
 
+// Sort field which may be used in GetDaemonsByPage.
+type DaemonSortField string
+
+// Valid sort fields.
+const (
+	DaemonSortFieldName            DaemonSortField = "name"
+	DaemonSortFieldVersion         DaemonSortField = "version"
+	DaemonSortFieldMachineAddress  DaemonSortField = "machine_address"
+	DaemonSortFieldMachineHostname DaemonSortField = "machine_hostname"
+)
+
 // Fetches a collection of daemons from the database.
 //
 // The offset and limit specify the beginning of the page and the maximum size
@@ -367,6 +378,16 @@ func GetDaemonsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *stri
 	}
 	var daemons []Daemon
 
+	// REST API is accepting simplified sortField names. Convert it to appropriate field names accepted by DB.
+	var dbSortField string
+	switch DaemonSortField(sortField) {
+	case DaemonSortFieldMachineAddress:
+		dbSortField = "machine.address"
+	case DaemonSortFieldMachineHostname:
+		dbSortField = "machine.state->'Hostname'"
+	default:
+		dbSortField = sortField
+	}
 	// prepare query
 	q := dbi.Model(&daemons).
 		Relation(DaemonRelationAccessPoints).
@@ -411,7 +432,18 @@ func GetDaemonsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *stri
 	}
 
 	// prepare sorting expression, offset and limit
-	ordExpr, _ := prepareOrderAndDistinctExpr("daemon", sortField, sortDir, nil)
+	ordExpr, _ := prepareOrderAndDistinctExpr("daemon", dbSortField, sortDir, func(sortField, escapedTableName, dirExpr string) (orderExpr, distinctOnExpr string, useCustom bool) {
+		switch DaemonSortField(sortField) {
+		case DaemonSortFieldName:
+			// When sorting daemons by name, apply the second sort by id field.
+			orderExpr = fmt.Sprintf("%[1]s.name %[2]s, %[1]s.id %[2]s", escapedTableName, dirExpr)
+			distinctOnExpr = fmt.Sprintf("%s.name", escapedTableName)
+		default:
+			return "", "", false
+		}
+		useCustom = true
+		return
+	})
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))

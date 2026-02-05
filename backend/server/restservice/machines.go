@@ -1306,11 +1306,23 @@ func (r *RestAPI) GetDaemons(ctx context.Context, params services.GetDaemonsPara
 		limit = *params.Limit
 	}
 
+	sortField := ""
+	if params.SortField != nil {
+		sortField = *params.SortField
+	}
+
+	sortDir := dbmodel.SortDirAny
+	if params.SortDir != nil {
+		sortDir = dbmodel.SortDirEnum(*params.SortDir)
+	}
+
 	log.WithFields(log.Fields{
-		"start":   start,
-		"limit":   limit,
-		"text":    params.Text,
-		"daemons": params.Daemons,
+		"start":     start,
+		"limit":     limit,
+		"text":      params.Text,
+		"daemons":   params.Daemons,
+		"sortField": sortField,
+		"sortDir":   sortDir,
 	}).Info("query daemons")
 
 	daemonNames := make([]daemonname.Name, 0, len(params.Daemons))
@@ -1318,7 +1330,7 @@ func (r *RestAPI) GetDaemons(ctx context.Context, params services.GetDaemonsPara
 		daemonNames = append(daemonNames, daemonname.Name(dn))
 	}
 
-	daemons, err := r.getDaemons(start, limit, params.Text, "", dbmodel.SortDirAny, daemonNames...)
+	daemons, err := r.getDaemons(start, limit, params.Text, sortField, sortDir, daemonNames...)
 	if err != nil {
 		msg := "Cannot get daemons from db"
 		log.WithError(err).Error(msg)
