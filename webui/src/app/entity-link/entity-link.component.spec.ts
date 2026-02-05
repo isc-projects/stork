@@ -30,7 +30,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#daemon-link-98'))
         expect(link.attributes.href).toEqual('/daemons/98')
-        expect(link.nativeElement.innerText).toEqual('[98] DHCPv4')
+        expect(link.nativeElement.innerText).toEqual('[98]\u00a0DHCPv4')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
@@ -50,7 +50,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#machine-link'))
         expect(link.attributes.href).toEqual('/machines/5')
-        expect(link.nativeElement.innerText).toEqual('[5] 192.0.2.10')
+        expect(link.nativeElement.innerText).toEqual('[5]\u00a0192.0.2.10')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
@@ -70,7 +70,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#user-link'))
         expect(link.attributes.href).toEqual('/users/7')
-        expect(link.nativeElement.innerText).toEqual('[7] turtle')
+        expect(link.nativeElement.innerText).toEqual('[7]\u00a0turtle')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
@@ -90,7 +90,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#user-link'))
         expect(link.attributes.href).toEqual('/users/7')
-        expect(link.nativeElement.innerText).toEqual('[7] mouse@example.org')
+        expect(link.nativeElement.innerText).toEqual('[7]\u00a0mouse@example.org')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement

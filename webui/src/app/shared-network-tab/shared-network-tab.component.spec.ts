@@ -324,8 +324,8 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets.length).toBe(7)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Shared Network')
-        expect(fieldsets[0].nativeElement.innerText).toContain('[1] DHCPv4')
-        expect(fieldsets[0].nativeElement.innerText).toContain('[2] DHCPv4')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[1]\u00a0DHCPv4')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[2]\u00a0DHCPv4')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Subnets')
         const subnetBars = fieldsets[1].queryAll(By.css('app-subnet-bar'))
@@ -381,7 +381,7 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets.length).toBe(5)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Shared Network')
-        expect(fieldsets[0].nativeElement.innerText).toContain('[10] DHCPv4')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[10]\u00a0DHCPv4')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Subnets')
         expect(fieldsets[1].nativeElement.innerText).toContain('No subnets configured.')
@@ -456,7 +456,7 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Shared Network')
-        expect(fieldsets[0].nativeElement.innerText).toContain('[1] DHCPv6@localhost')
+        expect(fieldsets[0].nativeElement.innerText).toContain('[1]\u00a0DHCPv6@localhost')
 
         expect(fieldsets[1].nativeElement.innerText).toContain('Subnets')
         const subnetBars = fieldsets[1].queryAll(By.css('app-subnet-bar'))

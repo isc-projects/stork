@@ -3,7 +3,7 @@
     <ng-container *ngSwitchCase="'daemon'">
         {{ showEntityName ? 'daemon' : '' }}
         <a id="daemon-link-{{ attrs.daemonId || attrs.id }}" routerLink="/daemons/{{ attrs.daemonId || attrs.id }}">
-            [{{ attrs.daemonId || attrs.id }}] {{ attrs.daemonLabel || (attrs.name | daemonNiceName) }}
+            [{{ attrs.daemonId || attrs.id }}]&nbsp;{{ attrs.daemonLabel || (attrs.name | daemonNiceName) }}
         </a>
     </ng-container>
 
@@ -11,7 +11,7 @@
     <ng-container *ngSwitchCase="'machine'">
         {{ showEntityName ? 'machine' : '' }}
         <a id="machine-link" routerLink="/machines/{{ attrs.machineId || attrs.id }}">
-            [{{ attrs.machineId || attrs.id }}] {{ attrs.machineLabel || attrs.label || attrs.address }}
+            [{{ attrs.machineId || attrs.id }}]&nbsp;{{ attrs.machineLabel || attrs.label || attrs.address }}
         </a>
     </ng-container>
 
@@ -29,7 +29,7 @@
     <ng-container *ngSwitchCase="'user'">
         {{ showEntityName ? 'user' : '' }}
         <a id="user-link" routerLink="/users/{{ attrs.id }}">
-            [{{ attrs.id }}] {{ attrs.login ? attrs.login : attrs.email }}
+            [{{ attrs.id }}]&nbsp;{{ attrs.login ? attrs.login : attrs.email }}
         </a>
     </ng-container>
 

@@ -168,7 +168,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
         expect(cols[2].nativeElement.innerText).toBe('IPv4 address')
         expect(cols[3].nativeElement.innerText).toBe('Valid')
-        expect(cols[4].nativeElement.innerText).toBe('[1] DHCPv4@localhost')
+        expect(cols[4].nativeElement.innerText).toBe('[1]\u00a0DHCPv4@localhost')
 
         // Validate app link.
         const daemonLink = cols[4].query(By.css('#daemon-link-1'))
@@ -275,7 +275,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
         expect(cols[2].nativeElement.innerText).toBe('IPv4 address')
         expect(cols[3].nativeElement.innerText).toBe('Declined')
-        expect(cols[4].nativeElement.innerText).toBe('[1] DHCPv4@localhost')
+        expect(cols[4].nativeElement.innerText).toBe('[1]\u00a0DHCPv4@localhost')
 
         // Validate app link.
         const daemonLink = cols[4].query(By.css('#daemon-link-1'))
@@ -382,7 +382,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[1].nativeElement.innerText).toBe('2001:db8:1::1')
         expect(cols[2].nativeElement.innerText).toBe('IPv6 address (IA_NA)')
         expect(cols[3].nativeElement.innerText).toBe('Declined')
-        expect(cols[4].nativeElement.innerText).toBe('[2] DHCPv6@localhost')
+        expect(cols[4].nativeElement.innerText).toBe('[2]\u00a0DHCPv6@localhost')
 
         // Validate app link.
         const daemonLink1 = cols[4].query(By.css('#daemon-link-2'))
@@ -400,7 +400,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[6].nativeElement.innerText).toBe('3000::/64')
         expect(cols[7].nativeElement.innerText).toBe('IPv6 prefix (IA_PD)')
         expect(cols[8].nativeElement.innerText).toBe('Expired/Reclaimed')
-        expect(cols[9].nativeElement.innerText).toBe('[2] DHCPv6@localhost')
+        expect(cols[9].nativeElement.innerText).toBe('[2]\u00a0DHCPv6@localhost')
 
         // Validate app link.
         const daemonLink2 = cols[9].query(By.css('#daemon-link-2'))

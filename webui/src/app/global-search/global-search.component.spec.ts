@@ -58,7 +58,7 @@ describe('GlobalSearchComponent', () => {
         // Entity link component wraps the daemon display
         const daemonLink = daemonDiv.query(By.css('#daemon-link-1'))
         expect(daemonLink).toBeTruthy()
-        expect(daemonLink.nativeElement.innerText).toBe('[1] Dhcp-server')
+        expect(daemonLink.nativeElement.innerText).toBe('[1]\u00a0Dhcp-server')
         expect(daemonLink.attributes.href).toBe('/daemons/1')
     })
 })
