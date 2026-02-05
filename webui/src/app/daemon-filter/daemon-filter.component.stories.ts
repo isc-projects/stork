@@ -1,6 +1,7 @@
 import { DaemonFilterComponent } from './daemon-filter.component'
 import { applicationConfig, argsToTemplate, Meta, StoryObj } from '@storybook/angular'
 import { provideHttpClient } from '@angular/common/http'
+import { userEvent, within, expect, waitFor } from '@storybook/test'
 
 const allDaemons = [
     {
@@ -308,10 +309,11 @@ export default {
             <app-daemon-filter (daemonIDChange)="output.value=$event" (errorOccurred)="err.value=$event" ${argsToTemplate(args)}></app-daemon-filter>
             <hr />
             Selected daemon ID:
-            <input #output disabled />
+            <input #output placeholder="daemonID" disabled />
+            <button type="button">Dummy button</button>
             <hr />
             Error emitted:
-            <input #err disabled />
+            <input #err placeholder="error" disabled class="w-full" />
             `,
     }),
 } as Meta
@@ -321,6 +323,46 @@ type Story = StoryObj<DaemonFilterComponent>
 export const AllDomains: Story = {
     args: {
         domain: undefined,
+    },
+}
+
+export const SlowBackendResponses: Story = {
+    args: {
+        domain: undefined,
+    },
+    parameters: {
+        mockData: [
+            {
+                url: 'api/daemons/directory',
+                method: 'GET',
+                status: 200,
+                response: () => ({
+                    items: allDaemons,
+                    total: allDaemons.length,
+                }),
+                delay: 2000,
+            },
+        ],
+    },
+}
+
+export const TimeoutOnBackendResponse: Story = {
+    args: {
+        domain: undefined,
+    },
+    parameters: {
+        mockData: [
+            {
+                url: 'api/daemons/directory',
+                method: 'GET',
+                status: 200,
+                response: () => ({
+                    items: allDaemons,
+                    total: allDaemons.length,
+                }),
+                delay: 4000,
+            },
+        ],
     },
 }
 
@@ -622,5 +664,142 @@ export const ApiError: Story = {
                 },
             },
         ],
+    },
+}
+
+export const TestNormalUsage: Story = {
+    args: {
+        domain: undefined,
+    },
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+
+        // Act + Assert
+        const input = await canvas.findByRole('combobox')
+
+        // Test daemon lookup.
+        await userEvent.click(input)
+        await userEvent.keyboard('name')
+
+        // Two daemons are expected.
+        const options = await canvas.findAllByRole('option')
+        await expect(options).toHaveLength(2)
+
+        // Pick an option.
+        await userEvent.click(options[0])
+        const daemonID = await canvas.findByPlaceholderText('daemonID')
+        await expect(daemonID).toHaveValue('57')
+
+        await userEvent.clear(input)
+        const dummyButton = await canvas.findByRole('button', { name: 'Dummy button' })
+        await userEvent.click(dummyButton) // in order to lose focus on autocomplete
+        await expect(daemonID).toHaveValue('')
+
+        // Use the autocomplete dropdown with keyboard.
+        await userEvent.click(input)
+        await userEvent.keyboard('{Tab}')
+        await new Promise((r) => setTimeout(r, 100))
+        await userEvent.keyboard('{Enter}')
+        await new Promise((r) => setTimeout(r, 50))
+        const listbox = await canvas.findByRole('listbox')
+
+        // All daemons should be displayed.
+        const allOptions = await within(listbox).findAllByRole('option')
+        const acceptedDaemons = allDaemons.filter((d) => ['dhcp4', 'dhcp6', 'named', 'pdns'].includes(d.name))
+        await waitFor(() => expect(allOptions).toHaveLength(acceptedDaemons.length))
+
+        // Pick an option.
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{Enter}')
+        await expect(daemonID).toHaveValue('60')
+    },
+}
+
+export const TestSlowBackendResponse: Story = {
+    parameters: SlowBackendResponses.parameters,
+    args: {
+        domain: undefined,
+    },
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+
+        // Act + Assert
+        const input = await canvas.findByRole('combobox')
+
+        // Test daemon lookup.
+        await userEvent.click(input)
+        await userEvent.keyboard('name')
+
+        // Two daemons are expected. We have to wait, but no longer than timeout.
+        await waitFor(() => expect(canvas.getAllByRole('option')).toHaveLength(2), { timeout: 2500 })
+        const options = await canvas.findAllByRole('option')
+        await expect(options).toHaveLength(2)
+
+        // Pick an option.
+        await userEvent.click(options[0])
+        const daemonID = await canvas.findByPlaceholderText('daemonID')
+        await expect(daemonID).toHaveValue('57')
+
+        await userEvent.clear(input)
+        const dummyButton = await canvas.findByRole('button', { name: 'Dummy button' })
+        await userEvent.click(dummyButton) // in order to lose focus on autocomplete
+        await expect(daemonID).toHaveValue('')
+
+        // Use the autocomplete dropdown with keyboard. Once the daemons directory was fetched from backend, lookups are fast.
+        await userEvent.click(input)
+        await userEvent.keyboard('{Tab}')
+        await new Promise((r) => setTimeout(r, 100))
+        await userEvent.keyboard('{Enter}')
+        await new Promise((r) => setTimeout(r, 50))
+        const listbox = await canvas.findByRole('listbox')
+
+        // All daemons should be displayed.
+        const allOptions = await within(listbox).findAllByRole('option')
+        const acceptedDaemons = allDaemons.filter((d) => ['dhcp4', 'dhcp6', 'named', 'pdns'].includes(d.name))
+        await waitFor(() => expect(allOptions).toHaveLength(acceptedDaemons.length))
+
+        // Pick an option.
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{ArrowDown}')
+        await userEvent.keyboard('{Enter}')
+        await expect(daemonID).toHaveValue('60')
+    },
+}
+
+export const TestTimeoutResponse: Story = {
+    tags: ['no-test-in-ci'], // Skip in CI because it needs more than 2500ms to run.
+    parameters: TimeoutOnBackendResponse.parameters,
+    args: {
+        domain: undefined,
+    },
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+
+        // Act + Assert
+        const input = await canvas.findByRole('combobox')
+        const errorInput = await canvas.findByPlaceholderText('error')
+        const daemonID = await canvas.findByPlaceholderText('daemonID')
+
+        // Test daemon lookup.
+        await userEvent.click(input)
+        await userEvent.keyboard('name')
+
+        // Timeout error is expected.
+        await waitFor(
+            () =>
+                expect(errorInput).toHaveValue(
+                    'Failed to retrieve daemons from Stork server: timeout - no response in 2500ms'
+                ),
+            { timeout: 2500 }
+        )
+        await expect(daemonID).toHaveValue('')
     },
 }

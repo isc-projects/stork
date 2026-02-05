@@ -45,14 +45,15 @@ describe('DaemonFilterComponent', () => {
         fixture = TestBed.createComponent(DaemonFilterComponent)
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
-        fixture.detectChanges()
     })
 
     it('should create', () => {
+        fixture.detectChanges()
         expect(component).toBeTruthy()
     })
 
     it('should have default label', () => {
+        fixture.detectChanges()
         expect(component.label()).toEqual('Daemon (type or pick)')
     })
 

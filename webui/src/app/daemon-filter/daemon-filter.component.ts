@@ -2,10 +2,21 @@ import { Component, effect, input, model, OnDestroy, OnInit, output } from '@ang
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete'
 import { FloatLabel } from 'primeng/floatlabel'
 import { FormsModule } from '@angular/forms'
-import { Observable, of, Subject, Subscription, switchMap, throttleTime } from 'rxjs'
+import {
+    exhaustMap,
+    Observable,
+    of,
+    Subject,
+    Subscription,
+    switchMap,
+    tap,
+    throttleTime,
+    throwError,
+    timeout,
+} from 'rxjs'
 import { ServicesService, SimpleDaemon, SimpleDaemons } from '../backend'
 import { getErrorMessage } from '../utils'
-import { catchError } from 'rxjs/operators'
+import { catchError, concatMap, share } from 'rxjs/operators'
 
 /**
  * Type extending SimpleDaemon with a string label.
@@ -91,22 +102,38 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
     private callApiTrigger = new Subject()
 
     /**
+     * Timeout value in milliseconds stating how long does the component wait for backend response
+     * until error feedback message is emitted.
+     * @private
+     */
+    private timeoutValue = 2500
+
+    /**
      * RxJS stream emitting daemons directory. It is calling REST API getDaemonsDirectory
      * in a protected, throttled way to mitigate the backend load. In a successful scenario,
      * first attempt of retrieving the daemons directory will be the only one.
+     * It is also secured by a timeout, in case there is no response from REST API for long time.
+     * This is to prevent frozen UI experience.
      * @private
      */
     private receivedDaemons$: Observable<SimpleDaemons> = this.callApiTrigger.pipe(
         throttleTime(3000),
-        switchMap(() =>
-            this.servicesApi.getDaemonsDirectory(undefined, this.domain()).pipe(
+        tap(() => console.log('passed throttle', Date.now())),
+        exhaustMap(() => {
+            console.log('>>> req to backend', Date.now())
+            return this.servicesApi.getDaemonsDirectory(undefined, this.domain()).pipe(
+                timeout({
+                    each: this.timeoutValue,
+                    with: () => throwError(() => `timeout - no response in ${this.timeoutValue}ms`),
+                }),
                 catchError((err) => {
                     const msg = getErrorMessage(err)
                     this.errorOccurred.emit(`Failed to retrieve daemons from Stork server: ${msg}`)
                     return of({ items: [] })
                 })
             )
-        )
+        }),
+        share()
     )
 
     /**
@@ -127,6 +154,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      */
     ngOnInit() {
         this.subscription = this.receivedDaemons$.subscribe((data) => {
+            console.log('<<< resp from backend', data, Date.now())
             this.daemonSuggestions = (data.items?.filter((d) => this.acceptedDaemons.includes(d.name)) ?? []).map(
                 (d) => ({
                     ...d,
@@ -139,6 +167,13 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
             }
         })
 
+        this.subscription.add(
+            this.daemonLookup$.subscribe((query) => {
+                console.log('async daemon lookup', query, Date.now())
+                this.daemonLookup(query)
+            })
+        )
+
         this.callGetDaemonsAPI()
     }
 
@@ -149,6 +184,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.subscription.unsubscribe()
         this.callApiTrigger.complete()
+        this.searchDaemonTrigger.complete()
     }
 
     /**
@@ -156,19 +192,55 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @private
      */
     private callGetDaemonsAPI() {
+        console.log('data from backend needed', Date.now())
         this.callApiTrigger.next(null)
     }
 
     /**
+     * RxJS subject emitting query string whenever value is typed into autocomplete form,
+     * or the dropdown button is clicked.
+     * @private
+     */
+    private searchDaemonTrigger = new Subject<string>()
+
+    /**
+     * RxJS stream emitting query string from the autocomplete form in a coordinated way.
+     * If user typed a query (or clicked on a dropdown button), but the daemons directory
+     * was not yet received from REST API, it will first wait for the response, and then will emit
+     * the query.
+     * If user changes the query in the meantime, before API response arrives, only the last query
+     * typed by user will be emitted.
+     * This RxJS stream is designed for deployments where responses from REST API may be slower.
+     * @private
+     */
+    private daemonLookup$ = this.searchDaemonTrigger.pipe(
+        tap(() => this.callGetDaemonsAPI()),
+        switchMap((s) => this.receivedDaemons$.pipe(concatMap(() => of(s))))
+    )
+
+    /**
      * Function called to search results for the autocomplete component.
-     * @param event
+     * @param event autocomplete event with the query
      */
     searchDaemon(event: AutoCompleteCompleteEvent) {
-        if (!this.daemonSuggestions.length) {
-            this.callGetDaemonsAPI()
+        console.log('typing', event.query)
+        if (this.daemonSuggestions.length) {
+            console.log('synchronous daemon lookup', event.query, Date.now())
+            this.daemonLookup(event.query)
+            return
         }
 
-        const query = event.query.trim()
+        this.searchDaemonTrigger.next(event.query)
+    }
+
+    /**
+     * Function called to perform daemon lookup based on given key string.
+     *
+     * @param key keyword used for daemons lookup
+     * @private
+     */
+    private daemonLookup(key: string) {
+        const query = key.trim()
         if (!query) {
             this.currentSuggestions = [...this.daemonSuggestions]
             return
