@@ -43,7 +43,18 @@ file CHROME_LINK => [NPX, NODE_MODULES, playwright_browsers_dir] do
     # all platforms. So, we try to install Chromium first through Playwright.
     # If it fails, we fallback to manually detecting Chrome/Chromium binary.
     Dir.chdir("webui") do
-        sh NPX, "playwright", "install", "chromium", "--with-deps"
+        stdout, stderr, exit_code = Open3.capture3 NPX, "playwright", "install", "chromium", "--with-deps"
+        if exit_code.exitstatus != 0 && exit_code.exitstatus != 127
+            # Playwright couldn't install the browser, probably due to missing
+            # system dependencies. It may occur when running on the system that
+            # is not officially supported by Playwright and, for example,
+            # misses apt-get. In this case, status code is 127. We ignore this
+            # error and try to detect the browser in the system. Other errors
+            # are considered fatal.
+            puts stdout
+            puts stderr
+            fail "Playwright Chromium installation failed with exit code #{exit_code}"
+        end
     end
 
     # Playwright creates a directory with versioned subdirectory. We create a
