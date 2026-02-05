@@ -1753,9 +1753,9 @@ func TestGetAllDaemonsWithRelationsFiltering(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, daemons, 0)
 
-		filterDomain := "dns"
+		filterDomain := "dhcp"
 		daemons, err = GetAllDaemonsWithRelations(db, nil, &filterDomain, DaemonRelationMachine)
 		require.NoError(t, err)
-		require.Len(t, daemons, 2)
+		require.Len(t, daemons, 5)
 	})
 }
