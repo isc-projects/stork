@@ -197,6 +197,13 @@ export class AppComponent implements OnInit, OnDestroy {
                 id: 'services',
                 items: [
                     {
+                        label: 'All Daemons',
+                        id: 'all-daemons',
+                        visible: false,
+                        icon: 'fa fa-server',
+                        routerLink: '/daemons/all',
+                    },
+                    {
                         label: 'Kea Daemons',
                         id: 'kea-daemons',
                         visible: false,
@@ -413,6 +420,9 @@ export class AppComponent implements OnInit, OnDestroy {
                             dnsAppsMenuItem['visible'] = false
                             dnsMenuItem['visible'] = false
                         }
+                        // if there are any of DHCP or DNS daemons, show related menu item; otherwise hide it
+                        const allDaemonsMenuItem = this.getMenuItem('All Daemons')
+                        allDaemonsMenuItem['visible'] = !!(data.dnsDaemonsTotal || data.dhcpDaemonsTotal)
 
                         // force refresh of top menu in UI
                         this.menuItems = [...this.menuItems]
