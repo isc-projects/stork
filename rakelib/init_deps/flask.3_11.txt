@@ -6,7 +6,7 @@
 #
 blinker==1.9.0
     # via flask
-certifi==2025.11.12
+certifi==2026.1.4
     # via requests
 charset-normalizer==3.4.4
     # via requests
@@ -14,7 +14,7 @@ click==8.3.1
     # via flask
 flask==3.1.2
     # via -r rakelib/init_deps/flask.in
-gunicorn==23.0.0
+gunicorn==25.0.1
     # via -r rakelib/init_deps/flask.in
 idna==3.11
     # via requests
@@ -27,11 +27,11 @@ markupsafe==3.0.3
     #   flask
     #   jinja2
     #   werkzeug
-packaging==25.0
+packaging==26.0
     # via gunicorn
 requests==2.32.5
     # via -r rakelib/init_deps/flask.in
-urllib3==2.6.0
+urllib3==2.6.3
     # via requests
-werkzeug==3.1.4
+werkzeug==3.1.5
     # via flask
