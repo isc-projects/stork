@@ -484,7 +484,7 @@ export class AppComponent implements OnInit, OnDestroy {
      * Returns appropriate class to style the badge basing on the severity.
      */
     get swVersionBadgeClass() {
-        return this.swVersionBadgeSeverity === Severity.error ? 'p-badge-danger' : 'p-badge-warning'
+        return this.swVersionBadgeSeverity === Severity.error ? 'p-badge-danger' : 'p-badge-warn'
     }
 
     /**
