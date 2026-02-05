@@ -1642,3 +1642,120 @@ func TestGetLabel(t *testing.T) {
 		})
 	}
 }
+
+// Verifies filtering in GetAllDaemonsWithRelations.
+func TestGetAllDaemonsWithRelationsFiltering(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:      1,
+		Address: "addressAbc",
+		State: MachineState{
+			Hostname: "hostnameFoo",
+		},
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, m)
+
+	m2 := &Machine{
+		ID:      2,
+		Address: "addressXyz",
+		State: MachineState{
+			Hostname: "hostnameBar",
+		},
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, m2)
+
+	daemonNames := []daemonname.Name{
+		daemonname.CA,
+		daemonname.DHCPv4,
+		daemonname.DHCPv4,
+		daemonname.DHCPv4,
+		daemonname.DHCPv6,
+		daemonname.Bind9,
+		daemonname.PDNS,
+	}
+
+	for i, name := range daemonNames {
+		var daemon *Daemon
+		if i < 4 {
+			daemon = NewDaemon(m, name, true, []*AccessPoint{})
+		} else {
+			daemon = NewDaemon(m2, name, true, []*AccessPoint{})
+		}
+		_ = AddDaemon(db, daemon)
+	}
+
+	t.Run("with DaemonRelationMachine", func(t *testing.T) {
+		// Act
+		filterText := string(daemonname.CA)
+		daemons, err := GetAllDaemonsWithRelations(db, &filterText, nil, DaemonRelationMachine)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, daemons, 1)
+		daemon := daemons[0]
+		require.Equal(t, daemonname.CA, daemon.Name)
+
+		filterText = "abc"
+		daemons, err = GetAllDaemonsWithRelations(db, &filterText, nil, DaemonRelationMachine)
+		require.NoError(t, err)
+		require.Len(t, daemons, 4)
+		require.Equal(t, "addressAbc", daemons[0].Machine.Address)
+		require.Equal(t, "addressAbc", daemons[1].Machine.Address)
+		require.Equal(t, "addressAbc", daemons[2].Machine.Address)
+		require.Equal(t, "addressAbc", daemons[3].Machine.Address)
+
+		filterText = "foo"
+		daemons, err = GetAllDaemonsWithRelations(db, &filterText, nil, DaemonRelationMachine)
+		require.NoError(t, err)
+		require.Len(t, daemons, 4)
+		require.Equal(t, "hostnameFoo", daemons[0].Machine.State.Hostname)
+		require.Equal(t, "hostnameFoo", daemons[1].Machine.State.Hostname)
+		require.Equal(t, "hostnameFoo", daemons[2].Machine.State.Hostname)
+		require.Equal(t, "hostnameFoo", daemons[3].Machine.State.Hostname)
+
+		filterDomain := "dns"
+		daemons, err = GetAllDaemonsWithRelations(db, &filterText, &filterDomain, DaemonRelationMachine)
+		require.NoError(t, err)
+		require.Len(t, daemons, 0)
+
+		filterText = "bar"
+		daemons, err = GetAllDaemonsWithRelations(db, &filterText, &filterDomain, DaemonRelationMachine)
+		require.NoError(t, err)
+		require.Len(t, daemons, 2)
+		require.Equal(t, "hostnameBar", daemons[0].Machine.State.Hostname)
+		require.Equal(t, "hostnameBar", daemons[1].Machine.State.Hostname)
+	})
+
+	t.Run("without DaemonRelationMachine", func(t *testing.T) {
+		// Act
+		filterText := string(daemonname.DHCPv4)
+		daemons, err := GetAllDaemonsWithRelations(db, &filterText, nil)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, daemons, 3)
+		require.Equal(t, daemonname.DHCPv4, daemons[0].Name)
+		require.Equal(t, daemonname.DHCPv4, daemons[1].Name)
+		require.Equal(t, daemonname.DHCPv4, daemons[2].Name)
+
+		filterText = "abc"
+		daemons, err = GetAllDaemonsWithRelations(db, &filterText, nil)
+		require.NoError(t, err)
+		require.Len(t, daemons, 0)
+
+		filterText = "foo"
+		daemons, err = GetAllDaemonsWithRelations(db, &filterText, nil)
+		require.NoError(t, err)
+		require.Len(t, daemons, 0)
+
+		filterDomain := "dns"
+		daemons, err = GetAllDaemonsWithRelations(db, nil, &filterDomain, DaemonRelationMachine)
+		require.NoError(t, err)
+		require.Len(t, daemons, 2)
+	})
+}
