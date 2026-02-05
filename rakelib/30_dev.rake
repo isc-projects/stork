@@ -1288,7 +1288,7 @@ namespace :update do
     end
 
     desc 'Update all go.mod dependencies to the latest versions.'
-    task :backend_deps => [GO] do
+    task :backend_deps => [GO] + go_codebase do
         Dir.chdir("backend") do
             sh GO, "get", "-u", "-t", "./..."
             sh GO, "mod", "tidy"

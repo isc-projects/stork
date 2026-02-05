@@ -598,20 +598,20 @@ any_system = true
 
 ### Define package versions
 # Golang-related
-go_ver = '1.25.5'
+go_ver = '1.25.7'
 gocover_cobertura_ver = 'v1.4.0'
 tparse_ver = 'v0.18.0'
 go_junit_report_ver = 'v2.1.0'
 go_live_pprof_ver = 'v1.0.8'
 mockgen_ver = 'v0.6.0'
-dlv_ver = 'v1.25.2'
-gdlv_ver = 'v1.15.0'
+dlv_ver = 'v1.26.0'
+gdlv_ver = 'v1.16.0'
 govulncheck_ver = 'v1.1.4'
 goswagger_ver = 'v0.31.0'
 protoc_ver = '31.1'
-protoc_gen_go_ver = 'v1.36.10'
-protoc_gen_go_grpc_ver = 'v1.6.0'
-nfpm_ver = 'v2.44.0'
+protoc_gen_go_ver = 'v1.36.11'
+protoc_gen_go_grpc_ver = 'v1.6.1'
+nfpm_ver = 'v2.45.0'
 golangcilint_ver = '2.7.1'
 
 # UI-related
