@@ -135,7 +135,7 @@ describe('HaStatusComponent', () => {
                                 primaryServer: {
                                     age: 0,
                                     id: 234,
-                                    controlAddress: '192.0.2.1:8080',
+                                    label: 'DHCPv4@localhost',
                                     failoverTime: null,
                                     inTouch: true,
                                     role: 'primary',
@@ -151,7 +151,7 @@ describe('HaStatusComponent', () => {
                                 secondaryServer: {
                                     age: 0,
                                     id: 123,
-                                    controlAddress: '192.0.2.2:8080',
+                                    label: 'DHCPv4@remotehost',
                                     failoverTime: null,
                                     inTouch: true,
                                     role: 'standby',
@@ -175,7 +175,7 @@ describe('HaStatusComponent', () => {
                                 primaryServer: {
                                     age: 0,
                                     id: 345,
-                                    controlAddress: '192.0.2.3:8080',
+                                    label: 'DHCPv4@localhost',
                                     failoverTime: null,
                                     inTouch: true,
                                     role: 'primary',
@@ -191,7 +191,7 @@ describe('HaStatusComponent', () => {
                                 secondaryServer: {
                                     age: 0,
                                     id: 123,
-                                    controlAddress: '192.0.2.2:8081',
+                                    label: 'DHCPv4@remotehost',
                                     failoverTime: '2024-02-16 11:11:12',
                                     inTouch: true,
                                     role: 'standby',
@@ -334,7 +334,7 @@ describe('HaStatusComponent', () => {
                                 primaryServer: {
                                     age: 7,
                                     id: 234,
-                                    controlAddress: '192.0.2.1:8080',
+                                    label: 'DHCPv4@localhost',
                                     failoverTime: null,
                                     inTouch: true,
                                     role: 'primary',
@@ -398,7 +398,7 @@ describe('HaStatusComponent', () => {
                                 primaryServer: {
                                     age: 7,
                                     id: 234,
-                                    controlAddress: '192.0.2.1:8080',
+                                    label: 'DHCPv4@localhost',
                                     failoverTime: null,
                                     inTouch: true,
                                     role: 'primary',
@@ -439,7 +439,7 @@ describe('HaStatusComponent', () => {
                                 primaryServer: {
                                     age: 7,
                                     id: 234,
-                                    controlAddress: '192.0.2.1:8080',
+                                    label: 'DHCPv4@localhost',
                                     failoverTime: null,
                                     inTouch: true,
                                     role: 'primary',

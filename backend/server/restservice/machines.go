@@ -1460,23 +1460,15 @@ func getKeaServicesStatus(db *dbops.PgDB, daemon *dbmodel.Daemon) *models.Servic
 				failoverTime[i] = &datetime
 			}
 		}
-		// Get the control addresses and machine ids for daemons taking part in HA.
-		controlAddress := make([]string, 2)
-		machineIDs := make([]int64, 2)
+		// Get the label for daemons taking part in HA.
+		labels := make([]string, 2)
+
 		for i := range s.Daemons {
 			switch s.Daemons[i].ID {
 			case ha.PrimaryID:
-				ap, _ := s.Daemons[i].GetAccessPoint(dbmodel.AccessPointControl)
-				if ap != nil {
-					controlAddress[0] = ap.Address
-				}
-				machineIDs[0] = s.Daemons[i].MachineID
+				labels[0] = s.Daemons[i].GetLabel()
 			case ha.SecondaryID:
-				ap, _ := s.Daemons[i].GetAccessPoint(dbmodel.AccessPointControl)
-				if ap != nil {
-					controlAddress[1] = ap.Address
-				}
-				machineIDs[1] = s.Daemons[i].MachineID
+				labels[0] = s.Daemons[i].GetLabel()
 			}
 		}
 		// Get the communication state value.
@@ -1496,10 +1488,9 @@ func getKeaServicesStatus(db *dbops.PgDB, daemon *dbmodel.Daemon) *models.Servic
 			Relationship: ha.Relationship,
 			PrimaryServer: &models.KeaHAServerStatus{
 				Age:                age[0],
-				MachineID:          machineIDs[0],
-				ControlAddress:     controlAddress[0],
 				FailoverTime:       failoverTime[0],
 				ID:                 ha.PrimaryID,
+				Label:              labels[0],
 				InTouch:            ha.PrimaryReachable,
 				Role:               "primary",
 				Scopes:             ha.PrimaryLastScopes,
@@ -1518,8 +1509,7 @@ func getKeaServicesStatus(db *dbops.PgDB, daemon *dbmodel.Daemon) *models.Servic
 		if ha.HAMode != "passive-backup" {
 			keaStatus.HaServers.SecondaryServer = &models.KeaHAServerStatus{
 				Age:                age[1],
-				MachineID:          machineIDs[1],
-				ControlAddress:     controlAddress[1],
+				Label:              labels[1],
 				FailoverTime:       failoverTime[1],
 				ID:                 ha.SecondaryID,
 				InTouch:            ha.SecondaryReachable,

@@ -15,7 +15,7 @@ let mockHubAndSpokeStatus: ServicesStatus = {
                     relationship: 'server1',
                     primaryServer: {
                         age: 0,
-                        controlAddress: '192.0.2.1:8080',
+                        label: 'DHCPv4@localhost',
                         failoverTime: null,
                         id: 1,
                         inTouch: true,
@@ -31,7 +31,7 @@ let mockHubAndSpokeStatus: ServicesStatus = {
                     },
                     secondaryServer: {
                         age: 0,
-                        controlAddress: '192.0.2.2:8080',
+                        label: 'DHCPv4@remotehost',
                         failoverTime: null,
                         id: 1,
                         inTouch: true,
@@ -55,7 +55,7 @@ let mockHubAndSpokeStatus: ServicesStatus = {
                     relationship: 'server3',
                     primaryServer: {
                         age: 0,
-                        controlAddress: '192.0.2.3:8080',
+                        label: 'DHCPv4@localhost',
                         failoverTime: null,
                         id: 1,
                         inTouch: true,
@@ -71,7 +71,7 @@ let mockHubAndSpokeStatus: ServicesStatus = {
                     },
                     secondaryServer: {
                         age: 0,
-                        controlAddress: '192.0.2.2:8081',
+                        label: 'DHCPv4@remotehost',
                         failoverTime: null,
                         id: 1,
                         inTouch: true,
@@ -100,7 +100,7 @@ let mockPassiveBackupStatus: ServicesStatus = {
                     relationship: 'server1',
                     primaryServer: {
                         age: 0,
-                        controlAddress: '192.0.2.1:8080',
+                        label: 'DHCPv4@localhost',
                         failoverTime: null,
                         id: 1,
                         inTouch: true,

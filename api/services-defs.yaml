@@ -464,16 +464,14 @@
     properties:
       age:
         type: integer
-      machineId:
-        type: integer
-      controlAddress:
-        type: string
       failoverTime:
         type: string
         format: date-time
         x-nullable: true
       id:
         type: integer
+      label:
+        type: string
       inTouch:
         type: boolean
       role:

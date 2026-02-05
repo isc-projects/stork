@@ -30,7 +30,7 @@
                     </td>
                     <td *ngFor="let column of statusRow.relationship.cells">
                         <span *ngIf="column.value !== undefined" class="ha-ok">{{ column.value }}</span>
-                        <span *ngIf="column.daemonId && column.daemonName">
+                        <span *ngIf="column.daemonId && column.daemonLabel">
                             at
                             <app-entity-link
                                 entity="daemon"
@@ -277,7 +277,7 @@
                     </td>
                     <td *ngFor="let column of statusRow.cells">
                         <span *ngIf="column.value !== undefined" class="ha-ok">{{ column.value }}</span>
-                        <span *ngIf="column.daemonId && column.daemonName">
+                        <span *ngIf="column.daemonId && column.daemonLabel">
                             at
                             <app-entity-link
                                 entity="daemon"

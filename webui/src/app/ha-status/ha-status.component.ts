@@ -21,7 +21,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 interface RelationshipNodeCell {
     iconType?: string
     daemonId?: number
-    daemonName?: string
+    daemonLabel?: string
     value?: string | number
     progress?: number
 }
@@ -259,7 +259,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                                     // server. The local server is currently displayed.
                                     if (index > 0) {
                                         cell.daemonId = s.id
-                                        cell.daemonName = `Kea@${s.controlAddress}`
+                                        cell.daemonLabel = s.label
                                     }
                                     return cell
                                 }),
