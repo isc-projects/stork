@@ -118,10 +118,8 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      */
     private receivedDaemons$: Observable<SimpleDaemons> = this.callApiTrigger.pipe(
         throttleTime(3000),
-        tap(() => console.log('passed throttle', Date.now())),
-        exhaustMap(() => {
-            console.log('>>> req to backend', Date.now())
-            return this.servicesApi.getDaemonsDirectory(undefined, this.domain()).pipe(
+        exhaustMap(() =>
+            this.servicesApi.getDaemonsDirectory(undefined, this.domain()).pipe(
                 timeout({
                     each: this.timeoutValue,
                     with: () => throwError(() => `timeout - no response in ${this.timeoutValue}ms`),
@@ -132,7 +130,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
                     return of({ items: [] })
                 })
             )
-        }),
+        ),
         share()
     )
 
@@ -154,7 +152,6 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      */
     ngOnInit() {
         this.subscription = this.receivedDaemons$.subscribe((data) => {
-            console.log('<<< resp from backend', data, Date.now())
             this.daemonSuggestions = (data.items?.filter((d) => this.acceptedDaemons.includes(d.name)) ?? []).map(
                 (d) => ({
                     ...d,
@@ -169,7 +166,6 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
 
         this.subscription.add(
             this.daemonLookup$.subscribe((query) => {
-                console.log('async daemon lookup', query, Date.now())
                 this.daemonLookup(query)
             })
         )
@@ -192,7 +188,6 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @private
      */
     private callGetDaemonsAPI() {
-        console.log('data from backend needed', Date.now())
         this.callApiTrigger.next(null)
     }
 
@@ -223,9 +218,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @param event autocomplete event with the query
      */
     searchDaemon(event: AutoCompleteCompleteEvent) {
-        console.log('typing', event.query)
         if (this.daemonSuggestions.length) {
-            console.log('synchronous daemon lookup', event.query, Date.now())
             this.daemonLookup(event.query)
             return
         }
