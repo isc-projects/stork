@@ -75,6 +75,7 @@ file CHROME_LINK => [NPX, NODE_MODULES, playwright_browsers_dir] do
     chrome = File.readlink(CHROME_LINK)
     sh chrome, "--version"
 end
+symlink_task(CHROME_LINK)
 
 # Specialized headless Chrome version. It is a separate binary from regular
 # Chrome/Chromium if the Playwright installation is used. Otherwise, it
@@ -104,6 +105,7 @@ file CHROME_HEADLESS_LINK => [CHROME_LINK] do
     chrome = File.readlink(CHROME_HEADLESS_LINK)
     sh chrome, "--version"
 end
+symlink_task(CHROME_HEADLESS_LINK)
 
 #################
 ### Functions ###

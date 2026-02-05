@@ -278,6 +278,29 @@ def create_not_needed_file_task(task_name)
     return task_name
 end
 
+# Modifies the .needed? method of the provided task to handle symbolic links.
+# The original .needed? method checks if the task file exists. It is always
+# false for symbolic links because Rake expects the task file to be a regular
+# file. The modified method checks whether the file referenced by the link
+# exists.
+def symlink_task(task_name)
+    task = Rake::Task[task_name]
+    if task.class != Rake::FileTask
+        fail "file task required"
+    end
+
+    def task.needed?()
+        if File.symlink?(self.name)
+            target = File.readlink(self.name)
+            return !File.exist?(target)
+        else
+            return super()
+        end
+    end
+end
+
+# Always rebuild this task prerequisite.
+
 # This is a regular task that does nothing. It is dedicated to using as
 # prerequirement. Due to it being a regular task it is always recognized as
 # "needed" and causes to rebuild of a parent task.
