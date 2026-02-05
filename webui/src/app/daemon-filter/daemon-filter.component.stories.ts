@@ -674,34 +674,32 @@ export const TestNormalUsage: Story = {
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
+        const user = userEvent.setup({ delay: 100 })
 
         // Act + Assert
         const input = await canvas.findByRole('combobox')
 
         // Test daemon lookup.
-        await userEvent.click(input)
-        await userEvent.keyboard('name')
+        await user.click(input)
+        await user.keyboard('name')
 
         // Two daemons are expected.
         const options = await canvas.findAllByRole('option')
         await expect(options).toHaveLength(2)
 
         // Pick an option.
-        await userEvent.click(options[0])
+        await user.click(options[0])
         const daemonID = await canvas.findByPlaceholderText('daemonID')
         await expect(daemonID).toHaveValue('57')
 
-        await userEvent.clear(input)
+        await user.clear(input)
         const dummyButton = await canvas.findByRole('button', { name: 'Dummy button' })
-        await userEvent.click(dummyButton) // in order to lose focus on autocomplete
+        await user.click(dummyButton) // in order to lose focus on autocomplete
         await expect(daemonID).toHaveValue('')
 
         // Use the autocomplete dropdown with keyboard.
-        await userEvent.click(input)
-        await userEvent.keyboard('{Tab}')
-        await new Promise((r) => setTimeout(r, 100))
-        await userEvent.keyboard('{Enter}')
-        await new Promise((r) => setTimeout(r, 50))
+        await user.click(input)
+        await user.keyboard('{Tab}{Enter}')
         const listbox = await canvas.findByRole('listbox')
 
         // All daemons should be displayed.
@@ -710,12 +708,8 @@ export const TestNormalUsage: Story = {
         await waitFor(() => expect(allOptions).toHaveLength(acceptedDaemons.length))
 
         // Pick an option.
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{Enter}')
-        await expect(daemonID).toHaveValue('60')
+        await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{Enter}')
+        await waitFor(() => expect(daemonID).toHaveValue('60'))
     },
 }
 
@@ -727,13 +721,14 @@ export const TestSlowBackendResponse: Story = {
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)
+        const user = userEvent.setup({ delay: 100 })
 
         // Act + Assert
         const input = await canvas.findByRole('combobox')
 
         // Test daemon lookup.
-        await userEvent.click(input)
-        await userEvent.keyboard('name')
+        await user.click(input)
+        await user.keyboard('name')
 
         // Two daemons are expected. We have to wait, but no longer than timeout.
         await waitFor(() => expect(canvas.getAllByRole('option')).toHaveLength(2), { timeout: 2500 })
@@ -741,21 +736,18 @@ export const TestSlowBackendResponse: Story = {
         await expect(options).toHaveLength(2)
 
         // Pick an option.
-        await userEvent.click(options[0])
+        await user.click(options[0])
         const daemonID = await canvas.findByPlaceholderText('daemonID')
         await expect(daemonID).toHaveValue('57')
 
-        await userEvent.clear(input)
+        await user.clear(input)
         const dummyButton = await canvas.findByRole('button', { name: 'Dummy button' })
-        await userEvent.click(dummyButton) // in order to lose focus on autocomplete
+        await user.click(dummyButton) // in order to lose focus on autocomplete
         await expect(daemonID).toHaveValue('')
 
         // Use the autocomplete dropdown with keyboard. Once the daemons directory was fetched from backend, lookups are fast.
-        await userEvent.click(input)
-        await userEvent.keyboard('{Tab}')
-        await new Promise((r) => setTimeout(r, 100))
-        await userEvent.keyboard('{Enter}')
-        await new Promise((r) => setTimeout(r, 50))
+        await user.click(input)
+        await user.keyboard('{Tab}{Enter}')
         const listbox = await canvas.findByRole('listbox')
 
         // All daemons should be displayed.
@@ -764,12 +756,8 @@ export const TestSlowBackendResponse: Story = {
         await waitFor(() => expect(allOptions).toHaveLength(acceptedDaemons.length))
 
         // Pick an option.
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{ArrowDown}')
-        await userEvent.keyboard('{Enter}')
-        await expect(daemonID).toHaveValue('60')
+        await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{Enter}')
+        await waitFor(() => expect(daemonID).toHaveValue('60'))
     },
 }
 
