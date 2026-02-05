@@ -1,6 +1,5 @@
 import os
 
-
 # The project-specific paths to the docker-compose artifacts.
 
 # Directory with this file (the core module).

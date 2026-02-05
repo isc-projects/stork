@@ -13,7 +13,6 @@ from typing import List, Set, Dict
 import plotly
 import plotly.subplots
 
-
 ReportEntry = namedtuple(
     "ReportEntry",
     ["timestamp", "container", "service_name", "counter_name", "counter_value"],

@@ -31,7 +31,6 @@ from openapi_client.exceptions import ServiceException
 from openapi_client.models.zone_inventory_states import ZoneInventoryStates
 from openapi_client.models.zones import Zones
 
-
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 

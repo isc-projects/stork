@@ -15,7 +15,6 @@ import io as StringIO
 import re
 from typing import Dict, List, NamedTuple, Optional, Union
 
-
 # Timestamp and exemplar are optional.
 # Value can be an int or a float.
 # Timestamp can be a float containing a unixtime in seconds,

@@ -31,16 +31,14 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
     assert subnets.total == 6912
 
 
-@pytest.mark.skip(
-    reason="""The test reproduces a use case described in #1552.
+@pytest.mark.skip(reason="""The test reproduces a use case described in #1552.
 Stork consumed all available memory. After the fix, the memory usage is on the
 standard level but the CPU usage is still very high. It causes the test to take
 so much time that it exceeds the default database timeouts and may freeze the
 host system. It is disabled for this reason and because it doesn't check any
 particular feature. Additionally, it is prone to the problem with too long
 loading big Kea configuration. But it is still useful to run it manually to
-reproduce the situation when the Stork server overuses the CPU resources."""
-)
+reproduce the situation when the Stork server overuses the CPU resources.""")
 @ha_parametrize(
     "agent-kea-many-subnets-and-shared-networks-1",
     "agent-kea-many-subnets-and-shared-networks-2",
@@ -66,8 +64,7 @@ def test_two_same_big_configurations_at_time(
     assert state
 
 
-@pytest.mark.skip(
-    reason="""The `test_migrate_many_hosts` is unstable, or rather always
+@pytest.mark.skip(reason="""The `test_migrate_many_hosts` is unstable, or rather always
     fails, but not due to a bug in the code, but rather Stork's design. For
     this amount of host reservations, single state and host pulling seem
     insufficient to detect all changes in the reservations. As a result,
@@ -76,8 +73,7 @@ def test_two_same_big_configurations_at_time(
     stabilize the situation. To fix it, we could alter the database as a part
     of the migration process, rethink the pulling process, or add any smart
     logic to recognize when all reservations are finally pulled. See #1959.
-    """
-)
+    """)
 @ha_parametrize(
     "agent-kea-many-host-reservations-1",
     "agent-kea-many-host-reservations-2",

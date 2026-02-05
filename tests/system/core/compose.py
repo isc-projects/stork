@@ -35,7 +35,6 @@ import yaml
 from core.utils import setup_logger, memoize, wait_for_success
 from core.service_state import ServiceState
 
-
 logger = setup_logger(__name__)
 
 

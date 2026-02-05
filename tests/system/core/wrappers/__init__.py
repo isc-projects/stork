@@ -6,7 +6,6 @@ from core.wrappers.external import ExternalPackages
 from core.wrappers.postgres import Postgres
 from core.wrappers.register import Register
 
-
 __all__ = [
     "Server",
     "Kea",

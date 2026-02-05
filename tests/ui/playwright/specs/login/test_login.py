@@ -3,7 +3,6 @@ from tests.ui.playwright.pages.login_page import LoginPage
 import os
 import pytest
 
-
 BASE_URL = os.getenv("STORK_BASE_URL", "http://localhost:42080")
 ADMIN_USER = os.getenv("STORK_ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("STORK_ADMIN_PASS", "admin")
