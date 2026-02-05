@@ -688,6 +688,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 	for _, s := range returned {
 		for _, ls := range s.LocalSubnets {
 			require.NotNil(t, ls.Daemon)
+			require.NotNil(t, ls.Daemon.Machine)
 			// It must be nil to limit memory usage.
 			require.Nil(t, ls.Daemon.KeaDaemon)
 		}

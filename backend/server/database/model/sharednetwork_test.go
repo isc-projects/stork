@@ -437,6 +437,9 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		if listing {
 			// It must be nil to limit memory usage.
 			require.Nil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.KeaDaemon)
+			// It must be set for displaying proper daemon label.
+			require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.Machine)
+			require.NotNil(t, returnedNetwork.Subnets[0].LocalSubnets[0].Daemon.Machine)
 		} else {
 			require.NotNil(t, returnedNetwork.LocalSharedNetworks[0].Daemon.KeaDaemon)
 		}

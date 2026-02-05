@@ -222,7 +222,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
      * @param net Shared network
      * @returns List of the daemons (only ID and daemon label)
      */
-    getDaemons(net: SharedNetwork): { id: number; label: string }[] {
+    getDaemons(net: SharedNetwork): { daemonId: number; daemonLabel: string }[] {
         const daemons = []
         const daemonIds: Record<number, boolean> = {}
 
@@ -231,8 +231,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
             if (!id || daemonIds[id]) {
                 return
             }
-            const label = lsn.daemonLabel
-            daemons.push({ id, label })
+            daemons.push({ daemonId: lsn.daemonId, daemonLabel: lsn.daemonLabel })
             daemonIds[id] = true
         })
 

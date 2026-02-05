@@ -12,9 +12,7 @@ import { Button } from 'primeng/button'
 import { Panel } from 'primeng/panel'
 import { TableModule } from 'primeng/table'
 import { Badge } from 'primeng/badge'
-import { RouterLink } from '@angular/router'
 import { VersionStatusComponent } from '../version-status/version-status.component'
-import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
 /**
