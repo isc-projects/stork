@@ -154,10 +154,15 @@
             </ng-template>
             <ng-template #header>
                 <tr>
-                    <th style="width: 14em">Daemon</th>
-                    <th>Version</th>
+                    <th style="width: 14em" [pSortableColumn]="DaemonSortField.Name">
+                        <div class="flex gap-1">Daemon <p-sortIcon [field]="DaemonSortField.Name" /></div>
+                    </th>
+                    <th [pSortableColumn]="DaemonSortField.Version">
+                        <div class="flex gap-1">Version <p-sortIcon [field]="DaemonSortField.Version" /></div>
+                    </th>
                     <th>Status</th>
-                    <th>Machine</th>
+                    <th [pSortableColumn]="DaemonSortField.MachineAddress"><div class="flex gap-1">Machine<p-sortIcon [field]="DaemonSortField.MachineAddress" />
+                    </div></th>
                     <th style="width: 4rem">Action</th>
                 </tr>
             </ng-template>

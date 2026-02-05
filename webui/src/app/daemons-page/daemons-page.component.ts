@@ -9,12 +9,12 @@ import {
     daemonStatusIconTooltip as daemonStatusIconTooltipFn,
     getErrorMessage,
 } from '../utils'
-import { AnyDaemon, ServicesService } from '../backend'
+import { AnyDaemon, DaemonSortField, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { distinctUntilChanged, finalize, last, map } from 'rxjs/operators'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { tableFiltersToQueryParams, tableHasFilter } from '../table'
+import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { ConfirmDialog } from 'primeng/confirmdialog'
@@ -245,7 +245,8 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
                 event.first,
                 event.rows,
                 (event.filters['text'] as FilterMetadata)?.value || null,
-                (event.filters['daemons'] as FilterMetadata)?.value ?? null
+                (event.filters['daemons'] as FilterMetadata)?.value ?? null,
+                ...convertSortingFields<DaemonSortField>(event)
             )
         )
             .then((data) => {
@@ -454,4 +455,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
                 },
             })
     }
+
+    // Reference to sorting field, so it could be used in the HTML template.
+    protected readonly DaemonSortField = DaemonSortField
 }
