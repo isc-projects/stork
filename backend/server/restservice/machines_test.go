@@ -1659,8 +1659,12 @@ func TestRestGetDaemons(t *testing.T) {
 	})
 
 	t.Run("get kea daemons", func(t *testing.T) {
+		sortField := string(dbmodel.DaemonSortFieldName)
+		sortDir := string(dbmodel.SortDirAsc)
 		params = services.GetDaemonsParams{
-			Daemons: []string{string(daemonname.DHCPv4), string(daemonname.DHCPv6), string(daemonname.CA)},
+			Daemons:   []string{string(daemonname.DHCPv4), string(daemonname.DHCPv6), string(daemonname.CA)},
+			SortField: &sortField,
+			SortDir:   &sortDir,
 		}
 		rsp = rapi.GetDaemons(ctx, params)
 		require.IsType(t, &services.GetDaemonsOK{}, rsp)

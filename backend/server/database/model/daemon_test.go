@@ -1362,8 +1362,12 @@ func TestGetDaemonsByPage(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	m := &Machine{Address: "localhost", AgentPort: 8080}
+	m := &Machine{Address: "localhost", AgentPort: 8080, State: MachineState{Hostname: "abchostname"}}
 	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	m2 := &Machine{Address: "zyxlocalhost", AgentPort: 8080, State: MachineState{Hostname: "xyzhostname"}}
+	err = AddMachine(db, m2)
 	require.NoError(t, err)
 
 	for i := 0; i < 10; i++ {
@@ -1374,7 +1378,7 @@ func TestGetDaemonsByPage(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		d := NewDaemon(m, daemonname.DHCPv6, true, []*AccessPoint{})
+		d := NewDaemon(m2, daemonname.DHCPv6, true, []*AccessPoint{})
 		d.Version = "2.0"
 		err = AddDaemon(db, d)
 		require.NoError(t, err)
@@ -1426,6 +1430,50 @@ func TestGetDaemonsByPage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, daemons, 5)
 	require.EqualValues(t, 5, total)
+
+	// Test sorting
+	// by name
+	daemons, total, err = GetDaemonsByPage(db, 0, 11, nil, string(DaemonSortFieldName), SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, daemons, 11)
+	require.EqualValues(t, 15, total)
+	require.EqualValues(t, daemons[0].Name, daemonname.DHCPv4)
+	require.EqualValues(t, daemons[10].Name, daemonname.DHCPv6)
+	require.Greater(t, daemons[1].ID, daemons[0].ID)
+
+	daemons, total, err = GetDaemonsByPage(db, 0, 6, nil, string(DaemonSortFieldName), SortDirDesc)
+	require.NoError(t, err)
+	require.Len(t, daemons, 6)
+	require.EqualValues(t, 15, total)
+	require.EqualValues(t, daemons[0].Name, daemonname.DHCPv6)
+	require.EqualValues(t, daemons[5].Name, daemonname.DHCPv4)
+	require.Greater(t, daemons[0].ID, daemons[1].ID)
+
+	// by machine address
+	daemons, total, err = GetDaemonsByPage(db, 0, 11, nil, string(DaemonSortFieldMachineAddress), SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, daemons, 11)
+	require.EqualValues(t, 15, total)
+	require.Greater(t, daemons[10].Machine.Address, daemons[0].Machine.Address)
+
+	daemons, total, err = GetDaemonsByPage(db, 0, 11, nil, string(DaemonSortFieldMachineAddress), SortDirDesc)
+	require.NoError(t, err)
+	require.Len(t, daemons, 11)
+	require.EqualValues(t, 15, total)
+	require.Greater(t, daemons[0].Machine.Address, daemons[10].Machine.Address)
+
+	// by machine hostname
+	daemons, total, err = GetDaemonsByPage(db, 0, 11, nil, string(DaemonSortFieldMachineHostname), SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, daemons, 11)
+	require.EqualValues(t, 15, total)
+	require.Greater(t, daemons[10].Machine.State.Hostname, daemons[0].Machine.State.Hostname)
+
+	daemons, total, err = GetDaemonsByPage(db, 0, 11, nil, string(DaemonSortFieldMachineHostname), SortDirDesc)
+	require.NoError(t, err)
+	require.Len(t, daemons, 11)
+	require.EqualValues(t, 15, total)
+	require.Greater(t, daemons[0].Machine.State.Hostname, daemons[10].Machine.State.Hostname)
 }
 
 // Test getting DHCP daemons.
