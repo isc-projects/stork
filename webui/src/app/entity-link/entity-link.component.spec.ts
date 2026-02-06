@@ -2,14 +2,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { EntityLinkComponent } from './entity-link.component'
 import { By } from '@angular/platform-browser'
 import { provideRouter } from '@angular/router'
-import {
-    Daemon,
-    LeasesSearchErredDaemon,
-    LocalHost,
-    LocalSharedNetwork,
-    LocalSubnet,
-    LocalZone,
-} from '../backend'
+import { Daemon, LeasesSearchErredDaemon, LocalHost, LocalSharedNetwork, LocalSubnet, LocalZone } from '../backend'
 
 describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
