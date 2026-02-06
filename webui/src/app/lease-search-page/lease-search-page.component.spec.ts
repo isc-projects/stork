@@ -527,8 +527,8 @@ describe('LeaseSearchPageComponent', () => {
         // A warning message informing about erred daemons should be displayed.
         const erredMessage = fixture.debugElement.query(By.css('#erred-daemons-message'))
         expect(erredMessage).not.toBeNull()
-        expect(erredMessage.nativeElement.innerText).toContain('[1] DHCPv4@localhost')
-        expect(erredMessage.nativeElement.innerText).toContain('[2] DHCPv6@localhost')
+        expect(erredMessage.nativeElement.innerText).toContain('[1]\u00a0DHCPv4@localhost')
+        expect(erredMessage.nativeElement.innerText).toContain('[2]\u00a0DHCPv6@localhost')
     })
 
     it('should handle communication error', fakeAsync(() => {

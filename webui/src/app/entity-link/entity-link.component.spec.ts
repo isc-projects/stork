@@ -52,7 +52,7 @@ describe('EntityLinkComponent', () => {
         }
         component.attrs = subnet
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
 
         // Test entity link from LocalSharedNetwork.
         const sharedNetwork: LocalSharedNetwork = {
@@ -61,7 +61,7 @@ describe('EntityLinkComponent', () => {
         }
         component.attrs = sharedNetwork
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
 
         // Test entity link from LocalHost.
         const host: LocalHost = {
@@ -75,7 +75,7 @@ describe('EntityLinkComponent', () => {
         }
         component.attrs = host
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
 
         // Test entity link from LocalZone.
         const zone: LocalZone = {
@@ -90,7 +90,7 @@ describe('EntityLinkComponent', () => {
         }
         component.attrs = zone
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
 
         // Test entity link from Daemon.
         const daemon: Daemon = {
@@ -106,7 +106,7 @@ describe('EntityLinkComponent', () => {
         }
         component.attrs = daemon
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4')
+        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4')
 
         // Test entity link from LeasesSearchErredDaemon.
         const erredDaemon: LeasesSearchErredDaemon = {
@@ -115,7 +115,7 @@ describe('EntityLinkComponent', () => {
         }
         component.attrs = erredDaemon
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
     })
 
     it('should construct machine link', () => {
