@@ -1091,7 +1091,10 @@ export const TestFiltersToolbar: Story = {
 }
 
 export const TestFiltersToolbarResponsive: Story = {
-    tags: ['no-test-in-ci'], // For some reason this test passes in normal browser, but fails in headless browser tests in CI.
+    // For some reason this test passes in normal browser, but fails in headless browser tests in CI or CLI.
+    // It seems that headless browser does not support smaller Storybook viewport and responsive UI has no effect.
+    // Thus, use 'no-test-in-headless-browser' tag to skip the test in CI or CLI.
+    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'read-only', // Check if user privileges work.
         viewport: 'mobile2', // Overwrite user viewport preference to have large mobile viewport when testing.
