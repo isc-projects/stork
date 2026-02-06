@@ -1,5 +1,4 @@
 import functools
-import re
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from typing import Callable, List, Optional, TypeVar

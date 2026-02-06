@@ -4,7 +4,7 @@ from core.wrappers import Server, Bind9
 from core.fixtures import bind9_parametrize
 
 
-def assertSingleDaemon(state):
+def assert_single_daemon(state):
     """
     It is possible that the race condition occurs on the detection phase
     because the first state puller iteration may still be executed while the
@@ -24,7 +24,7 @@ def test_bind9(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
     assert len(daemon.access_points) == 2
@@ -48,7 +48,7 @@ def test_bind9_rndc(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
     assert len(daemon.access_points) == 2
@@ -67,7 +67,7 @@ def test_bind9_package(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
     assert len(daemon.access_points) == 1  # Missing statistics
@@ -83,7 +83,7 @@ def test_bind9_rndc_custom(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
     assert len(daemon.access_points) == 2
@@ -97,7 +97,7 @@ def test_bind9_chroot(server_service: Server, bind9_service: Bind9):
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
 
@@ -111,7 +111,7 @@ def test_bind9_chroot_rndc_custom(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
     assert len(daemon.access_points) == 2
@@ -124,7 +124,7 @@ def test_bind9_fetch_zones(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assertSingleDaemon(state)
+    assert_single_daemon(state)
     daemon = state.daemons[0]
     assert daemon.name == "named"
     assert len(daemon.access_points) == 2
