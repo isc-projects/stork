@@ -10,10 +10,8 @@ def test_review_get_dhcp_config_reports(server_service: Server, kea_service: Kea
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    daemons = [d for a in state.apps for d in a.details.daemons]
-
     # DHCPv4 daemon.
-    dhcp_v4_daemons = [d for d in daemons if d.name == "dhcp4"]
+    dhcp_v4_daemons = [d for d in state.daemons if d.name == "dhcp4"]
     assert len(dhcp_v4_daemons) == 1
     daemon_id = dhcp_v4_daemons[0].id
 
@@ -34,7 +32,7 @@ def test_review_get_dhcp_config_reports(server_service: Server, kea_service: Kea
     assert "lease_cmds_presence" in issue_reports
 
     # DHCPv6 daemon.
-    dhcp_v6_daemons = [d for d in daemons if d.name == "dhcp6"]
+    dhcp_v6_daemons = [d for d in state.daemons if d.name == "dhcp6"]
     assert len(dhcp_v6_daemons) == 1
     daemon_id = dhcp_v6_daemons[0].id
 
@@ -63,8 +61,7 @@ def test_review_get_ha_only_top_mt_config_reports(server_service: Server, ha_ser
     assert len(states) == 2
 
     for state in states:
-        daemons = [d for a in state.apps for d in a.details.daemons]
-        daemons = [d for d in daemons if d.name in ["dhcp4", "dhcp6"]]
+        daemons = [d for d in state.daemons if d.name in ["dhcp4", "dhcp6"]]
         assert len(daemons) == 2
 
         for daemon in daemons:
@@ -95,8 +92,7 @@ def test_review_get_ha_mt_config_reports(server_service: Server, ha_service):
     assert len(states) == 2
 
     for state in states:
-        daemons = [d for a in state.apps for d in a.details.daemons]
-        daemons = [d for d in daemons if d.name in ["dhcp4", "dhcp6"]]
+        daemons = [d for d in state.daemons if d.name in ["dhcp4", "dhcp6"]]
         assert len(daemons) == 2
 
         for daemon in daemons:

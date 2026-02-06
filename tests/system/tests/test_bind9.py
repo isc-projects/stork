@@ -1,6 +1,21 @@
+import warnings
+
 from core.wrappers import Server, Bind9
 from core.fixtures import bind9_parametrize
 
+
+def assertSingleDaemon(state):
+    '''
+    It is possible that the race condition occurs on the detection phase
+    because the first state puller iteration may still be executed while the
+    test fetches the state. This problem is described in #583.
+    '''
+    assert len(state.daemons) >= 1
+    if len(state.daemons) > 1:
+        warnings.warn(
+            f"Expected 1 daemon, but got {len(state.daemons)}. It means the "
+            "race condition occurred on the detection phase. See #583."
+        )
 
 def test_bind9(server_service: Server, bind9_service: Bind9):
     """Check if Stork Agent detects BIND 9."""
@@ -8,11 +23,11 @@ def test_bind9(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
-    assert len(app.access_points) == 2
-    assert app.access_points[0].address == "127.0.0.1"
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
+    assert len(daemon.access_points) == 2
+    assert daemon.access_points[0].address == "127.0.0.1"
 
     # BIND9 rejects every second POST request if it contains a non-empty body.
     # See: https://gitlab.isc.org/isc-projects/bind9/-/issues/3463
@@ -32,11 +47,11 @@ def test_bind9_rndc(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
-    assert len(app.access_points) == 2
-    assert app.access_points[0].address == "127.0.0.1"
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
+    assert len(daemon.access_points) == 2
+    assert daemon.access_points[0].address == "127.0.0.1"
 
     metrics = bind9_service.read_prometheus_metrics()
     assert metrics is not None
@@ -51,11 +66,11 @@ def test_bind9_package(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
-    assert len(app.access_points) == 1  # Missing statistics
-    assert app.access_points[0].address == "127.0.0.1"
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
+    assert len(daemon.access_points) == 1  # Missing statistics
+    assert daemon.access_points[0].address == "127.0.0.1"
 
 
 @bind9_parametrize("agent-bind9-rndc-custom")
@@ -67,12 +82,11 @@ def test_bind9_rndc_custom(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
-    assert len(app.access_points) == 2
-    assert app.access_points[0].address == "127.0.0.1"
-
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
+    assert len(daemon.access_points) == 2
+    assert daemon.access_points[0].address == "127.0.0.1"
 
 @bind9_parametrize("agent-bind9-chroot")
 def test_bind9_chroot(server_service: Server, bind9_service: Bind9):
@@ -81,9 +95,9 @@ def test_bind9_chroot(server_service: Server, bind9_service: Bind9):
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
 
 
 @bind9_parametrize("agent-bind9-chroot-rndc-custom")
@@ -95,12 +109,11 @@ def test_bind9_chroot_rndc_custom(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
-    assert len(app.access_points) == 2
-    assert app.access_points[0].address == "127.0.0.1"
-
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
+    assert len(daemon.access_points) == 2
+    assert daemon.access_points[0].address == "127.0.0.1"
 
 def test_bind9_fetch_zones(server_service: Server, bind9_service: Bind9):
     """Check if zones can be fetched from BIND9."""
@@ -108,11 +121,11 @@ def test_bind9_fetch_zones(server_service: Server, bind9_service: Bind9):
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert len(state.apps) == 1
-    app = state.apps[0]
-    assert app.type == "bind9"
-    assert len(app.access_points) == 2
-    assert app.access_points[0].address == "127.0.0.1"
+    assertSingleDaemon(state)
+    daemon = state.daemons[0]
+    assert daemon.name == "named"
+    assert len(daemon.access_points) == 2
+    assert daemon.access_points[0].address == "127.0.0.1"
 
     zone_inventory_states = server_service.wait_for_fetch_zones()
 

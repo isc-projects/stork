@@ -22,10 +22,10 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
     assert len(machines.items) == 1
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert state.apps is not None
-    assert len(state.apps) == 2
-    assert len(state.apps[0].access_points) == 1
-    assert state.apps[0].access_points[0].address == "127.0.0.1"
+    assert state.daemons is not None
+    assert len(state.daemons) == 2
+    assert len(state.daemons[0].access_points) == 1
+    assert state.daemons[0].access_points[0].address == "127.0.0.1"
 
     subnets = server_service.list_subnets(family=4)
     assert subnets.total == 6912

@@ -10,7 +10,7 @@ def test_delete_machine_with_config_reports(kea_service: Kea, server_service: Se
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
-    daemon = [d for a in state.apps for d in a.details.daemons if d.name == "dhcp4"][0]
+    daemon = [d for d in state.daemons if d.name == "dhcp4"][0]
     reports = server_service.wait_for_config_reports(daemon.id)
     assert reports.total != 0
     assert any(r for r in reports.items if r.content is not None)
@@ -30,9 +30,7 @@ def test_fetch_machine_state(kea_service: Kea, server_service: Server):
     server_service.authorize_all_machines()
     machine, *_ = server_service.wait_for_next_machine_states()
     daemon: KeaDaemon
-    dhcp4_daemons = [
-        d for a in machine.apps for d in a.details.daemons if d.name == "dhcp4"
-    ]
+    dhcp4_daemons = [d for d in machine.daemons if d.name == "dhcp4"]
     assert len(dhcp4_daemons) == 1
     daemon = dhcp4_daemons[0]
 

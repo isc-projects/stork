@@ -194,12 +194,12 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         return api_instance.get_machines(**params)
 
     def list_subnets(
-        self, app_id=None, family: int = None, limit=10, start=0
+        self, daemon_id=None, family: int = None, limit=10, start=0
     ) -> Subnets:
-        """Lists the subnets from a given application and/or family."""
+        """Lists the subnets from a given daemon and/or family."""
         params = {"start": start, "limit": limit}
-        if app_id is not None:
-            params["app_id"] = app_id
+        if daemon_id is not None:
+            params["daemon_id"] = daemon_id
         if family is not None:
             params["dhcp_version"] = family
 
@@ -208,8 +208,8 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     def list_events(
         self,
-        daemon_type=None,
-        app_type=None,
+        daemon_name=None,
+        daemon_id=None,
         machine_id=None,
         user_id=None,
         limit=10,
@@ -220,10 +220,10 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         Parameters
         ----------
-        daemon_type : str, optional
-            Daemon type, e.g. 'named', 'dhcp4', 'dhcp6', 'ca', by default None
-        app_type : str, optional
-            App type, e.g. 'kea' or 'bind9', by default None
+        daemon_name : str, optional
+            Daemon name, e.g. 'named', 'dhcp4', 'dhcp6', 'ca', by default None
+        daemon_id : int, optional
+            Daemon ID, by default None
         machine_id : int, optional
             Machine ID, by default None
         user_id : int, optional
@@ -239,10 +239,10 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             List of events
         """
         params = {"start": start, "limit": limit}
-        if daemon_type is not None:
-            params["daemon_type"] = daemon_type
-        if app_type is not None:
-            params["app_type"] = app_type
+        if daemon_name is not None:
+            params["daemon_name"] = daemon_name
+        if daemon_id is not None:
+            params["daemon_id"] = daemon_id
         if machine_id is not None:
             params["machine"] = machine_id
         if user_id is not None:
@@ -698,30 +698,30 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         DatabaseDeadlockError, wait_msg="Waiting to fetch next machine state..."
     )
     def wait_for_next_machine_state(
-        self, machine_id: int, start: datetime = None, wait_for_apps=True
+        self, machine_id: int, start: datetime = None, wait_for_daemons=True
     ) -> Machine:
         """
         Waits for a next fetch of the machine state after a given date.
         If the date is None then the current moment is used.
-        By default, this function waits until some application is fetched.
+        By default, this function waits until some daemon is fetched.
         It may be suppressed by specifying a flag.
         """
         self._wait_for_states_pulling(start)
         state = self.read_machine_state(machine_id)
-        if wait_for_apps and len(state.apps) == 0:
-            raise NoSuccessException("the apps are missing")
+        if wait_for_daemons and len(state.daemons) == 0:
+            raise NoSuccessException("the daemons are missing")
         return state
 
     @wait_for_success(
         DatabaseDeadlockError, wait_msg="Waiting to fetch next machine states..."
     )
     def wait_for_next_machine_states(
-        self, start: datetime = None, wait_for_apps=True
+        self, start: datetime = None, wait_for_daemons=True
     ) -> List[Machine]:
         """
         Waits for the subsequent fetches of the machine states for all machines.
         The machines must be authorized. Returns list of states.
-        By default, this function waits until some application is fetched.
+        By default, this function waits until some daemon is fetched.
         It may be suppressed by specifying a flag.
         """
         self._wait_for_states_pulling(start)
@@ -729,21 +729,10 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         states = []
         for machine in machines.items:
             state = self.read_machine_state(machine.id)
-            if wait_for_apps and len(state.apps) == 0:
-                raise NoSuccessException("the apps are missing")
+            if wait_for_daemons and len(state.daemons) == 0:
+                raise NoSuccessException("the daemons are missing")
             states.append(state)
         return states
-
-    # The different event message is used if the number of subnets is less or
-    # greater than 10. Additionally, if the number of subnets is less than 10,
-    # each subnet generates its event.
-    _pattern_added_subnets = re.compile(
-        # pylint: disable=implicit-str-concat
-        r"added (?:(?:\d+ subnets)|(?:<subnet.*>)) to <daemon "
-        r'id="(?P<daemon_id>\d+)" '
-        r'name="(?P<daemon_name>.*)" '
-        r'appId="(?P<app_id>\d+)"'
-    )
 
     def wait_for_failed_ca_communication(self, check_unauthorized=True):
         """
@@ -788,7 +777,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         for daemon in overview.dhcp_daemons:
             for relationship in daemon.ha_overview:
                 if relationship.ha_state not in valid_states:
-                    identifier = f"{daemon.app_name}@{daemon.machine}/{daemon.name}"
+                    identifier = f"{daemon.name}@{daemon.machine}"
                     raise NoSuccessException(
                         f"The {identifier} HA peer is {relationship.ha_state}"
                     )

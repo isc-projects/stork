@@ -35,7 +35,7 @@ def test_update_stork_from_the_latest_released_version(
     package_service.update_server_to_latest_version()
     package_service.update_agent_to_latest_version()
 
-    state = package_service.wait_for_next_machine_states(wait_for_apps=False)[0]
+    state = package_service.wait_for_next_machine_states(wait_for_daemons=False)[0]
     agent_version = version.parse_version_info(state.agent_version)[0]
     server_version_raw = package_service.read_version().version
     server_version = version.parse_version_info(server_version_raw)[0]
@@ -75,7 +75,7 @@ def test_update_stork_server_from_the_latest_released_version(
 
     package_service.update_server_to_latest_version()
 
-    state = package_service.wait_for_next_machine_states(wait_for_apps=False)[0]
+    state = package_service.wait_for_next_machine_states(wait_for_daemons=False)[0]
     agent_version_updated = version.parse_version_info(state.agent_version)[0]
     server_version_updated = version.parse_version_info(
         package_service.read_version().version
@@ -116,7 +116,7 @@ def test_update_stork_agent_from_the_latest_released_version(
 
     package_service.update_agent_to_latest_version()
 
-    state = package_service.wait_for_next_machine_states(wait_for_apps=False)[0]
+    state = package_service.wait_for_next_machine_states(wait_for_daemons=False)[0]
     agent_version_updated = version.parse_version_info(state.agent_version)[0]
     server_version_updated = version.parse_version_info(
         package_service.read_version().version
