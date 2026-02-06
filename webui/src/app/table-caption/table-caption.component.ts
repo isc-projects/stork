@@ -40,6 +40,8 @@ export class TableCaptionComponent implements OnInit {
 
     /**
      * Input flag controlling whether the Filtering Help box should have wider or standard width.
+     * Standard value is 20% of the viewport width.
+     * Wider value is 40% of the viewport width.
      * Defaults to false.
      */
     wideHelpTip = input<boolean>(false)
@@ -103,7 +105,15 @@ export class TableCaptionComponent implements OnInit {
     }
 
     /**
-     * Attempts to read shown/hidden state of the filtering toolbar from the browser's local storage.
+     * Attempts to read and return the "filters-toolbar-shown" boolean flag from the browser's local storage.
+     *
+     * If the value couldn't be read from the storage, it returns true, so that the filtering toolbar is
+     * visible by default.
+     *
+     * @returns true when:
+     * a. the value couldn't be read from the local storage
+     * b. the value was read from the local storage, and it was parsed as 'true';
+     * false otherwise.
      */
     getFiltersShownFromStorage(): boolean {
         const storage = localStorage.getItem(this.storageKey())
