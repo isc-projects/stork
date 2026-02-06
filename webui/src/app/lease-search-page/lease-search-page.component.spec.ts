@@ -7,7 +7,7 @@ import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
 
 import { LeaseSearchPageComponent } from './lease-search-page.component'
-import { DHCPService } from '../backend'
+import { DHCPService, Leases } from '../backend'
 import { datetimeToLocal } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
@@ -76,14 +76,14 @@ describe('LeaseSearchPageComponent', () => {
         const searchInput = fixture.debugElement.query(By.css('#leases-search-input'))
         const searchInputElement = searchInput.nativeElement
 
-        const fakeLeases: any = {
+        const fakeLeases: Leases = {
             items: [
                 {
                     id: 0,
                     ipAddress: '192.0.2.3',
                     state: 0,
                     daemonId: 1,
-                    daemonName: 'dhcp4',
+                    daemonLabel: 'DHCPv4@localhost',
                     hwAddress: '01:02:03:04:05:06',
                     subnetId: 123,
                     cltt: 1616149050,
@@ -91,9 +91,9 @@ describe('LeaseSearchPageComponent', () => {
                 },
             ],
             total: 0,
-            erredApps: [],
+            erredDaemons: [],
         }
-        spyOn(dhcpApi, 'getLeases').and.returnValue(of(fakeLeases))
+        spyOn(dhcpApi, 'getLeases').and.returnValue(of(fakeLeases as any))
 
         // Simulate typing only spaces in the search box.
         searchInputElement.value = '192.1.0.1'
@@ -517,8 +517,8 @@ describe('LeaseSearchPageComponent', () => {
                 label: 'DHCPv4@localhost',
             },
             {
-                id: 1,
-                label: 'DHCPv4@localhost',
+                id: 2,
+                label: 'DHCPv6@localhost',
             },
         ]
         component.lastSearchText = '192.0.2.3'
@@ -527,6 +527,8 @@ describe('LeaseSearchPageComponent', () => {
         // A warning message informing about erred daemons should be displayed.
         const erredMessage = fixture.debugElement.query(By.css('#erred-daemons-message'))
         expect(erredMessage).not.toBeNull()
+        expect(erredMessage.nativeElement.innerText).toContain('[1] DHCPv4@localhost')
+        expect(erredMessage.nativeElement.innerText).toContain('[2] DHCPv6@localhost')
     })
 
     it('should handle communication error', fakeAsync(() => {

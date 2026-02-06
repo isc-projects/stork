@@ -2,6 +2,14 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { EntityLinkComponent } from './entity-link.component'
 import { By } from '@angular/platform-browser'
 import { provideRouter } from '@angular/router'
+import {
+    Daemon,
+    LeasesSearchErredDaemon,
+    LocalHost,
+    LocalSharedNetwork,
+    LocalSubnet,
+    LocalZone,
+} from '../backend'
 
 describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
@@ -41,6 +49,80 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         native = fixture.nativeElement
         expect(native.textContent).toContain('daemon')
+        component.showEntityName = false
+
+        // Test that entity link from LocalSubnet.
+        const subnet: LocalSubnet = {
+            id: 24,
+            daemonId: 42,
+            daemonLabel: 'DHCPv4@localhost',
+        }
+        component.attrs = subnet
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+
+        // Test entity link from LocalSharedNetwork.
+        const sharedNetwork: LocalSharedNetwork = {
+            daemonId: 42,
+            daemonLabel: 'DHCPv4@localhost',
+        }
+        component.attrs = sharedNetwork
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+
+        // Test entity link from LocalHost.
+        const host: LocalHost = {
+            bootFileName: 'pxelinux.0',
+            clientClasses: ['class1', 'class2'],
+            dataSource: 'api',
+            hostname: 'host',
+            serverHostname: 'server',
+            daemonId: 42,
+            daemonLabel: 'DHCPv4@localhost',
+        }
+        component.attrs = host
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+
+        // Test entity link from LocalZone.
+        const zone: LocalZone = {
+            daemonId: 42,
+            daemonLabel: 'DHCPv4@localhost',
+            loadedAt: '2024-06-01T12:00:00Z',
+            rpz: true,
+            serial: 12345,
+            view: 'default',
+            zoneClass: 'IN',
+            zoneType: 'primary',
+        }
+        component.attrs = zone
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
+
+        // Test entity link from Daemon.
+        const daemon: Daemon = {
+            id: 42,
+            name: 'dhcp4',
+            label: 'DHCPv4@localhost',
+            active: true,
+            machineId: 1,
+            machineLabel: 'localhost',
+            monitored: true,
+            pid: 1234,
+            version: '1.0.0',
+        }
+        component.attrs = daemon
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4')
+
+        // Test entity link from LeasesSearchErredDaemon.
+        const erredDaemon: LeasesSearchErredDaemon = {
+            id: 42,
+            label: 'DHCPv4@localhost',
+        }
+        component.attrs = erredDaemon
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[42] DHCPv4@localhost')
     })
 
     it('should construct machine link', () => {

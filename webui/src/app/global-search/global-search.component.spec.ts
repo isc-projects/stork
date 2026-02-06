@@ -7,6 +7,7 @@ import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter } from '@angular/router'
+import { Daemon } from '../backend'
 
 describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
@@ -34,13 +35,13 @@ describe('GlobalSearchComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should display app name and proper link to an app in the results', async () => {
+    it('should display daemon name and proper link to a daemon in the results', async () => {
         component.searchResults = {
             subnets: { items: [] },
             sharedNetworks: { items: [] },
             hosts: { items: [] },
             machines: { items: [] },
-            daemons: { items: [{ id: 1, name: 'dhcp-server' }] },
+            daemons: { items: [{ id: 1, name: Daemon.NameEnum.D2 }] },
             users: { items: [] },
             groups: { items: [] },
         }
@@ -58,7 +59,7 @@ describe('GlobalSearchComponent', () => {
         // Entity link component wraps the daemon display
         const daemonLink = daemonDiv.query(By.css('#daemon-link-1'))
         expect(daemonLink).toBeTruthy()
-        expect(daemonLink.nativeElement.innerText).toBe('[1]\u00a0Dhcp-server')
+        expect(daemonLink.nativeElement.innerText).toBe('[1]\u00a0DDNS')
         expect(daemonLink.attributes.href).toBe('/daemons/1')
     })
 })

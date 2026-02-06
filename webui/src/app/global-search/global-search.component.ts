@@ -8,6 +8,7 @@ import { InputText } from 'primeng/inputtext'
 import { NgIf, NgFor } from '@angular/common'
 import { RouterLink } from '@angular/router'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { SearchResult } from '../backend'
 
 const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'daemons', 'users', 'groups']
 
@@ -25,7 +26,7 @@ export class GlobalSearchComponent implements OnInit {
     @ViewChild('searchResultsBox') searchResultsBox: Popover
 
     searchText: string
-    searchResults: any
+    searchResults: Required<SearchResult>
 
     constructor(protected searchApi: SearchService) {}
 
@@ -37,10 +38,11 @@ export class GlobalSearchComponent implements OnInit {
      * Reset results to be empty.
      */
     resetResults() {
-        this.searchResults = {}
+        const searchResults: SearchResult = {}
         for (const rt of recordTypes) {
-            this.searchResults[rt] = { items: [] }
+            searchResults[rt] = { items: [] }
         }
+        this.searchResults = searchResults as Required<SearchResult>
     }
 
     /**
@@ -55,8 +57,7 @@ export class GlobalSearchComponent implements OnInit {
             this.searchApi.searchRecords(this.searchText).subscribe((data) => {
                 this.resetResults()
                 for (const k of recordTypes) {
-                    const apiResult = data[k] ?? (k === 'daemons' ? (data as any).apps : undefined)
-                    this.searchResults[k] = apiResult?.items ? apiResult : { items: [] }
+                    this.searchResults[k] = data[k]?.items ? data[k] : { items: [] }
                 }
                 this.searchResultsBox.show(event)
                 // this is a workaround to fix position when content of overlay panel changes

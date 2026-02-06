@@ -2,8 +2,20 @@
     <!-- daemon -->
     <ng-container *ngSwitchCase="'daemon'">
         {{ showEntityName ? 'daemon' : '' }}
-        <a id="daemon-link-{{ attrs.daemonId || attrs.id }}" routerLink="/daemons/{{ attrs.daemonId || attrs.id }}">
-            [{{ attrs.daemonId || attrs.id }}]&nbsp;{{ attrs.daemonLabel || (attrs.name | daemonNiceName) }}
+        <a
+            id="daemon-link-{{ attrs.daemonId || attrs.id }}"
+            routerLink="/daemons/{{ attrs.daemonId || attrs.id }}"
+        >
+            <!-- This entity link may be rendered by passing three different
+                structures:
+                - Daemon/AnyDaemon/KeaDaemon/DhcpDaemon/SimpleDaemon/BIND9Daemon/PdnsDaemon:
+                    they provide 'id', 'name', and 'label' attributes.
+                    They are usually used along with the machine entity link, so we avoid
+                    printing the full label and use the name.
+                - LocalSubnet/LocalSharedNetwork/LocalHost/LocalZone: they provide 'daemonId' and
+                    'daemonLabel' attributes (note they also have their own 'id')
+                - LeasesSearchErredDaemon: they provide 'id' and 'label' attributes -->
+            [{{ attrs.daemonId || attrs.id }}]&nbsp;{{ attrs.daemonLabel || (attrs.name | daemonNiceName) || attrs.label }}
         </a>
     </ng-container>
 
