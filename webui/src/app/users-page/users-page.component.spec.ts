@@ -165,3 +165,39 @@ describe('UsersPageComponent', () => {
         expect(validator(formGroup)).toBeNull()
     })
 })
+
+describe('UsersPageComponent without superadmin privileges', () => {
+    let component: UsersPageComponent
+    let fixture: ComponentFixture<UsersPageComponent>
+
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                MessageService,
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([]),
+            ],
+        }).compileComponents()
+    }))
+
+    beforeEach(() => {
+        fixture = TestBed.createComponent(UsersPageComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+
+    it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
+        expect(component.toolbarButtons.length).toBeGreaterThan(0)
+        // at first, it should be disabled
+        expect(component.toolbarButtons[0].disabled).toBeTrue()
+        // it should react on privilege change
+        component.canCreateUser.set(true)
+        fixture.detectChanges()
+        expect(component.toolbarButtons[0].disabled).toBeFalse()
+    })
+})

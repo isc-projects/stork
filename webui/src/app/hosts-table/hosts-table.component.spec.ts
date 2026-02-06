@@ -592,4 +592,18 @@ describe('HostsTableComponent', () => {
         // Data source labels are still rendered.
         expect(daemonTd.query(By.css('app-host-data-source-label'))).toBeTruthy()
     })
+
+    it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
+        expect(component.toolbarButtons.length).toBeGreaterThan(1)
+        // at first, it should be disabled
+        expect(component.toolbarButtons[0].disabled).toBeTrue()
+        expect(component.toolbarButtons[1].disabled).toBeTrue()
+        // it should react on privilege change
+        component.canStartMigration.set(true)
+        fixture.detectChanges()
+        expect(component.toolbarButtons[0].disabled).toBeFalse()
+        component.canCreateHosts.set(true)
+        fixture.detectChanges()
+        expect(component.toolbarButtons[1].disabled).toBeFalse()
+    })
 })

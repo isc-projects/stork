@@ -871,3 +871,39 @@ describe('ZonesPageComponent', () => {
         expect(shouldDisableShowZone({ zoneType: undefined })).toBeTrue()
     })
 })
+
+describe('ZonesPageComponent without superadmin privileges', () => {
+    let component: ZonesPageComponent
+    let fixture: ComponentFixture<ZonesPageComponent>
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            providers: [
+                MessageService,
+                ConfirmationService,
+                provideNoopAnimations(),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([]),
+            ],
+        }).compileComponents()
+
+        fixture = TestBed.createComponent(ZonesPageComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+
+    it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
+        expect(component.toolbarButtons.length).toBeGreaterThan(1)
+        // at first, it should be disabled
+        expect(component.toolbarButtons[0].disabled).toBeFalsy()
+        expect(component.toolbarButtons[1].disabled).toBeTrue()
+        // it should react on privilege change
+        component.hasFetchZonesPrivileges.set(true)
+        fixture.detectChanges()
+        expect(component.toolbarButtons[1].disabled).toBeFalse()
+    })
+})

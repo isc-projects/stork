@@ -527,4 +527,14 @@ describe('SharedNetworksTableComponent', () => {
         // Assert
         expect(result).toBeUndefined()
     })
+
+    it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
+        expect(component.toolbarButtons.length).toBeGreaterThan(0)
+        // at first, it should be disabled
+        expect(component.toolbarButtons[0].disabled).toBeTrue()
+        // it should react on privilege change
+        component.canCreateNetwork.set(true)
+        fixture.detectChanges()
+        expect(component.toolbarButtons[0].disabled).toBeFalse()
+    })
 })

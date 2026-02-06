@@ -377,4 +377,16 @@ describe('MachinesTableComponent', () => {
         // Assert
         expect(eventEmitterSpy).toHaveBeenCalledOnceWith(getUnauthorizedMachinesResp.items)
     })
+
+    it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
+        expect(component.toolbarButtons.length).toBeGreaterThan(0)
+        // at first, it should be disabled
+        expect(component.toolbarButtons[0].disabled).toBeTrue()
+        // it should react on signals change
+        component.canAuthorizeMachine.set(true)
+        component.unauthorizedMachinesDisplayed.set(true)
+        component.selectedMachines.set([{ id: 1, address: 'abc' }])
+        fixture.detectChanges()
+        expect(component.toolbarButtons[0].disabled).toBeFalse()
+    })
 })

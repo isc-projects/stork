@@ -354,4 +354,14 @@ describe('SubnetsTableComponent', () => {
         )
         expect(stats['declined-addresses']).toBe(BigInt('-2'))
     })
+
+    it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
+        expect(component.toolbarButtons.length).toBeGreaterThan(0)
+        // at first, it should be disabled
+        expect(component.toolbarButtons[0].disabled).toBeTrue()
+        // it should react on privilege change
+        component.canCreateSubnet.set(true)
+        fixture.detectChanges()
+        expect(component.toolbarButtons[0].disabled).toBeFalse()
+    })
 })
