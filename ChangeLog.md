@@ -1,3 +1,157 @@
+Stork 2.4.0 released on 2026-02-11.
+
+* 611 [func] piotrek
+
+    Refactored the filtering panels placed above various list views that
+    support filtering. The new panels take less space and can be hidden
+    with a toggle switch.
+    (Gitlab #2197)
+
+* 610 [func] slawek
+
+    Added labels to display daemon links consistently.
+    (Gitlab #2220)
+
+* 609 [build] slawek
+
+    Updated dependencies including the Go 1.25.7, Alpine 3.22, and
+    several JavaScript, Python, Ruby and Go packages.
+    (Gitlab #2240)
+
+* 608 [bug] marcin
+
+    Fixed setting the number of clients and rate in the DNS traffic
+    simulator. Previously, these settings were ignored and the default
+    values of 1 client, and the rate of 1 query per second were used.
+    (Gitlab #2100)
+
+* 607 [sec] slawek
+
+    Enhanced security by setting the default minimum required TLS
+    version to 1.3 for connections to the Stork server RestAPI,
+    database, and Kea API.
+    (Gitlab #9)
+
+* 606 [sec] slawek
+
+    Fixed command injection vector attack in the agent installer script.
+    (Gitlab #11)
+
+* 605 [func] slawek
+
+    The daemons are no longer removed from the database if they are
+    inactive. Added a button to delete them manually.
+    (Gitlab #2095)
+
+* 604 [sec] slawek
+
+    Added validation of the password policy on the backend side.
+    (Gitlab #10)
+
+* 603 [ui] slawek
+
+    Dropped the application concept.
+    (Gitlab #2193)
+
+* 602 [func] william
+
+    Added agent API for obtaining a snapshot of all leases from
+    Kea. It is disabled by default and is not currently ready for
+    production use. If you want to enable it and use it anyway (to
+    test it and report problems), pass `--enable-lease-tracking` or set
+    `STORK_AGENT_ENABLE_LEASE_TRACKING=1` when starting the agent.
+    (Gitlab #2057)
+
+* 601 [bug] marcin
+
+    Corrected the bug in the subnet edit form resulting in
+    displaying wrong input controls for specifying different
+    subnet names for the subnet.
+    (Gitlab #2184)
+
+* 600 [func] marcin
+
+    Added an option in the UI to force refreshing the zones list
+    from the monitored DNS servers.
+    (Gitlab #2201)
+
+* 599 [func] slawek
+
+    The commands to Kea are now sent over other control sockets if the
+    first one is unavailable.
+    (Gitlab #2223)
+
+* 598 [bug] william
+
+    Fix `state:declined` search for Kea 3.1.5 and newer. Kea 3.1.1
+    through 3.1.4 will not work.  (Also updated Kea version to 3.1.4
+    in demo and system tests.)
+    (Gitlab #1993)
+
+* 597 [bug] slawek
+
+    Fixed database migration failure when the database server was
+    Postgres 10.
+    (Gitlab #2144)
+
+* 596 [bug] piotrek
+
+    Fixed a bug where filtering apps by text would have no effect if
+    filter by app type was active at the same time.
+    (Gitlab #2180)
+
+* 595 [bug] slawek
+
+    Fixed fetching and displaying Kea log targets.
+    (Gitlab #2222)
+
+* 594 [bug] marcin
+
+    Fixed an issue with getting Kea configurations containing
+    consecutive quotes from the database. It resulted in using
+    invalid configuration strings (missing quotes) when trying
+    to update Kea configurations.
+    (Gitlab #2112)
+
+* 593 [doc] marcin
+
+    Updated the ARM to include PowerDNS-specific features. In
+    particular: updated the security architecture description and
+    the troubleshooting sections.
+    (Gitlab #1972)
+
+* 592 [func] marcin
+
+    Optimized detection of the BIND 9 and PowerDNS servers in the Stork
+    agent. It avoids parsing configuration files if they haven't changed
+    since the last detection.
+    (Gitlab #2200)
+
+* 591 [bug] marcin
+
+    Fixed an issue in the Stork agent which misinterpreted the keyword
+    "any" in the BIND 9 listen-on configuration clause. Now, it tries
+    to communicate with BIND 9 over the local loopback addresses when
+    it finds this keyword.
+    (Gitlab #2122)
+
+* 590 [bug] marcin
+
+    Corrected query param value when filtering zones by type and when
+    the type uses old (master, slave) naming convention.
+    (Gitlab #2186)
+
+* 589 [func] marcin
+
+    Added RRs filtering in the zone viewer.
+    (Gitlab #2136)
+
+* 588 [build] slawek
+
+    Fixed instabilities in the demo by changing the way the interfaces
+    are assigned to networks in the Docker Compose configuration.
+    (Gitlab #2140)
+
 Stork 2.3.2 released on 2025-12-10.
 
 * 587 [func] piotrek
