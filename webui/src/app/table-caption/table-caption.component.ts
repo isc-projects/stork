@@ -111,8 +111,9 @@ export class TableCaptionComponent implements OnInit {
      * visible by default.
      *
      * @returns true when:
-     * a. the value couldn't be read from the local storage
-     * b. the value was read from the local storage, and it was parsed as 'true';
+     * - the value couldn't be read from the local storage
+     * - the value was read from the local storage, and it was parsed as 'true';
+     *
      * false otherwise.
      */
     getFiltersShownFromStorage(): boolean {
