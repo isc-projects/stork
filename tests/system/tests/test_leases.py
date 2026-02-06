@@ -27,7 +27,7 @@ def fetch_and_assert_declined_leases(version: (int, int, int), server_service: S
     # was not added until 3.1.5.
     if (3, 1, 0) < version < (3, 1, 5):
         assert data.total is None
-        assert len(data.erred_apps) == 2
+        assert len(data.erred_daemons) == 2
     elif version >= (2, 3, 8):
         assert data.total == 20
     else:
