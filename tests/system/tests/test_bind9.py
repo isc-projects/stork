@@ -5,17 +5,18 @@ from core.fixtures import bind9_parametrize
 
 
 def assertSingleDaemon(state):
-    '''
+    """
     It is possible that the race condition occurs on the detection phase
     because the first state puller iteration may still be executed while the
     test fetches the state. This problem is described in #583.
-    '''
+    """
     assert len(state.daemons) >= 1
     if len(state.daemons) > 1:
         warnings.warn(
             f"Expected 1 daemon, but got {len(state.daemons)}. It means the "
             "race condition occurred on the detection phase. See #583."
         )
+
 
 def test_bind9(server_service: Server, bind9_service: Bind9):
     """Check if Stork Agent detects BIND 9."""
@@ -88,6 +89,7 @@ def test_bind9_rndc_custom(server_service: Server, bind9_service: Bind9):
     assert len(daemon.access_points) == 2
     assert daemon.access_points[0].address == "127.0.0.1"
 
+
 @bind9_parametrize("agent-bind9-chroot")
 def test_bind9_chroot(server_service: Server, bind9_service: Bind9):
     """Check if Stork Agent can monitor BIND 9 running in the chroot
@@ -114,6 +116,7 @@ def test_bind9_chroot_rndc_custom(server_service: Server, bind9_service: Bind9):
     assert daemon.name == "named"
     assert len(daemon.access_points) == 2
     assert daemon.access_points[0].address == "127.0.0.1"
+
 
 def test_bind9_fetch_zones(server_service: Server, bind9_service: Bind9):
     """Check if zones can be fetched from BIND9."""
