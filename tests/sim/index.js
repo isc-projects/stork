@@ -1,7 +1,7 @@
 ELEMENT.locale(ELEMENT.lang.en)
 
 var subnets = []
-var applications = []
+var daemons = []
 var services = []
 
 var app = new Vue({
@@ -9,7 +9,7 @@ var app = new Vue({
     data: {
         menuIndex: 'manager',
         subnets: subnets,
-        applications: applications,
+        daemons: daemons,
         services: services,
         disableDHCPButtons: false
     },
@@ -17,9 +17,9 @@ var app = new Vue({
         axios.get('/subnets').then(function (response) {
             this.subnets.push(...response.data.items)
         }).catch((err) => console.log('Error getting subnets: ', err))
-        axios.get('/applications').then(function (response) {
-            this.applications.push(...response.data.items)
-        }).catch((err) => console.log('Error getting applications: ', err))
+        axios.get('/daemons').then(function (response) {
+            this.daemons.push(...response.data.items)
+        }).catch((err) => console.log('Error getting daemons: ', err))
         axios.get('/services').then(function (response) {
             this.services.push(...response.data.items)
         }).catch((err) => console.log('Error getting services: ', err))
@@ -43,40 +43,40 @@ var app = new Vue({
                 .finally(() => this.disableDHCPButtons = false)
         },
         query: function (idx) {
-            var application = this.applications[idx]
+            var daemon = this.daemons[idx]
             var data = {
-                attempts: application.attempts,
-                qname: application.qname,
-                qtype: application.qtype,
-                transport: application.transport,
-                rate: application.rate,
-                clients: application.clients
+                attempts: daemon.attempts,
+                qname: daemon.qname,
+                qtype: daemon.qtype,
+                transport: daemon.transport,
+                rate: daemon.rate,
+                clients: daemon.clients
 
             }
             axios.put('/query/' + idx, data).then(function (response) {
-                this.applications.length = 0;
-                this.applications.push(...response.data.items);
+                this.daemons.length = 0;
+                this.daemons.push(...response.data.items);
             }).catch((err) => console.log('Error putting query: ', idx, data, err))
         },
         perf: function (idx, state) {
-            var application = this.applications[idx]
+            var daemon = this.daemons[idx]
             var data = {
                 state: state,
-                attempts: application.attempts,
-                qname: application.qname,
-                qtype: application.qtype,
-                transport: application.transport,
-                rate: application.rate,
-                clients: application.clients
+                attempts: daemon.attempts,
+                qname: daemon.qname,
+                qtype: daemon.qtype,
+                transport: daemon.transport,
+                rate: daemon.rate,
+                clients: daemon.clients
             }
             axios.put('/perf/' + idx, data).then(function (response) {
-                this.applications.length = 0;
-                this.applications.push(...response.data.items);
+                this.daemons.length = 0;
+                this.daemons.push(...response.data.items);
             }).catch((err) => console.log('Error putting perf: ', idx, data, err))
         },
         updateService: function (idx, operation) {
             var sn = this.subnets[idx]
-            var data = {operation: operation}
+            var data = { operation: operation }
             axios.put('/services/' + idx, data).then(function (response) {
                 this.services.length = 0;
                 this.services.push(...response.data.items);

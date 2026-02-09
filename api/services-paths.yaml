@@ -375,7 +375,7 @@
         - $ref: '#/parameters/filterTextParam'
         - name: daemons
           in: query
-          description: Limit returned list of daemons, possible values 'bind9', 'dhcp4', 'dhcp6', 'ca', 'netconf' or 'pdns'.
+          description: Limit returned list of daemons, possible values 'named', 'dhcp4', 'dhcp6', 'ca', 'netconf' or 'pdns'.
           type: array
           items:
             type: string

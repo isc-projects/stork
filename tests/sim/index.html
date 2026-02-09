@@ -77,7 +77,7 @@
             </el-table-column>
         </el-table>
 
-        <el-table :data="applications" v-if="menuIndex == 'dns'">
+        <el-table :data="daemons" v-if="menuIndex == 'dns'">
             <el-table-column label="DNS server" min-width="4em">
                 <template slot-scope="scope">
                     {{ scope.row.address }}

@@ -73,12 +73,12 @@ def _get_subnets_from_rest_api():
         return {"items": [], "total": 0}
 
 
-def _get_dns_applications_from_rest_api():
-    """Fetches the list of DNS applications from Stork server."""
+def _get_dns_daemons_from_rest_api():
+    """Fetches the list of DNS daemons from Stork server."""
     try:
         session = _login_session()
 
-        url = f"{STORK_SERVER_URL}/api/apps?apps=bind9,pdns"
+        url = f"{STORK_SERVER_URL}/api/daemons?daemons=named,pdns"
         response = session.get(url)
         data = response.json()
 
@@ -86,10 +86,10 @@ def _get_dns_applications_from_rest_api():
             return {"items": [], "total": 0}
         return data
     except requests.exceptions.RequestException as err:
-        log.error("Error getting DNS apps: %s", err)
+        log.error("Error getting DNS daemons: %s", err)
         return {"items": [], "total": 0}
     except BaseException as err:
-        log.error("Generic error getting DNS apps: %s", err)
+        log.error("Generic error getting DNS daemons: %s", err)
         return {"items": [], "total": 0}
 
 
@@ -129,24 +129,24 @@ def _refresh_subnets():
     app.subnets = subnets
 
 
-def _refresh_dns_applications():
-    """Fetches list of DNS applications from Stork server and extends them with
-    fields related to generating traffic. Stores the DNS applications in the app
+def _refresh_dns_daemons():
+    """Fetches list of DNS daemons from Stork server and extends them with
+    fields related to generating traffic. Stores the DNS daemons in the app
     object."""
-    app.dns_applications = {"items": [], "total": 0}
-    dns_applications = _get_dns_applications_from_rest_api()
+    app.dns_daemons = {"items": [], "total": 0}
+    dns_daemons = _get_dns_daemons_from_rest_api()
 
-    # Add the simulator-specific fields to the DNS applications.
-    for application in dns_applications["items"]:
-        if application["type"] == "bind9" or application["type"] == "pdns":
-            application["clients"] = 1
-            application["rate"] = 1
-            application["qname"] = "example.com"
-            application["qtype"] = "A"
-            application["transport"] = "udp"
-            application["proc"] = None
-            application["state"] = "stop"
-    app.dns_applications = dns_applications
+    # Add the simulator-specific fields to the DNS daemons.
+    for daemon in dns_daemons["items"]:
+        if daemon["name"] == "named" or daemon["name"] == "pdns":
+            daemon["clients"] = 1
+            daemon["rate"] = 1
+            daemon["qname"] = "example.com"
+            daemon["qtype"] = "A"
+            daemon["transport"] = "udp"
+            daemon["proc"] = None
+            daemon["state"] = "stop"
+    app.dns_daemons = dns_daemons
 
 
 def _refresh_services():
@@ -178,19 +178,19 @@ def serialize_subnets(subnets):
     return json.dumps(data)
 
 
-def serialize_applications(applications):
-    """Serializes applications to JSON."""
-    data = {"total": applications["total"], "items": []}
-    for application in applications["items"]:
+def serialize_daemons(daemons):
+    """Serializes daemons to JSON."""
+    data = {"total": daemons["total"], "items": []}
+    for daemon in daemons["items"]:
         data["items"].append(
             {
-                "state": application["state"],
-                "address": application["machine"]["address"],
-                "clients": application["clients"],
-                "rate": application["rate"],
-                "transport": application["transport"],
-                "qtype": application["qtype"],
-                "qname": application["qname"],
+                "state": daemon["state"],
+                "address": daemon["machine"]["address"],
+                "clients": daemon["clients"],
+                "rate": daemon["rate"],
+                "transport": daemon["transport"],
+                "qtype": daemon["qtype"],
+                "qname": daemon["qname"],
             }
         )
     return json.dumps(data)
@@ -207,7 +207,7 @@ def init():
 def main():
     """Runs the simulator."""
     _refresh_subnets()
-    _refresh_dns_applications()
+    _refresh_dns_daemons()
     _refresh_services()
 
 
@@ -308,11 +308,11 @@ def put_subnet_params(index):
     return serialize_subnets(app.subnets)
 
 
-@app.route("/applications")
-def get_dns_applications():
-    """DNS application list HTTP handler."""
-    _refresh_dns_applications()
-    return serialize_applications(app.dns_applications)
+@app.route("/daemons")
+def get_dns_daemons():
+    """DNS daemon list HTTP handler."""
+    _refresh_dns_daemons()
+    return serialize_daemons(app.dns_daemons)
 
 
 @app.route("/query/<int:index>", methods=["PUT"])
@@ -320,37 +320,37 @@ def put_dig_params(index):
     """Sends DNS query to a server with the given index."""
     data = json.loads(request.data)
     if (
-        app.dns_applications is None
-        or not isinstance(app.dns_applications["items"], list)
-        or index >= len(app.dns_applications["items"])
+        app.dns_daemons is None
+        or not isinstance(app.dns_daemons["items"], list)
+        or index >= len(app.dns_daemons["items"])
     ):
         log.error(
-            "dns app index out of boundaries - requested idx %s but the apps are %s",
+            "dns daemon index out of boundaries - requested idx %s but the daemons are %s",
             index,
-            app.dns_applications,
+            app.dns_daemons,
         )
-        return "dns app index out of boundaries!", 500
-    application = app.dns_applications["items"][index]
+        return "dns daemon index out of boundaries!", 500
+    daemon = app.dns_daemons["items"][index]
 
     if "qname" in data:
-        application["qname"] = data["qname"]
+        daemon["qname"] = data["qname"]
 
     if "qtype" in data:
-        application["qtype"] = data["qtype"]
+        daemon["qtype"] = data["qtype"]
 
     if "transport" in data:
-        application["transport"] = data["transport"]
+        daemon["transport"] = data["transport"]
 
     if "clients" in data:
-        application["clients"] = data["clients"]
+        daemon["clients"] = data["clients"]
 
     if "rate" in data:
-        application["rate"] = data["rate"]
+        daemon["rate"] = data["rate"]
 
-    traffic.run_dig(application)
-    log.info("Sent DNS query to %s", application["machine"]["address"])
+    traffic.run_dig(daemon)
+    log.info("Sent DNS query to %s", daemon["machine"]["address"])
 
-    return serialize_applications(app.dns_applications)
+    return serialize_daemons(app.dns_daemons)
 
 
 @app.route("/perf/<int:index>", methods=["PUT"])
@@ -358,53 +358,52 @@ def put_flamethrower_params(index):
     """Starts generating DNS traffic to a server with the given index."""
     data = json.loads(request.data)
     if (
-        app.dns_applications is None
-        or not isinstance(app.dns_applications["items"], list)
-        or index >= len(app.dns_applications["items"])
+        app.dns_daemons is None
+        or not isinstance(app.dns_daemons["items"], list)
+        or index >= len(app.dns_daemons["items"])
     ):
         log.error(
-            "dns app index out of boundaries - requested idx %s but the apps are %s",
+            "dns daemon index out of boundaries - requested idx %s but the daemons are %s",
             index,
-            app.dns_applications,
+            app.dns_daemons,
         )
-        return "dns app index out of boundaries!", 500
-    application = app.dns_applications["items"][index]
+        return "dns daemon index out of boundaries!", 500
+    daemon = app.dns_daemons["items"][index]
 
     if "qname" in data:
-        application["qname"] = data["qname"]
+        daemon["qname"] = data["qname"]
 
     if "qtype" in data:
-        application["qtype"] = data["qtype"]
+        daemon["qtype"] = data["qtype"]
 
     if "transport" in data:
-        application["transport"] = data["transport"]
+        daemon["transport"] = data["transport"]
 
     if "clients" in data:
-        application["clients"] = data["clients"]
+        daemon["clients"] = data["clients"]
 
     if "rate" in data:
-        application["rate"] = data["rate"]
+        daemon["rate"] = data["rate"]
 
     if "state" in data:
         # stop dnsperf if requested
         if (
-            application["state"] == "start"
+            daemon["state"] == "start"
             and data["state"] == "stop"
-            and application["proc"] is not None
+            and daemon["proc"] is not None
         ):
-            log.info("Stopping flamethrower for %s", application["machine"]["address"])
-            application["proc"].terminate()
-            application["proc"].wait()
-            application["proc"] = None
+            log.info("Stopping flamethrower for %s", daemon["machine"]["address"])
+            daemon["proc"].terminate()
+            daemon["proc"].wait()
+            daemon["proc"] = None
 
         # start dnsperf if requested
-        if application["state"] == "stop" and data["state"] == "start":
-            application["proc"] = traffic.start_flamethrower(application)
-            log.info("Started flamethrower for %s", application["machine"]["address"])
+        if daemon["state"] == "stop" and data["state"] == "start":
+            daemon["proc"] = traffic.start_flamethrower(daemon)
+            log.info("Started flamethrower for %s", daemon["machine"]["address"])
 
-        application["state"] = data["state"]
-
-    return serialize_applications(app.dns_applications)
+        daemon["state"] = data["state"]
+    return serialize_daemons(app.dns_daemons)
 
 
 @app.route("/services")
