@@ -1,4 +1,4 @@
-import { Component, effect, input, model, OnDestroy, OnInit, output } from '@angular/core'
+import { Component, computed, effect, input, model, OnDestroy, OnInit, output } from '@angular/core'
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete'
 import { FloatLabel } from 'primeng/floatlabel'
 import { FormsModule } from '@angular/forms'
@@ -90,11 +90,34 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
     errorOccurred = output<string>()
 
     /**
-     * List of daemon types that will be visualized by this component.
+     * List of Kea DHCP daemon types that may be visualized by this component.
      * It is used to filter out Kea daemons like control-agent or ddns which are not relevant for this component use.
      * @private
      */
-    private acceptedDaemons = ['dhcp4', 'dhcp6', 'named', 'pdns']
+    private dhcpDaemons = ['dhcp4', 'dhcp6']
+
+    /**
+     * List of DNS daemon types that may be visualized by this component.
+     * @private
+     */
+    private dnsDaemons = ['named', 'pdns']
+
+    /**
+     * List of daemon types that may be visualized by this component.
+     * It is computed depending on "domain" input value.
+     */
+    acceptedDaemons = computed(() => {
+        if (this.domain() == 'dhcp') {
+            return [...this.dhcpDaemons]
+        }
+
+        if (this.domain() == 'dns') {
+            return [...this.dnsDaemons]
+        }
+
+        // If no domain is set, both dhcp and dns types are accepted.
+        return [...this.dhcpDaemons, ...this.dnsDaemons]
+    })
 
     /**
      * RxJS subject triggering the getDaemonsDirectory API call.
@@ -120,7 +143,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
     private receivedDaemons$: Observable<SimpleDaemons> = this.callApiTrigger.pipe(
         throttleTime(3000),
         exhaustMap(() =>
-            this.servicesApi.getDaemonsDirectory(undefined, this.domain()).pipe(
+            this.servicesApi.getDaemonsDirectory().pipe(
                 timeout({
                     each: this.timeoutValue,
                     with: () => throwError(() => `timeout - no response in ${this.timeoutValue}ms`),
@@ -153,7 +176,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      */
     ngOnInit() {
         this.subscription = this.receivedDaemons$.subscribe((data) => {
-            this.daemonSuggestions = (data.items?.filter((d) => this.acceptedDaemons.includes(d.name)) ?? []).map(
+            this.daemonSuggestions = (data.items?.filter((d) => this.acceptedDaemons().includes(d.name)) ?? []).map(
                 (d) => ({
                     ...d,
                     listItemLabel: this.constructListItemLabel(d),

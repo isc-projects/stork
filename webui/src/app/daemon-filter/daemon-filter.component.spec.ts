@@ -32,8 +32,36 @@ describe('DaemonFilterComponent', () => {
                     hostname: 'host_c',
                 },
             },
+            {
+                id: 93,
+                name: 'netconf',
+                machine: {
+                    hostname: 'host_c',
+                },
+            },
+            {
+                id: 94,
+                name: 'd2',
+                machine: {
+                    hostname: 'host_c',
+                },
+            },
+            {
+                id: 95,
+                name: 'ca',
+                machine: {
+                    hostname: 'host_c',
+                },
+            },
+            {
+                id: 96,
+                name: 'pdns',
+                machine: {
+                    hostname: 'host_c',
+                },
+            },
         ],
-        total: 3,
+        total: 7,
     }
 
     beforeEach(async () => {
@@ -55,6 +83,23 @@ describe('DaemonFilterComponent', () => {
     it('should have default label', () => {
         fixture.detectChanges()
         expect(component.label()).toEqual('Daemon (type or pick)')
+    })
+
+    it('should accept daemons depending on domain', () => {
+        fixture.detectChanges()
+        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['dhcp4', 'dhcp6', 'named', 'pdns']))
+
+        fixture.componentRef.setInput('domain', 'dhcp')
+        fixture.detectChanges()
+        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['dhcp4', 'dhcp6']))
+
+        fixture.componentRef.setInput('domain', 'dns')
+        fixture.detectChanges()
+        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['named', 'pdns']))
+
+        fixture.componentRef.setInput('domain', 'other')
+        fixture.detectChanges()
+        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['dhcp4', 'dhcp6', 'named', 'pdns']))
     })
 
     it('should set label', () => {
@@ -103,7 +148,7 @@ describe('DaemonFilterComponent', () => {
     it('should set daemon to null when input daemonID changes and daemon name is not supported', () => {
         const resp: SimpleDaemons = {
             items: [...differentDaemons.items, { id: 4, name: 'ca', machineId: 7 }],
-            total: 4,
+            total: 8,
         }
         spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(resp as any))
         component.ngOnInit()
@@ -117,7 +162,7 @@ describe('DaemonFilterComponent', () => {
         spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
         component.ngOnInit()
         fixture.detectChanges()
-        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith(undefined, undefined)
+        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith()
     })
 
     it('should query only dhcp domain', () => {
@@ -125,7 +170,7 @@ describe('DaemonFilterComponent', () => {
         fixture.componentRef.setInput('domain', 'dhcp')
         component.ngOnInit()
         fixture.detectChanges()
-        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith(undefined, 'dhcp')
+        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith()
     })
 
     it('should query only dns domain', () => {
@@ -133,7 +178,7 @@ describe('DaemonFilterComponent', () => {
         fixture.componentRef.setInput('domain', 'dns')
         component.ngOnInit()
         fixture.detectChanges()
-        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith(undefined, 'dns')
+        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith()
     })
 
     it('should set daemonID onValueChange', () => {
@@ -178,8 +223,15 @@ describe('DaemonFilterComponent', () => {
                     name: 'pdns',
                     label: 'pdns_server@host_c',
                 },
+                {
+                    id: 93,
+                    name: 'netconf',
+                    machine: {
+                        hostname: 'host_c',
+                    },
+                },
             ],
-            total: 3,
+            total: 5,
         }
         spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(resp as any))
 
@@ -202,5 +254,10 @@ describe('DaemonFilterComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
         expect(component.daemon.listItemLabel).toEqual('[4] pdns_server@host_c')
+
+        fixture.componentRef.setInput('daemonID', 93)
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.daemon).toBeFalsy()
     })
 })
