@@ -3,7 +3,7 @@ import { applicationConfig, argsToTemplate, Meta, StoryObj } from '@storybook/an
 import { provideHttpClient } from '@angular/common/http'
 import { userEvent, within, expect, waitFor } from '@storybook/test'
 
-const allDaemons = [
+const allDaemonsDirectory = [
     {
         active: true,
         id: 56,
@@ -252,8 +252,8 @@ export default {
                 method: 'GET',
                 status: 200,
                 response: () => ({
-                    items: allDaemons,
-                    total: allDaemons.length,
+                    items: allDaemonsDirectory,
+                    total: allDaemonsDirectory.length,
                 }),
                 delay: 500,
             },
@@ -286,8 +286,8 @@ export const SlowBackendResponses: Story = {
                 method: 'GET',
                 status: 200,
                 response: () => ({
-                    items: allDaemons,
-                    total: allDaemons.length,
+                    items: allDaemonsDirectory,
+                    total: allDaemonsDirectory.length,
                 }),
                 delay: 2000,
             },
@@ -303,8 +303,8 @@ export const TimeoutOnBackendResponse: Story = {
                 method: 'GET',
                 status: 200,
                 response: () => ({
-                    items: allDaemons,
-                    total: allDaemons.length,
+                    items: allDaemonsDirectory,
+                    total: allDaemonsDirectory.length,
                 }),
                 delay: 4000,
             },
@@ -383,7 +383,7 @@ export const TestNormalUsage: Story = {
 
         // All daemons should be displayed.
         const allOptions = await within(listbox).findAllByRole('option')
-        const acceptedDaemons = allDaemons.filter((d) => ['dhcp4', 'dhcp6', 'named', 'pdns'].includes(d.name))
+        const acceptedDaemons = allDaemonsDirectory.filter((d) => ['dhcp4', 'dhcp6', 'named', 'pdns'].includes(d.name))
         await waitFor(() => expect(allOptions).toHaveLength(acceptedDaemons.length))
 
         // Pick an option.
@@ -431,7 +431,7 @@ export const TestSlowBackendResponse: Story = {
 
         // All daemons should be displayed.
         const allOptions = await within(listbox).findAllByRole('option')
-        const acceptedDaemons = allDaemons.filter((d) => ['dhcp4', 'dhcp6', 'named', 'pdns'].includes(d.name))
+        const acceptedDaemons = allDaemonsDirectory.filter((d) => ['dhcp4', 'dhcp6', 'named', 'pdns'].includes(d.name))
         await waitFor(() => expect(allOptions).toHaveLength(acceptedDaemons.length))
 
         // Pick an option.
