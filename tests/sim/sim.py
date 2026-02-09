@@ -185,7 +185,7 @@ def serialize_daemons(daemons):
         data["items"].append(
             {
                 "state": daemon["state"],
-                "address": daemon["machine"]["address"],
+                "label": daemon["label"],
                 "clients": daemon["clients"],
                 "rate": daemon["rate"],
                 "transport": daemon["transport"],
@@ -348,7 +348,7 @@ def put_dig_params(index):
         daemon["rate"] = data["rate"]
 
     traffic.run_dig(daemon)
-    log.info("Sent DNS query to %s", daemon["machine"]["address"])
+    log.info("Sent DNS query to %s", daemon["label"])
 
     return serialize_daemons(app.dns_daemons)
 
@@ -392,7 +392,7 @@ def put_flamethrower_params(index):
             and data["state"] == "stop"
             and daemon["proc"] is not None
         ):
-            log.info("Stopping flamethrower for %s", daemon["machine"]["address"])
+            log.info("Stopping flamethrower for %s", daemon["label"])
             daemon["proc"].terminate()
             daemon["proc"].wait()
             daemon["proc"] = None
@@ -400,7 +400,7 @@ def put_flamethrower_params(index):
         # start dnsperf if requested
         if daemon["state"] == "stop" and data["state"] == "start":
             daemon["proc"] = traffic.start_flamethrower(daemon)
-            log.info("Started flamethrower for %s", daemon["machine"]["address"])
+            log.info("Started flamethrower for %s", daemon["label"])
 
         daemon["state"] = data["state"]
     return serialize_daemons(app.dns_daemons)

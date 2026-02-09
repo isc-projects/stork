@@ -115,6 +115,11 @@ def start_perfdhcp(subnet):
     return subprocess.Popen(cmd)
 
 
+def _get_machine_address(server):
+    """Retrieves the machine address for a given server (daemon)."""
+    return server["machineLabel"]
+
+
 def run_dig(server):
     """Generates DNS traffic to a given server using dig."""
     clients = server["clients"]
@@ -123,7 +128,7 @@ def run_dig(server):
     tcp = "+notcp"
     if server["transport"] == "tcp":
         tcp = "+tcp"
-    address = server["machine"]["address"]
+    address = _get_machine_address(server)
     cmd = f"dig {tcp} +tries=1 +retry=0 @{address} {qname} {qtype}"
     print(f"exec {clients} times: {cmd}", file=sys.stderr)
     for _ in range(0, clients):
@@ -140,7 +145,7 @@ def start_flamethrower(server):
     transport = "udp"
     if server["transport"] == "tcp":
         transport = "tcp"
-    address = server["machine"]["address"]
+    address = _get_machine_address(server)
     # send one query (-q) per client (-c) every 'rate' millisecond (-d)
     # on transport (-P) with qname (-r) and qtype (-T)
     cmd = f"flame -q 1 -c {clients} -d {rate} -P {transport} -r {qname} -T {qtype} {address}"
