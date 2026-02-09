@@ -402,15 +402,6 @@
       operationId: getDaemonsDirectory
       tags:
         - Services
-      parameters:
-        -   $ref: '#/parameters/filterTextParam'
-        -   name: domain
-            in: query
-            description: Limit returned list of daemons to either DHCP or DNS domain. If omitted, daemons from all domains are returned.
-            type: string
-            enum:
-              - dhcp
-              - dns
       responses:
         200:
           description: List of daemon ids and names.
