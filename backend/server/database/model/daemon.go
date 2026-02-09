@@ -160,9 +160,9 @@ func (d Daemon) GetLabel() string {
 	case daemonname.DHCPv6:
 		formattedDaemonName = "DHCPv6"
 	case daemonname.Bind9:
-		formattedDaemonName = "BIND9"
+		formattedDaemonName = "named"
 	case daemonname.PDNS:
-		formattedDaemonName = "PowerDNS"
+		formattedDaemonName = "pdns_server"
 	}
 
 	if d.Machine != nil {

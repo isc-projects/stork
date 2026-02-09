@@ -1615,8 +1615,8 @@ func TestGetLabel(t *testing.T) {
 	}{
 		{daemonname.DHCPv4, "DHCPv4@foobar"},
 		{daemonname.DHCPv6, "DHCPv6@foobar"},
-		{daemonname.Bind9, "BIND9@foobar"},
-		{daemonname.PDNS, "PowerDNS@foobar"},
+		{daemonname.Bind9, "named@foobar"},
+		{daemonname.PDNS, "pdns_server@foobar"},
 		{daemonname.CA, "CA@foobar"},
 		{daemonname.NetConf, "NetConf@foobar"},
 		{daemonname.D2, "DDNS@foobar"},
