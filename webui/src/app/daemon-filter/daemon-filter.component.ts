@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, model, OnDestroy, OnInit, output } from '@angular/core'
+import { Component, effect, input, model, OnDestroy, OnInit, output } from '@angular/core'
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete'
 import { FloatLabel } from 'primeng/floatlabel'
 import { FormsModule } from '@angular/forms'
@@ -15,7 +15,7 @@ import {
     timeout,
 } from 'rxjs'
 import { ServicesService, SimpleDaemon, SimpleDaemons } from '../backend'
-import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
+import { getErrorMessage } from '../utils'
 import { catchError, concatMap, share } from 'rxjs/operators'
 
 /**
