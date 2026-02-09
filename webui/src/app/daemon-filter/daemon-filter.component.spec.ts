@@ -17,6 +17,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_a',
                 },
+                label: 'DHCPv4@host_a',
             },
             {
                 id: 2,
@@ -24,6 +25,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_b',
                 },
+                label: 'DHCPv6@host_b',
             },
             {
                 id: 3,
@@ -31,6 +33,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_c',
                 },
+                label: 'named@host_c',
             },
             {
                 id: 93,
@@ -38,6 +41,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_c',
                 },
+                label: 'NetConf@host_c',
             },
             {
                 id: 94,
@@ -45,6 +49,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_c',
                 },
+                label: 'DDNS@host_c',
             },
             {
                 id: 95,
@@ -52,6 +57,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_c',
                 },
+                label: 'CA@host_c',
             },
             {
                 id: 96,
@@ -59,6 +65,7 @@ describe('DaemonFilterComponent', () => {
                 machine: {
                     hostname: 'host_c',
                 },
+                label: 'pdns_server@host_c',
             },
         ],
         total: 7,
@@ -85,21 +92,62 @@ describe('DaemonFilterComponent', () => {
         expect(component.label()).toEqual('Daemon (type or pick)')
     })
 
-    it('should accept daemons depending on domain', () => {
+    it('should accept daemons depending on daemonNames input', () => {
+        spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
+        fixture.componentRef.setInput('daemonNames', ['dhcp4', 'dhcp6'])
+        component.ngOnInit()
         fixture.detectChanges()
-        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['dhcp4', 'dhcp6', 'named', 'pdns']))
 
-        fixture.componentRef.setInput('domain', 'dhcp')
-        fixture.detectChanges()
-        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['dhcp4', 'dhcp6']))
+        expect(component.daemon).toBeFalsy()
 
-        fixture.componentRef.setInput('domain', 'dns')
+        fixture.componentRef.setInput('daemonID', 1)
         fixture.detectChanges()
-        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['named', 'pdns']))
+        expect(component.daemon.id).toEqual(1)
 
-        fixture.componentRef.setInput('domain', 'other')
+        fixture.componentRef.setInput('daemonID', 2)
         fixture.detectChanges()
-        expect(component.acceptedDaemons()).toEqual(jasmine.arrayWithExactContents(['dhcp4', 'dhcp6', 'named', 'pdns']))
+        expect(component.daemon.id).toEqual(2)
+
+        fixture.componentRef.setInput('daemonID', 3)
+        fixture.detectChanges()
+        expect(component.daemon).toBeFalsy()
+    })
+
+    it('should accept all daemons by default', () => {
+        spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
+
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        expect(component.daemon).toBeFalsy()
+
+        fixture.componentRef.setInput('daemonID', 1)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(1)
+
+        fixture.componentRef.setInput('daemonID', 2)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(2)
+
+        fixture.componentRef.setInput('daemonID', 3)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(3)
+
+        fixture.componentRef.setInput('daemonID', 93)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(93)
+
+        fixture.componentRef.setInput('daemonID', 94)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(94)
+
+        fixture.componentRef.setInput('daemonID', 95)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(95)
+
+        fixture.componentRef.setInput('daemonID', 96)
+        fixture.detectChanges()
+        expect(component.daemon.id).toEqual(96)
     })
 
     it('should set label', () => {
@@ -151,34 +199,12 @@ describe('DaemonFilterComponent', () => {
             total: 8,
         }
         spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(resp as any))
+        fixture.componentRef.setInput('daemonNames', ['dhcp4'])
         component.ngOnInit()
         fixture.componentRef.setInput('daemonID', 4)
         fixture.detectChanges()
 
         expect(component.daemon).toBeFalsy()
-    })
-
-    it('should query all domains by default', () => {
-        spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
-        component.ngOnInit()
-        fixture.detectChanges()
-        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith()
-    })
-
-    it('should query only dhcp domain', () => {
-        spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
-        fixture.componentRef.setInput('domain', 'dhcp')
-        component.ngOnInit()
-        fixture.detectChanges()
-        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith()
-    })
-
-    it('should query only dns domain', () => {
-        spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(differentDaemons as any))
-        fixture.componentRef.setInput('domain', 'dns')
-        component.ngOnInit()
-        fixture.detectChanges()
-        expect(servicesApi.getDaemonsDirectory).toHaveBeenCalledOnceWith()
     })
 
     it('should set daemonID onValueChange', () => {
@@ -205,6 +231,7 @@ describe('DaemonFilterComponent', () => {
                     machine: {
                         hostname: 'host_a',
                     },
+                    label: 'DHCPv4@host_a',
                 },
                 {
                     id: 2,
@@ -212,11 +239,13 @@ describe('DaemonFilterComponent', () => {
                     machine: {
                         address: 'host_b_address',
                     },
+                    label: 'DHCPv6@host_b_address',
                 },
                 {
                     id: 3,
                     name: 'named',
                     machineId: 8,
+                    label: 'named@machine ID 8',
                 },
                 {
                     id: 4,
@@ -229,9 +258,20 @@ describe('DaemonFilterComponent', () => {
                     machine: {
                         hostname: 'host_c',
                     },
+                    label: 'NetConf@host_c',
+                },
+                {
+                    id: 94,
+                    name: 'ca',
+                    label: 'CA@host_c',
+                },
+                {
+                    id: 95,
+                    name: 'd2',
+                    label: 'DDNS@host_c',
                 },
             ],
-            total: 5,
+            total: 7,
         }
         spyOn(servicesApi, 'getDaemonsDirectory').and.returnValue(of(resp as any))
 
@@ -258,6 +298,16 @@ describe('DaemonFilterComponent', () => {
         fixture.componentRef.setInput('daemonID', 93)
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.daemon).toBeFalsy()
+        expect(component.daemon.listItemLabel).toEqual('[93] NetConf@host_c')
+
+        fixture.componentRef.setInput('daemonID', 94)
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.daemon.listItemLabel).toEqual('[94] CA@host_c')
+
+        fixture.componentRef.setInput('daemonID', 95)
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.daemon.listItemLabel).toEqual('[95] DDNS@host_c')
     })
 })
