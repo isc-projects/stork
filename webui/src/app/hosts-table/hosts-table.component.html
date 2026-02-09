@@ -138,7 +138,7 @@
                             <app-daemon-filter
                                 [daemonID]="value"
                                 (daemonIDChange)="filterTable($event, filterMetadata)"
-                                domain="dhcp"
+                                [daemonNames]="['dhcp4', 'dhcp6']"
                                 label="Daemon"
                                 (errorOccurred)="onAutocompleteError($event)"
                             />

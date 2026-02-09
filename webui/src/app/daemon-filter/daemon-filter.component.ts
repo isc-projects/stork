@@ -57,10 +57,10 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
     daemon: SimpleDaemonListItem | undefined
 
     /**
-     * Input property controlling whether to display daemons from DHCP, DNS domains or both.
-     * If undefined, all domains are used.
+     * Input property controlling which daemon names may be visualized by this component.
+     * If undefined, all daemon names known to Stork are used.
      */
-    domain = input<'dns' | 'dhcp' | undefined>(undefined)
+    daemonNames = input<SimpleDaemon.NameEnum[]>(['dhcp4', 'dhcp6', 'named', 'pdns', 'd2', 'ca', 'netconf'])
 
     /**
      * Input property with autocomplete form label value.
@@ -88,36 +88,6 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * It may be used to display feedback messages in the parent component.
      */
     errorOccurred = output<string>()
-
-    /**
-     * List of Kea DHCP daemon types that may be visualized by this component.
-     * It is used to filter out Kea daemons like control-agent or ddns which are not relevant for this component use.
-     * @private
-     */
-    private dhcpDaemons = ['dhcp4', 'dhcp6']
-
-    /**
-     * List of DNS daemon types that may be visualized by this component.
-     * @private
-     */
-    private dnsDaemons = ['named', 'pdns']
-
-    /**
-     * List of daemon types that may be visualized by this component.
-     * It is computed depending on "domain" input value.
-     */
-    acceptedDaemons = computed(() => {
-        if (this.domain() == 'dhcp') {
-            return [...this.dhcpDaemons]
-        }
-
-        if (this.domain() == 'dns') {
-            return [...this.dnsDaemons]
-        }
-
-        // If no domain is set, both dhcp and dns types are accepted.
-        return [...this.dhcpDaemons, ...this.dnsDaemons]
-    })
 
     /**
      * RxJS subject triggering the getDaemonsDirectory API call.
@@ -176,7 +146,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      */
     ngOnInit() {
         this.subscription = this.receivedDaemons$.subscribe((data) => {
-            this.daemonSuggestions = (data.items?.filter((d) => this.acceptedDaemons().includes(d.name)) ?? []).map(
+            this.daemonSuggestions = (data.items?.filter((d) => this.daemonNames().includes(d.name)) ?? []).map(
                 (d) => ({
                     ...d,
                     listItemLabel: this.constructListItemLabel(d),
@@ -257,7 +227,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @private
      */
     private daemonLookup(key: string) {
-        const query = key.trim()
+        const query = key.trim().toLowerCase()
         if (!query) {
             this.currentSuggestions = [...this.daemonSuggestions]
             return
@@ -267,16 +237,16 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
         // 1. on backend side - REST API supports searching daemons by query string
         // 2. on frontend side - all daemons should be in daemonSuggestions, so the filtering can be done on daemonSuggestions
         // Let's try second approach for now (less load for the backend).
-        // The lookup will return all daemons that have:
-        // - partial match of daemon name
+        // The lookup will return all daemons that have case-insensitive:
+        // - partial match of daemon label
         // - partial match of daemon's machine hostname
         // - partial match of daemon's machine address
         // - partial match of daemon's ID.
         const filtered = this.daemonSuggestions.filter(
             (d) =>
-                d.name.includes(query) ||
-                d.machine?.hostname?.includes(query) ||
-                d.machine?.address?.includes(query) ||
+                d.label?.toLowerCase().includes(query) ||
+                d.machine?.hostname?.toLowerCase().includes(query) ||
+                d.machine?.address?.toLowerCase().includes(query) ||
                 `${d.id}`.includes(query)
         )
         this.currentSuggestions = [...filtered]
@@ -296,20 +266,6 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @private
      */
     private constructListItemLabel(d: SimpleDaemon): string {
-        if (d.label) {
-            return `[${d.id}] ${d.label}`
-        }
-
-        const daemonName = daemonNameToFriendlyName(d.name)
-
-        if (d.machine?.hostname) {
-            return `[${d.id}] ${daemonName}@${d.machine.hostname}`
-        }
-
-        if (d.machine?.address) {
-            return `[${d.id}] ${daemonName}@${d.machine.address}`
-        }
-
-        return `[${d.id}] ${daemonName}@machine ID ${d.machineId}`
+        return `[${d.id}] ${d.label}`
     }
 }
