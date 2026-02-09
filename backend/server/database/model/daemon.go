@@ -336,7 +336,7 @@ func GetAllDaemonsWithRelations(dbi dbops.DBI, relations ...DaemonRelation) ([]D
 	}
 	orderExpr := "machine_id"
 	if withMachineRelation {
-		orderExpr = "machine.state->>'Hostname'"
+		orderExpr = "machine.state->>'Hostname' ASC, machine.address"
 	}
 	err := q.OrderExpr(orderExpr + " ASC, id ASC").Select()
 	if err != nil {
