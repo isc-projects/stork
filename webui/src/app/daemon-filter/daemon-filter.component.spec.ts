@@ -69,7 +69,7 @@ describe('DaemonFilterComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        const expected = { ...differentDaemons.items[1], label: 'dhcp6@host_b' }
+        const expected = { ...differentDaemons.items[1], listItemLabel: '[2] DHCPv6@host_b' }
         expect(component.daemon).toEqual(expected)
     })
 
@@ -83,7 +83,7 @@ describe('DaemonFilterComponent', () => {
         fixture.componentRef.setInput('daemonID', 3)
         fixture.detectChanges()
 
-        const expected = { ...differentDaemons.items[2], label: 'named@host_c' }
+        const expected = { ...differentDaemons.items[2], listItemLabel: '[3] named@host_c' }
         expect(component.daemon).toEqual(expected)
     })
 
@@ -143,7 +143,7 @@ describe('DaemonFilterComponent', () => {
 
         expect(component.daemon).toBeFalsy()
         expect(component.daemonID()).toBeFalsy()
-        const newValue = { ...differentDaemons.items[2], label: 'named@host_c' }
+        const newValue = { ...differentDaemons.items[2], listItemLabel: 'named@host_c' }
         component.onValueChange(newValue)
 
         fixture.detectChanges()
@@ -151,7 +151,7 @@ describe('DaemonFilterComponent', () => {
         expect(component.daemonID()).toEqual(3)
     })
 
-    it('should construct daemon label', () => {
+    it('should construct list item label', () => {
         const resp: SimpleDaemons = {
             items: [
                 {
@@ -173,6 +173,11 @@ describe('DaemonFilterComponent', () => {
                     name: 'named',
                     machineId: 8,
                 },
+                {
+                    id: 4,
+                    name: 'pdns',
+                    label: 'pdns_server@host_c',
+                },
             ],
             total: 3,
         }
@@ -181,16 +186,21 @@ describe('DaemonFilterComponent', () => {
         fixture.componentRef.setInput('daemonID', 1)
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.daemon.label).toEqual('dhcp4@host_a')
+        expect(component.daemon.listItemLabel).toEqual('[1] DHCPv4@host_a')
 
         fixture.componentRef.setInput('daemonID', 2)
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.daemon.label).toEqual('dhcp6@host_b_address')
+        expect(component.daemon.listItemLabel).toEqual('[2] DHCPv6@host_b_address')
 
         fixture.componentRef.setInput('daemonID', 3)
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.daemon.label).toEqual('named@machine ID 8')
+        expect(component.daemon.listItemLabel).toEqual('[3] named@machine ID 8')
+
+        fixture.componentRef.setInput('daemonID', 4)
+        component.ngOnInit()
+        fixture.detectChanges()
+        expect(component.daemon.listItemLabel).toEqual('[4] pdns_server@host_c')
     })
 })
