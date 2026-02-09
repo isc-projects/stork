@@ -327,6 +327,14 @@ func GetAllDaemons(dbi dbops.DBI) ([]Daemon, error) {
 	)
 }
 
+// Available daemon domains.
+type DaemonDomain = string
+
+const (
+	DaemonDomainDHCP DaemonDomain = "dhcp"
+	DaemonDomainDNS  DaemonDomain = "dns"
+)
+
 // Retrieves all daemons with provided relationships to other tables.
 // It is possible to filter retrieved daemons by search text or dns/dhcp domain.
 func GetAllDaemonsWithRelations(dbi dbops.DBI, filterText *string, filterDomain *string, relations ...DaemonRelation) ([]Daemon, error) {
@@ -352,15 +360,25 @@ func GetAllDaemonsWithRelations(dbi dbops.DBI, filterText *string, filterDomain 
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			var names []string
 			switch *filterDomain {
-			case "dns":
+			case DaemonDomainDNS:
 				names = []string{string(daemonname.Bind9), string(daemonname.PDNS)}
-			case "dhcp":
+			case DaemonDomainDHCP:
 				names = []string{
 					string(daemonname.DHCPv4),
 					string(daemonname.DHCPv6),
 					string(daemonname.NetConf),
 					string(daemonname.D2),
 					string(daemonname.CA),
+				}
+			default:
+				names = []string{
+					string(daemonname.DHCPv4),
+					string(daemonname.DHCPv6),
+					string(daemonname.NetConf),
+					string(daemonname.D2),
+					string(daemonname.CA),
+					string(daemonname.Bind9),
+					string(daemonname.PDNS),
 				}
 			}
 			qq = qq.Where("name IN (?)", pg.In(names))
