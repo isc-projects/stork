@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -327,12 +328,17 @@ func GetAllDaemons(dbi dbops.DBI) ([]Daemon, error) {
 // Retrieves all daemons with provided relationships to other tables.
 func GetAllDaemonsWithRelations(dbi dbops.DBI, relations ...DaemonRelation) ([]Daemon, error) {
 	var daemons []Daemon
+	withMachineRelation := slices.Contains(relations, DaemonRelationMachine)
 
 	q := dbi.Model(&daemons)
 	for _, relation := range relations {
 		q = q.Relation(relation)
 	}
-	err := q.OrderExpr("machine_id ASC, id ASC").Select()
+	orderExpr := "machine_id"
+	if withMachineRelation {
+		orderExpr = "machine.state->>'Hostname'"
+	}
+	err := q.OrderExpr(orderExpr + " ASC, id ASC").Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem getting daemons from the database")
 	}
