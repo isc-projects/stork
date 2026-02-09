@@ -15,19 +15,20 @@ import {
     timeout,
 } from 'rxjs'
 import { ServicesService, SimpleDaemon, SimpleDaemons } from '../backend'
-import { getErrorMessage } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { catchError, concatMap, share } from 'rxjs/operators'
 
 /**
- * Type extending SimpleDaemon with a string label.
+ * Type extending SimpleDaemon with a string label
+ * that will be a string representation of list item in the dropdown list.
  */
-type LabeledSimpleDaemon = SimpleDaemon & { label: string }
+type SimpleDaemonListItem = SimpleDaemon & { listItemLabel: string }
 
 /**
  * This component provides PrimeNG Autocomplete form element with a list
  * of all DHCP and DNS daemons known to Stork server.
  * It supports either selecting the daemon from a dropdown list or
- * searching the daemon by name, machines hostname, machines address.
+ * searching the daemon by name, ID, machines hostname, machines address.
  * Selected daemon ID can be accessed via daemonID input/output property.
  * Parent component may also inject the ID so the
  * component will display it as selected.
@@ -43,17 +44,17 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * All daemons suggested in the autocomplete component.
      * @private
      */
-    private daemonSuggestions: LabeledSimpleDaemon[] = []
+    private daemonSuggestions: SimpleDaemonListItem[] = []
 
     /**
      * Daemons suggestions matching current autocomplete query.
      */
-    currentSuggestions: LabeledSimpleDaemon[] | undefined
+    currentSuggestions: SimpleDaemonListItem[] | undefined
 
     /**
      * Currently selected daemon.
      */
-    daemon: LabeledSimpleDaemon | undefined
+    daemon: SimpleDaemonListItem | undefined
 
     /**
      * Input property controlling whether to display daemons from DHCP, DNS domains or both.
@@ -62,7 +63,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
     domain = input<'dns' | 'dhcp' | undefined>(undefined)
 
     /**
-     * Input property with label value.
+     * Input property with autocomplete form label value.
      */
     label = input<string>('Daemon (type or pick)')
 
@@ -155,7 +156,7 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
             this.daemonSuggestions = (data.items?.filter((d) => this.acceptedDaemons.includes(d.name)) ?? []).map(
                 (d) => ({
                     ...d,
-                    label: this.constructDaemonLabel(d),
+                    listItemLabel: this.constructListItemLabel(d),
                 })
             )
             if (this.daemonID()) {
@@ -243,56 +244,49 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
         // 1. on backend side - REST API supports searching daemons by query string
         // 2. on frontend side - all daemons should be in daemonSuggestions, so the filtering can be done on daemonSuggestions
         // Let's try second approach for now (less load for the backend).
+        // The lookup will return all daemons that have:
+        // - partial match of daemon name
+        // - partial match of daemon's machine hostname
+        // - partial match of daemon's machine address
+        // - partial match of daemon's ID.
         const filtered = this.daemonSuggestions.filter(
-            (d) => d.name.includes(query) || d.machine?.hostname?.includes(query) || d.machine?.address?.includes(query)
+            (d) =>
+                d.name.includes(query) ||
+                d.machine?.hostname?.includes(query) ||
+                d.machine?.address?.includes(query) ||
+                `${d.id}`.includes(query)
         )
         this.currentSuggestions = [...filtered]
-
-        // Comment out filtering on backend side.
-        // lastValueFrom(this.servicesApi.getDaemonsDirectory(query, this.domain()))
-        //     .then((response) => {
-        //         const _daemonSuggestions = response.items.filter((d) => this.acceptedDaemons.includes(d.name)) ?? []
-        //         this.currentSuggestions = _daemonSuggestions.map((d: SimpleDaemon) => ({
-        //             ...d,
-        //             label: this.constructDaemonLabel(d),
-        //         }))
-        //     })
-        //     .catch(() => {
-        //         this.errorOccurred.emit('Failed to retrieve daemons from Stork server.')
-        //         this.currentSuggestions = this.daemonSuggestions?.map((d: SimpleDaemon) => ({
-        //             ...d,
-        //             label: this.constructDaemonLabel(d),
-        //         }))
-        //     })
     }
 
     /**
      * Callback called whenever selected daemon changes.
      * @param d selected daemon
      */
-    onValueChange(d: LabeledSimpleDaemon) {
+    onValueChange(d: SimpleDaemonListItem) {
         this.daemonID.set(d?.id ?? null)
     }
 
     /**
-     * Constructs a label for the daemon.
+     * Constructs a label for the autocomplete dropdown list item.
      * @param d daemon
      * @private
      */
-    private constructDaemonLabel(d: SimpleDaemon): string {
-        // TODO: This could be user defined label, once backend supports it.
-        // if (d.machine?.label) {
-        //     return `${d.name}@${d.machine.label}`
-        // }
+    private constructListItemLabel(d: SimpleDaemon): string {
+        if (d.label) {
+            return `[${d.id}] ${d.label}`
+        }
+
+        const daemonName = daemonNameToFriendlyName(d.name)
 
         if (d.machine?.hostname) {
-            return `${d.name}@${d.machine.hostname}`
+            return `[${d.id}] ${daemonName}@${d.machine.hostname}`
         }
 
         if (d.machine?.address) {
-            return `${d.name}@${d.machine.address}`
+            return `[${d.id}] ${daemonName}@${d.machine.address}`
         }
 
-        return `${d.name}@machine ID ${d.machineId}`
+        return `[${d.id}] ${daemonName}@machine ID ${d.machineId}`
     }
 }
