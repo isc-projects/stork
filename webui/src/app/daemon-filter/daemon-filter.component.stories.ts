@@ -157,6 +157,7 @@ const allDaemons = [
         },
         name: 'dhcp4',
         version: '3.1.0',
+        label: 'DHCPv4@niceHostLabelFromBackend',
     },
     {
         active: true,
