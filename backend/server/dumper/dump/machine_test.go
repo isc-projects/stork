@@ -1,6 +1,7 @@
 package dump_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -157,4 +158,22 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 			require.Empty(t, machine.AgentToken)
 		}
 	}
+}
+
+// Test that the dump can be marshaled to JSON.
+func TestMachineDumpCanMarshalToJSON(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	m := initDatabase(db)
+
+	// Act
+	dumpMachine := dumppkg.NewMachineDump(m)
+	_ = dumpMachine.Execute()
+	machine, ok := extractMachineFromDump(dumpMachine)
+	require.True(t, ok)
+	_, err := json.Marshal(machine)
+
+	// Assert
+	require.NoError(t, err)
 }

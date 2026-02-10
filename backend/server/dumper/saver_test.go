@@ -4,11 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
+	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/dumper/dump"
 	storkutil "isc.org/stork/util"
 )
@@ -144,4 +148,50 @@ func TestSavedTarballToFile(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, stat.Size())
 	require.NotZero(t, position)
+}
+
+// Test that the dumps are properly executed and saved to tarball.
+func TestSavedDumpToTarball(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 42)
+	machine, _ := dbmodeltest.NewMachine(db)
+	_, _ = machine.NewKeaDHCPv4Server()
+	_ = dbmodel.AddEvent(db, &dbmodel.Event{
+		Text: "foo", Level: dbmodel.EvError, Details: "bar",
+		Relations: &dbmodel.Relations{MachineID: machine.ID},
+	})
+
+	dbMachine, _ := dbmodel.GetMachineByID(db, machine.ID)
+
+	machineDump := dump.NewMachineDump(dbMachine)
+	eventsDump := dump.NewEventsDump(db, dbMachine)
+	settingsDump := dump.NewSettingsDump(db)
+
+	dumps := []dump.Dump{machineDump, eventsDump, settingsDump}
+
+	var i int
+	saver := newTarballSaver(
+		json.Marshal,
+		func(dump dump.Dump, artifact dump.Artifact) string {
+			i++
+			return fmt.Sprint(i)
+		},
+	)
+	var buffer bytes.Buffer
+
+	// Act
+	var err []error
+	for _, d := range dumps {
+		err = append(err, d.Execute())
+	}
+	errSave := saver.Save(&buffer, dumps)
+
+	// Assert
+	for _, e := range err {
+		require.NoError(t, e)
+	}
+	require.NoError(t, errSave)
 }
