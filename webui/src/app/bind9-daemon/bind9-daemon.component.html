@@ -1,53 +1,61 @@
-<div class="grid">
-    <div class="col-12 md:col-6">
-        <h3 class="underlined">Overview</h3>
+<div class="flex flex-column">
+    <app-bind9-daemon-controls [daemonId]="daemon.id"></app-bind9-daemon-controls>
+    <div class="flex flex-column p-2">
         <div class="grid">
-            <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
-            <div class="col-12 sm:col-9">
-                <app-version-status [daemon]="daemon" [includeAnchor]="false"></app-version-status>
-            </div>
-            <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
-            <div class="col-12 sm:col-9">{{ daemon.uptime | duration }}</div>
-            <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
-            <div class="col-12 sm:col-9">
-                {{ daemon.reloadedAt | localtime | placeholder: 'never' }}
-            </div>
-            <div class="col-12 sm:col-3 pb-0 font-medium">Zone Configs Count</div>
-            <div class="col-12 sm:col-9">
-                <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemon.id }">{{ daemon.zoneCount }}</a>
-            </div>
-            <span class="col-12 mt-2 mb-2 pl-1 pb-2 border-bottom-1 surface-border font-bold text-lg">
-                Access points
-            </span>
-            <app-access-points [daemon]="daemon" class="col-12"></app-access-points>
-            <ng-container *ngFor="let view of daemon.views">
-                <div *ngIf="daemon.views.length > 1" class="col-12 mt-2 mb-2 pb-2 border-bottom-1 surface-border">
-                    <span class="font-bold text-lg"> {{ view.name }} </span>
-                    <span class="text-500">view statistics</span>
-                </div>
-                <div class="col-12 sm:col-3 pb-0 font-medium">Query Hit Ratio</div>
-                <div class="col-12 sm:col-9">
-                    <span pTooltip="Hits: {{ view.queryHits }}, Misses: {{ view.queryMisses }}">
-                        {{ view.queryHitRatio ? getQueryUtilization(view) + '%' : '?' }}
-                        <i
-                            *ngIf="getQueryUtilization(view) < 60"
-                            class="pi pi-exclamation-triangle vertical-align-text-top text-red-500"
-                        ></i>
-                        <i
-                            *ngIf="getQueryUtilization(view) >= 60 && getQueryUtilization(view) < 80"
-                            class="pi pi-exclamation-circle vertical-align-text-top text-orange-400"
-                        ></i>
-                        <i
-                            *ngIf="getQueryUtilization(view) >= 80"
-                            class="pi pi-check-circle vertical-align-text-top text-green-500"
-                        ></i>
+            <div class="col-12 md:col-6">
+                <h3 class="underlined">Overview</h3>
+                <div class="grid">
+                    <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
+                    <div class="col-12 sm:col-9">
+                        <app-version-status [daemon]="daemon" [includeAnchor]="false"></app-version-status>
+                    </div>
+                    <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
+                    <div class="col-12 sm:col-9">{{ daemon.uptime | duration }}</div>
+                    <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
+                    <div class="col-12 sm:col-9">
+                        {{ daemon.reloadedAt | localtime | placeholder: 'never' }}
+                    </div>
+                    <div class="col-12 sm:col-3 pb-0 font-medium">Zone Configs Count</div>
+                    <div class="col-12 sm:col-9">
+                        <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemon.id }">{{ daemon.zoneCount }}</a>
+                    </div>
+                    <span class="col-12 mt-2 mb-2 pl-1 pb-2 border-bottom-1 surface-border font-bold text-lg">
+                        Access points
                     </span>
+                    <app-access-points [daemon]="daemon" class="col-12"></app-access-points>
+                    <ng-container *ngFor="let view of daemon.views">
+                        <div
+                            *ngIf="daemon.views.length > 1"
+                            class="col-12 mt-2 mb-2 pb-2 border-bottom-1 surface-border"
+                        >
+                            <span class="font-bold text-lg"> {{ view.name }} </span>
+                            <span class="text-500">view statistics</span>
+                        </div>
+                        <div class="col-12 sm:col-3 pb-0 font-medium">Query Hit Ratio</div>
+                        <div class="col-12 sm:col-9">
+                            <span pTooltip="Hits: {{ view.queryHits }}, Misses: {{ view.queryMisses }}">
+                                {{ view.queryHitRatio ? getQueryUtilization(view) + '%' : '?' }}
+                                <i
+                                    *ngIf="getQueryUtilization(view) < 60"
+                                    class="pi pi-exclamation-triangle vertical-align-text-top text-red-500"
+                                ></i>
+                                <i
+                                    *ngIf="getQueryUtilization(view) >= 60 && getQueryUtilization(view) < 80"
+                                    class="pi pi-exclamation-circle vertical-align-text-top text-orange-400"
+                                ></i>
+                                <i
+                                    *ngIf="getQueryUtilization(view) >= 80"
+                                    class="pi pi-check-circle vertical-align-text-top text-green-500"
+                                ></i>
+                            </span>
+                        </div>
+                    </ng-container>
                 </div>
-            </ng-container>
+            </div>
+            <div class="col-12 md:col-6">
+                <h3 class="underlined">Events</h3>
+                <app-events-panel [filter]="{ daemon: daemon.id }"></app-events-panel>
+            </div>
         </div>
-    </div>
-    <div class="col-12 md:col-6">
-        <h3 class="underlined">Events</h3>
-        <app-events-panel [filter]="{ daemon: daemon.id }"></app-events-panel>
     </div>
 </div>

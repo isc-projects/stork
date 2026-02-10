@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core
 import { Bind9FormattedConfig } from '../backend'
 import { Checkbox, CheckboxChangeEvent } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
-import { ProgressSpinner } from 'primeng/progressspinner'
 import { Dialog } from 'primeng/dialog'
 import { Bind9ConfigViewFeederComponent } from '../bind9-config-view-feeder/bind9-config-view-feeder.component'
 import { Button } from 'primeng/button'
@@ -16,7 +15,7 @@ import { Tooltip } from 'primeng/tooltip'
  */
 @Component({
     selector: 'app-bind9-config-preview',
-    imports: [Bind9ConfigViewFeederComponent, Button, Checkbox, Dialog, FormsModule, ProgressSpinner, Tooltip],
+    imports: [Bind9ConfigViewFeederComponent, Button, Checkbox, Dialog, FormsModule, Tooltip],
     templateUrl: './bind9-config-preview.component.html',
     styleUrl: './bind9-config-preview.component.sass',
 })

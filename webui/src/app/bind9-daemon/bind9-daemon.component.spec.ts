@@ -10,6 +10,7 @@ import { of } from 'rxjs'
 import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
 
 describe('Bind9DaemonComponent', () => {
     let component: Bind9DaemonComponent
@@ -69,5 +70,10 @@ describe('Bind9DaemonComponent', () => {
         expect(versionStatus[0].nativeElement.innerHTML).not.toContain('named')
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
         expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
+    })
+
+    it('should include bind9 daemon controls', () => {
+        const bind9DaemonControls = fixture.debugElement.query(By.directive(Bind9DaemonControlsComponent))
+        expect(bind9DaemonControls).toBeTruthy()
     })
 })

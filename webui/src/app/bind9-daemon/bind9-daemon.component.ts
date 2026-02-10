@@ -9,6 +9,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
 import { AccessPointsComponent } from '../access-points/access-points.component'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-daemon-controls.component'
 
 /**
  * Component for displaying information about a BIND9 daemon.
@@ -28,6 +29,7 @@ import { EventsPanelComponent } from '../events-panel/events-panel.component'
         DurationPipe,
         AccessPointsComponent,
         EventsPanelComponent,
+        Bind9DaemonControlsComponent,
     ],
 })
 export class Bind9DaemonComponent {
