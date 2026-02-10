@@ -2,7 +2,7 @@ package eventcenter
 
 import (
 	"testing"
-	"time"
+	"testing/synctest"
 
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -381,37 +381,38 @@ func TestAddEvent(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ec := NewEventCenter(db)
+	synctest.Test(t, func(t *testing.T) {
+		ec := NewEventCenter(db)
+		defer ec.Shutdown()
 
-	subnet := &dbmodel.Subnet{
-		ID: 345,
-	}
-	machine := &dbmodel.Machine{
-		ID: 456,
-	}
-	daemon := &dbmodel.Daemon{
-		Name:      "dhcp4",
-		MachineID: machine.ID,
-		Machine:   machine,
-	}
+		subnet := &dbmodel.Subnet{
+			ID: 345,
+		}
+		machine := &dbmodel.Machine{
+			ID: 456,
+		}
+		daemon := &dbmodel.Daemon{
+			Name:      "dhcp4",
+			MachineID: machine.ID,
+			Machine:   machine,
+		}
 
-	ec.AddInfoEvent("some text", daemon, machine)
-	ec.AddWarningEvent("some text", subnet, machine)
-	ec.AddErrorEvent("some text", daemon, machine)
+		ec.AddInfoEvent("some text", daemon, machine)
+		ec.AddWarningEvent("some text", subnet, machine)
+		ec.AddErrorEvent("some text", daemon, machine)
 
-	// events are stored in db in separate goroutine so it may be delay
-	// so wait for it a little bit
-	var events []dbmodel.Event
-	var total int64
-	var err error
+		// events are stored in db in separate goroutine so it may be delay
+		// so wait for it a little bit
+		var events []dbmodel.Event
+		var total int64
+		var err error
 
-	require.Eventually(t, func() bool {
+		synctest.Wait()
 		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, 0, nil, nil, nil, nil, "", dbmodel.SortDirAny)
-		return total >= 3
-	}, time.Second, 10*time.Millisecond)
 
-	require.NoError(t, err)
-	require.EqualValues(t, 3, total)
-	require.Len(t, events, 3)
-	require.EqualValues(t, "some text", events[0].Text)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, total)
+		require.Len(t, events, 3)
+		require.EqualValues(t, "some text", events[0].Text)
+	})
 }
