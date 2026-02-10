@@ -29,8 +29,10 @@ func NewMachineDump(m *dbmodel.Machine) *MachineDump {
 func (d *MachineDump) Execute() error {
 	// Hide agent tokens
 	d.machine.AgentToken = ""
-	// Hide sensitive data from the daemon configurations
 	for _, daemon := range d.machine.Daemons {
+		// Cut the cyclic relations to avoid the problems with JSON serialization.
+		daemon.Machine = nil
+		// Hide sensitive data from the daemon configurations
 		if daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
 			daemon.KeaDaemon.Config.HideSensitiveData()
 		}
