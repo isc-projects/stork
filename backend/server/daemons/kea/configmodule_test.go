@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -189,6 +190,9 @@ func TestBeginGlobalParametersUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	daemons, err := dbmodel.GetAllDaemons(db)
+	sort.Slice(daemons, func(i, j int) bool {
+		return daemons[i].ID < daemons[j].ID
+	})
 	require.NoError(t, err)
 	require.Len(t, daemons, 2)
 
@@ -207,6 +211,9 @@ func TestBeginGlobalParametersUpdate(t *testing.T) {
 	require.Equal(t, dbmodel.ConfigOperationKeaGlobalParametersUpdate, state.Updates[0].Operation)
 
 	storedDaemons := state.Updates[0].Recipe.KeaDaemonsBeforeConfigUpdate
+	sort.Slice(storedDaemons, func(i, j int) bool {
+		return storedDaemons[i].ID < storedDaemons[j].ID
+	})
 	require.Len(t, storedDaemons, 2)
 	require.EqualValues(t, daemons[0].ID, storedDaemons[0].ID)
 	require.EqualValues(t, daemons[1].ID, storedDaemons[1].ID)
