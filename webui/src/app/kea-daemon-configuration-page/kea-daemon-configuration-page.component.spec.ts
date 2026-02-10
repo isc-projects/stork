@@ -28,9 +28,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideNoopAnimations(),
-                provideRouter([
-                    { path: 'daemons/:daemonId/config', component: KeaDaemonConfigurationPageComponent },
-                ]),
+                provideRouter([{ path: 'daemons/:daemonId/config', component: KeaDaemonConfigurationPageComponent }]),
             ],
         })
         dataService = TestBed.inject(ServerDataService)

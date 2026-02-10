@@ -164,12 +164,7 @@ const allAuthorizedMachines: Machine[] = [
                 extendedVersion:
                     '3.1.0 (3.1.0 (isc20250728104543 deb))\npremium: yes (isc20250728104543 deb)\nlinked with:\n- log4cplus 2.0.8\n- OpenSSL 3.0.17 1 Jul 2025\nlease backends:\n- Memfile backend 5.0\n- PostgreSQL backend 30.0, library 150013\nhost backends:\n- PostgreSQL backend 30.0, library 150013\nforensic backends:\n- PostgreSQL backend 30.0, library 150013',
                 files: [{ filename: '/var/log/kea', filetype: 'Forensic Logging', persist: true }],
-                hooks: [
-                    'libdhcp_lease_cmds.so',
-                    'libdhcp_pgsql.so',
-                    'libdhcp_legal_log.so',
-                    'libdhcp_subnet_cmds.so',
-                ],
+                hooks: ['libdhcp_lease_cmds.so', 'libdhcp_pgsql.so', 'libdhcp_legal_log.so', 'libdhcp_subnet_cmds.so'],
                 id: 5,
                 logTargets: [],
                 monitored: true,
@@ -375,7 +370,7 @@ const allAuthorizedMachines: Machine[] = [
                 label: 'CA@agent-kea-ha1',
                 machineId: 7,
                 machineLabel: 'agent-kea-ha1',
-            }
+            },
         ],
         authorized: true,
         cpus: 12,
