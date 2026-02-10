@@ -373,7 +373,7 @@ sudo ./stork-install-agent.sh</textarea
             </div>
             <div class="col-12 xl:col-5">
                 <h3 class="underlined">Events</h3>
-                <app-events-panel #eventsTable [filter]="{ machine: machineTab?.id }"></app-events-panel>
+                <app-events-panel #eventsTable [filter]="{ machineId: machineTab?.id || 42 }"></app-events-panel>
             </div>
         </div>
     </ng-template>
