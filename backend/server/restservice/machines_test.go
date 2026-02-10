@@ -3550,9 +3550,9 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 	// Assert
 	require.NotNil(t, versions)
 	require.NoError(t, err)
-	require.Equal(t, "9.21.1", *appsVersions.Bind9.LatestDev.Version)
-	require.Equal(t, "2.7.3", *appsVersions.Kea.LatestDev.Version)
-	require.Equal(t, "1.19.0", *appsVersions.Stork.LatestDev.Version)
+	require.Equal(t, "9.21.1", *versions.Bind9.LatestDev.Version)
+	require.Equal(t, "2.7.3", *versions.Kea.LatestDev.Version)
+	require.Equal(t, "1.19.0", *versions.Stork.LatestDev.Version)
 }
 
 // Test that getOnlineVersionsJSON returns an error when the online versions.json URL is incorrect.

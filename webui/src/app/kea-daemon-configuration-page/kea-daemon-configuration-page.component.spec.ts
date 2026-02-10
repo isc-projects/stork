@@ -170,7 +170,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(breadcrumbsComponent).not.toBeNull()
         expect(breadcrumbsComponent.items).toHaveSize(4)
         expect(breadcrumbsComponent.items[0].label).toEqual('Services')
-        expect(breadcrumbsComponent.items[1].label).toEqual('Kea Daemons')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Daemons')
         expect(breadcrumbsComponent.items[2].label).toEqual('Daemon')
         expect(breadcrumbsComponent.items[3].label).toEqual('Configuration')
     })
