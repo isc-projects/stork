@@ -401,23 +401,23 @@ export class AppComponent implements OnInit, OnDestroy {
                         // if there are Kea daemons then show DHCP/Kea menu items
                         // otherwise hide them
                         const dhcpMenuItem = this.getMenuItem('DHCP')
-                        const keaAppsMenuItem = this.getMenuItem('Kea Daemons')
+                        const keaDaemonsMenuItem = this.getMenuItem('Kea Daemons')
                         if (data.dhcpDaemonsTotal) {
                             dhcpMenuItem.visible = true
-                            keaAppsMenuItem['visible'] = true
+                            keaDaemonsMenuItem['visible'] = true
                         } else {
                             dhcpMenuItem.visible = false
-                            keaAppsMenuItem['visible'] = false
+                            keaDaemonsMenuItem['visible'] = false
                         }
                         // if there are DNS daemons then show DNS related menu items
                         // otherwise hide them
-                        const dnsAppsMenuItem = this.getMenuItem('DNS Daemons')
+                        const dnsDaemonsMenuItem = this.getMenuItem('DNS Daemons')
                         const dnsMenuItem = this.getMenuItem('DNS')
                         if (data.dnsDaemonsTotal) {
-                            dnsAppsMenuItem['visible'] = true
+                            dnsDaemonsMenuItem['visible'] = true
                             dnsMenuItem['visible'] = true
                         } else {
-                            dnsAppsMenuItem['visible'] = false
+                            dnsDaemonsMenuItem['visible'] = false
                             dnsMenuItem['visible'] = false
                         }
                         // if there are any of DHCP or DNS daemons, show related menu item; otherwise hide it

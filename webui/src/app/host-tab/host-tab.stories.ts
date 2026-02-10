@@ -35,7 +35,7 @@ export default {
                 response: {
                     items: [],
                     conflicts: 0,
-                    erredApps: 0,
+                    erredDaemons: 0,
                 },
             },
         ],

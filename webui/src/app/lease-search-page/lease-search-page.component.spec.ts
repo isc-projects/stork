@@ -170,7 +170,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[3].nativeElement.innerText).toBe('Valid')
         expect(cols[4].nativeElement.innerText).toBe('[1]\u00a0DHCPv4@localhost')
 
-        // Validate app link.
+        // Validate link.
         const daemonLink = cols[4].query(By.css('#daemon-link-1'))
         expect(daemonLink).toBeTruthy()
         expect(daemonLink.attributes.href).toBe('/daemons/1')
@@ -277,7 +277,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[3].nativeElement.innerText).toBe('Declined')
         expect(cols[4].nativeElement.innerText).toBe('[1]\u00a0DHCPv4@localhost')
 
-        // Validate app link.
+        // Validate link.
         const daemonLink = cols[4].query(By.css('#daemon-link-1'))
         expect(daemonLink).toBeTruthy()
         expect(daemonLink.attributes.href).toBe('/daemons/1')
@@ -384,7 +384,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[3].nativeElement.innerText).toBe('Declined')
         expect(cols[4].nativeElement.innerText).toBe('[2]\u00a0DHCPv6@localhost')
 
-        // Validate app link.
+        // Validate link.
         const daemonLink1 = cols[4].query(By.css('#daemon-link-2'))
         expect(daemonLink1).toBeTruthy()
         expect(daemonLink1.attributes.href).toBe('/daemons/2')
@@ -402,7 +402,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(cols[8].nativeElement.innerText).toBe('Expired/Reclaimed')
         expect(cols[9].nativeElement.innerText).toBe('[2]\u00a0DHCPv6@localhost')
 
-        // Validate app link.
+        // Validate link.
         const daemonLink2 = cols[9].query(By.css('#daemon-link-2'))
         expect(daemonLink2).toBeTruthy()
         expect(daemonLink2.attributes.href).toBe('/daemons/2')

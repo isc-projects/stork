@@ -143,7 +143,7 @@ postgres
    ``stork-server`` produces error messages about an unavailable database.
 prometheus
    Prometheus, a monitoring solution (https://prometheus.io/), uses this
-   container to monitor applications. It is preconfigured
+   container to monitor daemons. It is preconfigured
    to monitor the Kea and BIND 9 containers.
 grafana
    This is a container with Grafana (https://grafana.com/), a
@@ -176,7 +176,7 @@ dns-proxy-server
 
 .. note::
 
-   The containers running the Kea and BIND 9 applications are for demonstration
+   The containers running the Kea and BIND 9 daemons are for demonstration
    purposes only. They allow users to quickly start experimenting with
    Stork without having to manually deploy Kea and/or BIND 9
    instances.
@@ -200,8 +200,8 @@ Stork Environment Simulator
 
 The Stork Environment Simulator demonstrates how Stork:
 
-- sends DHCP traffic to Kea applications
-- sends DNS requests to BIND 9 applications
+- sends DHCP traffic to Kea daemons
+- sends DNS requests to BIND 9 daemons
 - stops and starts Stork agents and the Kea and BIND 9 daemons
 
 The Stork Environment Simulator allows DHCP traffic to be sent to selected
@@ -214,8 +214,8 @@ be sent to selected DNS servers.
 
 The Stork Environment Simulator can add all the machines available in the
 demo setup. It can stop and start selected Stork agents and the Kea and
-BIND 9 applications. This is useful to simulate communication problems
-between applications, Stork agents, and the Stork server.
+BIND 9 daemons. This is useful to simulate communication problems
+between daemons, Stork agents, and the Stork server.
 
 The Stork Environment Simulator can be found at port 5010 when the demo is
 running.

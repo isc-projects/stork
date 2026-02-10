@@ -6,7 +6,7 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
-import { KeaDaemonConfig } from '../backend'
+import { Daemon, KeaDaemonConfig } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { Panel } from 'primeng/panel'
 import { NgIf } from '@angular/common'
@@ -60,19 +60,18 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      *
      * It subscribes for necessary data, i.e. friendly names and daemon configuration JSON.
      *
-     * The app friendly name is fetched for the specified app ID query parameter. If the app
-     * with the specified ID does not exist or the ID is invalid, a placeholder for app name
+     * The daemon friendly name is fetched for the specified daemon ID query parameter. If the daemon
+     * with the specified ID does not exist or the ID is invalid, a placeholder for daemon name
      * is displayed.
      *
      * The daemon ID must be valid and must point to an existing daemon. The function uses
      * it to fetch daemon's friendly name and fetch its configuration. If the daemon ID is
-     * invalid, the user is redirected to the apps list.
-     * application list.
+     * invalid, the user is redirected to the daemons list.
      */
     ngOnInit(): void {
         this.breadcrumbs = [
             { label: 'Services' },
-            { label: 'Kea Daemons', routerLink: '/daemons/all', queryParams: { appType: 'kea' } },
+            { label: 'Daemons', routerLink: '/daemons/all' },
             { label: 'Daemon' },
             { label: 'Configuration' },
         ]

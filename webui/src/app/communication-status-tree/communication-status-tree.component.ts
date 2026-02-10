@@ -63,7 +63,7 @@ interface CommunicationStatusNodeData {
 })
 export class CommunicationStatusTreeComponent implements OnInit {
     /**
-     * A list of apps having communication issues returned by the server.
+     * A list of daemons having communication issues returned by the server.
      */
     @Input() daemons: AnyDaemon[] = []
 
@@ -76,7 +76,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
     /**
      * A component lifecycle hook called during the component initialization.
      *
-     * It processes the input list of apps and creates a tree of the failing
+     * It processes the input list of daemons and creates a tree of the failing
      * nodes, along with the necessary metadata.
      */
     ngOnInit(): void {
@@ -134,7 +134,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
     /**
      * Returns style class for a node based on the error count.
      *
-     * @param monitored a boolean value indicating if the daemon or app is monitored.
+     * @param monitored a boolean value indicating if the daemon is monitored.
      * @param errorCount communication error count for a node.
      * @returns Style class name highlighting a communication failure when
      * the error count is greater than 0, a style class name indicating
@@ -153,8 +153,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
     /**
      * Instantiates a tree node for BIND 9 control or statistics channel.
      *
-     * @param app BIND 9 app instance.
-     * @param daemon BIND 9 daemon.
+     * @param daemon BIND 9 daemon instance.
      * @param channelType channel type for which the node should be created.
      * @returns An instance of the tree node.
      */

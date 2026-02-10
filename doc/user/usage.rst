@@ -291,7 +291,7 @@ launched, it is recommended to remove (or comment out) those
 configurations to eliminate unwanted warnings from Stork about
 inactive daemons.
 
-Stork uses ``rndc`` to retrieve the BIND 9 application's status. It looks for
+Stork uses ``rndc`` to retrieve the BIND 9 daemon's status. It looks for
 the ``controls`` statement in the configuration file, and uses the
 first listed control point to monitor the daemon. The `statistics-channels`
 must be configured to allow fetching BIND 9 statistics (and exporting them to Prometheus),

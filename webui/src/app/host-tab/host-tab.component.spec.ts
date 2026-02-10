@@ -274,18 +274,18 @@ describe('HostTabComponent', () => {
         expect(hostIdsFieldset.nativeElement.textContent).toContain('TUVW')
         // Circuit ID should be converted to text.
         expect(hostIdsFieldset.nativeElement.textContent).toContain('UVWX')
-        const appsFieldset = fieldsets[0]
-        expect(appsFieldset).toBeTruthy()
+        const fieldset = fieldsets[0]
+        expect(fieldset).toBeTruthy()
 
-        const appLinks = appsFieldset.queryAll(By.css('a'))
-        expect(appLinks.length).toBe(2)
-        expect(appLinks[0].attributes.href).toBe('/daemons/1')
-        expect(appLinks[1].attributes.href).toBe('/daemons/2')
+        const daemonLinks = fieldset.queryAll(By.css('a'))
+        expect(daemonLinks.length).toBe(2)
+        expect(daemonLinks[0].attributes.href).toBe('/daemons/1')
+        expect(daemonLinks[1].attributes.href).toBe('/daemons/2')
 
-        let datasourceLabel = appsFieldset.query(By.css('.datasource--config'))
+        let datasourceLabel = fieldset.query(By.css('.datasource--config'))
         expect(datasourceLabel).toBeTruthy()
         expect(datasourceLabel.nativeElement.innerText).toBe('config')
-        datasourceLabel = appsFieldset.query(By.css('.datasource--hostcmds'))
+        datasourceLabel = fieldset.query(By.css('.datasource--hostcmds'))
         expect(datasourceLabel).toBeTruthy()
         expect(datasourceLabel.nativeElement.innerText).toBe('host_cmds')
     })
@@ -1230,7 +1230,7 @@ describe('HostTabComponent', () => {
         expect(fieldsets[5].properties.innerText).toContain('No options configured.')
     })
 
-    it('should group local hosts by app ID properly', () => {
+    it('should group local hosts by daemon ID properly', () => {
         const host = {
             localHosts: [
                 {

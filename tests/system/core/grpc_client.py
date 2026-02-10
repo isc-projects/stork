@@ -27,23 +27,23 @@ class StatusError(Exception):
 # The protoc GRPC generator doesn't provide the typing hints for the generated
 # classes.
 @dataclass()
-class GetStateRspAppAccessPoint(abc.ABC):
+class GetStateRspAccessPoint(abc.ABC):
     """Stub class for the AccessPoint entry in the GetStateRsp message."""
 
     type: str
     address: str
     port: int
     # pylint: disable=invalid-name
-    useSecureProtocol: bool
+    protocol: str
 
 
 @dataclass()
-class GetStateRspApp(abc.ABC):
-    """Stub class for the App entry in the GetStateRsp message."""
+class GetStateRspDaemon(abc.ABC):
+    """Stub class for the Daemon entry in the GetStateRsp message."""
 
-    type: str
+    name: str
     # pylint: disable=invalid-name
-    accessPoints: typing.List[GetStateRspAppAccessPoint]
+    accessPoints: typing.List[GetStateRspAccessPoint]
 
 
 @dataclass()
@@ -57,7 +57,7 @@ class GetStateRsp(abc.ABC):
 
     # pylint: disable=invalid-name
     agentVersion: str
-    apps: typing.List[GetStateRspApp]
+    daemons: typing.List[GetStateRspDaemon]
 
 
 @dataclass()

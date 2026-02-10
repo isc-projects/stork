@@ -354,7 +354,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             # situation.
             if (
                 e.status == 500
-                and "Problem storing application state in the database" in e.body
+                and "Problem storing daemon state in the database" in e.body
             ):
                 raise DatabaseDeadlockError() from e
             raise
@@ -415,7 +415,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """Updates the machine. It must to contain the valid ID."""
         api_instance = ServicesApi(self._api_client)
 
-        # This endpoint doesn't return the applications.
+        # This endpoint doesn't return the daemons.
         return api_instance.update_machine(
             id=machine.id,
             machine=machine,
@@ -467,7 +467,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         def on_begin() -> CreateHostBeginResponse:
             # Begin transaction response contains the daemons without related
-            # app access points.
+            # access points.
             return api_instance.create_host_begin()
 
         def on_submit(transaction_id: int, host: Host):
@@ -484,7 +484,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         def on_begin() -> UpdateHostBeginResponse:
             # Begin transaction response contains the daemons without related
-            # app access points.
+            # access points.
             return api_instance.update_host_begin(host_id=host_id)
 
         def on_submit(transaction_id: int, host: Host):
@@ -682,16 +682,16 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     def _wait_for_states_pulling(self, start: datetime = None):
         """
-        Waits for finishing next execution of application state puller. Unlike
-        the `last_visited_at` property from the application entry, it waits
-        until the end of writing all application-related entries (subnets,
+        Waits for finishing next execution of daemon state puller. Unlike
+        the `last_visited_at` property from the daemon entry, it waits
+        until the end of writing all daemon-related entries (subnets,
         shared networks, hosts) to the database.
         """
         try:
             self._wait_for_puller("state_puller_interval", start)
         except openapi_client.exceptions.NotFoundException:
             # Applicable only when the server is running in the older version.
-            self._wait_for_puller("apps_state_puller_interval", start)
+            self._wait_for_puller("state_puller_interval", start)
 
     @wait_for_success(
         DatabaseDeadlockError, wait_msg="Waiting to fetch next machine state..."

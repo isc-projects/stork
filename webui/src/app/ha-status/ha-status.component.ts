@@ -255,7 +255,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                                     let cell: RelationshipNodeCell = {
                                         value: s.role,
                                     }
-                                    // It only makes sense to add an app link if it is a remote
+                                    // It only makes sense to add a daemon link if it is a remote
                                     // server. The local server is currently displayed.
                                     if (index > 0) {
                                         cell.daemonId = s.id

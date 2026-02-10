@@ -172,7 +172,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
         this.disableEdit = true
         lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
             .then((data: KeaDaemonConfig) => {
-                // Update daemon and app identifiers.
+                // Update daemon identifier.
                 this.daemonLabel = data.daemonLabel
 
                 // Update DHCP parameters.

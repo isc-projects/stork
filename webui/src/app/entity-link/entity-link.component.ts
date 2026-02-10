@@ -20,7 +20,7 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 })
 export class EntityLinkComponent {
     /**
-     * Entity name, one of: machine, app, daemon, subnet, host.
+     * Entity name, one of: machine, daemon, subnet, host.
      */
     @Input() entity: string
 

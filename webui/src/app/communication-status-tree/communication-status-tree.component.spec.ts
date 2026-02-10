@@ -131,7 +131,7 @@ describe('CommunicationStatusTreeComponent', () => {
                     },
                 ],
             },
-            // Bind9 app with the Communication issues over RNDC.
+            // Bind9 daemon with the Communication issues over RNDC.
             {
                 accessPoints: [
                     {
@@ -152,7 +152,7 @@ describe('CommunicationStatusTreeComponent', () => {
                 daemonCommErrors: 6,
                 monitored: true,
             },
-            // Bind9 app with the Communication issues over stats. It runs
+            // Bind9 daemon with the Communication issues over stats. It runs
             // on the same machine as first Kea.
             {
                 accessPoints: [

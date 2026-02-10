@@ -211,14 +211,15 @@ describe('MachinesTableComponent', () => {
         expect(component.unauthorizedMachinesDisplayed()).toBeFalse()
     })
 
-    it('should display status of all daemons from all applications', async () => {
+    it('should display status of all daemons from all daemons', async () => {
         // Prepare the data
-        const getMachinesResp: any = {
+        const getMachinesResp: Machines = {
             items: [
                 {
                     id: 1,
                     authorized: true,
                     hostname: 'zzz',
+                    address: 'fe80::1',
                     daemons: [
                         {
                             active: true,

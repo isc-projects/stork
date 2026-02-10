@@ -100,7 +100,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         },
         /* Temporarily disable unauthorization until we find an
            actual use case for it. Also, if we allow unauthorization
-           we will have to fix several things, e.g. apps belonging
+           we will have to fix several things, e.g. daemons belonging
            to an unauthorized machine will have to disappear.
            For now, a user can simply remove a machine.
         {
@@ -263,7 +263,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * @param router router used to navigate between tabs.
      * @param servicesApi services API to do all CRUD machine related operations
      * @param msgSrv Message service used to display feedback messages in UI.
-     * @param serverData Server Data service used to reload Apps stats whenever machines registration state changes.
+     * @param serverData Server Data service used to reload Daemons stats whenever machines registration state changes.
      * @param settingsService Settings service used to retrieve global settings.
      * @param confirmationService Confirmation used to handle confirmation dialogs.
      * @param authService authentication and authorization service for customizing the component based on user privileges
@@ -405,7 +405,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 })
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
-                // is new machine and apps available.
+                // is new machine and daemons available.
                 this.serverData.forceReloadDaemonsStats()
             })
             .catch((err) => {
@@ -479,8 +479,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     /**
      * Delete indicated machine.
      *
-     * Additionally app stats will be reloaded and if after deletion
-     * there is no more DHCP or DNS apps then the item in the top menu
+     * Additionally daemons stats will be reloaded and if after deletion
+     * there is no more DHCP or DNS daemons then the item in the top menu
      * is adjusted.
      *
      * @param machineId ID of machine
@@ -498,7 +498,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.machinesTable()?.setDataLoading(true)
                 lastValueFrom(this.servicesApi.deleteMachine(machineId))
                     .then(() => {
-                        // reload apps stats to reflect new state (adjust menu content)
+                        // reload daemons stats to reflect new state (adjust menu content)
                         this.serverData.forceReloadDaemonsStats()
 
                         this.tabView()?.onDeleteEntity(machineId)
@@ -687,14 +687,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.machinesTable()?.setDataLoading(false)
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
-                // is new machine and apps available.
+                // is new machine and daemons available.
                 this.serverData.forceReloadDaemonsStats()
             },
             complete: () => {
                 this.machinesTable()?.setDataLoading(false)
                 this.machinesTable()?.loadData(this.machinesTable()?.machinesTable?.createLazyLoadMetadata())
                 // Force menu adjustments to take into account that there
-                // is new machine and apps available.
+                // is new machine and daemons available.
                 this.serverData.forceReloadDaemonsStats()
             },
         })

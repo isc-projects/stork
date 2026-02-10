@@ -21,7 +21,7 @@ export class ServerDataService {
     private reloadDaemonConfiguration: { [daemonId: number]: Subject<number> } = {}
 
     private _machinesAddresses: Observable<any>
-    private _appsNames: Observable<any>
+    private _daemonsNames: Observable<any>
     private _daemonConfigurations: { [daemonId: number]: Observable<any> } = {}
 
     constructor(
@@ -132,16 +132,16 @@ export class ServerDataService {
     }
 
     /**
-     * Returns a set of apps' names.
+     * Returns a set of daemons' names.
      *
-     * This function fetches a list of all apps' ids and names and
-     * transforms returned data to a map with an app name as a key
+     * This function fetches a list of all daemons' ids and names and
+     * transforms returned data to a map with a daemon name as a key
      * and id as a value.
      *
-     * @returns Observable holding a list of apps' names.
+     * @returns Observable holding a list of daemons' names.
      */
     public getDaemonsNames(): Observable<Map<string, number>> {
-        this._appsNames = this.servicesApi.getDaemonsDirectory().pipe(
+        this._daemonsNames = this.servicesApi.getDaemonsDirectory().pipe(
             map((data) => {
                 const names = new Map<string, number>()
                 for (const a of data.items) {
@@ -150,7 +150,7 @@ export class ServerDataService {
                 return names
             })
         )
-        return this._appsNames
+        return this._daemonsNames
     }
 
     /**

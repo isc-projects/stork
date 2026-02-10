@@ -29,7 +29,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                 provideHttpClientTesting(),
                 provideNoopAnimations(),
                 provideRouter([
-                    { path: 'apps/:appId/daemons/:daemonId/config', component: KeaDaemonConfigurationPageComponent },
+                    { path: 'daemons/:daemonId/config', component: KeaDaemonConfigurationPageComponent },
                 ]),
             ],
         })
@@ -79,7 +79,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         authService.login('boz', 'foo', 'bar', 'baz')
 
         const harness = await RouterTestingHarness.create()
-        component = await harness.navigateByUrl('/apps/1/daemons/2/config', KeaDaemonConfigurationPageComponent)
+        component = await harness.navigateByUrl('/daemons/2/config', KeaDaemonConfigurationPageComponent)
         fixture = harness.fixture
 
         fixture.detectChanges()

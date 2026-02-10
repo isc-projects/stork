@@ -34,7 +34,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                         component: DaemonsPageComponent,
                     },
                     {
-                        path: 'apps/:appId/daemons/:daemonId/global-config',
+                        path: 'daemons/:daemonId/global-config',
                         component: KeaGlobalConfigurationPageComponent,
                     },
                 ]),
@@ -42,7 +42,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         }).compileComponents()
 
         const harness = await RouterTestingHarness.create()
-        component = await harness.navigateByUrl('/apps/2/daemons/1/global-config', KeaGlobalConfigurationPageComponent)
+        component = await harness.navigateByUrl('/daemons/1/global-config', KeaGlobalConfigurationPageComponent)
         fixture = harness.fixture
 
         messageService = fixture.debugElement.injector.get(MessageService)

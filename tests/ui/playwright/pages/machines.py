@@ -64,7 +64,7 @@ class MachinesPage:
     # Detail page verifications and actions
     def expect_detail_headings(self):
         self.page.get_by_role("heading", name="System Information").click()
-        self.page.get_by_role("heading", name="Applications").click()
+        self.page.get_by_role("heading", name="Daemons").click()
         self.page.get_by_role("heading", name="Events").click()
 
     def expect_detail_ip_fragment(self, fragment: str):

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { PriorityErrorsPanelComponent } from './priority-errors-panel.component'
-import { ServicesService } from '../backend'
+import { Daemons, ServicesService } from '../backend'
 import { MessageService } from 'primeng/api'
 import {
     EventStream,
@@ -55,8 +55,8 @@ describe('PriorityErrorsPanelComponent', () => {
         let observable = receivedEventsSubject.asObservable()
         spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
 
-        // Simulate returning an app with the connectivity issues.
-        const apps: any = {
+        // Simulate returning a daemon with the connectivity issues.
+        const daemons: Daemons = {
             items: [
                 {
                     id: 1,
@@ -68,13 +68,13 @@ describe('PriorityErrorsPanelComponent', () => {
         // No unauthorized machines.
         const unauthorized: any = 0
 
-        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(daemons as any))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(component, 'setBackoff').and.callThrough()
         spyOn(component, 'setBackoffTimeout')
 
         // When the component is initialized it should subscribe to the events and
-        // receive the report about the apps with connectivity issues.
+        // receive the report about the daemons with connectivity issues.
         component.ngOnInit()
         fixture.detectChanges()
         tick()
@@ -166,7 +166,7 @@ describe('PriorityErrorsPanelComponent', () => {
         spyOn(component, 'setBackoffTimeout')
 
         // When the component is initialized it should subscribe to the events and
-        // receive the report about the apps with connectivity issues.
+        // receive the report about the daemons with connectivity issues.
         component.ngOnInit()
         fixture.detectChanges()
         tick()
@@ -248,8 +248,8 @@ describe('PriorityErrorsPanelComponent', () => {
                 originalEvent: null,
             })
         )
-        // Simulate returning an app with issues.
-        const apps: any = {
+        // Simulate returning a daemon with issues.
+        const daemons: Daemons = {
             items: [
                 {
                     id: 1,
@@ -258,7 +258,7 @@ describe('PriorityErrorsPanelComponent', () => {
             total: 1,
         }
         const unauthorized: any = 1
-        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(daemons as any))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(component, 'setBackoffTimeout')
         component.ngOnInit()
@@ -280,18 +280,18 @@ describe('PriorityErrorsPanelComponent', () => {
         spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
 
         // Simulate returning no connectivity issues.
-        const apps: any = {
+        const daemons: Daemons = {
             items: [],
             total: 0,
         }
         // Also, no unauthorized machines.
         const unauthorized: any = 0
-        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(daemons as any))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(component, 'setBackoffTimeout')
 
         // When the component is initialized it should subscribe to the events and
-        // receive the report about the apps with connectivity issues and unauthorized
+        // receive the report about the daemons with connectivity issues and unauthorized
         // machines.
         component.ngOnInit()
         fixture.detectChanges()
@@ -309,12 +309,12 @@ describe('PriorityErrorsPanelComponent', () => {
     }))
 
     it('should unsubscribe when the component is destroyed', fakeAsync(() => {
-        const apps: any = {
+        const daemons: Daemons = {
             items: [],
             total: 0,
         }
         const unauthorized: any = 0
-        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(daemons as any))
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(of(unauthorized))
         spyOn(sse, 'receivePriorityEvents').and.returnValue(
             of({
@@ -343,7 +343,7 @@ describe('PriorityErrorsPanelComponent', () => {
                 originalEvent: null,
             })
         )
-        // Simulate an error while fetching the apps.
+        // Simulate an error while fetching the daemons.
         spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(
             throwError(() => new HttpErrorResponse({ status: 404 }))
         )
@@ -368,12 +368,12 @@ describe('PriorityErrorsPanelComponent', () => {
                 originalEvent: null,
             })
         )
-        // Return empty list of apps with the connectivity issues.
-        const apps: any = {
+        // Return empty list of daemons with the connectivity issues.
+        const daemons: Daemons = {
             items: [],
             total: 0,
         }
-        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(apps)
+        spyOn(api, 'getDaemonsWithCommunicationIssues').and.returnValue(of(daemons as any))
 
         // Simulate returning an error while getting unauthorized machines.
         spyOn(api, 'getUnauthorizedMachinesCount').and.returnValue(
