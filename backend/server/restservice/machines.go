@@ -158,14 +158,14 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (*
 	dataDate := strfmt.Date(parsedTime)
 
 	// Prepare REST API response.
-	appsVersions := models.AppsVersions{
+	versions := models.AppsVersions{
 		Date:       &dataDate,
 		Bind9:      bind9,
 		Kea:        kea,
 		Stork:      stork,
 		DataSource: mode,
 	}
-	return &appsVersions, nil
+	return &versions, nil
 }
 
 // Get information about current ISC software versions.
@@ -176,18 +176,18 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 		onlineModeEnabled = false
 	}
 	if onlineModeEnabled {
-		appsVersions, err := r.getOnlineVersionsJSON()
+		versions, err := r.getOnlineVersionsJSON()
 		if err == nil {
-			return general.NewGetSoftwareVersionsOK().WithPayload(appsVersions)
+			return general.NewGetSoftwareVersionsOK().WithPayload(versions)
 		}
 		log.WithError(err).Error("Problem processing online versions metadata file data; falling back to offline mode")
 	} else {
 		log.Warn("online mode of software version checking disabled")
 	}
 
-	appsVersions, err := getOfflineVersionsJSON()
+	versions, err := getOfflineVersionsJSON()
 	if err == nil {
-		return general.NewGetSoftwareVersionsOK().WithPayload(appsVersions)
+		return general.NewGetSoftwareVersionsOK().WithPayload(versions)
 	}
 	log.WithError(err).Error("Problem processing offline versions.json data")
 	errMsg := "Error parsing the contents of the JSON file with software versions metadata"

@@ -660,7 +660,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		},
 	}
 
-	appSubnets := []Subnet{
+	subnets := []Subnet{
 		{
 			Prefix: "192.168.0.0/24",
 			LocalSubnets: []*LocalSubnet{
@@ -671,7 +671,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
+	_, err = CommitNetworksIntoDB(db, appNetworks, subnets)
 	require.NoError(t, err)
 
 	// add daemon with dhcp6 to machine
@@ -736,7 +736,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		},
 	}
 
-	appSubnets = []Subnet{
+	subnets = []Subnet{
 		{
 			Prefix: "2001:db8:1::/64",
 			LocalSubnets: []*LocalSubnet{
@@ -747,7 +747,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets)
+	_, err = CommitNetworksIntoDB(db, appNetworks, subnets)
 	require.NoError(t, err)
 
 	// Get all shared networks.

@@ -739,8 +739,8 @@ func TestFetchZonesForcePopulate(t *testing.T) {
 	notifyChannel, err := manager.FetchZones(1, 1000, FetchZonesOptionBlock, FetchZonesOptionForcePopulate)
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
-		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
-		return isFetching && appsNum == 1 && completedAppsNum == 1
+		isFetching, daemonsNum, completedDaemonsNum := manager.GetFetchZonesProgress()
+		return isFetching && daemonsNum == 1 && completedDaemonsNum == 1
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
@@ -751,8 +751,8 @@ func TestFetchZonesForcePopulate(t *testing.T) {
 	// Complete the fetch.
 	<-notifyChannel
 	require.Eventually(t, func() bool {
-		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
-		return !isFetching && appsNum == 1 && completedAppsNum == 1
+		isFetching, daemonsNum, completedDaemonsNum := manager.GetFetchZonesProgress()
+		return !isFetching && daemonsNum == 1 && completedDaemonsNum == 1
 	}, 5*time.Second, 10*time.Millisecond)
 }
 
@@ -820,8 +820,8 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	notifyChannel, err := manager.FetchZones(1, 1000, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
-		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
-		return isFetching && appsNum == 1 && completedAppsNum == 1
+		isFetching, daemonsNum, completedDaemonsNum := manager.GetFetchZonesProgress()
+		return isFetching && daemonsNum == 1 && completedDaemonsNum == 1
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
@@ -838,8 +838,8 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	var alreadyFetching *ManagerAlreadyFetchingError
 	require.ErrorAs(t, err, &alreadyFetching)
 	require.Eventually(t, func() bool {
-		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
-		return isFetching && appsNum == 1 && completedAppsNum == 1
+		isFetching, daemonsNum, completedDaemonsNum := manager.GetFetchZonesProgress()
+		return isFetching && daemonsNum == 1 && completedDaemonsNum == 1
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// The zones should remain untouched.
@@ -850,8 +850,8 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	// Complete the fetch.
 	<-notifyChannel
 	require.Eventually(t, func() bool {
-		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
-		return !isFetching && appsNum == 1 && completedAppsNum == 1
+		isFetching, daemonsNum, completedDaemonsNum := manager.GetFetchZonesProgress()
+		return !isFetching && daemonsNum == 1 && completedDaemonsNum == 1
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// All zones should be in the database.
@@ -863,8 +863,8 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	notifyChannel, err = manager.FetchZones(10, 1000, FetchZonesOptionBlock)
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
-		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
-		return isFetching && appsNum == 1 && completedAppsNum == 1
+		isFetching, daemonsNum, completedDaemonsNum := manager.GetFetchZonesProgress()
+		return isFetching && daemonsNum == 1 && completedDaemonsNum == 1
 	}, 5*time.Second, 10*time.Millisecond)
 
 	// Complete the fetch.

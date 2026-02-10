@@ -40,7 +40,7 @@ the typical config file locations in the following order:
 - ``/usr/local/etc/namedb/``
 
 If the config file is not found using the methods described above, the agent will report an error,
-and BIND 9 will not appear on the list of detected apps.
+and BIND 9 will not appear on the list of detected daemons.
 
 .. note::
     The ``STORK_AGENT_BIND9_CONFIG`` environment variable setting has no effect if
@@ -241,7 +241,7 @@ to find the config file in the typical locations in the following order:
 - ``/opt/homebrew/etc/powerdns/``
 
 If the config file is not found using the methods described above, the agent will report an error,
-and PowerDNS will not be shown on the list of detected apps.
+and PowerDNS will not be shown on the list of detected daemons.
 
 .. note::
     The ``STORK_AGENT_POWERDNS_CONFIG`` environment variable setting has no effect if
@@ -360,8 +360,8 @@ filtering box provides three options:
 - ``exclude``: exclude RPZ from the list, and only show non-RPZ zones,
 - ``only``: return only RPZ.
 
-The remaining filtering boxes allow for filtering the zones by ``App ID``,
-``Serial``, ``Class``, and ``App Type``.
+The remaining filtering boxes allow for filtering the zones by ``DaemonID``,
+``Serial``, ``Class``, and ``Daemon Name``.
 
 
 Viewing Zone Contents

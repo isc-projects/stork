@@ -89,7 +89,7 @@ func TestSearchRecords(t *testing.T) {
 	err = dbmodel.AddDaemon(db, d4)
 	require.NoError(t, err)
 
-	appSubnets := []dbmodel.Subnet{
+	subnets := []dbmodel.Subnet{
 		{
 			Prefix: "192.168.0.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
@@ -110,7 +110,7 @@ func TestSearchRecords(t *testing.T) {
 		},
 	}
 
-	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets)
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, subnets)
 	require.NoError(t, err)
 
 	// add daemon kea with dhcp6 to machine
@@ -137,12 +137,12 @@ func TestSearchRecords(t *testing.T) {
 	err = dbmodel.AddDaemon(db, d6)
 	require.NoError(t, err)
 
-	appSubnets = []dbmodel.Subnet{
+	subnets = []dbmodel.Subnet{
 		{
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets)
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, subnets)
 	require.NoError(t, err)
 
 	// add additional daemons kea with dhcp4 and dhcp6 to machine
@@ -225,7 +225,7 @@ func TestSearchRecords(t *testing.T) {
 		},
 	}
 
-	appSubnets = []dbmodel.Subnet{
+	subnets = []dbmodel.Subnet{
 		{
 			Prefix: "192.118.0.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
@@ -255,9 +255,9 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, []dbmodel.Subnet{appSubnets[0]})
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, []dbmodel.Subnet{subnets[0]})
 	require.NoError(t, err)
-	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{appNetworks[0]}, []dbmodel.Subnet{appSubnets[1]})
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{appNetworks[0]}, []dbmodel.Subnet{subnets[1]})
 	require.NoError(t, err)
 
 	// search for 'fox' - shared network and subnet are expected

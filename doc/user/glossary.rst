@@ -6,15 +6,15 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | Term                  | Definition                                                     |
    +=======================+================================================================+
-   | app                   | A program monitored by the Stork server via the Stork agent.   |
-   |                       | Typically, it is one of the integrated servers (e.g., Kea      |
-   |                       | DHCP or BIND 9 DNS). An app may comprise multiple daemons.     |
-   |                       | For example, the Kea DHCP app contains DHCPv4 and DHCPv6       |
+   | app                   | Deprecated concept that aggregated daemons running on the same |
+   |                       | machine.                                                       |
+   |                       | For example, the Kea DHCP app contained DHCPv4 and DHCPv6      |
    |                       | daemons.                                                       |
+   |                       | Removed in Stork 2.4.0.                                        |
    +-----------------------+----------------------------------------------------------------+
-   | app ID                | The unique identifier of a monitored app in the Stork server   |
-   |                       | database. This identifier is often displayed in the UI and can |
-   |                       | be used, for example, for filtering apps.                      |
+   | daemon                | The unique identifier of a monitored daemon in the Stork       |
+   |                       | server database. This identifier is often displayed in the UI  |
+   |                       | and can be used, for example, for filtering daemons.           |
    +-----------------------+----------------------------------------------------------------+
    | authorized machine    | A machine running the Stork agent that has requested           |
    |                       | registration on the Stork server, and whose request has been   |
@@ -22,8 +22,8 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | configured subnet ID  | See "Kea subnet ID."                                           |
    +-----------------------+----------------------------------------------------------------+
-   | daemon                | One of the programs belonging to an app. For example: a DHCPv4 |
-   |                       | or D2 daemon in the Kea app.                                   |
+   | daemon                | One of the programs belonging to a machine. For example: a     |
+   |                       | DHCPv4 or DHCPv6 daemon in the Kea DHCP machine.               |
    +-----------------------+----------------------------------------------------------------+
    | global configuration  | The set of parameters and DHCP options of a Kea configuration  |
    |                       | that apply to all subnets, shared networks, or host            |
@@ -56,7 +56,7 @@ Glossary
    |                       | client. Stork allows for creating host reservations in the Kea |
    |                       | instances.                                                     |
    +-----------------------+----------------------------------------------------------------+
-   | Kea server            | The Kea DHCP daemon or app, depending on the context.          |
+   | Kea server            | The Kea DHCP daemon or machine, depending on the context.      |
    +-----------------------+----------------------------------------------------------------+
    | Kea subnet ID         | A subnet identifier specified in the Kea configuration file,   |
    |                       | sometimes called the "configured subnet ID." Distinct from     |
@@ -64,19 +64,19 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | machine               | A physical or virtual system running the Stork agent software  |
    |                       | and communicating with the Stork server. It typically also runs|
-   |                       | one or more apps (e.g., the Kea or BIND 9 app) that the Stork  |
-   |                       | server monitors.                                               |
+   |                       | one or more daemons (e.g., the Kea or BIND 9 daemon) that the  |
+   |                       | Stork server monitors.                                         |
    +-----------------------+----------------------------------------------------------------+
    | machine ID            | The unique identifier of an authorized or unauthorized machine |
    |                       | in the Stork database. This identifier is often displayed in   |
    |                       | the UI and can be used for, for example, filtering machines.   |
    +-----------------------+----------------------------------------------------------------+
    | puller                | A mechanism in the Stork server that periodically fetches      |
-   |                       | data from the Stork agents or the apps behind them.            |
+   |                       | data from the Stork agents or the daemons behind them.         |
    |                       | The puller interval is configurable, allowing different data   |
    |                       | refresh intervals to be specified for different data types.    |
    +-----------------------+----------------------------------------------------------------+
-   | service               | One of the functions provided by one or more monitored apps.   |
+   | service               | One of the functions provided by one or more monitored daemons.|
    |                       | For example: Kea provides a DHCP service to the DHCP clients.  |
    |                       | BIND 9 provides DNS service. Multiple Kea servers can          |
    |                       | provide High Availability service to DHCP clients.             |
@@ -86,10 +86,10 @@ Glossary
    |                       | in the same network segment can be allocated a DHCP lease.     |
    +-----------------------+----------------------------------------------------------------+
    | Stork agent           | One of the Stork programs, installed on the same               |
-   |                       | machine as monitored apps. It detects apps running on the      |
-   |                       | machine, registers the machine in the Stork server, and        |
+   |                       | machine as monitored daemons. It detects daemons running on    |
+   |                       | the machine, registers the machine in the Stork server, and    |
    |                       | serves as an intermediary between the Stork server and the     |
-   |                       | apps. There may be many Stork agents in a Stork deployment.    |
+   |                       | daemons. There may be many Stork agents in a Stork deployment. |
    +-----------------------+----------------------------------------------------------------+
    | Stork hook            | A library (plugin) that can be attached to the Stork server,   |
    |                       | extending its capabilities (e.g. authorization with LDAP).     |

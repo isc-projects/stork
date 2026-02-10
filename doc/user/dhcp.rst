@@ -40,8 +40,8 @@ supports both UNIX domain and network sockets.
 Subnets and Networks
 ====================
 
-IPv4 and IPv6 Subnets per Kea Application
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+IPv4 and IPv6 Subnets per Kea Daemons
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One of the primary configuration aspects of any network is the layout
 of IP addressing. This is represented in Kea with IPv4 and IPv6
@@ -51,24 +51,24 @@ to the DHCP server to manage. Stork is able to display this
 information.
 
 One way to inspect the subnets and pools within Kea is by looking at
-each Kea application to get an overview of the configurations a
-specific Kea application is serving. A list of configured subnets on
-that specific Kea application is displayed. The following picture
+each Kea daemon to get an overview of the configurations a
+specific Kea daemon is serving. A list of configured subnets on
+that specific Kea daemon is displayed. The following picture
 shows a simple view of the Kea DHCPv6 server running with a single
 subnet, with three pools configured in it.
 
 .. figure:: ./static/kea-subnets6.png
-   :alt: View of subnets assigned to a single Kea application
+   :alt: View of subnets assigned to a single Kea daemon
 
 IPv4 and IPv6 Subnets in the Whole Network
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 It is convenient to see a complete overview of all subnets
 configured in the network that are being monitored by Stork. Once at least one
-machine with the Kea application running is added to Stork, click on
+machine with the Kea daemon running is added to Stork, click on
 the ``DHCP`` menu and choose ``Subnets`` to see all available subnets. The
 view shows all IPv4 and IPv6 subnets, with the address pools and links
-to the applications that are providing them. An example view of all
+to the daemons that are providing them. An example view of all
 subnets in the network is presented in the figure below.
 
 .. figure:: ./static/kea-subnets-list.png
@@ -372,15 +372,15 @@ IP addresses and prefixes belong. If the reservation is global, i.e., is valid
 for all configured subnets of the given server, the word "global" is shown
 instead of the subnet prefix.
 
-Finally, the ``App Name`` column includes one or more links to
-Kea applications configured to assign each reservation to the
-client. The number of applications is typically greater than one
+Finally, the ``Daemon Name`` column includes one or more links to
+Kea daemons configured to assign each reservation to the
+client. The number of daemons is typically greater than one
 when Kea servers operate in the High Availability setup. In this case,
 each of the HA peers uses the same configuration and may allocate IP
 addresses and delegated prefixes to the same set of clients, including
 static assignments via host reservations. If HA peers are configured
 correctly, the reservations they share will have two links in the
-``App Name`` column. Next to each link there is a label indicating
+``Daemon Name`` column. Next to each link there is a label indicating
 whether the host reservation for the given server has been specified
 in its configuration file or a host database (via the Host Commands
 hook library).
@@ -685,8 +685,8 @@ first column for the selected lease.
 Kea High Availability Status
 ============================
 
-To check the High Availability (HA) status of a machine, go to the ``Services -> Kea Apps``
-menu. On the Kea Apps page, click on a machine name in the list and scroll
+To check the High Availability (HA) status of a machine, go to the ``Services -> Kea Daemons``
+menu. On the Kea Daemons page, click on a machine name in the list and scroll
 down to the High Availability section. This information is
 periodically refreshed according to the configured interval of the
 Kea status puller (see ``Configuration`` -> ``Settings``).
@@ -719,7 +719,7 @@ High Availability status view for a relationship.
 
 
 ``This Server`` is the DHCP server (daemon)
-whose application status is currently displayed; the ``Partner`` is its
+whose daemon status is currently displayed; the ``Partner`` is its
 active HA partner belonging to the same relationship. The partner belongs
 to a different Kea instance running on a different machine; this machine may or
 may not be monitored by Stork. The statuses of both servers are fetched by sending
@@ -765,7 +765,7 @@ Viewing the Kea Log
 ===================
 
 Stork offers a simple log-viewing mechanism to diagnose issues with
-monitored applications.
+monitored daemons.
 
 .. note::
 
@@ -775,10 +775,9 @@ monitored applications.
 
 Kea can be configured to save logs to multiple destinations. Different types
 of log messages may be output into different log files: syslog, stdout,
-or stderr. The list of log destinations used by the Kea application
-is available on the ``Kea Apps`` page: click on a Kea app to view its details,
-and then select a Kea daemon by clicking on the appropriate tab,
-e.g. ``DHCPv4``, ``DHCPv6``, ``DDNS``, or ``CA``. Then, scroll down to the ``Loggers`` section.
+or stderr. The list of log destinations used by the Kea daemon
+is available on the ``Kea Daemons`` page: click on a Kea daemon to view its details.
+Then, scroll down to the ``Loggers`` section.
 
 This section contains a table with a list of configured loggers for
 the selected daemon. For each configured logger, the logger's name,
@@ -817,8 +816,8 @@ are also converted to JSON and returned over the control channel in that
 format. The diagnosis of issues with a particular server often begins by
 inspecting its configuration.
 
-In the ``Kea Apps`` view, select the appropriate tab for the daemon
-configuration to be inspected, and then click on the ``Raw Configuration``
+In the ``Kea Daemons`` view, select the appropriate daemon
+to be inspected, and then click on the ``Raw Configuration``
 button. The displayed tree view comprises the selected daemon's
 configuration fetched using the Kea ``config-get`` command.
 
@@ -856,7 +855,7 @@ configuration, using built-in configuration checkers.
 
 Stork generates configuration reports for a monitored Kea daemon when it
 detects that the daemon's configuration has changed. To view the reports for the daemon,
-navigate to the application page and select one of the daemons. The
+navigate to the daemons page and select one of the daemons. The
 ``Configuration Review Reports`` panel lists issues and proposed configuration
 updates generated by the configuration checkers. Each checker focuses on one
 particular problem.
@@ -914,7 +913,7 @@ triggers all these tasks. The resynchronization may correct some data integrity 
 sometimes occur due to software bugs, network errors, or any other reason.
 
 To schedule a configuration synchronization from the Kea servers, navigate to
-``Services`` and then ``Kea Apps``, and click on the ``Resynchronize Kea Configs`` button.
+``Services`` and then ``Kea Daemons``, and click on the ``Resynchronize Kea Configs`` button.
 The pullers fetch and populate the updated configuration data, but this operation
 takes time, depending on the configured puller intervals. Ensure the pullers
 are not disabled on the ``Settings`` page; otherwise, the configurations will

@@ -11,11 +11,11 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       A machine is authorized in the Stork server successfully, but there are no applications.
+:Issue:       A machine is authorized in the Stork server successfully, but there are no daemons.
 :Description: The user has installed and started ``stork-server`` and ``stork-agent`` and authorized
               the machine. The "Last Refreshed" column has a value on the Machines page and the
               "Error" column value shows no errors, but the "Daemons" column is still blank.
-              The "Application" section on the specific Machine page is also blank.
+              The "Daemons" section on the specific Machine page is also blank.
 :Solution:    Make sure that the daemons are running:
 
               - Kea Control Agent, Kea DHCPv4 server, and/or Kea DHCPv6 server
@@ -245,11 +245,10 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       Stork shows only the Kea Control Agent tab on the Apps page. The running Kea is older than 3.0.0. Stork
+:Issue:       Stork shows only the Kea Control Agent on the Daemons page. The running Kea is older than 3.0.0. Stork
               detects no Kea DHCP servers, although the DHCP daemons are running and allocating leases.
-:Description: There is only a single tab titled "CA" on the Kea Apps page, but no data about any DHCP daemon or
-              DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases. The Stork
-              agent log includes the ``The Kea application has no DHCP daemons configured`` message.
+:Description: There is only a single daemon titled "CA" on the Kea Daemons page, but no data about any DHCP daemon or
+              DDNS. The Kea Control Agent and Kea DHCPv4 or Kea DHCPv6 daemon are running and serve leases.
 :Solution:    The ``kea-ctrl-agent.conf`` file is missing the ``control-sockets`` property.
 :Explanation: Stork detects Kea components using the control socket list from the Kea Control Agent configuration file.
               The list must be configured properly to allow Stork to send commands to Kea daemons. See

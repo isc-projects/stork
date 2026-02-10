@@ -345,7 +345,7 @@ func TestDetectDaemons(t *testing.T) {
 	commander.addFileInfo("/etc/named.conf", &testFileInfo{size: 200})
 	commander.addFileInfo("/etc/powerdns/pdns.conf", &testFileInfo{size: 200})
 
-	// Redetect apps. It should result in recreating the zone inventory.
+	// Redetect daemons. It should result in recreating the zone inventory.
 	monitor.detectDaemons(t.Context())
 	daemons3 := monitor.daemons
 	sort.Slice(daemons3, func(i, j int) bool {

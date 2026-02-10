@@ -138,7 +138,7 @@ func TestInitializeSettingsWithInterval(t *testing.T) {
 	bind9Interval, err3 := GetSettingInt(db, "bind9_stats_puller_interval")
 	keaStatsInterval, err4 := GetSettingInt(db, "kea_stats_puller_interval")
 	hostsInterval, err5 := GetSettingInt(db, "kea_hosts_puller_interval")
-	appsStateInterval, err6 := GetSettingInt(db, "state_puller_interval")
+	stateInterval, err6 := GetSettingInt(db, "state_puller_interval")
 	haStatusInterval, err7 := GetSettingInt(db, "kea_status_puller_interval")
 
 	// Assert
@@ -153,7 +153,7 @@ func TestInitializeSettingsWithInterval(t *testing.T) {
 	require.EqualValues(t, 42, bind9Interval)
 	require.EqualValues(t, 42, keaStatsInterval)
 	require.EqualValues(t, 42, hostsInterval)
-	require.EqualValues(t, 42, appsStateInterval)
+	require.EqualValues(t, 42, stateInterval)
 	require.EqualValues(t, 42, haStatusInterval)
 }
 

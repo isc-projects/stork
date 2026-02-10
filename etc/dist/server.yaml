@@ -19,7 +19,7 @@ conflicts: []
 maintainer: "Stork team <stork-users@lists.isc.org>"
 description: "ISC Stork Server
 
-Provides centralized, front end to apps (Kea and BIND9) monitored by Stork agents.
+Provides centralized, front end to daemons (Kea and BIND9) monitored by Stork agents.
 You typically need a single server in a network."
 vendor: "Internet Systems Consortium, Inc."
 homepage: "https://stork.isc.org"

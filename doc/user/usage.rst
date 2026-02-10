@@ -29,7 +29,7 @@ Each section contains three kinds of information:
 - statistics about DHCP
 
 The Service Status section in the DHCP panel lists all monitored DHCP servers.
-The information shown includes the hostname, the application version, the app name,
+The information shown includes the hostname, the version, the daemon name,
 the daemon running on the host, its communication status, the average number of ACKs
 sent by the daemon over the previous 15 minutes and 24 hours, its High Availability (HA)
 state, whether an HA failure has been detected, and the host's running uptime.
@@ -40,7 +40,7 @@ The DNS Panel
 ~~~~~~~~~~~~~
 
 The Service Status section in the DNS panel lists all monitored DNS servers.
-Similarly, to the DHCP pane, it includes the hostname, the app name, the communication
+Similarly, to the DHCP panel, it includes the hostname, the daemon name, the communication
 status with the daemon, and the daemon uptime. It also includes the following indicators
 for each DNS daemon:
 
@@ -57,7 +57,7 @@ The Events Panel
 The Events panel presents the list of the most recent events captured by
 the Stork server. There are three event urgency levels: info, warning,
 and error. Events pertaining to particular entities, e.g. machines
-or applications, provide a link to a web page containing information
+or daemons, provide a link to a web page containing information
 about the given object. Users with ``super-admin`` permissions can clear
 the events (though this leaves behind an event describing their action).
 
@@ -252,10 +252,9 @@ The tarball can be easily sent via email or attached to a bug report.
 Communication Status With the Monitored Machines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The communication status with the monitored agents and daemons is shown on
-the apps pages for the respective daemons. To see the detailed status for all
-apps and daemons on a single page, navigate to ``Monitoring`` and then
-``Communication``. If this page shows no communication issues,
+The communication status with the monitored agents and daemons. To see the
+detailed status for all daemons on a single page, navigate to ``Monitoring``
+and then ``Communication``. If this page shows no communication issues,
 all connected systems are online. If there are issues, the page lists a hierarchical view
 of the Stork agents, Kea Control Agents, and the daemons, highlighting any
 for which communication failures have occurred. The communication failures
@@ -266,20 +265,19 @@ With a machine failure, all processes on
 the culprit machine are down. The Stork server tries to provide accurate data
 about the states of all processes, but some information may be unavailable.
 
-Monitoring Applications
+Monitoring Daemons
 =======================
 
-Application Status
-~~~~~~~~~~~~~~~~~~
+Daemon Status
+~~~~~~~~~~~~~
 
-Kea DHCP applications discovered on connected machines are
-listed via the top-level menu bar, under ``Services``. The list view includes the
-application version, application status, and some machine details. The
+Kea DHCP daemons discovered on connected machines are
+listed via the top-level menu bar, under ``Machines``. The list view includes
+the daemon version, daemon status, and some machine details. The
 ``Action`` button is also available, to refresh the information about
-the application.
+the daemon.
 
-The application status may include a list of daemons belonging to the
-application. Several daemons may be presented in the application
+Several daemons may be presented in the daemon
 status columns (e.g., DHCPv4, DHCPv6, DDNS, and the Kea Control
 Agent (CA) for Kea). The daemons are not listed for the DNS servers
 because each DNS server has only one daemon.
@@ -295,7 +293,7 @@ inactive daemons.
 
 Stork uses ``rndc`` to retrieve the BIND 9 application's status. It looks for
 the ``controls`` statement in the configuration file, and uses the
-first listed control point to monitor the application. The `statistics-channels`
+first listed control point to monitor the daemon. The `statistics-channels`
 must be configured to allow fetching BIND 9 statistics (and exporting them to Prometheus),
 and fetch a list of zones.
 
@@ -321,46 +319,23 @@ the exporter queries the first listed channel. Stork is able to export the
 most metrics if ``zone-statistics`` is set to ``full`` in the
 ``named.conf`` configuration.
 
-Friendly App Names
-~~~~~~~~~~~~~~~~~~
+Friendly Daemon Labels
+~~~~~~~~~~~~~~~~~~~~~~
 
-Every app connected to Stork is assigned a default name. For example,
-if a Kea app runs on the machine ``abc.example.org``, this app's default name
-is ``kea@abc.example.org``. Similarly, if a BIND 9 app runs on the machine
-with the address ``192.0.2.3``, the resulting app name is ``bind9@192.0.2.3``.
-If multiple apps of a given type run on the same machine, a postfix with a
-unique identifier is appended to the duplicated names, e.g. ``bind9@192.0.2.3%56``.
+Every daemon connected to Stork is assigned a label. For example,
+if a Kea DHCPv4 daemon runs on the machine ``abc.example.org``, this daemon's
+label is ``DHCPv4@abc.example.org``. Similarly, if a BIND 9 daemon runs on the
+machine with the address ``192.0.2.3``, the resulting label is ``named@192.0.2.3``.
 
-The default app names are unique so that the user can distinguish them in the
-dashboard, apps list, events panel, and other views. However, the default names
+.. TODO
+  If multiple daemons of a given type run on the same machine, a postfix with a
+  unique identifier is appended to the duplicated labels, e.g. ``named@192.0.2.3%56``.
+
+The daemon labels are semi-unique so that the user can distinguish them in the
+dashboard, daemons list, events panel, and other views. However, the default labels
 may become lengthy when machine names consist of fully qualified domain names (FQDNs).
-When machines' IP addresses are used instead of FQDNs, the app names are less
+When machines' IP addresses are used instead of FQDNs, the daemon labels are less
 meaningful for someone not familiar with addressing in the managed network.
-In these cases, users may prefer replacing the default app names with more
-descriptive ones.
-
-Suppose there are two Kea DHCP servers in the network, one on the first floor of a building
-and one on the second floor. A user may assign the names ``Floor 1 DHCP``
-and ``Floor 2 DHCP`` to the respective DHCP servers in this case.
-The new names need not have the same pattern as the default names and may
-contain spaces. The @ character is not required, but if it is present,
-the part of the name following this character (and before an optional %
-character) must be an address or name of the machine monitored in Stork.
-For example, the names ``dhcp-server@floor1%123`` and ``dhcp-server@floor1``
-are invalid unless ``floor1`` is a monitored machine's name. The special
-notation using two consecutive @ characters can be used to suppress this
-check. The ``dhcp-server@@floor1`` is a valid name even if ``floor1`` is
-not a machine's name. In this case, ``floor1`` can be a physical location
-of the DHCP server in a building.
-
-To modify an app's name, navigate to the selected app's view. For example,
-select ``Services`` from the top menu bar and then click ``Kea Apps``.
-Select an app from the presented apps list, then locate and click the pencil
-icon next to the app name in the app view. In the displayed dialog box,
-type the new app name. If the specified name is valid, the ``Rename``
-button is enabled; click this button to submit the new name. The ``Rename``
-button is disabled if the name is invalid. In this case, a hint is displayed
-to explain the issues with the new name.
 
 The Events Page
 ===============
@@ -370,8 +345,7 @@ to be filtered by:
 
 - urgency level
 - machine
-- application type (Kea, BIND 9)
-- daemon type (``dhcp4``, ``dhcp6``, ``named``, etc.)
+- daemon name (``dhcp4``, ``dhcp6``, ``named``, etc.)
 - the user who caused a given event (available only to users in the ``super-admin`` group).
 
 .. _usage-software-versions-page:
@@ -462,6 +436,6 @@ The Version Status Icon
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 There are many places in the Stork UI where either the Kea, BIND 9, or Stork agent version is displayed, e.g.,
-the ``Services -> Machines`` list, the ``Services -> Kea Apps`` list, etc. Next to the displayed software version,
+the ``Services -> Machines`` list, the ``Services -> Kea Daemons`` list, etc. Next to the displayed software version,
 there is an icon with feedback about the version. Hovering the mouse over the icon displays a tooltip with
 full feedback about the version. Clicking on the icon leads to the Software Versions page.

@@ -118,7 +118,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.Empty(t, okRsp.Payload.Daemons)
 }
 
-func mockGetAppsState(callNo int, cmdResponses []interface{}) {
+func mockGetDaemonsState(callNo int, cmdResponses []interface{}) {
 	switch callNo {
 	case 0:
 		versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
@@ -200,7 +200,7 @@ func TestGetMachineAndDaemonsState(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(mockGetAppsState, nil)
+	fa := agentcommtest.NewFakeAgents(mockGetDaemonsState, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
@@ -620,7 +620,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.PingMachineOK{}, pingRsp)
 	_, ok := pingRsp.(*services.PingMachineOK)
 	require.True(t, ok)
-	// check if GetMachineAndAppsState was called
+	// check if GetMachineAndDaemonsState was called
 	require.True(t, fa.GetStateCalled)
 
 	// Make sure that the event informing about the new machine registration
@@ -1209,7 +1209,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.Equal(t, m.ID, okRsp.Payload.ID)
 	require.Equal(t, addr, *okRsp.Payload.Address)
 	require.True(t, okRsp.Payload.Authorized) // machine is authorized now
-	// check if GetMachineAndAppsState was called because it was just authorized
+	// check if GetMachineAndDaemonsState was called because it was just authorized
 	require.True(t, fa.GetStateCalled)
 
 	// add another machine
@@ -3471,10 +3471,10 @@ func TestGetOfflineVersionsJSONErrorNoSuchFile(t *testing.T) {
 	VersionsJSONPath = path.Join(sb.BasePath, "not-exists.json")
 
 	// Act
-	appsVersions, err := getOfflineVersionsJSON()
+	versions, err := getOfflineVersionsJSON()
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem opening the JSON file")
 	require.ErrorContains(t, err, "no such file")
@@ -3545,10 +3545,10 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 
 	// Act
-	appsVersions, err := rapi.getOnlineVersionsJSON()
+	versions, err := rapi.getOnlineVersionsJSON()
 
 	// Assert
-	require.NotNil(t, appsVersions)
+	require.NotNil(t, versions)
 	require.NoError(t, err)
 	require.Equal(t, "9.21.1", *appsVersions.Bind9.LatestDev.Version)
 	require.Equal(t, "2.7.3", *appsVersions.Kea.LatestDev.Version)
@@ -3567,10 +3567,10 @@ func TestGetOnlineVersionsJSONSendingError(t *testing.T) {
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 
 	// Act
-	appsVersions, err := rapi.getOnlineVersionsJSON()
+	versions, err := rapi.getOnlineVersionsJSON()
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem sending HTTP GET request to")
 }
@@ -3582,10 +3582,10 @@ func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
 	bytes := []byte(`"date": "2024-12-08"`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
+	versions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem unmarshalling contents of the offline JSON file")
 }
@@ -3634,10 +3634,10 @@ func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 	}`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
+	versions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem converting BIND 9 data")
 }
@@ -3685,10 +3685,10 @@ func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 	}`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
+	versions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem converting Kea data")
 }
@@ -3737,10 +3737,10 @@ func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 	}`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
+	versions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem converting Stork data")
 }
@@ -3789,10 +3789,10 @@ func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
 	}`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
+	versions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Nil(t, appsVersions)
+	require.Nil(t, versions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem parsing date")
 }
