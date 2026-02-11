@@ -194,7 +194,7 @@ describe('LeaseSearchPageComponent', () => {
                 ['Client Identifier', 'QRST'],
             ],
             [
-                ['Subnet Identifier', '123'],
+                ['Kea Subnet ID', '123'],
                 ['Valid Lifetime', '3600 seconds'],
                 ['Allocated at', datetimeToLocal(startDate)],
                 ['Expires at', datetimeToLocal(endDate)],
@@ -298,7 +298,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Expected data within the expanded row.
         const expectedLeaseData: any = [
-            ['Subnet Identifier', '123'],
+            ['Kea Subnet ID', '123'],
             ['Valid Lifetime', '3600 seconds'],
             ['Allocated at', datetimeToLocal(startDate)],
             ['Expires at', datetimeToLocal(endDate)],
@@ -427,7 +427,7 @@ describe('LeaseSearchPageComponent', () => {
                 ['DUID', '\\0x01\\0x02\\0x03\\0x04'],
             ],
             [
-                ['Subnet Identifier', '234'],
+                ['Kea Subnet ID', '234'],
                 ['IAID', '12'],
                 ['Preferred Lifetime', '900 seconds'],
                 ['Valid Lifetime', '1800 seconds'],
@@ -478,7 +478,7 @@ describe('LeaseSearchPageComponent', () => {
         expectedLeaseData = [
             [['DUID', '\\0x01\\0x02\\0x03\\0x05']],
             [
-                ['Subnet Identifier', '345'],
+                ['Kea Subnet ID', '345'],
                 ['IAID', '13'],
                 ['Preferred Lifetime', '900 seconds'],
                 ['Valid Lifetime', '1800 seconds'],
