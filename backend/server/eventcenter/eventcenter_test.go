@@ -88,6 +88,33 @@ func TestCreateEventDaemon(t *testing.T) {
 	require.Zero(t, ev.CreatedAt)
 }
 
+// Test that the event with a daemon entry but without assigned ID is created properly.
+func TestCreateEventDaemonWithoutID(t *testing.T) {
+	// Arrange
+	daemon := &dbmodel.Daemon{
+		Name:      "dhcp4",
+		MachineID: 456,
+		Machine: &dbmodel.Machine{
+			ID: 456,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8080,
+		}},
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvError, "foo {daemon} bar", daemon)
+
+	// Assert
+	require.EqualValues(t, "foo <daemon name=\"dhcp4\" machineId=\"456\"> bar", ev.Text)
+	require.EqualValues(t, dbmodel.EvError, ev.Level)
+	require.NotNil(t, ev.Relations)
+	require.EqualValues(t, 456, ev.Relations.MachineID)
+	require.Zero(t, ev.Relations.DaemonID)
+}
+
 // Test that the event with a daemon entry is created properly even if the
 // daemon misses the machine reference.
 func TestCreateEventDaemonWithoutMachine(t *testing.T) {

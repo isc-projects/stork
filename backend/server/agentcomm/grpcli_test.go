@@ -2680,6 +2680,12 @@ func TestReceiveBind9FormattedConfigErrorResponse(t *testing.T) {
 	require.Nil(t, rsp)
 }
 
+// Test that the daemon always return the zero ID.
+func TestDaemonGetID(t *testing.T) {
+	daemon := Daemon{}
+	require.Zero(t, daemon.GetID())
+}
+
 // Test getting the name of the daemon.
 func TestDaemonGetName(t *testing.T) {
 	daemon := Daemon{
@@ -2721,4 +2727,21 @@ func TestDaemonGetMachineTag(t *testing.T) {
 		Machine: machine,
 	}
 	require.Equal(t, machine, daemon.GetMachineTag())
+}
+
+// Test getting the machine ID of the daemon.
+func TestDaemonGetMachineID(t *testing.T) {
+	// Arrange
+	machine := &dbmodel.Machine{
+		ID: 123,
+	}
+	daemon := Daemon{
+		Machine: machine,
+	}
+
+	// Act
+	machineID := daemon.GetMachineID()
+
+	// Assert
+	require.EqualValues(t, 123, machineID)
 }

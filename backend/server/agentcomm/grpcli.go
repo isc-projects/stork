@@ -31,10 +31,14 @@ var _ ConnectedAgents = (*connectedAgentsImpl)(nil)
 // An interface to a daemon that can receive commands from Stork.
 // Kea daemon receiving control commands is an example.
 type ControlledDaemon interface {
+	GetID() int64
+	GetMachineID() int64
 	GetAccessPoint(apType dbmodel.AccessPointType) (*dbmodel.AccessPoint, error)
 	GetMachineTag() dbmodel.MachineTag
 	GetName() daemonname.Name
 }
+
+var _ dbmodel.DaemonTag = (ControlledDaemon)(nil)
 
 // An interface to a machine that can receive commands from Stork.
 type ControlledMachine interface {
@@ -56,6 +60,17 @@ var _ ControlledDaemon = (*Daemon)(nil)
 // Return the name of the daemon.
 func (d *Daemon) GetName() daemonname.Name {
 	return d.Name
+}
+
+// Returns the ID of the daemon. The agentcomm.Daemon has no ID because it is
+// not stored in the database.
+func (d *Daemon) GetID() int64 {
+	return 0
+}
+
+// Returns the machine ID of the daemon.
+func (d *Daemon) GetMachineID() int64 {
+	return d.Machine.GetID()
 }
 
 // Returns the control access point of the daemon. It returns an error if
