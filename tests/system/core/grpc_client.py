@@ -156,7 +156,7 @@ class StorkAgentGRPCClient:
         return rsp
 
     def forward_to_kea_over_http(
-        self, access_point: GetStateRspAppAccessPoint, *cmds
+        self, access_point: GetStateRspAccessPoint, *cmds
     ) -> typing.List[typing.Any]:
         """
         Forwards the request to the Kea server over HTTP.
