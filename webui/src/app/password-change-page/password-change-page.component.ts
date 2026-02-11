@@ -60,7 +60,7 @@ export class PasswordChangePageComponent implements OnInit {
      * numbers 0-9, all special characters and whitespace
      * characters (i.e., space, tab, form feed, and line feed).
      */
-    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]{12,120}$/
+    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$/
 
     constructor(
         private formBuilder: UntypedFormBuilder,
