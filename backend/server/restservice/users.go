@@ -344,6 +344,17 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
 	}
 
+	// Validate the new password against the password policy.
+	validationProblems := validatePassword(string(*p))
+	if len(validationProblems) > 0 {
+		msg := fmt.Sprintf("The password does not meet the password policy: %s", strings.Join(validationProblems, ", "))
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+		return rsp
+	}
+
 	su := &dbmodel.SystemUser{
 		Login:          u.Login,
 		Email:          u.Email,
@@ -414,6 +425,21 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
 	}
 
+	password := ""
+	if p != nil {
+		password = string(*p)
+		// Validate the new password against the password policy.
+		validationProblems := validatePassword(password)
+		if len(validationProblems) > 0 {
+			msg := fmt.Sprintf("The password does not meet the password policy: %s", strings.Join(validationProblems, ", "))
+			rspErr := models.APIError{
+				Message: &msg,
+			}
+			rsp := users.NewUpdateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+			return rsp
+		}
+	}
+
 	isInternal := u.AuthenticationMethodID == nil || *u.AuthenticationMethodID == dbmodel.AuthenticationMethodIDInternal
 	if isInternal && (u.Name == "" || u.Lastname == "") {
 		msg := "Failed to update user account: missing first or last name"
@@ -462,10 +488,6 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		return rsp
 	}
 
-	password := ""
-	if p != nil {
-		password = string(*p)
-	}
 	if password != "" {
 		err = dbmodel.SetPassword(r.DB, int(*u.ID), password)
 		if err != nil {

@@ -72,7 +72,7 @@ func TestCreateUserConflictLogin(t *testing.T) {
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: storkutil.Ptr(models.Password("pass")),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
 		},
 	}
 
@@ -112,7 +112,7 @@ func TestCreateUserConflictEmail(t *testing.T) {
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: storkutil.Ptr(models.Password("pass")),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
 		},
 	}
 
@@ -151,7 +151,7 @@ func TestCreateUserConflictEmailEmpty(t *testing.T) {
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: storkutil.Ptr(models.Password("pass")),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
 		},
 	}
 
@@ -186,7 +186,7 @@ func TestCreateUserConflictEmailEmptyLogin(t *testing.T) {
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: storkutil.Ptr(models.Password("pass")),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
 		},
 	}
 
@@ -306,7 +306,21 @@ func TestCreateUser(t *testing.T) {
 		},
 	}
 
+	// Attempt to create the user should be rejected due to weak password.
 	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Contains(t, *defaultRsp.Payload.Message, "The password does not meet the password policy")
+
+	// Use a strong password and attempt to create the user again - it should succeed.
+	params = users.CreateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
+		},
+	}
+	rsp = rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserOK{}, rsp)
 	okRsp := rsp.(*users.CreateUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
@@ -323,7 +337,7 @@ func TestCreateUser(t *testing.T) {
 	// An attempt to create the same user should fail with HTTP error 409.
 	rsp = rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.CreateUserDefault)
+	defaultRsp = rsp.(*users.CreateUserDefault)
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
@@ -786,7 +800,7 @@ func TestUpdateUserInvalidUserID(t *testing.T) {
 	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
-			Password: storkutil.Ptr(models.Password("pass")),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
 		},
 	}
 	rsp := rapi.UpdateUser(ctx, params)
@@ -816,8 +830,7 @@ func TestUpdateUserWithPassword(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	// Modify some values and update the user.
-	su.Lastname = "Born"
+	// Modify password to be weak and verify that it is rejected.
 	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
@@ -825,6 +838,20 @@ func TestUpdateUserWithPassword(t *testing.T) {
 		},
 	}
 	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Contains(t, *defaultRsp.Payload.Message, "The password does not meet the password policy")
+
+	// Modify some values and update the user.
+	su.Lastname = "Born"
+	params = users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("StrongPassword1!")),
+		},
+	}
+	rsp = rapi.UpdateUser(ctx, params)
 	require.IsType(t, &users.UpdateUserOK{}, rsp)
 
 	// Also check that the user has been updated in the database.
@@ -837,13 +864,12 @@ func TestUpdateUserWithPassword(t *testing.T) {
 	su.ID = 123
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
-			User:     newRestUser(su),
-			Password: storkutil.Ptr(models.Password("pass")),
+			User: newRestUser(su),
 		},
 	}
 	rsp = rapi.UpdateUser(ctx, params)
 	require.IsType(t, &users.UpdateUserDefault{}, rsp)
-	defaultRsp := rsp.(*users.UpdateUserDefault)
+	defaultRsp = rsp.(*users.UpdateUserDefault)
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
