@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { SharedNetworksTableComponent } from './shared-networks-table.component'
 import { MessageService } from 'primeng/api'
@@ -270,9 +270,9 @@ describe('SharedNetworksTableComponent', () => {
         expect(component.totalRecords).toBe(10496)
     })
 
-    it('should convert shared network statistics to big integers', async () => {
+    it('should convert shared network statistics to big integers', fakeAsync(() => {
         // Act
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         // Assert
@@ -287,11 +287,12 @@ describe('SharedNetworksTableComponent', () => {
             )
         )
         expect(stats['declined-addresses']).toBe(BigInt('-2'))
-    })
+        flush()
+    }))
 
-    it('should convert subnet statistics to big integers', async () => {
+    it('should convert subnet statistics to big integers', fakeAsync(() => {
         // Act
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         // Assert
@@ -302,22 +303,24 @@ describe('SharedNetworksTableComponent', () => {
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
         )
         expect(stats['declined-addresses']).toBe(BigInt('0'))
-    })
+        flush()
+    }))
 
-    it('should not fail on empty statistics', async () => {
+    it('should not fail on empty statistics', fakeAsync(() => {
         // Act
         // Filter by text to get subnet without stats.
         const metadata = component.table.createLazyLoadMetadata()
         metadata.filters['text'].value = 'frog-no-stats'
         component.loadData(metadata)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         // Assert
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'frog-no-stats', null, null)
         expect(component.dataCollection[0].stats).toBeUndefined()
         // No throw
-    })
+        flush()
+    }))
 
     it('should detect IPv6 subnets included in filter', () => {
         expect(component.ipV6SubnetsFilterIncluded()).toBeTrue()
@@ -344,12 +347,12 @@ describe('SharedNetworksTableComponent', () => {
         expect(component.emptyMessageColspan()).toEqual(9)
     })
 
-    it('should display proper utilization bars', async () => {
+    it('should display proper utilization bars', fakeAsync(() => {
         // Filter by text to get shared network with proper data.
         const metadata = component.table.createLazyLoadMetadata()
         metadata.filters['text'].value = 'cat'
         component.loadData(metadata)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'cat', null, null)
@@ -383,7 +386,8 @@ describe('SharedNetworksTableComponent', () => {
                     break
             }
         }
-    })
+        flush()
+    }))
 
     xit('should display error about wrong query params filter', async () => {
         // TODO: this test should be moved away from Karma tests.

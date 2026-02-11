@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
 import { provideRouter } from '@angular/router'
@@ -17,7 +17,7 @@ describe('SharedNetworksPageComponent', () => {
     let dhcpService: DHCPService
     let messageService: MessageService
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         TestBed.configureTestingModule({
             providers: [
                 ConfirmationService,
@@ -253,7 +253,7 @@ describe('SharedNetworksPageComponent', () => {
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
-    }))
+    })
 
     it('should create', () => {
         expect(component).toBeTruthy()

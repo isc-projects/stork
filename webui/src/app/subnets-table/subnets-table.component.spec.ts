@@ -308,12 +308,12 @@ describe('SubnetsTableComponent', () => {
         flush()
     }))
 
-    it('should display the Kea subnet ID', async () => {
+    it('should display the Kea subnet ID', fakeAsync(() => {
         // Act
         spyOn(dhcpApi, 'getSubnets').and.returnValue(of(fakeResponse as any))
         const metadata = component.table.createLazyLoadMetadata()
         component.loadData(metadata)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         // Assert
@@ -326,14 +326,15 @@ describe('SubnetsTableComponent', () => {
         expect(cellValues).toContain('')
         // Third subnet has identical Kea subnet IDs.
         expect(cellValues).toContain('4')
-    })
+        flush()
+    }))
 
-    it('should convert statistics to big integers', async () => {
+    it('should convert statistics to big integers', fakeAsync(() => {
         // Act
         spyOn(dhcpApi, 'getSubnets').and.returnValue(of(fakeResponse as any))
         const metadata = component.table.createLazyLoadMetadata()
         component.loadData(metadata)
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
 
         // Assert
@@ -349,7 +350,8 @@ describe('SubnetsTableComponent', () => {
             )
         )
         expect(stats['declined-addresses']).toBe(BigInt('-2'))
-    })
+        flush()
+    }))
 
     it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
         expect(component.toolbarButtons.length).toBeGreaterThan(0)

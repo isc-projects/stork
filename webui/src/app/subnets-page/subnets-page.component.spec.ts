@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
 import { provideRouter } from '@angular/router'
@@ -20,7 +20,7 @@ describe('SubnetsPageComponent', () => {
     let messageService: MessageService
     let settingService: SettingService
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         TestBed.configureTestingModule({
             providers: [
                 ConfirmationService,
@@ -223,31 +223,33 @@ describe('SubnetsPageComponent', () => {
                 grafanaDhcp6DashboardId: 'dhcp6-dashboard-id',
             } as any)
         )
-    }))
+    })
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should fetch grafana url and dashboard IDs', async () => {
+    it('should fetch grafana url and dashboard IDs', fakeAsync(() => {
         component.ngOnInit()
-        await fixture.whenStable()
+        tick()
         expect(component.grafanaUrl).toBe('http://localhost:3000')
         expect(component.grafanaDhcp4DashboardId).toBe('dhcp4-dashboard-id')
         expect(component.grafanaDhcp6DashboardId).toBe('dhcp6-dashboard-id')
-    })
+        flush()
+    }))
 
-    it('should not fail on empty statistics', async () => {
+    it('should not fail on empty statistics', fakeAsync(() => {
         // Filter by text to get subnet without stats.
         component.table().filterTable('1.0.0.0/16', <FilterMetadata>component.table().table.filters['text'], false)
         // Act
         fixture.detectChanges()
-        await fixture.whenStable()
+        tick()
 
         // Assert
         expect(component.table().dataCollection[0].stats).toBeUndefined()
         // No throw
-    })
+        flush()
+    }))
 
     it('should have breadcrumbs', () => {
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
@@ -269,21 +271,22 @@ describe('SubnetsPageComponent', () => {
         expect(component.table().isAnyIPv6SubnetVisible).toBeTrue()
     })
 
-    it('should filter subnets by the Kea subnet ID', async () => {
+    it('should filter subnets by the Kea subnet ID', fakeAsync(() => {
         // Act
-        await fixture.whenStable()
+        tick()
 
         component.table().filterTable(5, <FilterMetadata>component.table().table.filters['subnetId'], false)
 
         fixture.detectChanges()
-        await fixture.whenStable()
+        tick()
 
         // Assert
         expect(dhcpService.getSubnets).toHaveBeenCalledWith(0, 10, null, 5, null, null, null, null)
         // One subnet record is expected after filtering.
         expect(component.table().dataCollection).toBeTruthy()
         expect(component.table().dataCollection.length).toBe(1)
-    })
+        flush()
+    }))
 
     it('should detect that the subnet has only references to the local subnets with identical IDs', () => {
         // Arrange
