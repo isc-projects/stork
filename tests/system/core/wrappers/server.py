@@ -776,9 +776,8 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         for daemon in overview.dhcp_daemons:
             for relationship in daemon.ha_overview:
                 if relationship.ha_state not in valid_states:
-                    identifier = f"{daemon.name}@{daemon.machine}"
                     raise NoSuccessException(
-                        f"The {identifier} HA peer is {relationship.ha_state}"
+                        f"The {daemon.label} HA peer is {relationship.ha_state}"
                     )
 
     @wait_for_success(wait_msg="Waiting for zones fetching completion...")

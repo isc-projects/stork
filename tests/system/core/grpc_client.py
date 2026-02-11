@@ -118,11 +118,8 @@ class StorkAgentGRPCClient:
         Creates an SSL context object from provided certificate and key files.
         Inspired by https://github.com/vmagamedov/grpclib/blob/master/examples/mtls/client.py
         """
-        ctx = ssl.SSLContext()
+        ctx = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
         ctx.load_cert_chain(cert_pem_path, key_pem_path)
-        # The following ciphers was proposed by the above example. I don't know
-        # if all of them are necessary.
-        ctx.set_ciphers("ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20")
         ctx.set_alpn_protocols(["h2"])
         return ctx
 

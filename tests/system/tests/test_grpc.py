@@ -13,15 +13,16 @@ Stork agents perform the registration at startup. We copy the certificates from
 BIND 9 container and use them to send gRPC commands to the Kea container.
 """
 
-from typing import Tuple
+import ssl
 
+from typing import Type
 from grpclib.exceptions import StreamTerminatedError
 
 from core.wrappers import Kea, Bind9
 from core.grpc_client import StorkAgentGRPCClient, GetStateRspAppAccessPoint
 
 
-def assert_raises(exceptions: Tuple[Exception], func, *args, **kwargs):
+def assert_raises(exceptions: tuple[Type[Exception], ...], func, *args, **kwargs):
     """
     Assert that the function raises the expected exception.
     It handles the case when the original exception is covered by another one
@@ -34,26 +35,34 @@ def assert_raises(exceptions: Tuple[Exception], func, *args, **kwargs):
     - ConnectionResetError - in Docker-in-Docker running on my local machine
     - StreamTerminatedError but the AttributeError is raised when the exception
         is internally processed by the GRPC library - on CI
+    - ssl.SSLCertVerificationError - after changing the SSLContext() protocol
+      to ssl.PROTOCOL_TLS_CLIENT (from the default of None), @william observed
+      this on aarch64-darwin.
 
     I spent a lot of time trying to figure out why the tests failed differently
     but I didn't find the reason. I decided to write this helper function as
     a workaround.
     """
 
-    raised = False
+    exceptions_t = tuple(exceptions)
+    raised = None
     try:
         func(*args, **kwargs)
-    except exceptions:
-        raised = True
     except Exception as ex:  # pylint: disable=broad-except
-        original_exception = ex.__context__
-        if original_exception is not None and isinstance(
-            original_exception, exceptions
-        ):
-            raised = True
+        raised = ex
 
-    if not raised:
-        raise AssertionError(f"Function did not raise any of {exceptions}")
+    if raised is None:
+        raise AssertionError(
+            "Function did not raise any exceptions, but it was expected to "
+            f"raise one of {exceptions}"
+        )
+    is_expected = isinstance(raised, exceptions_t)
+    context = raised.__context__
+    is_context_expected = context is not None and isinstance(context, exceptions_t)
+    if not is_expected and not is_context_expected:
+        raise AssertionError(
+            f"Function raised {raised}, but it was expected to raise one of {exceptions}"
+        )
 
 
 def test_grpc_ping(kea_service: Kea, bind9_service: Bind9):
@@ -64,7 +73,10 @@ def test_grpc_ping(kea_service: Kea, bind9_service: Bind9):
     client = StorkAgentGRPCClient.for_service(kea_service)
     client.fetch_certs_from(bind9_service)
 
-    assert_raises((ConnectionResetError, StreamTerminatedError), client.ping)
+    assert_raises(
+        (ConnectionResetError, StreamTerminatedError, ssl.SSLCertVerificationError),
+        client.ping,
+    )
 
 
 def test_grpc_get_state(kea_service: Kea, bind9_service: Bind9):
@@ -75,7 +87,10 @@ def test_grpc_get_state(kea_service: Kea, bind9_service: Bind9):
     client = StorkAgentGRPCClient.for_service(kea_service)
     client.fetch_certs_from(bind9_service)
 
-    assert_raises((ConnectionResetError, StreamTerminatedError), client.get_state)
+    assert_raises(
+        (ConnectionResetError, StreamTerminatedError, ssl.SSLCertVerificationError),
+        client.get_state,
+    )
 
 
 def test_grpc_forward_to_kea_over_http(kea_service: Kea, bind9_service: Bind9):
@@ -87,7 +102,7 @@ def test_grpc_forward_to_kea_over_http(kea_service: Kea, bind9_service: Bind9):
     client.fetch_certs_from(bind9_service)
 
     assert_raises(
-        (ConnectionResetError, StreamTerminatedError),
+        (ConnectionResetError, StreamTerminatedError, ssl.SSLCertVerificationError),
         client.forward_to_kea_over_http,
         GetStateRspAppAccessPoint("control", "foo", 42, False),
         {
