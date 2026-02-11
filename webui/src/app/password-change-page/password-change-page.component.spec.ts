@@ -82,4 +82,133 @@ describe('PasswordChangePageComponent', () => {
         expect(component.mustChangePassword).toBeTrue()
         expect(component.mustChangePassword).toBeFalse()
     })
+
+    it('should return required error message', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('oldPassword').setValue('')
+        component.passwordChangeForm.get('oldPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('oldPassword')
+        expect(message).toContain('This field is required.')
+    })
+
+    it('should return minlength error message', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('Short1!')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword')
+        expect(message).toContain('This field value must be at least 12 characters long.')
+    })
+
+    it('should return maxlength error message', () => {
+        component.ngOnInit()
+        const longPassword = 'A'.repeat(121)
+        component.passwordChangeForm.get('oldPassword').setValue(longPassword)
+        component.passwordChangeForm.get('oldPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('oldPassword')
+        expect(message).toContain('This field value must be at most 120 characters long.')
+    })
+
+    it('should return uppercase letter error message', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('lowercase123!')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword')
+        expect(message).toContain('Password must contain at least one uppercase letter.')
+    })
+
+    it('should return lowercase letter error message', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('UPPERCASE123!')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword')
+        expect(message).toContain('Password must contain at least one lowercase letter.')
+    })
+
+    it('should return digit error message', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('NoDigitsHere!')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword')
+        expect(message).toContain('Password must contain at least one digit.')
+    })
+
+    it('should return special character error message', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('NoSpecialChar1')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword')
+        expect(message).toContain('Password must contain at least one special character.')
+    })
+
+    it('should return mismatched passwords error message when comparePasswords is true', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('ValidPassword123!')
+        component.passwordChangeForm.get('confirmPassword').setValue('DifferentPassword123!')
+        component.passwordChangeForm.get('confirmPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('confirmPassword', undefined, true)
+        expect(message).toContain('Passwords must match.')
+    })
+
+    it('should return same passwords error message when comparePasswords is true', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('oldPassword').setValue('SamePassword123!')
+        component.passwordChangeForm.get('newPassword').setValue('SamePassword123!')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword', undefined, true)
+        expect(message).toContain('New password must be different from current password.')
+    })
+
+    it('should return multiple error messages when multiple validations fail', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('newPassword').setValue('short')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword')
+        expect(message).toContain('This field value must be at least 12 characters long.')
+        expect(message).toContain('Password must contain at least one uppercase letter.')
+        expect(message).toContain('Password must contain at least one digit.')
+        expect(message).toContain('Password must contain at least one special character.')
+    })
+
+    it('should return empty string when no errors', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('oldPassword').setValue('ValidPassword123!')
+        component.passwordChangeForm.get('oldPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('oldPassword')
+        expect(message).toBe('')
+    })
+
+    it('should not include password comparison errors when comparePasswords is false', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('oldPassword').setValue('SamePassword123!')
+        component.passwordChangeForm.get('newPassword').setValue('SamePassword123!')
+        component.passwordChangeForm.get('confirmPassword').setValue('DifferentPassword123!')
+        component.passwordChangeForm.get('newPassword').markAsTouched()
+        fixture.detectChanges()
+
+        const message = component.buildFeedbackMessage('newPassword', undefined, false)
+        expect(message).not.toContain('New password must be different from current password.')
+        expect(message).not.toContain('Passwords must match.')
+    })
 })
