@@ -196,15 +196,31 @@ export class PasswordChangePageComponent implements OnInit {
         }
 
         if (this.passwordChangeForm.get(name).errors?.['minlength']) {
-            errors.push('This field value is too short.')
+            errors.push('This field value must be at least 12 characters long.')
         }
 
         if (this.passwordChangeForm.get(name).errors?.['maxlength']) {
-            errors.push('This field value is too long.')
+            errors.push('This field value must be at most 120 characters long.')
         }
 
         if (this.passwordChangeForm.get(name).errors?.['pattern']) {
             errors.push(formatFeedback ?? 'This field value is incorrect.')
+        }
+
+        if (this.passwordChangeForm.get(name).errors?.['hasUppercaseLetter']) {
+            errors.push('Password must contain at least one uppercase letter.')
+        }
+
+        if (this.passwordChangeForm.get(name).errors?.['hasLowercaseLetter']) {
+            errors.push('Password must contain at least one lowercase letter.')
+        }
+
+        if (this.passwordChangeForm.get(name).errors?.['hasDigit']) {
+            errors.push('Password must contain at least one digit.')
+        }
+
+        if (this.passwordChangeForm.get(name).errors?.['hasSpecialCharacter']) {
+            errors.push('Password must contain at least one special character.')
         }
 
         if (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords']) {
