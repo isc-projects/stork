@@ -281,7 +281,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
     showDaemonMenu(event: Event, daemonId: number) {
         const menuItems = this.daemonMenuItems
         menuItems[0].command = () => this.onRefreshDaemon(daemonId)
-        menuItems[1].command = () => this.onDeleteDaemon(daemonId)
+        menuItems[1].command = () => this.onConfirmDeleteDaemon(daemonId)
         menuItems[1].disabled = !this.canDeleteDaemon()
         this.daemonMenuItems = [...menuItems]
 
