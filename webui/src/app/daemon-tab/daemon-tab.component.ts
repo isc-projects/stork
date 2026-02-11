@@ -12,6 +12,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { NgIf } from '@angular/common'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { last } from 'rxjs'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 @Component({
     selector: 'app-daemon-tab',
@@ -25,6 +26,7 @@ import { last } from 'rxjs'
         Bind9DaemonComponent,
         PdnsDaemonComponent,
         EntityLinkComponent,
+        ManagedAccessDirective,
     ],
 })
 export class DaemonTabComponent {

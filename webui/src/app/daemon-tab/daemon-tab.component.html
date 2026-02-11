@@ -18,7 +18,14 @@
                     (onClick)="refresh()"
                     [disabled]="daemon().id === undefined"
                 ></p-button>
-                <p-button label="Delete" severity="danger" icon="pi pi-trash" (onClick)="confirmDelete()"></p-button>
+                <p-button
+                    label="Delete"
+                    severity="danger"
+                    icon="pi pi-trash"
+                    (onClick)="confirmDelete()"
+                    appAccessEntity="daemon"
+                    appAccessType="delete"
+                ></p-button>
             </div>
         </div>
     </div>

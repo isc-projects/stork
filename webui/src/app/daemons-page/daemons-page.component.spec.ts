@@ -11,12 +11,14 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { of, throwError } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { DaemonsPageComponent } from './daemons-page.component'
+import { AuthService } from '../auth.service'
 
 describe('DaemonsPageComponent', () => {
     let component: DaemonsPageComponent
     let fixture: ComponentFixture<DaemonsPageComponent>
     let api: ServicesService
     let msgSrv: MessageService
+    let authService: AuthService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -36,6 +38,7 @@ describe('DaemonsPageComponent', () => {
         component = fixture.componentInstance
         api = fixture.debugElement.injector.get(ServicesService)
         msgSrv = fixture.debugElement.injector.get(MessageService)
+        authService = fixture.debugElement.injector.get(AuthService)
         fixture.detectChanges()
     })
 
@@ -126,5 +129,22 @@ describe('DaemonsPageComponent', () => {
         component.canResyncConfig.set(true)
         fixture.detectChanges()
         expect(component.toolbarButtons[0].disabled).toBeFalse()
+    })
+
+    it('should disable delete daemon menu item when no privileges', () => {
+        spyOn(authService, 'superAdmin').and.returnValues(false, true)
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        expect(component.daemonMenuItems.length).toBeGreaterThanOrEqual(2)
+        component.showDaemonMenu({ currentTarget: null } as any, 1)
+        expect(component.daemonMenuItems[1].disabled).toBeTrue()
+
+        // AuthService superAdmin() will return true when called for the second time, so the menu item should be enabled.
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        component.showDaemonMenu({ currentTarget: null } as any, 1)
+        expect(component.daemonMenuItems[1].disabled).toBeFalse()
     })
 })

@@ -34,6 +34,7 @@ import { Tooltip } from 'primeng/tooltip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
+import { AuthService } from '../auth.service'
 
 /**
  * Sets boolean flag indicating if there are communication errors with
@@ -113,7 +114,8 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         private confirmService: ConfirmationService,
-        private router: Router
+        private router: Router,
+        private authService: AuthService
     ) {}
 
     /**
@@ -163,6 +165,11 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
      * This value comes from ManagedAccess directive which is called in the HTML template.
      */
     canResyncConfig = signal<boolean>(false)
+
+    /**
+     * This flag states whether user has privileges to delete a daemon.
+     */
+    canDeleteDaemon = signal<boolean>(false)
 
     /**
      * Effect signal reacting on user privileges changes and triggering update of the splitButton model
@@ -223,6 +230,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
                 this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.daemonsTable) })
             })
 
+        this.canDeleteDaemon.set(this.authService.hasPrivilege('daemon', 'delete'))
         this._updateToolbarButtons()
     }
 
@@ -271,8 +279,11 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
      * @param daemonId daemon identifier
      */
     showDaemonMenu(event: Event, daemonId: number) {
-        this.daemonMenuItems[0].command = this.onRefreshDaemon.bind(this, daemonId)
-        this.daemonMenuItems[1].command = this.onConfirmDeleteDaemon.bind(this, daemonId)
+        const menuItems = this.daemonMenuItems
+        menuItems[0].command = () => this.onRefreshDaemon(daemonId)
+        menuItems[1].command = () => this.onDeleteDaemon(daemonId)
+        menuItems[1].disabled = !this.canDeleteDaemon()
+        this.daemonMenuItems = [...menuItems]
 
         this.daemonMenu.toggle(event)
     }
