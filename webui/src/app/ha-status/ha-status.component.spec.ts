@@ -321,6 +321,70 @@ describe('HaStatusComponent', () => {
         expect(component.status[23].cells[1].value).toBe('Server is responding to all DHCP traffic.')
     }))
 
+    it('should mark a non-monitored server', fakeAsync(() => {
+        // Mock the API response.
+        spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
+            of({
+                items: [
+                    {
+                        status: {
+                            daemon: 'dhcp4',
+                            haServers: {
+                                relationship: 'server1',
+                                primaryServer: {
+                                    age: 0,
+                                    id: 123,
+                                    label: 'DHCPv4@localhost',
+                                    failoverTime: null,
+                                    inTouch: true,
+                                    role: 'primary',
+                                    scopes: ['server1'],
+                                    state: 'hot-standby',
+                                    statusTime: '2024-02-16 13:54:23',
+                                    commInterrupted: 0,
+                                    connectingClients: 0,
+                                    unackedClients: 0,
+                                    unackedClientsLeft: 0,
+                                    analyzedPackets: 0,
+                                },
+                                secondaryServer: {
+                                    age: 0,
+                                    id: 0,
+                                    failoverTime: null,
+                                    inTouch: true,
+                                    role: 'standby',
+                                    scopes: [],
+                                    state: 'hot-standby',
+                                    statusTime: '2024-02-16 12:01:02',
+                                    commInterrupted: 0,
+                                    connectingClients: 0,
+                                    unackedClients: 0,
+                                    unackedClientsLeft: 0,
+                                    analyzedPackets: 0,
+                                },
+                            },
+                        },
+                    },
+                ],
+            } as ServicesStatus & HttpEvent<ServicesStatus>)
+        )
+
+        component.daemonId = 123
+        component.daemonName = 'dhcp4'
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(servicesApi.getDaemonServicesStatus).toHaveBeenCalled()
+
+        const relationshipCells = fixture.debugElement.queryAll(By.css('tr.relationship-pane td'))
+        expect(relationshipCells.length).toBe(3)
+        expect(relationshipCells[0].nativeElement.textContent.trim()).toBe('Relationship #1')
+        expect(relationshipCells[1].nativeElement.textContent.trim()).toBe('primary')
+        expect(relationshipCells[2].nativeElement.textContent.trim()).toContain('standby')
+        expect(relationshipCells[2].nativeElement.textContent.trim()).toContain('at non-monitored machine')
+    }))
+
     it('should present a passive-backup configuration state', fakeAsync(() => {
         // Mock the API response.
         spyOn(servicesApi, 'getDaemonServicesStatus').and.returnValue(
