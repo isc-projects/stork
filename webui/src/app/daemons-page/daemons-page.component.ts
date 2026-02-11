@@ -168,8 +168,9 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
 
     /**
      * This flag states whether user has privileges to delete a daemon.
+     * @private
      */
-    canDeleteDaemon = signal<boolean>(false)
+    private canDeleteDaemon = signal<boolean>(false)
 
     /**
      * Effect signal reacting on user privileges changes and triggering update of the splitButton model
