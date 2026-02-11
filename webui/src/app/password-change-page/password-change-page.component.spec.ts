@@ -55,6 +55,77 @@ describe('PasswordChangePageComponent', () => {
         expect(breadcrumbsComponent.items[1].label).toEqual('Password Change')
     })
 
+    it('should recognize invalid password', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('oldPassword').setValue('admin')
+
+        // Empty new password.
+        component.passwordChangeForm.get('newPassword').setValue('')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['required']).not.toBeNull()
+
+        // Minimum length violation.
+        component.passwordChangeForm.get('newPassword').setValue('Short1!')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['minlength']).not.toBeNull()
+
+        // Maximum length violation.
+        const longPassword = 'A'.repeat(121)
+        component.passwordChangeForm.get('newPassword').setValue(longPassword)
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['maxlength']).not.toBeNull()
+
+        // Missing uppercase letter.
+        component.passwordChangeForm.get('newPassword').setValue('lowercase123!')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasUppercaseLetter']).not.toBeNull()
+
+        // Missing lowercase letter.
+        component.passwordChangeForm.get('newPassword').setValue('UPPERCASE123!')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasLowercaseLetter']).not.toBeNull()
+
+        // Missing digit.
+        component.passwordChangeForm.get('newPassword').setValue('NoDigitsHere!')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasDigit']).not.toBeNull()
+
+        // Missing special character.
+        component.passwordChangeForm.get('newPassword').setValue('NoSpecialChar1')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasSpecialCharacter']).not.toBeNull()
+
+        // Many violations at once.
+        component.passwordChangeForm.get('newPassword').setValue('short')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeFalse()
+        expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['minlength']).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasUppercaseLetter']).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasDigit']).not.toBeNull()
+        expect(component.passwordChangeForm.get('newPassword').errors['hasSpecialCharacter']).not.toBeNull()
+
+        // Valid password.
+        component.passwordChangeForm.get('newPassword').setValue('ValidPassword123!')
+        component.passwordChangeForm.get('confirmPassword').setValue('ValidPassword123!')
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeTrue()
+    })
+
     it('should permit spaces in the password', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('oldPassword').setValue('admin')
