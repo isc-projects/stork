@@ -1482,7 +1482,7 @@ func getKeaServicesStatus(db *dbops.PgDB, daemon *dbmodel.Daemon) *models.Servic
 			case ha.PrimaryID:
 				labels[0] = s.Daemons[i].GetLabel()
 			case ha.SecondaryID:
-				labels[0] = s.Daemons[i].GetLabel()
+				labels[1] = s.Daemons[i].GetLabel()
 			}
 		}
 		// Get the communication state value.

@@ -2135,24 +2135,15 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 	ctx := context.Background()
 
 	// Add a machine.
-	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err = dbmodel.AddMachine(db, m)
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	daemon1, err := server1.GetDaemon()
 	require.NoError(t, err)
 
-	// Add Kea daemon to the machine
-	keaAccessPoint := &dbmodel.AccessPoint{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "127.0.0.1",
-		Port:     1234,
-		Protocol: protocoltype.HTTP,
-	}
-	keaDaemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
-	err = dbmodel.AddDaemon(db, keaDaemon)
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
-	require.NotZero(t, keaDaemon.ID)
+	daemon2, err := server2.GetDaemon()
+	require.NoError(t, err)
 
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
 	commInterrupted := []bool{true, true}
@@ -2163,7 +2154,8 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
 				Relationship:                "server1",
-				PrimaryID:                   keaDaemon.ID,
+				PrimaryID:                   daemon1.ID,
+				SecondaryID:                 daemon2.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
 				PrimaryLastState:            "load-balancing",
@@ -2190,7 +2182,8 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
 				Relationship:                "server3",
-				PrimaryID:                   keaDaemon.ID,
+				PrimaryID:                   daemon1.ID,
+				SecondaryID:                 daemon2.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
 				PrimaryLastState:            "load-balancing",
@@ -2217,7 +2210,7 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 				HAType:                      "dhcp6",
 				HAMode:                      "hot-standby",
 				Relationship:                "server1",
-				PrimaryID:                   keaDaemon.ID,
+				PrimaryID:                   daemon1.ID,
 				PrimaryStatusCollectedAt:    exampleTime,
 				SecondaryStatusCollectedAt:  exampleTime,
 				PrimaryLastState:            "hot-standby",
@@ -2244,12 +2237,14 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 	for i := range keaServices {
 		err = dbmodel.AddService(db, &keaServices[i])
 		require.NoError(t, err)
-		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaDaemon)
+		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, daemon1)
+		require.NoError(t, err)
+		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, daemon2)
 		require.NoError(t, err)
 	}
 
 	params := services.GetDaemonServicesStatusParams{
-		ID: keaDaemon.ID,
+		ID: daemon1.ID,
 	}
 	rsp := rapi.GetDaemonServicesStatus(ctx, params)
 
@@ -2275,14 +2270,14 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 
 	require.Equal(t, "server1", haStatus.Relationship)
 
-	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, daemon1.ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, daemon1.GetLabel(), haStatus.PrimaryServer.Label)
+	require.NotEqual(t, haStatus.PrimaryServer.Label, haStatus.SecondaryServer.Label)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
-	require.Equal(t, "DHCPv4@localhost", haStatus.PrimaryServer.Label)
-	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 7, haStatus.PrimaryServer.ConnectingClients)
@@ -2290,13 +2285,15 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 	require.EqualValues(t, 8, haStatus.PrimaryServer.UnackedClientsLeft)
 	require.EqualValues(t, 10, haStatus.PrimaryServer.AnalyzedPackets)
 
+	require.EqualValues(t, daemon2.ID, haStatus.SecondaryServer.ID)
+	require.EqualValues(t, daemon2.GetLabel(), haStatus.SecondaryServer.Label)
 	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
 	require.Len(t, haStatus.SecondaryServer.Scopes, 1)
 	require.Contains(t, haStatus.SecondaryServer.Scopes, "server2")
 	require.Equal(t, "load-balancing", haStatus.SecondaryServer.State)
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
 	require.False(t, haStatus.SecondaryServer.InTouch)
-	require.Empty(t, haStatus.SecondaryServer.Label)
+	require.NotEmpty(t, haStatus.SecondaryServer.Label)
 	require.NotEmpty(t, haStatus.SecondaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.SecondaryServer.CommInterrupted)
 	require.EqualValues(t, 9, haStatus.SecondaryServer.ConnectingClients)
@@ -2314,14 +2311,14 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 
 	require.Equal(t, "server3", haStatus.Relationship)
 
-	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, daemon1.ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server3")
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
-	require.Equal(t, "DHCPv4@localhost", haStatus.PrimaryServer.Label)
-	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
+	require.Equal(t, daemon1.GetLabel(), haStatus.PrimaryServer.Label)
+	require.EqualValues(t, daemon1.ID, haStatus.PrimaryServer.ID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 1, haStatus.PrimaryServer.ConnectingClients)
@@ -2335,7 +2332,7 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 	require.Equal(t, "load-balancing", haStatus.SecondaryServer.State)
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
 	require.False(t, haStatus.SecondaryServer.InTouch)
-	require.Empty(t, haStatus.SecondaryServer.Label)
+	require.Equal(t, daemon2.GetLabel(), haStatus.SecondaryServer.Label)
 	require.NotEmpty(t, haStatus.SecondaryServer.StatusTime.String())
 	require.EqualValues(t, 1, haStatus.SecondaryServer.CommInterrupted)
 	require.EqualValues(t, 2, haStatus.SecondaryServer.ConnectingClients)
@@ -2353,13 +2350,13 @@ func TestRestGetDaemonServicesStatus(t *testing.T) {
 
 	require.Equal(t, "server1", haStatus.Relationship)
 
-	require.EqualValues(t, keaDaemon.ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, daemon1.ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "hot-standby", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
-	require.Equal(t, "DHCPv4@localhost", haStatus.PrimaryServer.Label)
+	require.Equal(t, daemon1.GetLabel(), haStatus.PrimaryServer.Label)
 	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 5, haStatus.PrimaryServer.ConnectingClients)
 	require.EqualValues(t, 2, haStatus.PrimaryServer.UnackedClients)
