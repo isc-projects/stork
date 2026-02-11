@@ -1,5 +1,12 @@
 import { Component, effect, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
-import { UntypedFormGroup, FormsModule } from '@angular/forms'
+import {
+    UntypedFormGroup,
+    FormsModule,
+    AbstractControl,
+    ValidatorFn,
+    Validators,
+    ValidationErrors,
+} from '@angular/forms'
 import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
@@ -29,6 +36,7 @@ import { UserFormComponent } from '../user-form/user-form.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
+import { StorkValidators } from '../validators'
 
 /**
  * Form validator verifying if the confirmed password matches the password
@@ -78,6 +86,90 @@ export function differentPasswords(oldPasswordKey: string, newPasswordKey: strin
 
         return null
     }
+}
+
+/**
+ * A validator checking a new password against the password policy. The password must be between 12 and 120 characters
+ * long and must contain at least one uppercase letter, one lowercase letter, one digit and one special character.
+ */
+export function validatorNewPassword(control: AbstractControl): ValidatorFn | null {
+    return Validators.compose([
+        Validators.required,
+        Validators.minLength(12),
+        Validators.maxLength(120),
+        StorkValidators.hasUppercaseLetter,
+        StorkValidators.hasLowercaseLetter,
+        StorkValidators.hasDigit,
+        StorkValidators.hasSpecialCharacter,
+    ])
+}
+
+/**
+ * A validator checking a confirm password field. It must match the new password field and must not exceed the
+ * maximum allowed length.
+ * If the oldPasswordKey parameter is provided, it also checks that the new password is different from the current
+ * password.
+ */
+export function validatorsConfirmPassword(
+    oldPasswordKey: string = null,
+    newPasswordKey: string = 'newPassword',
+    confirmPasswordKey: string = 'confirmPassword'
+): ValidatorFn[] {
+    const validators: ValidatorFn[] = [matchPasswords(newPasswordKey, confirmPasswordKey)]
+    if (oldPasswordKey) {
+        validators.push(differentPasswords(oldPasswordKey, newPasswordKey))
+    }
+    return validators
+}
+
+/**
+ * Extracts errors from the given input and formats them into
+ * human-readable messages.
+ */
+export function formatPasswordErrors(control: AbstractControl): string[] {
+    const errors: string[] = []
+
+    if (control.errors?.['required']) {
+        errors.push('This field is required.')
+    }
+
+    if (control.errors?.['minlength']) {
+        errors.push('This field value must be at least 12 characters long.')
+    }
+
+    if (control.errors?.['maxlength']) {
+        errors.push('This field value must be at most 120 characters long.')
+    }
+
+    if (control.errors?.['pattern']) {
+        errors.push('Password must only contain letters, digits, special, or whitespace characters.')
+    }
+
+    if (control.errors?.['hasUppercaseLetter']) {
+        errors.push('Password must contain at least one uppercase letter.')
+    }
+
+    if (control.errors?.['hasLowercaseLetter']) {
+        errors.push('Password must contain at least one lowercase letter.')
+    }
+
+    if (control.errors?.['hasDigit']) {
+        errors.push('Password must contain at least one digit.')
+    }
+
+    if (control.errors?.['hasSpecialCharacter']) {
+        errors.push('Password must contain at least one special character.')
+    }
+
+    if (control.errors?.['mismatchedPasswords']) {
+        errors.push('Passwords must match.')
+    }
+
+    if (control.errors?.['samePasswords']) {
+        errors.push('New password must be different from current password.')
+    }
+
+    return errors
 }
 
 /**

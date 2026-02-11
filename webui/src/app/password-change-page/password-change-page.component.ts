@@ -6,7 +6,13 @@ import { MessageService } from 'primeng/api'
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { getErrorMessage } from '../utils'
-import { differentPasswords, matchPasswords } from '../users-page/users-page.component'
+import {
+    differentPasswords,
+    formatPasswordErrors,
+    matchPasswords,
+    validatorNewPassword,
+    validatorsConfirmPassword,
+} from '../users-page/users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
@@ -18,6 +24,7 @@ import { Password } from 'primeng/password'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { StorkValidators } from '../validators'
+import { PasswordPolicy } from '../passwordpolicy'
 
 /**
  * This component allows the logged user to change the password.
@@ -75,25 +82,11 @@ export class PasswordChangePageComponent implements OnInit {
         this.passwordChangeForm = this.formBuilder.group(
             {
                 oldPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                newPassword: [
-                    '',
-                    [
-                        Validators.required,
-                        Validators.minLength(12),
-                        Validators.maxLength(this.maxInputLen),
-                        StorkValidators.hasUppercaseLetter,
-                        StorkValidators.hasLowercaseLetter,
-                        StorkValidators.hasDigit,
-                        StorkValidators.hasSpecialCharacter,
-                    ],
-                ],
+                newPassword: ['', [validatorNewPassword]],
                 confirmPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
             },
             {
-                validators: [
-                    matchPasswords('newPassword', 'confirmPassword'),
-                    differentPasswords('oldPassword', 'newPassword'),
-                ],
+                validators: validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword'),
             }
         )
     }
@@ -185,52 +178,9 @@ export class PasswordChangePageComponent implements OnInit {
      * Utility function which builds feedback message when form field validation failed.
      *
      * @param name FormControl name for which the feedback is to be generated
-     * @param formatFeedback optional feedback message when pattern validation failed
-     * @param comparePasswords when true, feedback about passwords mismatch is also appended; defaults to false
      */
-    buildFeedbackMessage(name: string, formatFeedback?: string, comparePasswords = false): string | null {
-        const errors: string[] = []
-
-        if (this.passwordChangeForm.get(name).errors?.['required']) {
-            errors.push('This field is required.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['minlength']) {
-            errors.push('This field value must be at least 12 characters long.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['maxlength']) {
-            errors.push('This field value must be at most 120 characters long.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['pattern']) {
-            errors.push(formatFeedback ?? 'This field value is incorrect.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['hasUppercaseLetter']) {
-            errors.push('Password must contain at least one uppercase letter.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['hasLowercaseLetter']) {
-            errors.push('Password must contain at least one lowercase letter.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['hasDigit']) {
-            errors.push('Password must contain at least one digit.')
-        }
-
-        if (this.passwordChangeForm.get(name).errors?.['hasSpecialCharacter']) {
-            errors.push('Password must contain at least one special character.')
-        }
-
-        if (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords']) {
-            errors.push('Passwords must match.')
-        }
-
-        if (comparePasswords && this.passwordChangeForm.errors?.['samePasswords']) {
-            errors.push('New password must be different from current password.')
-        }
-
+    buildFeedbackMessage(name: string): string | null {
+        const errors = formatPasswordErrors(this.passwordChangeForm.get(name))
         return errors.join(' ')
     }
 }
