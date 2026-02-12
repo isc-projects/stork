@@ -129,6 +129,18 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         expect(link.nativeElement.innerText).toEqual('DHCPv4')
         expect(link.attributes.href).toEqual('/daemons')
+
+        // Test entity link for numeric zero daemon ID.
+        component.attrs = { id: 0, name: 'dhcp4' }
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('DHCPv4')
+        expect(link.attributes.href).toEqual('/daemons')
+
+        // Test entity link for string zero daemon ID.
+        component.attrs = { id: '0', name: 'dhcp4' }
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('DHCPv4')
+        expect(link.attributes.href).toEqual('/daemons')
     })
 
     it('should construct machine link', () => {
