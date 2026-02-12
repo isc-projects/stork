@@ -6,15 +6,11 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | Term                  | Definition                                                     |
    +=======================+================================================================+
-   | app                   | Deprecated concept that aggregated daemons running on the same |
-   |                       | machine.                                                       |
-   |                       | For example, the Kea DHCP app contained DHCPv4 and DHCPv6      |
-   |                       | daemons.                                                       |
+   | app                   | A program was monitored by the Stork server via the Stork      |
+   |                       | agent. Typically, it was one of the integrated servers (e.g.,  |
+   |                       | Kea DHCP or BIND 9 DNS). An app comprised multiple daemons.    |
+   |                       | For example, the Kea DHCP app contained DHCPv4 and DHCPv6.     |
    |                       | Removed in Stork 2.4.0.                                        |
-   +-----------------------+----------------------------------------------------------------+
-   | daemon                | The unique identifier of a monitored daemon in the Stork       |
-   |                       | server database. This identifier is often displayed in the UI  |
-   |                       | and can be used, for example, for filtering daemons.           |
    +-----------------------+----------------------------------------------------------------+
    | authorized machine    | A machine running the Stork agent that has requested           |
    |                       | registration on the Stork server, and whose request has been   |
@@ -24,6 +20,10 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | daemon                | One of the programs belonging to a machine. For example: a     |
    |                       | DHCPv4 or DHCPv6 daemon in the Kea DHCP machine.               |
+   +-----------------------+----------------------------------------------------------------+
+   | daemon id             | The unique identifier of a monitored daemon in the Stork       |
+   |                       | server database. This identifier is often displayed in the UI  |
+   |                       | and can be used, for example, for filtering daemons.           |
    +-----------------------+----------------------------------------------------------------+
    | global configuration  | The set of parameters and DHCP options of a Kea configuration  |
    |                       | that apply to all subnets, shared networks, or host            |
@@ -56,7 +56,7 @@ Glossary
    |                       | client. Stork allows for creating host reservations in the Kea |
    |                       | instances.                                                     |
    +-----------------------+----------------------------------------------------------------+
-   | Kea server            | The Kea DHCP daemon or machine, depending on the context.      |
+   | Kea server            | The Kea DHCP daemon.                                           |
    +-----------------------+----------------------------------------------------------------+
    | Kea subnet ID         | A subnet identifier specified in the Kea configuration file,   |
    |                       | sometimes called the "configured subnet ID." Distinct from     |
