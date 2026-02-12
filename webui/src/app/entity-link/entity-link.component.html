@@ -47,13 +47,15 @@
     <!-- host reservation -->
     <ng-container *ngSwitchCase="'host'">
         {{ showEntityName ? 'host' : '' }}
-        <a id="host-link" routerLink="/dhcp/hosts/{{ attrs.id }}">{{ attrs.label }}</a>
+        <a id="host-link" routerLink="/dhcp/hosts/{{ attrs.id }}">[{{ attrs.id }}]&nbsp;{{ attrs.label }}</a>
     </ng-container>
 
     <!-- shared network -->
     <ng-container *ngSwitchCase="'shared-network'">
         {{ showEntityName ? 'shared network' : '' }}
-        <a id="shared-network-link" routerLink="/dhcp/shared-networks/{{ attrs.id }}">{{ attrs.name }}</a>
+        <a id="shared-network-link" routerLink="/dhcp/shared-networks/{{ attrs.id }}"
+            >[{{ attrs.id }}]&nbsp;{{ attrs.name }}</a
+        >
     </ng-container>
 
     <!-- unsupported -->

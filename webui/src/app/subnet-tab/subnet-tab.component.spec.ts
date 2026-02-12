@@ -113,7 +113,7 @@ describe('SubnetTabComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
+        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network []\u00a0Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(6)
@@ -177,7 +177,7 @@ describe('SubnetTabComponent', () => {
         }
         fixture.detectChanges()
 
-        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
+        expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network []\u00a0Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(6)
