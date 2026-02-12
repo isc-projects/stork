@@ -232,7 +232,7 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('confirmPassword').markAsTouched()
         fixture.detectChanges()
 
-        const message = component.buildFeedbackMessage('confirmPassword', undefined, true)
+        const message = component.buildFeedbackMessage('confirmPassword', true)
         expect(message).toContain('Passwords must match.')
     })
 
@@ -243,7 +243,7 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('newPassword').markAsTouched()
         fixture.detectChanges()
 
-        const message = component.buildFeedbackMessage('newPassword', undefined, true)
+        const message = component.buildFeedbackMessage('newPassword', true)
         expect(message).toContain('New password must be different from current password.')
     })
 
@@ -278,7 +278,7 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('newPassword').markAsTouched()
         fixture.detectChanges()
 
-        const message = component.buildFeedbackMessage('newPassword', undefined, false)
+        const message = component.buildFeedbackMessage('newPassword', false)
         expect(message).not.toContain('New password must be different from current password.')
         expect(message).not.toContain('Passwords must match.')
     })

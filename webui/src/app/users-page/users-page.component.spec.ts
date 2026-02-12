@@ -1,6 +1,6 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { differentPasswords, UsersPageComponent } from './users-page.component'
+import { UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@angular/router'
 import { FormControl, FormGroup, UntypedFormBuilder } from '@angular/forms'
 import { UsersService } from '../backend'
@@ -12,6 +12,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { AuthService } from '../auth.service'
 import { MockParamMap } from '../utils'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { differentPasswords } from '../user-form/user-form.component'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent

@@ -1,12 +1,5 @@
 import { Component, effect, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
-import {
-    UntypedFormGroup,
-    FormsModule,
-    AbstractControl,
-    ValidatorFn,
-    Validators,
-    ValidationErrors,
-} from '@angular/forms'
+import { FormsModule } from '@angular/forms'
 import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
