@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 
-import { AuthService } from './auth.service'
+import { AuthService, isInternalUser } from './auth.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { AuthenticationMethods, User, UsersService } from './backend'
 import { Router, provideRouter } from '@angular/router'
@@ -26,25 +26,26 @@ describe('AuthService', () => {
     })
 
     it('should indicate that the user is internal if it uses the internal authentication', () => {
+        const user: User = { id: 1, authenticationMethodId: 'internal' }
         const service: AuthService = TestBed.inject(AuthService)
-        spyOnProperty(service, 'currentUserValue').and.returnValue({
-            authenticationMethodId: 'internal',
-        } as User)
+        spyOnProperty(service, 'currentUserValue').and.returnValue(user)
         expect(service.isInternalUser()).toBeTrue()
+        expect(isInternalUser(user)).toBeTrue()
     })
 
     it('should indicate that the user is not internal if it uses the external authentication', () => {
+        const user: User = { id: 1, authenticationMethodId: 'external' }
         const service: AuthService = TestBed.inject(AuthService)
-        spyOnProperty(service, 'currentUserValue').and.returnValue({
-            authenticationMethodId: 'external',
-        } as User)
+        spyOnProperty(service, 'currentUserValue').and.returnValue(user)
         expect(service.isInternalUser()).toBeFalse()
+        expect(isInternalUser(user)).toBeFalse()
     })
 
     it('should indicate that the user is not internal if the user is not logged', () => {
         const service: AuthService = TestBed.inject(AuthService)
         spyOnProperty(service, 'currentUserValue').and.returnValue(undefined)
         expect(service.isInternalUser()).toBeFalse()
+        expect(isInternalUser(undefined)).toBeFalse()
     })
 
     it('should fetch the authentication method only once', async () => {

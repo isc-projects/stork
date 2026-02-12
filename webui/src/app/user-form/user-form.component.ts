@@ -6,13 +6,7 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { Message } from 'primeng/message'
 import { Panel } from 'primeng/panel'
 import { Password } from 'primeng/password'
-import {
-    FormControl,
-    ReactiveFormsModule,
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    Validators,
-} from '@angular/forms'
+import { FormControl, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { Select } from 'primeng/select'
 import { Group, User, UsersService } from '../backend'
 import { UserFormState } from '../forms/user-form'

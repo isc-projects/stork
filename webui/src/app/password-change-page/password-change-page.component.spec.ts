@@ -161,7 +161,7 @@ describe('PasswordChangePageComponent', () => {
         fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('oldPassword')
-        expect(message).toContain('This field is required.')
+        expect(message).toContain('Password is required.')
     })
 
     it('should return minlength error message', () => {
@@ -171,7 +171,7 @@ describe('PasswordChangePageComponent', () => {
         fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
-        expect(message).toContain('This field value must be at least 12 characters long.')
+        expect(message).toContain('Password must be at least 12 characters long.')
     })
 
     it('should return maxlength error message', () => {
@@ -182,7 +182,7 @@ describe('PasswordChangePageComponent', () => {
         fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('oldPassword')
-        expect(message).toContain('This field value must be at most 120 characters long.')
+        expect(message).toContain('Password must be at most 120 characters long.')
     })
 
     it('should return uppercase letter error message', () => {
@@ -254,7 +254,7 @@ describe('PasswordChangePageComponent', () => {
         fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
-        expect(message).toContain('This field value must be at least 12 characters long.')
+        expect(message).toContain('Password must be at least 12 characters long.')
         expect(message).toContain('Password must contain at least one uppercase letter.')
         expect(message).toContain('Password must contain at least one digit.')
         expect(message).toContain('Password must contain at least one special character.')
