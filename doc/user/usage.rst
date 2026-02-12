@@ -329,7 +329,7 @@ machine with the address ``192.0.2.3``, the resulting label is ``named@192.0.2.3
   If multiple daemons of a given type run on the same machine, a postfix with a
   unique identifier is appended to the duplicated labels, e.g. ``named@192.0.2.3%56``.
 
-The daemon labels are semi-unique so that the user can distinguish them in the
+The daemon labels allow the user to distinguish daemons in the
 dashboard, daemons list, events panel, and other views. However, the default labels
 may become lengthy when machine names consist of fully qualified domain names (FQDNs).
 When machines' IP addresses are used instead of FQDNs, the daemon labels are less
