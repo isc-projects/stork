@@ -681,7 +681,7 @@ Kea High Availability Status
 ============================
 
 To check the High Availability (HA) status of a machine, go to the ``Services -> Kea Daemons``
-menu. On the Kea Daemons page, click on a machine name in the list and scroll
+menu. On the Kea Daemons page, click on the selected daemon's name in the list and scroll
 down to the High Availability section. This information is
 periodically refreshed according to the configured interval of the
 Kea status puller (see ``Configuration`` -> ``Settings``).
