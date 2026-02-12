@@ -127,7 +127,7 @@ describe('EntityLinkComponent', () => {
         // Test entity link for missing daemon ID.
         component.attrs = { name: 'dhcp4' }
         fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[0]\u00a0DHCPv4')
+        expect(link.nativeElement.innerText).toEqual('DHCPv4')
         expect(link.attributes.href).toEqual('/daemons')
     })
 
