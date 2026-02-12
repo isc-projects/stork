@@ -275,7 +275,7 @@ Kea DHCP daemons discovered on connected machines are
 listed via the top-level menu bar, under ``Machines``. The list view includes
 the daemon version, daemon status, and some machine details. The
 ``Action`` button is also available, to refresh the information about
-the daemon.
+the daemons.
 
 Several daemons may be presented in the daemon
 status columns (e.g., DHCPv4, DHCPv6, DDNS, and the Kea Control
