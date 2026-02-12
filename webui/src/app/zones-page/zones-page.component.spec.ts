@@ -275,7 +275,10 @@ describe('ZonesPageComponent', () => {
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideRouter([]),
-                { provide: ServicesService, useValue: { getDaemonsDirectory: () => of({ items: [], total: 0 }) } },
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         }).compileComponents()
 
@@ -863,6 +866,10 @@ describe('ZonesPageComponent without superadmin privileges', () => {
                 provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideRouter([]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         }).compileComponents()
 

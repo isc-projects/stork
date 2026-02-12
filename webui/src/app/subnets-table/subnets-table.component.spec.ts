@@ -7,7 +7,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 import { SubnetsPageComponent } from '../subnets-page/subnets-page.component'
-import { DHCPService, Subnets } from '../backend'
+import { DHCPService, ServicesService, Subnets } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -37,6 +37,10 @@ describe('SubnetsTableComponent', () => {
                         component: SubnetsPageComponent,
                     },
                 ]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         }).compileComponents()
 

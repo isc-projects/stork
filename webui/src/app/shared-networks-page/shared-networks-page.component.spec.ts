@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
 import { provideRouter } from '@angular/router'
-import { DHCPService, SharedNetwork } from '../backend'
+import { DHCPService, ServicesService, SharedNetwork } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -36,6 +36,10 @@ describe('SharedNetworksPageComponent', () => {
                         component: SharedNetworksPageComponent,
                     },
                 ]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         })
 

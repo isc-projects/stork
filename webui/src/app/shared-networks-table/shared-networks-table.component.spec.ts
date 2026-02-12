@@ -6,7 +6,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 import { SharedNetworksPageComponent } from '../shared-networks-page/shared-networks-page.component'
-import { DHCPService, SharedNetwork } from '../backend'
+import { DHCPService, ServicesService, SharedNetwork } from '../backend'
 import { of } from 'rxjs'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { By } from '@angular/platform-browser'
@@ -37,6 +37,10 @@ describe('SharedNetworksTableComponent', () => {
                         component: SharedNetworksPageComponent,
                     },
                 ]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         }).compileComponents()
 

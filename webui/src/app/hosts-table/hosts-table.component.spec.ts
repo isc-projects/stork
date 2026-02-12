@@ -9,7 +9,7 @@ import { InputNumber } from 'primeng/inputnumber'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfirmDialog } from 'primeng/confirmdialog'
-import { DHCPService, Host, LocalHost } from '../backend'
+import { DHCPService, Host, LocalHost, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
@@ -45,6 +45,10 @@ describe('HostsTableComponent', () => {
                         redirectTo: 'dhcp/hosts/all',
                     },
                 ]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         }).compileComponents()
 

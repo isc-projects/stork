@@ -3,7 +3,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { HostsPageComponent } from './hosts-page.component'
 import { UntypedFormBuilder } from '@angular/forms'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { DHCPService, Host, LocalHost } from '../backend'
+import { DHCPService, Host, LocalHost, ServicesService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideRouter } from '@angular/router'
 import { By } from '@angular/platform-browser'
@@ -39,6 +39,10 @@ describe('HostsPageComponent', () => {
                         component: HostsPageComponent,
                     },
                 ]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         }).compileComponents()
     }))

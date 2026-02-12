@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core
 
 import { SubnetsPageComponent } from './subnets-page.component'
 import { provideRouter } from '@angular/router'
-import { DHCPService, Subnet } from '../backend'
+import { DHCPService, ServicesService, Subnet } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 import { ConfirmationService, MessageService } from 'primeng/api'
@@ -39,6 +39,10 @@ describe('SubnetsPageComponent', () => {
                         component: SubnetsPageComponent,
                     },
                 ]),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
