@@ -13,6 +13,5 @@ depend() {
 }
 
 start_pre() {
-    touch "${output_log}"
-    chown "${command_user}" "${output_log}"
+    checkpath --file "${output_log}" --owner "${command_user}"
 }
