@@ -205,7 +205,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#subnet-link'))
         expect(link.attributes.href).toEqual('/dhcp/subnets/8')
-        expect(link.nativeElement.innerText).toEqual('[8] fe80::/64')
+        expect(link.nativeElement.innerText).toEqual('[8]\u00a0fe80::/64')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
