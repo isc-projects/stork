@@ -266,7 +266,7 @@ the culprit machine are down. The Stork server tries to provide accurate data
 about the states of all processes, but some information may be unavailable.
 
 Monitoring Daemons
-=======================
+==================
 
 Daemon Status
 ~~~~~~~~~~~~~
