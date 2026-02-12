@@ -1,5 +1,6 @@
 #!/sbin/openrc-run
 
+capabilities="^cap_sys_ptrace"
 cfgfile="/etc/stork/agent.conf"
 command="/usr/bin/stork-agent"
 command_args="--use-env-file"
