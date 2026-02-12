@@ -63,12 +63,14 @@ func (d *Daemon) GetName() daemonname.Name {
 }
 
 // Returns the ID of the daemon. The agentcomm.Daemon has no ID because it is
-// not stored in the database.
+// not stored in the database. It is required to satisfy the DaemonTag
+// interface.
 func (d *Daemon) GetID() int64 {
 	return 0
 }
 
-// Returns the machine ID of the daemon.
+// Returns the machine ID of the daemon. It is required to satisfy the
+// DaemonTag interface.
 func (d *Daemon) GetMachineID() int64 {
 	return d.Machine.GetID()
 }
