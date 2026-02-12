@@ -171,21 +171,13 @@
                                 inputId="userPassword"
                                 class="max-w-form"
                                 [pattern]="passwordPattern"
-                                title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
+                                title="Must only contain letters, digits, special, or whitespace characters and must be at least twelve characters long."
                                 [toggleMask]="true"
                             ></p-password>
                         </div>
                         @if (isFeedbackNeeded('userPassword')) {
                             <div class="col-12 sm:col-9 sm:col-offset-3 mt-2">
-                                <p-message
-                                    severity="error"
-                                    [text]="
-                                        buildFeedbackMessage(
-                                            'userPassword',
-                                            'Password must only contain letters, digits, special, or whitespace characters.'
-                                        )
-                                    "
-                                ></p-message>
+                                <p-message severity="error" [text]="buildFeedbackMessage('userPassword')"></p-message>
                             </div>
                         }
                     </div>
@@ -197,7 +189,7 @@
                                 formControlName="userPassword2"
                                 inputId="userPassword2"
                                 class="max-w-form"
-                                title="Must only contain letters, digits, special, or whitespace characters and must be at least eight characters long."
+                                title="Must only contain letters, digits, special, or whitespace characters and must be at least twelve characters long."
                                 [toggleMask]="true"
                             ></p-password>
                         </div>

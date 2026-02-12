@@ -6,15 +6,175 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { Message } from 'primeng/message'
 import { Panel } from 'primeng/panel'
 import { Password } from 'primeng/password'
-import { FormControl, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
+import {
+    AbstractControl,
+    FormControl,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    ValidatorFn,
+    Validators,
+} from '@angular/forms'
 import { Select } from 'primeng/select'
 import { Group, User, UsersService } from '../backend'
 import { UserFormState } from '../forms/user-form'
-import { isInternalUser, matchPasswords } from '../users-page/users-page.component'
+import { isInternalUser } from '../users-page/users-page.component'
 import { MessageService, SelectItem } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { TabType } from '../tab-view/tab-view.component'
+import { StorkValidators } from '../validators'
+
+/**
+ * Form validator verifying if the confirmed password matches the password
+ * value.
+ *
+ * @param passwordKey Name of the key under which the password value can be
+ *                    found in the form.
+ * @param confirmPasswordKey Name of the key under which the confirmed
+ *                           password can be found in the form.
+ * @returns The validator function comparing the passwords.
+ */
+export function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
+    return (group: UntypedFormGroup): { [key: string]: any } => {
+        const password = group.get(passwordKey)
+        const confirmPassword = group.get(confirmPasswordKey)
+
+        if (password?.value !== confirmPassword?.value) {
+            return {
+                mismatchedPasswords: true,
+            }
+        }
+
+        return null
+    }
+}
+
+/**
+ * Form validator verifying if the confirmed password is different from the
+ * previous password.
+ *
+ * @param oldPasswordKey Name of the key under which the old password value can
+ *                       be found in the form.
+ * @param newPasswordKey Name of the key under which the new password value can
+ *                       be found in the form.
+ * @returns The validator function comparing the passwords.
+ */
+export function differentPasswords(oldPasswordKey: string, newPasswordKey: string) {
+    return (group: UntypedFormGroup): { [key: string]: any } => {
+        const oldPassword = group.get(oldPasswordKey)
+        const newPassword = group.get(newPasswordKey)
+
+        if (oldPassword?.value === newPassword?.value) {
+            return {
+                samePasswords: true,
+            }
+        }
+
+        return null
+    }
+}
+
+/**
+ * A validator checking a new password against the password policy. The password must be between 12 and 120 characters
+ * long and must contain at least one uppercase letter, one lowercase letter, one digit and one special character.
+ */
+export function validatorPassword(): ValidatorFn | null {
+    return Validators.compose([
+        Validators.minLength(12),
+        Validators.maxLength(120),
+        StorkValidators.hasUppercaseLetter,
+        StorkValidators.hasLowercaseLetter,
+        StorkValidators.hasDigit,
+        StorkValidators.hasSpecialCharacter,
+    ])
+}
+
+/**
+ * A validator checking a confirm password field. It must match the new password field and must not exceed the
+ * maximum allowed length.
+ * If the oldPasswordKey parameter is provided, it also checks that the new password is different from the current
+ * password.
+ */
+export function validatorsConfirmPassword(
+    oldPasswordKey: string | null,
+    newPasswordKey: string,
+    confirmPasswordKey: string
+): ValidatorFn[] {
+    const validators: ValidatorFn[] = [matchPasswords(newPasswordKey, confirmPasswordKey)]
+    if (oldPasswordKey) {
+        validators.push(differentPasswords(oldPasswordKey, newPasswordKey))
+    }
+    return validators
+}
+
+/**
+ * Extracts errors from the given input and formats them into
+ * human-readable messages.
+ */
+export function formatPasswordErrors(name: string, group: UntypedFormGroup, comparePasswords = false): string[] {
+    const control = group.get(name)
+    const errors: string[] = []
+
+    if (control.errors?.['required']) {
+        errors.push('This field is required.')
+    }
+
+    if (control.errors?.['minlength']) {
+        errors.push('This field value must be at least 12 characters long.')
+    }
+
+    if (control.errors?.['maxlength']) {
+        errors.push('This field value must be at most 120 characters long.')
+    }
+
+    if (control.errors?.['pattern']) {
+        errors.push('Password must only contain letters, digits, special, or whitespace characters.')
+    }
+
+    if (control.errors?.['hasUppercaseLetter']) {
+        errors.push('Password must contain at least one uppercase letter.')
+    }
+
+    if (control.errors?.['hasLowercaseLetter']) {
+        errors.push('Password must contain at least one lowercase letter.')
+    }
+
+    if (control.errors?.['hasDigit']) {
+        errors.push('Password must contain at least one digit.')
+    }
+
+    if (control.errors?.['hasSpecialCharacter']) {
+        errors.push('Password must contain at least one special character.')
+    }
+
+    if (comparePasswords) {
+        if (group.errors?.['mismatchedPasswords']) {
+            errors.push('Passwords must match.')
+        }
+
+        if (group.errors?.['samePasswords']) {
+            errors.push('New password must be different from current password.')
+        }
+    }
+
+    return errors
+}
+
+/**
+ * Utility function which checks if feedback for given FormControl shall be displayed.
+ *
+ * @param name FormControl name for which the check is done
+ * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
+ */
+export function isPasswordFeedbackNeeded(name: string, group: UntypedFormGroup, comparePasswords = false): boolean {
+    return (
+        (group.get(name).invalid ||
+            (comparePasswords && group.errors?.['mismatchedPasswords']) ||
+            (comparePasswords && group.errors?.['samePasswords'])) &&
+        (group.get(name).dirty || group.get(name).touched)
+    )
+}
 
 @Component({
     selector: 'app-user-form',
@@ -113,12 +273,12 @@ export class UserFormComponent implements OnInit {
                     userFirst: ['', Validators.maxLength(this.maxInputLen)],
                     userLast: ['', Validators.maxLength(this.maxInputLen)],
                     userGroup: ['', Validators.required],
-                    userPassword: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
-                    userPassword2: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
+                    userPassword: ['', [validatorPassword()]],
+                    userPassword2: ['', [validatorPassword()]],
                     changePassword: [''],
                 },
                 {
-                    validators: [matchPasswords('userPassword', 'userPassword2')],
+                    validators: validatorsConfirmPassword(null, 'userPassword', 'userPassword2'),
                 }
             )
 
@@ -162,18 +322,12 @@ export class UserFormComponent implements OnInit {
                     userFirst: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
                     userLast: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
                     userGroup: ['', Validators.required],
-                    userPassword: [
-                        '',
-                        [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
-                    ],
-                    userPassword2: [
-                        '',
-                        [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
-                    ],
+                    userPassword: ['', [Validators.required, validatorPassword()]],
+                    userPassword2: ['', [Validators.required, validatorPassword()]],
                     changePassword: [true],
                 },
                 {
-                    validators: [matchPasswords('userPassword', 'userPassword2')],
+                    validators: validatorsConfirmPassword(null, 'userPassword', 'userPassword2'),
                 }
             )
         }
@@ -186,9 +340,12 @@ export class UserFormComponent implements OnInit {
      *
      * @param name FormControl name for which the feedback is to be generated
      * @param formatFeedback optional feedback message when pattern validation failed
-     * @param comparePasswords when true, feedback about passwords mismatch is also appended; defaults to false
      */
     buildFeedbackMessage(name: string, formatFeedback?: string, comparePasswords = false): string | null {
+        if (name === 'userPassword' || name === 'userPassword2') {
+            return formatPasswordErrors(name, this.formGroup, comparePasswords).join(' ')
+        }
+
         const errors: string[] = []
 
         if (this.formGroup.get(name).errors?.['required']) {
@@ -211,10 +368,6 @@ export class UserFormComponent implements OnInit {
             errors.push(formatFeedback ?? 'This field value is incorrect.')
         }
 
-        if (comparePasswords && this.formGroup.errors?.['mismatchedPasswords']) {
-            errors.push('Passwords must match.')
-        }
-
         return errors.join(' ')
     }
 
@@ -225,11 +378,11 @@ export class UserFormComponent implements OnInit {
      * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
      */
     isFeedbackNeeded(name: string, comparePasswords = false): boolean {
-        return (
-            (this.formGroup.get(name).invalid ||
-                (comparePasswords && this.formGroup.errors?.['mismatchedPasswords'])) &&
-            (this.formGroup.get(name).dirty || this.formGroup.get(name).touched)
-        )
+        if (name === 'userPassword' || name === 'userPassword2') {
+            return isPasswordFeedbackNeeded(name, this.formGroup, comparePasswords)
+        }
+
+        return this.formGroup.get(name).invalid && (this.formGroup.get(name).dirty || this.formGroup.get(name).touched)
     }
 
     /**

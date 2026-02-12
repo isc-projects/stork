@@ -6,13 +6,6 @@ import { MessageService } from 'primeng/api'
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { getErrorMessage } from '../utils'
-import {
-    differentPasswords,
-    formatPasswordErrors,
-    matchPasswords,
-    validatorNewPassword,
-    validatorsConfirmPassword,
-} from '../users-page/users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
@@ -23,8 +16,12 @@ import { Panel } from 'primeng/panel'
 import { Password } from 'primeng/password'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { StorkValidators } from '../validators'
-import { PasswordPolicy } from '../passwordpolicy'
+import {
+    formatPasswordErrors,
+    isPasswordFeedbackNeeded,
+    validatorPassword,
+    validatorsConfirmPassword,
+} from '../user-form/user-form.component'
 
 /**
  * This component allows the logged user to change the password.
@@ -82,8 +79,8 @@ export class PasswordChangePageComponent implements OnInit {
         this.passwordChangeForm = this.formBuilder.group(
             {
                 oldPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                newPassword: ['', [validatorNewPassword]],
-                confirmPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                newPassword: ['', [Validators.required, validatorPassword()]],
+                confirmPassword: ['', [Validators.required, validatorPassword()]],
             },
             {
                 validators: validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword'),
@@ -166,12 +163,7 @@ export class PasswordChangePageComponent implements OnInit {
      * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
      */
     isFeedbackNeeded(name: string, comparePasswords = false): boolean {
-        return (
-            (this.passwordChangeForm.get(name).invalid ||
-                (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords']) ||
-                (comparePasswords && this.passwordChangeForm.errors?.['samePasswords'])) &&
-            (this.passwordChangeForm.get(name).dirty || this.passwordChangeForm.get(name).touched)
-        )
+        return isPasswordFeedbackNeeded(name, this.passwordChangeForm, comparePasswords)
     }
 
     /**
@@ -179,8 +171,8 @@ export class PasswordChangePageComponent implements OnInit {
      *
      * @param name FormControl name for which the feedback is to be generated
      */
-    buildFeedbackMessage(name: string): string | null {
-        const errors = formatPasswordErrors(this.passwordChangeForm.get(name))
+    buildFeedbackMessage(name: string, comparePasswords = false): string | null {
+        const errors = formatPasswordErrors(name, this.passwordChangeForm, comparePasswords)
         return errors.join(' ')
     }
 }
