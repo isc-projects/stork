@@ -74,7 +74,13 @@ describe('DaemonFilterComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [DaemonFilterComponent],
-            providers: [provideHttpClient(withInterceptorsFromDi())],
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                {
+                    provide: ServicesService,
+                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                },
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(DaemonFilterComponent)
