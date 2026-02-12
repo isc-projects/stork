@@ -40,8 +40,8 @@ supports both UNIX domain and network sockets.
 Subnets and Networks
 ====================
 
-IPv4 and IPv6 Subnets per Kea Daemons
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+IPv4 and IPv6 Subnets per Kea Daemon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One of the primary configuration aspects of any network is the layout
 of IP addressing. This is represented in Kea with IPv4 and IPv6
@@ -52,13 +52,8 @@ information.
 
 One way to inspect the subnets and pools within Kea is by looking at
 each Kea daemon to get an overview of the configurations a
-specific Kea daemon is serving. A list of configured subnets on
-that specific Kea daemon is displayed. The following picture
-shows a simple view of the Kea DHCPv6 server running with a single
-subnet, with three pools configured in it.
-
-.. figure:: ./static/kea-subnets6.png
-   :alt: View of subnets assigned to a single Kea daemon
+specific Kea daemon is serving. There is a button to a list of configured
+subnets on that specific Kea daemon.
 
 IPv4 and IPv6 Subnets in the Whole Network
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
