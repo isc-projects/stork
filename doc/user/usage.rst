@@ -277,10 +277,8 @@ the daemon version, daemon status, and some machine details. The
 ``Action`` button is also available, to refresh the information about
 the daemons.
 
-Several daemons may be presented in the daemon
-status columns (e.g., DHCPv4, DHCPv6, DDNS, and the Kea Control
-Agent (CA) for Kea). The daemons are not listed for the DNS servers
-because each DNS server has only one daemon.
+Several daemons may be presented in the ``Daemons`` column. The daemons are not
+listed for the DNS servers because each DNS server has only one daemon.
 
 The listed Kea daemons are those that Stork finds in the Kea CA
 configuration file. A warning is displayed for any daemons from
