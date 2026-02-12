@@ -250,7 +250,7 @@ describe('ZonesPageComponent', () => {
         ],
     }
 
-    beforeEach(async () => {
+    beforeEach(fakeAsync(() => {
         dnsApi = createSpyObj('DNSService', ['getZonesFetch', 'putZonesFetch', 'getZones', 'getZoneRRs'])
         putZonesFetchSpy = dnsApi.putZonesFetch
         getZonesSpy = dnsApi.getZones
@@ -266,7 +266,7 @@ describe('ZonesPageComponent', () => {
         messageService = createSpyObj('MessageService', ['add'])
         messageAddSpy = messageService.add
 
-        await TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 { provide: MessageService, useValue: messageService },
                 { provide: DNSService, useValue: dnsApi },
@@ -312,20 +312,13 @@ describe('ZonesPageComponent', () => {
         // Let's wait for async actions that happen on component init:
         // 1. Zones Fetch Status table data is fetched on every init
         // 2. Zones table data is lazily loaded on every init
-
-        // onLazyLoadZones() is manually triggering change detection cycle in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
-        // Call await fixture.whenStable() two times to wait for another round of change detection.
-        await fixture.whenStable()
-        await fixture.whenStable()
-
-        // Wait for getZones and getZonesFetch async responses
-        await fixture.whenStable()
+        tick()
 
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         expect(component.zonesFetchStatesLoading)
             .withContext('Zones Fetch Status table data loading should be done')
             .toBeFalse()
-    })
+    }))
 
     it('should create', () => {
         expect(component).toBeTruthy()

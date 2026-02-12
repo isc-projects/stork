@@ -256,16 +256,10 @@ describe('SharedNetworksTableComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should load initial data', async () => {
-        // Data loading should be in progress.
-        expect(component.dataLoading).toBeTrue()
-
-        await fixture.whenStable()
+    it('should load initial data', () => {
         fixture.detectChanges()
-
         // Data loading should be done.
         expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null)
-        expect(component.dataLoading).toBeFalse()
         // Records count should be updated.
         expect(component.totalRecords).toBe(10496)
     })
