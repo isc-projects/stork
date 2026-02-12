@@ -32,7 +32,7 @@
         <a id="subnet-link" routerLink="/dhcp/subnets/{{ attrs.id }}" class="white-space-nowrap">
             <!-- Subnet property is included in the API responses. -->
             <!-- Prefix property is included in the event content. -->
-            {{ attrs.subnet || attrs.prefix }}
+            [{{ attrs.id }}] {{ attrs.subnet || attrs.prefix }}
         </a>
     </ng-container>
 

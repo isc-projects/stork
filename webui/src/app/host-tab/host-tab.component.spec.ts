@@ -106,7 +106,7 @@ describe('HostTabComponent', () => {
 
         const titleSpan = fixture.debugElement.query(By.css('#tab-title-span'))
         expect(titleSpan).toBeTruthy()
-        expect(titleSpan.nativeElement.innerText).toBe('[1] Host in subnet 192.0.2.0/24')
+        expect(titleSpan.nativeElement.innerText).toBe('[1] Host in subnet [1] 192.0.2.0/24')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(7)
@@ -242,7 +242,7 @@ describe('HostTabComponent', () => {
 
         const titleSpan = fixture.debugElement.query(By.css('#tab-title-span'))
         expect(titleSpan).toBeTruthy()
-        expect(titleSpan.nativeElement.innerText).toBe('[1] Host in subnet 2001:db8:1::/64')
+        expect(titleSpan.nativeElement.innerText).toBe('[1] Host in subnet [1] 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
         expect(fieldsets.length).toBe(6)
