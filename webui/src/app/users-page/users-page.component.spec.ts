@@ -12,7 +12,6 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { AuthService } from '../auth.service'
 import { MockParamMap } from '../utils'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { differentPasswords } from '../user-form/user-form.component'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -144,26 +143,6 @@ describe('UsersPageComponent', () => {
         yesBtn.nativeElement.click()
         // Check that the deleteUser function has been called
         expect(usersApi.deleteUser).toHaveBeenCalled()
-    })
-
-    it('should verify if the passwords are the same', () => {
-        const formGroup = new FormGroup({
-            oldPassword: new FormControl('password'),
-            newPassword: new FormControl('password'),
-        })
-
-        const validator = differentPasswords('oldPassword', 'newPassword')
-        expect(validator(formGroup)).toEqual({ samePasswords: true })
-    })
-
-    it('should verify if the passwords are not the same', () => {
-        const formGroup = new FormGroup({
-            oldPassword: new FormControl('password'),
-            newPassword: new FormControl('another-password'),
-        })
-
-        const validator = differentPasswords('oldPassword', 'newPassword')
-        expect(validator(formGroup)).toBeNull()
     })
 })
 

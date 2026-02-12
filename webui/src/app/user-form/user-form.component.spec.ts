@@ -41,8 +41,8 @@ describe('UserFormComponent', () => {
         component.formGroup.get('userFirst').setValue('Frank')
         component.formGroup.get('userLast').setValue('Smith')
         component.formGroup.get('userGroup').setValue(1)
-        component.formGroup.get('userPassword').setValue('password with spaces is cool')
-        component.formGroup.get('userPassword2').setValue('password with spaces is cool')
+        component.formGroup.get('userPassword').setValue('1 password with spaces is COOL!')
+        component.formGroup.get('userPassword2').setValue('1 password with spaces is COOL!')
         tick()
         fixture.detectChanges()
 

@@ -16,12 +16,7 @@ import { Panel } from 'primeng/panel'
 import { Password } from 'primeng/password'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import {
-    formatPasswordErrors,
-    isPasswordFeedbackNeeded,
-    validatorPassword,
-    validatorsConfirmPassword,
-} from '../user-form/user-form.component'
+import { PasswordPolicy } from '../password-policy'
 
 /**
  * This component allows the logged user to change the password.
@@ -79,11 +74,11 @@ export class PasswordChangePageComponent implements OnInit {
         this.passwordChangeForm = this.formBuilder.group(
             {
                 oldPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
-                newPassword: ['', [Validators.required, validatorPassword()]],
-                confirmPassword: ['', [Validators.required, validatorPassword()]],
+                newPassword: ['', [Validators.required, PasswordPolicy.validatorPassword()]],
+                confirmPassword: ['', [Validators.required, PasswordPolicy.validatorPassword()]],
             },
             {
-                validators: validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword'),
+                validators: PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword'),
             }
         )
     }
@@ -163,7 +158,7 @@ export class PasswordChangePageComponent implements OnInit {
      * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
      */
     isFeedbackNeeded(name: string, comparePasswords = false): boolean {
-        return isPasswordFeedbackNeeded(name, this.passwordChangeForm, comparePasswords)
+        return PasswordPolicy.isPasswordFeedbackNeeded(name, this.passwordChangeForm, comparePasswords)
     }
 
     /**
@@ -172,7 +167,7 @@ export class PasswordChangePageComponent implements OnInit {
      * @param name FormControl name for which the feedback is to be generated
      */
     buildFeedbackMessage(name: string, comparePasswords = false): string | null {
-        const errors = formatPasswordErrors(name, this.passwordChangeForm, comparePasswords)
+        const errors = PasswordPolicy.formatPasswordErrors(name, this.passwordChangeForm, comparePasswords)
         return errors.join(' ')
     }
 }

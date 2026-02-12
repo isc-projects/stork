@@ -12,6 +12,19 @@ import { User } from './backend'
 import { getErrorMessage } from './utils'
 
 /**
+ * Indicates if the user in an active tab is managed by an internal
+ * authentication service
+ */
+export function isInternalUser(user: User) {
+    if (!user) {
+        return false
+    }
+    const authenticationMethodId = user.authenticationMethodId
+    // Empty or null or internal.
+    return !authenticationMethodId || authenticationMethodId === 'internal'
+}
+
+/**
  * System user groups enumeration.
  * IDs match group IDs in the backend.
  */
@@ -242,7 +255,7 @@ export class AuthService {
      * @returns true if the user was authenticated using the internal method.
      */
     isInternalUser(): boolean {
-        return this.currentUserValue?.authenticationMethodId === 'internal'
+        return isInternalUser(this.currentUserValue)
     }
 
     /**

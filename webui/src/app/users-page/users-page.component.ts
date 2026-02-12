@@ -2,7 +2,7 @@ import { Component, effect, OnDestroy, OnInit, signal, viewChild } from '@angula
 import { FormsModule } from '@angular/forms'
 import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 
-import { AuthService } from '../auth.service'
+import { AuthService, isInternalUser } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { UserSortField, UsersService } from '../backend'
 import { debounceTime, firstValueFrom, lastValueFrom, Subject, Subscription } from 'rxjs'
@@ -29,16 +29,6 @@ import { UserFormComponent } from '../user-form/user-form.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
-
-/**
- * Indicates if the user in an active tab is managed by an internal
- * authentication service
- */
-export function isInternalUser(user: User) {
-    const authenticationMethodId = user.authenticationMethodId
-    // Empty or null or internal.
-    return !authenticationMethodId || authenticationMethodId === 'internal'
-}
 
 /**
  * Component for managing system users.
