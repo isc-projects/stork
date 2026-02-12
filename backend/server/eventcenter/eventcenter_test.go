@@ -108,7 +108,7 @@ func TestCreateEventDaemonWithoutID(t *testing.T) {
 	ev := CreateEvent(dbmodel.EvError, "foo {daemon} bar", daemon)
 
 	// Assert
-	require.EqualValues(t, "foo <daemon name=\"dhcp4\" machineId=\"456\"> bar", ev.Text)
+	require.EqualValues(t, "foo <daemon id=\"0\" name=\"dhcp4\" machineId=\"456\"> bar", ev.Text)
 	require.EqualValues(t, dbmodel.EvError, ev.Level)
 	require.NotNil(t, ev.Relations)
 	require.EqualValues(t, 456, ev.Relations.MachineID)

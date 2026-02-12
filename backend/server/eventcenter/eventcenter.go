@@ -185,18 +185,10 @@ func (ec *eventCenter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // Prepare a tag describing a daemon.
 func daemonTag(daemon dbmodel.DaemonTag) string {
-	var attributes []string
-	if daemon.GetID() != 0 {
-		// The daemon ID may lack if the daemon is not yet stored in database.
-		// In this case, we must skip the ID attribute in the tag.
-		attributes = append(attributes, fmt.Sprintf("id=\"%d\"", daemon.GetID()))
-	}
-	attributes = append(attributes, fmt.Sprintf("name=\"%s\"", daemon.GetName()))
-	attributes = append(attributes, fmt.Sprintf("machineId=\"%d\"", daemon.GetMachineID()))
-
 	tag := fmt.Sprintf(
-		"<daemon %s>",
-		strings.Join(attributes, " "),
+		"<daemon id=\"%d\" name=\"%s\" machineId=\"%d\">",
+		daemon.GetID(), daemon.GetName(),
+		daemon.GetMachineID(),
 	)
 	return tag
 }
