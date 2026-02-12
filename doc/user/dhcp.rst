@@ -367,7 +367,7 @@ IP addresses and prefixes belong. If the reservation is global, i.e., is valid
 for all configured subnets of the given server, the word "global" is shown
 instead of the subnet prefix.
 
-Finally, the ``Daemon Name`` column includes one or more links to
+Finally, the ``Daemon`` column includes one or more links to
 Kea daemons configured to assign each reservation to the
 client. The number of daemons is typically greater than one
 when Kea servers operate in the High Availability setup. In this case,
@@ -375,7 +375,7 @@ each of the HA peers uses the same configuration and may allocate IP
 addresses and delegated prefixes to the same set of clients, including
 static assignments via host reservations. If HA peers are configured
 correctly, the reservations they share will have two links in the
-``Daemon Name`` column. Next to each link there is a label indicating
+``Daemon`` column. Next to each link there is a label indicating
 whether the host reservation for the given server has been specified
 in its configuration file or a host database (via the Host Commands
 hook library).
