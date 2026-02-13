@@ -1,5 +1,5 @@
-[ui] william
+[ui] william, piotrek
 
-    Show the Stork database ID in the text of any links to a subnet, a
-    host reservation, or a shared network.
+    Show the Stork database ID in the text of links to subnets in Host
+    Reservations list view.
     (Gitlab #2280)
