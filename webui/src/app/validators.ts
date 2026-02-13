@@ -3,6 +3,7 @@ import {
     FormArray,
     FormControl,
     FormGroup,
+    UntypedFormGroup,
     ValidationErrors,
     ValidatorFn,
     Validators,
@@ -862,5 +863,52 @@ export class StorkValidators {
             }
         }
         return { hasSpecialCharacter: 'The value must contain at least one special character.' }
+    }
+
+    /**
+     * Form validator verifying if the two controls have the same
+     * value.
+     *
+     * @param firstKey Name of the key under which the first value can be
+     *                    found in the form.
+     * @param secondKey Name of the key under which the second value can be
+     *                    found in the form.
+     * @returns The validator function comparing the values.
+     */
+    public static areSame(firstKey: string, secondKey: string): ValidatorFn {
+        return (group: UntypedFormGroup): { [key: string]: any } => {
+            const first = group.get(firstKey)
+            const second = group.get(secondKey)
+            if (first?.value !== second?.value) {
+                return {
+                    areNotSame: true,
+                }
+            }
+
+            return null
+        }
+    }
+
+    /**
+     * Form validator verifying if the two controls are different from each other.
+     *
+     * @param firstKey Name of the key under which the first value can be
+     *                    found in the form.
+     * @param secondKey Name of the key under which the second value can be
+     *                    found in the form.
+     * @returns The validator function comparing the values.
+     */
+    public static areNotSame(firstKey: string, secondKey: string): ValidatorFn {
+        return (group: UntypedFormGroup): { [key: string]: any } => {
+            const first = group.get(firstKey)
+            const second = group.get(secondKey)
+
+            if (first?.value === second?.value) {
+                return {
+                    areSame: true,
+                }
+            }
+            return null
+        }
     }
 }

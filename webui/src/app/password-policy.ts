@@ -3,56 +3,6 @@ import { StorkValidators } from './validators'
 
 export class PasswordPolicy {
     /**
-     * Form validator verifying if the confirmed password matches the password
-     * value.
-     *
-     * @param passwordKey Name of the key under which the password value can be
-     *                    found in the form.
-     * @param confirmPasswordKey Name of the key under which the confirmed
-     *                           password can be found in the form.
-     * @returns The validator function comparing the passwords.
-     */
-    public static matchPasswords(passwordKey: string, confirmPasswordKey: string) {
-        return (group: UntypedFormGroup): { [key: string]: any } => {
-            const password = group.get(passwordKey)
-            const confirmPassword = group.get(confirmPasswordKey)
-
-            if (password?.value !== confirmPassword?.value) {
-                return {
-                    mismatchedPasswords: true,
-                }
-            }
-
-            return null
-        }
-    }
-
-    /**
-     * Form validator verifying if the confirmed password is different from the
-     * previous password.
-     *
-     * @param oldPasswordKey Name of the key under which the old password value can
-     *                       be found in the form.
-     * @param newPasswordKey Name of the key under which the new password value can
-     *                       be found in the form.
-     * @returns The validator function comparing the passwords.
-     */
-    public static differentPasswords(oldPasswordKey: string, newPasswordKey: string) {
-        return (group: UntypedFormGroup): { [key: string]: any } => {
-            const oldPassword = group.get(oldPasswordKey)
-            const newPassword = group.get(newPasswordKey)
-
-            if (oldPassword?.value === newPassword?.value) {
-                return {
-                    samePasswords: true,
-                }
-            }
-
-            return null
-        }
-    }
-
-    /**
      * A validator checking a new password against the password policy. The password must be between 12 and 120 characters
      * long and must contain at least one uppercase letter, one lowercase letter, one digit and one special character.
      */
@@ -78,9 +28,9 @@ export class PasswordPolicy {
         newPasswordKey: string,
         confirmPasswordKey: string
     ): ValidatorFn[] {
-        const validators: ValidatorFn[] = [PasswordPolicy.matchPasswords(newPasswordKey, confirmPasswordKey)]
+        const validators: ValidatorFn[] = [StorkValidators.areSame(newPasswordKey, confirmPasswordKey)]
         if (oldPasswordKey) {
-            validators.push(PasswordPolicy.differentPasswords(oldPasswordKey, newPasswordKey))
+            validators.push(StorkValidators.areNotSame(oldPasswordKey, newPasswordKey))
         }
         return validators
     }
@@ -126,11 +76,11 @@ export class PasswordPolicy {
         }
 
         if (comparePasswords) {
-            if (group.errors?.['mismatchedPasswords']) {
+            if (group.errors?.['areNotSame']) {
                 errors.push('Passwords must match.')
             }
 
-            if (group.errors?.['samePasswords']) {
+            if (group.errors?.['areSame']) {
                 errors.push('New password must be different from current password.')
             }
         }
@@ -147,8 +97,8 @@ export class PasswordPolicy {
     public static isPasswordFeedbackNeeded(name: string, group: UntypedFormGroup, comparePasswords = false): boolean {
         return !!(
             (group.get(name).invalid ||
-                (comparePasswords && group.errors?.['mismatchedPasswords']) ||
-                (comparePasswords && group.errors?.['samePasswords'])) &&
+                (comparePasswords && group.errors?.['areNotSame']) ||
+                (comparePasswords && group.errors?.['areSame'])) &&
             (group.get(name).dirty || group.get(name).touched)
         )
     }

@@ -2,26 +2,6 @@ import { FormControl, FormGroup } from '@angular/forms'
 import { PasswordPolicy } from './password-policy'
 
 describe('PasswordPolicy', () => {
-    it('should verify if the passwords are the same', () => {
-        const formGroup = new FormGroup({
-            oldPassword: new FormControl('password'),
-            newPassword: new FormControl('password'),
-        })
-
-        const validator = PasswordPolicy.differentPasswords('oldPassword', 'newPassword')
-        expect(validator(formGroup)).toEqual({ samePasswords: true })
-    })
-
-    it('should verify if the passwords are not the same', () => {
-        const formGroup = new FormGroup({
-            oldPassword: new FormControl('password'),
-            newPassword: new FormControl('another-password'),
-        })
-
-        const validator = PasswordPolicy.differentPasswords('oldPassword', 'newPassword')
-        expect(validator(formGroup)).toBeNull()
-    })
-
     it('should recognize invalid password', () => {
         const validator = PasswordPolicy.validatorPassword()
         const control: FormControl = new FormControl('', validator)
@@ -133,8 +113,9 @@ describe('PasswordPolicy', () => {
             {
                 oldPassword: new FormControl('password'),
                 newPassword: new FormControl('password'),
+                confirmPassword: new FormControl('password'),
             },
-            { validators: [PasswordPolicy.differentPasswords('oldPassword', 'newPassword')] }
+            { validators: PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword') }
         )
         group.get('oldPassword').markAsDirty()
         group.get('newPassword').markAsDirty()
@@ -146,6 +127,7 @@ describe('PasswordPolicy', () => {
         )
 
         group.get('newPassword')?.setValue('another-password')
+        group.get('confirmPassword')?.setValue('another-password')
         group.updateValueAndValidity()
         expect(PasswordPolicy.isPasswordFeedbackNeeded('oldPassword', group, true)).toBeFalse()
         expect(PasswordPolicy.isPasswordFeedbackNeeded('newPassword', group, true)).toBeFalse()
@@ -154,10 +136,11 @@ describe('PasswordPolicy', () => {
     it('should verify if the new password is the same as the confirm one', () => {
         const group = new FormGroup(
             {
+                oldPassword: new FormControl('old-password'),
                 newPassword: new FormControl('password'),
                 confirmPassword: new FormControl('password'),
             },
-            { validators: [PasswordPolicy.matchPasswords('newPassword', 'confirmPassword')] }
+            { validators: PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword') }
         )
         group.get('newPassword').markAsDirty()
         group.get('confirmPassword').markAsDirty()
@@ -191,7 +174,7 @@ describe('PasswordPolicy', () => {
         group.get('confirmPassword')?.setValue('invalid')
         group.updateValueAndValidity()
         expect(group.valid).toBeFalse()
-        expect(group.errors).toEqual({ mismatchedPasswords: true })
+        expect(group.errors).toEqual({ areNotSame: true })
         expect(PasswordPolicy.isPasswordFeedbackNeeded('confirmPassword', group, true)).toBeTrue()
         expect(PasswordPolicy.formatPasswordErrors('confirmPassword', group, true)[0]).toBe('Passwords must match.')
     })
@@ -215,14 +198,14 @@ describe('PasswordPolicy', () => {
         group.get('confirmPassword')?.setValue('invalid')
         group.updateValueAndValidity()
         expect(group.valid).toBeFalse()
-        expect(group.errors).toEqual({ mismatchedPasswords: true })
+        expect(group.errors).toEqual({ areNotSame: true })
         expect(PasswordPolicy.isPasswordFeedbackNeeded('confirmPassword', group, true)).toBeTrue()
         expect(PasswordPolicy.formatPasswordErrors('confirmPassword', group, true)[0]).toBe('Passwords must match.')
 
         group.get('newPassword')?.setValue('OldPassword123!')
         group.updateValueAndValidity()
         expect(group.valid).toBeFalse()
-        expect(group.errors).toEqual({ samePasswords: true, mismatchedPasswords: true })
+        expect(group.errors).toEqual({ areSame: true, areNotSame: true })
         expect(PasswordPolicy.isPasswordFeedbackNeeded('newPassword', group, true)).toBeTrue()
         expect(PasswordPolicy.formatPasswordErrors('newPassword', group, true)).toContain(
             'New password must be different from current password.'

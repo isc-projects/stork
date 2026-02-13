@@ -995,4 +995,28 @@ describe('StorkValidators', () => {
         expect(StorkValidators.valueInList(values)(formBuilder.control(null))).toBeFalsy()
         expect(StorkValidators.valueInList(values)(formBuilder.control('wall'))).toBeFalsy()
     })
+
+    it('verifies if the values are the same', () => {
+        const formGroup = new FormGroup({
+            first: new FormControl('foo'),
+            second: new FormControl('foo'),
+        })
+
+        const sameValidator = StorkValidators.areSame('first', 'second')
+        const notSameValidator = StorkValidators.areNotSame('first', 'second')
+        expect(sameValidator(formGroup)).toBeNull()
+        expect(notSameValidator(formGroup)).toEqual({ areSame: true })
+    })
+
+    it('verifies if the values are not the same', () => {
+        const formGroup = new FormGroup({
+            first: new FormControl('foo'),
+            second: new FormControl('bar'),
+        })
+
+        const sameValidator = StorkValidators.areSame('first', 'second')
+        const notSameValidator = StorkValidators.areNotSame('first', 'second')
+        expect(sameValidator(formGroup)).toEqual({ areNotSame: true })
+        expect(notSameValidator(formGroup)).toBeNull()
+    })
 })
