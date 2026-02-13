@@ -1156,7 +1156,8 @@ func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
 				}
 			}
     }`)
-	exePath, _ := sb.Join("kea-dhcp4")
+	exePath, _ := sb.Join("bin/kea-dhcp4")
+	socketPath, _ := sb.Join("var/run/kea/kea4-ctrl-socket")
 
 	httpConfig := HTTPClientConfig{}
 
@@ -1169,7 +1170,7 @@ func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
 		nil,
 	)
 	process.EXPECT().getCwd().Return(sb.BasePath, nil)
-	process.EXPECT().getExe().Return(sb.BasePath, nil)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1192,7 +1193,7 @@ func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
 	require.Len(t, accessPoints, 1)
 	accessPoint := accessPoints[0]
 	require.Equal(t, AccessPointControl, accessPoint.Type)
-	require.Equal(t, "/var/run/kea/kea4-ctrl-socket", accessPoint.Address)
+	require.Equal(t, socketPath, accessPoint.Address)
 	require.Zero(t, accessPoint.Port)
 	require.Equal(t, protocoltype.Socket, accessPoint.Protocol)
 }
