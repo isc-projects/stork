@@ -68,7 +68,8 @@
                             <app-help-tip subject="subnets listed" id="subnets4-help-button">
                                 <p>
                                     This list shows up to five DHCPv4 subnets with the highest utilization. The total
-                                    number of subnets is {{ overview.subnets4?.total ?? 0 }}.
+                                    number of subnets is {{ overview.subnets4?.total ?? 0 }}. On the left of each subnet
+                                    entry, there is a Kea Subnet ID assigned in the Kea DHCP daemon configuration.
                                 </p>
                             </app-help-tip>
                         </h2>
@@ -192,7 +193,8 @@
                             <app-help-tip subject="subnets listed" id="subnets6-help-button">
                                 <p>
                                     This list shows up to five DHCPv6 subnets with the highest utilization. The total
-                                    number of subnets is {{ overview.subnets6?.total ?? 0 }}.
+                                    number of subnets is {{ overview.subnets6?.total ?? 0 }}. On the left of each subnet
+                                    entry, there is a Kea Subnet ID assigned in the Kea DHCP daemon configuration.
                                 </p>
                             </app-help-tip>
                         </h2>
