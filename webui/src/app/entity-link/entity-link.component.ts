@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core'
+import { Component, input, Input } from '@angular/core'
 import { NgSwitch, NgClass, NgSwitchCase, NgSwitchDefault, NgIf } from '@angular/common'
 import { RouterLink } from '@angular/router'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
@@ -7,10 +7,11 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
  * A component that displays given entity as a link with rounded border
  * and a background color. It can be used for making a link to:
  * - machine
- * - app
  * - daemon
  * - subnet
- * - host
+ * - host reservation
+ * - user
+ * - shared network
  */
 @Component({
     selector: 'app-entity-link',
@@ -38,6 +39,14 @@ export class EntityLinkComponent {
      * Name of the class overriding original component style.
      */
     @Input() styleClass: string
+
+    /**
+     * Input boolean flag controlling whether subnet, host reservation or shared network entity link
+     * should include the entity identifier as well.
+     * For daemon, machine or user entity, the identifier is always included.
+     * It defaults to false.
+     */
+    showIdentifier = input<boolean>(false)
 
     constructor() {}
 }
