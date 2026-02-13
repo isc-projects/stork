@@ -1138,6 +1138,65 @@ func TestDetectKeaDHCPOnSocketPost3_0(t *testing.T) {
 	require.Equal(t, protocoltype.Socket, accessPoint.Protocol)
 }
 
+// Test that the Kea DHCP listening on socket configured with name only is detected.
+func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Create a configuration file for Kea.
+	configPath, _ := sb.Write("kea-dhcp4.conf", `{
+      "Dhcp4": {
+				"control-socket": {
+					"socket-type": "unix",
+					"socket-name": "kea4-ctrl-socket"
+				}
+			}
+    }`)
+	exePath, _ := sb.Join("kea-dhcp4")
+
+	httpConfig := HTTPClientConfig{}
+
+	// Kea process mock.
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getName().Return("kea-dhcp4", nil)
+	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
+	process.EXPECT().getCmdline().Return(
+		fmt.Sprintf("%s -c %s", exePath, configPath),
+		nil,
+	)
+	process.EXPECT().getCwd().Return(sb.BasePath, nil)
+	process.EXPECT().getExe().Return(sb.BasePath, nil)
+
+	// System calls mock.
+	commander := NewMockCommandExecutor(ctrl)
+	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
+
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
+	// Act
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
+
+	// Assert
+	require.False(t, gock.HasUnmatchedRequest())
+	require.NoError(t, err)
+
+	require.Len(t, daemons, 1)
+	require.Equal(t, daemonname.DHCPv4, daemons[0].GetName())
+
+	accessPoints := daemons[0].GetAccessPoints()
+	require.Len(t, accessPoints, 1)
+	accessPoint := accessPoints[0]
+	require.Equal(t, AccessPointControl, accessPoint.Type)
+	require.Equal(t, "/var/run/kea/kea4-ctrl-socket", accessPoint.Address)
+	require.Zero(t, accessPoint.Port)
+	require.Equal(t, protocoltype.Socket, accessPoint.Protocol)
+}
+
 // Test that the Kea DHCP post 3.0 listening on HTTP is detected.
 func TestDetectKeaDHCPOnHTTPPost3_0(t *testing.T) {
 	// Arrange

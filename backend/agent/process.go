@@ -18,6 +18,7 @@ var (
 type supportedProcess interface {
 	getCmdline() (string, error)
 	getCwd() (string, error)
+	getExe() (string, error)
 	getName() (string, error)
 	getPid() int32
 	getParentPid() (int32, error)
@@ -42,6 +43,13 @@ func (p *processWrapper) getCwd() (string, error) {
 	cwd, err := p.process.Cwd()
 	err = errors.Wrapf(err, "failed to get process current working directory for pid %d", p.getPid())
 	return cwd, err
+}
+
+// Returns the process path to the executable.
+func (p *processWrapper) getExe() (string, error) {
+	exe, err := p.process.Exe()
+	err = errors.Wrapf(err, "failed to get process executable path for pid %d", p.getPid())
+	return exe, err
 }
 
 // Returns the process pid.

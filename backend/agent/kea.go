@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -328,9 +329,19 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			}
 		}
 
+		// Normalize socket path if the socket type is unix. Translate into full path if only name is given.
+		socketAddress := controlSocket.GetAddress()
+		if controlSocket.GetProtocol() == protocoltype.Socket && !strings.Contains(socketAddress, "/") {
+			exe, err := p.getExe()
+			if err != nil {
+				return nil, errors.WithMessagef(err, "could not get path to executable")
+			}
+			socketAddress = filepath.Join(filepath.Dir(exe), "..", "var", "run", "kea", socketAddress)
+		}
+
 		accessPoint := AccessPoint{
 			Type:     AccessPointControl,
-			Address:  controlSocket.GetAddress(),
+			Address:  socketAddress,
 			Port:     controlSocket.GetPort(),
 			Protocol: controlSocket.GetProtocol(),
 			Key:      key,
