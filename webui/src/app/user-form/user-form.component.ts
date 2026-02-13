@@ -119,7 +119,7 @@ export class UserFormComponent implements OnInit {
                     changePassword: [''],
                 },
                 {
-                    validators: PasswordPolicy.validatorsConfirmPassword(null, 'userPassword', 'userPassword2'),
+                    validators: PasswordPolicy.validatorsConfirmPassword('userPassword', 'userPassword2'),
                 }
             )
 
@@ -168,7 +168,7 @@ export class UserFormComponent implements OnInit {
                     changePassword: [true],
                 },
                 {
-                    validators: PasswordPolicy.validatorsConfirmPassword(null, 'userPassword', 'userPassword2'),
+                    validators: PasswordPolicy.validatorsConfirmPassword('userPassword', 'userPassword2'),
                 }
             )
         }

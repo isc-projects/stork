@@ -24,9 +24,9 @@ export class PasswordPolicy {
      * password.
      */
     public static validatorsConfirmPassword(
-        oldPasswordKey: string | null,
         newPasswordKey: string,
-        confirmPasswordKey: string
+        confirmPasswordKey: string,
+        oldPasswordKey?: string,
     ): ValidatorFn[] {
         const validators: ValidatorFn[] = [StorkValidators.areSame(newPasswordKey, confirmPasswordKey)]
         if (oldPasswordKey) {

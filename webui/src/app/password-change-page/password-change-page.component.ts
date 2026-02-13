@@ -78,7 +78,7 @@ export class PasswordChangePageComponent implements OnInit {
                 confirmPassword: ['', [Validators.required, PasswordPolicy.validatorPassword()]],
             },
             {
-                validators: PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword'),
+                validators: PasswordPolicy.validatorsConfirmPassword('newPassword', 'confirmPassword', 'oldPassword'),
             }
         )
     }

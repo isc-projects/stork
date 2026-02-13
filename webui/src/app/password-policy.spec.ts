@@ -115,7 +115,7 @@ describe('PasswordPolicy', () => {
                 newPassword: new FormControl('password'),
                 confirmPassword: new FormControl('password'),
             },
-            { validators: PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword') }
+            { validators: PasswordPolicy.validatorsConfirmPassword('newPassword', 'confirmPassword', 'oldPassword') }
         )
         group.get('oldPassword').markAsDirty()
         group.get('newPassword').markAsDirty()
@@ -140,7 +140,7 @@ describe('PasswordPolicy', () => {
                 newPassword: new FormControl('password'),
                 confirmPassword: new FormControl('password'),
             },
-            { validators: PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword') }
+            { validators: PasswordPolicy.validatorsConfirmPassword('newPassword', 'confirmPassword', 'oldPassword') }
         )
         group.get('newPassword').markAsDirty()
         group.get('confirmPassword').markAsDirty()
@@ -161,7 +161,7 @@ describe('PasswordPolicy', () => {
                 newPassword: new FormControl('ValidPassword123!'),
                 confirmPassword: new FormControl('ValidPassword123!'),
             },
-            PasswordPolicy.validatorsConfirmPassword(null, 'newPassword', 'confirmPassword')
+            PasswordPolicy.validatorsConfirmPassword('newPassword', 'confirmPassword')
         )
         group.get('newPassword').markAsDirty()
         group.get('confirmPassword').markAsDirty()
@@ -186,7 +186,7 @@ describe('PasswordPolicy', () => {
                 newPassword: new FormControl('ValidPassword123!'),
                 confirmPassword: new FormControl('ValidPassword123!'),
             },
-            PasswordPolicy.validatorsConfirmPassword('oldPassword', 'newPassword', 'confirmPassword')
+            PasswordPolicy.validatorsConfirmPassword('newPassword', 'confirmPassword', 'oldPassword')
         )
         group.get('oldPassword').markAsDirty()
         group.get('newPassword').markAsDirty()
