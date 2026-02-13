@@ -620,7 +620,6 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.PingMachineOK{}, pingRsp)
 	_, ok := pingRsp.(*services.PingMachineOK)
 	require.True(t, ok)
-	// check if GetMachineState was called
 	require.True(t, fa.GetStateCalled)
 
 	// Make sure that the event informing about the new machine registration
@@ -1209,7 +1208,6 @@ func TestUpdateMachine(t *testing.T) {
 	require.Equal(t, m.ID, okRsp.Payload.ID)
 	require.Equal(t, addr, *okRsp.Payload.Address)
 	require.True(t, okRsp.Payload.Authorized) // machine is authorized now
-	// check if GetMachineState was called because it was just authorized
 	require.True(t, fa.GetStateCalled)
 
 	// add another machine
