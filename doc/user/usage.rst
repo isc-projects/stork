@@ -80,8 +80,11 @@ restrictions:
   well-formed e-mail address.
 - The ``firstname`` and ``lastname`` fields are mandatory for the user accounts managed
   by Stork. They are optional for authentication methods provided by hooks.
-- The ``password`` must consist of an uppercase and lowercase letter A-Z, digit 0-9,
-  and any ASCII special characters or whitespace characters; it must be at least twelve characters long.
+- The ``password`` can consist of uppercase and lowercase letters A-Z, numbers 0-9,
+  and any ASCII special characters or whitespace characters; it must be at least twelve
+  characters long; it must include at least one uppercase letter; it must include at least
+  one lowercase letter; it must include at least one digit; it must include at least one
+  special character or whitespace character.
 
 Currently, each user is associated with one of the three predefined groups
 (roles), which are ``super-admin``, ``admin`` or ``read-only``; one of these must be selected
