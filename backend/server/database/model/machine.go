@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -321,7 +322,24 @@ func GetAllMachinesWithRelations(db *pg.DB, authorized *bool, relations ...Machi
 		q = q.Where("authorized = ?", *authorized)
 	}
 	for _, relation := range relations {
-		q = q.Relation(string(relation))
+		// The daemons must be returned in determined order because some
+		// unit tests are relying on it. The order is determined by the ID of
+		// the daemon. It is a primary key. It is default order on most
+		// PostgreSQL versions, but some (older?) distributions don't guarantee
+		// it. To be sure that the order is always the same, we need to specify
+		// it explicitly.
+		if strings.Contains(string(relation), "Daemons") {
+			q = q.Relation(string(MachineRelationDaemons), func(q *orm.Query) (*orm.Query, error) {
+				return q.Order("daemon.id ASC"), nil
+			})
+			if relation == MachineRelationDaemons {
+				continue
+			}
+		}
+
+		q = q.Relation(string(relation), func(q *orm.Query) (*orm.Query, error) {
+			return q, nil
+		})
 	}
 
 	err := q.Select()
