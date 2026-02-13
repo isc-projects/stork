@@ -113,7 +113,7 @@ Changing a User Password
 
 An initial password is assigned by the administrator when a user
 account is created; by default, each user must change their password
-when first logging into the system. After that, each user has a possibility to
+when first logging into the system. After that, each user has the possibility to
 change their password whenever they need to. To change the password, click on the
 ``Profile`` menu and choose ``Settings`` to display the user profile
 information. Click on ``Change password`` in the menu bar on the left
