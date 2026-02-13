@@ -881,7 +881,7 @@ export class StorkValidators {
             const second = group.get(secondKey)
             if (first?.value !== second?.value) {
                 return {
-                    areNotSame: true,
+                    areSame: true,
                 }
             }
 
@@ -905,7 +905,7 @@ export class StorkValidators {
 
             if (first?.value === second?.value) {
                 return {
-                    areSame: true,
+                    areNotSame: true,
                 }
             }
             return null

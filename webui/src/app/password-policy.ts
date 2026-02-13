@@ -26,7 +26,7 @@ export class PasswordPolicy {
     public static validatorsConfirmPassword(
         newPasswordKey: string,
         confirmPasswordKey: string,
-        oldPasswordKey?: string,
+        oldPasswordKey?: string
     ): ValidatorFn[] {
         const validators: ValidatorFn[] = [StorkValidators.areSame(newPasswordKey, confirmPasswordKey)]
         if (oldPasswordKey) {
@@ -76,11 +76,11 @@ export class PasswordPolicy {
         }
 
         if (comparePasswords) {
-            if (group.errors?.['areNotSame']) {
+            if (group.errors?.['areSame']) {
                 errors.push('Passwords must match.')
             }
 
-            if (group.errors?.['areSame']) {
+            if (group.errors?.['areNotSame']) {
                 errors.push('New password must be different from current password.')
             }
         }

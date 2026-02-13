@@ -1005,7 +1005,7 @@ describe('StorkValidators', () => {
         const sameValidator = StorkValidators.areSame('first', 'second')
         const notSameValidator = StorkValidators.areNotSame('first', 'second')
         expect(sameValidator(formGroup)).toBeNull()
-        expect(notSameValidator(formGroup)).toEqual({ areSame: true })
+        expect(notSameValidator(formGroup)).toEqual({ areNotSame: true })
     })
 
     it('verifies if the values are not the same', () => {
@@ -1016,7 +1016,7 @@ describe('StorkValidators', () => {
 
         const sameValidator = StorkValidators.areSame('first', 'second')
         const notSameValidator = StorkValidators.areNotSame('first', 'second')
-        expect(sameValidator(formGroup)).toEqual({ areNotSame: true })
+        expect(sameValidator(formGroup)).toEqual({ areSame: true })
         expect(notSameValidator(formGroup)).toBeNull()
     })
 })

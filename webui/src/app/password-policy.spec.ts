@@ -174,7 +174,7 @@ describe('PasswordPolicy', () => {
         group.get('confirmPassword')?.setValue('invalid')
         group.updateValueAndValidity()
         expect(group.valid).toBeFalse()
-        expect(group.errors).toEqual({ areNotSame: true })
+        expect(group.errors).toEqual({ areSame: true })
         expect(PasswordPolicy.isPasswordFeedbackNeeded('confirmPassword', group, true)).toBeTrue()
         expect(PasswordPolicy.formatPasswordErrors('confirmPassword', group, true)[0]).toBe('Passwords must match.')
     })
@@ -198,7 +198,7 @@ describe('PasswordPolicy', () => {
         group.get('confirmPassword')?.setValue('invalid')
         group.updateValueAndValidity()
         expect(group.valid).toBeFalse()
-        expect(group.errors).toEqual({ areNotSame: true })
+        expect(group.errors).toEqual({ areSame: true })
         expect(PasswordPolicy.isPasswordFeedbackNeeded('confirmPassword', group, true)).toBeTrue()
         expect(PasswordPolicy.formatPasswordErrors('confirmPassword', group, true)[0]).toBe('Passwords must match.')
 
