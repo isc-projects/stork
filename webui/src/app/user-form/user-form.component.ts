@@ -181,6 +181,7 @@ export class UserFormComponent implements OnInit {
      *
      * @param name FormControl name for which the feedback is to be generated
      * @param formatFeedback optional feedback message when pattern validation failed
+     * @param comparePasswords when true, feedback about passwords mismatch is also appended; defaults to false
      */
     buildFeedbackMessage(name: string, formatFeedback?: string, comparePasswords = false): string | null {
         if (name === 'userPassword' || name === 'userPassword2') {
