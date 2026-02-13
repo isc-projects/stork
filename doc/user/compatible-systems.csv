@@ -17,8 +17,6 @@ System Family,System Version,Architecture,Unit Tests,System Tests,Build Binaries
        Fedora,            42,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Fedora,            43,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Fedora,            43,       amd64,         X,            ,              ,              ,                              ,                                                    X
-      FreeBSD,          14.3,       amd64,         X,            ,             U,             U,                             U,
-      FreeBSD,          15.0,       amd64,         X,            ,              ,              ,                              ,
       OpenBSD,             ?,       amd64,         U,            ,             U,              ,                             U,
          RHEL,       UBI 8.8,     aarch64,          ,            ,             X,             X,                             X,
          RHEL,       UBI 8.8,       amd64,          ,            ,             X,             X,                             X,

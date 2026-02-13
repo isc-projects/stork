@@ -333,7 +333,7 @@ The zones are cached in the Stork server database, so browsing the list of fetch
 zones is fast. The zones are not refreshed automatically. To see the updated list of
 zones, click the ``Fetch Zones`` button again.
 
-Any errors occuring during the zone fetch can be inspected by clicking the
+Any errors occurring during the zone fetch can be inspected by clicking the
 ``Fetch Status`` button. The status view also includes the following information:
 
 - **Zone Configs Count**: the number of different zone configurations in the server (if the same zone name appears in multiple views, it is counted multiple times).

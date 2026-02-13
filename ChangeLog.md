@@ -1,4 +1,21 @@
-Stork 2.4.0 released on 2026-02-11.
+Stork 2.4.0 released on 2026-02-18.
+
+* 614 [func] slawek
+
+    Added validation of the password policy to the user form.
+    (Gitlab #2275)
+
+* 613 [func] andrei
+
+    The agent can now communicate to UNIX control sockets if they are
+    configured by name only in Kea.
+    (Gitlab #2166)
+
+* 612 [ui] william, piotrek
+
+    Show the Stork database ID in the text of links to subnets in Host
+    Reservations list view.
+    (Gitlab #2280)
 
 * 611 [func] piotrek
 
@@ -30,12 +47,12 @@ Stork 2.4.0 released on 2026-02-11.
     Enhanced security by setting the default minimum required TLS
     version to 1.3 for connections to the Stork server RestAPI,
     database, and Kea API.
-    (Gitlab #9)
+    (Gitlab #2250)
 
 * 606 [sec] slawek
 
     Fixed command injection vector attack in the agent installer script.
-    (Gitlab #11)
+    (Gitlab #2251)
 
 * 605 [func] slawek
 
@@ -46,7 +63,7 @@ Stork 2.4.0 released on 2026-02-11.
 * 604 [sec] slawek
 
     Added validation of the password policy on the backend side.
-    (Gitlab #10)
+    (Gitlab #2252)
 
 * 603 [ui] slawek
 

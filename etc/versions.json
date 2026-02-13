@@ -73,8 +73,8 @@
     "currentStable": [
       {
         "version": "2.4.0",
-        "releaseDate": "2026-02-11",
-        "eolDate": "2026-11-11"
+        "releaseDate": "2026-02-18",
+        "eolDate": "2026-11-18"
       },
       {
         "version": "2.2.1",
@@ -97,5 +97,5 @@
       }
     ]
   },
-  "date": "2026-02-06"
+  "date": "2026-02-13"
 }
