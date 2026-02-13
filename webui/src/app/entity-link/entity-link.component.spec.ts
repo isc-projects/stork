@@ -210,7 +210,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#host-link'))
         expect(link.attributes.href).toEqual('/dhcp/hosts/8')
-        expect(link.nativeElement.innerText).toEqual('[8]\u00a0mouse.example.org')
+        expect(link.nativeElement.innerText).toEqual('mouse.example.org')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
@@ -221,6 +221,11 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         native = fixture.nativeElement
         expect(native.textContent).toContain('host')
+
+        // Show the identifier.
+        fixture.componentRef.setInput('showIdentifier', true)
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[8]\u00a0mouse.example.org')
     })
 
     it('should construct subnet link', () => {
@@ -230,7 +235,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#subnet-link'))
         expect(link.attributes.href).toEqual('/dhcp/subnets/8')
-        expect(link.nativeElement.innerText).toEqual('[8]\u00a0fe80::/64')
+        expect(link.nativeElement.innerText).toEqual('fe80::/64')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
@@ -241,6 +246,11 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         native = fixture.nativeElement
         expect(native.textContent).toContain('subnet')
+
+        // Show the identifier.
+        fixture.componentRef.setInput('showIdentifier', true)
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[8] fe80::/64')
     })
 
     it('should construct a shared network link', () => {
@@ -250,7 +260,7 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#shared-network-link'))
         expect(link.attributes.href).toEqual('/dhcp/shared-networks/9')
-        expect(link.nativeElement.innerText).toEqual('[9]\u00a0frog')
+        expect(link.nativeElement.innerText).toEqual('frog')
 
         // Test entity name is not displayed.
         let native = fixture.nativeElement
@@ -261,5 +271,10 @@ describe('EntityLinkComponent', () => {
         fixture.detectChanges()
         native = fixture.nativeElement
         expect(native.textContent).toContain('shared network')
+
+        // Show the identifier.
+        fixture.componentRef.setInput('showIdentifier', true)
+        fixture.detectChanges()
+        expect(link.nativeElement.innerText).toEqual('[9]\u00a0frog')
     })
 })
