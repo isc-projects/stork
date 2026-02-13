@@ -81,7 +81,7 @@ describe('PasswordPolicy', () => {
         expect(control.errors['hasSpecialCharacter']).toBeDefined()
         expect(PasswordPolicy.isPasswordFeedbackNeeded('password', group)).toBeTrue()
         expect(PasswordPolicy.formatPasswordErrors('password', group)[0]).toBe(
-            'Password must contain at least one special character.'
+            'Password must contain at least one special character or whitespace.'
         )
         // Many violations at once.
         control.setValue('short')
@@ -97,7 +97,7 @@ describe('PasswordPolicy', () => {
         expect(errors).toContain('Password must be at least 12 characters long.')
         expect(errors).toContain('Password must contain at least one uppercase letter.')
         expect(errors).toContain('Password must contain at least one digit.')
-        expect(errors).toContain('Password must contain at least one special character.')
+        expect(errors).toContain('Password must contain at least one special character or whitespace.')
 
         // Valid password.
         control.setValue('ValidPassword123!')

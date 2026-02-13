@@ -862,7 +862,7 @@ export class StorkValidators {
                 return null
             }
         }
-        return { hasSpecialCharacter: 'The value must contain at least one special character.' }
+        return { hasSpecialCharacter: 'The value must contain at least one special character or whitespace.' }
     }
 
     /**

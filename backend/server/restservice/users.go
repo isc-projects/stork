@@ -653,7 +653,7 @@ func validatePassword(password string) []string {
 		validationErrors = append(validationErrors, "password must include at least one digit")
 	}
 	if !hasSpecial {
-		validationErrors = append(validationErrors, "password must include at least one special character")
+		validationErrors = append(validationErrors, "password must include at least one special character or whitespace")
 	}
 
 	return validationErrors

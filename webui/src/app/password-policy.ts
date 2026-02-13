@@ -72,7 +72,7 @@ export class PasswordPolicy {
         }
 
         if (control.errors?.['hasSpecialCharacter']) {
-            errors.push('Password must contain at least one special character.')
+            errors.push('Password must contain at least one special character or whitespace.')
         }
 
         if (comparePasswords) {

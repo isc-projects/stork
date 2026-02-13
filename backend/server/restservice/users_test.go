@@ -1210,7 +1210,7 @@ func TestValidatePassword(t *testing.T) {
 
 	passwordHasNoSpecialChars := validatePassword("Password1234")
 	require.NotEmpty(t, passwordHasNoSpecialChars)
-	require.Contains(t, passwordHasNoSpecialChars[0], "at least one special character")
+	require.Contains(t, passwordHasNoSpecialChars[0], "at least one special character or whitespace")
 
 	passwordWithManyProblems := validatePassword("®")
 	require.Len(t, passwordWithManyProblems, 5)

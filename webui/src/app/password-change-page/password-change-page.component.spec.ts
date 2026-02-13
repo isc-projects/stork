@@ -222,7 +222,7 @@ describe('PasswordChangePageComponent', () => {
         fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
-        expect(message).toContain('Password must contain at least one special character.')
+        expect(message).toContain('Password must contain at least one special character or whitespace.')
     })
 
     it('should return mismatched passwords error message when comparePasswords is true', () => {
@@ -257,7 +257,7 @@ describe('PasswordChangePageComponent', () => {
         expect(message).toContain('Password must be at least 12 characters long.')
         expect(message).toContain('Password must contain at least one uppercase letter.')
         expect(message).toContain('Password must contain at least one digit.')
-        expect(message).toContain('Password must contain at least one special character.')
+        expect(message).toContain('Password must contain at least one special character or whitespace.')
     })
 
     it('should return empty string when no errors', () => {
