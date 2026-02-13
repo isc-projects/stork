@@ -428,6 +428,8 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	password := ""
 	if p != nil {
 		password = string(*p)
+	}
+	if password != "" {
 		// Validate the new password against the password policy.
 		validationProblems := validatePassword(password)
 		if len(validationProblems) > 0 {

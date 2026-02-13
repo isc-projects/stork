@@ -923,6 +923,44 @@ func TestUpdateUserWithoutPassword(t *testing.T) {
 	require.Equal(t, 409, getStatusCode(*defaultRsp))
 }
 
+// Tests that user account with an empty password can be updated via REST API.
+func TestUpdateUserWithEmptyPassword(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	su := dbmodel.SystemUser{
+		Email:          "jan@example.org",
+		Lastname:       "Kowalski",
+		Name:           "Jan",
+		ChangePassword: false,
+	}
+	con, err := dbmodel.CreateUser(db, &su)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Modify some values and update the user.
+	su.Lastname = "Born"
+	params := users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: storkutil.Ptr(models.Password("")),
+		},
+	}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserOK{}, rsp)
+
+	// Also check that the user has been updated in the database.
+	returned, err := dbmodel.GetUserByID(db, su.ID)
+	require.NoError(t, err)
+	require.Equal(t, su.Lastname, returned.Lastname)
+}
+
 // Tests that update user password with missing data is rejected via REST API.
 func TestUpdateUserPasswordMissingData(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
