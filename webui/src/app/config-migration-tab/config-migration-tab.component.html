@@ -107,6 +107,7 @@
                                             *ngSwitchCase="'host'"
                                             entity="host"
                                             [attrs]="{ id: error.id, label: error.label }"
+                                            [showIdentifier]="true"
                                         ></app-entity-link>
                                         <span *ngSwitchDefault
                                             >{{ error.causeEntity }} [{{ error.id }}] {{ error.label }}</span
