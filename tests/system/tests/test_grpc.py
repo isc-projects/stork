@@ -19,7 +19,7 @@ from typing import Type
 from grpclib.exceptions import StreamTerminatedError
 
 from core.wrappers import Kea, Bind9
-from core.grpc_client import StorkAgentGRPCClient, GetStateRspAppAccessPoint
+from core.grpc_client import StorkAgentGRPCClient, GetStateRspAccessPoint
 
 
 def assert_raises(exceptions: tuple[Type[Exception], ...], func, *args, **kwargs):
@@ -104,7 +104,7 @@ def test_grpc_forward_to_kea_over_http(kea_service: Kea, bind9_service: Bind9):
     assert_raises(
         (ConnectionResetError, StreamTerminatedError, ssl.SSLCertVerificationError),
         client.forward_to_kea_over_http,
-        GetStateRspAppAccessPoint("control", "foo", 42, False),
+        GetStateRspAccessPoint("control", "foo", 42, False),
         {
             "command": "version-get",
             "service": ["dhcp4"],
