@@ -6,7 +6,7 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | Term                  | Definition                                                     |
    +=======================+================================================================+
-   | app                   | A program was monitored by the Stork server via the Stork      |
+   | app                   | Was a program monitored by the Stork server via the Stork      |
    |                       | agent. Typically, it was one of the integrated servers (e.g.,  |
    |                       | Kea DHCP or BIND 9 DNS). An app comprised multiple daemons.    |
    |                       | For example, the Kea DHCP app contained DHCPv4 and DHCPv6.     |
@@ -21,7 +21,7 @@ Glossary
    | daemon                | One of the programs belonging to a machine. For example: a     |
    |                       | DHCPv4 or DHCPv6 daemon in the Kea DHCP machine.               |
    +-----------------------+----------------------------------------------------------------+
-   | daemon id             | The unique identifier of a monitored daemon in the Stork       |
+   | daemon ID             | The unique identifier of a monitored daemon in the Stork       |
    |                       | server database. This identifier is often displayed in the UI  |
    |                       | and can be used, for example, for filtering daemons.           |
    +-----------------------+----------------------------------------------------------------+
