@@ -2012,7 +2012,7 @@ func TestGetBind9FormattedConfig(t *testing.T) {
 	// Filter config only.
 	next, cancel := iter.Pull(
 		manager.GetBind9FormattedConfig(
-			context.Background(),
+			t.Context(),
 			daemon.ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig),
 			bind9config.NewFilter(bind9config.FilterTypeConfig, bind9config.FilterTypeView),
@@ -2115,7 +2115,7 @@ func TestGetBind9FormattedConfigMultipleFiles(t *testing.T) {
 
 	next, cancel := iter.Pull(
 		manager.GetBind9FormattedConfig(
-			context.Background(),
+			t.Context(),
 			daemon.ID,
 			bind9config.NewFileTypeSelector(bind9config.FileTypeConfig, bind9config.FileTypeRndcKey),
 			nil),
@@ -2165,7 +2165,7 @@ func TestGetBind9FormattedConfigNoDaemon(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(context.Background(), int64(1), nil, nil))
+	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(t.Context(), int64(1), nil, nil))
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -2189,7 +2189,7 @@ func TestGetBind9FormattedConfigError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(context.Background(), int64(1), nil, nil))
+	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(t.Context(), int64(1), nil, nil))
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -2234,7 +2234,7 @@ func TestGetBind9FormattedConfigNilResponse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(context.Background(), int64(1), nil, nil))
+	next, cancel := iter.Pull(manager.GetBind9FormattedConfig(t.Context(), int64(1), nil, nil))
 	defer cancel()
 	rsp, ok := next()
 	require.True(t, ok)
@@ -2308,7 +2308,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetBind9FormattedConfig(context.Background(), daemon.ID, nil, nil)
+		responses := manager.GetBind9FormattedConfig(t.Context(), daemon.ID, nil, nil)
 		for response := range responses {
 			require.NoError(t, response.Err)
 		}
@@ -2320,7 +2320,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	// Run the second request while the first one is in progress.
 	// Since we use the same daemon ID, the manager should refuse it.
 	var errors []error
-	responses := manager.GetBind9FormattedConfig(context.Background(), daemon.ID, nil, nil)
+	responses := manager.GetBind9FormattedConfig(t.Context(), daemon.ID, nil, nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -2424,7 +2424,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	wg3.Add(1)
 	go func() {
 		defer wg3.Done()
-		responses := manager.GetBind9FormattedConfig(context.Background(), daemon1.ID, nil, nil)
+		responses := manager.GetBind9FormattedConfig(t.Context(), daemon1.ID, nil, nil)
 		for response := range responses {
 			// Since these responses will be read in the cleanup phase, it is expected
 			// that some of them will indicate failures while communicating with the
@@ -2444,7 +2444,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	})
 
 	var errors []error
-	responses := manager.GetBind9FormattedConfig(context.Background(), daemon2.ID, nil, nil)
+	responses := manager.GetBind9FormattedConfig(t.Context(), daemon2.ID, nil, nil)
 	for response := range responses {
 		errors = append(errors, response.Err)
 	}
@@ -2509,7 +2509,7 @@ func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
-	ctx, ctxCancel := context.WithCancel(context.Background())
+	ctx, ctxCancel := context.WithCancel(t.Context())
 	next, cancel := iter.Pull(
 		manager.GetBind9FormattedConfig(
 			ctx,
@@ -2531,6 +2531,7 @@ func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	ctxCancel()
 
 	// The second chunk should not be received.
-	_, ok = next()
+	rsp, ok = next()
+	require.Nil(t, rsp)
 	require.False(t, ok)
 }
