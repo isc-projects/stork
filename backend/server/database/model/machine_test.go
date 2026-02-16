@@ -1122,6 +1122,14 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		},
 	})
 
+	sortDaemons := func(machines []Machine) {
+		for m := range machines {
+			sort.Slice(machines[m].Daemons, func(i, j int) bool {
+				return machines[m].Daemons[i].ID < machines[m].Daemons[j].ID
+			})
+		}
+	}
+
 	t.Run("No relations - all", func(t *testing.T) {
 		// Act
 		machines, err := GetAllMachinesWithRelations(db, nil)
@@ -1162,6 +1170,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1187,6 +1196,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Len(t, machines[0].Daemons[0].LogTargets, 1)
 		require.Equal(t, "syslog", machines[0].Daemons[0].LogTargets[0].Name)
@@ -1214,6 +1224,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Len(t, machines[0].Daemons[0].AccessPoints, 1)
@@ -1245,6 +1256,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1272,6 +1284,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1298,6 +1311,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1324,6 +1338,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1351,6 +1366,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1379,6 +1395,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Empty(t, machines[0].Daemons[0].LogTargets)
 		require.Empty(t, machines[0].Daemons[0].AccessPoints)
@@ -1414,6 +1431,7 @@ func TestGetAllMachinesWithRelations(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, machines, 1)
 		require.Len(t, machines[0].Daemons, 3)
+		sortDaemons(machines)
 		require.Equal(t, daemonname.DHCPv4, machines[0].Daemons[0].Name)
 		require.Len(t, machines[0].Daemons[0].LogTargets, 1)
 		require.Len(t, machines[0].Daemons[0].AccessPoints, 1)
