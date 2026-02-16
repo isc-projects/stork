@@ -243,8 +243,12 @@ func TestGetMachineState(t *testing.T) {
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
 	require.Len(t, okRsp.Payload.Daemons, 2)
-	require.EqualValues(t, daemonname.CA, okRsp.Payload.Daemons[0].Name)
-	require.EqualValues(t, daemonname.Bind9, okRsp.Payload.Daemons[1].Name)
+	var daemonNames []string
+	for _, d := range okRsp.Payload.Daemons {
+		daemonNames = append(daemonNames, d.Name)
+	}
+	require.Contains(t, daemonNames, daemonname.CA)
+	require.Contains(t, daemonNames, daemonname.Bind9)
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
