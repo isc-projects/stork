@@ -996,11 +996,18 @@ func (manager *managerImpl) GetBind9FormattedConfig(ctx context.Context, daemonI
 			_ = yield(NewBind9FormattedConfigResponseError(err))
 			return
 		}
-		for r := range ch {
-			if !yield(r) || r.Err != nil {
-				// Stop reading the BIND 9 configuration if the caller is done reading
-				// or there was an error reading from the channel.
+
+		for {
+			select {
+			case <-ctx.Done():
+				// The caller stopped reading the BIND 9 configuration.
 				return
+			case r, ok := <-ch:
+				if !ok || !yield(r) || r.Err != nil {
+					// Stop reading the BIND 9 configuration if the caller is done reading
+					// or there was an error reading from the channel.
+					return
+				}
 			}
 		}
 	}
