@@ -119,24 +119,22 @@ func TestGetMachineStateOnly(t *testing.T) {
 }
 
 func mockGetDaemonsState(callNo int, cmdResponses []interface{}) {
-	switch callNo {
-	case 0:
-		versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
-		*versionResponse = kea.VersionGetResponse{
-			ResponseHeader: keactrl.ResponseHeader{
-				Result: 0,
-				Text:   "2.3.2",
-			},
-			Arguments: &kea.VersionGetRespArgs{
-				Extended: "Extended version",
-			},
-		}
-		response := cmdResponses[1].(*keactrl.Response)
-		*response = keactrl.Response{
-			ResponseHeader: keactrl.ResponseHeader{
-				Result: 0,
-			},
-			Arguments: []byte(`{
+	versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
+	*versionResponse = kea.VersionGetResponse{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+			Text:   "2.3.2",
+		},
+		Arguments: &kea.VersionGetRespArgs{
+			Extended: "Extended version",
+		},
+	}
+	response := cmdResponses[1].(*keactrl.Response)
+	*response = keactrl.Response{
+		ResponseHeader: keactrl.ResponseHeader{
+			Result: 0,
+		},
+		Arguments: []byte(`{
 				"Control-agent": {
 					"control-sockets": {
 						"dhcp4": {
@@ -146,52 +144,6 @@ func mockGetDaemonsState(callNo int, cmdResponses []interface{}) {
 					}
 				}
 			}`),
-		}
-	case 1:
-		// version-get response
-		versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
-		*versionResponse = kea.VersionGetResponse{
-			ResponseHeader: keactrl.ResponseHeader{
-				Result: 0,
-				Text:   "2.3.0",
-			},
-			Arguments: &kea.VersionGetRespArgs{
-				Extended: "Extended version",
-			},
-		}
-
-		// config-get response
-		response := cmdResponses[1].(*keactrl.Response)
-		*response = keactrl.Response{
-			ResponseHeader: keactrl.ResponseHeader{
-				Result: 0,
-			},
-			Arguments: []byte(`{
-				"Dhcp4": {
-					"hooks-libraries": [
-						{
-							"library": "hook_abc.so"
-						},
-						{
-							"library": "hook_def.so"
-						}
-					]
-				}
-			}`),
-		}
-
-		// status-get response
-		statusResponse := cmdResponses[2].(*kea.StatusGetResponse)
-		*statusResponse = kea.StatusGetResponse{
-			ResponseHeader: keactrl.ResponseHeader{
-				Result: 0,
-			},
-			Arguments: &kea.StatusGetRespArgs{
-				Pid: 123,
-			},
-		}
-	default:
-		panic("unexpected call number")
 	}
 }
 
