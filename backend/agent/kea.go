@@ -226,7 +226,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 //
 // It returns the Kea daemon instance or an error if the Kea is not recognized or
 // any error occurs.
-func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]Daemon, error) {
+func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]Daemon, error) { //nolint: gocyclo
 	// Extract the daemon name from the process.
 	processName, err := p.getName()
 	if err != nil {
@@ -336,7 +336,17 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			if err != nil {
 				return nil, errors.WithMessagef(err, "could not get path to executable")
 			}
-			socketAddress = filepath.Join(filepath.Dir(exe), "..", "var", "run", "kea", socketAddress)
+
+			// Meson decides localstatedir (which is part of socket path dir) automatically for Kea: https://github.com/mesonbuild/meson/blob/1.10.1/mesonbuild/options.py#L772
+			keaInstallPrefix := filepath.Join(filepath.Dir(exe), "..")
+			switch keaInstallPrefix {
+			case "/usr":
+				socketAddress = filepath.Join("/", "var", "run", "kea", socketAddress)
+			case "/usr/local":
+				socketAddress = filepath.Join("/", "var", "local", "run", "kea", socketAddress)
+			default:
+				socketAddress = filepath.Join(keaInstallPrefix, "var", "run", "kea", socketAddress)
+			}
 		}
 
 		accessPoint := AccessPoint{
