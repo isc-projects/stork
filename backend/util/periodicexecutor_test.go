@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -88,54 +89,47 @@ func TestPauseAndUnpauseOrReset(t *testing.T) {
 	for _, testCase := range testCases {
 		tc := testCase
 		t.Run(tc, func(t *testing.T) {
-			// Create an instance of the test executor which implements our mock function to
-			// be invoked by the executor under test.
-			testExecutorInstance := &testExecutor{
-				pausedChan: make(chan bool, 1),
-				mutex:      new(sync.Mutex),
-			}
-			executor, err := NewPeriodicExecutor("test executor",
-				testExecutorInstance.mockPull, getIntervalFunc)
-			require.NotNil(t, executor)
-			require.NoError(t, err)
-			defer executor.Shutdown()
-
-			// Pause the executor twice and unpause it once. The executor should remain
-			// paused because there were more calls to Pause() than Unpause().
-			executor.Pause()
-			executor.Pause()
-			executor.Unpause()
-
-			// The handler function should not be invoked within next 3 seconds when
-			// the executor is paused.
-			require.Never(t, func() bool {
-				invoked := len(testExecutorInstance.pausedChan) > 0
-				if invoked {
-					<-testExecutorInstance.pausedChan
+			synctest.Test(t, func(t *testing.T) {
+				// Create an instance of the test executor which implements our mock function to
+				// be invoked by the executor under test.
+				testExecutorInstance := &testExecutor{
+					pausedChan: make(chan bool, 1),
+					mutex:      new(sync.Mutex),
 				}
-				return invoked
-			},
-				1*time.Second,
-				50*time.Millisecond,
-				"executor function was invoked but it shouldn't when executor is paused")
+				executor, err := NewPeriodicExecutor("test executor",
+					testExecutorInstance.mockPull, getIntervalFunc)
+				require.NotNil(t, executor)
+				require.NoError(t, err)
+				defer executor.Shutdown()
 
-			// Make sure that the paused flag is set as expected.
-			require.True(t, executor.Paused())
-
-			// Depending on the test case, use Unpause or Reset to start the executor again.
-			if tc == "Unpause" {
+				// Pause the executor twice and unpause it once. The executor should remain
+				// paused because there were more calls to Pause() than Unpause().
+				executor.Pause()
+				executor.Pause()
 				executor.Unpause()
-			} else {
-				executor.reset(1)
-			}
 
-			// This should result in handler function being called.
-			require.Eventually(t, func() bool {
-				return len(testExecutorInstance.pausedChan) > 0
-			},
-				5*time.Second,
-				50*time.Millisecond,
-				"test executor did not invoke a function within a desired time period")
+				// The handler function should not be invoked within next 3 seconds when
+				// the executor is paused.
+				time.Sleep(100 * time.Millisecond)
+				synctest.Wait()
+
+				require.Zero(t, len(testExecutorInstance.pausedChan))
+
+				// Make sure that the paused flag is set as expected.
+				require.True(t, executor.Paused())
+
+				// Depending on the test case, use Unpause or Reset to start the executor again.
+				if tc == "Unpause" {
+					executor.Unpause()
+				} else {
+					executor.reset(1)
+				}
+
+				// This should result in handler function being called.
+				time.Sleep(20 * time.Millisecond)
+				synctest.Wait()
+				require.NotZero(t, len(testExecutorInstance.pausedChan))
+			})
 		})
 	}
 }
