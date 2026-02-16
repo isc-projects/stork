@@ -247,8 +247,8 @@ func TestGetMachineState(t *testing.T) {
 	for _, d := range okRsp.Payload.Daemons {
 		daemonNames = append(daemonNames, d.Name)
 	}
-	require.Contains(t, daemonNames, daemonname.CA)
-	require.Contains(t, daemonNames, daemonname.Bind9)
+	require.Contains(t, daemonNames, string(daemonname.CA))
+	require.Contains(t, daemonNames, string(daemonname.Bind9))
 	require.Nil(t, okRsp.Payload.LastVisitedAt)
 }
 
