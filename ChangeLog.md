@@ -1,4 +1,10 @@
-Stork 2.4.0 released on 2026-02-18.
+Stork 2.4.0 released on 2026-02-25.
+
+* 615 [bug] slawek
+
+    Fixed a bug preventing deletion of an unauthorized machine or a
+    machine without any detected daemons.
+    (Gitlab #2295)
 
 * 614 [func] slawek
 

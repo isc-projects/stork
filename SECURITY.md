@@ -52,16 +52,6 @@ confidential GitLab issue as described above; if verified, we will be happy to c
 
 ## Supported Versions
 
-| Version | Kind        | Period                  | End-Of-Life                                     |
-| ------- | ----------- | ----------------------- | ----------------------------------------------- |
-| 2.5.x   | development | ~2 months               | August 2026 (on release of 2.6.0)               |
-| 2.4.x   | stable      | ~6 months (+ ~3 months) | November 2026 (on release of 2.6.0 + 3 months)  |
-| 2.3.x   | development | ~2 months               | February 2026                                   |
-| 2.2.0   | stable      | ~6 months (+ ~3 months) | May 2026                                        |
-| 2.1.x   | development | ~2 months               | June 2025                                       |
-| 2.0.0   | stable      | ~6 months (+ ~3 months) | September 2025                                  |
-| earlier | development | ~2 months               | November 2024                                   |
-
 ISC's Software Support Policy and Version Numbering is explained in a [KnowledgeBase article](https://kb.isc.org/docs/aa-00896).
 Limited past EOL support may be available to higher-tier customers. For more information, please contact ISC
 sales at info@isc.org.

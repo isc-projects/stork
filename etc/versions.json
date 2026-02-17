@@ -2,21 +2,21 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.20.18",
-        "releaseDate": "2026-01-21",
+        "version": "9.20.19",
+        "releaseDate": "2026-02-18",
         "eolDate": "2028-07-01",
         "ESV": "true"
       },
       {
-        "version": "9.18.44",
-        "releaseDate": "2026-01-21",
+        "version": "9.18.45",
+        "releaseDate": "2026-02-18",
         "eolDate": "2026-07-01",
         "ESV": "true"
       }
     ],
     "latestDev": {
-      "version": "9.21.17",
-      "releaseDate": "2026-01-21"
+      "version": "9.21.18",
+      "releaseDate": "2026-02-18"
     },
     "latestSecure": [
       {
@@ -47,8 +47,8 @@
       }
     ],
     "latestDev": {
-      "version": "3.1.5",
-      "releaseDate": "2026-01-28"
+      "version": "3.1.6",
+      "releaseDate": "2026-02-25"
     },
     "latestSecure": [
       {
@@ -73,7 +73,7 @@
     "currentStable": [
       {
         "version": "2.4.0",
-        "releaseDate": "2026-02-18",
+        "releaseDate": "2026-02-25",
         "eolDate": "2026-11-18"
       },
       {
@@ -97,5 +97,5 @@
       }
     ]
   },
-  "date": "2026-02-13"
+  "date": "2026-02-25"
 }
