@@ -37,7 +37,7 @@ def test_users_management(server_service: Server):
             groups=[],
             authentication_method_id="internal",
         ),
-        "password",
+        "Password123!",
     )
 
 
@@ -54,11 +54,11 @@ def test_user_without_groups(server_service: Server):
             groups=[],
             authentication_method_id="internal",
         ),
-        "password",
+        "Password123!",
     )
     server_service.log_out()
 
-    server_service.log_in("user", "password")
+    server_service.log_in("user", "Password123!")
     server_service.log_out()
 
 
