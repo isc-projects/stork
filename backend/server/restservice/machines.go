@@ -987,7 +987,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		rsp := services.NewDeleteMachineOK()
 		return rsp
 	} else if err != nil {
-		msg := fmt.Sprintf("Cannot delete machine %d", params.ID)
+		msg := fmt.Sprintf("Cannot fetch machine %d", params.ID)
 		log.WithError(err).Error(msg)
 		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,

@@ -8,8 +8,6 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
-	"isc.org/stork/datamodel/daemonname"
-	dbops "isc.org/stork/server/database"
 )
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
@@ -349,15 +347,10 @@ func GetUnauthorizedMachinesCount(db *pg.DB) (int, error) {
 	return count, pkgerrors.Wrapf(err, "problem counting unauthorized machines")
 }
 
-// Delete a machine from database. The machine must include non-nil Daemons
-// field (though it may be an empty slice). The Daemons field is used to
-// delete orphaned objects (e.g., subnets, zones) after the machine is deleted.
-// The whole operation is transactional, so it is rolled back if it fails at
-// any stage.
+// Delete a machine from database. It also deletes all orphaned objects related
+// to the machine. The whole operation is transactional, so it is rolled back
+// if it fails at any stage.
 func DeleteMachine(db *pg.DB, machine *Machine) error {
-	if machine.Daemons == nil {
-		return pkgerrors.Errorf("deleted machine with ID %d has no daemons relation", machine.ID)
-	}
 	return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 		result, err := db.Model(machine).WherePK().Delete()
 		if err != nil {
@@ -365,27 +358,22 @@ func DeleteMachine(db *pg.DB, machine *Machine) error {
 		} else if result.RowsAffected() <= 0 {
 			return pkgerrors.Wrapf(ErrNotExists, "machine with ID %d does not exist", machine.ID)
 		}
-		// Deleting the machine may leave some orphaned objects behind.
-		// Let's make sure they are deleted.
-		daemonNames := make(map[daemonname.Name]bool)
-		fns := []func(tx dbops.DBI) (int64, error){}
-		for _, daemon := range machine.Daemons {
-			daemonNames[daemon.Name] = true
+
+		_, err = DeleteOrphanedZones(db)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem deleting orphaned zones after deleting machine")
 		}
-		for daemonName := range daemonNames {
-			switch daemonName {
-			case daemonname.Bind9, daemonname.PDNS:
-				fns = append(fns, DeleteOrphanedZones)
-			case daemonname.DHCPv4, daemonname.DHCPv6:
-				fns = append(fns, DeleteOrphanedSubnets, DeleteOrphanedHosts, DeleteOrphanedSharedNetworks)
-			case daemonname.CA, daemonname.D2, daemonname.NetConf:
-				// No orphaned objects to delete.
-			}
+		_, err = DeleteOrphanedSubnets(db)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem deleting orphaned subnets after deleting machine")
 		}
-		for _, fn := range fns {
-			if _, err := fn(tx); err != nil {
-				return err
-			}
+		_, err = DeleteOrphanedHosts(db)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem deleting orphaned hosts after deleting machine")
+		}
+		_, err = DeleteOrphanedSharedNetworks(db)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem deleting orphaned shared networks after deleting machine")
 		}
 		return nil
 	})

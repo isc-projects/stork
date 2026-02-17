@@ -678,12 +678,12 @@ func TestGetUnauthorizedMachinesCount(t *testing.T) {
 }
 
 // Check if an attempt to delete a machine without specifying the daemons
-// relation fails.
+// relation doesn't fail.
 func TestDeleteMachineOnly(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// add machine
+	// Add machine.
 	m := &Machine{
 		Address:   "localhost",
 		AgentPort: 8080,
@@ -691,10 +691,20 @@ func TestDeleteMachineOnly(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// delete machine
+	// Add an orphaned subnet.
+	subnet := &Subnet{
+		Prefix: "fe80::/64",
+	}
+	err = AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	// Delete machine.
 	err = DeleteMachine(db, m)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "deleted machine with ID 1 has no daemons relation")
+	require.NoError(t, err)
+	// Check if there is no orphans.
+	subnets, err := GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Empty(t, subnets)
 }
 
 // Check if deleting machine and its daemons works.
