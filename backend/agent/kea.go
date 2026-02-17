@@ -179,6 +179,28 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 	return config, err
 }
 
+// Resolves the full socket path from the socket filename and Kea executable
+// path.
+// Meson (build system used by Kea) decides localstatedir (which is part of
+// socket path dir) automatically for Kea:
+// https://github.com/mesonbuild/meson/blob/1.10.1/mesonbuild/options.py#L772
+// Handles a general case (standard Linux distribution, when the Kea
+// installation prefix is /) and special cases: when the installation prefix is
+// /usr, /usr/local (BSDs, MacOS), and custom.
+// See: https://github.com/mesonbuild/meson/blob/master/unittests/allplatformstests.py#L324-L363
+// and https://gitlab.isc.org/isc-projects/stork/-/issues/2166 .
+func resolveKeaSocketPath(socketFilename string, keaExecutablePath string) string {
+	keaInstallPrefix := filepath.Join(filepath.Dir(keaExecutablePath), "..")
+	switch keaInstallPrefix {
+	case "/usr":
+		return filepath.Join("/", "var", "run", "kea", socketFilename)
+	case "/usr/local":
+		return filepath.Join("/", "var", "local", "run", "kea", socketFilename)
+	default:
+		return filepath.Join(keaInstallPrefix, "var", "run", "kea", socketFilename)
+	}
+}
+
 // Detect the Kea daemon(s).
 //
 // The communication model with Kea changed significantly with the release of
@@ -226,7 +248,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 //
 // It returns the Kea daemon instance or an error if the Kea is not recognized or
 // any error occurs.
-func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]Daemon, error) { //nolint: gocyclo
+func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]Daemon, error) {
 	// Extract the daemon name from the process.
 	processName, err := p.getName()
 	if err != nil {
@@ -337,16 +359,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 				return nil, errors.WithMessagef(err, "could not get path to executable")
 			}
 
-			// Meson decides localstatedir (which is part of socket path dir) automatically for Kea: https://github.com/mesonbuild/meson/blob/1.10.1/mesonbuild/options.py#L772
-			keaInstallPrefix := filepath.Join(filepath.Dir(exe), "..")
-			switch keaInstallPrefix {
-			case "/usr":
-				socketAddress = filepath.Join("/", "var", "run", "kea", socketAddress)
-			case "/usr/local":
-				socketAddress = filepath.Join("/", "var", "local", "run", "kea", socketAddress)
-			default:
-				socketAddress = filepath.Join(keaInstallPrefix, "var", "run", "kea", socketAddress)
-			}
+			socketAddress = resolveKeaSocketPath(socketAddress, exe)
 		}
 
 		accessPoint := AccessPoint{

@@ -2428,3 +2428,91 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 		require.False(t, gock.HasUnmatchedRequest())
 	})
 }
+
+// Test that resolveKeaSocketPath returns the correct socket path for different
+// Kea installation prefixes.
+func TestResolveKeaSocketPath(t *testing.T) {
+	t.Run("Standard Linux distribution (prefix /)", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-dhcp4.socket"
+		keaExecutablePath := "/sbin/kea-dhcp4"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/var/run/kea/kea-dhcp4.socket", result)
+	})
+
+	t.Run("Prefix /usr", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-dhcp4.socket"
+		keaExecutablePath := "/usr/sbin/kea-dhcp4"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/var/run/kea/kea-dhcp4.socket", result)
+	})
+
+	t.Run("Prefix /usr/local (BSDs, MacOS)", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-dhcp4.socket"
+		keaExecutablePath := "/usr/local/sbin/kea-dhcp4"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/var/local/run/kea/kea-dhcp4.socket", result)
+	})
+
+	t.Run("Custom prefix /opt/kea", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-dhcp4.socket"
+		keaExecutablePath := "/opt/kea/sbin/kea-dhcp4"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/opt/kea/var/run/kea/kea-dhcp4.socket", result)
+	})
+
+	t.Run("Custom prefix /home/user/kea", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-ctrl-agent.socket"
+		keaExecutablePath := "/home/user/kea/bin/kea-ctrl-agent"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/home/user/kea/var/run/kea/kea-ctrl-agent.socket", result)
+	})
+
+	t.Run("DHCPv6 daemon socket", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-dhcp6.socket"
+		keaExecutablePath := "/usr/sbin/kea-dhcp6"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/var/run/kea/kea-dhcp6.socket", result)
+	})
+
+	t.Run("DDNS daemon socket", func(t *testing.T) {
+		// Arrange
+		socketFilename := "kea-ddns.socket"
+		keaExecutablePath := "/usr/local/sbin/kea-dhcp-ddns"
+
+		// Act
+		result := resolveKeaSocketPath(socketFilename, keaExecutablePath)
+
+		// Assert
+		require.Equal(t, "/var/local/run/kea/kea-ddns.socket", result)
+	})
+}
