@@ -361,19 +361,19 @@ func DeleteMachine(db *pg.DB, machine *Machine) error {
 
 		_, err = DeleteOrphanedZones(db)
 		if err != nil {
-			return pkgerrors.WithMessage(err, "problem deleting orphaned zones after deleting machine")
+			return err
 		}
 		_, err = DeleteOrphanedSubnets(db)
 		if err != nil {
-			return pkgerrors.WithMessage(err, "problem deleting orphaned subnets after deleting machine")
+			return err
 		}
 		_, err = DeleteOrphanedHosts(db)
 		if err != nil {
-			return pkgerrors.WithMessage(err, "problem deleting orphaned hosts after deleting machine")
+			return err
 		}
 		_, err = DeleteOrphanedSharedNetworks(db)
 		if err != nil {
-			return pkgerrors.WithMessage(err, "problem deleting orphaned shared networks after deleting machine")
+			return err
 		}
 		return nil
 	})
