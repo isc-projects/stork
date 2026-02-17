@@ -68,7 +68,6 @@ stages:
 .nodejs_cache: &nodejs_cache
   paths:
     - tools/nodejs
-    - tools/playwright_browsers
   policy: pull
 
 .golang_amd64_cache: &golang_amd64_cache
@@ -123,6 +122,12 @@ stages:
   key: ruby
   paths:
     - tools/ruby
+  policy: pull
+
+.playwright_browsers_cache: &playwright_browsers_cache
+  key: playwright_browsers
+  paths:
+    - tools/playwright_browsers
   policy: pull
 
 ### build jobs ###
@@ -323,6 +328,7 @@ unittest_ui:
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
+    - *playwright_browsers_cache
   script:
     - rake unittest:ui
   artifacts:
@@ -338,6 +344,7 @@ storybook_tests:
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
+    - *playwright_browsers_cache
   allow_failure: true
   script:
     - rake unittest:storybook
@@ -377,6 +384,8 @@ build_cache_amd64:
     - <<: *python_amd64_cache
       policy: push
     - <<: *nodejs_amd64_cache
+      policy: push
+    - <<: *playwright_browsers_cache
       policy: push
 #    - <<: *ruby_cache
 #      policy: push
