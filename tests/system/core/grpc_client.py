@@ -165,8 +165,7 @@ class StorkAgentGRPCClient:
         will be serialized to JSONs.
         Returns deserialized Kea responses.
         """
-        protocol = "https" if access_point.useSecureProtocol else "http"
-        url = f"{protocol}://{access_point.address}:{access_point.port}"
+        url = f"{access_point.protocol}://{access_point.address}:{access_point.port}"
 
         grpc_cmds = []
         for cmd in cmds:
