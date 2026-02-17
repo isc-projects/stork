@@ -701,7 +701,7 @@ func TestDeleteMachineOnly(t *testing.T) {
 	// Delete machine.
 	err = DeleteMachine(db, m)
 	require.NoError(t, err)
-	// Check if there is no orphans.
+	// Check if there are no orphans.
 	subnets, err := GetAllSubnets(db, 0)
 	require.NoError(t, err)
 	require.Empty(t, subnets)
