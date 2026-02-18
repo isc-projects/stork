@@ -573,8 +573,8 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	})
 	for range 10 {
 		wg.Go(func() {
-			errStr := sp.UpdateMachineAndDaemonsState(t.Context(), m)
-			require.Empty(t, errStr)
+			err := sp.UpdateMachineAndDaemonsState(t.Context(), m)
+			require.NoError(t, err)
 		})
 	}
 	wg.Wait()

@@ -63,21 +63,20 @@ func (puller *StatePuller) pullData() error {
 	}
 
 	// get state from machines and their daemons
-	var lastErr error
+	var errs []error
 	okCnt := 0
 	for _, dbM := range dbMachines {
 		dbM2 := dbM
 		ctx := context.Background()
-		errStr := puller.UpdateMachineAndDaemonsState(ctx, &dbM2)
-		if errStr != "" {
-			lastErr = errors.New(errStr)
-			log.WithError(lastErr).Errorf("Error occurred while getting info from machine %d", dbM2.ID)
+		err := puller.UpdateMachineAndDaemonsState(ctx, &dbM2)
+		if err != nil {
+			errs = append(errs, err)
 		} else {
 			okCnt++
 		}
 	}
 	log.Printf("Completed pulling information from machines: %d/%d succeeded", okCnt, len(dbMachines))
-	return lastErr
+	return storkutil.CombineErrors("errors occurred while getting info from some machines", errs)
 }
 
 // It fetches the state of the machine and its daemons from the agent and
@@ -86,28 +85,15 @@ func (puller *StatePuller) pullData() error {
 //
 // It is guaranteed that this function is not called concurrently for the same
 // machine, even if it is called by the puller and externally at the same time.
-func (puller *StatePuller) UpdateMachineAndDaemonsState(ctx context.Context, dbMachine *dbmodel.Machine) string {
+func (puller *StatePuller) UpdateMachineAndDaemonsState(ctx context.Context, dbMachine *dbmodel.Machine) error {
 	key := fmt.Sprintf("%s-update-state-%d", puller.GetName(), dbMachine.ID)
-	errStrRaw, err, _ := puller.updateMachineStateGroup.Do(key, func() (any, error) {
-		return updateMachineAndDaemonsState(ctx, puller.DB,
+	_, err, _ := puller.updateMachineStateGroup.Do(key, func() (any, error) {
+		return nil, updateMachineAndDaemonsState(ctx, puller.DB,
 			dbMachine,
 			puller.Agents, puller.EventCenter, puller.ReviewDispatcher,
-			puller.DHCPOptionDefinitionLookup), nil
+			puller.DHCPOptionDefinitionLookup)
 	})
-	if err != nil {
-		// It should never happen.
-		errStr := "Updating machine in a singleflight mode failed"
-		log.WithError(err).Error(errStr)
-		return errStr
-	}
-	errStr, ok := errStrRaw.(string)
-	if !ok {
-		// It should never happen even more.
-		errStr := "Updating machine in a singleflight mode returned unexpected type"
-		log.Error(errStr)
-		return errStr
-	}
-	return errStr
+	return err
 }
 
 // Store updated machine fields in to database.
@@ -214,7 +200,7 @@ DISCOVERED_LOOP:
 }
 
 // Retrieve remotely machine and its daemons state, and store it in the database.
-func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) string {
+func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) error {
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -225,17 +211,14 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 		dbMachine.Error = "Cannot get state of machine"
 		err = dbmodel.UpdateMachine(db, dbMachine)
 		if err != nil {
-			msg := "Problem updating record in database"
-			log.WithError(err).Error(msg)
-			return msg
+			return err
 		}
-		return ""
+		return nil
 	}
 
 	agentVersion, err := storkutil.ParseSemanticVersion(state.AgentVersion)
 	if err != nil {
-		log.WithError(err).Errorf("Cannot parse agent version: %s", state.AgentVersion)
-		return "Cannot parse agent version"
+		return err
 	}
 
 	if agentVersion.LessThan(storkutil.NewSemanticVersion(2, 3, 2)) {
@@ -247,9 +230,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 
 			additionalDaemons, err := getDaemonsFromKeaCAConfig(ctx, agents, daemon)
 			if err != nil {
-				msg := "Cannot get daemons from Kea CA configuration"
-				log.WithError(err).Error(msg)
-				return msg
+				return err
 			}
 
 			// Append the additional daemons to the list of daemons.
@@ -268,9 +249,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 	// store machine's state in db
 	err = updateMachineFields(db, dbMachine, state)
 	if err != nil {
-		msg := "Cannot update machine in db"
-		log.WithError(err).Error(msg)
-		return msg
+		return err
 	}
 
 	// take old daemons from db and new daemons fetched from the machine
@@ -356,8 +335,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 		}
 
 		if err != nil {
-			log.WithError(err).Errorf("Cannot store daemon state")
-			return "Problem storing daemon state in the database"
+			return err
 		}
 	}
 
@@ -365,7 +343,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine
 	// to return state of machine and its daemons
 	dbMachine.Daemons = allDaemons
 
-	return ""
+	return nil
 }
 
 // This function checks if a new config review should be performed. It is
