@@ -161,13 +161,15 @@ stages:
   <<: *cache_job_template
   rules:
     - changes:
-      - .gitlab-ci.yml
-      - webui/package.json
-      - webui/package-lock.json
-      - backend/go.mod
-      - backend/go.sum
-      - rakelib/*
-      - rakelib/**/*
+        paths:
+  #      - .gitlab-ci.yml
+          - webui/package.json
+          - webui/package-lock.json
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/*
+          - rakelib/**/*
+        compare_to: "$CI_COMMIT_REF_SLUG~1"
     - when: manual
       allow_failure: true
 .cache_job_template_alpine: &cache_job_template_alpine
@@ -175,11 +177,13 @@ stages:
   <<: *job_template_alpine
   rules:
     - changes:
-      - .gitlab-ci.yml
-      - backend/go.mod
-      - backend/go.sum
-      - rakelib/*
-      - rakelib/**/*
+        paths:
+  #      - .gitlab-ci.yml
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/*
+          - rakelib/**/*
+        compare_to: "$CI_COMMIT_REF_SLUG~1"
     - when: manual
       allow_failure: true
   script:
@@ -190,9 +194,11 @@ stages:
   <<: *job_template_redhat
   rules:
     - changes:
-      - .gitlab-ci.yml
-      - rakelib/*
-      - rakelib/**/*
+        paths:
+#      - .gitlab-ci.yml
+          - rakelib/*
+          - rakelib/**/*
+        compare_to: "$CI_COMMIT_REF_SLUG~1"
     - when: manual
       allow_failure: true
   script:
