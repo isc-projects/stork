@@ -269,13 +269,14 @@ rebuild_cache_arm64_redhat:
   stage: build
   rules:
     - when: always
+  needs:
+    - job: rebuild_cache_amd64
+      optional: true
 .build_template_arm: &build_template_arm
   <<: *build_template
   <<: *job_template_arm
-#  needs: []
 
 # jobs
-
 build_ui:
   <<: *build_template
   cache:
@@ -321,6 +322,9 @@ build_backend_arm64:
   cache:
     - *golang_arm64_cache
     - *nodejs_arm64_cache ## because npm yamlinc is used
+  needs:
+    - job: rebuild_cache_arm64
+      optional: true
   variables:
     ARCH: arm64
 
@@ -409,6 +413,8 @@ build_rpms_amd64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
+    - job: rebuild_cache_amd64_redhat
+      optional: true
   script:
     - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
     - rake build:server_pkg SUPPRESS_PREREQUISITES=true
@@ -428,6 +434,8 @@ build_rpms_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
+    - job: rebuild_cache_arm64_redhat
+      optional: true
   script:
     - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
     - rake build:server_pkg SUPPRESS_PREREQUISITES=true
@@ -444,6 +452,11 @@ build_apks_amd64:
     - *golang_amd64_cache_alpine
     - *python_amd64_cache_alpine
     - *nodejs_amd64_cache
+  needs:
+    - job: rebuild_cache_amd64
+      optional: true
+    - job: rebuild_cache_amd64_alpine
+      optional: true
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -460,6 +473,11 @@ build_apks_arm64:
     - *golang_arm64_cache_alpine
     - *python_arm64_cache_alpine
     - *nodejs_arm64_cache
+  needs:
+    - job: rebuild_cache_arm64
+      optional: true
+    - job: rebuild_cache_arm64_alpine
+      optional: true
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -492,6 +510,9 @@ packages:
 .checks_template: &checks_template
   <<: *job_template
   stage: checks
+  needs:
+    - job: rebuild_cache_amd64
+      optional: true
 .checks_template_arm: &checks_template_arm
   <<: *checks_template
   <<: *job_template_arm
@@ -503,8 +524,6 @@ lint_backend:
   cache:
     - *golang_amd64_cache
     - *nodejs_amd64_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   script:
     - rake lint:backend
 
@@ -520,8 +539,6 @@ lint_python_pylint:
     - *python_amd64_cache
     - *nodejs_amd64_cache
     - *golang_amd64_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   script:
     - rake lint:python:pylint
 
@@ -529,8 +546,6 @@ lint_python_flake8:
   <<: *checks_template
   cache:
     - *python_amd64_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   script:
     - rake lint:python:flake8
 
@@ -538,8 +553,6 @@ lint_python_black:
   <<: *checks_template
   cache:
     - *python_amd64_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   script:
     - rake lint:python:black
 
@@ -547,8 +560,6 @@ unittest_backend:
   <<: *checks_template
   cache:
     - *golang_amd64_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   services:
     - name: postgres:18-alpine
       alias: postgres
@@ -577,8 +588,6 @@ lint_ui:
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   script:
     - rake lint:ui
 
@@ -588,8 +597,6 @@ unittest_ui:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
     - *playwright_browsers_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   script:
     - rake unittest:ui
   artifacts:
@@ -605,8 +612,6 @@ storybook_tests:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
     - *playwright_browsers_cache
-  #  needs:
-  #    - rebuild_cache_amd64
   allow_failure: true
   script:
     - rake unittest:storybook
@@ -816,6 +821,9 @@ system_test_latest_devs:
 .hooks_template: &hooks_template
   <<: *job_template
   stage: hooks
+  needs:
+    - job: rebuild_cache_amd64
+      optional: true
 .hooks_template_arm: &hooks_template_arm
   <<: *job_template_arm
   stage: hooks
@@ -823,8 +831,6 @@ system_test_latest_devs:
 build_hooks_amd64:
   <<: *hooks_template
   when: always
-  #  needs:
-  #    - rebuild_cache_amd64
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   cache:
@@ -838,6 +844,9 @@ build_hooks_amd64:
 build_hooks_arm64:
   extends: build_hooks_amd64
   <<: *job_template_arm
+  needs:
+    - job: rebuild_cache_arm64
+      optional: true
   cache:
     - *golang_arm64_cache
   variables:
@@ -877,8 +886,6 @@ build_hooks_legacy_arm64:
 unittest_hooks:
   <<: *hooks_template
   when: always
-  #  needs:
-  #    - rebuild_cache_amd64
   cache:
     - *golang_amd64_cache
   variables:
@@ -970,6 +977,8 @@ build_hooks_rpms_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
+    - job: rebuild_cache_arm64_redhat
+      optional: true
   cache:
     - *golang_arm64_cache
     - *python_arm64_cache_redhat
@@ -988,8 +997,9 @@ build_hooks_apks_amd64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  #  needs:
-  #    - rebuild_cache_amd64_alpine
+  needs:
+    - job: rebuild_cache_amd64_alpine
+      optional: true
   cache:
     - *golang_amd64_cache_alpine
     - *python_amd64_cache_alpine
@@ -1008,8 +1018,9 @@ build_hooks_apks_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  #  needs:
-  #    - rebuild_cache_arm64_alpine
+  needs:
+    - job: rebuild_cache_arm64_alpine
+      optional: true
   cache:
     - *golang_arm64_cache_alpine
     - *python_arm64_cache_alpine
