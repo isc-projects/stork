@@ -171,8 +171,8 @@ stages:
           - rakelib/*
           - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1"
-#    - when: manual
-#      allow_failure: true
+    - when: manual
+      allow_failure: true
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
   <<: *job_template_alpine
@@ -185,8 +185,8 @@ stages:
           - rakelib/*
           - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1"
-#    - when: manual
-#      allow_failure: true
+    - when: manual
+      allow_failure: true
   script:
     - rake prepare:dist
     - rake prepare:deps
@@ -200,8 +200,8 @@ stages:
           - rakelib/*
           - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1"
-#    - when: manual
-#      allow_failure: true
+    - when: manual
+      allow_failure: true
   script:
     - rake prepare:sphinx_deps
 
@@ -516,6 +516,7 @@ packages:
 .checks_template: &checks_template
   <<: *job_template
   stage: checks
+  when: always
   needs:
     - job: rebuild_cache_amd64
       optional: true
