@@ -160,28 +160,26 @@ stages:
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes:
-        - .gitlab-ci.yml
-        - webui/package.json
-        - webui/package-lock.json
-        - backend/go.mod
-        - backend/go.sum
-        - rakelib/*
-        - rakelib/**/*
+    - changes:
+      - .gitlab-ci.yml
+      - webui/package.json
+      - webui/package-lock.json
+      - backend/go.mod
+      - backend/go.sum
+      - rakelib/*
+      - rakelib/**/*
     - when: manual
       allow_failure: true
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
   <<: *job_template_alpine
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes:
-        - .gitlab-ci.yml
-        - backend/go.mod
-        - backend/go.sum
-        - rakelib/*
-        - rakelib/**/*
+    - changes:
+      - .gitlab-ci.yml
+      - backend/go.mod
+      - backend/go.sum
+      - rakelib/*
+      - rakelib/**/*
     - when: manual
       allow_failure: true
   script:
@@ -191,11 +189,10 @@ stages:
   <<: *cache_job_template
   <<: *job_template_redhat
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes:
-        - .gitlab-ci.yml
-        - rakelib/*
-        - rakelib/**/*
+    - changes:
+      - .gitlab-ci.yml
+      - rakelib/*
+      - rakelib/**/*
     - when: manual
       allow_failure: true
   script:
