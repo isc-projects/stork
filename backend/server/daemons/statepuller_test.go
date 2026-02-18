@@ -487,8 +487,11 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 
 	// prepare fake agents
 	fa := agentcommtest.NewFakeAgents(func(i int, daemon agentcomm.ControlledDaemon, responses []any) {
-		switch i % 3 {
-		case 0:
+		accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+		require.NoError(t, err)
+
+		switch {
+		case daemon.GetName() == daemonname.DHCPv4 && accessPoint.Address == "203.0.113.111":
 			// The DHCPv4 daemon with an old access point is offline, so the
 			// the puller should not be able to retrieve its state.
 			versionResponse := responses[0].(*kea.VersionGetResponse)
@@ -502,16 +505,18 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 			statusResponse := responses[2].(*kea.StatusGetResponse)
 			statusResponse.Result = keactrl.ResponseError
 			statusResponse.Text = "server is likely to be offline"
-		case 1:
+		case daemon.GetName() == daemonname.DHCPv4 && accessPoint.Address == "203.0.113.123":
 			// The DHCPv4 daemon with a new access point is online, so the
 			// puller should be able to retrieve its state.
 			r := responses[1].(*keactrl.Response)
 			r.Arguments = []byte(`{ "Dhcp4": {} }`)
-		default:
+		case daemon.GetName() == daemonname.CA:
 			// The CA daemon is online, so the puller should be able to
 			// retrieve its state.
 			r := responses[1].(*keactrl.Response)
 			r.Arguments = []byte(`{ "Control-agent": {} }`)
+		default:
+			require.FailNow(t, "unexpected call to fake agents")
 		}
 	}, nil)
 
