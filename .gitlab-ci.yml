@@ -157,6 +157,7 @@ stages:
   <<: *job_template
   stage: cache
   needs: [ ]
+  allow_failure: true
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
