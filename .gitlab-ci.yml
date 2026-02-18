@@ -354,6 +354,8 @@ build_backend_legacy_arm64:
 tarball:
   <<: *build_template
   needs: [ ]
+  before_script:
+    - echo $CI_PIPELINE_SOURCE
   script:
     - rake release:tarball
   artifacts:
