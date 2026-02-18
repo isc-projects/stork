@@ -274,7 +274,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	err = r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx, dbMachine)
+	dbMachine, err = r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot fetch state of machine with ID %d", params.ID)
 		log.WithError(err).Error(msg)
@@ -789,7 +789,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 	}
 
 	// Communication with an agent established, so get machine's state.
-	err = r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx2, dbMachine)
+	_, err = r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx2, dbMachine.ID)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot fetch state of machine with ID %d after ping", params.ID)
 		log.WithError(err).Error(msg)
@@ -893,7 +893,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if !prevAuthorized && dbMachine.Authorized {
 		ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		err := r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx2, dbMachine)
+		dbMachine, err = r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx2, dbMachine.ID)
 		if err != nil {
 			msg := fmt.Sprintf("Cannot fetch state of machine with ID %d", params.ID)
 			log.WithError(err).Error(msg)
