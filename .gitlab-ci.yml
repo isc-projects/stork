@@ -313,7 +313,8 @@ build_backend_amd64:
     expire_in: 1 hour
 
 build_backend_arm64:
-  <<: *build_template_arm
+  extends: build_backend_amd64
+  <<: *job_template_arm
   cache:
     - *golang_arm64_cache
     - *nodejs_arm64_cache ## because npm yamlinc is used
