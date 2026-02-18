@@ -160,8 +160,6 @@ stages:
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - .gitlab-ci.yml
@@ -171,12 +169,12 @@ stages:
         - backend/go.sum
         - rakelib/*
         - rakelib/**/*
+    - when: manual
+      allow_failure: true
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
   <<: *job_template_alpine
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - .gitlab-ci.yml
@@ -184,6 +182,8 @@ stages:
         - backend/go.sum
         - rakelib/*
         - rakelib/**/*
+    - when: manual
+      allow_failure: true
   script:
     - rake prepare:dist
     - rake prepare:deps
@@ -191,13 +191,13 @@ stages:
   <<: *cache_job_template
   <<: *job_template_redhat
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - .gitlab-ci.yml
         - rakelib/*
         - rakelib/**/*
+    - when: manual
+      allow_failure: true
   script:
     - rake prepare:sphinx_deps
 
@@ -354,8 +354,6 @@ build_backend_legacy_arm64:
 tarball:
   <<: *build_template
   needs: [ ]
-  before_script:
-    - echo $CI_PIPELINE_SOURCE
   script:
     - rake release:tarball
   artifacts:
