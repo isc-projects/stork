@@ -416,7 +416,8 @@ build_rpms_amd64:
     - *nodejs_amd64_cache
   needs:
     # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_amd64
+    - job: build_backend_legacy_amd64
+      optional: false
     - job: rebuild_cache_amd64_redhat
       optional: true
   script:
@@ -437,7 +438,8 @@ build_rpms_arm64:
     - *nodejs_arm64_cache
   needs:
     # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_arm64
+    - job: build_backend_legacy_arm64
+      optional: false
     - job: rebuild_cache_arm64_redhat
       optional: true
   script:
