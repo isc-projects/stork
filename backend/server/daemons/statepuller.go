@@ -28,7 +28,7 @@ type StatePuller struct {
 	EventCenter                eventcenter.EventCenter
 	ReviewDispatcher           configreview.Dispatcher
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
-	UpdateMachineStateGroup    singleflight.Group
+	updateMachineStateGroup    singleflight.Group
 }
 
 // Create an instance of the puller which periodically checks the status of
@@ -88,7 +88,7 @@ func (puller *StatePuller) pullData() error {
 // machine, even if it is called by the puller and externally at the same time.
 func (puller *StatePuller) UpdateMachineAndDaemonsState(ctx context.Context, dbMachine *dbmodel.Machine) string {
 	key := fmt.Sprintf("%s-update-state-%d", puller.GetName(), dbMachine.ID)
-	errStrRaw, err, _ := puller.UpdateMachineStateGroup.Do(key, func() (any, error) {
+	errStrRaw, err, _ := puller.updateMachineStateGroup.Do(key, func() (any, error) {
 		return updateMachineAndDaemonsState(ctx, puller.DB,
 			dbMachine,
 			puller.Agents, puller.EventCenter, puller.ReviewDispatcher,

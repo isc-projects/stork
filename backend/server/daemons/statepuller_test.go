@@ -2,6 +2,7 @@ package daemons
 
 import (
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -449,4 +450,156 @@ func TestConditionallyBeginKeaConfigReviews(t *testing.T) {
 	require.Len(t, dispatcher.CallLog[6].Triggers, 2)
 	require.Equal(t, configreview.StorkAgentConfigModified, dispatcher.CallLog[6].Triggers[0])
 	require.Equal(t, configreview.ConfigModified, dispatcher.CallLog[6].Triggers[1])
+}
+
+// Test that concurrent pulls should not cause data duplication.
+func TestStatePullerConcurrentPulls(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare fake agents
+	fa := agentcommtest.NewFakeAgents(func(i int, response []any) {
+		r := response[1].(*keactrl.Response)
+		r.Arguments = []byte(`{ "Dhcp4": {} }`)
+	}, nil)
+	fa.MachineState = &agentcomm.State{
+		AgentVersion: "2.4.0",
+		Daemons: []*agentcomm.Daemon{
+			{
+				Name: daemonname.DHCPv4,
+				// access point is changing from 203.0.113.111 to 203.0.113.123
+				AccessPoints: []dbmodel.AccessPoint{{
+					Type:    dbmodel.AccessPointControl,
+					Address: "203.0.113.123",
+					Port:    1234,
+				}},
+			},
+			{
+				Name: daemonname.Bind9,
+				AccessPoints: []dbmodel.AccessPoint{
+					{
+						Type:    dbmodel.AccessPointControl,
+						Address: "203.0.113.123",
+						Port:    124,
+						Key:     "abcd",
+					},
+					{
+						Type:    dbmodel.AccessPointStatistics,
+						Address: "203.0.113.123",
+						Port:    5678,
+					},
+				},
+			},
+			{
+				Name: daemonname.PDNS,
+				AccessPoints: []dbmodel.AccessPoint{{
+					Type:    dbmodel.AccessPointControl,
+					Address: "203.0.113.123",
+					Port:    134,
+					Key:     "abcd",
+				}},
+			},
+			{
+				Name: daemonname.CA,
+				AccessPoints: []dbmodel.AccessPoint{{
+					Type:    dbmodel.AccessPointControl,
+					Address: "203.0.113.111",
+					Port:    5678,
+				}},
+			},
+		},
+	}
+
+	// prepare fake event center
+	fec := &storktest.FakeEventCenter{}
+
+	// Ensure that the puller initiated configuration review for the Kea daemons.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	fd := NewMockDispatcher(ctrl)
+
+	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.CA
+	}), gomock.Any(), gomock.Any()).MinTimes(1)
+	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "203.0.113.111"
+	}), gomock.Any(), gomock.Any()).MinTimes(1)
+	fd.EXPECT().BeginReview(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "203.0.113.123"
+	}), gomock.Any(), gomock.Any()).MinTimes(1)
+
+	// add one machine with one kea daemon
+	m := &dbmodel.Machine{
+		ID:         0,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	d := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{{
+		Type:    dbmodel.AccessPointControl,
+		Address: "203.0.113.111",
+		Port:    1234,
+		Key:     "",
+	}})
+	err = d.SetKeaConfigFromJSON([]byte(`{"Dhcp4": { }}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, d)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, d.ID)
+
+	// Re-fetch the machine to get all references set up correctly.
+	m, err = dbmodel.GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+
+	err = dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	// prepare stats puller
+	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	// shutdown state puller at the end
+	defer sp.Shutdown()
+
+	// invoke pulling state concurrently
+	// run as a puller iteration
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		err = sp.pullData()
+		require.NoError(t, err)
+	})
+	for range 10 {
+		wg.Go(func() {
+			errStr := sp.UpdateMachineAndDaemonsState(t.Context(), m)
+			require.Empty(t, errStr)
+		})
+	}
+	wg.Wait()
+
+	// check if daemons have been updated correctly
+	daemons, err := dbmodel.GetAllDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 5)
+
+	var keaDaemons []*dbmodel.Daemon
+	for _, daemon := range daemons {
+		if daemon.Name == daemonname.DHCPv4 {
+			keaDaemons = append(keaDaemons, &daemon)
+		}
+	}
+	sort.Slice(keaDaemons, func(i, j int) bool {
+		return keaDaemons[i].ID < keaDaemons[j].ID
+	})
+
+	require.Len(t, keaDaemons, 2)
+	// The daemon with access point before change. It's no longer active but
+	// should still be in the database.
+	require.Len(t, keaDaemons[0].AccessPoints, 1)
+	require.EqualValues(t, keaDaemons[0].AccessPoints[0].Address, "203.0.113.111")
+	// The daemon with updated access point.
+	require.Len(t, keaDaemons[1].AccessPoints, 1)
+	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "203.0.113.123")
 }
