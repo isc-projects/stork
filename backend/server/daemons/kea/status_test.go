@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
+	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -97,7 +98,7 @@ func getHATestConfig(rootName, thisServerName, mode string, peerNames ...string)
 
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6.
-func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
+func mockGetStatusWithHA(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	var bytes string
 	switch callNo {
 	case 0:
@@ -219,7 +220,7 @@ func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6. Format supported by
 // Kea 1.7.8 onwards.
-func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
+func mockGetStatusWithHA178(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	var bytes string
 	switch callNo {
 	case 0:
@@ -337,7 +338,7 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
 
 // Generates a response to the status-get command for a server that has two
 // HA relationships.
-func mockGetStatusWithHAHub(callNo int, cmdResponses []any) {
+func mockGetStatusWithHAHub(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []any) {
 	var bytes string
 	switch callNo {
 	case 0:
@@ -448,7 +449,7 @@ func mockGetStatusWithHAHub(callNo int, cmdResponses []any) {
 
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing.
-func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
+func mockGetStatusLoadBalancing(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	bytes := `
         {
             "result": 0,
@@ -482,7 +483,7 @@ func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
 
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing. Format supported by Kea 1.7.8 onwards.
-func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
+func mockGetStatusLoadBalancing178(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	bytes := `
         {
             "result": 0,
@@ -526,7 +527,7 @@ func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
 
 // Generates test response to status-get command lacking a status of the
 // HA pair.
-func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
+func mockGetStatusNoHA(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	bytes := `
         {
             "result": 0,
@@ -545,7 +546,7 @@ func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
 
 // Generates test response to status-get command indicating an error and
 // lacking arguments.
-func mockGetStatusError(callNo int, cmdResponses []interface{}) {
+func mockGetStatusError(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	bytes := `
         {
             "result": 1,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
+	agentcomm "isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/daemons"
@@ -1190,7 +1191,7 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 	require.Len(t, sharedNetworks, 1)
 
 	// Create fake agents receiving commands.
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)
@@ -2521,7 +2522,7 @@ func TestDeleteSharedNetworkError(t *testing.T) {
 
 	// Setup fake agents that return an error in response to network4-del
 	// command.
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)

@@ -11,6 +11,7 @@ import (
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
@@ -209,7 +210,7 @@ func getTestConfigWithIPv6GlobalHosts() []byte {
 // command. This command fetches host reservations in chunks from the servers.
 // The detailed explanations how this function works are provided within the
 // function body.
-func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
+func mockReservationGetPage(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	// First 15 calls are for IPv4 reservations.
 	family := 4
 	if callNo/(3*5) > 0 {
@@ -294,7 +295,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
 // This function mocks the response of the Kea servers to the reservation-get-page
 // command. It should be used to test cases that the second attempt to fetch hosts
 // reduces the number of hosts in the database.
-func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
+func mockReservationGetPageReduceHosts(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	var str string
 	switch callNo {
 	case 1:
@@ -365,7 +366,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
 // command. It is used to test the case when host reservations returned in the
 // first response to the reservation-get-page hasn't changed but the reservations
 // in the second response have changed.
-func mockReservationGetPagePartialChange(callNo int, cmdResponses []interface{}) {
+func mockReservationGetPagePartialChange(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	var str string
 	switch callNo {
 	// No global hosts, third response returns empty response terminating the
@@ -1719,7 +1720,7 @@ func TestUpdateHost(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		var str string
 		// Update option data - read reservation option is unsupported yet.
 		switch callNo {

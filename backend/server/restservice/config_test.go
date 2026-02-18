@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
+	agentcomm "isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configreview"
@@ -2243,7 +2244,7 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 	require.NotNil(t, daemon)
 
 	// Create fake agents receiving commands.
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)

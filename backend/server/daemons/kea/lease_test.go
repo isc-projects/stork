@@ -18,7 +18,7 @@ import (
 
 // Generates a success mock response to commands fetching a single
 // DHCPv4 lease.
-func mockLease4Get(callNo int, responses []any) {
+func mockLease4Get(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -43,7 +43,7 @@ func mockLease4Get(callNo int, responses []any) {
 
 // Generates a success mock response to commands fetching a single
 // DHCPv4 lease with invalid user context data.
-func mockLease4GetInvalidJSON(callNo int, responses []any) {
+func mockLease4GetInvalidJSON(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -70,7 +70,7 @@ func mockLease4GetInvalidJSON(callNo int, responses []any) {
 // called it returns an error response. The second time it returns
 // a lease. It is useful to simulate tracking erred communication
 // with selected servers.
-func mockLease4GetFirstCallError(callNo int, responses []any) {
+func mockLease4GetFirstCallError(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	var bytes []byte
 	if callNo == 0 {
 		bytes = []byte(`
@@ -107,7 +107,7 @@ func mockLease4GetFirstCallError(callNo int, responses []any) {
 
 // Generates a success mock response to commands fetching a single
 // DHCPv6 lease by IPv6 address.
-func mockLease6GetByIPAddress(callNo int, responses []any) {
+func mockLease6GetByIPAddress(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`{
         "result": 0,
         "text": "Lease found",
@@ -134,7 +134,7 @@ func mockLease6GetByIPAddress(callNo int, responses []any) {
 
 // Generates a success mock response to commands fetching a single
 // DHCPv6 lease by IPv6 address.
-func mockLease6GetByPrefix(callNo int, responses []any) {
+func mockLease6GetByPrefix(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -162,7 +162,7 @@ func mockLease6GetByPrefix(callNo int, responses []any) {
 
 // Generates a success mock response to commands fetching a single
 // DHCPv6 lease with invalid user context data.
-func mockLease6GetInvalidJSON(callNo int, responses []any) {
+func mockLease6GetInvalidJSON(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -191,7 +191,7 @@ func mockLease6GetInvalidJSON(callNo int, responses []any) {
 // Generates a mock response to lease4-get-by-hw-address and lease4-get-by-client-id
 // combined in a single gRPC command. The first response is successful, the second
 // response indicates an error.
-func mockLeases4GetSecondError(callNo int, responses []any) {
+func mockLeases4GetSecondError(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	// Response to lease4-get-by-hw-address.
 	bytes := []byte(`
         {
@@ -229,7 +229,7 @@ func mockLeases4GetSecondError(callNo int, responses []any) {
 }
 
 // Generates a mock empty response to commands fetching DHCPv4 leases.
-func mockLeases4GetEmpty(callNo int, responses []any) {
+func mockLeases4GetEmpty(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 3,
@@ -243,7 +243,7 @@ func mockLeases4GetEmpty(callNo int, responses []any) {
 }
 
 // Generates a mock empty response to commands fetching DHCPv6 leases.
-func mockLeases6GetEmpty(callNo int, responses []any) {
+func mockLeases6GetEmpty(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 3,
@@ -255,7 +255,7 @@ func mockLeases6GetEmpty(callNo int, responses []any) {
 
 // Generates a success mock response to commands fetching multiple
 // DHCPv4 leases.
-func mockLeases4Get(callNo int, responses []any) {
+func mockLeases4Get(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -283,7 +283,7 @@ func mockLeases4Get(callNo int, responses []any) {
 
 // Generates a success mock response to commands fetching multiple
 // DHCPv6 leases.
-func mockLeases6Get(callNo int, responses []interface{}) {
+func mockLeases6Get(callNo int, daemon agentcomm.ControlledDaemon, responses []interface{}) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -331,7 +331,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
 // two DHCPv4 leases, one in the default state and one in the declined state.
 // Stork should ignore the lease in the default state. The second response
 // contains two declined DHCPv6 leases.
-func mockLeasesGetDeclined(callNo int, responses []any) {
+func mockLeasesGetDeclined(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	switch callNo {
 	case 0:
 		bytes := []byte(`
@@ -403,7 +403,7 @@ func mockLeasesGetDeclined(callNo int, responses []any) {
 // Generates responses to declined leases search. First response comprises
 // one in the declined state. The second response contains two declined DHCPv6
 // leases.
-func mockLeasesGetByStatusDeclined(callNo int, responses []any) {
+func mockLeasesGetByStatusDeclined(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	switch callNo {
 	case 0:
 		bytes := []byte(`
@@ -464,7 +464,7 @@ func mockLeasesGetByStatusDeclined(callNo int, responses []any) {
 	}
 }
 
-func mockLeasesGetDeclinedErrors(callNo int, responses []any) {
+func mockLeasesGetDeclinedErrors(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	switch callNo {
 	case 0:
 		bytes := []byte(`
@@ -503,7 +503,7 @@ func mockLeasesGetDeclinedErrors(callNo int, responses []any) {
 
 // Generate an error mock response to a command fetching lease by an IPv6
 // address.
-func mockLease6GetError(callNo int, responses []any) {
+func mockLease6GetError(callNo int, daemon agentcomm.ControlledDaemon, responses []any) {
 	bytes := []byte(`
         {
             "result": 1,

@@ -14,6 +14,7 @@ import (
 	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
+	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -22,8 +23,8 @@ import (
 // Prepares the Kea mock. It accepts list of serialized JSON responses in order:
 // 1. Statistic-get-all DHCPv4
 // 3. Statistic-get-all DHCPv6.
-func createKeaMock(t *testing.T, jsonFactory func(callNo int) (jsons []string)) func(callNo int, cmdResponses []interface{}) {
-	return func(callNo int, cmdResponses []interface{}) {
+func createKeaMock(t *testing.T, jsonFactory func(callNo int) (jsons []string)) func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
+	return func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		jsons := jsonFactory(callNo)
 		// DHCPv4
 		err := json.Unmarshal([]byte(jsons[0]), cmdResponses[0])
@@ -44,7 +45,7 @@ func createKeaMock(t *testing.T, jsonFactory func(callNo int) (jsons []string)) 
 // It assigns different, predictable values for each daemons.
 // Accepts a parameter that indicates if the old names of the statistics should
 // be used (missing doubled "s" in "addresses" word).
-func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, cmdResponses []any) {
+func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []any) {
 	statistic4Names := []string{"total-addresses", "assigned-addresses", "declined-addresses"}
 	if oldStatsFormat {
 		statistic4Names = []string{"total-addreses", "assigned-addreses", "declined-addreses"}

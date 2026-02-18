@@ -54,7 +54,7 @@ func TestStatePullerPullData(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(i int, responses []any) {
+	fa := agentcommtest.NewFakeAgents(func(i int, daemon agentcomm.ControlledDaemon, responses []any) {
 		switch i {
 		case 0:
 			// The DHCPv4 daemon with an old access point is offline, so the
@@ -226,7 +226,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(callNo int, response []any) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, response []any) {
 		switch callNo {
 		case 0:
 			// Call to Kea CA to retrieve daemons.
@@ -486,7 +486,7 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(i int, responses []any) {
+	fa := agentcommtest.NewFakeAgents(func(i int, daemon agentcomm.ControlledDaemon, responses []any) {
 		switch i % 3 {
 		case 0:
 			// The DHCPv4 daemon with an old access point is offline, so the

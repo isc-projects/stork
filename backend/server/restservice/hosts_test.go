@@ -13,6 +13,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	keactrl "isc.org/stork/daemonctrl/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
+	agentcomm "isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
@@ -1005,7 +1006,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 
 	// Setup fake agents that return an error in response to reservation-add
 	// command.
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)
@@ -1555,7 +1556,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 
 	// Setup fake agents that return an error in response to reservation-del
 	// command.
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)
@@ -1874,7 +1875,7 @@ func TestDeleteHostError(t *testing.T) {
 
 	// Setup fake agents that return an error in response to reservation-del
 	// command.
-	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	fa := agentcommtest.NewFakeAgents(func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		mockStatusError(cmdResponses)
 	}, nil)
 	require.NotNil(t, fa)

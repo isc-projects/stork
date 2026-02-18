@@ -10,6 +10,7 @@ import (
 	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
+	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -142,7 +143,7 @@ func TestGetConfig(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
 
-	keaMock := func(callNo int, cmdResponses []any) {
+	keaMock := func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []any) {
 		require.Equal(t, 0, callNo)
 		require.Len(t, cmdResponses, 1)
 
@@ -176,7 +177,7 @@ func TestGetDaemonStateWith1Daemon(t *testing.T) {
 	ctx := context.Background()
 
 	// check getting config of 1 daemon
-	keaMock := func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		require.LessOrEqual(t, callNo, 2)
 		mockGetConfigFromCAResponse(1, cmdResponses)
 	}
@@ -219,7 +220,7 @@ func TestGetDaemonStateWith2Daemons(t *testing.T) {
 	ctx := context.Background()
 
 	// check getting configs of 2 daemons
-	keaMock := func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		switch callNo {
 		case 0:
 			mockGetConfigFromCAResponse(2, cmdResponses)
@@ -255,7 +256,7 @@ func TestGetDaemonStateForExistingDaemon(t *testing.T) {
 	ctx := context.Background()
 
 	// check getting config of 1 daemon
-	keaMock := func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 		// Since we're testing with a CA daemon, always use CA response
 		mockGetConfigFromCAResponse(1, cmdResponses)
 	}

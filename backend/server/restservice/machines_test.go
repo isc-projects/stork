@@ -124,7 +124,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.Empty(t, okRsp.Payload.Daemons)
 }
 
-func mockGetDaemonsState(callNo int, cmdResponses []interface{}) {
+func mockGetDaemonsState(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
 	versionResponse := cmdResponses[0].(*kea.VersionGetResponse)
 	*versionResponse = kea.VersionGetResponse{
 		ResponseHeader: keactrl.ResponseHeader{

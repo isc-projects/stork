@@ -9,6 +9,7 @@ import (
 	keactrl "isc.org/stork/daemonctrl/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
+	agentcomm "isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -17,7 +18,7 @@ import (
 
 // Generates a success mock response to a command fetching a DHCPv4
 // lease by IP address.
-func mockLease4Get(callNo int, responses []interface{}) {
+func mockLease4Get(callNo int, daemon agentcomm.ControlledDaemon, responses []interface{}) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -42,7 +43,7 @@ func mockLease4Get(callNo int, responses []interface{}) {
 
 // Generates a success mock response to a command fetching a DHCPv4
 // lease by IP address.
-func mockLease6Get(callNo int, responses []interface{}) {
+func mockLease6Get(callNo int, daemon agentcomm.ControlledDaemon, responses []interface{}) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -65,7 +66,7 @@ func mockLease6Get(callNo int, responses []interface{}) {
 
 // Generates a success mock response to a command fetching DHCPv6 leases
 // by DUID.
-func mockLeases6Get(callNo int, responses []interface{}) {
+func mockLeases6Get(callNo int, daemon agentcomm.ControlledDaemon, responses []interface{}) {
 	bytes := []byte(`
         {
             "result": 0,
@@ -112,7 +113,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
 }
 
 // Generates an error response to lease4-get command.
-func mockLease4GetError(callNo int, responses []interface{}) {
+func mockLease4GetError(callNo int, daemon agentcomm.ControlledDaemon, responses []interface{}) {
 	bytes := []byte(`
         {
             "result": 1,
@@ -123,7 +124,7 @@ func mockLease4GetError(callNo int, responses []interface{}) {
 }
 
 // Generates response to declined leases searching on the DHCPv4 and DHCPv6 server.
-func mockLeasesGetDeclined(callNo int, responses []interface{}) {
+func mockLeasesGetDeclined(callNo int, daemon agentcomm.ControlledDaemon, responses []interface{}) {
 	switch callNo % 2 {
 	case 0:
 		bytes := []byte(`
