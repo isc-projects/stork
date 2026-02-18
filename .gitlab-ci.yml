@@ -84,12 +84,12 @@ stages:
 ### caches templates ###
 .golang_cache: &golang_cache
   paths:
-  - tools/golang
+    - tools/golang
   policy: pull
 
 .python_cache: &python_cache
   paths:
-  - tools/python
+    - tools/python
   policy: pull
 
 .nodejs_cache: &nodejs_cache
@@ -156,13 +156,14 @@ stages:
 .cache_job_template: &cache_job_template
   <<: *job_template
   stage: cache
-  needs: []
+  needs: [ ]
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - .gitlab-ci.yml
         - webui/package.json
         - webui/package-lock.json
@@ -174,14 +175,15 @@ stages:
   <<: *cache_job_template
   <<: *job_template_alpine
   rules:
-    -   when: manual
-        allow_failure: true
-    -   changes:
-          - .gitlab-ci.yml
-          - backend/go.mod
-          - backend/go.sum
-          - rakelib/*
-          - rakelib/**/*
+    - when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - .gitlab-ci.yml
+        - backend/go.mod
+        - backend/go.sum
+        - rakelib/*
+        - rakelib/**/*
   script:
     - rake prepare:dist
     - rake prepare:deps
@@ -191,7 +193,8 @@ stages:
   rules:
     - when: manual
       allow_failure: true
-    - changes:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
         - .gitlab-ci.yml
         - rakelib/*
         - rakelib/**/*
@@ -249,8 +252,8 @@ rebuild_cache_arm64_alpine:
 rebuild_cache_amd64_redhat:
   <<: *cache_job_template_redhat
   cache:
-    -   <<: *python_amd64_cache_redhat
-        policy: push
+    - <<: *python_amd64_cache_redhat
+      policy: push
 
 rebuild_cache_arm64_redhat:
   <<: *cache_job_template_redhat
@@ -350,7 +353,7 @@ build_backend_legacy_arm64:
 
 tarball:
   <<: *build_template
-  needs: []
+  needs: [ ]
   script:
     - rake release:tarball
   artifacts:
@@ -507,7 +510,7 @@ lint_backend:
 
 lint_changelog:
   <<: *checks_template
-  needs: []
+  needs: [ ]
   script:
     - rake lint:changelog
 
@@ -612,7 +615,7 @@ storybook_tests:
 
 danger:
   <<: *checks_template
-  needs: []
+  needs: [ ]
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
@@ -623,7 +626,7 @@ danger:
 
 lint_shell:
   <<: *checks_template
-  needs: []
+  needs: [ ]
   script:
     - rake lint:shell
 
@@ -749,7 +752,7 @@ install_apks_arm64:
 
 system_test:
   <<: *checks_template
-  needs: []
+  needs: [ ]
   services:
     - docker:dind
   rules:
@@ -758,12 +761,12 @@ system_test:
     - when: manual
       allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
-#  cache:
-#    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
-#    paths:
-#      - tools/
-#    fallback_keys:
-#      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
+  #  cache:
+  #    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
+  #    paths:
+  #      - tools/
+  #    fallback_keys:
+  #      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
   before_script:
     - ip -6 route del default
     - rake prepare:systemtest
@@ -886,7 +889,7 @@ unittest_hooks:
 tarball_hooks:
   <<: *hooks_template
   when: always
-  needs: []
+  needs: [ ]
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -1073,13 +1076,13 @@ upload_to_repo_hooks:
 
 deploy_demo:
   stage: deploy
-  cache: []
+  cache: [ ]
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
     - when: manual
       allow_failure: true
-  needs: []
+  needs: [ ]
   tags:
     - linux
     - aws
