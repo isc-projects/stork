@@ -49,10 +49,10 @@ default:
 # stages order
 stages:
   - cache
-  - build
-  - checks
-  - hooks
-  - deploy
+#  - build
+#  - checks
+#  - hooks
+#  - deploy
 
 ### job templates ###
 .job_template: &job_template
@@ -263,7 +263,7 @@ rebuild_cache_arm64_redhat:
 # common parts used in stage jobs
 .build_template: &build_template
   <<: *job_template
-  stage: build
+#  stage: build
   rules:
     - when: always
   needs:
@@ -274,239 +274,239 @@ rebuild_cache_arm64_redhat:
   <<: *job_template_arm
 
 # jobs
-build_ui:
-  <<: *build_template
-  cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-    - *python_amd64_cache
-  script:
-    - rake build:ui
-  artifacts:
-    name: "ui"
-    expire_in: 1 week
-    paths:
-      - webui/dist/stork/
-
-build_doc:
-  <<: *build_template
-  cache:
-    - *python_amd64_cache
-  script:
-    - rake build:doc
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  artifacts:
-    name: "doc"
-    expire_in: 1 week
-    paths:
-      - doc/build/
-
-build_backend_amd64:
-  <<: *build_template
-  cache:
-    - *golang_amd64_cache
-    - *nodejs_amd64_cache ## because npm yamlinc is used
-  script:
-    - rake build:backend
-  artifacts:
-    untracked: true
-    expire_in: 1 hour
-
-build_backend_arm64:
-  extends: build_backend_amd64
-  <<: *job_template_arm
-  cache:
-    - *golang_arm64_cache
-    - *nodejs_arm64_cache ## because npm yamlinc is used
-  needs:
-    - job: rebuild_cache_arm64
-      optional: true
-  variables:
-    ARCH: arm64
-
-build_backend_legacy_amd64:
-  <<: *build_template
-  rules:
-    - when: on_success
-  # Use image based on Debian 11. It is required to build the binaries with
-  # the older GLIBC version.
-  <<: *job_template_debian11
-  needs:
-    - build_backend_amd64
-  script:
-    - rake rebuild:backend SUPPRESS_PREREQUISITES=true
-  artifacts:
-    name: "backend"
-    expire_in: 1 week
-    paths:
-      - backend/cmd/stork-agent/stork-agent
-      - backend/cmd/stork-server/stork-server
-      - backend/cmd/stork-tool/stork-tool
-
-build_backend_legacy_arm64:
-  extends: build_backend_legacy_amd64
-  <<: *job_template_arm
-  needs:
-    - build_backend_arm64
-  variables:
-    ARCH: arm64
-
-tarball:
-  <<: *build_template
-  needs: [ ]
-  script:
-    - rake release:tarball
-  artifacts:
-    paths:
-      - stork-*.tar.gz
-    expire_in: 1 week
-
-### build rpm & deb packages ###
-
-build_debs_amd64:
-  <<: *build_template
-  cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache
-    - *nodejs_amd64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_amd64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
-
-build_debs_arm64:
-  <<: *build_template_arm
-  cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache
-    - *nodejs_arm64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_arm64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
-
-build_rpms_amd64:
-  <<: *build_template
-  <<: *job_template_redhat
-  cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache_redhat
-    - *nodejs_amd64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_amd64
-    - job: rebuild_cache_amd64_redhat
-      optional: true
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
-
-build_rpms_arm64:
-  <<: *build_template_arm
-  <<: *job_template_redhat
-  cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache_redhat
-    - *nodejs_arm64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_arm64
-    - job: rebuild_cache_arm64_redhat
-      optional: true
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
-
-build_apks_amd64:
-  <<: *build_template
-  <<: *job_template_alpine
-  cache:
-    - *golang_amd64_cache_alpine
-    - *python_amd64_cache_alpine
-    - *nodejs_amd64_cache
-  needs:
-    - job: rebuild_cache_amd64
-      optional: true
-    - job: rebuild_cache_amd64_alpine
-      optional: true
-  script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
-    - cp dist/pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
-
-build_apks_arm64:
-  <<: *build_template_arm
-  <<: *job_template_alpine
-  cache:
-    - *golang_arm64_cache_alpine
-    - *python_arm64_cache_alpine
-    - *nodejs_arm64_cache
-  needs:
-    - job: rebuild_cache_arm64
-      optional: true
-    - job: rebuild_cache_arm64_alpine
-      optional: true
-  script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
-    - cp dist/pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
-
-packages:
-  <<: *build_template
-  rules:
-    - when: on_success
-  needs:
-    - build_debs_amd64
-    - build_debs_arm64
-    - build_rpms_amd64
-    - build_rpms_arm64
-    - build_apks_amd64
-    - build_apks_arm64
-  script:
-    - ":"
-  artifacts:
-    paths:
-      - isc-stork-*
-    expire_in: 1 week
+#build_ui:
+#  <<: *build_template
+#  cache:
+#    - *nodejs_amd64_cache
+#    - *golang_amd64_cache
+#    - *python_amd64_cache
+#  script:
+#    - rake build:ui
+#  artifacts:
+#    name: "ui"
+#    expire_in: 1 week
+#    paths:
+#      - webui/dist/stork/
+#
+#build_doc:
+#  <<: *build_template
+#  cache:
+#    - *python_amd64_cache
+#  script:
+#    - rake build:doc
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  artifacts:
+#    name: "doc"
+#    expire_in: 1 week
+#    paths:
+#      - doc/build/
+#
+#build_backend_amd64:
+#  <<: *build_template
+#  cache:
+#    - *golang_amd64_cache
+#    - *nodejs_amd64_cache ## because npm yamlinc is used
+#  script:
+#    - rake build:backend
+#  artifacts:
+#    untracked: true
+#    expire_in: 1 hour
+#
+#build_backend_arm64:
+#  extends: build_backend_amd64
+#  <<: *job_template_arm
+#  cache:
+#    - *golang_arm64_cache
+#    - *nodejs_arm64_cache ## because npm yamlinc is used
+#  needs:
+#    - job: rebuild_cache_arm64
+#      optional: true
+#  variables:
+#    ARCH: arm64
+#
+#build_backend_legacy_amd64:
+#  <<: *build_template
+#  rules:
+#    - when: on_success
+#  # Use image based on Debian 11. It is required to build the binaries with
+#  # the older GLIBC version.
+#  <<: *job_template_debian11
+#  needs:
+#    - build_backend_amd64
+#  script:
+#    - rake rebuild:backend SUPPRESS_PREREQUISITES=true
+#  artifacts:
+#    name: "backend"
+#    expire_in: 1 week
+#    paths:
+#      - backend/cmd/stork-agent/stork-agent
+#      - backend/cmd/stork-server/stork-server
+#      - backend/cmd/stork-tool/stork-tool
+#
+#build_backend_legacy_arm64:
+#  extends: build_backend_legacy_amd64
+#  <<: *job_template_arm
+#  needs:
+#    - build_backend_arm64
+#  variables:
+#    ARCH: arm64
+#
+#tarball:
+#  <<: *build_template
+#  needs: [ ]
+#  script:
+#    - rake release:tarball
+#  artifacts:
+#    paths:
+#      - stork-*.tar.gz
+#    expire_in: 1 week
+#
+#### build rpm & deb packages ###
+#
+#build_debs_amd64:
+#  <<: *build_template
+#  cache:
+#    - *golang_amd64_cache
+#    - *python_amd64_cache
+#    - *nodejs_amd64_cache
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_backend_legacy_amd64
+#  script:
+#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/pkgs/*.deb ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.deb
+#    expire_in: 1 hour
+#
+#build_debs_arm64:
+#  <<: *build_template_arm
+#  cache:
+#    - *golang_arm64_cache
+#    - *python_arm64_cache
+#    - *nodejs_arm64_cache
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_backend_legacy_arm64
+#  script:
+#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/pkgs/*.deb ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.deb
+#    expire_in: 1 hour
+#
+#build_rpms_amd64:
+#  <<: *build_template
+#  <<: *job_template_redhat
+#  cache:
+#    - *golang_amd64_cache
+#    - *python_amd64_cache_redhat
+#    - *nodejs_amd64_cache
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_backend_legacy_amd64
+#    - job: rebuild_cache_amd64_redhat
+#      optional: true
+#  script:
+#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/pkgs/*.rpm ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.rpm
+#    expire_in: 1 hour
+#
+#build_rpms_arm64:
+#  <<: *build_template_arm
+#  <<: *job_template_redhat
+#  cache:
+#    - *golang_arm64_cache
+#    - *python_arm64_cache_redhat
+#    - *nodejs_arm64_cache
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_backend_legacy_arm64
+#    - job: rebuild_cache_arm64_redhat
+#      optional: true
+#  script:
+#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/pkgs/*.rpm ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.rpm
+#    expire_in: 1 hour
+#
+#build_apks_amd64:
+#  <<: *build_template
+#  <<: *job_template_alpine
+#  cache:
+#    - *golang_amd64_cache_alpine
+#    - *python_amd64_cache_alpine
+#    - *nodejs_amd64_cache
+#  needs:
+#    - job: rebuild_cache_amd64
+#      optional: true
+#    - job: rebuild_cache_amd64_alpine
+#      optional: true
+#  script:
+#    - rake build:agent_pkg
+#    - rake build:server_pkg
+#    - cp dist/pkgs/*.apk ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.apk
+#    expire_in: 1 hour
+#
+#build_apks_arm64:
+#  <<: *build_template_arm
+#  <<: *job_template_alpine
+#  cache:
+#    - *golang_arm64_cache_alpine
+#    - *python_arm64_cache_alpine
+#    - *nodejs_arm64_cache
+#  needs:
+#    - job: rebuild_cache_arm64
+#      optional: true
+#    - job: rebuild_cache_arm64_alpine
+#      optional: true
+#  script:
+#    - rake build:agent_pkg
+#    - rake build:server_pkg
+#    - cp dist/pkgs/*.apk ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.apk
+#    expire_in: 1 hour
+#
+#packages:
+#  <<: *build_template
+#  rules:
+#    - when: on_success
+#  needs:
+#    - build_debs_amd64
+#    - build_debs_arm64
+#    - build_rpms_amd64
+#    - build_rpms_arm64
+#    - build_apks_amd64
+#    - build_apks_arm64
+#  script:
+#    - ":"
+#  artifacts:
+#    paths:
+#      - isc-stork-*
+#    expire_in: 1 week
 
 ### stage: checks ###
 # common parts used in stage jobs
 .checks_template: &checks_template
   <<: *job_template
-  stage: checks
+#  stage: checks
   needs:
     - job: rebuild_cache_amd64
       optional: true
@@ -516,647 +516,647 @@ packages:
 
 # jobs
 
-lint_backend:
-  <<: *checks_template
-  cache:
-    - *golang_amd64_cache
-    - *nodejs_amd64_cache
-  script:
-    - rake lint:backend
-
-lint_changelog:
-  <<: *checks_template
-  needs: [ ]
-  script:
-    - rake lint:changelog
-
-lint_python_pylint:
-  <<: *checks_template
-  cache:
-    - *python_amd64_cache
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-  script:
-    - rake lint:python:pylint
-
-lint_python_flake8:
-  <<: *checks_template
-  cache:
-    - *python_amd64_cache
-  script:
-    - rake lint:python:flake8
-
-lint_python_black:
-  <<: *checks_template
-  cache:
-    - *python_amd64_cache
-  script:
-    - rake lint:python:black
-
-unittest_backend:
-  <<: *checks_template
-  cache:
-    - *golang_amd64_cache
-  services:
-    - name: postgres:18-alpine
-      alias: postgres
-  variables:
-    # CGO is required by the race detector.
-    CGO_ENABLED: 1
-    PRESERVE_COVERAGE: "true"
-  coverage: '/Total coverage:\s+\d+.\d+%/'
-  script:
-    - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
-    - chmod 600 ~/.pgpass
-    - rake unittest:backend
-  artifacts:
-    when: always
-    paths:
-      - backend/junit.xml
-      - backend/coverage.cobertura.xml
-    reports:
-      junit: backend/junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: backend/coverage.cobertura.xml
-
-lint_ui:
-  <<: *checks_template
-  cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-  script:
-    - rake lint:ui
-
-unittest_ui:
-  <<: *checks_template
-  cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-    - *playwright_browsers_cache
-  script:
-    - rake unittest:ui
-  artifacts:
-    when: always
-    paths:
-      - webui/junit.xml
-    reports:
-      junit: webui/junit.xml
-
-storybook_tests:
-  <<: *checks_template
-  cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-    - *playwright_browsers_cache
-  allow_failure: true
-  script:
-    - rake unittest:storybook
-  rules:
-    - when: manual
-
-danger:
-  <<: *checks_template
-  needs: [ ]
-  before_script:
-    - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
-    - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
-    - export DANGER_GITLAB_HOST=gitlab.isc.org
-    - export DANGER_GITLAB_API_BASE_URL=https://gitlab.isc.org/api/v4
-  script:
-    - rake lint:git
-
-lint_shell:
-  <<: *checks_template
-  needs: [ ]
-  script:
-    - rake lint:shell
-
-### install packages ###
-
-install_debs_amd64:
-  <<: *checks_template
-  variables:
-    ARCH: amd64
-  script:
-    - "dpkg -i isc-stork-*${ARCH}.deb"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "dpkg -i isc-stork-*${ARCH}.deb"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "man stork-agent > /dev/null"
-    - "man stork-server > /dev/null"
-    - "man stork-tool > /dev/null"
-    - "dpkg -r isc-stork-agent"
-    - "dpkg -r isc-stork-server"
-  needs:
-    - build_debs_amd64
-
-install_debs_amd64_ubuntu_lts:
-  <<: *checks_template
-  image: ubuntu:20.04
-  variables:
-    ARCH: amd64
-  script:
-    - "dpkg -i isc-stork-*${ARCH}.deb"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "dpkg -i isc-stork-*${ARCH}.deb"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "man stork-agent > /dev/null"
-    - "man stork-server > /dev/null"
-    - "man stork-tool > /dev/null"
-    - "dpkg -r isc-stork-agent"
-    - "dpkg -r isc-stork-server"
-  needs:
-    - build_debs_amd64
-
-install_debs_arm64:
-  extends: install_debs_amd64
-  <<: *checks_template_arm
-  variables:
-    ARCH: arm64
-  needs:
-    - build_debs_arm64
-
-install_rpms_amd64:
-  <<: *checks_template
-  <<: *job_template_redhat
-  variables:
-    ARCH: x86_64
-  script:
-    - "rpm -i isc-stork-*${ARCH}.rpm"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "rpm -U --force isc-stork-*${ARCH}.rpm"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "man stork-agent > /dev/null"
-    - "man stork-server > /dev/null"
-    - "man stork-tool > /dev/null"
-    - "rpm -e isc-stork-agent"
-    - "rpm -e isc-stork-server"
-  needs:
-    - build_rpms_amd64
-
-install_rpms_arm64:
-  extends: install_rpms_amd64
-  <<: *checks_template_arm
-  variables:
-    ARCH: aarch64
-  needs:
-    - build_rpms_arm64
-
-install_apks_amd64:
-  <<: *checks_template
-  <<: *job_template_alpine
-  variables:
-    ARCH: x86_64
-  script:
-    - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
-    - "stork-agent --version"
-    - "stork-server --version"
-    - "stork-tool --version"
-    - "man stork-agent > /dev/null"
-    - "man stork-server > /dev/null"
-    - "man stork-tool > /dev/null"
-    - "apk del isc-stork-agent"
-    - "apk del isc-stork-server"
-  needs:
-    - build_apks_amd64
-  artifacts:
-    paths:
-      - core.*
-    expire_in: 1 week
-    when: always
-
-install_apks_arm64:
-  extends: install_apks_amd64
-  <<: *job_template_arm
-  variables:
-    ARCH: aarch64
-  needs:
-    - build_apks_arm64
-
-### system testing ###
-
-system_test:
-  <<: *checks_template
-  needs: [ ]
-  services:
-    - docker:dind
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-      when: always
-    - when: manual
-      allow_failure: true
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
-  #  cache:
-  #    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
-  #    paths:
-  #      - tools/
-  #    fallback_keys:
-  #      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
-  before_script:
-    - ip -6 route del default
-    - rake prepare:systemtest
-  variables:
-    BIND9_VERSION: latest-stable
-    KEA_VERSION: latest-stable
-    # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
-    # binary fetched by the Rake script. Additionally, the binaries for alpine
-    # are missing on the NodeJS page. We cannot use the image based on Debian
-    # because it is out-of-date.
-    USE_SYSTEM_NODEJS: "true"
-    # It must be an alias of the docker:dind service.
-    DEFAULT_MAPPED_ADDRESS: "docker"
-  script:
-    # - rake system_tests_ui
-    - rake systemtest
-  artifacts:
-    paths:
-      - tests/system/test-results/
-    exclude:
-      - tests/system/test-results/**/performance-charts.html
-    expire_in: 6 months
-    when: always
-    reports:
-      junit: tests/system/test-results/junit.xml
-
-system_test_old_stables:
-  extends: system_test
-  variables:
-    BIND9_VERSION: old-stable
-    KEA_VERSION: old-stable
-    ONLY_KEA_TESTS: "true"
-  script:
-    - rake systemtest
-
-system_test_latest_devs:
-  extends: system_test
-  variables:
-    BIND9_VERSION: latest-dev
-    KEA_VERSION: latest-dev
-    ONLY_KEA_TESTS: "true"
-  script:
-    - rake systemtest
+#lint_backend:
+#  <<: *checks_template
+#  cache:
+#    - *golang_amd64_cache
+#    - *nodejs_amd64_cache
+#  script:
+#    - rake lint:backend
+#
+#lint_changelog:
+#  <<: *checks_template
+#  needs: [ ]
+#  script:
+#    - rake lint:changelog
+#
+#lint_python_pylint:
+#  <<: *checks_template
+#  cache:
+#    - *python_amd64_cache
+#    - *nodejs_amd64_cache
+#    - *golang_amd64_cache
+#  script:
+#    - rake lint:python:pylint
+#
+#lint_python_flake8:
+#  <<: *checks_template
+#  cache:
+#    - *python_amd64_cache
+#  script:
+#    - rake lint:python:flake8
+#
+#lint_python_black:
+#  <<: *checks_template
+#  cache:
+#    - *python_amd64_cache
+#  script:
+#    - rake lint:python:black
+#
+#unittest_backend:
+#  <<: *checks_template
+#  cache:
+#    - *golang_amd64_cache
+#  services:
+#    - name: postgres:18-alpine
+#      alias: postgres
+#  variables:
+#    # CGO is required by the race detector.
+#    CGO_ENABLED: 1
+#    PRESERVE_COVERAGE: "true"
+#  coverage: '/Total coverage:\s+\d+.\d+%/'
+#  script:
+#    - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
+#    - chmod 600 ~/.pgpass
+#    - rake unittest:backend
+#  artifacts:
+#    when: always
+#    paths:
+#      - backend/junit.xml
+#      - backend/coverage.cobertura.xml
+#    reports:
+#      junit: backend/junit.xml
+#      coverage_report:
+#        coverage_format: cobertura
+#        path: backend/coverage.cobertura.xml
+#
+#lint_ui:
+#  <<: *checks_template
+#  cache:
+#    - *nodejs_amd64_cache
+#    - *golang_amd64_cache
+#  script:
+#    - rake lint:ui
+#
+#unittest_ui:
+#  <<: *checks_template
+#  cache:
+#    - *nodejs_amd64_cache
+#    - *golang_amd64_cache
+#    - *playwright_browsers_cache
+#  script:
+#    - rake unittest:ui
+#  artifacts:
+#    when: always
+#    paths:
+#      - webui/junit.xml
+#    reports:
+#      junit: webui/junit.xml
+#
+#storybook_tests:
+#  <<: *checks_template
+#  cache:
+#    - *nodejs_amd64_cache
+#    - *golang_amd64_cache
+#    - *playwright_browsers_cache
+#  allow_failure: true
+#  script:
+#    - rake unittest:storybook
+#  rules:
+#    - when: manual
+#
+#danger:
+#  <<: *checks_template
+#  needs: [ ]
+#  before_script:
+#    - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
+#    - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
+#    - export DANGER_GITLAB_HOST=gitlab.isc.org
+#    - export DANGER_GITLAB_API_BASE_URL=https://gitlab.isc.org/api/v4
+#  script:
+#    - rake lint:git
+#
+#lint_shell:
+#  <<: *checks_template
+#  needs: [ ]
+#  script:
+#    - rake lint:shell
+#
+#### install packages ###
+#
+#install_debs_amd64:
+#  <<: *checks_template
+#  variables:
+#    ARCH: amd64
+#  script:
+#    - "dpkg -i isc-stork-*${ARCH}.deb"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "dpkg -i isc-stork-*${ARCH}.deb"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "man stork-agent > /dev/null"
+#    - "man stork-server > /dev/null"
+#    - "man stork-tool > /dev/null"
+#    - "dpkg -r isc-stork-agent"
+#    - "dpkg -r isc-stork-server"
+#  needs:
+#    - build_debs_amd64
+#
+#install_debs_amd64_ubuntu_lts:
+#  <<: *checks_template
+#  image: ubuntu:20.04
+#  variables:
+#    ARCH: amd64
+#  script:
+#    - "dpkg -i isc-stork-*${ARCH}.deb"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "dpkg -i isc-stork-*${ARCH}.deb"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "man stork-agent > /dev/null"
+#    - "man stork-server > /dev/null"
+#    - "man stork-tool > /dev/null"
+#    - "dpkg -r isc-stork-agent"
+#    - "dpkg -r isc-stork-server"
+#  needs:
+#    - build_debs_amd64
+#
+#install_debs_arm64:
+#  extends: install_debs_amd64
+#  <<: *checks_template_arm
+#  variables:
+#    ARCH: arm64
+#  needs:
+#    - build_debs_arm64
+#
+#install_rpms_amd64:
+#  <<: *checks_template
+#  <<: *job_template_redhat
+#  variables:
+#    ARCH: x86_64
+#  script:
+#    - "rpm -i isc-stork-*${ARCH}.rpm"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "rpm -U --force isc-stork-*${ARCH}.rpm"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "man stork-agent > /dev/null"
+#    - "man stork-server > /dev/null"
+#    - "man stork-tool > /dev/null"
+#    - "rpm -e isc-stork-agent"
+#    - "rpm -e isc-stork-server"
+#  needs:
+#    - build_rpms_amd64
+#
+#install_rpms_arm64:
+#  extends: install_rpms_amd64
+#  <<: *checks_template_arm
+#  variables:
+#    ARCH: aarch64
+#  needs:
+#    - build_rpms_arm64
+#
+#install_apks_amd64:
+#  <<: *checks_template
+#  <<: *job_template_alpine
+#  variables:
+#    ARCH: x86_64
+#  script:
+#    - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
+#    - "stork-agent --version"
+#    - "stork-server --version"
+#    - "stork-tool --version"
+#    - "man stork-agent > /dev/null"
+#    - "man stork-server > /dev/null"
+#    - "man stork-tool > /dev/null"
+#    - "apk del isc-stork-agent"
+#    - "apk del isc-stork-server"
+#  needs:
+#    - build_apks_amd64
+#  artifacts:
+#    paths:
+#      - core.*
+#    expire_in: 1 week
+#    when: always
+#
+#install_apks_arm64:
+#  extends: install_apks_amd64
+#  <<: *job_template_arm
+#  variables:
+#    ARCH: aarch64
+#  needs:
+#    - build_apks_arm64
+#
+#### system testing ###
+#
+#system_test:
+#  <<: *checks_template
+#  needs: [ ]
+#  services:
+#    - docker:dind
+#  rules:
+#    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+#      when: always
+#    - when: manual
+#      allow_failure: true
+#  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
+#  #  cache:
+#  #    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
+#  #    paths:
+#  #      - tools/
+#  #    fallback_keys:
+#  #      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
+#  before_script:
+#    - ip -6 route del default
+#    - rake prepare:systemtest
+#  variables:
+#    BIND9_VERSION: latest-stable
+#    KEA_VERSION: latest-stable
+#    # Alpine uses the libc-musl library, which isn't compatible with the NodeJS
+#    # binary fetched by the Rake script. Additionally, the binaries for alpine
+#    # are missing on the NodeJS page. We cannot use the image based on Debian
+#    # because it is out-of-date.
+#    USE_SYSTEM_NODEJS: "true"
+#    # It must be an alias of the docker:dind service.
+#    DEFAULT_MAPPED_ADDRESS: "docker"
+#  script:
+#    # - rake system_tests_ui
+#    - rake systemtest
+#  artifacts:
+#    paths:
+#      - tests/system/test-results/
+#    exclude:
+#      - tests/system/test-results/**/performance-charts.html
+#    expire_in: 6 months
+#    when: always
+#    reports:
+#      junit: tests/system/test-results/junit.xml
+#
+#system_test_old_stables:
+#  extends: system_test
+#  variables:
+#    BIND9_VERSION: old-stable
+#    KEA_VERSION: old-stable
+#    ONLY_KEA_TESTS: "true"
+#  script:
+#    - rake systemtest
+#
+#system_test_latest_devs:
+#  extends: system_test
+#  variables:
+#    BIND9_VERSION: latest-dev
+#    KEA_VERSION: latest-dev
+#    ONLY_KEA_TESTS: "true"
+#  script:
+#    - rake systemtest
 
 ### hooks ###
 # common parts used in stage jobs
 .hooks_template: &hooks_template
   <<: *job_template
-  stage: hooks
+#  stage: hooks
   needs:
     - job: rebuild_cache_amd64
       optional: true
 .hooks_template_arm: &hooks_template_arm
   <<: *job_template_arm
-  stage: hooks
+#  stage: hooks
 
-build_hooks_amd64:
-  <<: *hooks_template
-  when: always
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  cache:
-    - *golang_amd64_cache
-  script:
-    - rake hook:build
-  artifacts:
-    untracked: true
-    expire_in: 1 hour
-
-build_hooks_arm64:
-  extends: build_hooks_amd64
-  <<: *job_template_arm
-  needs:
-    - job: rebuild_cache_arm64
-      optional: true
-  cache:
-    - *golang_arm64_cache
-  variables:
-    ARCH: arm64
-
-build_hooks_legacy_amd64:
-  <<: *hooks_template
-  rules:
-    - when: on_success
-  # Use image based on Debian 11. It is required to build the binaries with
-  # the older GLIBC version.
-  <<: *job_template_debian11
-  needs:
-    - build_hooks_amd64
-  # The submodules are not included in the artifacts even if the `untracked`
-  # option is set. It is a bug in GitLab: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2457
-  # We clone the fresh copy of the submodules. As long as our hooks need only
-  # Golang to compile, it shouldn't be a problem.
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  script:
-    # The hook:build rebuilds the binaries every time.
-    - rake hook:build
-  artifacts:
-    paths:
-      - hooks/*.so
-    expire_in: 1 hour
-
-build_hooks_legacy_arm64:
-  extends: build_hooks_legacy_amd64
-  <<: *job_template_arm
-  needs:
-    - build_hooks_arm64
-  variables:
-    ARCH: arm64
-
-unittest_hooks:
-  <<: *hooks_template
-  when: always
-  cache:
-    - *golang_amd64_cache
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  script:
-    - rake hook:unittest
-
-tarball_hooks:
-  <<: *hooks_template
-  when: always
-  needs: [ ]
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  script:
-    - rake hook:tarball
-  artifacts:
-    paths:
-      - stork-*-*.tar.gz
-    expire_in: 1 week
-
-build_hooks_debs_amd64:
-  <<: *hooks_template
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_hooks_legacy_amd64
-  cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache
-  script:
-    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/hook-pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
-
-build_hooks_debs_arm64:
-  <<: *hooks_template_arm
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_hooks_legacy_arm64
-  cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache
-  script:
-    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/hook-pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
-
-build_hooks_rpms_amd64:
-  <<: *hooks_template
-  <<: *job_template_redhat
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_hooks_legacy_amd64
-  cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache_redhat
-  script:
-    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/hook-pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
-
-build_hooks_rpms_arm64:
-  <<: *hooks_template_arm
-  <<: *job_template_redhat
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_hooks_legacy_arm64
-    - job: rebuild_cache_arm64_redhat
-      optional: true
-  cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache_redhat
-  script:
-    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/hook-pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
-
-build_hooks_apks_amd64:
-  <<: *hooks_template
-  <<: *job_template_alpine
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    - job: rebuild_cache_amd64_alpine
-      optional: true
-  cache:
-    - *golang_amd64_cache_alpine
-    - *python_amd64_cache_alpine
-  script:
-    - rake hook:build_pkg
-    - cp dist/hook-pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
-
-build_hooks_apks_arm64:
-  <<: *hooks_template_arm
-  <<: *job_template_alpine
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    - job: rebuild_cache_arm64_alpine
-      optional: true
-  cache:
-    - *golang_arm64_cache_alpine
-    - *python_arm64_cache_alpine
-  script:
-    - rake hook:build_pkg
-    - cp dist/hook-pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
-
-packages_hooks:
-  <<: *hooks_template
-  rules:
-    - when: on_success
-  needs:
-    - build_hooks_debs_amd64
-    - build_hooks_debs_arm64
-    - build_hooks_rpms_amd64
-    - build_hooks_rpms_arm64
-    - build_hooks_apks_amd64
-    - build_hooks_apks_arm64
-  script:
-    - ":"
-  artifacts:
-    paths:
-      - isc-stork-*
-    expire_in: 1 week
+#build_hooks_amd64:
+#  <<: *hooks_template
+#  when: always
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  cache:
+#    - *golang_amd64_cache
+#  script:
+#    - rake hook:build
+#  artifacts:
+#    untracked: true
+#    expire_in: 1 hour
+#
+#build_hooks_arm64:
+#  extends: build_hooks_amd64
+#  <<: *job_template_arm
+#  needs:
+#    - job: rebuild_cache_arm64
+#      optional: true
+#  cache:
+#    - *golang_arm64_cache
+#  variables:
+#    ARCH: arm64
+#
+#build_hooks_legacy_amd64:
+#  <<: *hooks_template
+#  rules:
+#    - when: on_success
+#  # Use image based on Debian 11. It is required to build the binaries with
+#  # the older GLIBC version.
+#  <<: *job_template_debian11
+#  needs:
+#    - build_hooks_amd64
+#  # The submodules are not included in the artifacts even if the `untracked`
+#  # option is set. It is a bug in GitLab: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2457
+#  # We clone the fresh copy of the submodules. As long as our hooks need only
+#  # Golang to compile, it shouldn't be a problem.
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  script:
+#    # The hook:build rebuilds the binaries every time.
+#    - rake hook:build
+#  artifacts:
+#    paths:
+#      - hooks/*.so
+#    expire_in: 1 hour
+#
+#build_hooks_legacy_arm64:
+#  extends: build_hooks_legacy_amd64
+#  <<: *job_template_arm
+#  needs:
+#    - build_hooks_arm64
+#  variables:
+#    ARCH: arm64
+#
+#unittest_hooks:
+#  <<: *hooks_template
+#  when: always
+#  cache:
+#    - *golang_amd64_cache
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  script:
+#    - rake hook:unittest
+#
+#tarball_hooks:
+#  <<: *hooks_template
+#  when: always
+#  needs: [ ]
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  script:
+#    - rake hook:tarball
+#  artifacts:
+#    paths:
+#      - stork-*-*.tar.gz
+#    expire_in: 1 week
+#
+#build_hooks_debs_amd64:
+#  <<: *hooks_template
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  rules:
+#    - when: on_success
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_hooks_legacy_amd64
+#  cache:
+#    - *golang_amd64_cache
+#    - *python_amd64_cache
+#  script:
+#    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/hook-pkgs/*.deb ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.deb
+#    expire_in: 1 hour
+#
+#build_hooks_debs_arm64:
+#  <<: *hooks_template_arm
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  rules:
+#    - when: on_success
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_hooks_legacy_arm64
+#  cache:
+#    - *golang_arm64_cache
+#    - *python_arm64_cache
+#  script:
+#    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/hook-pkgs/*.deb ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.deb
+#    expire_in: 1 hour
+#
+#build_hooks_rpms_amd64:
+#  <<: *hooks_template
+#  <<: *job_template_redhat
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  rules:
+#    - when: on_success
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_hooks_legacy_amd64
+#  cache:
+#    - *golang_amd64_cache
+#    - *python_amd64_cache_redhat
+#  script:
+#    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/hook-pkgs/*.rpm ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.rpm
+#    expire_in: 1 hour
+#
+#build_hooks_rpms_arm64:
+#  <<: *hooks_template_arm
+#  <<: *job_template_redhat
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  rules:
+#    - when: on_success
+#  needs:
+#    # Use the binaries compiled by the legacy image.
+#    - build_hooks_legacy_arm64
+#    - job: rebuild_cache_arm64_redhat
+#      optional: true
+#  cache:
+#    - *golang_arm64_cache
+#    - *python_arm64_cache_redhat
+#  script:
+#    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/hook-pkgs/*.rpm ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.rpm
+#    expire_in: 1 hour
+#
+#build_hooks_apks_amd64:
+#  <<: *hooks_template
+#  <<: *job_template_alpine
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  rules:
+#    - when: on_success
+#  needs:
+#    - job: rebuild_cache_amd64_alpine
+#      optional: true
+#  cache:
+#    - *golang_amd64_cache_alpine
+#    - *python_amd64_cache_alpine
+#  script:
+#    - rake hook:build_pkg
+#    - cp dist/hook-pkgs/*.apk ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.apk
+#    expire_in: 1 hour
+#
+#build_hooks_apks_arm64:
+#  <<: *hooks_template_arm
+#  <<: *job_template_alpine
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
+#  rules:
+#    - when: on_success
+#  needs:
+#    - job: rebuild_cache_arm64_alpine
+#      optional: true
+#  cache:
+#    - *golang_arm64_cache_alpine
+#    - *python_arm64_cache_alpine
+#  script:
+#    - rake hook:build_pkg
+#    - cp dist/hook-pkgs/*.apk ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.apk
+#    expire_in: 1 hour
+#
+#packages_hooks:
+#  <<: *hooks_template
+#  rules:
+#    - when: on_success
+#  needs:
+#    - build_hooks_debs_amd64
+#    - build_hooks_debs_arm64
+#    - build_hooks_rpms_amd64
+#    - build_hooks_rpms_arm64
+#    - build_hooks_apks_amd64
+#    - build_hooks_apks_arm64
+#  script:
+#    - ":"
+#  artifacts:
+#    paths:
+#      - isc-stork-*
+#    expire_in: 1 week
 
 ### upload release notes and tarball to repo.isc.org ###
 
-upload_to_repo:
-  stage: deploy
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-      when: manual
-    - when: manual
-      allow_failure: true
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  needs:
-    - tarball
-  script:
-    - eval $(ssh-agent -s)
-    - echo "${REPO_SSH_PRIVATE_KEY}" | base64 -d | ssh-add -
-    - ssh-keyscan repo.isc.org >> ~/.ssh/known_hosts
-    - rake release:notes
-    - rake release:tarball:upload HOST=storkpush@repo.isc.org TARGET=/data/shared/sweng/stork/releases
-  artifacts:
-    name: release-notes
-    expire_in: 1 week
-    paths:
-      - Stork-*-ReleaseNotes.txt
-
-upload_to_repo_hooks:
-  extends: upload_to_repo
-  needs:
-    - tarball_hooks
-
-### demo deploy jobs ###
-
-deploy_demo:
-  stage: deploy
-  cache: [ ]
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: always
-    - when: manual
-      allow_failure: true
-  needs: [ ]
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  before_script:
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
-  script:
-    # Print Docker info
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker info
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker version
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose version
-    # Stop all containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org "docker ps -q | xargs docker kill || true"
-    # Force network cleanup and to make sure we have clean state do restart docker service
-    # They can be replaced with docker-compose down after migration from the old demo.
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker container prune -f
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker volume prune -f
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org sudo systemctl restart docker
-    # Copy source code
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org rm -rf deploy/*
-    - scp -o StrictHostKeyChecking=no -r $PWD/* jenkins@stork.lab.isc.org:~/deploy
-    # Build & Start Docker containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CS_REPO_ACCESS_TOKEN deploy/stork-demo.sh --no-prompt
-
-### upload packages to cloudsmith.io ###
-
-upload_packages:
-  stage: deploy
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-      when: manual
-    - when: manual
-      allow_failure: true
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
-  tags:
-    - docker
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  needs:
-    - packages
-  variables:
-    COMPONENTS: isc-stork-server,isc-stork-agent
-  script:
-    - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
-    - rake release:packages:upload
-
-upload_packages_hooks:
-  extends: upload_packages
-  needs:
-    - packages_hooks
-  variables:
-    # TODO: Append `isc-stork-agent-hook` after a comma when any agent hook
-    # will be ready.
-    COMPONENTS: isc-stork-server-hook
-
-upload_test_packages:
-  extends: upload_packages
-  variables:
-    REPO: stork-testing
-
-upload_test_packages_hooks:
-  extends: upload_packages_hooks
-  variables:
-    REPO: stork-testing
+#upload_to_repo:
+#  stage: deploy
+#  rules:
+#    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+#      when: manual
+#    - when: manual
+#      allow_failure: true
+#  tags:
+#    - linux
+#    - aws
+#    - runner-manager
+#    - amd64
+#  needs:
+#    - tarball
+#  script:
+#    - eval $(ssh-agent -s)
+#    - echo "${REPO_SSH_PRIVATE_KEY}" | base64 -d | ssh-add -
+#    - ssh-keyscan repo.isc.org >> ~/.ssh/known_hosts
+#    - rake release:notes
+#    - rake release:tarball:upload HOST=storkpush@repo.isc.org TARGET=/data/shared/sweng/stork/releases
+#  artifacts:
+#    name: release-notes
+#    expire_in: 1 week
+#    paths:
+#      - Stork-*-ReleaseNotes.txt
+#
+#upload_to_repo_hooks:
+#  extends: upload_to_repo
+#  needs:
+#    - tarball_hooks
+#
+#### demo deploy jobs ###
+#
+#deploy_demo:
+#  stage: deploy
+#  cache: [ ]
+#  rules:
+#    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+#      when: always
+#    - when: manual
+#      allow_failure: true
+#  needs: [ ]
+#  tags:
+#    - linux
+#    - aws
+#    - runner-manager
+#    - amd64
+#  before_script:
+#    - eval $(ssh-agent -s)
+#    - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
+#  script:
+#    # Print Docker info
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker info
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker version
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose version
+#    # Stop all containers
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org "docker ps -q | xargs docker kill || true"
+#    # Force network cleanup and to make sure we have clean state do restart docker service
+#    # They can be replaced with docker-compose down after migration from the old demo.
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker container prune -f
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker volume prune -f
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org sudo systemctl restart docker
+#    # Copy source code
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org rm -rf deploy/*
+#    - scp -o StrictHostKeyChecking=no -r $PWD/* jenkins@stork.lab.isc.org:~/deploy
+#    # Build & Start Docker containers
+#    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CS_REPO_ACCESS_TOKEN deploy/stork-demo.sh --no-prompt
+#
+#### upload packages to cloudsmith.io ###
+#
+#upload_packages:
+#  stage: deploy
+#  rules:
+#    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+#      when: manual
+#    - when: manual
+#      allow_failure: true
+#  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
+#  tags:
+#    - docker
+#    - linux
+#    - aws
+#    - runner-manager
+#    - amd64
+#  needs:
+#    - packages
+#  variables:
+#    COMPONENTS: isc-stork-server,isc-stork-agent
+#  script:
+#    - export LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+#    - rake release:packages:upload
+#
+#upload_packages_hooks:
+#  extends: upload_packages
+#  needs:
+#    - packages_hooks
+#  variables:
+#    # TODO: Append `isc-stork-agent-hook` after a comma when any agent hook
+#    # will be ready.
+#    COMPONENTS: isc-stork-server-hook
+#
+#upload_test_packages:
+#  extends: upload_packages
+#  variables:
+#    REPO: stork-testing
+#
+#upload_test_packages_hooks:
+#  extends: upload_packages_hooks
+#  variables:
+#    REPO: stork-testing
