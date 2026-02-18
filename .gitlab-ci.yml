@@ -503,8 +503,8 @@ lint_backend:
   cache:
     - *golang_amd64_cache
     - *nodejs_amd64_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   script:
     - rake lint:backend
 
@@ -520,8 +520,8 @@ lint_python_pylint:
     - *python_amd64_cache
     - *nodejs_amd64_cache
     - *golang_amd64_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   script:
     - rake lint:python:pylint
 
@@ -529,8 +529,8 @@ lint_python_flake8:
   <<: *checks_template
   cache:
     - *python_amd64_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   script:
     - rake lint:python:flake8
 
@@ -538,8 +538,8 @@ lint_python_black:
   <<: *checks_template
   cache:
     - *python_amd64_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   script:
     - rake lint:python:black
 
@@ -547,8 +547,8 @@ unittest_backend:
   <<: *checks_template
   cache:
     - *golang_amd64_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   services:
     - name: postgres:18-alpine
       alias: postgres
@@ -577,8 +577,8 @@ lint_ui:
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   script:
     - rake lint:ui
 
@@ -588,8 +588,8 @@ unittest_ui:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
     - *playwright_browsers_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   script:
     - rake unittest:ui
   artifacts:
@@ -605,8 +605,8 @@ storybook_tests:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
     - *playwright_browsers_cache
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   allow_failure: true
   script:
     - rake unittest:storybook
@@ -823,8 +823,8 @@ system_test_latest_devs:
 build_hooks_amd64:
   <<: *hooks_template
   when: always
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   cache:
@@ -877,8 +877,8 @@ build_hooks_legacy_arm64:
 unittest_hooks:
   <<: *hooks_template
   when: always
-  needs:
-    - rebuild_cache_amd64
+  #  needs:
+  #    - rebuild_cache_amd64
   cache:
     - *golang_amd64_cache
   variables:
@@ -988,8 +988,8 @@ build_hooks_apks_amd64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - rebuild_cache_amd64_alpine
+  #  needs:
+  #    - rebuild_cache_amd64_alpine
   cache:
     - *golang_amd64_cache_alpine
     - *python_amd64_cache_alpine
@@ -1008,8 +1008,8 @@ build_hooks_apks_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - rebuild_cache_arm64_alpine
+  #  needs:
+  #    - rebuild_cache_arm64_alpine
   cache:
     - *golang_arm64_cache_alpine
     - *python_arm64_cache_alpine
