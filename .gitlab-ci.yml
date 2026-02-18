@@ -54,7 +54,34 @@ stages:
   - hooks
   - deploy
 
-### caches ###
+### job templates ###
+.job_template: &job_template
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - amd64
+
+.job_template_arm: &job_template_arm
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - aarch64
+
+.job_template_alpine: &job_template_alpine
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
+  variables:
+    # CGO is disabled by default in official images from Go 1.23.
+    CGO_ENABLED: 1
+
+.job_template_redhat: &job_template_redhat
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
+
+.job_template_debian11: &job_template_debian11
+  image: ruby:3.3.5-bullseye
+
+### caches templates ###
 .golang_cache: &golang_cache
   paths:
   - tools/golang
@@ -118,32 +145,62 @@ stages:
   key: python_arm64_redhat
   <<: *python_cache
 
-.ruby_cache: &ruby_cache
-  key: ruby
-  paths:
-    - tools/ruby
-  policy: pull
-
 .playwright_browsers_cache: &playwright_browsers_cache
   key: playwright_browsers
   paths:
     - tools/playwright_browsers
   policy: pull
 
-### cache jobs ###
-build_cache_amd64:
-  extends: .base_build_debian
+### stage: cache ###
+# common parts used in stage jobs
+.cache_job_template: &cache_job_template
+  <<: *job_template
   stage: cache
+  needs: []
+.cache_job_template_debian: &cache_job_template_debian
+  <<: *cache_job_template
   rules:
     - when: manual
       allow_failure: true
     - changes:
+        - .gitlab-ci.yml
         - webui/package.json
         - webui/package-lock.json
         - backend/go.mod
         - backend/go.sum
         - rakelib/*
         - rakelib/**/*
+.cache_job_template_alpine: &cache_job_template_alpine
+  <<: *cache_job_template
+  <<: *job_template_alpine
+  rules:
+    -   when: manual
+        allow_failure: true
+    -   changes:
+          - .gitlab-ci.yml
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/*
+          - rakelib/**/*
+  script:
+    - rake prepare:dist
+    - rake prepare:deps
+.cache_job_template_redhat: &cache_job_template_redhat
+  <<: *cache_job_template
+  <<: *job_template_redhat
+  rules:
+    - when: manual
+      allow_failure: true
+    - changes:
+        - .gitlab-ci.yml
+        - rakelib/*
+        - rakelib/**/*
+  script:
+    - rake prepare:sphinx_deps
+
+# jobs
+rebuild_cache_amd64:
+  <<: *cache_job_template_debian
   cache:
     - <<: *golang_amd64_cache
       policy: push
@@ -153,29 +210,14 @@ build_cache_amd64:
       policy: push
     - <<: *playwright_browsers_cache
       policy: push
-  #    - <<: *ruby_cache
-  #      policy: push
   script:
     - rake prepare
     - rake prepare:dev
     - rake prepare:deps
-  after_script:
-    - tools/python/bin/python -m pip cache dir
-    - tools/python/bin/python -m pip cache list
 
-build_cache_arm64:
-  extends: .base_build_debian
-  stage: cache
-  rules:
-    - when: manual
-      allow_failure: true
-    - changes:
-        - webui/package.json
-        - webui/package-lock.json
-        - backend/go.mod
-        - backend/go.sum
-        - rakelib/*
-        - rakelib/**/*
+rebuild_cache_arm64:
+  <<: *cache_job_template_debian
+  <<: *job_template_arm
   cache:
     - <<: *golang_arm64_cache
       policy: push
@@ -186,242 +228,322 @@ build_cache_arm64:
   script:
     - rake prepare
     - rake prepare:deps
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
 
-build_cache_amd64_alpine:
-  extends: .base_build_alpine
-  stage: cache
-  rules:
-    - when: manual
-      allow_failure: true
-    - changes:
-        - backend/go.mod
-        - backend/go.sum
-        - rakelib/*
-        - rakelib/**/*
+rebuild_cache_amd64_alpine:
+  <<: *cache_job_template_alpine
   cache:
     - <<: *golang_amd64_cache_alpine
       policy: push
     - <<: *python_amd64_cache_alpine
       policy: push
-  script:
-    - rake prepare:dist
-    - rake prepare:deps
 
-build_cache_arm64_alpine:
-  extends: .base_build_alpine_arm
-  stage: cache
-  rules:
-    - when: manual
-      allow_failure: true
-    - changes:
-        - backend/go.mod
-        - backend/go.sum
-        - rakelib/*
-        - rakelib/**/*
+rebuild_cache_arm64_alpine:
+  <<: *cache_job_template_alpine
+  <<: *job_template_arm
   cache:
     - <<: *golang_arm64_cache_alpine
       policy: push
     - <<: *python_arm64_cache_alpine
       policy: push
-  script:
-    - rake prepare:dist
-    - rake prepare:deps
 
-build_cache_amd64_redhat:
-  extends: .base_build_ubi
-  stage: cache
-  rules:
-    - when: manual
-      allow_failure: true
-    - changes:
-        - rakelib/*
-        - rakelib/**/*
+rebuild_cache_amd64_redhat:
+  <<: *cache_job_template_redhat
   cache:
     -   <<: *python_amd64_cache_redhat
         policy: push
-  script:
-    - rake prepare:sphinx_deps
 
-build_cache_arm64_redhat:
-  extends: .base_build_ubi_arm
-  stage: cache
-  rules:
-    - when: manual
-      allow_failure: true
-    - changes:
-        - rakelib/*
-        - rakelib/**/*
+rebuild_cache_arm64_redhat:
+  <<: *cache_job_template_redhat
+  <<: *job_template_arm
   cache:
-    -   <<: *python_arm64_cache_redhat
-        policy: push
+    - <<: *python_arm64_cache_redhat
+      policy: push
+
+### stage: build ###
+# common parts used in stage jobs
+.build_template: &build_template
+  <<: *job_template
+  stage: build
+  rules:
+    - when: always
+.build_template_arm: &build_template_arm
+  <<: *build_template
+  <<: *job_template_arm
+#  needs: []
+
+# jobs
+
+build_ui:
+  <<: *build_template
+  cache:
+    - *nodejs_amd64_cache
+    - *golang_amd64_cache
+    - *python_amd64_cache
   script:
-    - rake prepare:sphinx_deps
+    - rake build:ui
+  artifacts:
+    name: "ui"
+    expire_in: 1 week
+    paths:
+      - webui/dist/stork/
 
-### build jobs ###
-
-# common parts used in build jobs
-.base_build_debian:
-  stage: build
-  rules:
-    - when: always
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  needs: []
-#  cache:
-#    key:
-#      files:
-#        - webui/package-lock.json
-#    paths:
-#      - tools/nodejs
-#      - webui/node_modules
-#    policy: pull
-
-.base_build_debian_arm:
-  extends: .base_build_debian
-  cache: []
-#    key: $CI_PROJECT_NAME-debian-arm-$CI_COMMIT_REF_SLUG
-#    paths:
-#      - tools/nodejs
-#      - webui/node_modules/
-#    fallback_keys:
-#      - $CI_PROJECT_NAME-debian-arm-$CI_DEFAULT_BRANCH
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
-
-.base_build_ubi:
-  stage: build
-  needs: []
-  rules:
-    - when: always
-#  cache:
-#    key: $CI_PROJECT_NAME-ubi-$CI_COMMIT_REF_SLUG
-#    paths:
-#      - tools/nodejs
-#      - webui/node_modules/
-#    fallback_keys:
-#      - $CI_PROJECT_NAME-ubi-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-
-.base_build_ubi_arm:
-  extends: .base_build_ubi
-  cache: []
-#    key: $CI_PROJECT_NAME-ubi-arm-$CI_COMMIT_REF_SLUG
-#    paths:
-#      - tools/nodejs
-#      - webui/node_modules/
-#    fallback_keys:
-#      - $CI_PROJECT_NAME-ubi-arm-$CI_DEFAULT_BRANCH
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
-
-.base_build_alpine:
-  stage: build
-  needs: []
-  rules:
-    - when: always
-#  cache:
-#    key: $CI_PROJECT_NAME-alpine-$CI_COMMIT_REF_SLUG
-#    paths:
-#      - tools/nodejs
-#      - webui/node_modules/
-#    fallback_keys:
-#      - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-#  before_script:
-#    - rake prepare:dist
-#    - rake prepare:deps
+build_doc:
+  <<: *build_template
+  cache:
+    - *python_amd64_cache
+  script:
+    - rake build:doc
   variables:
-    # CGO is disabled by default in official images from Go 1.23.
-    CGO_ENABLED: 1
+    GIT_SUBMODULE_STRATEGY: normal
+  artifacts:
+    name: "doc"
+    expire_in: 1 week
+    paths:
+      - doc/build/
 
-.base_build_alpine_arm:
-  extends: .base_build_alpine
-  cache: []
-#    key: $CI_PROJECT_NAME-alpine-arm-$CI_COMMIT_REF_SLUG
-#    paths:
-#      - tools/nodejs
-#      - webui/node_modules/
-#    fallback_keys:
-#      - $CI_PROJECT_NAME-alpine-arm-$CI_DEFAULT_BRANCH
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
+build_backend_amd64:
+  <<: *build_template
+  cache:
+    - *golang_amd64_cache
+    - *nodejs_amd64_cache ## because npm yamlinc is used
+  script:
+    - rake build:backend
+  artifacts:
+    untracked: true
+    expire_in: 1 hour
+
+build_backend_arm64:
+  <<: *build_template_arm
+  cache:
+    - *golang_arm64_cache
+    - *nodejs_arm64_cache ## because npm yamlinc is used
+  variables:
+    ARCH: arm64
+
+build_backend_legacy_amd64:
+  <<: *build_template
+  rules:
+    - when: on_success
+  # Use image based on Debian 11. It is required to build the binaries with
+  # the older GLIBC version.
+  <<: *job_template_debian11
+  needs:
+    - build_backend_amd64
+  script:
+    - rake rebuild:backend SUPPRESS_PREREQUISITES=true
+  artifacts:
+    name: "backend"
+    expire_in: 1 week
+    paths:
+      - backend/cmd/stork-agent/stork-agent
+      - backend/cmd/stork-server/stork-server
+      - backend/cmd/stork-tool/stork-tool
+
+build_backend_legacy_arm64:
+  <<: *build_template_arm
+  needs:
+    - build_backend_arm64
+  variables:
+    ARCH: arm64
+
+tarball:
+  <<: *build_template
+  needs: []
+  script:
+    - rake release:tarball
+  artifacts:
+    paths:
+      - stork-*.tar.gz
+    expire_in: 1 week
+
+### build rpm & deb packages ###
+
+build_debs_amd64:
+  <<: *build_template
+  cache:
+    - *golang_amd64_cache
+    - *python_amd64_cache
+    - *nodejs_amd64_cache
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_amd64
+  script:
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+    - cp dist/pkgs/*.deb ./
+  artifacts:
+    paths:
+      - isc-stork-*.deb
+    expire_in: 1 hour
+
+build_debs_arm64:
+  <<: *build_template_arm
+  cache:
+    - *golang_arm64_cache
+    - *python_arm64_cache
+    - *nodejs_arm64_cache
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_arm64
+  script:
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+    - cp dist/pkgs/*.deb ./
+  artifacts:
+    paths:
+      - isc-stork-*.deb
+    expire_in: 1 hour
+
+build_rpms_amd64:
+  <<: *build_template
+  <<: *job_template_redhat
+  cache:
+    - *golang_amd64_cache
+    - *python_amd64_cache_redhat
+    - *nodejs_amd64_cache
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_amd64
+  script:
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+    - cp dist/pkgs/*.rpm ./
+  artifacts:
+    paths:
+      - isc-stork-*.rpm
+    expire_in: 1 hour
+
+build_rpms_arm64:
+  <<: *build_template_arm
+  <<: *job_template_redhat
+  cache:
+    - *golang_arm64_cache
+    - *python_arm64_cache_redhat
+    - *nodejs_arm64_cache
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_arm64
+  script:
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+    - cp dist/pkgs/*.rpm ./
+  artifacts:
+    paths:
+      - isc-stork-*.rpm
+    expire_in: 1 hour
+
+build_apks_amd64:
+  <<: *build_template
+  <<: *job_template_alpine
+  cache:
+    - *golang_amd64_cache_alpine
+    - *python_amd64_cache_alpine
+    - *nodejs_amd64_cache
+  script:
+    - rake build:agent_pkg
+    - rake build:server_pkg
+    - cp dist/pkgs/*.apk ./
+  artifacts:
+    paths:
+      - isc-stork-*.apk
+    expire_in: 1 hour
+
+build_apks_arm64:
+  <<: *build_template_arm
+  <<: *job_template_alpine
+  cache:
+    - *golang_arm64_cache_alpine
+    - *python_arm64_cache_alpine
+    - *nodejs_arm64_cache
+  script:
+    - rake build:agent_pkg
+    - rake build:server_pkg
+    - cp dist/pkgs/*.apk ./
+  artifacts:
+    paths:
+      - isc-stork-*.apk
+    expire_in: 1 hour
+
+packages:
+  <<: *build_template
+  rules:
+    - when: on_success
+  needs:
+    - build_debs_amd64
+    - build_debs_arm64
+    - build_rpms_amd64
+    - build_rpms_arm64
+    - build_apks_amd64
+    - build_apks_arm64
+  script:
+    - ":"
+  artifacts:
+    paths:
+      - isc-stork-*
+    expire_in: 1 week
+
+### stage: checks ###
+# common parts used in stage jobs
+.checks_template: &checks_template
+  <<: *job_template
+  stage: checks
+.checks_template_arm: &checks_template_arm
+  <<: *checks_template
+  <<: *job_template_arm
+
+# jobs
 
 lint_backend:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *golang_amd64_cache
     - *nodejs_amd64_cache
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake lint:backend
 
 lint_changelog:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
+  needs: []
   script:
     - rake lint:changelog
 
 lint_python_pylint:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *python_amd64_cache
     - *nodejs_amd64_cache
     - *golang_amd64_cache
-  before_script:
-    - tools/python/bin/python -m pip cache dir
-    - tools/python/bin/python -m pip cache list
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake lint:python:pylint
 
 lint_python_flake8:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *python_amd64_cache
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake lint:python:flake8
 
 lint_python_black:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *python_amd64_cache
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake lint:python:black
 
 unittest_backend:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *golang_amd64_cache
+  needs:
+    - rebuild_cache_amd64
   services:
     - name: postgres:18-alpine
       alias: postgres
@@ -446,21 +568,23 @@ unittest_backend:
         path: backend/coverage.cobertura.xml
 
 lint_ui:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake lint:ui
 
 unittest_ui:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
     - *playwright_browsers_cache
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake unittest:ui
   artifacts:
@@ -471,117 +595,21 @@ unittest_ui:
       junit: webui/junit.xml
 
 storybook_tests:
-  extends: .base_build_debian
-  stage: checks
+  <<: *checks_template
   cache:
     - *nodejs_amd64_cache
     - *golang_amd64_cache
     - *playwright_browsers_cache
+  needs:
+    - rebuild_cache_amd64
   allow_failure: true
   script:
     - rake unittest:storybook
   rules:
     - when: manual
 
-build_ui:
-  extends: .base_build_debian
-  cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-    - *python_amd64_cache
-  script:
-    - rake build:ui
-  artifacts:
-    name: "ui"
-    expire_in: 1 week
-    paths:
-      - webui/dist/stork/
-
-build_doc:
-  extends: .base_build_debian
-  cache:
-    - *python_amd64_cache
-  script:
-    - rake build:doc
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  artifacts:
-    name: "doc"
-    expire_in: 1 week
-    paths:
-      - doc/build/
-
-build_backend_amd64:
-  extends: .base_build_debian
-  cache:
-    - *golang_amd64_cache
-    - *nodejs_amd64_cache ## because npm yamlinc is used
-  script:
-    - rake build:backend
-  artifacts:
-    untracked: true
-    expire_in: 1 hour
-
-build_backend_arm64:
-  extends: build_backend_amd64
-  cache:
-    - *golang_arm64_cache
-    - *nodejs_arm64_cache ## because npm yamlinc is used
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
-  variables:
-    ARCH: arm64
-
-build_backend_legacy_amd64:
-  stage: build
-  rules:
-    - when: on_success
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  # Use image based on Debian 11. It is required to build the binaries with
-  # the older GLIBC version.
-  image: ruby:3.3.5-bullseye
-  needs:
-    - build_backend_amd64
-  script:
-    - rake rebuild:backend SUPPRESS_PREREQUISITES=true
-  artifacts:
-    name: "backend"
-    expire_in: 1 week
-    paths:
-      - backend/cmd/stork-agent/stork-agent
-      - backend/cmd/stork-server/stork-server
-      - backend/cmd/stork-tool/stork-tool
-
-build_backend_legacy_arm64:
-  extends: build_backend_legacy_amd64
-  cache: []
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
-  needs:
-    - build_backend_arm64
-  variables:
-    ARCH: arm64
-
 danger:
-  extends: .base_build_debian
-  stage: checks
-#  cache:
-#    - *ruby_cache
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
+  <<: *checks_template
   needs: []
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
@@ -592,165 +620,15 @@ danger:
     - rake lint:git
 
 lint_shell:
-  extends: .base_build_debian
-  stage: checks
-  script:
-    - rake lint:shell
-
-tarball:
-  stage: build
-  rules:
-    - when: always
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
+  <<: *checks_template
   needs: []
   script:
-    - rake release:tarball
-  artifacts:
-    paths:
-      - stork-*.tar.gz
-    expire_in: 1 week
-
-
-### build rpm & deb packages ###
-
-build_debs_amd64:
-  extends: .base_build_debian
-  stage: build
-  cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache
-    - *nodejs_amd64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_amd64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
-
-build_debs_arm64:
-  extends: .base_build_debian_arm
-  stage: build
-  cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache
-    - *nodejs_arm64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_arm64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
-
-build_rpms_amd64:
-  extends: .base_build_ubi
-  stage: build
-  cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache_redhat
-    - *nodejs_amd64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_amd64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
-
-build_rpms_arm64:
-  extends: .base_build_ubi_arm
-  stage: build
-  cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache_redhat
-    - *nodejs_arm64_cache
-  needs:
-    # Use the binaries compiled by the legacy image.
-    - build_backend_legacy_arm64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
-
-build_apks_amd64:
-  extends: .base_build_alpine
-  cache:
-    - *golang_amd64_cache_alpine
-    - *python_amd64_cache_alpine
-    - *nodejs_amd64_cache
-  script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
-    - cp dist/pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
-
-build_apks_arm64:
-  extends: .base_build_alpine_arm
-  cache:
-    - *golang_arm64_cache_alpine
-    - *python_arm64_cache_alpine
-    - *nodejs_arm64_cache
-  script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
-    - cp dist/pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
-
-packages:
-  extends: .base_build_debian
-  stage: build
-  rules:
-    - when: on_success
-  needs:
-    - build_debs_amd64
-    - build_debs_arm64
-    - build_rpms_amd64
-    - build_rpms_arm64
-    - build_apks_amd64
-    - build_apks_arm64
-  script:
-    - ":"
-  artifacts:
-    paths:
-      - isc-stork-*
-    expire_in: 1 week
+    - rake lint:shell
 
 ### install packages ###
 
 install_debs_amd64:
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  stage: checks
+  <<: *checks_template
   variables:
     ARCH: amd64
   script:
@@ -771,12 +649,7 @@ install_debs_amd64:
     - build_debs_amd64
 
 install_debs_amd64_ubuntu_lts:
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  stage: checks
+  <<: *checks_template
   image: ubuntu:20.04
   variables:
     ARCH: amd64
@@ -799,25 +672,15 @@ install_debs_amd64_ubuntu_lts:
 
 install_debs_arm64:
   extends: install_debs_amd64
-  cache: []
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
+  <<: *checks_template_arm
   variables:
     ARCH: arm64
   needs:
     - build_debs_arm64
 
 install_rpms_amd64:
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  stage: checks
+  <<: *checks_template
+  <<: *job_template_redhat
   variables:
     ARCH: x86_64
   script:
@@ -839,25 +702,15 @@ install_rpms_amd64:
 
 install_rpms_arm64:
   extends: install_rpms_amd64
-  cache: []
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
+  <<: *checks_template_arm
   variables:
     ARCH: aarch64
   needs:
     - build_rpms_arm64
 
 install_apks_amd64:
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
-  stage: checks
+  <<: *checks_template
+  <<: *job_template_alpine
   variables:
     ARCH: x86_64
   script:
@@ -884,12 +737,7 @@ install_apks_amd64:
 
 install_apks_arm64:
   extends: install_apks_amd64
-  cache: []
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
+  <<: *job_template_arm
   variables:
     ARCH: aarch64
   needs:
@@ -898,13 +746,7 @@ install_apks_arm64:
 ### system testing ###
 
 system_test:
-  stage: checks
-  tags:
-    - docker
-    - linux
-    - aws
-    - runner-manager
-    - amd64
+  <<: *checks_template
   needs: []
   services:
     - docker:dind
@@ -965,11 +807,19 @@ system_test_latest_devs:
     - rake systemtest
 
 ### hooks ###
-build_hooks_amd64:
-  extends: .base_build_debian
+# common parts used in stage jobs
+.hooks_template: &hooks_template
+  <<: *job_template
   stage: hooks
+.hooks_template_arm: &hooks_template_arm
+  <<: *job_template_arm
+  stage: hooks
+
+build_hooks_amd64:
+  <<: *hooks_template
   when: always
-  needs: []
+  needs:
+    - rebuild_cache_amd64
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   cache:
@@ -982,28 +832,19 @@ build_hooks_amd64:
 
 build_hooks_arm64:
   extends: build_hooks_amd64
+  <<: *job_template_arm
   cache:
     - *golang_arm64_cache
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
   variables:
     ARCH: arm64
 
 build_hooks_legacy_amd64:
-  stage: hooks
+  <<: *hooks_template
   rules:
     - when: on_success
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  image: ruby:3.3.5-bullseye
+  <<: *job_template_debian11
   needs:
     - build_hooks_amd64
   # The submodules are not included in the artifacts even if the `untracked`
@@ -1022,22 +863,17 @@ build_hooks_legacy_amd64:
 
 build_hooks_legacy_arm64:
   extends: build_hooks_legacy_amd64
-  cache: []
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - aarch64
+  <<: *job_template_arm
   needs:
     - build_hooks_arm64
   variables:
     ARCH: arm64
 
 unittest_hooks:
-  extends: .base_build_debian
-  stage: hooks
+  <<: *hooks_template
   when: always
-  needs: []
+  needs:
+    - rebuild_cache_amd64
   cache:
     - *golang_amd64_cache
   variables:
@@ -1046,8 +882,7 @@ unittest_hooks:
     - rake hook:unittest
 
 tarball_hooks:
-  extends: .base_build_debian
-  stage: hooks
+  <<: *hooks_template
   when: always
   needs: []
   variables:
@@ -1060,8 +895,7 @@ tarball_hooks:
     expire_in: 1 week
 
 build_hooks_debs_amd64:
-  extends: .base_build_debian
-  stage: hooks
+  <<: *hooks_template
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
@@ -1081,8 +915,7 @@ build_hooks_debs_amd64:
     expire_in: 1 hour
 
 build_hooks_debs_arm64:
-  extends: .base_build_debian_arm
-  stage: hooks
+  <<: *hooks_template_arm
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
@@ -1102,8 +935,8 @@ build_hooks_debs_arm64:
     expire_in: 1 hour
 
 build_hooks_rpms_amd64:
-  extends: .base_build_ubi
-  stage: hooks
+  <<: *hooks_template
+  <<: *job_template_redhat
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
@@ -1123,8 +956,8 @@ build_hooks_rpms_amd64:
     expire_in: 1 hour
 
 build_hooks_rpms_arm64:
-  extends: .base_build_ubi_arm
-  stage: hooks
+  <<: *hooks_template_arm
+  <<: *job_template_redhat
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
@@ -1144,13 +977,14 @@ build_hooks_rpms_arm64:
     expire_in: 1 hour
 
 build_hooks_apks_amd64:
-  extends: .base_build_alpine
-  stage: hooks
+  <<: *hooks_template
+  <<: *job_template_alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs: []
+  needs:
+    - rebuild_cache_amd64_alpine
   cache:
     - *golang_amd64_cache_alpine
     - *python_amd64_cache_alpine
@@ -1163,13 +997,14 @@ build_hooks_apks_amd64:
     expire_in: 1 hour
 
 build_hooks_apks_arm64:
-  extends: .base_build_alpine_arm
-  stage: hooks
+  <<: *hooks_template_arm
+  <<: *job_template_alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs: []
+  needs:
+    - rebuild_cache_arm64_alpine
   cache:
     - *golang_arm64_cache_alpine
     - *python_arm64_cache_alpine
@@ -1182,8 +1017,7 @@ build_hooks_apks_arm64:
     expire_in: 1 hour
 
 packages_hooks:
-  extends: .base_build_debian
-  stage: hooks
+  <<: *hooks_template
   rules:
     - when: on_success
   needs:
