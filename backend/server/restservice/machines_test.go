@@ -25,6 +25,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/certs"
+	"isc.org/stork/server/daemons"
 	"isc.org/stork/server/daemons/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -75,12 +76,17 @@ func TestGetVersion(t *testing.T) {
 func TestGetMachineStateOnly(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	statePuller, err := daemons.NewStatePuller(db, fa, fec, fd, lookup)
+	require.NoError(t, err)
+	pullers := &daemons.Pullers{StatePuller: statePuller}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, pullers)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -150,12 +156,15 @@ func mockGetDaemonsState(callNo int, cmdResponses []interface{}) {
 func TestGetMachineState(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(mockGetDaemonsState, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	statePuller, err := daemons.NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, &daemons.Pullers{StatePuller: statePuller})
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -257,6 +266,7 @@ func TestGetMachineState(t *testing.T) {
 func TestGetMachineAndPowerDNSState(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	// Add machine to db.
 	machine := &dbmodel.Machine{
@@ -334,8 +344,14 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	})
 
 	mockAgents.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-
-	rapi, err := NewRestAPI(&RestAPISettings{}, dbSettings, db, mockAgents, &storktest.FakeEventCenter{}, &storktest.FakeDispatcher{})
+	fd := &storktest.FakeDispatcher{}
+	fc := &storktest.FakeEventCenter{}
+	statePuller, err := daemons.NewStatePuller(db, mockAgents,
+		fc, fd,
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
+	require.NoError(t, err)
+	rapi, err := NewRestAPI(&RestAPISettings{}, dbSettings, db, mockAgents, fc, fd, &daemons.Pullers{StatePuller: statePuller})
 	require.NoError(t, err)
 
 	rsp := rapi.GetMachineState(context.Background(), services.GetMachineStateParams{
@@ -376,13 +392,17 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 func TestCreateMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	ec := NewEndpointControl()
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, ec)
+	statePuller, err := daemons.NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	pullers := &daemons.Pullers{StatePuller: statePuller}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, ec, pullers)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1075,12 +1095,15 @@ func TestGetMachine(t *testing.T) {
 func TestUpdateMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	statePuller, _ := daemons.NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	pullers := &daemons.Pullers{StatePuller: statePuller}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, pullers)
 	require.NoError(t, err)
 	ctx := context.Background()
 

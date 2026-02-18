@@ -24,7 +24,6 @@ import (
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/certs"
-	"isc.org/stork/server/daemons"
 	"isc.org/stork/server/daemons/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -275,7 +274,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	errStr := daemons.UpdateMachineAndDaemonsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher, r.DHCPOptionDefinitionLookup)
+	errStr := r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx, dbMachine)
 	if errStr != "" {
 		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -788,7 +787,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 	}
 
 	// Communication with an agent established, so get machine's state.
-	errStr := daemons.UpdateMachineAndDaemonsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher, r.DHCPOptionDefinitionLookup)
+	errStr := r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx2, dbMachine)
 	if errStr != "" {
 		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -890,7 +889,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if !prevAuthorized && dbMachine.Authorized {
 		ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		errStr := daemons.UpdateMachineAndDaemonsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter, r.ReviewDispatcher, r.DHCPOptionDefinitionLookup)
+		errStr := r.Pullers.StatePuller.UpdateMachineAndDaemonsState(ctx2, dbMachine)
 		if errStr != "" {
 			rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &errStr,

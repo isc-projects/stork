@@ -2,10 +2,12 @@ package daemons
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/server/agentcomm"
@@ -26,6 +28,7 @@ type StatePuller struct {
 	EventCenter                eventcenter.EventCenter
 	ReviewDispatcher           configreview.Dispatcher
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
+	UpdateMachineStateGroup    singleflight.Group
 }
 
 // Create an instance of the puller which periodically checks the status of
@@ -65,7 +68,7 @@ func (puller *StatePuller) pullData() error {
 	for _, dbM := range dbMachines {
 		dbM2 := dbM
 		ctx := context.Background()
-		errStr := UpdateMachineAndDaemonsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter, puller.ReviewDispatcher, puller.DHCPOptionDefinitionLookup)
+		errStr := puller.UpdateMachineAndDaemonsState(ctx, &dbM2)
 		if errStr != "" {
 			lastErr = errors.New(errStr)
 			log.WithError(lastErr).Errorf("Error occurred while getting info from machine %d", dbM2.ID)
@@ -75,6 +78,36 @@ func (puller *StatePuller) pullData() error {
 	}
 	log.Printf("Completed pulling information from machines: %d/%d succeeded", okCnt, len(dbMachines))
 	return lastErr
+}
+
+// It fetches the state of the machine and its daemons from the agent and
+// stores it in the database. It also detects changes in the machine and daemon
+// configurations and schedules configuration reviews for them if needed.
+//
+// It is guaranteed that this function is not called concurrently for the same
+// machine, even if it is called by the puller and externally at the same time.
+func (puller *StatePuller) UpdateMachineAndDaemonsState(ctx context.Context, dbMachine *dbmodel.Machine) string {
+	key := fmt.Sprintf("%s-update-state-%d", puller.GetName(), dbMachine.ID)
+	errStrRaw, err, _ := puller.UpdateMachineStateGroup.Do(key, func() (any, error) {
+		return updateMachineAndDaemonsState(ctx, puller.DB,
+			dbMachine,
+			puller.Agents, puller.EventCenter, puller.ReviewDispatcher,
+			puller.DHCPOptionDefinitionLookup), nil
+	})
+	if err != nil {
+		// It should never happen.
+		errStr := "Updating machine in a singleflight mode failed"
+		log.WithError(err).Error(errStr)
+		return errStr
+	}
+	errStr, ok := errStrRaw.(string)
+	if !ok {
+		// It should never happen even more.
+		errStr := "Updating machine in a singleflight mode returned unexpected type"
+		log.Error(errStr)
+		return errStr
+	}
+	return errStr
 }
 
 // Store updated machine fields in to database.
@@ -181,7 +214,7 @@ DISCOVERED_LOOP:
 }
 
 // Retrieve remotely machine and its daemons state, and store it in the database.
-func UpdateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) string {
+func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) string {
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
