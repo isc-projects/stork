@@ -54,9 +54,35 @@ func TestStatePullerPullData(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(i int, response []any) {
-		r := response[1].(*keactrl.Response)
-		r.Arguments = []byte(`{ "Dhcp4": {} }`)
+	fa := agentcommtest.NewFakeAgents(func(i int, responses []any) {
+		switch i {
+		case 0:
+			// The DHCPv4 daemon with an old access point is offline, so the
+			// the puller should not be able to retrieve its state.
+			versionResponse := responses[0].(*kea.VersionGetResponse)
+			versionResponse.Result = keactrl.ResponseError
+			versionResponse.Text = "server is likely to be offline"
+
+			response := responses[1].(*keactrl.Response)
+			response.Result = keactrl.ResponseError
+			response.Text = "server is likely to be offline"
+
+			statusResponse := responses[2].(*kea.StatusGetResponse)
+			statusResponse.Result = keactrl.ResponseError
+			statusResponse.Text = "server is likely to be offline"
+		case 1:
+			// The DHCPv4 daemon with a new access point is online, so the
+			// puller should be able to retrieve its state.
+			r := responses[1].(*keactrl.Response)
+			r.Arguments = []byte(`{ "Dhcp4": {} }`)
+		case 2:
+			// The CA daemon is online, so the puller should be able to
+			// retrieve its state.
+			r := responses[1].(*keactrl.Response)
+			r.Arguments = []byte(`{ "Control-agent": {} }`)
+		default:
+			require.Fail(t, "unexpected number of calls")
+		}
 	}, nil)
 	fa.MachineState = &agentcomm.State{
 		AgentVersion: "2.4.0",
@@ -186,9 +212,11 @@ func TestStatePullerPullData(t *testing.T) {
 	// should still be in the database.
 	require.Len(t, keaDaemons[0].AccessPoints, 1)
 	require.EqualValues(t, keaDaemons[0].AccessPoints[0].Address, "203.0.113.111")
+	require.False(t, keaDaemons[0].Active)
 	// The daemon with updated access point.
 	require.Len(t, keaDaemons[1].AccessPoints, 1)
 	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "203.0.113.123")
+	require.True(t, keaDaemons[1].Active)
 }
 
 // Check if puller correctly pulls data from an agent that can communicate only
@@ -458,10 +486,35 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(i int, response []any) {
-		r := response[1].(*keactrl.Response)
-		r.Arguments = []byte(`{ "Dhcp4": {} }`)
+	fa := agentcommtest.NewFakeAgents(func(i int, responses []any) {
+		switch i % 3 {
+		case 0:
+			// The DHCPv4 daemon with an old access point is offline, so the
+			// the puller should not be able to retrieve its state.
+			versionResponse := responses[0].(*kea.VersionGetResponse)
+			versionResponse.Result = keactrl.ResponseError
+			versionResponse.Text = "server is likely to be offline"
+
+			response := responses[1].(*keactrl.Response)
+			response.Result = keactrl.ResponseError
+			response.Text = "server is likely to be offline"
+
+			statusResponse := responses[2].(*kea.StatusGetResponse)
+			statusResponse.Result = keactrl.ResponseError
+			statusResponse.Text = "server is likely to be offline"
+		case 1:
+			// The DHCPv4 daemon with a new access point is online, so the
+			// puller should be able to retrieve its state.
+			r := responses[1].(*keactrl.Response)
+			r.Arguments = []byte(`{ "Dhcp4": {} }`)
+		default:
+			// The CA daemon is online, so the puller should be able to
+			// retrieve its state.
+			r := responses[1].(*keactrl.Response)
+			r.Arguments = []byte(`{ "Control-agent": {} }`)
+		}
 	}, nil)
+
 	fa.MachineState = &agentcomm.State{
 		AgentVersion: "2.4.0",
 		Daemons: []*agentcomm.Daemon{
@@ -599,7 +652,9 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	// should still be in the database.
 	require.Len(t, keaDaemons[0].AccessPoints, 1)
 	require.EqualValues(t, keaDaemons[0].AccessPoints[0].Address, "203.0.113.111")
+	require.False(t, keaDaemons[0].Active)
 	// The daemon with updated access point.
 	require.Len(t, keaDaemons[1].AccessPoints, 1)
 	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "203.0.113.123")
+	require.True(t, keaDaemons[1].Active)
 }
