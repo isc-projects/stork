@@ -151,13 +151,14 @@ stages:
     - tools/playwright_browsers
   policy: pull
 
-### stage: cache ###
+### Stage - cache ###
+
 # common parts used in stage jobs
 .cache_job_template: &cache_job_template
   <<: *job_template
   stage: cache
-  needs: [ ]
-  allow_failure: true
+#  needs: [ ]
+#  allow_failure: true
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
@@ -168,7 +169,7 @@ stages:
           - webui/package-lock.json
           - backend/go.mod
           - backend/go.sum
-          - rakelib/*
+#          - rakelib/*
           - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1"
 #    - when: manual
@@ -182,7 +183,7 @@ stages:
   #      - .gitlab-ci.yml
           - backend/go.mod
           - backend/go.sum
-          - rakelib/*
+#          - rakelib/*
           - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1"
 #    - when: manual
@@ -197,7 +198,7 @@ stages:
     - changes:
         paths:
 #      - .gitlab-ci.yml
-          - rakelib/*
+#          - rakelib/*
           - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1"
 #    - when: manual
