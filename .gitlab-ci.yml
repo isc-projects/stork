@@ -853,6 +853,7 @@ system_test:
     DEFAULT_MAPPED_ADDRESS: "docker"
   script:
     # - rake system_tests_ui
+    - rake systemtest:build
     - rake systemtest
   artifacts:
     paths:
@@ -871,6 +872,7 @@ system_test_old_stables:
     KEA_VERSION: old-stable
     ONLY_KEA_TESTS: "true"
   script:
+    - rake systemtest:build
     - rake systemtest
 
 system_test_latest_devs:
@@ -880,6 +882,7 @@ system_test_latest_devs:
     KEA_VERSION: latest-dev
     ONLY_KEA_TESTS: "true"
   script:
+    - rake systemtest:build
     - rake systemtest
 
 ####################################################################################
