@@ -498,7 +498,7 @@ packages:
   rules:
 #    - when: on_success
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-      when: always
+#      when: always
     - when: manual
       allow_failure: true
   needs:
