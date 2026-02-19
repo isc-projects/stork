@@ -81,6 +81,14 @@ stages:
 .job_template_debian11: &job_template_debian11
   image: ruby:3.3.5-bullseye
 
+.merge_to_master: &merge_to_master
+  rules:
+    #    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+    #      when: always
+    - when: manual
+      allow_failure: true
+
 ### caches templates ###
 .golang_cache: &golang_cache
   paths:
@@ -649,6 +657,7 @@ lint_shell:
 
 install_debs_amd64:
   <<: *checks_template
+  <<: *merge_to_master
   variables:
     ARCH: amd64
   script:
@@ -670,6 +679,7 @@ install_debs_amd64:
 
 install_debs_amd64_ubuntu_lts:
   <<: *checks_template
+  <<: *merge_to_master
   image: ubuntu:20.04
   variables:
     ARCH: amd64
@@ -701,6 +711,7 @@ install_debs_arm64:
 install_rpms_amd64:
   <<: *checks_template
   <<: *job_template_redhat
+  <<: *merge_to_master
   variables:
     ARCH: x86_64
   script:
