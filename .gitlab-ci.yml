@@ -48,232 +48,309 @@ default:
 
 # stages order
 stages:
-  - cache
+  - cache # this stage is used to automatically rebuild and push cache for MR branch or for the master branch
   - build
   - checks
   - hooks
   - deploy
+  - force_cache # this stage is used to manually
 
-### job templates ###
+#############################################################################
+### job templates and YAML anchors with content to be used in many places ###
+#############################################################################
+# expression which evaluates to true only when it is a push to master (MR merge to master)
+.is_push_to_master: &is_push_to_master
+  '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+
+# expression which evaluates to true only when it is a push to master (MR merge to master) or a git tag push
+.is_push_to_master_or_tag: &is_push_to_master_or_tag
+  '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+
+# expression which evaluates to true only when it is a merge request event (push to MR branch)
+.is_mr_event: &is_mr_event
+  '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+.cache_policy_rules: &cache_policy_rules
+  - if: '$CI_JOB_STAGE == "cache"'
+    variables:
+      CACHE_POLICY: push
+  - if: '$CI_JOB_STAGE != "cache"'
+    variables:
+      CACHE_POLICY: pull
+
+# default job template to be used in all jobs
 .job_template: &job_template
   tags:
     - linux
     - aws
     - runner-manager
     - amd64
+  rules:
+    - *cache_policy_rules
 
+# template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
+  <<: *job_template
   tags:
     - linux
     - aws
     - runner-manager
     - aarch64
 
-.job_template_alpine: &job_template_alpine
+# template with alpine image
+.image_alpine: &image_alpine
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
 
-.job_template_redhat: &job_template_redhat
+# template with redhat image
+.image_redhat: &image_redhat
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
 
-.job_template_debian11: &job_template_debian11
+# template with debian11 image
+.image_debian11: &image_debian11
   image: ruby:3.3.5-bullseye
 
-.merge_to_master: &merge_to_master
-  rules:
-    #    - when: on_success
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-    #      when: always
-    - when: manual
-      allow_failure: true
+# rule to run the job only when it is manually triggered
+.rule_manual_allow_failure: &rule_manual_allow_failure
+  when: manual
+  allow_failure: true # if manual job is not triggered, allow to fail to not block the pipeline
 
 ### caches templates ###
-.golang_cache: &golang_cache
+.golang_cache_paths: &golang_cache_paths
   paths:
     - tools/golang
-  policy: pull
+  policy: $CACHE_POLICY
 
-.python_cache: &python_cache
+.python_cache_paths: &python_cache_paths
   paths:
     - tools/python
-  policy: pull
+  policy: $CACHE_POLICY
 
-.nodejs_cache: &nodejs_cache
+.nodejs_cache_paths: &nodejs_cache_paths
   paths:
     - tools/nodejs
-  policy: pull
+  policy: $CACHE_POLICY
 
-.golang_amd64_cache: &golang_amd64_cache
-  key: golang_amd64
-  <<: *golang_cache
+.golang_cache: &golang_cache
+  key: golang_amd64-$CI_COMMIT_REF_SLUG
+  <<: *golang_cache_paths
+  fallback_keys:
+    - golang_amd64-$CI_DEFAULT_BRANCH
 
-.golang_arm64_cache: &golang_arm64_cache
-  key: golang_arm64
-  <<: *golang_cache
+.golang_arm_cache: &golang_arm_cache
+  key: golang_arm64-$CI_COMMIT_REF_SLUG
+  <<: *golang_cache_paths
+  fallback_keys:
+    - golang_arm64-$CI_DEFAULT_BRANCH
 
-.golang_amd64_cache_alpine: &golang_amd64_cache_alpine
-  key: golang_amd64_alpine
-  <<: *golang_cache
+.golang_cache_alpine: &golang_cache_alpine
+  key: golang_amd64_alpine-$CI_COMMIT_REF_SLUG
+  <<: *golang_cache_paths
+  fallback_keys:
+    - golang_amd64_alpine-$CI_DEFAULT_BRANCH
 
-.golang_arm64_cache_alpine: &golang_arm64_cache_alpine
-  key: golang_arm64_alpine
-  <<: *golang_cache
+.golang_arm_cache_alpine: &golang_arm_cache_alpine
+  key: golang_arm64_alpine-$CI_COMMIT_REF_SLUG
+  <<: *golang_cache_paths
+  fallback_keys:
+    - golang_arm64_alpine-$CI_DEFAULT_BRANCH
 
-.nodejs_amd64_cache: &nodejs_amd64_cache
-  key: nodejs_amd64
-  <<: *nodejs_cache
+.nodejs_cache: &nodejs_cache
+  key: nodejs_amd64-$CI_COMMIT_REF_SLUG
+  <<: *nodejs_cache_paths
+  fallback_keys:
+    - nodejs_amd64-$CI_DEFAULT_BRANCH
 
-.nodejs_arm64_cache: &nodejs_arm64_cache
-  key: nodejs_arm64
-  <<: *nodejs_cache
+.nodejs_arm_cache: &nodejs_arm_cache
+  key: nodejs_arm64-$CI_COMMIT_REF_SLUG
+  <<: *nodejs_cache_paths
+  fallback_keys:
+    - nodejs_arm64-$CI_DEFAULT_BRANCH
 
-.python_amd64_cache: &python_amd64_cache
-  key: python_amd64
-  <<: *python_cache
+.python_cache: &python_cache
+  key: python_amd64-$CI_COMMIT_REF_SLUG
+  <<: *python_cache_paths
+  fallback_keys:
+    - python_amd64-$CI_DEFAULT_BRANCH
 
-.python_arm64_cache: &python_arm64_cache
-  key: python_arm64
-  <<: *python_cache
+.python_arm_cache: &python_arm_cache
+  key: python_arm64-$CI_COMMIT_REF_SLUG
+  <<: *python_cache_paths
+  fallback_keys:
+    - python_arm64-$CI_DEFAULT_BRANCH
 
-.python_amd64_cache_alpine: &python_amd64_cache_alpine
-  key: python_amd64_alpine
-  <<: *python_cache
+.python_cache_alpine: &python_cache_alpine
+  key: python_amd64_alpine-$CI_COMMIT_REF_SLUG
+  <<: *python_cache_paths
+  fallback_keys:
+    - python_amd64_alpine-$CI_DEFAULT_BRANCH
 
-.python_arm64_cache_alpine: &python_arm64_cache_alpine
-  key: python_arm64_alpine
-  <<: *python_cache
+.python_arm_cache_alpine: &python_arm_cache_alpine
+  key: python_arm64_alpine-$CI_COMMIT_REF_SLUG
+  <<: *python_cache_paths
+  fallback_keys:
+    - python_arm64_alpine-$CI_DEFAULT_BRANCH
 
-.python_amd64_cache_redhat: &python_amd64_cache_redhat
-  key: python_amd64_redhat
-  <<: *python_cache
+.python_cache_redhat: &python_cache_redhat
+  key: python_amd64_redhat-$CI_COMMIT_REF_SLUG
+  <<: *python_cache_paths
+  fallback_keys:
+    - python_amd64_redhat-$CI_DEFAULT_BRANCH
 
-.python_arm64_cache_redhat: &python_arm64_cache_redhat
-  key: python_arm64_redhat
-  <<: *python_cache
+.python_arm_cache_redhat: &python_arm_cache_redhat
+  key: python_arm64_redhat-$CI_COMMIT_REF_SLUG
+  <<: *python_cache_paths
+  fallback_keys:
+    - python_arm64_redhat-$CI_DEFAULT_BRANCH
 
 .playwright_browsers_cache: &playwright_browsers_cache
-  key: playwright_browsers
+  key: playwright_browsers-$CI_COMMIT_REF_SLUG
   paths:
     - tools/playwright_browsers
-  policy: pull
+  policy: $CACHE_POLICY
+  fallback_keys:
+    - playwright_browsers-$CI_DEFAULT_BRANCH
 
-### Stage - cache ###
+####################################################################################
+### STAGE cache                                                                  ###
+####################################################################################
 
-# common parts used in stage jobs
+### common parts used in stage jobs ###
+# template to be used by all jobs in the stage
 .cache_job_template: &cache_job_template
   <<: *job_template
   stage: cache
-#  needs: [ ]
-#  allow_failure: true
+
+# backend caches will be rebuilt whenever any of listed files change
+.backend_changes_paths: &backend_changes_paths
+  - backend/go.mod
+  - backend/go.sum
+
+# frontend caches will be rebuilt whenever any of listed files change
+.frontend_changes_paths: &frontend_changes_paths
+  - webui/package.json
+  - webui/package-lock.json
+
+# python (and also other) caches will be rebuilt whenever any of listed files change
+.rakelib_changes_paths: &rakelib_changes_paths
+  - rakelib/**/*
+
+# job template for rebuilding cache for default debian image
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
-    - changes:
+    - if: *is_mr_event
+      changes:
         paths:
-  #      - .gitlab-ci.yml
-          - webui/package.json
-          - webui/package-lock.json
-          - backend/go.mod
-          - backend/go.sum
-#          - rakelib/*
-          - rakelib/**/*
-        compare_to: "$CI_COMMIT_REF_SLUG~1"
-#    - when: manual
-#      allow_failure: true
+          - *frontend_changes_paths
+          - *backend_changes_paths
+          - *rakelib_changes_paths
+        compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - *frontend_changes_paths
+          - *backend_changes_paths
+          - *rakelib_changes_paths
+    - <<: *rule_manual_allow_failure
+    - *cache_policy_rules
+
+# job template for rebuilding cache isolated only for current MR for alpine image
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
-  <<: *job_template_alpine
+  <<: *image_alpine
   rules:
-    - changes:
+    - if: *is_mr_event
+      changes:
         paths:
-  #      - .gitlab-ci.yml
-          - backend/go.mod
-          - backend/go.sum
-#          - rakelib/*
-          - rakelib/**/*
-        compare_to: "$CI_COMMIT_REF_SLUG~1"
-#    - when: manual
-#      allow_failure: true
+          - *backend_changes_paths
+          - *rakelib_changes_paths
+        compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - *backend_changes_paths
+          - *rakelib_changes_paths
+    - <<: *rule_manual_allow_failure
+    - *cache_policy_rules
   script:
     - rake prepare:dist
     - rake prepare:deps
+
+# job template for rebuilding cache isolated only for current MR for redhat image
 .cache_job_template_redhat: &cache_job_template_redhat
   <<: *cache_job_template
-  <<: *job_template_redhat
+  <<: *image_redhat
   rules:
-    - changes:
+    - if: *is_mr_event
+      changes:
         paths:
-#      - .gitlab-ci.yml
-#          - rakelib/*
-          - rakelib/**/*
-        compare_to: "$CI_COMMIT_REF_SLUG~1"
-#    - when: manual
-#      allow_failure: true
+          - *rakelib_changes_paths
+        compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - *rakelib_changes_paths
+    - <<: *rule_manual_allow_failure
+    - *cache_policy_rules
   script:
     - rake prepare:sphinx_deps
 
-# jobs
+### jobs definitions ###
+# rebuilds debian caches only when needed
 rebuild_cache_amd64:
   <<: *cache_job_template_debian
   cache:
-    - <<: *golang_amd64_cache
-      policy: push
-    - <<: *python_amd64_cache
-      policy: push
-    - <<: *nodejs_amd64_cache
-      policy: push
-    - <<: *playwright_browsers_cache
-      policy: push
+    - *golang_cache
+    - *python_cache
+    - *nodejs_cache
+    - *playwright_browsers_cache
   script:
     - rake prepare
     - rake prepare:dev
     - rake prepare:deps
 
+# rebuilds debian ARM caches only when needed
 rebuild_cache_arm64:
   <<: *cache_job_template_debian
   <<: *job_template_arm
   cache:
-    - <<: *golang_arm64_cache
-      policy: push
-    - <<: *python_arm64_cache
-      policy: push
-    - <<: *nodejs_arm64_cache
-      policy: push
+    - <<: *golang_arm_cache
+    - <<: *python_arm_cache
+    - <<: *nodejs_arm_cache
   script:
     - rake prepare
     - rake prepare:deps
 
+# rebuilds alpine caches only when needed
 rebuild_cache_amd64_alpine:
   <<: *cache_job_template_alpine
   cache:
-    - <<: *golang_amd64_cache_alpine
-      policy: push
-    - <<: *python_amd64_cache_alpine
-      policy: push
+    - <<: *golang_cache_alpine
+    - <<: *python_cache_alpine
 
+# rebuilds alpine ARM caches only when needed
 rebuild_cache_arm64_alpine:
   <<: *cache_job_template_alpine
   <<: *job_template_arm
   cache:
-    - <<: *golang_arm64_cache_alpine
-      policy: push
-    - <<: *python_arm64_cache_alpine
-      policy: push
+    - <<: *golang_arm_cache_alpine
+    - <<: *python_arm_cache_alpine
 
+# rebuilds redhat caches only when needed
 rebuild_cache_amd64_redhat:
   <<: *cache_job_template_redhat
   cache:
-    - <<: *python_amd64_cache_redhat
-      policy: push
+    - <<: *python_cache_redhat
 
+# rebuilds redhat ARM caches only when needed
 rebuild_cache_arm64_redhat:
   <<: *cache_job_template_redhat
   <<: *job_template_arm
   cache:
-    - <<: *python_arm64_cache_redhat
-      policy: push
+    - <<: *python_arm_cache_redhat
 
 ### stage: build ###
 # common parts used in stage jobs
@@ -282,9 +359,9 @@ rebuild_cache_arm64_redhat:
   stage: build
 #  rules:
 #    - when: always
-  needs:
-    - job: rebuild_cache_amd64
-      optional: true
+#  needs:
+#    - job: rebuild_cache_amd64
+#      optional: true
 .build_template_arm: &build_template_arm
   <<: *build_template
   <<: *job_template_arm
@@ -293,9 +370,9 @@ rebuild_cache_arm64_redhat:
 build_ui:
   <<: *build_template
   cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
-    - *python_amd64_cache
+    - *nodejs_cache
+    - *golang_cache
+    - *python_cache
   script:
     - rake build:ui
   artifacts:
@@ -307,7 +384,7 @@ build_ui:
 build_doc:
   <<: *build_template
   cache:
-    - *python_amd64_cache
+    - *python_cache
   script:
     - rake build:doc
   variables:
@@ -321,8 +398,8 @@ build_doc:
 build_backend_amd64:
   <<: *build_template
   cache:
-    - *golang_amd64_cache
-    - *nodejs_amd64_cache ## because npm yamlinc is used
+    - *golang_cache
+    - *nodejs_cache ## because npm yamlinc is used
   script:
     - rake build:backend
   artifacts:
@@ -333,21 +410,18 @@ build_backend_arm64:
   extends: build_backend_amd64
   <<: *job_template_arm
   cache:
-    - *golang_arm64_cache
-    - *nodejs_arm64_cache ## because npm yamlinc is used
-  needs:
-    - job: rebuild_cache_arm64
-      optional: true
+    - *golang_arm_cache
+    - *nodejs_arm_cache ## because npm yamlinc is used
   variables:
     ARCH: arm64
 
 build_backend_legacy_amd64:
   <<: *build_template
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  <<: *job_template_debian11
+  <<: *image_debian11
   needs:
     - build_backend_amd64
   script:
@@ -383,9 +457,9 @@ tarball:
 build_debs_amd64:
   <<: *build_template
   cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache
-    - *nodejs_amd64_cache
+    - *golang_cache
+    - *python_cache
+    - *nodejs_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
@@ -401,9 +475,9 @@ build_debs_amd64:
 build_debs_arm64:
   <<: *build_template_arm
   cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache
-    - *nodejs_arm64_cache
+    - *golang_arm_cache
+    - *python_arm_cache
+    - *nodejs_arm_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
@@ -418,17 +492,14 @@ build_debs_arm64:
 
 build_rpms_amd64:
   <<: *build_template
-  <<: *job_template_redhat
+  <<: *image_redhat
   cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache_redhat
-    - *nodejs_amd64_cache
+    - *golang_cache
+    - *python_cache_redhat
+    - *nodejs_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_amd64
-    - job: rebuild_cache_amd64_redhat
-      optional: true
-#      artifacts: false
   script:
     - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
     - rake build:server_pkg SUPPRESS_PREREQUISITES=true
@@ -440,16 +511,14 @@ build_rpms_amd64:
 
 build_rpms_arm64:
   <<: *build_template_arm
-  <<: *job_template_redhat
+  <<: *image_redhat
   cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache_redhat
-    - *nodejs_arm64_cache
+    - *golang_arm_cache
+    - *python_arm_cache_redhat
+    - *nodejs_arm_cache
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
-    - job: rebuild_cache_arm64_redhat
-      optional: true
   script:
     - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
     - rake build:server_pkg SUPPRESS_PREREQUISITES=true
@@ -461,16 +530,11 @@ build_rpms_arm64:
 
 build_apks_amd64:
   <<: *build_template
-  <<: *job_template_alpine
+  <<: *image_alpine
   cache:
-    - *golang_amd64_cache_alpine
-    - *python_amd64_cache_alpine
-    - *nodejs_amd64_cache
-  needs:
-    - job: rebuild_cache_amd64
-      optional: true
-    - job: rebuild_cache_amd64_alpine
-      optional: true
+    - *golang_cache_alpine
+    - *python_cache_alpine
+    - *nodejs_cache
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -482,16 +546,11 @@ build_apks_amd64:
 
 build_apks_arm64:
   <<: *build_template_arm
-  <<: *job_template_alpine
+  <<: *image_alpine
   cache:
-    - *golang_arm64_cache_alpine
-    - *python_arm64_cache_alpine
-    - *nodejs_arm64_cache
-  needs:
-    - job: rebuild_cache_arm64
-      optional: true
-    - job: rebuild_cache_arm64_alpine
-      optional: true
+    - *golang_arm_cache_alpine
+    - *python_arm_cache_alpine
+    - *nodejs_arm_cache
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -504,11 +563,8 @@ build_apks_arm64:
 packages:
   <<: *build_template
   rules:
-#    - when: on_success
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-#      when: always
-    - when: manual
-      allow_failure: true
+    - if: *is_push_to_master_or_tag
+    - *rule_manual_allow_failure
   needs:
     - build_debs_amd64
     - build_debs_arm64
@@ -528,9 +584,6 @@ packages:
 .checks_template: &checks_template
   <<: *job_template
   stage: checks
-  needs:
-    - job: rebuild_cache_amd64
-      optional: true
 .checks_template_arm: &checks_template_arm
   <<: *checks_template
   <<: *job_template_arm
@@ -538,46 +591,46 @@ packages:
 # jobs
 
 lint_backend:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *golang_amd64_cache
-    - *nodejs_amd64_cache
+    - *golang_cache
+    - *nodejs_cache
   script:
     - rake lint:backend
 
 lint_changelog:
-  <<: *checks_template
+  <<: *build_template
   needs: [ ]
   script:
     - rake lint:changelog
 
 lint_python_pylint:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *python_amd64_cache
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
+    - *python_cache
+    - *nodejs_cache
+    - *golang_cache
   script:
     - rake lint:python:pylint
 
 lint_python_flake8:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *python_amd64_cache
+    - *python_cache
   script:
     - rake lint:python:flake8
 
 lint_python_black:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *python_amd64_cache
+    - *python_cache
   script:
     - rake lint:python:black
 
 unittest_backend:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *golang_amd64_cache
+    - *golang_cache
   services:
     - name: postgres:18-alpine
       alias: postgres
@@ -602,18 +655,18 @@ unittest_backend:
         path: backend/coverage.cobertura.xml
 
 lint_ui:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
+    - *nodejs_cache
+    - *golang_cache
   script:
     - rake lint:ui
 
 unittest_ui:
-  <<: *checks_template
+  <<: *build_template
   cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
+    - *nodejs_cache
+    - *golang_cache
     - *playwright_browsers_cache
   script:
     - rake unittest:ui
@@ -625,19 +678,19 @@ unittest_ui:
       junit: webui/junit.xml
 
 storybook_tests:
-  <<: *checks_template
+  <<: *build_template
+  rules:
+    - *rule_manual_allow_failure
+    - *cache_policy_rules
   cache:
-    - *nodejs_amd64_cache
-    - *golang_amd64_cache
+    - *nodejs_cache
+    - *golang_cache
     - *playwright_browsers_cache
-  allow_failure: true
   script:
     - rake unittest:storybook
-  rules:
-    - when: manual
 
 danger:
-  <<: *checks_template
+  <<: *build_template
   needs: [ ]
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
@@ -648,7 +701,7 @@ danger:
     - rake lint:git
 
 lint_shell:
-  <<: *checks_template
+  <<: *build_template
   needs: [ ]
   script:
     - rake lint:shell
@@ -657,7 +710,8 @@ lint_shell:
 
 install_debs_amd64:
   <<: *checks_template
-  <<: *merge_to_master
+  rules:
+    - *rule_manual_allow_failure
   variables:
     ARCH: amd64
   script:
@@ -679,7 +733,8 @@ install_debs_amd64:
 
 install_debs_amd64_ubuntu_lts:
   <<: *checks_template
-  <<: *merge_to_master
+  rules:
+    - *rule_manual_allow_failure
   image: ubuntu:20.04
   variables:
     ARCH: amd64
@@ -710,8 +765,9 @@ install_debs_arm64:
 
 install_rpms_amd64:
   <<: *checks_template
-  <<: *job_template_redhat
-  <<: *merge_to_master
+  <<: *image_redhat
+  rules:
+    - *rule_manual_allow_failure
   variables:
     ARCH: x86_64
   script:
@@ -741,7 +797,7 @@ install_rpms_arm64:
 
 install_apks_amd64:
   <<: *checks_template
-  <<: *job_template_alpine
+  <<: *image_alpine
   variables:
     ARCH: x86_64
   script:
@@ -782,10 +838,8 @@ system_test:
   services:
     - docker:dind
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
-      when: always
-    - when: manual
-      allow_failure: true
+    - if: *is_push_to_master_or_tag
+    - *rule_manual_allow_failure
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:12
   #  cache:
   #    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
@@ -842,9 +896,9 @@ system_test_latest_devs:
 .hooks_template: &hooks_template
   <<: *job_template
   stage: hooks
-  needs:
-    - job: rebuild_cache_amd64
-      optional: true
+#  needs:
+#    - job: rebuild_cache_amd64
+#      optional: true
 .hooks_template_arm: &hooks_template_arm
   <<: *hooks_template
   <<: *job_template_arm
@@ -857,7 +911,7 @@ build_hooks_amd64:
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   cache:
-    - *golang_amd64_cache
+    - *golang_cache
   script:
     - rake hook:build
   artifacts:
@@ -867,21 +921,18 @@ build_hooks_amd64:
 build_hooks_arm64:
   extends: build_hooks_amd64
   <<: *job_template_arm
-  needs:
-    - job: rebuild_cache_arm64
-      optional: true
   cache:
-    - *golang_arm64_cache
+    - *golang_arm_cache
   variables:
     ARCH: arm64
 
 build_hooks_legacy_amd64:
   <<: *hooks_template
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  <<: *job_template_debian11
+  <<: *image_debian11
   needs:
     - build_hooks_amd64
   # The submodules are not included in the artifacts even if the `untracked`
@@ -910,7 +961,7 @@ unittest_hooks:
   <<: *hooks_template
   when: always
   cache:
-    - *golang_amd64_cache
+    - *golang_cache
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -933,14 +984,14 @@ build_hooks_debs_amd64:
   <<: *hooks_template
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_amd64
   cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache
+    - *golang_cache
+    - *python_cache
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
@@ -953,14 +1004,14 @@ build_hooks_debs_arm64:
   <<: *hooks_template_arm
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
   cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache
+    - *golang_arm_cache
+    - *python_arm_cache
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
@@ -971,17 +1022,17 @@ build_hooks_debs_arm64:
 
 build_hooks_rpms_amd64:
   <<: *hooks_template
-  <<: *job_template_redhat
+  <<: *image_redhat
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_amd64
   cache:
-    - *golang_amd64_cache
-    - *python_amd64_cache_redhat
+    - *golang_cache
+    - *python_cache_redhat
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./
@@ -992,19 +1043,17 @@ build_hooks_rpms_amd64:
 
 build_hooks_rpms_arm64:
   <<: *hooks_template_arm
-  <<: *job_template_redhat
+  <<: *image_redhat
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
-    - job: rebuild_cache_arm64_redhat
-      optional: true
   cache:
-    - *golang_arm64_cache
-    - *python_arm64_cache_redhat
+    - *golang_arm_cache
+    - *python_arm_cache_redhat
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./
@@ -1015,17 +1064,14 @@ build_hooks_rpms_arm64:
 
 build_hooks_apks_amd64:
   <<: *hooks_template
-  <<: *job_template_alpine
+  <<: *image_alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    - job: rebuild_cache_amd64_alpine
-      optional: true
+#  rules:
+#    - when: on_success
   cache:
-    - *golang_amd64_cache_alpine
-    - *python_amd64_cache_alpine
+    - *golang_cache_alpine
+    - *python_cache_alpine
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -1036,17 +1082,14 @@ build_hooks_apks_amd64:
 
 build_hooks_apks_arm64:
   <<: *hooks_template_arm
-  <<: *job_template_alpine
+  <<: *image_alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-  rules:
-    - when: on_success
-  needs:
-    - job: rebuild_cache_arm64_alpine
-      optional: true
+#  rules:
+#    - when: on_success
   cache:
-    - *golang_arm64_cache_alpine
-    - *python_arm64_cache_alpine
+    - *golang_arm_cache_alpine
+    - *python_arm_cache_alpine
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -1057,8 +1100,8 @@ build_hooks_apks_arm64:
 
 packages_hooks:
   <<: *hooks_template
-  rules:
-    - when: on_success
+#  rules:
+#    - when: on_success
   needs:
     - build_hooks_debs_amd64
     - build_hooks_debs_arm64
