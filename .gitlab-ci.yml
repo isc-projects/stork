@@ -90,7 +90,7 @@ stages:
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
-  <<: *job_template
+#  <<: *job_template
   tags:
     - linux
     - aws
