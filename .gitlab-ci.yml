@@ -246,6 +246,12 @@ stages:
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
+    - if: '$CI_JOB_STAGE == "cache"'
+      variables:
+        CACHE_POLICY: push
+    - if: '$CI_JOB_STAGE != "cache"'
+      variables:
+        CACHE_POLICY: pull
     - if: *is_mr_event
       changes:
         paths:
@@ -260,18 +266,19 @@ stages:
           - *backend_changes_paths
           - *rakelib_changes_paths
     - <<: *rule_manual_allow_failure
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
+
 
 # job template for rebuilding cache isolated only for current MR for alpine image
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
   <<: *image_alpine
   rules:
+    - if: '$CI_JOB_STAGE == "cache"'
+      variables:
+        CACHE_POLICY: push
+    - if: '$CI_JOB_STAGE != "cache"'
+      variables:
+        CACHE_POLICY: pull
     - if: *is_mr_event
       changes:
         paths:
@@ -284,12 +291,7 @@ stages:
           - *backend_changes_paths
           - *rakelib_changes_paths
     - <<: *rule_manual_allow_failure
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
+
   script:
     - rake prepare:dist
     - rake prepare:deps
@@ -299,6 +301,12 @@ stages:
   <<: *cache_job_template
   <<: *image_redhat
   rules:
+    - if: '$CI_JOB_STAGE == "cache"'
+      variables:
+        CACHE_POLICY: push
+    - if: '$CI_JOB_STAGE != "cache"'
+      variables:
+        CACHE_POLICY: pull
     - if: *is_mr_event
       changes:
         paths:
@@ -309,12 +317,7 @@ stages:
         paths:
           - *rakelib_changes_paths
     - <<: *rule_manual_allow_failure
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
+
   script:
     - rake prepare:sphinx_deps
 
@@ -700,13 +703,13 @@ unittest_ui:
 storybook_tests:
   <<: *build_template
   rules:
-    - *rule_manual_allow_failure
     - if: '$CI_JOB_STAGE == "cache"'
       variables:
         CACHE_POLICY: push
     - if: '$CI_JOB_STAGE != "cache"'
       variables:
         CACHE_POLICY: pull
+    - *rule_manual_allow_failure
   cache:
     - *nodejs_cache
     - *golang_cache
