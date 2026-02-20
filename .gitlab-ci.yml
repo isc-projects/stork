@@ -225,17 +225,17 @@ stages:
 
 # backend caches will be rebuilt whenever any of listed files change
 .backend_changes_paths: &backend_changes_paths
-  - backend/go.mod
-  - backend/go.sum
+  backend/go.mod
+  backend/go.sum
 
 # frontend caches will be rebuilt whenever any of listed files change
 .frontend_changes_paths: &frontend_changes_paths
-  - webui/package.json
-  - webui/package-lock.json
+  webui/package.json
+  webui/package-lock.json
 
 # python (and also other) caches will be rebuilt whenever any of listed files change
 .rakelib_changes_paths: &rakelib_changes_paths
-  - rakelib/**/*
+  rakelib/**/*
 
 # job template for rebuilding cache for default debian image
 .cache_job_template_debian: &cache_job_template_debian
