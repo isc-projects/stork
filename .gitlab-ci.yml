@@ -706,10 +706,11 @@ storybook_tests:
     - if: '$CI_JOB_STAGE == "cache"'
       variables:
         CACHE_POLICY: push
+      <<: *rule_manual_allow_failure
     - if: '$CI_JOB_STAGE != "cache"'
       variables:
         CACHE_POLICY: pull
-    - *rule_manual_allow_failure
+      <<: *rule_manual_allow_failure
   cache:
     - *nodejs_cache
     - *golang_cache
