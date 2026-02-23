@@ -467,7 +467,9 @@ build_debs_amd64:
     expire_in: 1 hour
 
 build_debs_arm64:
-  <<: *build_template_arm
+  extends: build_debs_amd64
+  <<: *job_template_arm
+#  <<: *build_template_arm
   cache:
     - *golang_arm_cache
     - *python_arm_cache
@@ -475,14 +477,14 @@ build_debs_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
+#  script:
+#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/pkgs/*.deb ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.deb
+#    expire_in: 1 hour
 
 build_rpms_amd64:
   <<: *build_template
@@ -504,8 +506,10 @@ build_rpms_amd64:
     expire_in: 1 hour
 
 build_rpms_arm64:
-  <<: *build_template_arm
-  <<: *image_redhat
+  extends: build_rpms_amd64
+  <<: *job_template_arm
+#  <<: *build_template_arm
+#  <<: *image_redhat
   cache:
     - *golang_arm_cache
     - *python_arm_cache_redhat
@@ -513,14 +517,14 @@ build_rpms_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
-  script:
-    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
+#  script:
+#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
+#    - cp dist/pkgs/*.rpm ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.rpm
+#    expire_in: 1 hour
 
 build_apks_amd64:
   <<: *build_template
@@ -539,20 +543,22 @@ build_apks_amd64:
     expire_in: 1 hour
 
 build_apks_arm64:
-  <<: *build_template_arm
-  <<: *image_alpine
+  extends: build_apks_amd64
+  <<: *job_template_arm
+#  <<: *build_template_arm
+#  <<: *image_alpine
   cache:
     - *golang_arm_cache_alpine
     - *python_arm_cache_alpine
     - *nodejs_arm_cache
-  script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
-    - cp dist/pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
+#  script:
+#    - rake build:agent_pkg
+#    - rake build:server_pkg
+#    - cp dist/pkgs/*.apk ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.apk
+#    expire_in: 1 hour
 
 packages:
   <<: *build_template
@@ -578,6 +584,8 @@ packages:
 .checks_template: &checks_template
   <<: *job_template
   stage: checks
+  needs:
+    - wait_for_cache
 .checks_template_arm: &checks_template_arm
   <<: *checks_template
   <<: *job_template_arm
@@ -586,8 +594,6 @@ packages:
 
 lint_backend:
   <<: *checks_template
-  needs:
-    - wait_for_cache
   cache:
     - *golang_cache
     - *nodejs_cache
@@ -595,13 +601,13 @@ lint_backend:
     - rake lint:backend
 
 lint_changelog:
-  <<: *build_template
+  <<: *checks_template
   needs: [ ]
   script:
     - rake lint:changelog
 
 lint_python_pylint:
-  <<: *build_template
+  <<: *checks_template
   cache:
     - *python_cache
     - *nodejs_cache
@@ -613,21 +619,18 @@ lint_python_flake8:
   <<: *checks_template
   cache:
     - *python_cache
-  needs:
-    - job: rebuild_cache_amd64
-      optional: true
   script:
     - rake lint:python:flake8
 
 lint_python_black:
-  <<: *build_template
+  <<: *checks_template
   cache:
     - *python_cache
   script:
     - rake lint:python:black
 
 unittest_backend:
-  <<: *build_template
+  <<: *checks_template
   cache:
     - *golang_cache
   services:
@@ -654,7 +657,7 @@ unittest_backend:
         path: backend/coverage.cobertura.xml
 
 lint_ui:
-  <<: *build_template
+  <<: *checks_template
   cache:
     - *nodejs_cache
     - *golang_cache
@@ -662,7 +665,7 @@ lint_ui:
     - rake lint:ui
 
 unittest_ui:
-  <<: *build_template
+  <<: *checks_template
   cache:
     - *nodejs_cache
     - *golang_cache
@@ -677,16 +680,9 @@ unittest_ui:
       junit: webui/junit.xml
 
 storybook_tests:
-  <<: *build_template
+  <<: *checks_template
   rules:
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-      <<: *rule_manual_allow_failure
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
-      <<: *rule_manual_allow_failure
+    - *rule_manual_allow_failure
   cache:
     - *nodejs_cache
     - *golang_cache
@@ -695,7 +691,7 @@ storybook_tests:
     - rake unittest:storybook
 
 danger:
-  <<: *build_template
+  <<: *checks_template
   needs: [ ]
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
@@ -706,7 +702,7 @@ danger:
     - rake lint:git
 
 lint_shell:
-  <<: *build_template
+  <<: *checks_template
   needs: [ ]
   script:
     - rake lint:shell
