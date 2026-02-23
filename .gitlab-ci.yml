@@ -608,7 +608,8 @@ lint_python_flake8:
   cache:
     - *python_cache
   needs:
-    - rebuild_cache_amd64
+    - job: rebuild_cache_amd64
+      optional: true
   script:
     - rake lint:python:flake8
 
