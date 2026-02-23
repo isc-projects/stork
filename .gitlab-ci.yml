@@ -36,6 +36,9 @@ variables:
   # Download Python packages to cached location.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
 
+  # Only pull the cache by default in all the jobs.
+  CACHE_POLICY: pull
+
 
 default:
   # AWS can interrupt the spot instance anytime, so let's retry the job when
@@ -70,14 +73,6 @@ stages:
 .is_mr_event: &is_mr_event
   '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-.cache_policy_rules: &cache_policy_rules
-  - if: '$CI_JOB_STAGE == "cache"'
-    variables:
-      CACHE_POLICY: push
-  - if: '$CI_JOB_STAGE != "cache"'
-    variables:
-      CACHE_POLICY: pull
-
 # default job template to be used in all jobs
 .job_template: &job_template
   tags:
@@ -85,17 +80,9 @@ stages:
     - aws
     - runner-manager
     - amd64
-  rules:
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
-#  <<: *job_template
   tags:
     - linux
     - aws
@@ -227,95 +214,71 @@ stages:
 .cache_job_template: &cache_job_template
   <<: *job_template
   stage: cache
-
-# backend caches will be rebuilt whenever any of listed files change
-.backend_changes_paths: &backend_changes_paths
-  backend/go.mod
-  backend/go.sum
-
-# frontend caches will be rebuilt whenever any of listed files change
-.frontend_changes_paths: &frontend_changes_paths
-  webui/package.json
-  webui/package-lock.json
-
-# python (and also other) caches will be rebuilt whenever any of listed files change
-.rakelib_changes_paths: &rakelib_changes_paths
-  rakelib/**/*
+  variables:
+    CACHE_POLICY: push
 
 # job template for rebuilding cache for default debian image
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
   rules:
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
     - if: *is_mr_event
       changes:
         paths:
-          - *frontend_changes_paths
-          - *backend_changes_paths
-          - *rakelib_changes_paths
+          - backend/go.mod
+          - backend/go.sum
+          - webui/package.json
+          - webui/package-lock.json
+          - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
     - if: *is_push_to_master
       changes:
         paths:
-          - *frontend_changes_paths
-          - *backend_changes_paths
-          - *rakelib_changes_paths
+          - backend/go.mod
+          - backend/go.sum
+          - webui/package.json
+          - webui/package-lock.json
+          - rakelib/**/*
     - <<: *rule_manual_allow_failure
 
 
-# job template for rebuilding cache isolated only for current MR for alpine image
+# job template for rebuilding cache for alpine image
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
   <<: *image_alpine
   rules:
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
     - if: *is_mr_event
       changes:
         paths:
-          - *backend_changes_paths
-          - *rakelib_changes_paths
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
     - if: *is_push_to_master
       changes:
         paths:
-          - *backend_changes_paths
-          - *rakelib_changes_paths
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/**/*
     - <<: *rule_manual_allow_failure
 
   script:
     - rake prepare:dist
     - rake prepare:deps
 
-# job template for rebuilding cache isolated only for current MR for redhat image
+# job template for rebuilding cache for redhat image
 .cache_job_template_redhat: &cache_job_template_redhat
   <<: *cache_job_template
   <<: *image_redhat
   rules:
-    - if: '$CI_JOB_STAGE == "cache"'
-      variables:
-        CACHE_POLICY: push
-    - if: '$CI_JOB_STAGE != "cache"'
-      variables:
-        CACHE_POLICY: pull
     - if: *is_mr_event
       changes:
         paths:
-          - *rakelib_changes_paths
+          - rakelib/**/*
         compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
     - if: *is_push_to_master
       changes:
         paths:
-          - *rakelib_changes_paths
+          - rakelib/**/*
     - <<: *rule_manual_allow_failure
 
   script:
