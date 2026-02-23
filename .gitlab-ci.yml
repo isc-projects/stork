@@ -358,7 +358,7 @@ rebuild_cache_arm64_redhat:
 
 # jobs
 wait_for_cache:
-  stage: build
+  <<: *build_template
   script: ":"
 
 build_ui:
