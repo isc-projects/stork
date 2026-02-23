@@ -349,12 +349,6 @@ rebuild_cache_arm64_redhat:
   stage: build
 #  rules:
 #    - when: always
-#  needs:
-#    - job: rebuild_cache_amd64
-#      optional: true
-.build_template_arm: &build_template_arm
-  <<: *build_template
-  <<: *job_template_arm
 
 # jobs
 wait_for_cache:
@@ -586,9 +580,6 @@ packages:
   stage: checks
   needs:
     - wait_for_cache
-.checks_template_arm: &checks_template_arm
-  <<: *checks_template
-  <<: *job_template_arm
 
 # jobs
 
@@ -758,7 +749,7 @@ install_debs_amd64_ubuntu_lts:
 
 install_debs_arm64:
   extends: install_debs_amd64
-  <<: *checks_template_arm
+  <<: *job_template_arm
   variables:
     ARCH: arm64
   needs:
@@ -790,7 +781,7 @@ install_rpms_amd64:
 
 install_rpms_arm64:
   extends: install_rpms_amd64
-  <<: *checks_template_arm
+  <<: *job_template_arm
   variables:
     ARCH: aarch64
   needs:
@@ -897,12 +888,6 @@ system_test_latest_devs:
 .hooks_template: &hooks_template
   <<: *job_template
   stage: hooks
-#  needs:
-#    - job: rebuild_cache_amd64
-#      optional: true
-.hooks_template_arm: &hooks_template_arm
-  <<: *hooks_template
-  <<: *job_template_arm
 
 # jobs
 
@@ -959,7 +944,9 @@ build_hooks_legacy_arm64:
     ARCH: arm64
 
 unittest_hooks:
-  <<: *build_template
+  <<: *hooks_template
+  needs:
+    - wait_for_cache
 #  when: always
   cache:
     - *golang_cache
@@ -1002,24 +989,14 @@ build_hooks_debs_amd64:
     expire_in: 1 hour
 
 build_hooks_debs_arm64:
-  <<: *hooks_template_arm
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-#  rules:
-#    - when: on_success
+  extends: build_hooks_debs_amd64
+  <<: *job_template_arm
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
   cache:
     - *golang_arm_cache
     - *python_arm_cache
-  script:
-    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/hook-pkgs/*.deb ./
-  artifacts:
-    paths:
-      - isc-stork-*.deb
-    expire_in: 1 hour
 
 build_hooks_rpms_amd64:
   <<: *hooks_template
@@ -1043,25 +1020,14 @@ build_hooks_rpms_amd64:
     expire_in: 1 hour
 
 build_hooks_rpms_arm64:
-  <<: *hooks_template_arm
-  <<: *image_redhat
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-#  rules:
-#    - when: on_success
+  extends: build_hooks_rpms_amd64
+  <<: *job_template_arm
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_arm64
   cache:
     - *golang_arm_cache
     - *python_arm_cache_redhat
-  script:
-    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
-    - cp dist/hook-pkgs/*.rpm ./
-  artifacts:
-    paths:
-      - isc-stork-*.rpm
-    expire_in: 1 hour
 
 build_hooks_apks_amd64:
   <<: *build_template
