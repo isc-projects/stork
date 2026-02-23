@@ -237,7 +237,7 @@ stages:
           - webui/package.json
           - webui/package-lock.json
           - rakelib/**/*
-    - <<: *rule_manual_allow_failure
+    - *rule_manual_allow_failure
 
 
 # job template for rebuilding cache for alpine image
@@ -262,7 +262,7 @@ stages:
           - backend/go.mod
           - backend/go.sum
           - rakelib/**/*
-    - <<: *rule_manual_allow_failure
+    - *rule_manual_allow_failure
 
   script:
     - rake prepare:dist
@@ -282,7 +282,7 @@ stages:
       changes:
         paths:
           - rakelib/**/*
-    - <<: *rule_manual_allow_failure
+    - *rule_manual_allow_failure
 
   script:
     - rake prepare:sphinx_deps
@@ -306,9 +306,9 @@ rebuild_cache_arm64:
   <<: *cache_job_template_debian
   <<: *job_template_arm
   cache:
-    - <<: *golang_arm_cache
-    - <<: *python_arm_cache
-    - <<: *nodejs_arm_cache
+    - *golang_arm_cache
+    - *python_arm_cache
+    - *nodejs_arm_cache
   script:
     - rake prepare
     - rake prepare:deps
@@ -317,29 +317,29 @@ rebuild_cache_arm64:
 rebuild_cache_amd64_alpine:
   <<: *cache_job_template_alpine
   cache:
-    - <<: *golang_cache_alpine
-    - <<: *python_cache_alpine
+    - *golang_cache_alpine
+    - *python_cache_alpine
 
 # rebuilds alpine ARM caches only when needed
 rebuild_cache_arm64_alpine:
   <<: *cache_job_template_alpine
   <<: *job_template_arm
   cache:
-    - <<: *golang_arm_cache_alpine
-    - <<: *python_arm_cache_alpine
+    - *golang_arm_cache_alpine
+    - *python_arm_cache_alpine
 
 # rebuilds redhat caches only when needed
 rebuild_cache_amd64_redhat:
   <<: *cache_job_template_redhat
   cache:
-    - <<: *python_cache_redhat
+    - *python_cache_redhat
 
 # rebuilds redhat ARM caches only when needed
 rebuild_cache_arm64_redhat:
   <<: *cache_job_template_redhat
   <<: *job_template_arm
   cache:
-    - <<: *python_arm_cache_redhat
+    - *python_arm_cache_redhat
 
 ####################################################################################
 ### STAGE build                                                                  ###
@@ -356,9 +356,10 @@ rebuild_cache_arm64_redhat:
 # and that are in following stages after the "build" stage. Thanks to this, these jobs
 # will wait for rebuilding the cache only when any "cache" stage job was started.
 # In case no "cache" stage job was started, jobs will run once "wait_for_cache" is finished.
+# This is a workaround for needs:optional, which doesn't work for manual jobs that were not triggered (such jobs are blocked).
 wait_for_cache:
   <<: *build_template
-  script: ":" # no-op in script stage in this job
+  script: ":" # no-op in the script stage in this job
 
 build_ui:
   <<: *build_template
@@ -1048,15 +1049,10 @@ packages_hooks:
 upload_to_repo:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+    - if: *is_push_to_master_or_tag
       when: manual
-    - when: manual
-      allow_failure: true
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
+    - *rule_manual_allow_failure
+  <<: *job_template
   needs:
     - tarball
   script:
@@ -1081,16 +1077,11 @@ upload_to_repo_hooks:
 deploy_demo:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: *is_push_to_master
       when: always
-    - when: manual
-      allow_failure: true
+    - *rule_manual_allow_failure
   needs: [ ] # this job doesn't need cache, so it can start right away
-  tags:
-    - linux
-    - aws
-    - runner-manager
-    - amd64
+  <<: *job_template
   before_script:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
@@ -1118,7 +1109,7 @@ deploy_demo:
 upload_packages:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
+    - if: *is_push_to_master_or_tag
       when: manual
     - when: manual
       allow_failure: true
