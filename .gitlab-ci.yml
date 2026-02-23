@@ -56,7 +56,6 @@ stages:
   - checks
   - hooks
   - deploy
-  - force_cache # this stage is used to manually
 
 #############################################################################
 ### job templates and YAML anchors with content to be used in many places ###
@@ -342,18 +341,24 @@ rebuild_cache_arm64_redhat:
   cache:
     - <<: *python_arm_cache_redhat
 
-### stage: build ###
-# common parts used in stage jobs
+####################################################################################
+### STAGE build                                                                  ###
+####################################################################################
+
+### common parts used in stage jobs ###
+# template to be used by all jobs in the stage
 .build_template: &build_template
   <<: *job_template
   stage: build
-#  rules:
-#    - when: always
 
-# jobs
+### jobs definitions ###
+# This job is created so it can be used in "needs" rules by jobs that depend on cache
+# and that are in following stages after the "build" stage. Thanks to this, these jobs
+# will wait for rebuilding the cache only when any "cache" stage job was started.
+# In case no "cache" stage job was started, jobs will run once "wait_for_cache" is finished.
 wait_for_cache:
   <<: *build_template
-  script: ":"
+  script: ":" # no-op in script stage in this job
 
 build_ui:
   <<: *build_template
@@ -405,8 +410,6 @@ build_backend_arm64:
 
 build_backend_legacy_amd64:
   <<: *build_template
-#  rules:
-#    - when: on_success
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
   <<: *image_debian11
@@ -432,15 +435,13 @@ build_backend_legacy_arm64:
 
 tarball:
   <<: *build_template
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   script:
     - rake release:tarball
   artifacts:
     paths:
       - stork-*.tar.gz
     expire_in: 1 week
-
-### build rpm & deb packages ###
 
 build_debs_amd64:
   <<: *build_template
@@ -463,7 +464,6 @@ build_debs_amd64:
 build_debs_arm64:
   extends: build_debs_amd64
   <<: *job_template_arm
-#  <<: *build_template_arm
   cache:
     - *golang_arm_cache
     - *python_arm_cache
@@ -471,14 +471,6 @@ build_debs_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
-#  script:
-#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-#    - cp dist/pkgs/*.deb ./
-#  artifacts:
-#    paths:
-#      - isc-stork-*.deb
-#    expire_in: 1 hour
 
 build_rpms_amd64:
   <<: *build_template
@@ -502,8 +494,6 @@ build_rpms_amd64:
 build_rpms_arm64:
   extends: build_rpms_amd64
   <<: *job_template_arm
-#  <<: *build_template_arm
-#  <<: *image_redhat
   cache:
     - *golang_arm_cache
     - *python_arm_cache_redhat
@@ -511,14 +501,6 @@ build_rpms_arm64:
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy_arm64
-#  script:
-#    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
-#    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
-#    - cp dist/pkgs/*.rpm ./
-#  artifacts:
-#    paths:
-#      - isc-stork-*.rpm
-#    expire_in: 1 hour
 
 build_apks_amd64:
   <<: *build_template
@@ -539,20 +521,10 @@ build_apks_amd64:
 build_apks_arm64:
   extends: build_apks_amd64
   <<: *job_template_arm
-#  <<: *build_template_arm
-#  <<: *image_alpine
   cache:
     - *golang_arm_cache_alpine
     - *python_arm_cache_alpine
     - *nodejs_arm_cache
-#  script:
-#    - rake build:agent_pkg
-#    - rake build:server_pkg
-#    - cp dist/pkgs/*.apk ./
-#  artifacts:
-#    paths:
-#      - isc-stork-*.apk
-#    expire_in: 1 hour
 
 packages:
   <<: *build_template
@@ -573,16 +545,19 @@ packages:
       - isc-stork-*
     expire_in: 1 week
 
-### stage: checks ###
-# common parts used in stage jobs
+####################################################################################
+### STAGE checks                                                                 ###
+####################################################################################
+
+### common parts used in stage jobs ###
+# template to be used by all jobs in the stage
 .checks_template: &checks_template
   <<: *job_template
   stage: checks
   needs:
-    - wait_for_cache
+    - wait_for_cache # by default, wait until all jobs in "cache" stage are finished
 
-# jobs
-
+### jobs definitions ###
 lint_backend:
   <<: *checks_template
   cache:
@@ -593,7 +568,7 @@ lint_backend:
 
 lint_changelog:
   <<: *checks_template
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   script:
     - rake lint:changelog
 
@@ -683,7 +658,7 @@ storybook_tests:
 
 danger:
   <<: *checks_template
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
@@ -694,15 +669,14 @@ danger:
 
 lint_shell:
   <<: *checks_template
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   script:
     - rake lint:shell
-
-### install packages ###
 
 install_debs_amd64:
   <<: *checks_template
   rules:
+    - if: *is_push_to_master_or_tag
     - *rule_manual_allow_failure
   variables:
     ARCH: amd64
@@ -726,6 +700,7 @@ install_debs_amd64:
 install_debs_amd64_ubuntu_lts:
   <<: *checks_template
   rules:
+    - if: *is_push_to_master_or_tag
     - *rule_manual_allow_failure
   image: ubuntu:20.04
   variables:
@@ -759,6 +734,7 @@ install_rpms_amd64:
   <<: *checks_template
   <<: *image_redhat
   rules:
+    - if: *is_push_to_master_or_tag
     - *rule_manual_allow_failure
   variables:
     ARCH: x86_64
@@ -826,7 +802,7 @@ install_apks_arm64:
 
 system_test:
   <<: *checks_template
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   services:
     - docker:dind
   rules:
@@ -883,17 +859,21 @@ system_test_latest_devs:
   script:
     - rake systemtest
 
-### hooks ###
-# common parts used in stage jobs
+####################################################################################
+### STAGE hooks                                                                  ###
+####################################################################################
+
+### common parts used in stage jobs ###
+# template to be used by all jobs in the stage
 .hooks_template: &hooks_template
   <<: *job_template
   stage: hooks
+  needs:
+    - wait_for_cache # by default, wait until all jobs in "cache" stage are finished
 
-# jobs
-
+### jobs definitions ###
 build_hooks_amd64:
-  <<: *build_template
-  when: always
+  <<: *hooks_template
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   cache:
@@ -914,8 +894,6 @@ build_hooks_arm64:
 
 build_hooks_legacy_amd64:
   <<: *hooks_template
-#  rules:
-#    - when: on_success
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
   <<: *image_debian11
@@ -945,9 +923,6 @@ build_hooks_legacy_arm64:
 
 unittest_hooks:
   <<: *hooks_template
-  needs:
-    - wait_for_cache
-#  when: always
   cache:
     - *golang_cache
   variables:
@@ -957,8 +932,7 @@ unittest_hooks:
 
 tarball_hooks:
   <<: *hooks_template
-  when: always
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -972,8 +946,6 @@ build_hooks_debs_amd64:
   <<: *hooks_template
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-#  rules:
-#    - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_amd64
@@ -1003,8 +975,6 @@ build_hooks_rpms_amd64:
   <<: *image_redhat
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-#  rules:
-#    - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy_amd64
@@ -1030,12 +1000,10 @@ build_hooks_rpms_arm64:
     - *python_arm_cache_redhat
 
 build_hooks_apks_amd64:
-  <<: *build_template
+  <<: *hooks_template
   <<: *image_alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
-#  rules:
-#    - when: on_success
   cache:
     - *golang_cache_alpine
     - *python_cache_alpine
@@ -1050,27 +1018,12 @@ build_hooks_apks_amd64:
 build_hooks_apks_arm64:
   extends: build_hooks_apks_amd64
   <<: *job_template_arm
-#  <<: *hooks_template_arm
-#  <<: *image_alpine
-#  variables:
-#    GIT_SUBMODULE_STRATEGY: normal
-#  rules:
-#    - when: on_success
   cache:
     - *golang_arm_cache_alpine
     - *python_arm_cache_alpine
-#  script:
-#    - rake hook:build_pkg
-#    - cp dist/hook-pkgs/*.apk ./
-#  artifacts:
-#    paths:
-#      - isc-stork-*.apk
-#    expire_in: 1 hour
 
 packages_hooks:
   <<: *hooks_template
-#  rules:
-#    - when: on_success
   needs:
     - build_hooks_debs_amd64
     - build_hooks_debs_arm64
@@ -1084,6 +1037,11 @@ packages_hooks:
     paths:
       - isc-stork-*
     expire_in: 1 week
+
+
+####################################################################################
+### STAGE deploy                                                                 ###
+####################################################################################
 
 ### upload release notes and tarball to repo.isc.org ###
 
@@ -1122,13 +1080,12 @@ upload_to_repo_hooks:
 
 deploy_demo:
   stage: deploy
-  cache: [ ]
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
     - when: manual
       allow_failure: true
-  needs: [ ]
+  needs: [ ] # this job doesn't need cache, so it can start right away
   tags:
     - linux
     - aws
