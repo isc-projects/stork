@@ -902,7 +902,7 @@ system_test_latest_devs:
 # jobs
 
 build_hooks_amd64:
-  <<: *hooks_template
+  <<: *build_template
   when: always
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -954,8 +954,8 @@ build_hooks_legacy_arm64:
     ARCH: arm64
 
 unittest_hooks:
-  <<: *hooks_template
-  when: always
+  <<: *build_template
+#  when: always
   cache:
     - *golang_cache
   variables:
@@ -1059,7 +1059,7 @@ build_hooks_rpms_arm64:
     expire_in: 1 hour
 
 build_hooks_apks_amd64:
-  <<: *hooks_template
+  <<: *build_template
   <<: *image_alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -1077,22 +1077,24 @@ build_hooks_apks_amd64:
     expire_in: 1 hour
 
 build_hooks_apks_arm64:
-  <<: *hooks_template_arm
-  <<: *image_alpine
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
+  extends: build_hooks_apks_amd64
+  <<: *job_template_arm
+#  <<: *hooks_template_arm
+#  <<: *image_alpine
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: normal
 #  rules:
 #    - when: on_success
   cache:
     - *golang_arm_cache_alpine
     - *python_arm_cache_alpine
-  script:
-    - rake hook:build_pkg
-    - cp dist/hook-pkgs/*.apk ./
-  artifacts:
-    paths:
-      - isc-stork-*.apk
-    expire_in: 1 hour
+#  script:
+#    - rake hook:build_pkg
+#    - cp dist/hook-pkgs/*.apk ./
+#  artifacts:
+#    paths:
+#      - isc-stork-*.apk
+#    expire_in: 1 hour
 
 packages_hooks:
   <<: *hooks_template
