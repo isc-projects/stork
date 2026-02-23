@@ -357,6 +357,10 @@ rebuild_cache_arm64_redhat:
   <<: *job_template_arm
 
 # jobs
+wait_for_cache:
+  stage: build
+  script: ":"
+
 build_ui:
   <<: *build_template
   cache:
@@ -581,7 +585,9 @@ packages:
 # jobs
 
 lint_backend:
-  <<: *build_template
+  <<: *checks_template
+  needs:
+    - wait_for_cache
   cache:
     - *golang_cache
     - *nodejs_cache
