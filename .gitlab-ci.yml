@@ -604,9 +604,11 @@ lint_python_pylint:
     - rake lint:python:pylint
 
 lint_python_flake8:
-  <<: *build_template
+  <<: *checks_template
   cache:
     - *python_cache
+  needs:
+    - rebuild_cache_amd64
   script:
     - rake lint:python:flake8
 
