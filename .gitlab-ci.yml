@@ -245,6 +245,10 @@ stages:
 .cache_job_template_alpine: &cache_job_template_alpine
   <<: *cache_job_template
   <<: *image_alpine
+  variables:
+    # CGO is disabled by default in official images from Go 1.23.
+    CGO_ENABLED: 1
+    CACHE_POLICY: push
   rules:
     - if: *is_mr_event
       changes:
