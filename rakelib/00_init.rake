@@ -2,7 +2,7 @@
 
 # Initialization
 # This file contains the toolkits that
-# aren't related to the source code .
+# aren't related to the source code.
 # It means that they don't change very often
 # and can be cached for later use.
 

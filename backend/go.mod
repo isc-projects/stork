@@ -43,7 +43,6 @@ require (
 	gopkg.in/h2non/gock.v1 v1.1.2
 )
 
-
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
