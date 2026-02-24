@@ -60,15 +60,15 @@ stages:
 #############################################################################
 ### job templates and YAML anchors with content to be used in many places ###
 #############################################################################
-# expression which evaluates to true only when it is a push to master (MR merge to master)
+# expression which evaluates to true only when pipeline source is a push to master (MR merge to master)
 .is_push_to_master: &is_push_to_master
   '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
 
-# expression which evaluates to true only when it is a push to master (MR merge to master) or a git tag push
+# expression which evaluates to true only when pipeline source is a push to master (MR merge to master) or a git tag push
 .is_push_to_master_or_tag: &is_push_to_master_or_tag
   '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+$/)'
 
-# expression which evaluates to true only when it is a merge request event (push to MR branch)
+# expression which evaluates to true only when pipeline source is a merge request event (push to MR branch)
 .is_mr_event: &is_mr_event
   '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
@@ -103,7 +103,7 @@ stages:
 .image_debian11: &image_debian11
   image: ruby:3.3.5-bullseye
 
-# rule to run the job only when it is manually triggered
+# rule to run the job only when it is manually triggered; to be used in "rules"
 .rule_manual_allow_failure: &rule_manual_allow_failure
   when: manual
   allow_failure: true # if manual job is not triggered, allow to fail to not block the pipeline
@@ -124,6 +124,8 @@ stages:
     - tools/nodejs
   policy: $CACHE_POLICY
 
+# For all below cache templates, the default cache key is using MR branch name as suffix.
+# In case cache for MR branch doesn't exist, there is a fallback to "master/main" branch cache.
 .golang_cache: &golang_cache
   key: golang_amd64-$CI_COMMIT_REF_SLUG
   <<: *golang_cache_paths
@@ -216,6 +218,19 @@ stages:
   variables:
     CACHE_POLICY: push
 
+# Below job templates are designed to be run automatically:
+# 1. if source of the pipeline was push to MR branch event AND any of the files listed
+#    under the "changes:paths" changed comparing to the previous commit in MR branch
+# 2. if source of the pipeline was push to "master/main" branch event AND any of the files listed
+#    under the "changes:paths" changed comparing to the previous HEAD of "master/main" branch
+#
+# This way, cache for the MR branch will be created only when the MR is touching any file under "changes:paths".
+# Usual MR pipeline will not trigger this action and will be using a fallback cache built for "master/main" branch.
+# When MR is merged to "master/main" branch, and it changed any file under "changes:paths",
+# the cache for "master/main" branch will be rebuilt automatically.
+#
+# All "rebuild_cache" jobs can also be triggered manually.
+
 # job template for rebuilding cache for default debian image
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
@@ -238,7 +253,6 @@ stages:
           - webui/package-lock.json
           - rakelib/**/*
     - *rule_manual_allow_failure
-
 
 # job template for rebuilding cache for alpine image
 .cache_job_template_alpine: &cache_job_template_alpine
