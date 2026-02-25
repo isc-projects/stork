@@ -978,7 +978,7 @@ export const TestAuthorizedShown: Story = {
         // Check menu items
         const menuButtons = await canvas.findAllByLabelText('Show machine menu')
         await expect(menuButtons.length).toBe(mockedAuthorizedMachines.length)
-        await user.pointer([{target: menuButtons[0]}])
+        await user.pointer([{ target: menuButtons[0] }])
         await user.click(menuButtons[0].parentElement)
         await waitFor(() => body.findByRole('menu'))
         await expect(await canvas.findAllByRole('menuitem')).toHaveLength(3)
