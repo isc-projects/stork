@@ -1037,6 +1037,9 @@ build_hooks_apks_arm64:
 
 packages_hooks:
   <<: *hooks_template
+  rules:
+    - if: *is_push_to_master_or_tag
+    - *rule_manual_allow_failure
   needs:
     - build_hooks_debs_amd64
     - build_hooks_debs_arm64
