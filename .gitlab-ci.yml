@@ -662,8 +662,6 @@ unittest_ui:
 
 storybook_tests:
   <<: *checks_template
-  rules:
-    - *rule_manual_allow_failure
   cache:
     - *nodejs_cache
     - *golang_cache
