@@ -978,8 +978,9 @@ export const TestAuthorizedShown: Story = {
         // Check menu items
         const menuButtons = await canvas.findAllByLabelText('Show machine menu')
         await expect(menuButtons.length).toBe(mockedAuthorizedMachines.length)
-        await user.click(menuButtons[0])
-        await canvas.findByRole('menu')
+        await user.pointer([{target: menuButtons[0]}])
+        await user.click(menuButtons[0].parentElement)
+        await waitFor(() => body.findByRole('menu'))
         await expect(await canvas.findAllByRole('menuitem')).toHaveLength(3)
         // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
         await expect(
@@ -1009,8 +1010,9 @@ export const TestAuthorizedShown: Story = {
             13 * (mockedAuthorizedMachines.length - 1)
         ) // One row in the tbody has specific number of cells (13).
 
-        await user.click(menuButtons[1])
-        await canvas.findByRole('menu')
+        await user.pointer([{ target: menuButtons[1] }])
+        await user.click(menuButtons[1].parentElement)
+        await waitFor(() => body.findByRole('menu'))
         menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
         await user.click(menuCommandDeleteMachine)
         await waitFor(() => {
@@ -1026,8 +1028,9 @@ export const TestAuthorizedShown: Story = {
         ) // One row in the tbody has specific number of cells (13).
 
         // Test refreshing machine state
-        await user.click(menuButtons[1])
-        await canvas.findByRole('menu')
+        await user.pointer([{ target: menuButtons[1] }])
+        await user.click(menuButtons[1].parentElement)
+        await waitFor(() => body.findByRole('menu'))
         const menuCommandRefreshState = await canvas.findByTitle('Refresh machine state information')
         await user.click(menuCommandRefreshState)
         await waitFor(() => expect(body.getByText('Machine refreshed')).toBeInTheDocument())
