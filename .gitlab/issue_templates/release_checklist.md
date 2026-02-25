@@ -4,28 +4,30 @@
 
 - `A.B.C`: the version being released
 
-- `Stable Release`: the first release on a stable branch. `B` is an even number. `C` is 0.
+When you see the following marks, only do the task if the current release matches the marked release:
 
-- `Maintenance Release`: any release on a stable branch except the first. `B` is an even number. `C` is not 0.
+- <mark>🟩 Stable</mark>: the first release on a stable branch. `B` is an even number. `C` is 0.
 
-- `Dev Release`: any release from the `master` and `main` branches. `B` is an odd number.
+- <mark>🟨 Maintenance</mark>: any release on a stable branch except the first. `B` is an even number. `C` is not 0.
 
-- `Security Release`: any release that contains changes that were assigned a CVE number.
+- <mark>🏗️ Dev</mark>: any release from the `master` and `main` branches. `B` is an odd number.
+
+- <mark>🟥 Security</mark>: any release that contains changes that were assigned a CVE number.
 
 #### General Guidelines
 
-- <mark>Stable or Maintenance Releases Only</mark>: Run QA scripts from branch `stork_vA_B` of `qa-dhcp` instead of `master`.
+- <mark>🟩 Stable or 🟨 Maintenance</mark>: Run QA scripts from branch `stork_vA_B` of `qa-dhcp` instead of `master`.
 
 ## Pre-Release Preparation (QA)
 
 Some of these checks and updates can be made before the actual freeze.
 
-1. [ ] <mark>Security Release Only</mark>: Should have been done when the CVE was discovered, but better late then never. Make sure mirroring is turned off for both Github and Gitlab [here](https://gitlab.isc.org/isc-projects/stork/-/settings/repository#js-push-remote-settings). To turn it off, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) \
+1. [ ] <mark>🟥 Security</mark>: Should have been done when the CVE was discovered, but better late then never. Make sure mirroring is turned off for both Github and Gitlab [here](https://gitlab.isc.org/isc-projects/stork/-/settings/repository#js-push-remote-settings). To turn it off, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) \
     Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --off isc-projects/stork`.
     Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --check-only isc-projects/stork`.
 1. [ ] Check Jenkins and Gitlab CI results:
     1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest). <mark>Maintenance Release Only</mark>: check [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
+    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest). <mark>🟨 Maintenance</mark>: check [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
         - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
     1. [ ] Upload necessary changes and fixes.
 1. [ ] Do some quick checks on <https://demo.stork.isc.org/>. There should be an old version deployed at this time, but there may be bugs worth pointing out to the Stork team, or other bugs that affect the normal release workflow to fix.
@@ -38,17 +40,17 @@ Some of these checks and updates can be made before the actual freeze.
     1. [ ] Check if [the latest build](https://app.readthedocs.org/projects/stork/builds/?version__slug=latest) was successful and if its time matches the merge time of the release changes. <mark>Stable and Maintenance Releases</mark>: check [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=v2.4.6) instead (draft link, edit).
     1. If not, trigger rebuilding docs on [readthedocs.org](https://app.readthedocs.org/projects/stork/builds) and wait for the build to complete.
 1. [ ] Create a draft of the release notes on [the Stork GitLab wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home). It should be created under [the Releases directory](https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases), like this one: <https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-2.0.0>.
-    1. <mark>Security Release Only</mark>: Use the private Stork Gitlab wiki instead: <https://gitlab.isc.org/isc-private/stork/-/wikis/Releases>.
+    1. <mark>🟥 Security</mark>: Use the private Stork Gitlab wiki instead: <https://gitlab.isc.org/isc-private/stork/-/wikis/Releases>.
 1. [ ] Notify Tomek that the draft is ready to be redacted.
 
 The following steps may involve changing files in the repository.
 
-1. [ ] <mark>Security Release Only</mark>: Sync release branches from public repository into private. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) \
+1. [ ] <mark>🟥 Security</mark>: Sync release branches from public repository into private. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-projects/stork --target-project isc-private/stork --branch master`.
 1. [ ] Prepare release changes. Run QA script [stork/release/update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/update-code-for-release.py).
     * e.g. `GITLAB_TOKEN='...' ./update-code-for-release.py --release-date 'Feb 07, 2030' --repo-dir=/home/wlodek/stork`
-    * [ ] <mark>Stable Release Only</mark>: please run with the `--version=vA_B` flag.
-    * [ ] <mark>Maintenance Release Only</mark>: please run from `stork_vA_B` branch of `qa-dhcp`.
+    * [ ] <mark>🟩 Stable</mark>: please run with the `--version=vA_B` flag.
+    * [ ] <mark>🟨 Maintenance</mark>: please run from `stork_vA_B` branch of `qa-dhcp`.
    The script makes the following changes:
       - Adds release entries in `ChangeLog.md`.
       - Bumps up Stork versions.
@@ -124,26 +126,26 @@ Release notes: {release_notes}
         1. Download the tarballs from `repo.isc.org:/data/shared/sweng/stork/releases/x.y.z/stork*-x.y.z.tar.gz`.
         1. Sign them.
         1. Upload the public signature at `/data/shared/sweng/stork/releases/x.y.z/stork*-x.y.z.tar.gz.asc`.
-1. [ ] <mark>Security Release Only</mark>: Wait for clearance from Incident Manager to proceed with the public release. Usually on T-5.
+1. [ ] <mark>🟥 Security</mark>: Wait for clearance from Incident Manager to proceed with the public release. Usually on T-5.
 1. [ ] Log in to repo.isc.org and publish the final tarball to the public FTP site using the make-available script.
-    * [ ] <mark>Security Release Only</mark>: Pass the `--private` flag instead of `--public` even for the core tarball. Save the private link. Put it in the CVE ticket.
+    * [ ] <mark>🟥 Security</mark>: Pass the `--private` flag instead of `--public` even for the core tarball. Save the private link. Put it in the CVE ticket.
     * Example command: `make-available --public /data/shared/sweng/stork/releases/1.2.0`
     * For more information use `--debug` option.
     * To overwrite existing content, use `--force` option.
     * If you did a mistake, contact ASAP someone from the ops team to remove incorrectly uploaded tarballs.
-1. [ ] <mark>Security Release Only</mark>: Wait for public disclosure. Confirm with the Incident Manager that the disclosure is done.
-1. [ ] <mark>Security Release Only</mark>: Run make-available again with `--public` instead of `--private`.
+1. [ ] <mark>🟥 Security</mark>: Wait for public disclosure. Confirm with the Incident Manager that the disclosure is done.
+1. [ ] <mark>🟥 Security</mark>: Run make-available again with `--public` instead of `--private`.
 1. Upload packages to Cloudsmith.
     1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
     1. Run `upload_packages`.
     1. Run `upload_packages_hooks`.
     1. Wait for the jobs to complete.
-    1. [ ] Check that the packages were uploaded to Cloudsmith: <https://app.cloudsmith.com/isc/stork-dev/>. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 3 (agent + server + ldap)` total packages. <mark>Stable or Maintenance Releases Only</mark>: check <https://app.cloudsmith.com/isc/stork> instead.
-1. [ ] <mark>Security Release Only</mark>: Sync release branches from private repository into public. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) \
+    1. [ ] Check that the packages were uploaded to Cloudsmith: <https://app.cloudsmith.com/isc/stork-dev/>. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 3 (agent + server + ldap)` total packages. <mark>🟩 Stable or 🟨 Maintenance</mark>: check <https://app.cloudsmith.com/isc/stork> instead.
+1. [ ] <mark>🟥 Security</mark>: Sync release branches from private repository into public. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/stork --target-project isc-projects/stork --branch master`.
 1. [ ] Create a signed tag. Run QA script [sign-tag.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sign-tag.py) for project `isc-projects/stork`.
     * It will create tags automatically for other repos of interest too.
-    * <mark>Stable Release Only</mark>: It will also create stable branches.
+    * <mark>🟩 Stable</mark>: It will also create stable branches.
     * Example command: `./sign-tag.py --project isc-projects/stork --tag v1.2.0 --branch master --key 0259A33B5F5A3A4466CF345C7A5E084CACA51884`
     * To get the fingerprint, run `gpg --list-keys wlodek@isc.org`.
 1. [ ] Create the Gitlab release. Run QA script [stork/release/create-gitlab-release-and-announce-on-mattermost.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/create-gitlab-release-and-announce-on-mattermost.py). (Connection to repo.isc.org will be required.)
@@ -175,29 +177,29 @@ Release notes: {release_notes}
 
             Code freeze is over.
             ```
-1. [ ] <mark>Latest Stable Release Only</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/stork/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `stork_vA_B`.
-1. [ ] <mark>Security Release Only</mark>: Wait for public disclosure.
-1. [ ] <mark>Security Release Only</mark>: After public disclosure, sync release branches from Stork private repositories into Stork public.
+1. [ ] <mark>Latest 🟩 Stable</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/stork/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `stork_vA_B`.
+1. [ ] <mark>🟥 Security</mark>: Wait for public disclosure.
+1. [ ] <mark>🟥 Security</mark>: After public disclosure, sync release branches from Stork private repositories into Stork public.
 1. [ ] Update docs on <https://app.readthedocs.org/projects/stork/>.
     1. Click `Add version` -> click `Resync versions` at the bottom -> click on the `Search versions` search bar -> find the tag name in the dropdown menu -> toggle `Active` -> click `Update version`. Wait for the build to complete.
-    1. [ ] <mark>Latest Stable Release Only</mark>: Rebuild the `stable` version. Go to [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=stable), click `Rebuild version`.
+    1. [ ] <mark>Latest 🟩 Stable</mark>: Rebuild the `stable` version. Go to [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=stable), click `Rebuild version`.
 
-1. [ ] <mark>Security Release Only</mark>: Copy release notes from the private Stork wiki to the public Stork wiki.
+1. [ ] <mark>🟥 Security</mark>: Copy release notes from the private Stork wiki to the public Stork wiki.
 
-1. [ ] <mark>Stable or Maintenance Releases Only</mark>: follow [these instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update the public demo.
+1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: follow [these instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update the public demo.
 
-1. [ ] <mark>Stable Release Only</mark>: Update the [the Stork Quickstart Guide](https://kb.isc.org/docs/stork-quickstart-guide).
+1. [ ] <mark>🟩 Stable</mark>: Update the [the Stork Quickstart Guide](https://kb.isc.org/docs/stork-quickstart-guide).
 
 1. [ ] Contact the Marketing team, and assign this ticket to a member who will continue working on this release.
 
 ## Marketing
 
 1. [ ] Publish links to downloads on the ISC website.
-1. [ ] <mark>Stable or Maintenance Releases Only</mark>: Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
-1. [ ] <mark>Stable or Maintenance Releases Only</mark>: Announce release to support subscribers using the read-only Kea Announce queue.
+1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
+1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Announce release to support subscribers using the read-only Kea Announce queue.
 1. [ ] Write email to [stork-users](https://lists.isc.org/pipermail/stork-users/).
 1. [ ] Announce on social media.
-1. [ ] <mark>Stable or Maintenance Releases Only</mark>: Write blog article.
+1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Write blog article.
 1. [ ] Check if [the Stork website page](https://www.isc.org/stork/) needs updating.
 1. [ ] Contact the Support team, and assign this ticket to a member who will continue working on this release.
 
@@ -211,6 +213,6 @@ Release notes: {release_notes}
     1. Go to <https://app.cloudsmith.com/isc/stork-testing/>.
     1. Click the checkbox that checks all packages.
     1. Click the red trash-can icon that says `Delete (remove) completely.`.
-1. [ ] <mark>Security Release Only</mark>: Mirroring can be turned back on for both Github and Gitlab. You an check it [here](https://gitlab.isc.org/isc-projects/stork/-/settings/repository#js-push-remote-settings). To turn it on, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/scripts/toggle-repo-mirroring.py) \
+1. [ ] <mark>🟥 Security</mark>: Mirroring can be turned back on for both Github and Gitlab. You an check it [here](https://gitlab.isc.org/isc-projects/stork/-/settings/repository#js-push-remote-settings). To turn it on, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/scripts/toggle-repo-mirroring.py) \
    Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --on isc-projects/stork`.
 1. [ ] Close this ticket.
