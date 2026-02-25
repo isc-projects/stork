@@ -953,10 +953,11 @@ export const TestAuthorizedShown: Story = {
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
         const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        const user = userEvent.setup({ delay: 50 })
 
         // Act
-        await userEvent.click(clearFiltersBtn)
-        await userEvent.click(authorizedButton)
+        await user.click(clearFiltersBtn)
+        await user.click(authorizedButton)
 
         // Assert
         // Check table content
@@ -977,7 +978,7 @@ export const TestAuthorizedShown: Story = {
         // Check menu items
         const menuButtons = await canvas.findAllByLabelText('Show machine menu')
         await expect(menuButtons.length).toBe(mockedAuthorizedMachines.length)
-        await userEvent.click(menuButtons[0])
+        await user.click(menuButtons[0])
         await canvas.findByRole('menu')
         await expect(await canvas.findAllByRole('menuitem')).toHaveLength(3)
         // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
@@ -995,23 +996,29 @@ export const TestAuthorizedShown: Story = {
 
         // Test deleting a machine.
         let menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
-        await userEvent.click(menuCommandDeleteMachine)
-        let dialog = await body.findByRole('alertdialog', { name: 'Confirm' })
+        await user.click(menuCommandDeleteMachine)
+        await waitFor(() => {
+            body.findByRole('alertdialog', { name: 'Confirm' })
+        })
+        let dialog = body.getByRole('alertdialog', { name: 'Confirm' })
         const confirmButton = await within(dialog).findByRole('button', { name: 'Yes' })
-        await userEvent.click(confirmButton)
+        await user.click(confirmButton)
 
         await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length) // There should be one less machine.
         await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(
             13 * (mockedAuthorizedMachines.length - 1)
         ) // One row in the tbody has specific number of cells (13).
 
-        await userEvent.click(menuButtons[1])
+        await user.click(menuButtons[1])
         await canvas.findByRole('menu')
         menuCommandDeleteMachine = await canvas.findByTitle('Remove machine from Stork server')
-        await userEvent.click(menuCommandDeleteMachine)
-        dialog = await body.findByRole('alertdialog', { name: 'Confirm' })
+        await user.click(menuCommandDeleteMachine)
+        await waitFor(() => {
+            body.findByRole('alertdialog', { name: 'Confirm' })
+        })
+        dialog = body.getByRole('alertdialog', { name: 'Confirm' })
         const cancelButton = await within(dialog).findByRole('button', { name: 'No' })
-        await userEvent.click(cancelButton)
+        await user.click(cancelButton)
 
         await expect(canvas.getAllByRole('row')).toHaveLength(mockedAuthorizedMachines.length) // There should be no change.
         await expect(canvas.getAllByRole('cell', { hidden: true })).toHaveLength(
@@ -1019,10 +1026,10 @@ export const TestAuthorizedShown: Story = {
         ) // One row in the tbody has specific number of cells (13).
 
         // Test refreshing machine state
-        await userEvent.click(menuButtons[1])
+        await user.click(menuButtons[1])
         await canvas.findByRole('menu')
         const menuCommandRefreshState = await canvas.findByTitle('Refresh machine state information')
-        await userEvent.click(menuCommandRefreshState)
+        await user.click(menuCommandRefreshState)
         await waitFor(() => expect(body.getByText('Machine refreshed')).toBeInTheDocument())
     },
 }
