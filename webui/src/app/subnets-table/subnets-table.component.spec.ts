@@ -2,7 +2,7 @@ import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core
 
 import { SubnetsTableComponent } from './subnets-table.component'
 import { InputNumber } from 'primeng/inputnumber'
-import { MessageService } from 'primeng/api'
+import { MessageService, FilterMetadata } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
@@ -11,7 +11,6 @@ import { DHCPService, ServicesService, Subnets } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent

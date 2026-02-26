@@ -3,7 +3,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { HostsTableComponent } from './hosts-table.component'
 import { Router, provideRouter } from '@angular/router'
 import { HostsPageComponent } from '../hosts-page/hosts-page.component'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService, FilterMetadata } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { InputNumber } from 'primeng/inputnumber'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
@@ -12,7 +12,6 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { DHCPService, Host, LocalHost, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent

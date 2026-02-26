@@ -6,12 +6,11 @@ import { provideRouter } from '@angular/router'
 import { DHCPService, ServicesService, Subnet } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService, FilterMetadata } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { SettingService } from '../setting.service'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent

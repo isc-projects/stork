@@ -1,5 +1,5 @@
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { FilterMetadata } from 'primeng/api'
 import { SortDir } from './backend'
 
 /**

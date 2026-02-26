@@ -1,5 +1,5 @@
-import Aura from '@primeng/themes/aura'
-import { definePreset } from '@primeng/themes'
+import { definePreset } from '@primeuix/themes'
+import Aura from '@primeuix/themes/aura'
 
 // Generated API modules
 import { Configuration, ConfigurationParameters } from './backend'
@@ -88,13 +88,13 @@ const AuraBluePreset = definePreset(Aura, {
         message: {
             colorScheme: {
                 light: {
-                    root: {
-                        textFontWeight: '400',
+                    text: {
+                        fontWeight: '400',
                     },
                 },
                 dark: {
-                    root: {
-                        textFontWeight: '400',
+                    text: {
+                        fontWeight: '400',
                     },
                 },
             },
@@ -103,14 +103,10 @@ const AuraBluePreset = definePreset(Aura, {
         panel: {
             colorScheme: {
                 light: {
-                    root: {
-                        toggleableHeaderPadding: '1.125rem',
-                    },
+                    toggleableHeader: { padding: '1.125rem' },
                 },
                 dark: {
-                    root: {
-                        toggleableHeaderPadding: '1.125rem',
-                    },
+                    toggleableHeader: { padding: '1.125rem' },
                 },
             },
         },
@@ -118,21 +114,25 @@ const AuraBluePreset = definePreset(Aura, {
         accordion: {
             colorScheme: {
                 light: {
-                    root: {
-                        headerBackground: '{surface.50}',
-                        headerActiveBackground: '{surface.50}',
-                        headerHoverBackground: '{surface.100}',
-                        headerActiveHoverBackground: '{surface.100}',
-                        contentPadding: '0 0.5rem 0.5rem 0.5rem',
+                    header: {
+                        background: '{surface.50}',
+                        activeBackground: '{surface.50}',
+                        hoverBackground: '{surface.100}',
+                        activeHoverBackground: '{surface.100}',
+                    },
+                    content: {
+                        padding: '0 0.5rem 0.5rem 0.5rem',
                     },
                 },
                 dark: {
-                    root: {
-                        headerBackground: '{surface.950}',
-                        headerActiveBackground: '{surface.950}',
-                        headerHoverBackground: '{surface.800}',
-                        headerActiveHoverBackground: '{surface.800}',
-                        contentPadding: '0 0.5rem 0.5rem 0.5rem',
+                    header: {
+                        background: '{surface.950}',
+                        activeBackground: '{surface.950}',
+                        hoverBackground: '{surface.800}',
+                        activeHoverBackground: '{surface.800}',
+                    },
+                    content: {
+                        padding: '0 0.5rem 0.5rem 0.5rem',
                     },
                 },
             },

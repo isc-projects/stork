@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, effect, NgZone, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
-import { ConfirmationService, MenuItem, MessageService, TableState, PrimeTemplate } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService, TableState, PrimeTemplate, FilterMetadata } from 'primeng/api'
 import {
     DNSClass,
     DNSDaemonName,
@@ -28,7 +28,6 @@ import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { daemonNameToFriendlyName, getErrorMessage, unrootZone } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router, RouterLink } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'

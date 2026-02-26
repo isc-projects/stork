@@ -1,7 +1,7 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { SharedNetworksTableComponent } from './shared-networks-table.component'
-import { MessageService } from 'primeng/api'
+import { MessageService, FilterMetadata } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
@@ -11,7 +11,6 @@ import { of } from 'rxjs'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 describe('SharedNetworksTableComponent', () => {
     let component: SharedNetworksTableComponent

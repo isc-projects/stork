@@ -1,7 +1,7 @@
 import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
+import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate, FilterMetadata } from 'primeng/api'
 
 import {
     daemonStatusErred,
@@ -13,7 +13,6 @@ import { AnyDaemon, DaemonSortField, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { distinctUntilChanged, finalize, last, map } from 'rxjs/operators'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'

@@ -3,7 +3,7 @@ import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from 
 import { DHCPService, Subnet, SubnetSortField } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
-import { MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
+import { MessageService, TableState, PrimeTemplate, MenuItem, FilterMetadata } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
@@ -14,7 +14,6 @@ import {
     extractUniqueSubnetPools,
 } from '../subnets'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { NgIf, NgFor, DecimalPipe } from '@angular/common'

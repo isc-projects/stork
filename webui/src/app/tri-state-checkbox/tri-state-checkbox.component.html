@@ -13,9 +13,9 @@
 >
     <ng-template #checkboxicon>
         @if (value() === true) {
-            <CheckIcon [styleClass]="'p-checkbox-icon'" [attr.data-pc-section]="'icon'" />
+            <svg data-p-icon="check" />
         } @else if (value() === false) {
-            <TimesIcon [styleClass]="'p-checkbox-icon'" [attr.data-pc-section]="'icon'" />
+            <svg data-p-icon="times" />
         }
     </ng-template>
 </p-checkbox>
