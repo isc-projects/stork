@@ -509,7 +509,7 @@ namespace :prepare do
     task :doc => [hook_doc_directory, hook_man_directory]
 
     desc 'Prepare Sphinx dependencies needed for documentation building'
-    task :sphinx_deps => [SPHINX_BUILD]
+    task :doc_deps => [SPHINX_BUILD]
 end
 
 namespace :check do
