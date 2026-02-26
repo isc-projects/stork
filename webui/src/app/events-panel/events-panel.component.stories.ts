@@ -5,7 +5,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { Events } from '../backend'
 import { toastDecorator } from '../utils-stories'
 import { EventsPanelComponent } from './events-panel.component'
-import { action } from '@storybook/addon-actions'
+import { action } from 'storybook/actions'
 
 export default {
     title: 'App/EventsPanel',

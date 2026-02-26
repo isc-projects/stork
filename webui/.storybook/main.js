@@ -3,8 +3,6 @@ const config = {
 
     addons: [
         '@storybook/addon-links', // is this used?
-        '@storybook/addon-essentials',
-        '@storybook/addon-interactions',
         '@storybook/addon-themes',
         'storybook-addon-mock',
     ],

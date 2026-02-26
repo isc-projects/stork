@@ -4,7 +4,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { ActivatedRoute, convertToParamMap, provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
 import { Daemon, LocalZone, Zone } from '../backend'
-import { expect, userEvent, waitFor, within } from '@storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 const meta: Meta<ZonesPageComponent> = {

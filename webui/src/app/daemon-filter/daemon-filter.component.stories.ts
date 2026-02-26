@@ -1,7 +1,7 @@
 import { DaemonFilterComponent } from './daemon-filter.component'
 import { applicationConfig, argsToTemplate, Meta, StoryObj } from '@storybook/angular'
 import { provideHttpClient } from '@angular/common/http'
-import { userEvent, within, expect, waitFor } from '@storybook/test'
+import { userEvent, within, expect, waitFor } from 'storybook/test'
 
 const allDaemonsDirectory = [
     {
