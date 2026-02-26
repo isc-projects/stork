@@ -299,7 +299,7 @@ stages:
     - *rule_manual_allow_failure
 
   script:
-    - rake prepare:sphinx_deps
+    - rake prepare:doc_deps
 
 ### jobs definitions ###
 # rebuilds debian caches only when needed
