@@ -234,6 +234,12 @@ stages:
 # job template for rebuilding cache for default debian image
 .cache_job_template_debian: &cache_job_template_debian
   <<: *cache_job_template
+  # The submodules are not included in the artifacts even if the `untracked`
+  # option is set. It is a bug in GitLab: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2457
+  # We clone the fresh copy of the submodules. As long as our hooks need only
+  # Golang to compile, it shouldn't be a problem.
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
   rules:
     - if: *is_mr_event
       changes:
@@ -262,6 +268,11 @@ stages:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
     CACHE_POLICY: push
+    # The submodules are not included in the artifacts even if the `untracked`
+    # option is set. It is a bug in GitLab: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2457
+    # We clone the fresh copy of the submodules. As long as our hooks need only
+    # Golang to compile, it shouldn't be a problem.
+    GIT_SUBMODULE_STRATEGY: normal
   rules:
     - if: *is_mr_event
       changes:
