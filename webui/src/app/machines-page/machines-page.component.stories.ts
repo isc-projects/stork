@@ -953,6 +953,7 @@ export const TestAuthorizedShown: Story = {
         const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
         const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
         const user = userEvent.setup({ delay: 50 })
 
         // Act
