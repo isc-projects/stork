@@ -99,8 +99,8 @@ stages:
 .image_redhat: &image_redhat
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
 
-# template with debian11 image
-.image_debian11: &image_debian11
+# template with ruby-debian image
+.image_ruby_debian: &image_ruby_debian
   image: ruby:3.3.5-bullseye
 
 # rule to run the job only when it is manually triggered; to be used in "rules"
@@ -427,7 +427,7 @@ build_backend_legacy_amd64:
   <<: *build_template
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  <<: *image_debian11
+  <<: *image_ruby_debian
   needs:
     - build_backend_amd64
   script:
@@ -909,7 +909,7 @@ build_hooks_legacy_amd64:
   <<: *hooks_template
   # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  <<: *image_debian11
+  <<: *image_ruby_debian
   needs:
     - build_hooks_amd64
   # The submodules are not included in the artifacts even if the `untracked`
