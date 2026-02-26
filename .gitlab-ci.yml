@@ -286,7 +286,6 @@ stages:
   script:
     - rake prepare:dist
     - rake prepare:deps
-    - rake hook:prepare
     - rake hook:update_deps
 
 # job template for rebuilding cache for redhat image
