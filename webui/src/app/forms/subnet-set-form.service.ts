@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import {
     FormArray,
     FormControl,
@@ -381,15 +381,16 @@ export type KeaRawConfig = { [key: string]: any }
 })
 export class SubnetSetFormService {
     /**
-     * Empty constructor.
-     *
-     * @param genericFormService a generic form service used to clone controls.
-     * @param optionService a service for manipulating DHCP options.
+     * A generic form service used to clone controls.
+     * @private
      */
-    constructor(
-        private genericFormService: GenericFormService,
-        private optionService: DhcpOptionSetFormService
-    ) {}
+    private genericFormService = inject(GenericFormService)
+
+    /**
+     * A service for manipulating DHCP options.
+     * @private
+     */
+    private optionService = inject(DhcpOptionSetFormService)
 
     /**
      * Extract the index from the array by matching the daemon id.

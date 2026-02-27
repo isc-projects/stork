@@ -1,5 +1,5 @@
 import { HttpStatusCode } from '@angular/common/http'
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input, OnInit, inject } from '@angular/core'
 import { MessageService } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { of } from 'rxjs'
@@ -63,6 +63,18 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
     ],
 })
 export class ConfigReviewPanelComponent implements OnInit {
+    /**
+     * A service used to display error messages.
+     * @private
+     */
+    private msgService = inject(MessageService)
+
+    /**
+     * A service used to fetch the config review reports.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
     /**
      * ID of the daemon for which reports are listed.
      */
@@ -130,17 +142,6 @@ export class ConfigReviewPanelComponent implements OnInit {
      * A total number of reports.
      */
     totalReports = 0
-
-    /**
-     * Component constructor.
-     *
-     * @param msgService a service used to display error messages.
-     * @param servicesApi a service used to fetch the config review reports.
-     */
-    constructor(
-        private msgService: MessageService,
-        private servicesApi: ServicesService
-    ) {}
 
     /**
      * A hook invoked during the component initialization.

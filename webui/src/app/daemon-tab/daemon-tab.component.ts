@@ -1,4 +1,4 @@
-import { Component, computed, EventEmitter, input, Output } from '@angular/core'
+import { Component, computed, EventEmitter, input, Output, inject } from '@angular/core'
 
 import { AnyDaemon, ServicesService } from '../backend'
 import { daemonStatusIconClass, daemonStatusIconTooltip, getErrorMessage } from '../utils'
@@ -30,18 +30,16 @@ import { ManagedAccessDirective } from '../managed-access.directive'
     ],
 })
 export class DaemonTabComponent {
+    private servicesApi = inject(ServicesService)
+    private confirmService = inject(ConfirmationService)
+    private msgService = inject(MessageService)
+
     daemon = input<AnyDaemon>(null)
     /**
      * Indicates if the daemon is being deleted.
      */
     @Output() refreshDaemon = new EventEmitter<number>()
     @Output() deleteDaemon = new EventEmitter<number>()
-
-    constructor(
-        private servicesApi: ServicesService,
-        private confirmService: ConfirmationService,
-        private msgService: MessageService
-    ) {}
 
     /**
      * The CSS class to display the icon to be used to indicate daemon status

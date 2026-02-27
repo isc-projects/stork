@@ -1,4 +1,4 @@
-import { Component, computed, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { Component, computed, OnDestroy, OnInit, signal, viewChild, ViewChild, inject } from '@angular/core'
 import { Router, RouterLink } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
@@ -72,6 +72,48 @@ import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
     ],
 })
 export class MachinesPageComponent implements OnInit, OnDestroy {
+    /**
+     * Router used to navigate between tabs.
+     * @private
+     */
+    private router = inject(Router)
+
+    /**
+     * Services API to do all CRUD machine related operations.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
+    /**
+     * Message service used to display feedback messages in UI.
+     * @private
+     */
+    private msgSrv = inject(MessageService)
+
+    /**
+     * Server Data service used to reload Daemons stats whenever machines registration state changes.
+     * @private
+     */
+    private serverData = inject(ServerDataService)
+
+    /**
+     * Settings service used to retrieve global settings.
+     * @private
+     */
+    private settingsService = inject(SettingsService)
+
+    /**
+     * Confirmation used to handle confirmation dialogs.
+     * @private
+     */
+    private confirmationService = inject(ConfirmationService)
+
+    /**
+     * Authentication and authorization service for customizing the component based on user privileges.
+     * @private
+     */
+    private authService = inject(AuthService)
+
     /**
      * View breadcrumbs menu items.
      */
@@ -257,26 +299,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     machineProvider: (id: number) => Promise<Machine> = (machineID: number) => {
         return lastValueFrom(this.servicesApi.getMachine(machineID))
     }
-
-    /**
-     * Component's constructor.
-     * @param router router used to navigate between tabs.
-     * @param servicesApi services API to do all CRUD machine related operations
-     * @param msgSrv Message service used to display feedback messages in UI.
-     * @param serverData Server Data service used to reload Daemons stats whenever machines registration state changes.
-     * @param settingsService Settings service used to retrieve global settings.
-     * @param confirmationService Confirmation used to handle confirmation dialogs.
-     * @param authService authentication and authorization service for customizing the component based on user privileges
-     */
-    constructor(
-        private router: Router,
-        private servicesApi: ServicesService,
-        private msgSrv: MessageService,
-        private serverData: ServerDataService,
-        private settingsService: SettingsService,
-        private confirmationService: ConfirmationService,
-        private authService: AuthService
-    ) {}
 
     /**
      * Component lifecycle hook called to perform clean-up when destroying the component.

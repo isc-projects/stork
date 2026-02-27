@@ -1,4 +1,4 @@
-import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild, inject } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate, FilterMetadata } from 'primeng/api'
@@ -74,6 +74,12 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
     ],
 })
 export class DaemonsPageComponent implements OnInit, OnDestroy {
+    private servicesApi = inject(ServicesService)
+    private msgSrv = inject(MessageService)
+    private confirmService = inject(ConfirmationService)
+    private router = inject(Router)
+    private authService = inject(AuthService)
+
     /**
      * PrimeNG Table with daemons list.
      */
@@ -108,14 +114,6 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
             )
         )
     }
-
-    constructor(
-        private servicesApi: ServicesService,
-        private msgSrv: MessageService,
-        private confirmService: ConfirmationService,
-        private router: Router,
-        private authService: AuthService
-    ) {}
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed

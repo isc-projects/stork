@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
+import { Component, OnInit, Input, Output, EventEmitter, OnDestroy, inject } from '@angular/core'
 import {
     AbstractControl,
     UntypedFormBuilder,
@@ -217,6 +217,37 @@ export interface MappedHostBeginData {
 })
 export class HostFormComponent implements OnInit, OnDestroy {
     /**
+     * Private form builder instance.
+     * @private
+     */
+    private _formBuilder = inject(UntypedFormBuilder)
+
+    /**
+     * REST API server service.
+     * @private
+     */
+    private _dhcpApi = inject(DHCPService)
+
+    /**
+     * Generic form service.
+     * @private
+     */
+    private _genericFormService = inject(GenericFormService)
+
+    /**
+     * Service providing functions to convert the
+     * host reservation information between the form and REST API formats.
+     * @private
+     */
+    private _optionSetFormService = inject(DhcpOptionSetFormService)
+
+    /**
+     * Service displaying error and success messages.
+     * @private
+     */
+    private _messageService = inject(MessageService)
+
+    /**
      * Form state instance.
      *
      * The instance is shared between the parent and this component.
@@ -303,23 +334,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * It is required to revert host reservation edits.
      */
     savedUpdateHostBeginData: MappedHostBeginData
-
-    /**
-     * Constructor.
-     *
-     * @param _formBuilder private form builder instance.
-     * @param _dhcpApi REST API server service.
-     * @param _optionSetFormService service providing functions to convert the
-     * host reservation information between the form and REST API formats.
-     * @param _messageService service displaying error and success messages.
-     */
-    constructor(
-        private _formBuilder: UntypedFormBuilder,
-        private _dhcpApi: DHCPService,
-        private _genericFormService: GenericFormService,
-        private _optionSetFormService: DhcpOptionSetFormService,
-        private _messageService: MessageService
-    ) {}
 
     /**
      * Component lifecycle hook invoked during initialization.

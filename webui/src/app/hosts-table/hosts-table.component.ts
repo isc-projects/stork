@@ -1,4 +1,4 @@
-import { Component, effect, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, ViewChild, inject } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
@@ -69,6 +69,11 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
     ],
 })
 export class HostsTableComponent implements OnInit, OnDestroy {
+    private router = inject(Router)
+    private dhcpApi = inject(DHCPService)
+    private messageService = inject(MessageService)
+    private confirmationService = inject(ConfirmationService)
+
     /**
      * PrimeNG table instance.
      */
@@ -95,13 +100,6 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * @private
      */
     private _subscriptions: Subscription = new Subscription()
-
-    constructor(
-        private router: Router,
-        private dhcpApi: DHCPService,
-        private messageService: MessageService,
-        private confirmationService: ConfirmationService
-    ) {}
 
     /**
      * Loads hosts from the database into the component.

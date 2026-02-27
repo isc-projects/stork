@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, OnDestroy } from '@angular/core'
+import { Component, OnInit, OnChanges, Input, OnDestroy, inject } from '@angular/core'
 
 import { LazyLoadEvent, MessageService, ConfirmationService } from 'primeng/api'
 
@@ -55,6 +55,14 @@ interface DaemonNameOption {
     ],
 })
 export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
+    private eventsApi = inject(EventsService)
+    private usersApi = inject(UsersService)
+    private servicesApi = inject(ServicesService)
+    private msgSrv = inject(MessageService)
+    auth = inject(AuthService)
+    private confirmationService = inject(ConfirmationService)
+    private sse = inject(ServerSentEventsService)
+
     /**
      * A subscription to the events.
      */
@@ -138,16 +146,6 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     get canReadEvents(): boolean {
         return this.auth.hasPrivilege('events')
     }
-
-    constructor(
-        private eventsApi: EventsService,
-        private usersApi: UsersService,
-        private servicesApi: ServicesService,
-        private msgSrv: MessageService,
-        public auth: AuthService,
-        private confirmationService: ConfirmationService,
-        private sse: ServerSentEventsService
-    ) {}
 
     ngOnDestroy(): void {
         this.eventSubscription.unsubscribe()

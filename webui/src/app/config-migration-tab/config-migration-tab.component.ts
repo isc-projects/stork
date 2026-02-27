@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
 import { MigrationError, MigrationStatus } from '../backend'
 import { AuthService } from '../auth.service'
 import { NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
@@ -36,6 +36,12 @@ import { DurationPipe } from '../pipes/duration.pipe'
     ],
 })
 export class ConfigMigrationTabComponent {
+    /**
+     * Auth service used to check user authorization for canceling migrations.
+     * @private
+     */
+    private authService = inject(AuthService)
+
     /**
      * An event emitter notifying a parent that user has clicked the
      * Cancel button to cancel the migration.
@@ -147,10 +153,4 @@ export class ConfigMigrationTabComponent {
     onCancel() {
         this.cancelMigration.emit(this.migration.id)
     }
-
-    /**
-     * Component class constructor.
-     * @param authService Auth service used to check user authorization for canceling migrations.
-     */
-    constructor(private authService: AuthService) {}
 }

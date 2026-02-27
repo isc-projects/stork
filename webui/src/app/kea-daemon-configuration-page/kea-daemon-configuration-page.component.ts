@@ -1,10 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, inject } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 import { MenuItem, MessageService } from 'primeng/api'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 import { KeaDaemonConfig } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -27,6 +26,11 @@ import { Message } from 'primeng/message'
     imports: [BreadcrumbsComponent, Panel, NgIf, Button, JsonTreeRootComponent, Message],
 })
 export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute)
+    private router = inject(Router)
+    private serverData = inject(ServerDataService)
+    private msgService = inject(MessageService)
+
     breadcrumbs: MenuItem[] = []
 
     // Variables to store values for getters. See specific getter for documentation.
@@ -38,14 +42,6 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
 
     private changeDaemonId = new Subject<number>()
     private subscriptions = new Subscription()
-
-    constructor(
-        private route: ActivatedRoute,
-        private router: Router,
-        private servicesApi: ServicesService,
-        private serverData: ServerDataService,
-        private msgService: MessageService
-    ) {}
 
     /**
      * Unsubscribe all subscriptions.

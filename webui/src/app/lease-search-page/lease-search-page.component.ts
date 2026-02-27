@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 import { map } from 'rxjs/operators'
 
@@ -78,6 +78,16 @@ enum LeasesSearchStatus {
     ],
 })
 export class LeaseSearchPageComponent implements OnInit {
+    private route = inject(ActivatedRoute)
+    private router = inject(Router)
+    private msgService = inject(MessageService)
+
+    /**
+     * Service used to contact the DHCP servers.
+     * @private
+     */
+    private dhcpApi = inject(DHCPService)
+
     public Status = LeasesSearchStatus
 
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Lease Search' }]
@@ -131,18 +141,6 @@ export class LeaseSearchPageComponent implements OnInit {
      * problematic daemons.
      */
     erredDaemons: LeasesSearchErredDaemon[]
-
-    /**
-     * Component constructor.
-     *
-     * @param dhcpApi service used to contact the DHCP servers.
-     */
-    constructor(
-        private route: ActivatedRoute,
-        private router: Router,
-        private msgService: MessageService,
-        private dhcpApi: DHCPService
-    ) {}
 
     /**
      * Hook displayed during component initialization.

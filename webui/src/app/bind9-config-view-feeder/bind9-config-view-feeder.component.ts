@@ -1,4 +1,4 @@
-import { Component, DestroyRef, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { Bind9FormattedConfig, ServicesService } from '../backend'
 import { MessageService } from 'primeng/api'
 import { TextFileViewerComponent } from '../text-file-viewer/text-file-viewer.component'
@@ -17,6 +17,24 @@ import { catchError, EMPTY, finalize, Subject, switchMap, takeUntil, tap } from 
     styleUrl: './bind9-config-view-feeder.component.sass',
 })
 export class Bind9ConfigViewFeederComponent implements OnInit {
+    /**
+     * API service exposing the function to get the BIND 9 configuration.
+     * @private
+     */
+    private _servicesApi = inject(ServicesService)
+
+    /**
+     * Service used to display messages to the user.
+     * @private
+     */
+    private _messageService = inject(MessageService)
+
+    /**
+     * Used to destroy the subscription when the component is destroyed.
+     * @private
+     */
+    private _destroyRef = inject(DestroyRef)
+
     /**
      * The ID of the daemon whose configuration is being fetched.
      */
@@ -72,21 +90,6 @@ export class Bind9ConfigViewFeederComponent implements OnInit {
      * A subject used to explicitly cancel the HTTP call to get the configuration.
      */
     private _cancelTrigger$ = new Subject<void>()
-
-    /**
-     * Constructor.
-     *
-     * @param _servicesApi is the API service exposing the function to get the
-     *        BIND 9 configuration.
-     * @param _messageService is the service used to display messages to the user.
-     * @param _destroyRef is the destroy ref used to destroy the subscription when
-     *        the component is destroyed.
-     */
-    constructor(
-        private _servicesApi: ServicesService,
-        private _messageService: MessageService,
-        private _destroyRef: DestroyRef
-    ) {}
 
     /**
      * Lifecycle hook called after component initialization.

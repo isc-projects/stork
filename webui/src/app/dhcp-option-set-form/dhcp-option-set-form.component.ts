@@ -1,5 +1,5 @@
 import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core'
-import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { UntypedFormArray, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { NgFor, NgIf } from '@angular/common'
 import { Button } from 'primeng/button'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
@@ -46,13 +46,6 @@ export class DhcpOptionSetFormComponent {
      * An event emitter sending an event when user adds a new option.
      */
     @Output() optionAdd = new EventEmitter<void>()
-
-    /**
-     * Constructor.
-     *
-     * @param _formBuilder a form builder instance used in this component.
-     */
-    constructor(private _formBuilder: UntypedFormBuilder) {}
 
     /**
      * Notifies a parent component to create new option form group.

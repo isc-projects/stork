@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core'
+import { Component, OnInit, Input, inject } from '@angular/core'
 import { Title } from '@angular/platform-browser'
 import { MenuItem } from 'primeng/api'
 import { Breadcrumb } from 'primeng/breadcrumb'
@@ -11,6 +11,8 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
     imports: [Breadcrumb, HelpTipComponent],
 })
 export class BreadcrumbsComponent implements OnInit {
+    private titleService = inject(Title)
+
     @Input() items: any
     home: MenuItem = {
         icon: 'pi pi-home',
@@ -25,8 +27,6 @@ export class BreadcrumbsComponent implements OnInit {
             itemColor: '{content.color}',
         },
     }
-
-    constructor(private titleService: Title) {}
 
     ngOnInit(): void {
         let title = ''
