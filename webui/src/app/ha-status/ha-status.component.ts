@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core'
 import { interval, lastValueFrom, Subscription } from 'rxjs'
 import { ServicesService } from '../backend/api/api'
 import { KeaHAServerStatus, ServiceStatus } from '../backend'
@@ -79,6 +79,9 @@ type RelationshipNodeCellFunction = (serverStatus: KeaHAServerStatus) => Relatio
     ],
 })
 export class HaStatusComponent implements OnInit, OnDestroy {
+    private servicesApi = inject(ServicesService)
+    private messageService = inject(MessageService)
+
     /**
      * A periodic timer subscription counting down until next data refresh.
      */
@@ -130,11 +133,6 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * Indicates if the data were loaded at least once.
      */
     loadedOnce: boolean = false
-
-    constructor(
-        private servicesApi: ServicesService,
-        private messageService: MessageService
-    ) {}
 
     /**
      * A lifecycle hook invoked when the component is initialized.

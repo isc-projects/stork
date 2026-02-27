@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
 
@@ -49,6 +49,13 @@ import { Message } from 'primeng/message'
     ],
 })
 export class LoginScreenComponent implements OnInit {
+    protected api = inject(GeneralService)
+    private auth = inject(AuthService)
+    private route = inject(ActivatedRoute)
+    private router = inject(Router)
+    private formBuilder = inject(UntypedFormBuilder)
+    http = inject(HttpClient)
+
     /**
      * Stork version.
      */
@@ -91,15 +98,6 @@ export class LoginScreenComponent implements OnInit {
             focusColor: '{surface.0}',
         },
     }
-
-    constructor(
-        protected api: GeneralService,
-        private auth: AuthService,
-        private route: ActivatedRoute,
-        private router: Router,
-        private formBuilder: UntypedFormBuilder,
-        public http: HttpClient
-    ) {}
 
     /**
      * Fetches the version and authentication methods, and initializes the

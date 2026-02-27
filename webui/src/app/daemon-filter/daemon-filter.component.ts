@@ -1,4 +1,4 @@
-import { Component, effect, input, model, OnDestroy, OnInit, output } from '@angular/core'
+import { Component, effect, input, model, OnDestroy, OnInit, output, inject } from '@angular/core'
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete'
 import { FloatLabel } from 'primeng/floatlabel'
 import { FormsModule } from '@angular/forms'
@@ -40,6 +40,12 @@ type SimpleDaemonListItem = SimpleDaemon & { listItemLabel: string }
     styleUrl: './daemon-filter.component.sass',
 })
 export class DaemonFilterComponent implements OnInit, OnDestroy {
+    /**
+     * Services API used to retrieve daemons directory from backend.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
     /**
      * All daemons suggested in the autocomplete component.
      * @private
@@ -133,12 +139,6 @@ export class DaemonFilterComponent implements OnInit, OnDestroy {
      * @private
      */
     private subscription: Subscription
-
-    /**
-     * Component ctor.
-     * @param servicesApi services API used to retrieve daemons directory from backend
-     */
-    constructor(private servicesApi: ServicesService) {}
 
     /**
      * Initializes the component. It subscribes to receivedDaemons$ RxJS stream

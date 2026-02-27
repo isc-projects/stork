@@ -1,4 +1,14 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    QueryList,
+    ViewChildren,
+    inject,
+} from '@angular/core'
 import { CreateSubnetBeginResponse, DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
@@ -19,8 +29,6 @@ import {
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { SubnetFormState } from '../forms/subnet-form'
-import { GenericFormService } from '../forms/generic-form.service'
-import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
@@ -79,6 +87,21 @@ import { Message } from 'primeng/message'
     ],
 })
 export class SubnetFormComponent implements OnInit, OnDestroy {
+    /**
+     * A service providing an API to the server.
+     */
+    dhcpApi = inject(DHCPService)
+
+    /**
+     * A service for displaying error messages to the user.
+     */
+    messageService = inject(MessageService)
+
+    /**
+     * A service for converting subnet data.
+     */
+    subnetSetFormService = inject(SubnetSetFormService)
+
     @ViewChildren(AddressPoolFormComponent) addressPoolComponents!: QueryList<AddressPoolFormComponent>
 
     @ViewChildren(PrefixPoolFormComponent) prefixPoolComponents!: QueryList<PrefixPoolFormComponent>
@@ -118,23 +141,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * An event emitter notifying that form editing has been canceled.
      */
     @Output() formCancel = new EventEmitter<number>()
-
-    /**
-     * Constructor.
-     *
-     * @param dhcpApi a service providing an API to the server.
-     * @param genericFormService a generic form conversion service.
-     * @param messageService a service for displaying error messages to the user.
-     * @param optionsFormService a service for converting DHCP options.
-     * @param subnetSetFormService a service for converting subnet data.
-     */
-    constructor(
-        public dhcpApi: DHCPService,
-        public genericFormService: GenericFormService,
-        public messageService: MessageService,
-        public optionsFormService: DhcpOptionSetFormService,
-        public subnetSetFormService: SubnetSetFormService
-    ) {}
 
     /**
      * A component lifecycle hook invoked when the component is initialized.

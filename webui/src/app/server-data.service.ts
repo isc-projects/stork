@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Observable, Subject, merge, timer, EMPTY, of } from 'rxjs'
 import { switchMap, shareReplay, catchError, filter, map } from 'rxjs/operators'
 
@@ -15,6 +15,10 @@ import { Groups } from './backend/model/groups'
     providedIn: 'root',
 })
 export class ServerDataService {
+    private auth = inject(AuthService)
+    servicesApi = inject(ServicesService)
+    private usersApi = inject(UsersService)
+
     private daemonsStats: Observable<DaemonsStats>
     private groups: Observable<Groups>
     private reloadDaemonStats = new Subject<void>()
@@ -23,12 +27,6 @@ export class ServerDataService {
     private _machinesAddresses: Observable<any>
     private _daemonsNames: Observable<any>
     private _daemonConfigurations: { [daemonId: number]: Observable<any> } = {}
-
-    constructor(
-        private auth: AuthService,
-        public servicesApi: ServicesService,
-        private usersApi: UsersService
-    ) {}
 
     /**
      * Get daemons stats from the server and cache it for other subscribers.

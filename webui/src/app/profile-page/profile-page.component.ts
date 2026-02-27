@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, inject } from '@angular/core'
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { User } from '../backend'
@@ -18,6 +18,9 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
     imports: [BreadcrumbsComponent, SettingsMenuComponent, Panel, PlaceholderPipe],
 })
 export class ProfilePageComponent implements OnInit, OnDestroy {
+    private auth = inject(AuthService)
+    private serverData = inject(ServerDataService)
+
     breadcrumbs = [{ label: 'User Profile' }]
 
     currentUser: User = null
@@ -29,10 +32,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
      */
     private subscriptions = new Subscription()
 
-    constructor(
-        private auth: AuthService,
-        private serverData: ServerDataService
-    ) {
+    constructor() {
         this.subscriptions.add(
             this.auth.currentUser$.subscribe((user) => {
                 this.currentUser = user

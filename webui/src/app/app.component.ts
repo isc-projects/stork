@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, inject } from '@angular/core'
 import { Router, RouterLink, RouterOutlet } from '@angular/router'
 import { firstValueFrom, Observable, Subscription } from 'rxjs'
 
@@ -46,6 +46,16 @@ import { Toast } from 'primeng/toast'
     ],
 })
 export class AppComponent implements OnInit, OnDestroy {
+    private router = inject(Router)
+    private serverData = inject(ServerDataService)
+    protected generalApi = inject(GeneralService)
+    private auth = inject(AuthService)
+    private loadingService = inject(LoadingService)
+    private settingSvc = inject(SettingService)
+    private themeService = inject(ThemeService)
+    private versionService = inject(VersionService)
+    private messageService = inject(MessageService)
+
     storkVersion = 'unknown'
     storkBuildDate = 'unknown'
     currentUser: User = null
@@ -106,17 +116,7 @@ export class AppComponent implements OnInit, OnDestroy {
         },
     }
 
-    constructor(
-        private router: Router,
-        private serverData: ServerDataService,
-        protected generalApi: GeneralService,
-        private auth: AuthService,
-        private loadingService: LoadingService,
-        private settingSvc: SettingService,
-        private themeService: ThemeService,
-        private versionService: VersionService,
-        private messageService: MessageService
-    ) {
+    constructor() {
         this.initMenus()
 
         this.breadcrumbItems = [{ label: 'Categories' }]

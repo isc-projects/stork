@@ -3,7 +3,7 @@ import { MessageService } from 'primeng/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { action } from '@storybook/addon-actions'
+import { action } from 'storybook/actions'
 import { toastDecorator } from '../utils-stories'
 
 const mockPreferencesData: ConfigCheckers = {

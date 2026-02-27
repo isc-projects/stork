@@ -1,5 +1,5 @@
-import { Component, computed, input } from '@angular/core'
-import { ActivatedRoute, RouterLink } from '@angular/router'
+import { Component, computed, input, inject } from '@angular/core'
+import { RouterLink } from '@angular/router'
 import { prerelease, gte } from 'semver'
 
 import { MessageService } from 'primeng/api'
@@ -54,6 +54,9 @@ import { AccessPointsComponent } from '../access-points/access-points.component'
     ],
 })
 export class KeaDaemonComponent {
+    private servicesApi = inject(ServicesService)
+    private msgService = inject(MessageService)
+
     daemon = input<KeaDaemon>(null)
 
     /**
@@ -90,12 +93,6 @@ export class KeaDaemonComponent {
         'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
         'libdhcp_user_chk.so': 'user-chk-user-check',
     }
-
-    constructor(
-        private route: ActivatedRoute,
-        private servicesApi: ServicesService,
-        private msgService: MessageService
-    ) {}
 
     /**
      * Converts duration to pretty string.

@@ -28,12 +28,11 @@ const AuraBluePreset = definePreset(Aura, {
             900: '{blue.900}',
             950: '{blue.950}',
         },
+    },
+    // Custom inverted scale (old surface-like light↔dark). Must live under extend;
+    // semantic.colorScheme only allows known tokens (surface, primary, …).
+    extend: {
         colorScheme: {
-            // Adding custom 'inverted' color scheme which mimics old PrimeNG 'surface' color scheme,
-            // which for light scheme was changing from white to dark colors, and for
-            // dark scheme it was changing from dark colors to white.
-            // In new PrimeNG (v18 and following), the 'surface' color scheme behaves similarly for both light and dark mode,
-            // i.e. it changes from white to darker colors.
             dark: {
                 inverted: {
                     0: '{zinc.900}',
@@ -88,13 +87,13 @@ const AuraBluePreset = definePreset(Aura, {
         message: {
             colorScheme: {
                 light: {
-                    root: {
-                        textFontWeight: '400',
+                    text: {
+                        fontWeight: '400',
                     },
                 },
                 dark: {
-                    root: {
-                        textFontWeight: '400',
+                    text: {
+                        fontWeight: '400',
                     },
                 },
             },
@@ -103,13 +102,13 @@ const AuraBluePreset = definePreset(Aura, {
         panel: {
             colorScheme: {
                 light: {
-                    root: {
-                        toggleableHeaderPadding: '1.125rem',
+                    toggleableHeader: {
+                        padding: '1.125rem',
                     },
                 },
                 dark: {
-                    root: {
-                        toggleableHeaderPadding: '1.125rem',
+                    toggleableHeader: {
+                        padding: '1.125rem',
                     },
                 },
             },
@@ -118,21 +117,25 @@ const AuraBluePreset = definePreset(Aura, {
         accordion: {
             colorScheme: {
                 light: {
-                    root: {
-                        headerBackground: '{surface.50}',
-                        headerActiveBackground: '{surface.50}',
-                        headerHoverBackground: '{surface.100}',
-                        headerActiveHoverBackground: '{surface.100}',
-                        contentPadding: '0 0.5rem 0.5rem 0.5rem',
+                    header: {
+                        background: '{surface.50}',
+                        activeBackground: '{surface.50}',
+                        hoverBackground: '{surface.100}',
+                        activeHoverBackground: '{surface.100}',
+                    },
+                    content: {
+                        padding: '0 0.5rem 0.5rem 0.5rem',
                     },
                 },
                 dark: {
-                    root: {
-                        headerBackground: '{surface.950}',
-                        headerActiveBackground: '{surface.950}',
-                        headerHoverBackground: '{surface.800}',
-                        headerActiveHoverBackground: '{surface.800}',
-                        contentPadding: '0 0.5rem 0.5rem 0.5rem',
+                    header: {
+                        background: '{surface.950}',
+                        activeBackground: '{surface.950}',
+                        hoverBackground: '{surface.800}',
+                        activeHoverBackground: '{surface.800}',
+                    },
+                    content: {
+                        padding: '0 0.5rem 0.5rem 0.5rem',
                     },
                 },
             },

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { AnyDaemon, ServicesService } from '../backend'
 import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
@@ -26,6 +26,18 @@ import { ProgressSpinner } from 'primeng/progressspinner'
 })
 export class CommunicationStatusPageComponent implements OnInit {
     /**
+     * Service used for displaying communication errors with the Stork server.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
+     * Service used for fetching the communication issues from the Stork server.
+     * @private
+     */
+    private servicesService = inject(ServicesService)
+
+    /**
      * Configures the breadcrumbs for the component.
      */
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Communication' }]
@@ -39,19 +51,6 @@ export class CommunicationStatusPageComponent implements OnInit {
      * A boolean flag indicating if the data are being loaded.
      */
     loading = true
-
-    /**
-     * Constructor.
-     *
-     * @param messageService message service used for displaying communication
-     *        errros with the Stork server.
-     * @param servicesService a service used for fetching the communication issues
-     *        from the Stork server.
-     */
-    constructor(
-        private messageService: MessageService,
-        private servicesService: ServicesService
-    ) {}
 
     /**
      * A component lifecycle hook invoked when the component is loaded.

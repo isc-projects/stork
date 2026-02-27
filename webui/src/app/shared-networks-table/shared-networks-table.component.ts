@@ -1,4 +1,4 @@
-import { Component, computed, effect, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, effect, Input, OnDestroy, OnInit, signal, ViewChild, inject } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import {
     getTotalAddresses,
@@ -12,8 +12,7 @@ import { Router, RouterLink } from '@angular/router'
 import { DHCPService, NetworkSortField, SharedNetwork } from '../backend'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
+import { FilterMetadata, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
@@ -64,6 +63,10 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
     ],
 })
 export class SharedNetworksTableComponent implements OnInit, OnDestroy {
+    private dhcpApi = inject(DHCPService)
+    private router = inject(Router)
+    private messageService = inject(MessageService)
+
     /**
      * PrimeNG table instance.
      */
@@ -137,12 +140,6 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
         ]
         this.toolbarButtons = [...buttons]
     }
-
-    constructor(
-        private dhcpApi: DHCPService,
-        private router: Router,
-        private messageService: MessageService
-    ) {}
 
     /**
      * Loads shared networks from the database into the component.

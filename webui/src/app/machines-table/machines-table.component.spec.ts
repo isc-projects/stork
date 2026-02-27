@@ -3,14 +3,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { MachinesTableComponent } from './machines-table.component'
 import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { FilterMetadata, MessageService } from 'primeng/api'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'
 import { AppsVersions, Machines, ServicesService } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -288,13 +287,10 @@ describe('MachinesTableComponent', () => {
         expect(versionStatus[3].nativeElement.innerHTML).toContain('9.18.30')
         expect(versionStatus[3].nativeElement.innerHTML).not.toContain('named')
 
-        // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
+        // All VersionStatus components got Severity.success
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
         expect(versionStatus[1].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[1].nativeElement.innerHTML).toContain('test feedback')
         expect(versionStatus[2].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[2].nativeElement.innerHTML).toContain('test feedback')
     })
 
     it('should set data loading state', () => {

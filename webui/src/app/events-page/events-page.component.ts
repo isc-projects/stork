@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { Daemon } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -15,12 +15,12 @@ import { EventsPanelComponent } from '../events-panel/events-panel.component'
     imports: [BreadcrumbsComponent, EventsPanelComponent],
 })
 export class EventsPageComponent implements OnInit {
+    private route = inject(ActivatedRoute)
+
     machineId: number = null
     daemonName: Daemon.NameEnum = null
     userId: number = null
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Events' }]
-
-    constructor(private route: ActivatedRoute) {}
 
     ngOnInit(): void {
         const machineId = this.route.snapshot.queryParams.machineId

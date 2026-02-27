@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { Host, Lease, LeasesSearchErredDaemon, LocalHost } from '../backend'
@@ -95,6 +95,25 @@ interface LeaseInfo {
 })
 export class HostTabComponent {
     /**
+     * Service used to communicate with the server over REST API.
+     * @private
+     */
+    private dhcpApi = inject(DHCPService)
+
+    /**
+     * PrimeNG confirmation service
+     * @private
+     */
+    private confirmService = inject(ConfirmationService)
+
+    /**
+     * Service displaying error messages upon a communication
+     * error with the server.
+     * @private
+     */
+    private msgService = inject(MessageService)
+
+    /**
      * An event emitter notifying a parent that user has clicked the
      * Edit button to modify the host reservation.
      */
@@ -190,20 +209,6 @@ export class HostTabComponent {
      * This value is set by appHasAccess EventEmitter of the ManagedAccessDirective used in the HTML template of this component.
      */
     canGetLeases: boolean = false
-
-    /**
-     * Component constructor.
-     *
-     * @param msgService service displaying error messages upon a communication
-     *                   error with the server.
-     * @param confirmService PrimeNG confirmation service
-     * @param dhcpApi service used to communicate with the server over REST API.
-     */
-    constructor(
-        private dhcpApi: DHCPService,
-        private confirmService: ConfirmationService,
-        private msgService: MessageService
-    ) {}
 
     /**
      * Returns information about currently selected host.

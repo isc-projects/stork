@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { ServicesService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
@@ -41,6 +41,18 @@ import { LogTail } from '../backend'
     ],
 })
 export class LogViewPageComponent implements OnInit {
+    /**
+     * Angular service used to extract parameters from current route.
+     * @private
+     */
+    private route = inject(ActivatedRoute)
+
+    /**
+     * Services API used to fetch the tail of the log file from backend.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
     maxLengthChunk = 4000
     maxLength = this.maxLengthChunk
 
@@ -55,17 +67,6 @@ export class LogViewPageComponent implements OnInit {
      */
     loaded = false
     loadingError = null
-
-    /**
-     * Constructor
-     *
-     * @param route object used to get the requested log id
-     * @param servicesApi object used in communication with the server
-     */
-    constructor(
-        private route: ActivatedRoute,
-        private servicesApi: ServicesService
-    ) {}
 
     /**
      * Sends initial request for log tail

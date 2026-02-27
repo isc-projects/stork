@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core'
+import { Component, Input, inject } from '@angular/core'
 import { ServicesService } from '../backend'
 import { NgIf } from '@angular/common'
 import { Button } from 'primeng/button'
@@ -13,7 +13,7 @@ import { Button } from 'primeng/button'
     imports: [NgIf, Button],
 })
 export class AccessPointKeyComponent {
-    constructor(private servicesApi: ServicesService) {}
+    private servicesApi = inject(ServicesService)
 
     /**
      * Daemon ID.

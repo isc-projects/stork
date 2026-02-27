@@ -4,7 +4,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AuthenticationMethod, AuthenticationMethods, Version } from '../backend'
 import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
-import { action } from '@storybook/addon-actions'
+import { action } from 'storybook/actions'
 import { provideRouter, withHashLocation } from '@angular/router'
 
 export default {

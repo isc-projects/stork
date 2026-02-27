@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
 import { hasAddressPools, hasDifferentLocalSubnetOptions, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
@@ -48,6 +48,26 @@ import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-
 })
 export class SubnetTabComponent implements OnInit {
     /**
+     * Service used to communicate with the server over REST API.
+     * @private
+     */
+    private dhcpApi = inject(DHCPService)
+
+    /**
+     * Confirmation service displaying the confirm dialog when
+     * attempting to delete the subnet.
+     * @private
+     */
+    private confirmService = inject(ConfirmationService)
+
+    /**
+     * Service displaying error messages upon a communication
+     * error with the server.
+     * @private
+     */
+    private msgService = inject(MessageService)
+
+    /**
      * Subnet data.
      */
     @Input() subnet: Subnet
@@ -84,21 +104,6 @@ export class SubnetTabComponent implements OnInit {
      * Disables the button deleting a subnet after clicking this button.
      */
     subnetDeleting = false
-
-    /**
-     * Component constructor.
-     *
-     * @param dhcpApi service used to communicate with the server over REST API.
-     * @param confirmService confirmation service displaying the confirm dialog when
-     * attempting to delete the subnet.
-     * @param msgService service displaying error messages upon a communication
-     *                   error with the server.
-     */
-    constructor(
-        private dhcpApi: DHCPService,
-        private confirmService: ConfirmationService,
-        private msgService: MessageService
-    ) {}
 
     /**
      * A component lifecycle hook invoked upon the component initialization.

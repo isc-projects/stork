@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, TemplateRef } from '@angular/core'
+import { Component, Input, OnInit, TemplateRef, inject } from '@angular/core'
 import { AuthService } from '../auth.service'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
@@ -18,6 +18,8 @@ import { JsonTreeComponent } from '../json-tree/json-tree.component'
     imports: [JsonTreeComponent],
 })
 export class JsonTreeRootComponent implements OnInit {
+    private auth = inject(AuthService)
+
     private _value: any = null
 
     /**
@@ -105,8 +107,6 @@ export class JsonTreeRootComponent implements OnInit {
      */
     @Input()
     customValueTemplates: { [key: string]: TemplateRef<{ key: string; value: string }> } = {}
-
-    constructor(private auth: AuthService) {}
 
     ngOnInit(): void {
         // Check if user can show the secrets

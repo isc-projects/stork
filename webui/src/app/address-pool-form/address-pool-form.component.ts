@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { AddressPoolForm, KeaPoolParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
@@ -42,6 +42,12 @@ import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-
 })
 export class AddressPoolFormComponent implements OnInit {
     /**
+     * A service providing form conversion functions.
+     * @private
+     */
+    private subnetSetFormService = inject(SubnetSetFormService)
+
+    /**
      * Subnet prefix.
      */
     @Input() subnet: string
@@ -69,13 +75,6 @@ export class AddressPoolFormComponent implements OnInit {
         poolEnd: uuidv4(),
         selectedDaemons: uuidv4(),
     }
-
-    /**
-     * Constructor.
-     *
-     * @param subnetSetFormService a service providing form conversion functions.
-     */
-    constructor(private subnetSetFormService: SubnetSetFormService) {}
 
     /**
      * A component lifecycle hook invoked when the component is initialized.

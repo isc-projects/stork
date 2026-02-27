@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, Output, ViewChild, inject } from '@angular/core'
 import { DHCPService, MigrationStatus } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { ConfirmationService, MessageService } from 'primeng/api'
@@ -40,6 +40,10 @@ import { DurationPipe } from '../pipes/duration.pipe'
     ],
 })
 export class ConfigMigrationTableComponent {
+    private dhcpApi = inject(DHCPService)
+    private messageService = inject(MessageService)
+    private confirmationService = inject(ConfirmationService)
+
     /**
      * Event emitted when the user wants to clear finished migrations.
      */
@@ -70,12 +74,6 @@ export class ConfigMigrationTableComponent {
      * Total number of records in the table.
      */
     totalRecords: number = 0
-
-    constructor(
-        private dhcpApi: DHCPService,
-        private messageService: MessageService,
-        private confirmationService: ConfirmationService
-    ) {}
 
     /**
      * Loads configuration migrations from the database into the component.

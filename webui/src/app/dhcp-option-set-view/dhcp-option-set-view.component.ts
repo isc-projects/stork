@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input, OnInit, inject } from '@angular/core'
 import { TreeNode, PrimeTemplate } from 'primeng/api'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { DhcpOptionsService } from '../dhcp-options.service'
@@ -54,6 +54,8 @@ export interface OptionFieldNode {
     imports: [Tree, PrimeTemplate, NgIf, Tag, HelpTipComponent, Tooltip, Divider, Checkbox, FormsModule],
 })
 export class DhcpOptionSetViewComponent implements OnInit {
+    optionsService = inject(DhcpOptionsService)
+
     /**
      * An input parameter holding an array of DHCP options associated with
      * a particular daemon and a host, subnet etc.
@@ -110,11 +112,6 @@ export class DhcpOptionSetViewComponent implements OnInit {
     currentLevelOnlyMode: boolean = false
 
     /**
-     * Constructor.
-     */
-    constructor(public optionsService: DhcpOptionsService) {}
-
-    /**
      * A component lifecycle hook executed when the component is initialized.
      *
      * It converts input DHCP options into the nodes tree that can be displayed.
@@ -143,7 +140,8 @@ export class DhcpOptionSetViewComponent implements OnInit {
                     this.combinedOptionNodes.push(treeOptionNode)
                 }
         }
-        this.displayedOptionNodes = this.combinedOptionNodes
+        // Copy combinedOptionNodes to ensure change detection works properly.
+        this.displayedOptionNodes = [...this.combinedOptionNodes]
     }
 
     /**

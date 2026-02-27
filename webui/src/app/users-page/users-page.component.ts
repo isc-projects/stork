@@ -1,6 +1,6 @@
-import { Component, effect, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, viewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
+import { ConfirmationService, FilterMetadata, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 
 import { AuthService, isInternalUser } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
@@ -10,7 +10,6 @@ import { getErrorMessage } from '../utils'
 import { Group, User } from '../backend'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Table, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
 import { distinctUntilChanged, map } from 'rxjs/operators'
@@ -60,6 +59,13 @@ import { SplitButton } from 'primeng/splitbutton'
     ],
 })
 export class UsersPageComponent implements OnInit, OnDestroy {
+    private usersApi = inject(UsersService)
+    private msgSrv = inject(MessageService)
+    private serverData = inject(ServerDataService)
+    auth = inject(AuthService)
+    private confirmService = inject(ConfirmationService)
+    private router = inject(Router)
+
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]
 
     groups: Group[] = []
@@ -116,15 +122,6 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         ]
         this.toolbarButtons = [...buttons]
     }
-
-    constructor(
-        private usersApi: UsersService,
-        private msgSrv: MessageService,
-        private serverData: ServerDataService,
-        public auth: AuthService,
-        private confirmService: ConfirmationService,
-        private router: Router
-    ) {}
 
     ngOnInit() {
         this._restoreTableRowsPerPage()

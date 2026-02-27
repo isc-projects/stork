@@ -1,9 +1,9 @@
-import { Component, computed, effect, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, effect, Input, OnDestroy, OnInit, signal, ViewChild, inject } from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { DHCPService, Subnet, SubnetSortField } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
-import { MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
+import { FilterMetadata, MessageService, TableState, PrimeTemplate, MenuItem } from 'primeng/api'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
 import {
@@ -14,7 +14,6 @@ import {
     extractUniqueSubnetPools,
 } from '../subnets'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { NgIf, NgFor, DecimalPipe } from '@angular/common'
@@ -69,6 +68,10 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
     ],
 })
 export class SubnetsTableComponent implements OnInit, OnDestroy {
+    private dhcpApi = inject(DHCPService)
+    private messageService = inject(MessageService)
+    private router = inject(Router)
+
     /**
      * PrimeNG table instance.
      */
@@ -158,12 +161,6 @@ export class SubnetsTableComponent implements OnInit, OnDestroy {
         ]
         this.toolbarButtons = [...buttons]
     }
-
-    constructor(
-        private dhcpApi: DHCPService,
-        private messageService: MessageService,
-        private router: Router
-    ) {}
 
     /**
      * Loads subnets from the database into the component.

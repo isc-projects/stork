@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, computed, input } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, computed, input, inject } from '@angular/core'
 import {
     DaemonName,
     getDaemonAppType,
@@ -32,6 +32,18 @@ import { Message } from 'primeng/message'
     imports: [NgIf, RouterLink, Tooltip, Message],
 })
 export class VersionStatusComponent implements OnInit, OnDestroy {
+    /**
+     * Service used to do software version checking; it returns the feedback about version used.
+     * @private
+     */
+    private versionService = inject(VersionService)
+
+    /**
+     * Message service used to display errors.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
     /**
      * Daemon for which the version check is done.
      * The daemon object should contain its name ('dhcp4', 'dhcp6', 'd2', 'ca', 'netconf' (Kea daemons),
@@ -114,16 +126,6 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * @private
      */
     private _subscriptions = new Subscription()
-
-    /**
-     * Class constructor.
-     * @param versionService version service used to do software version checking; it returns the feedback about version used
-     * @param messageService message service used to display errors
-     */
-    constructor(
-        private versionService: VersionService,
-        private messageService: MessageService
-    ) {}
 
     /**
      * Component lifecycle hook called upon initialization. It sets the component's look and the feedback

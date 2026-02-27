@@ -252,7 +252,7 @@ describe('utils', () => {
         const prefix = 'foo'
         const excludedPrefix = 'fe80:42::/96'
         expect(() => formatShortExcludedPrefix(prefix, excludedPrefix)).toThrowError(
-            'Given IPv6 is not confirm to a valid IPv6 address'
+            'Error: Given IPv6 is not confirm to a valid IPv6 address'
         )
     })
 
@@ -260,7 +260,7 @@ describe('utils', () => {
         const prefix = 'fe80::/64'
         const excludedPrefix = 'foo'
         expect(() => formatShortExcludedPrefix(prefix, excludedPrefix)).toThrowError(
-            'Given IPv6 is not confirm to a valid IPv6 address'
+            'Error: Given IPv6 is not confirm to a valid IPv6 address'
         )
     })
 

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { SharedNetworkWithUniquePools, hasDifferentLocalSharedNetworkOptions } from '../subnets'
 import {
     CascadedParametersBoardComponent,
@@ -44,6 +44,24 @@ import { getErrorMessage } from '../utils'
 })
 export class SharedNetworkTabComponent implements OnInit {
     /**
+     * Service used to communicate with the server over REST API.
+     * @private
+     */
+    private dhcpApi = inject(DHCPService)
+
+    /**
+     * Confirmation service displaying the confirm dialog when attempting to delete the shared network.
+     * @private
+     */
+    private confirmService = inject(ConfirmationService)
+
+    /**
+     * Service displaying error messages upon a communication error with the server.
+     * @private
+     */
+    private msgService = inject(MessageService)
+
+    /**
      * Shared network data.
      */
     @Input() sharedNetwork: SharedNetworkWithUniquePools
@@ -79,21 +97,6 @@ export class SharedNetworkTabComponent implements OnInit {
      * Disables the button deleting a shared network after clicking this button.
      */
     sharedNetworkDeleting = false
-
-    /**
-     * Component constructor.
-     *
-     * @param dhcpApi service used to communicate with the server over REST API.
-     * @param confirmService confirmation service displaying the confirm dialog when
-     *        attempting to delete the shared network.
-     * @param msgService service displaying error messages upon a communication
-     *        error with the server.
-     */
-    constructor(
-        private dhcpApi: DHCPService,
-        private confirmService: ConfirmationService,
-        private msgService: MessageService
-    ) {}
 
     /**
      * A component lifecycle hook invoked upon the component initialization.

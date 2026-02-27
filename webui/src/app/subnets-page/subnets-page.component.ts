@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, viewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, viewChild, inject } from '@angular/core'
 
 import { DHCPService } from '../backend'
 import { getErrorMessage } from '../utils'
@@ -25,6 +25,10 @@ import { SubnetFormComponent } from '../subnet-form/subnet-form.component'
     imports: [BreadcrumbsComponent, TabViewComponent, SubnetsTableComponent, SubnetTabComponent, SubnetFormComponent],
 })
 export class SubnetsPageComponent implements OnInit, OnDestroy {
+    private dhcpApi = inject(DHCPService)
+    private settingSvc = inject(SettingService)
+    private messageService = inject(MessageService)
+
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Subnets' }]
 
@@ -72,12 +76,6 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * Function used to provide new SubnetFormState instance.
      */
     subnetFormProvider: () => SubnetFormState = () => new SubnetFormState()
-
-    constructor(
-        private dhcpApi: DHCPService,
-        private settingSvc: SettingService,
-        private messageService: MessageService
-    ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()

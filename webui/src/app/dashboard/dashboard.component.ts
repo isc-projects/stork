@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
@@ -110,6 +110,14 @@ type DhcpOverviewParsed = ModifyDeep<
     ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+    private serverData = inject(ServerDataService)
+    private dhcpApi = inject(DHCPService)
+    private msgSrv = inject(MessageService)
+    private settingSvc = inject(SettingService)
+    private servicesApi = inject(ServicesService)
+    private cd = inject(ChangeDetectorRef)
+    private dnsApi = inject(DNSService)
+
     /**
      * All subscriptions used by this component. It is used to unsubscribe
      * from all of them when the component is destroyed.
@@ -210,16 +218,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         'unavailable',
         '',
     ]
-
-    constructor(
-        private serverData: ServerDataService,
-        private dhcpApi: DHCPService,
-        private msgSrv: MessageService,
-        private settingSvc: SettingService,
-        private servicesApi: ServicesService,
-        private cd: ChangeDetectorRef,
-        private dnsApi: DNSService
-    ) {}
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()

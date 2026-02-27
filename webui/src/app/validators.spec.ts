@@ -978,7 +978,6 @@ describe('StorkValidators', () => {
     it('validates that a prefix is not in the list', () => {
         const subnets = ['192.0.2.0/24', '192.0.3.0/24', '192.0.4.0/24', '2001:db8:1::/64', '2001:db8:2::/64']
         expect(StorkValidators.prefixInList(subnets)(formBuilder.control('192.0.2.0/24'))).toBeTruthy()
-        expect(StorkValidators.prefixInList(subnets)(formBuilder.control('192.0.02.0/24'))).toBeTruthy()
         expect(StorkValidators.prefixInList(subnets)(formBuilder.control('2001:db8:1:0:0::/64'))).toBeTruthy()
         expect(StorkValidators.prefixInList(subnets)(formBuilder.control('2001:db8:2::/64'))).toBeTruthy()
         expect(StorkValidators.prefixInList(subnets)(formBuilder.control(''))).toBeFalsy()

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import {
     DHCPService,
     UpdateKeaDaemonsGlobalParametersBeginResponse,
@@ -47,6 +47,21 @@ import { Message } from 'primeng/message'
 })
 export class KeaGlobalConfigurationFormComponent implements OnInit {
     /**
+     * A service providing an API to the server.
+     */
+    dhcpApi = inject(DHCPService)
+
+    /**
+     * A service for displaying error messages to the user.
+     */
+    messageService = inject(MessageService)
+
+    /**
+     * A service for converting configuration data.
+     */
+    subnetSetFormService = inject(SubnetSetFormService)
+
+    /**
      * Daemon ID for which configuration should be updated.
      */
     @Input() daemonId: number = 0
@@ -82,19 +97,6 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
      * Form group holding Kea configuration data.
      */
     formGroup: FormGroup<KeaGlobalConfigurationForm>
-
-    /**
-     * Constructor.
-     *
-     * @param dhcpApi a service providing an API to the server.
-     * @param messageService a service for displaying error messages to the user.
-     * @param subnetSetFormService a service for converting configuration data.
-     */
-    constructor(
-        public dhcpApi: DHCPService,
-        public messageService: MessageService,
-        public subnetSetFormService: SubnetSetFormService
-    ) {}
 
     /**
      * A component lifecycle hook invoked when the component is initialized.

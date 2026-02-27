@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { MenuItem, MessageService } from 'primeng/api'
@@ -29,6 +29,24 @@ import { ProgressSpinner } from 'primeng/progressspinner'
     ],
 })
 export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
+    /**
+     * An activated route used to fetch the current parameters.
+     * @private
+     */
+    private route = inject(ActivatedRoute)
+
+    /**
+     * A message service used to display error messages.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
+     * A service used to communicate with the Kea servers.
+     * @private
+     */
+    private servicesService = inject(ServicesService)
+
     @ViewChild(KeaGlobalConfigurationFormComponent) keaGlobalConfigurationForm: KeaGlobalConfigurationFormComponent
 
     /**
@@ -98,19 +116,6 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
         'subnet6',
         'sharedNetworks',
     ]
-
-    /**
-     * Constructor.
-     *
-     * @param route an activated route used to fetch the current parameters.
-     * @param messageService a message service used to display error messages.
-     * @param servicesService a service used to communicate with the Kea servers.
-     */
-    constructor(
-        private route: ActivatedRoute,
-        private messageService: MessageService,
-        private servicesService: ServicesService
-    ) {}
 
     /**
      * Component lifecycle hook invoked during the component initialization.

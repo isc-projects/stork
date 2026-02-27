@@ -3,7 +3,7 @@ import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ServicesService } from '../backend'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
-import { action } from '@storybook/addon-actions'
+import { action } from 'storybook/actions'
 import { toastDecorator } from '../utils-stories'
 
 const mockData: ConfigCheckers = {

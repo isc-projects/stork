@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core'
 import { MessageService } from 'primeng/api'
 import { of, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -22,6 +22,18 @@ import { ConfigCheckerPreferencePickerComponent } from '../config-checker-prefer
     imports: [ConfigCheckerPreferencePickerComponent],
 })
 export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestroy {
+    /**
+     * Used to exchange data with API.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
+    /**
+     * Used to generate success and error messages.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
     /**
      * List of subscriptions created by the component.
      */
@@ -53,16 +65,6 @@ export class ConfigCheckerPreferenceUpdaterComponent implements OnInit, OnDestro
      * that are emitted when the picker's Cancel button is clicked.
      */
     @Output() cancelled = new EventEmitter<void>()
-
-    /**
-     * Constructs the component.
-     * @param servicesApi Used to exchange data with API.
-     * @param messageService Used to generate success and error messages
-     */
-    constructor(
-        private servicesApi: ServicesService,
-        private messageService: MessageService
-    ) {}
 
     /**
      * Creates two subscriptions.

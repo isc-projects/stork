@@ -1,12 +1,5 @@
-import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core'
-import {
-    UntypedFormArray,
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    Validators,
-    FormsModule,
-    ReactiveFormsModule,
-} from '@angular/forms'
+import { Component, EventEmitter, forwardRef, Input, OnInit, Output, inject } from '@angular/core'
+import { UntypedFormArray, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { MenuItem } from 'primeng/api'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
@@ -83,6 +76,19 @@ type AddFieldFn = () => void
     ],
 })
 export class DhcpOptionFormComponent implements OnInit {
+    /**
+     * A service providing functions to convert
+     * options from and to reactive forms.
+     * @private
+     */
+    private _optionSetFormService = inject(DhcpOptionSetFormService)
+
+    /**
+     * A service exposing a list of standard DHCP options
+     * to configure.
+     */
+    optionsService = inject(DhcpOptionsService)
+
     /**
      * Sets the options universe: DHCPv4 or DHCPv6.
      */
@@ -165,21 +171,6 @@ export class DhcpOptionFormComponent implements OnInit {
      * option.
      */
     optionDef: DhcpOptionDef
-
-    /**
-     * Constructor.
-     *
-     * @param _formBuilder a form builder instance used in this component.
-     * @param _optionSetFormService a service providing functions to convert
-     * options from and to reactive forms.
-     * @param optionsService a service exposing a list of standard DHCP options
-     * to configure.
-     */
-    constructor(
-        private _formBuilder: UntypedFormBuilder,
-        private _optionSetFormService: DhcpOptionSetFormService,
-        public optionsService: DhcpOptionsService
-    ) {}
 
     /**
      * Returns a function to be invoked when selected option field type is

@@ -7,7 +7,7 @@ import { EntitiesResponse, mockedFilterByText, toastDecorator } from '../utils-s
 import { Severity, VersionService } from '../version.service'
 import { of } from 'rxjs'
 import { AppsVersions, Daemon, Machine } from '../backend'
-import { userEvent, within, expect, waitFor } from '@storybook/test'
+import { userEvent, within, expect, waitFor } from 'storybook/test'
 import { deepCopy } from '../utils'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 

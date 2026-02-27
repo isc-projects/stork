@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { BehaviorSubject, defer, Observable, of, tap, timeout, timer } from 'rxjs'
 import { catchError, map, mergeMap, retry, share, shareReplay } from 'rxjs/operators'
@@ -84,6 +84,10 @@ export type AccessType = 'create' | 'read' | 'update' | 'delete'
     providedIn: 'root',
 })
 export class AuthService {
+    private api = inject(UsersService)
+    private router = inject(Router)
+    private msgSrv = inject(MessageService)
+
     /**
      * RxJS behavior subject holding currently authenticated user. In case no user is authenticated, it holds null.
      * @private
@@ -154,11 +158,9 @@ export class AuthService {
         )
     }
 
-    constructor(
-        private api: UsersService,
-        private router: Router,
-        private msgSrv: MessageService
-    ) {
+    constructor() {
+        const api = this.api
+
         this._currentUserSubject = new BehaviorSubject<User>(null)
         this.currentUser$ = this._currentUserSubject.asObservable()
         this._authenticationMethods = api.getAuthenticationMethods().pipe(

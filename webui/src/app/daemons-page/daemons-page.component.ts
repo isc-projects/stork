@@ -1,7 +1,7 @@
-import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild, inject } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
+import { FilterMetadata, MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate } from 'primeng/api'
 
 import {
     daemonStatusErred,
@@ -13,7 +13,6 @@ import { AnyDaemon, DaemonSortField, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Menu } from 'primeng/menu'
 import { distinctUntilChanged, finalize, last, map } from 'rxjs/operators'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
@@ -75,6 +74,12 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
     ],
 })
 export class DaemonsPageComponent implements OnInit, OnDestroy {
+    private servicesApi = inject(ServicesService)
+    private msgSrv = inject(MessageService)
+    private confirmService = inject(ConfirmationService)
+    private router = inject(Router)
+    private authService = inject(AuthService)
+
     /**
      * PrimeNG Table with daemons list.
      */
@@ -109,14 +114,6 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
             )
         )
     }
-
-    constructor(
-        private servicesApi: ServicesService,
-        private msgSrv: MessageService,
-        private confirmService: ConfirmationService,
-        private router: Router,
-        private authService: AuthService
-    ) {}
 
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed

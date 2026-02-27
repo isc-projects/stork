@@ -1,4 +1,4 @@
-import { Component, computed, Input, model, OnInit, input, effect, output } from '@angular/core'
+import { Component, computed, Input, model, OnInit, input, effect, output, inject } from '@angular/core'
 import { Button } from 'primeng/button'
 import { Checkbox } from 'primeng/checkbox'
 import { InputText } from 'primeng/inputtext'
@@ -34,6 +34,10 @@ import { isInternalUser } from '../auth.service'
     styleUrl: './user-form.component.sass',
 })
 export class UserFormComponent implements OnInit {
+    private _formBuilder = inject(UntypedFormBuilder)
+    private usersApi = inject(UsersService)
+    private messageService = inject(MessageService)
+
     @Input() formState: UserFormState = null
 
     user = model<User>()
@@ -69,11 +73,7 @@ export class UserFormComponent implements OnInit {
         return [...initUserGroups]
     })
 
-    constructor(
-        private _formBuilder: UntypedFormBuilder,
-        private usersApi: UsersService,
-        private messageService: MessageService
-    ) {
+    constructor() {
         effect(() => {
             this.formState.user = this.user()
         })

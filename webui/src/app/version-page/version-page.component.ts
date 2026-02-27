@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, inject } from '@angular/core'
 import { DaemonName, isIscDaemon, isKeaDaemon, Severity, UpdateNotification, VersionService } from '../version.service'
 import { AppsVersions, ServicesService, VersionDetails, SimpleMachine, SimpleMachines, SimpleDaemon } from '../backend'
 import { deepCopy, getErrorMessage, getIconBySeverity } from '../utils'
@@ -43,6 +43,24 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
     ],
 })
 export class VersionPageComponent implements OnInit, OnDestroy {
+    /**
+     * Service used to retrieve current software versions data.
+     * @private
+     */
+    private versionService = inject(VersionService)
+
+    /**
+     * Api used to retrieve authorized machines data.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
+    /**
+     * Service used to display error messages.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
      * at once onDestroy.
@@ -152,18 +170,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * An array of Machines in the "summary of ISC software versions detected by Stork" table.
      */
     machines: SimpleMachine[]
-
-    /**
-     * Class constructor.
-     * @param versionService used to retrieve current software versions data
-     * @param servicesApi used to retrieve authorized machines data
-     * @param messageService used to display error messages
-     */
-    constructor(
-        private versionService: VersionService,
-        private servicesApi: ServicesService,
-        private messageService: MessageService
-    ) {}
 
     /**
      * Component lifecycle hook called to perform clean-up when destroying the component.

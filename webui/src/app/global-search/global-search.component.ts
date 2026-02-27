@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnInit, ViewChild, inject } from '@angular/core'
 
 import { Popover } from 'primeng/popover'
 
@@ -23,12 +23,12 @@ const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'daemons'
     imports: [FormsModule, InputText, Popover, NgIf, NgFor, RouterLink, EntityLinkComponent],
 })
 export class GlobalSearchComponent implements OnInit {
+    protected searchApi = inject(SearchService)
+
     @ViewChild('searchResultsBox') searchResultsBox: Popover
 
     searchText: string
     searchResults: Required<SearchResult>
-
-    constructor(protected searchApi: SearchService) {}
 
     ngOnInit(): void {
         this.resetResults()

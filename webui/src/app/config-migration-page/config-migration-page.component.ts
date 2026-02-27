@@ -1,4 +1,4 @@
-import { Component, signal, viewChild } from '@angular/core'
+import { Component, signal, viewChild, inject } from '@angular/core'
 import { lastValueFrom } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { DHCPService, MigrationStatus } from '../backend'
@@ -23,6 +23,18 @@ import { ConfigMigrationTabComponent } from '../config-migration-tab/config-migr
     imports: [BreadcrumbsComponent, NgIf, TabViewComponent, ConfigMigrationTableComponent, ConfigMigrationTabComponent],
 })
 export class ConfigMigrationPageComponent {
+    /**
+     * Server API used to gather hosts information.
+     * @private
+     */
+    private dhcpApi = inject(DHCPService)
+
+    /**
+     * Service used to display error messages to a user.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
     /**
      * Configures the breadcrumbs for the component.
      */
@@ -54,17 +66,6 @@ export class ConfigMigrationPageComponent {
      * Keeps track of migration ID that is currently displayed in the tab.
      */
     activeTabMigrationID = signal<number>(undefined)
-
-    /**
-     * Constructor.
-     *
-     * @param dhcpApi server API used to gather hosts information.
-     * @param messageService message service used to display error messages to a user.
-     */
-    constructor(
-        private dhcpApi: DHCPService,
-        private messageService: MessageService
-    ) {}
 
     /**
      * Function called when requested to cancel a migration.

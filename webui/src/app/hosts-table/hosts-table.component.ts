@@ -1,13 +1,12 @@
-import { Component, effect, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, ViewChild, inject } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
-import { ConfirmationService, MenuItem, MessageService, PrimeTemplate, TableState } from 'primeng/api'
+import { ConfirmationService, FilterMetadata, MenuItem, MessageService, PrimeTemplate, TableState } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { debounceTime, last, lastValueFrom, Subject, Subscription } from 'rxjs'
-import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { ConfirmDialog } from 'primeng/confirmdialog'
@@ -70,6 +69,11 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
     ],
 })
 export class HostsTableComponent implements OnInit, OnDestroy {
+    private router = inject(Router)
+    private dhcpApi = inject(DHCPService)
+    private messageService = inject(MessageService)
+    private confirmationService = inject(ConfirmationService)
+
     /**
      * PrimeNG table instance.
      */
@@ -96,13 +100,6 @@ export class HostsTableComponent implements OnInit, OnDestroy {
      * @private
      */
     private _subscriptions: Subscription = new Subscription()
-
-    constructor(
-        private router: Router,
-        private dhcpApi: DHCPService,
-        private messageService: MessageService,
-        private confirmationService: ConfirmationService
-    ) {}
 
     /**
      * Loads hosts from the database into the component.
