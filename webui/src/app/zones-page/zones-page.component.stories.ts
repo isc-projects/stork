@@ -1034,6 +1034,8 @@ export const TestZonesFiltering: Story = {
         // Arrange
         const canvas = within(canvasElement)
         const body = within(canvasElement.parentElement)
+        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        const user = userEvent.setup({ delay: 50 })
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         const table = await canvas.findByRole('table')
         let elementID = canvas.getByText('Daemon Name').getAttribute('for')
@@ -1043,10 +1045,10 @@ export const TestZonesFiltering: Story = {
 
         // Act
         // Filter only BIND9 zones.
-        await userEvent.click(clearFiltersBtn)
-        await userEvent.click(selectSpan)
+        await user.click(clearFiltersBtn)
+        await user.click(selectSpan)
         const bindOption = await canvas.findByRole('option', { name: 'named' })
-        await userEvent.click(bindOption)
+        await user.click(bindOption)
 
         // Assert
         // 3 BIND9 zones are expected.
@@ -1057,7 +1059,7 @@ export const TestZonesFiltering: Story = {
 
         // Toggle builtin zones.
         const toggleBuiltinZones = await canvas.findByRole('button', { name: 'Toggle builtin zones' })
-        await userEvent.click(toggleBuiltinZones)
+        await user.click(toggleBuiltinZones)
         // 3 additional (6 in total) BIND9 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(7)) // All rows in tbody + one row in the thead.
         await expect(within(table).getByText(builtinZones[0].name)).toBeInTheDocument()
@@ -1065,10 +1067,10 @@ export const TestZonesFiltering: Story = {
         await expect(within(table).getByText(builtinZones[2].name)).toBeInTheDocument()
 
         // Filter only PowerDNS zones.
-        await userEvent.click(clearFiltersBtn)
-        await userEvent.click(selectSpan)
+        await user.click(clearFiltersBtn)
+        await user.click(selectSpan)
         const pdnsOption = await canvas.findByRole('option', { name: 'pdns_server' })
-        await userEvent.click(pdnsOption)
+        await user.click(pdnsOption)
 
         // 4 PowerDNS zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(5)) // All rows in tbody + one row in the thead.
@@ -1078,88 +1080,88 @@ export const TestZonesFiltering: Story = {
         await expect(within(table).getByText(primaryZones[3].name)).toBeInTheDocument()
 
         // Check filtering by class.
-        await userEvent.click(clearFiltersBtn)
-        await userEvent.click(toggleBuiltinZones)
+        await user.click(clearFiltersBtn)
+        await user.click(toggleBuiltinZones)
         elementID = canvas.getByText('Zone Class').getAttribute('for')
         selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
         // Filter by IN class.
-        await userEvent.click(selectSpan)
+        await user.click(selectSpan)
         const inOption = await canvas.findByRole('option', { name: 'IN' })
-        await userEvent.click(inOption)
+        await user.click(inOption)
 
         // 9 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(10)) // All rows in tbody + one row in the thead.
 
         // Filter by CH class.
-        await userEvent.click(selectSpan)
+        await user.click(selectSpan)
         const chOption = await canvas.findByRole('option', { name: 'CH' })
-        await userEvent.click(chOption)
+        await user.click(chOption)
 
         // 1 zone is expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
 
         // Check filtering by RPZ.
-        await userEvent.click(clearFiltersBtn)
-        await userEvent.click(toggleBuiltinZones)
+        await user.click(clearFiltersBtn)
+        await user.click(toggleBuiltinZones)
         elementID = canvas.getAllByText('RPZ')[0].getAttribute('for')
         selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
         // Filter by RPZ - include.
-        await userEvent.click(selectSpan)
+        await user.click(selectSpan)
         const includeOption = await canvas.findByRole('option', { name: 'include' })
-        await userEvent.click(includeOption)
+        await user.click(includeOption)
 
         // All 10 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(11)) // All rows in tbody + one row in the thead.
         await expect(within(table).queryAllByText('RPZ')).toHaveLength(2)
 
         // Filter by RPZ - exclude.
-        await userEvent.click(selectSpan)
+        await user.click(selectSpan)
         const excludeOption = await canvas.findByRole('option', { name: 'exclude' })
-        await userEvent.click(excludeOption)
+        await user.click(excludeOption)
 
         // 8 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(9)) // All rows in tbody + one row in the thead.
         await expect(within(table).queryAllByText('RPZ')).toHaveLength(0)
 
         // Filter by RPZ - only.
-        await userEvent.click(selectSpan)
+        await user.click(selectSpan)
         const onlyOption = await canvas.findByRole('option', { name: 'only' })
-        await userEvent.click(onlyOption)
+        await user.click(onlyOption)
 
         // 2 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(3)) // All rows in tbody + one row in the thead.
         await expect(within(table).queryAllByText('RPZ')).toHaveLength(2)
 
         // Check filtering by daemon.
-        await userEvent.click(clearFiltersBtn)
+        await user.click(clearFiltersBtn)
         elementID = canvas.getByText('Daemon').getAttribute('for')
         selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
-        await userEvent.click(selectSpan)
-        await userEvent.keyboard('pdns')
+        await user.click(selectSpan)
+        await user.keyboard('pdns')
 
         const daemon = await canvas.findByRole('option')
-        await userEvent.click(daemon)
+        await user.click(daemon)
 
         // 4 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(5)) // All rows in tbody + one row in the thead.
 
         // Check filtering by zone type.
-        await userEvent.click(clearFiltersBtn)
+        await user.click(clearFiltersBtn)
         elementID = canvas.getAllByText('Zone Type')[0].getAttribute('for')
         selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
         // Filter only builtin zones.
-        await userEvent.click(selectSpan)
-        await userEvent.keyboard('b')
+        await user.click(selectSpan)
+        await user.keyboard('b')
         let zoneTypeOption = await canvas.findByRole('option', { name: 'builtin' })
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
 
         // Only builtin zones rows are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(builtinZones.length + 1)) // All rows in tbody + one row in the thead.
@@ -1169,9 +1171,9 @@ export const TestZonesFiltering: Story = {
         await userEvent.unhover(toggleBuiltinZones)
 
         // Deselect builtin zones and select mirror type zones.
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
         zoneTypeOption = await canvas.findByRole('option', { name: 'mirror' })
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
 
         // Only one mirror zone is expected (the root zone).
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
@@ -1181,9 +1183,9 @@ export const TestZonesFiltering: Story = {
         await userEvent.unhover(toggleBuiltinZones)
 
         // Deselect mirror zones and select primary type zones.
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
         zoneTypeOption = await canvas.findByRole('option', { name: 'primary' })
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
 
         // Only primary zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(primaryZones.length + 1)) // All rows in tbody + one row in the thead.
@@ -1194,9 +1196,9 @@ export const TestZonesFiltering: Story = {
         await userEvent.unhover(toggleBuiltinZones)
 
         // Deselect primary zones and select secondary type zones.
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
         zoneTypeOption = await canvas.findByRole('option', { name: 'secondary' })
-        await userEvent.click(zoneTypeOption)
+        await user.click(zoneTypeOption)
 
         // Only one secondary zone is expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2)) // All rows in tbody + one row in the thead.
@@ -1207,7 +1209,7 @@ export const TestZonesFiltering: Story = {
         await userEvent.unhover(toggleBuiltinZones)
 
         // Toggle builtin zones.
-        await userEvent.click(toggleBuiltinZones)
+        await user.click(toggleBuiltinZones)
 
         // One secondary zone and all builtin zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2 + builtinZones.length)) // All rows in tbody + one row in the thead.
@@ -1217,7 +1219,7 @@ export const TestZonesFiltering: Story = {
         await expect(body.getByRole('tooltip', { name: 'Click to hide builtin zones' })).toBeInTheDocument()
         await userEvent.unhover(toggleBuiltinZones)
 
-        await userEvent.click(clearFiltersBtn)
+        await user.click(clearFiltersBtn)
     },
 }
 
