@@ -1,4 +1,4 @@
-import { Component, viewChild } from '@angular/core'
+import { Component, viewChild, inject } from '@angular/core'
 
 import { DHCPService } from '../backend'
 import { getErrorMessage } from '../utils'
@@ -29,6 +29,18 @@ import { SharedNetworkFormComponent } from '../shared-network-form/shared-networ
     ],
 })
 export class SharedNetworksPageComponent {
+    /**
+     * Message service.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
+     * A service for communication with the server.
+     * @private
+     */
+    private dhcpApi = inject(DHCPService)
+
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Shared Networks' }]
 
     /**
@@ -98,15 +110,4 @@ export class SharedNetworksPageComponent {
                 life: 10000,
             })
         })
-
-    /**
-     * Constructor.
-     *
-     * @param messageService message service.
-     * @param dhcpApi a service for communication with the server.
-     */
-    constructor(
-        private messageService: MessageService,
-        private dhcpApi: DHCPService
-    ) {}
 }

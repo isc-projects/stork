@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { DOCUMENT } from '@angular/common'
 import { BehaviorSubject } from 'rxjs'
 
@@ -11,6 +11,12 @@ import { BehaviorSubject } from 'rxjs'
     providedIn: 'root',
 })
 export class ThemeService {
+    /**
+     * Injected DOM document.
+     * @private
+     */
+    private document = inject<Document>(DOCUMENT)
+
     /**
      * Key used for storing user preference in browser's storage.
      * @private
@@ -27,12 +33,6 @@ export class ThemeService {
      * Observable which may be used to notify subscribers about changed dark/light mode.
      */
     isDark$ = new BehaviorSubject<boolean>(false)
-
-    /**
-     * Service constructor.
-     * @param document injected DOM document
-     */
-    constructor(@Inject(DOCUMENT) private document: Document) {}
 
     /**
      * Switches dark/light mode and color theme.

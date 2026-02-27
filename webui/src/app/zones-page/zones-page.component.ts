@@ -1,4 +1,14 @@
-import { ChangeDetectorRef, Component, effect, NgZone, OnDestroy, OnInit, signal, ViewChild } from '@angular/core'
+import {
+    ChangeDetectorRef,
+    Component,
+    effect,
+    NgZone,
+    OnDestroy,
+    OnInit,
+    signal,
+    ViewChild,
+    inject,
+} from '@angular/core'
 import { ConfirmationService, MenuItem, MessageService, TableState, PrimeTemplate, FilterMetadata } from 'primeng/api'
 import {
     DNSClass,
@@ -117,6 +127,48 @@ interface ExtendedLocalZone extends LocalZone {
     ],
 })
 export class ZonesPageComponent implements OnInit, OnDestroy {
+    /**
+     * Angular change detection required to manually trigger detectChanges in this component.
+     * @private
+     */
+    private cd = inject(ChangeDetectorRef)
+
+    /**
+     * Service providing DNS REST APIs.
+     * @private
+     */
+    private dnsService = inject(DNSService)
+
+    /**
+     * PrimeNG message service used to display feedback messages in UI.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
+     * PrimeNG confirmation service used to display confirmation dialog.
+     * @private
+     */
+    private confirmationService = inject(ConfirmationService)
+
+    /**
+     * Angular router service used to navigate when zones table filtering changes.
+     * @private
+     */
+    private router = inject(Router)
+
+    /**
+     * Angular zone to call Router navigation inside the zone.
+     * @private
+     */
+    private zone = inject(NgZone)
+
+    /**
+     * AuthService used to check user privileges.
+     * @private
+     */
+    private authService = inject(AuthService)
+
     /**
      * Configures the breadcrumbs for the component.
      */
@@ -336,26 +388,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Flag indicating whether to force populate zone inventory when fetching zones.
      */
     forcePopulateZoneInventory: boolean = false
-
-    /**
-     * Class constructor.
-     * @param cd Angular change detection required to manually trigger detectChanges in this component
-     * @param dnsService service providing DNS REST APIs
-     * @param messageService PrimeNG message service used to display feedback messages in UI
-     * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
-     * @param router Angular router service used to navigate when zones table filtering changes
-     * @param zone Angular zone to call Router navigation inside the zone
-     * @param authService AuthService used to check user privileges
-     */
-    constructor(
-        private cd: ChangeDetectorRef,
-        private dnsService: DNSService,
-        private messageService: MessageService,
-        private confirmationService: ConfirmationService,
-        private router: Router,
-        private zone: NgZone,
-        private authService: AuthService
-    ) {}
 
     /**
      * Zone types values used for the UI filter dropdown options.

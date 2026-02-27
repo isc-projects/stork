@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
 import { AppsVersions, Daemon, GeneralService, SimpleMachine } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
@@ -129,6 +129,12 @@ type ReleaseType = 'latestSecure' | 'currentStable' | 'latestDev'
 })
 export class VersionService {
     /**
+     * Service used to query the backend for current software versions data.
+     * @private
+     */
+    private generalService = inject(GeneralService)
+
+    /**
      * A map for caching returning feedback for queried app and version.
      * The key of the map is the concatenated version and app, e.g. "2.6.1kea" or "1.18.0stork".
      * @private
@@ -190,9 +196,8 @@ export class VersionService {
 
     /**
      * Service constructor.
-     * @param generalService service used to query the backend for current software versions data
      */
-    constructor(private generalService: GeneralService) {
+    constructor() {
         this._checkedVersionCache = new Map()
     }
 

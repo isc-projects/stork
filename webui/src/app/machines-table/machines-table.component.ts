@@ -1,4 +1,15 @@
-import { Component, effect, EventEmitter, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
+import {
+    Component,
+    effect,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    signal,
+    ViewChild,
+    inject,
+} from '@angular/core'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Machine, MachineSortField, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule, TableSelectAllChangeEvent } from 'primeng/table'
@@ -60,6 +71,24 @@ import { SplitButton } from 'primeng/splitbutton'
     ],
 })
 export class MachinesTableComponent implements OnInit, OnDestroy {
+    /**
+     * Services API used to fetch machines from backend.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
+    /**
+     * Message service used to display feedback messages in UI.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
+     * Angular router used to trigger navigations.
+     * @private
+     */
+    private router = inject(Router)
+
     /**
      * PrimeNG table instance.
      */
@@ -181,18 +210,6 @@ export class MachinesTableComponent implements OnInit, OnDestroy {
         ]
         this.toolbarButtons = [...buttons]
     }
-
-    /**
-     * Component constructor.
-     * @param servicesApi Services API used to fetch machines from backend.
-     * @param messageService Message service used to display feedback messages in UI.
-     * @param router Angular router used to trigger navigations.
-     */
-    constructor(
-        private servicesApi: ServicesService,
-        private messageService: MessageService,
-        private router: Router
-    ) {}
 
     /**
      * Component lifecycle hook called to perform clean-up when destroying the component.

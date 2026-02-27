@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { MenuItem } from 'primeng/api'
 import { AuthService } from '../auth.service'
 import { Menu } from 'primeng/menu'
@@ -16,9 +16,9 @@ import { Menu } from 'primeng/menu'
     imports: [Menu],
 })
 export class SettingsMenuComponent implements OnInit {
-    items: MenuItem[]
+    auth = inject(AuthService)
 
-    constructor(public auth: AuthService) {}
+    items: MenuItem[]
 
     /**
      * Initializes the menu items.

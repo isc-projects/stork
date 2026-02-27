@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core'
+import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core'
 import { ServicesService } from '../backend'
 import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { EventStream, ServerSentEventsService } from '../server-sent-events.service'
@@ -22,6 +22,24 @@ import { RouterLink } from '@angular/router'
     imports: [Message, RouterLink],
 })
 export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
+    /**
+     * Message service.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
+     * Server sent events service.
+     * @private
+     */
+    private sse = inject(ServerSentEventsService)
+
+    /**
+     * REST API service.
+     * @private
+     */
+    private servicesApi = inject(ServicesService)
+
     /**
      * Holds displayed alerts.
      */
@@ -50,19 +68,6 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      * Counts the events received during the backoff.
      */
     private eventCount: Map<EventStream, number> = new Map()
-
-    /**
-     * Constructor.
-     *
-     * @param messageService message service
-     * @param sse server sent events service
-     * @param servicesApi REST API service
-     */
-    constructor(
-        private messageService: MessageService,
-        private sse: ServerSentEventsService,
-        private servicesApi: ServicesService
-    ) {}
 
     /**
      * A lifecycle hook invoked when the component is initialized.

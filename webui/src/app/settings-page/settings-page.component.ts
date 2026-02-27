@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { FormControl, FormGroup, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
@@ -73,6 +73,24 @@ interface SettingsItem {
     ],
 })
 export class SettingsPageComponent implements OnInit {
+    /**
+     * Form builder instance.
+     * @private
+     */
+    private fb = inject(FormBuilder)
+
+    /**
+     * A service for communicating with the server.
+     * @private
+     */
+    private settingsApi = inject(SettingsService)
+
+    /**
+     * A message service.
+     * @private
+     */
+    private msgSrv = inject(MessageService)
+
     /**
      * A path specified in the breadcrumbs.
      */
@@ -158,16 +176,8 @@ export class SettingsPageComponent implements OnInit {
 
     /**
      * Constructor.
-     *
-     * @param fb form builder instance.
-     * @param settingsApi a service for communicating with the server.
-     * @param msgSrv a message service.
      */
-    constructor(
-        private fb: FormBuilder,
-        private settingsApi: SettingsService,
-        private msgSrv: MessageService
-    ) {
+    constructor() {
         this.settingsForm = this.fb.group({
             statePullerInterval: [0, [Validators.required, Validators.min(0)]],
             bind9StatsPullerInterval: [0, [Validators.required, Validators.min(0)]],

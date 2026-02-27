@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 
 import { AuthService } from './auth.service'
@@ -8,12 +8,12 @@ import { SettingsService } from './backend/api/api'
     providedIn: 'root',
 })
 export class SettingService {
+    private auth = inject(AuthService)
+    private settingsApi = inject(SettingsService)
+
     private settingsBS = new BehaviorSubject({})
 
-    constructor(
-        private auth: AuthService,
-        private settingsApi: SettingsService
-    ) {
+    constructor() {
         // Only get the settings when the user is logged in.
         this.auth.currentUser$.subscribe(() => {
             if (this.auth.currentUserValue) {

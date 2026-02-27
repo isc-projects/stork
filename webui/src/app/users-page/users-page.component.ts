@@ -1,4 +1,4 @@
-import { Component, effect, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, signal, viewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem, FilterMetadata } from 'primeng/api'
 
@@ -59,6 +59,13 @@ import { SplitButton } from 'primeng/splitbutton'
     ],
 })
 export class UsersPageComponent implements OnInit, OnDestroy {
+    private usersApi = inject(UsersService)
+    private msgSrv = inject(MessageService)
+    private serverData = inject(ServerDataService)
+    auth = inject(AuthService)
+    private confirmService = inject(ConfirmationService)
+    private router = inject(Router)
+
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]
 
     groups: Group[] = []
@@ -115,15 +122,6 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         ]
         this.toolbarButtons = [...buttons]
     }
-
-    constructor(
-        private usersApi: UsersService,
-        private msgSrv: MessageService,
-        private serverData: ServerDataService,
-        public auth: AuthService,
-        private confirmService: ConfirmationService,
-        private router: Router
-    ) {}
 
     ngOnInit() {
         this._restoreTableRowsPerPage()

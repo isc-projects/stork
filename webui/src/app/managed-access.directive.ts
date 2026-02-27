@@ -7,6 +7,7 @@ import {
     Output,
     Renderer2,
     ViewContainerRef,
+    inject,
 } from '@angular/core'
 import { AccessType, AuthService, ManagedAccessEntity } from './auth.service'
 import { Message } from 'primeng/message'
@@ -20,6 +21,11 @@ import { Message } from 'primeng/message'
     selector: '[appAccessEntity]',
 })
 export class ManagedAccessDirective implements AfterViewInit {
+    private authService = inject(AuthService)
+    private elementRef = inject(ElementRef)
+    private renderer = inject(Renderer2)
+    private viewRef = inject(ViewContainerRef)
+
     /**
      * Identifies the entity for which the access will be checked.
      */
@@ -50,13 +56,6 @@ export class ManagedAccessDirective implements AfterViewInit {
      * @private
      */
     private readonly _title = 'This component is disabled due to lack of privileges'
-
-    constructor(
-        private authService: AuthService,
-        private elementRef: ElementRef,
-        private renderer: Renderer2,
-        private viewRef: ViewContainerRef
-    ) {}
 
     ngAfterViewInit(): void {
         const hasAccess = this.authService.hasPrivilege(this.appAccessEntity, this.appAccessType)

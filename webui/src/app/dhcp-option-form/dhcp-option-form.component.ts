@@ -1,11 +1,5 @@
 import { Component, EventEmitter, forwardRef, Input, OnInit, Output, inject } from '@angular/core'
-import {
-    UntypedFormArray,
-    UntypedFormGroup,
-    Validators,
-    FormsModule,
-    ReactiveFormsModule,
-} from '@angular/forms'
+import { UntypedFormArray, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { MenuItem } from 'primeng/api'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'

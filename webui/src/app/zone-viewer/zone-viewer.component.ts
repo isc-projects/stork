@@ -1,4 +1,4 @@
-import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core'
 import { ZoneRR } from '../backend/model/zoneRR'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Button } from 'primeng/button'
@@ -65,6 +65,24 @@ interface Column {
     ],
 })
 export class ZoneViewerComponent implements OnInit {
+    /**
+     * DNS API service.
+     * @private
+     */
+    private _dnsApi = inject(DNSService)
+
+    /**
+     * Message service.
+     * @private
+     */
+    private _messageService = inject(MessageService)
+
+    /**
+     * Service used for RxJS subject cleanup.
+     * @private
+     */
+    private destroyRef = inject(DestroyRef)
+
     /**
      * Provides direct access to the the PrimeNG table component.
      */
@@ -155,18 +173,6 @@ export class ZoneViewerComponent implements OnInit {
      * @private
      */
     private _rrsTableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
-
-    /**
-     * Constructor.
-     *
-     * @param _dnsApi DNS API service.
-     * @param _messageService message service.
-     */
-    constructor(
-        private _dnsApi: DNSService,
-        private _messageService: MessageService,
-        private destroyRef: DestroyRef
-    ) {}
 
     /**
      * Component lifecycle hook which inits the component.

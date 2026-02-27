@@ -1,13 +1,11 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core'
 import {
     CreateSharedNetworkBeginResponse,
     DHCPService,
     SharedNetwork,
     UpdateSharedNetworkBeginResponse,
 } from '../backend'
-import { GenericFormService } from '../forms/generic-form.service'
 import { MessageService } from 'primeng/api'
-import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { deepCopy, getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { FormsModule, ReactiveFormsModule, UntypedFormArray, Validators } from '@angular/forms'
@@ -54,6 +52,22 @@ import { Message } from 'primeng/message'
 })
 export class SharedNetworkFormComponent implements OnInit, OnDestroy {
     /**
+     * A service providing an API to the server.
+     */
+    dhcpApi = inject(DHCPService)
+
+    /**
+     * A service for displaying error messages to the user.
+     */
+    messageService = inject(MessageService)
+
+    /**
+     * A service exposing functions converting subnet data to a form and
+     * vice versa.
+     */
+    subnetSetFormService = inject(SubnetSetFormService)
+
+    /**
      * Form state instance.
      *
      * The instance is shared between the parent and this component.
@@ -89,23 +103,6 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
      * An event emitter notifying that form editing has been canceled.
      */
     @Output() formCancel = new EventEmitter<number>()
-
-    /**
-     * Constructor.
-     *
-     * @param dhcpApi a service providing an API to the server.
-     * @param genericFormService a generic form conversion service.
-     * @param messageService a service for displaying error messages to the user.
-     * @param optionsFormService a service for converting DHCP options.
-     * @param sharedNetworkSetFormService a service for converting shared network data.
-     */
-    constructor(
-        public dhcpApi: DHCPService,
-        public genericFormService: GenericFormService,
-        public messageService: MessageService,
-        public optionsFormService: DhcpOptionSetFormService,
-        public subnetSetFormService: SubnetSetFormService
-    ) {}
 
     /**
      * A component lifecycle hook invoked when the component is initialized.

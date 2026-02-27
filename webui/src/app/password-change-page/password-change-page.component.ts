@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
@@ -44,6 +44,13 @@ import { PasswordPolicy } from '../password-policy'
     ],
 })
 export class PasswordChangePageComponent implements OnInit {
+    private formBuilder = inject(UntypedFormBuilder)
+    private usersApi = inject(UsersService)
+    private msgSrv = inject(MessageService)
+    private auth = inject(AuthService)
+    private route = inject(ActivatedRoute)
+    private router = inject(Router)
+
     breadcrumbs = [{ label: 'User Profile' }, { label: 'Password Change' }]
 
     passwordChangeForm: UntypedFormGroup
@@ -60,15 +67,6 @@ export class PasswordChangePageComponent implements OnInit {
      * characters (i.e., space, tab, form feed, and line feed).
      */
     passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$/
-
-    constructor(
-        private formBuilder: UntypedFormBuilder,
-        private usersApi: UsersService,
-        private msgSrv: MessageService,
-        private auth: AuthService,
-        private route: ActivatedRoute,
-        private router: Router
-    ) {}
 
     ngOnInit() {
         this.passwordChangeForm = this.formBuilder.group(
