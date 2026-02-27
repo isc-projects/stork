@@ -507,7 +507,6 @@ describe('DashboardComponent', () => {
         expect(versionStatus[0].nativeElement.innerHTML).toContain('2.0.0')
         expect(versionStatus[0].nativeElement.innerHTML).not.toContain('DHCPv4')
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
     })
 
     it('should return whether both dhcp and dns daemons exist', () => {

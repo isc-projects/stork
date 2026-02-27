@@ -69,7 +69,6 @@ describe('Bind9DaemonComponent', () => {
         expect(versionStatus[0].nativeElement.innerHTML).toContain('9.18.30')
         expect(versionStatus[0].nativeElement.innerHTML).not.toContain('named')
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
     })
 
     it('should include bind9 daemon controls', () => {

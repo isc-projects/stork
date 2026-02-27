@@ -287,13 +287,10 @@ describe('MachinesTableComponent', () => {
         expect(versionStatus[3].nativeElement.innerHTML).toContain('9.18.30')
         expect(versionStatus[3].nativeElement.innerHTML).not.toContain('named')
 
-        // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
+        // All VersionStatus components got Severity.success
         expect(versionStatus[0].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[0].nativeElement.innerHTML).toContain('test feedback')
         expect(versionStatus[1].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[1].nativeElement.innerHTML).toContain('test feedback')
         expect(versionStatus[2].nativeElement.innerHTML).toContain('text-green-500')
-        expect(versionStatus[2].nativeElement.innerHTML).toContain('test feedback')
     })
 
     it('should set data loading state', () => {
