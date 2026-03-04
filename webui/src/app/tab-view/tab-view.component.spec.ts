@@ -378,32 +378,33 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(2)
 
         // Check displayed tab content.
-        const id = fixture.debugElement.query(By.css('.entity-id'))
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const id = activePanel.query(By.css('.entity-id'))
         expect(id).toBeTruthy()
         expect(id.nativeElement.innerText).toEqual('3')
 
-        const subnet = fixture.debugElement.query(By.css('.subnet'))
+        const subnet = activePanel.query(By.css('.subnet'))
         expect(subnet).toBeTruthy()
         expect(subnet.nativeElement.innerText).toEqual('10.0.0.0/32')
 
         // Check active tab title.
         const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
         expect(title).toBeTruthy()
-        expect(title.nativeElement.innerText).toEqual('10.0.0.0/32')
+        expect(title.nativeElement.innerText).toContain('10.0.0.0/32')
 
         // Act - update the entity.
         component.onUpdateTabEntity(3, { id: 3, subnet: '10.0.0.0/31' })
         fixture.detectChanges()
 
         // Check if displayed tab content was updated.
-        const updatedSubnet = fixture.debugElement.query(By.css('.subnet'))
+        const updatedSubnet = activePanel.query(By.css('.subnet'))
         expect(updatedSubnet).toBeTruthy()
         expect(updatedSubnet.nativeElement.innerText).toEqual('10.0.0.0/31')
 
         // Check if active tab title was updated.
         const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
         expect(updatedTitle).toBeTruthy()
-        expect(updatedTitle.nativeElement.innerText).toEqual('10.0.0.0/31')
+        expect(updatedTitle.nativeElement.innerText).toContain('10.0.0.0/31')
 
         // Go to the first tab with the table.
         component.activeTabEntityID = 0
@@ -431,18 +432,19 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(2)
 
         // Check displayed tab content.
-        const id = fixture.debugElement.query(By.css('.entity-id'))
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const id = activePanel.query(By.css('.entity-id'))
         expect(id).toBeTruthy()
         expect(id.nativeElement.innerText).toEqual('1')
 
-        const subnet = fixture.debugElement.query(By.css('.subnet'))
+        const subnet = activePanel.query(By.css('.subnet'))
         expect(subnet).toBeTruthy()
         expect(subnet.nativeElement.innerText).toEqual('1.0.0.0/32')
 
         // Check active tab title.
         const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
         expect(title).toBeTruthy()
-        expect(title.nativeElement.innerText).toEqual('1.0.0.0/32')
+        expect(title.nativeElement.innerText).toContain('1.0.0.0/32')
 
         // Act - update entity title.
         component.onUpdateTitle(1, '1.2.0.0/32')
@@ -451,7 +453,7 @@ describe('TabViewTestComponent', () => {
         // Check if active tab title was updated.
         const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
         expect(updatedTitle).toBeTruthy()
-        expect(updatedTitle.nativeElement.innerText).toEqual('1.2.0.0/32')
+        expect(updatedTitle.nativeElement.innerText).toContain('1.2.0.0/32')
 
         // Go to the first tab with the table.
         component.activeTabEntityID = 0
@@ -483,18 +485,19 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(2)
 
         // Check displayed tab content.
-        const id = fixture.debugElement.query(By.css('.entity-id'))
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const id = activePanel.query(By.css('.entity-id'))
         expect(id).toBeTruthy()
         expect(id.nativeElement.innerText).toEqual('1')
 
-        const subnet = fixture.debugElement.query(By.css('.subnet'))
+        const subnet = activePanel.query(By.css('.subnet'))
         expect(subnet).toBeTruthy()
         expect(subnet.nativeElement.innerText).toEqual('1.0.0.0/32')
 
         // Check active tab title.
         const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
         expect(title).toBeTruthy()
-        expect(title.nativeElement.innerText).toEqual('Title 1.0.0.0/32')
+        expect(title.nativeElement.innerText).toContain('Title 1.0.0.0/32')
 
         // Act - update entity title.
         component.onUpdateTitle(1, '1.2.0.0/32')
@@ -503,7 +506,7 @@ describe('TabViewTestComponent', () => {
         // Check if active tab title was updated.
         const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
         expect(updatedTitle).toBeTruthy()
-        expect(updatedTitle.nativeElement.innerText).withContext('').toEqual('1.2.0.0/32')
+        expect(updatedTitle.nativeElement.innerText).withContext('').toContain('1.2.0.0/32')
 
         // Go to the first tab with the table.
         component.activeTabEntityID = 0

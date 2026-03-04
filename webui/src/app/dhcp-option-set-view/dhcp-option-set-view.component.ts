@@ -140,7 +140,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
                     this.combinedOptionNodes.push(treeOptionNode)
                 }
         }
-        this.displayedOptionNodes = this.combinedOptionNodes
+        this.displayedOptionNodes = [...this.combinedOptionNodes]
     }
 
     /**
