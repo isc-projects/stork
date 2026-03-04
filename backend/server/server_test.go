@@ -37,6 +37,7 @@ func getExpectedSwitches() []string {
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
 		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--rest-tls-1-2-enabled",
 		"--initial-puller-interval", "--env-file", "--use-env-file", "--db-password",
+		"--db-tls-1-2-enabled",
 	}
 }
 

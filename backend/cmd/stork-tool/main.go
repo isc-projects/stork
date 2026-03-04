@@ -368,7 +368,28 @@ func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Fla
 			envVars = append(envVars, definition.EnvironmentVariable)
 		}
 
-		if definition.Kind == reflect.Int {
+		switch definition.Kind {
+		case reflect.Bool:
+			defaultBool := false
+			if definition.Default != "" {
+				var err error
+				defaultBool, err = strconv.ParseBool(definition.Default)
+				if err != nil {
+					return nil, errors.Wrapf(
+						err, "invalid default value ('%s') for parameter ('%s')",
+						definition.Default, definition.Long,
+					)
+				}
+			}
+
+			flag = &cli.BoolFlag{
+				Name:    definition.Long,
+				Aliases: aliases,
+				Usage:   definition.Description,
+				EnvVars: envVars,
+				Value:   defaultBool,
+			}
+		case reflect.Int:
 			valueInt, err := strconv.ParseInt(definition.Default, 10, 0)
 			if err != nil {
 				return nil, errors.Wrapf(
@@ -384,7 +405,7 @@ func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Fla
 				EnvVars: envVars,
 				Value:   valueInt,
 			}
-		} else {
+		default:
 			flag = &cli.StringFlag{
 				Name:    definition.Long,
 				Aliases: aliases,

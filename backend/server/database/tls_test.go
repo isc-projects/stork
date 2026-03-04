@@ -34,7 +34,7 @@ func TestGetTLSConfigDisableWithNonBlankFiles(t *testing.T) {
 	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("disable", "localhost", serverCert, serverKey, rootCert)
+	tlsConfig, err := dbops.GetTLSConfig("disable", "localhost", serverCert, serverKey, rootCert, false)
 	require.NoError(t, err)
 	require.Nil(t, tlsConfig)
 }
@@ -48,7 +48,7 @@ func TestGetTLSConfigRequire(t *testing.T) {
 	serverCert, serverKey, _, err := testutil.CreateTestCerts(sb)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, "")
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, "", false)
 	require.NoError(t, err)
 	require.NotNil(t, tlsConfig)
 
@@ -68,7 +68,7 @@ func TestGetTLSConfigRequireVerifyCA(t *testing.T) {
 	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, rootCert)
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, rootCert, false)
 	require.NoError(t, err)
 	require.NotNil(t, tlsConfig)
 
@@ -91,7 +91,7 @@ func TestGetTLSConfigRequireCertKeyUnspecified(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "", "", "")
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "", "", "", false)
 	require.NoError(t, err)
 	require.NotNil(t, tlsConfig)
 
@@ -104,7 +104,7 @@ func TestGetTLSConfigRequireCertKeyUnspecified(t *testing.T) {
 
 // Test the require mode with non-existing cert file.
 func TestGetTLSConfigRequireCertDoesNotExist(t *testing.T) {
-	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "nonexist", "", "")
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "nonexist", "", "", false)
 	require.Error(t, err)
 	require.Nil(t, tlsConfig)
 }
@@ -117,7 +117,7 @@ func TestGetTLSConfigRequireKeyDoesNotExist(t *testing.T) {
 	serverCert, _, _, err := testutil.CreateTestCerts(sb)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, "nonexist", "")
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, "nonexist", "", false)
 	require.Error(t, err)
 	require.Nil(t, tlsConfig)
 }
@@ -131,7 +131,7 @@ func TestGetTLSConfigVerifyCA(t *testing.T) {
 	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert)
+	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert, false)
 	require.NoError(t, err)
 	require.NotNil(t, tlsConfig)
 
@@ -151,7 +151,7 @@ func TestGetTLSConfigVerifyFull(t *testing.T) {
 	serverCert, serverKey, rootCert, err := testutil.CreateTestCerts(sb)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("verify-full", "bull", serverCert, serverKey, rootCert)
+	tlsConfig, err := dbops.GetTLSConfig("verify-full", "bull", serverCert, serverKey, rootCert, false)
 	require.NoError(t, err)
 	require.NotNil(t, tlsConfig)
 
@@ -164,7 +164,7 @@ func TestGetTLSConfigVerifyFull(t *testing.T) {
 
 // Test disabling the TLS. There should be no TLS config returned.
 func TestGetTLSConfigDisable(t *testing.T) {
-	tlsConfig, err := dbops.GetTLSConfig("disable", "localhost", "", "", "")
+	tlsConfig, err := dbops.GetTLSConfig("disable", "localhost", "", "", "", false)
 	require.NoError(t, err)
 	require.Nil(t, tlsConfig)
 }
@@ -174,7 +174,7 @@ func TestGetTLSConfigUnsupportedMode(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	tlsConfig, err := dbops.GetTLSConfig("unsupported", "localhost", "", "", "")
+	tlsConfig, err := dbops.GetTLSConfig("unsupported", "localhost", "", "", "", false)
 	require.Error(t, err)
 	require.Nil(t, tlsConfig)
 }
@@ -189,7 +189,35 @@ func TestGetTLSConfigWrongKeyPermissions(t *testing.T) {
 	err = os.Chmod(serverKey, 0o644)
 	require.NoError(t, err)
 
-	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert)
+	tlsConfig, err := dbops.GetTLSConfig("verify-ca", "localhost", serverCert, serverKey, rootCert, false)
 	require.Error(t, err)
 	require.Nil(t, tlsConfig)
+}
+
+// Test that the default minimum TLS version is 1.3.
+func TestGetTLSConfigDefaultTLS13(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	serverCert, serverKey, _, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
+
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, "", false)
+	require.NoError(t, err)
+	require.NotNil(t, tlsConfig)
+	require.EqualValues(t, tls.VersionTLS13, tlsConfig.MinVersion)
+}
+
+// Test that the minimum TLS version is lowered to 1.2 when the flag is set.
+func TestGetTLSConfigWithTLS12Enabled(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	serverCert, serverKey, _, err := testutil.CreateTestCerts(sb)
+	require.NoError(t, err)
+
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, serverKey, "", true)
+	require.NoError(t, err)
+	require.NotNil(t, tlsConfig)
+	require.EqualValues(t, tls.VersionTLS12, tlsConfig.MinVersion)
 }

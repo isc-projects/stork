@@ -56,7 +56,7 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 	require.Empty(t, obj.FieldWithoutTag)
 	require.Empty(t, obj.FieldWithUnexpectedTag)
 	require.EqualValues(t, "value-multiple", obj.FieldWithMultipleTags)
-	require.False(t, obj.FieldWithUnsupportedType)
+	require.True(t, obj.FieldWithUnsupportedType)
 	require.Empty(t, obj.FieldStringUnknown)
 	require.EqualValues(t, "nested-field-string", obj.Parent.FieldString)
 }
@@ -88,8 +88,7 @@ func TestReadFromEnvironment(t *testing.T) {
 	// Assert
 	require.EqualValues(t, "string", obj.String)
 	require.EqualValues(t, 42, obj.Int)
-	// Boolean is not supported.
-	require.False(t, obj.Bool)
+	require.True(t, obj.Bool)
 	require.Empty(t, obj.Missing)
 	require.Empty(t, obj.NoTag)
 }
@@ -233,6 +232,7 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 		SSLCert:      "sslcert",
 		SSLKey:       "sslkey",
 		SSLRootCert:  "sslrootcert",
+		TLS12Enabled: true,
 		TraceSQL:     "run",
 		ReadTimeout:  24 * time.Minute,
 		WriteTimeout: 42 * time.Second,
@@ -252,6 +252,7 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	require.EqualValues(t, "sslcert", settings.SSLCert)
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
+	require.True(t, settings.TLS12Enabled)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
 	require.EqualValues(t, 24*time.Minute, settings.ReadTimeout)
 	require.EqualValues(t, 42*time.Second, settings.WriteTimeout)
@@ -352,17 +353,18 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 	// Arrange
 	cliFlags := &DatabaseCLIFlags{}
 	lookup := newMockCLILookup(map[string]string{
-		"db-name":          "dbname",
-		"db-user":          "user",
-		"db-host":          "host",
-		"db-port":          "42",
-		"db-sslmode":       "sslmode",
-		"db-sslkey":        "sslkey",
-		"db-sslcert":       "sslcert",
-		"db-sslrootcert":   "sslrootcert",
-		"db-trace-queries": "run",
-		"db-read-timeout":  "24m",
-		"db-write-timeout": "42s",
+		"db-name":            "dbname",
+		"db-user":            "user",
+		"db-host":            "host",
+		"db-port":            "42",
+		"db-sslmode":         "sslmode",
+		"db-sslkey":          "sslkey",
+		"db-sslcert":         "sslcert",
+		"db-sslrootcert":     "sslrootcert",
+		"db-tls-1-2-enabled": "true",
+		"db-trace-queries":   "run",
+		"db-read-timeout":    "24m",
+		"db-write-timeout":   "42s",
 	})
 
 	// Act
@@ -378,6 +380,7 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 	require.EqualValues(t, "sslcert", cliFlags.SSLCert)
 	require.EqualValues(t, "sslkey", cliFlags.SSLKey)
 	require.EqualValues(t, "sslrootcert", cliFlags.SSLRootCert)
+	require.True(t, cliFlags.TLS12Enabled)
 	require.EqualValues(t, LoggingQueryPresetRuntime, cliFlags.TraceSQL)
 	require.EqualValues(t, 24*time.Minute, cliFlags.ReadTimeout)
 	require.EqualValues(t, 42*time.Second, cliFlags.WriteTimeout)
@@ -655,7 +658,7 @@ func TestConvertDatabaseCLIFlagsToDefinitions(t *testing.T) {
 	definitions := pointer.ConvertToCLIFlagDefinitions()
 
 	// Assert
-	require.Len(t, definitions, 13)
+	require.Len(t, definitions, 14)
 
 	definitionMap := make(map[string]*CLIFlagDefinition, len(definitions))
 	for _, definition := range definitions {
@@ -677,7 +680,7 @@ func TestConvertMaintenanceDatabaseCLIFlagsToDefinitions(t *testing.T) {
 	definitions := pointer.ConvertToCLIFlagDefinitions()
 
 	// Assert
-	require.Len(t, definitions, 13+3)
+	require.Len(t, definitions, 14+3)
 
 	definitionMap := make(map[string]*CLIFlagDefinition, len(definitions))
 	for _, definition := range definitions {
