@@ -8,7 +8,12 @@
             }
         </span>
         <a *ngIf="iscApp()" routerLink="/versions">
-            <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
+            <i
+                class="pi font-semibold"
+                [class]="iconClasses"
+                [pTooltip]="feedbackMessages.join(' ')"
+                aria-label="Feedback icon"
+            ></i>
         </a>
     </div>
     @if (!inline && iscApp()) {
