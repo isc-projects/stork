@@ -11,17 +11,22 @@ import (
 )
 
 // Returns tls.Config structure based on the specified connection parameters.
+// If tls12Enabled is true, the minimum TLS version is lowered to 1.2;
+// otherwise TLS 1.3 is required.
 // This implementation origins from the similar logic from lib/pq.
 // See: https://github.com/lib/pq/blob/master/ssl.go.
 // It strives to establish secure connections over the go-pg in the same
 // way as lib/pq package because this package used by the session manager
 // (github.com/alexedwards/scs/postgresstore). Note that the lib/pq was
 // based on the libpq - C library.
-func GetTLSConfig(sslMode, host, sslCert, sslKey, sslRootCert string) (*tls.Config, error) {
+func GetTLSConfig(sslMode, host, sslCert, sslKey, sslRootCert string, tls12Enabled bool) (*tls.Config, error) {
 	verifyCAOnly := false
+	var minVersion uint16 = tls.VersionTLS13
+	if tls12Enabled {
+		minVersion = tls.VersionTLS12
+	}
 	tlsConfig := &tls.Config{
-		// TLS 1.3 is supported as far back as PostgreSQL 9.5.
-		MinVersion: tls.VersionTLS13,
+		MinVersion: minVersion,
 	}
 	switch sslMode {
 	case "require":
