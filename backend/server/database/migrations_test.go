@@ -896,3 +896,42 @@ func TestResetDatabaseWithData(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 }
+
+// Test that migration 71 handles apps with no daemons correctly.
+func TestMigration71DropAppsWithNoDaemons(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, _, err := dbops.Migrate(db, "down", "70")
+	require.NoError(t, err)
+
+	var machineID int64
+	var appID int64
+
+	// Insert a machine
+	_, err = db.QueryOne(pg.Scan(&machineID), `INSERT INTO machine (address, agent_port, state) VALUES ('localhost', 8080, '{}'::jsonb) RETURNING id;`)
+	require.NoError(t, err)
+
+	// Insert an app WITHOUT any daemons but WITH an access point (the problematic case)
+	_, err = db.QueryOne(pg.Scan(&appID), `INSERT INTO app (machine_id, type) VALUES (?, 'kea') RETURNING id;`, machineID)
+	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO access_point (app_id, machine_id, type, address, port, use_secure_protocol) VALUES (?, ?, 'control', 'localhost', 9000, false);`, appID, machineID)
+	require.NoError(t, err)
+
+	// Act - migrate up to 71
+	_, _, err = dbops.Migrate(db, "up", "71")
+
+	// Assert
+	require.NoError(t, err)
+
+	// Verify the orphaned access point was deleted
+	var accessPointCount int
+	_, err = db.QueryOne(pg.Scan(&accessPointCount), `SELECT COUNT(*) FROM access_point;`)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, accessPointCount, "orphaned access point should be deleted")
+
+	// Test full round-trip: migrate down and verify no errors
+	_, _, err = dbops.Migrate(db, "down", "70")
+	require.NoError(t, err)
+}
