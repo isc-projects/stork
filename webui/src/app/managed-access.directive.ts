@@ -69,10 +69,14 @@ export class ManagedAccessDirective implements AfterViewInit {
             }
 
             // If this is a PrimeNG component...
-            const pComponent = this.htmlElement.querySelector('.p-component')
+            const pComponent =
+                this.htmlElement.querySelector('.p-component') ||
+                this.elementRef.nativeElement.classList.contains('p-component')
             if (pComponent) {
+                // Set attributes and classes for all input and button elements or elements with .p-component class.
+                this.setDisabledAttributes(this.elementRef.nativeElement)
+                this.setDisabledClasses(this.elementRef.nativeElement)
                 this.htmlElement.querySelectorAll('.p-component,input,button').forEach((el) => {
-                    // Set attributes and classes for all input and button elements or elements with .p-component class.
                     this.setDisabledAttributes(<HTMLElement>el)
                     this.setDisabledClasses(<HTMLElement>el)
                 })
