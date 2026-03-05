@@ -283,7 +283,9 @@ export const TestFeedbackIsDisplayed: Story = {
         const user = userEvent.setup({ delay: 100 })
 
         // Act
-        const tooltipIcon = await canvas.findByLabelText('Feedback icon')
+        const anchor = await canvas.findByLabelText('More Version Info')
+        await expect(anchor.childElementCount).toEqual(1)
+        const tooltipIcon = anchor.children[0]
         await user.hover(tooltipIcon)
 
         // Assert

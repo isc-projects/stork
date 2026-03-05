@@ -7,14 +7,11 @@
                 {{ version() }}
             }
         </span>
-        <a *ngIf="iscApp()" routerLink="/versions">
-            <i
-                class="pi font-semibold"
-                [class]="iconClasses"
-                [pTooltip]="feedbackMessages.join(' ')"
-                aria-label="Feedback icon"
-            ></i>
-        </a>
+        @if (iscApp()) {
+            <a routerLink="/versions" aria-label="More Version Info">
+                <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
+            </a>
+        }
     </div>
     @if (!inline && iscApp()) {
         @for (message of messages; track message.summary) {
