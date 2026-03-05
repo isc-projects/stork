@@ -140,6 +140,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
                     this.combinedOptionNodes.push(treeOptionNode)
                 }
         }
+        // Copy combinedOptionNodes to ensure change detection works properly.
         this.displayedOptionNodes = [...this.combinedOptionNodes]
     }
 
