@@ -240,6 +240,7 @@ func TestDetectDaemons(t *testing.T) {
 		"kea-ctrl-agent -c %s", keaConfPath,
 	), nil)
 	keaProcess.EXPECT().getCwd().AnyTimes().Return("/etc/kea", nil)
+	keaProcess.EXPECT().getExe().AnyTimes().Return("/etc/kea/sbin/kea-ctrl-agent", nil)
 	keaProcess.EXPECT().getPid().AnyTimes().Return(int32(1234))
 	keaProcess.EXPECT().getParentPid().AnyTimes().Return(int32(2345), nil)
 
@@ -474,6 +475,7 @@ func TestDetectDaemonsSkipOnNotAvailableCwd(t *testing.T) {
 	noCwdProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.CA)
 	noCwdProcess.EXPECT().getCmdline().AnyTimes().Return("kea-ctrl-agent -c /etc/kea/kea.conf", nil)
 	noCwdProcess.EXPECT().getCwd().AnyTimes().Return("", errors.New("no current working directory"))
+	noCwdProcess.EXPECT().getExe().AnyTimes().Return("/usr/sbin/kea-ctrl-agent", nil)
 	noCwdProcess.EXPECT().getPid().AnyTimes().Return(int32(1234))
 	noCwdProcess.EXPECT().getParentPid().AnyTimes().Return(int32(2345), nil)
 
@@ -714,7 +716,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("/usr/bin/kea-ctrl-agent -c %s", tmpFilePath), nil)
-		process.EXPECT().getCwd().Return("", nil)
+		process.EXPECT().getExe().Return("/usr/bin/kea-ctrl-agent", nil)
 		daemon, err := monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)
@@ -725,6 +727,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
 		process.EXPECT().getCwd().Return(cwd, nil)
+		process.EXPECT().getExe().Return("/usr/bin/kea-ctrl-agent", nil)
 		daemon, err = monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)
@@ -742,7 +745,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("/usr/bin/kea-ctrl-agent -c %s", tmpFilePath), nil)
-		process.EXPECT().getCwd().Return("", nil)
+		process.EXPECT().getExe().Return("/usr/bin/kea-ctrl-agent", nil)
 
 		daemon, err := monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
@@ -754,6 +757,7 @@ func TestDetectKeaDaemon(t *testing.T) {
 		process.EXPECT().getDaemonName().Return(daemonname.CA)
 		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
 		process.EXPECT().getCwd().Return(cwd, nil)
+		process.EXPECT().getExe().Return("/usr/bin/kea-ctrl-agent", nil)
 		daemon, err = monitor.detectKeaDaemons(t.Context(), process)
 		require.NoError(t, err)
 		checkDaemon(daemon)

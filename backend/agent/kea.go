@@ -265,10 +265,6 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 	if err != nil {
 		return nil, err
 	}
-	cwd, err := p.getCwd()
-	if err != nil {
-		log.WithError(err).Warn("Cannot get Kea process current working directory")
-	}
 
 	pattern := regexp.MustCompile(fmt.Sprintf(`(.*?)%s\s+.*-c\s+(\S+)`, processName))
 
@@ -283,14 +279,10 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 
 	// Check the version of the Kea binary. We need to differentiate between
 	// Kea prior to 3.0 and Kea post 3.0.
-	executablePath := match[1] + processName
-	if !path.IsAbs(executablePath) {
-		if cwd == "" {
-			return nil, errors.New("cannot resolve Kea executable path because the current working directory is unknown")
-		}
-		executablePath = path.Join(cwd, executablePath)
+	executablePath, err := p.getExe()
+	if err != nil {
+		return nil, errors.WithMessagef(err, "cannot get Kea executable")
 	}
-
 	versionRaw, err := sm.commander.Output(executablePath, "-v")
 	if err != nil {
 		return nil, errors.WithMessagef(err, "cannot get Kea version by executing %s -v", executablePath)
@@ -310,6 +302,11 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 	configPath := match[2]
 
 	if !strings.HasPrefix(configPath, "/") {
+		cwd, err := p.getCwd()
+		if err != nil {
+			log.WithError(err).Warn("Cannot get Kea process current working directory")
+		}
+
 		// If path to config is not absolute then join it with CWD of Kea.
 		configPath = path.Join(cwd, configPath)
 	}
