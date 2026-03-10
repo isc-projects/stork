@@ -48,17 +48,18 @@ func TestStatsPullerBasic(t *testing.T) {
 	sp.Shutdown()
 }
 
-// Check if puller correctly pulls data.
-func TestStatePullerPullData(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
+// Creates Kea mock returning an error response for old access point and a
+// successful response for new access point.
+// It is aware of the order of calls.
+func createKeaMockForAccessPointChange(t *testing.T) func(int, agentcomm.ControlledDaemon, []any) {
+	return func(i int, daemon agentcomm.ControlledDaemon, responses []any) {
+		accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+		require.NoError(t, err)
 
-	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(i int, daemon agentcomm.ControlledDaemon, responses []any) {
-		switch i {
-		case 0:
+		switch {
+		case daemon.GetName() == daemonname.DHCPv4 && accessPoint.Address == "203.0.113.111":
 			// The DHCPv4 daemon with an old access point is offline, so the
-			// the puller should not be able to retrieve its state.
+			// puller should not be able to retrieve its state.
 			versionResponse := responses[0].(*kea.VersionGetResponse)
 			versionResponse.Result = keactrl.ResponseError
 			versionResponse.Text = "server is likely to be offline"
@@ -70,20 +71,29 @@ func TestStatePullerPullData(t *testing.T) {
 			statusResponse := responses[2].(*kea.StatusGetResponse)
 			statusResponse.Result = keactrl.ResponseError
 			statusResponse.Text = "server is likely to be offline"
-		case 1:
+		case daemon.GetName() == daemonname.DHCPv4 && accessPoint.Address == "203.0.113.123":
 			// The DHCPv4 daemon with a new access point is online, so the
 			// puller should be able to retrieve its state.
 			r := responses[1].(*keactrl.Response)
 			r.Arguments = []byte(`{ "Dhcp4": {} }`)
-		case 2:
+		case daemon.GetName() == daemonname.CA:
 			// The CA daemon is online, so the puller should be able to
 			// retrieve its state.
 			r := responses[1].(*keactrl.Response)
 			r.Arguments = []byte(`{ "Control-agent": {} }`)
 		default:
-			require.Fail(t, "unexpected number of calls")
+			require.FailNow(t, "unexpected call to fake agents")
 		}
-	}, nil)
+	}
+}
+
+// Check if puller correctly pulls data.
+func TestStatePullerPullData(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare fake agents
+	fa := agentcommtest.NewFakeAgents(createKeaMockForAccessPointChange(t), nil)
 	fa.MachineState = &agentcomm.State{
 		AgentVersion: "2.4.0",
 		Daemons: []*agentcomm.Daemon{
@@ -486,39 +496,7 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := agentcommtest.NewFakeAgents(func(i int, daemon agentcomm.ControlledDaemon, responses []any) {
-		accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
-		require.NoError(t, err)
-
-		switch {
-		case daemon.GetName() == daemonname.DHCPv4 && accessPoint.Address == "203.0.113.111":
-			// The DHCPv4 daemon with an old access point is offline, so the
-			// the puller should not be able to retrieve its state.
-			versionResponse := responses[0].(*kea.VersionGetResponse)
-			versionResponse.Result = keactrl.ResponseError
-			versionResponse.Text = "server is likely to be offline"
-
-			response := responses[1].(*keactrl.Response)
-			response.Result = keactrl.ResponseError
-			response.Text = "server is likely to be offline"
-
-			statusResponse := responses[2].(*kea.StatusGetResponse)
-			statusResponse.Result = keactrl.ResponseError
-			statusResponse.Text = "server is likely to be offline"
-		case daemon.GetName() == daemonname.DHCPv4 && accessPoint.Address == "203.0.113.123":
-			// The DHCPv4 daemon with a new access point is online, so the
-			// puller should be able to retrieve its state.
-			r := responses[1].(*keactrl.Response)
-			r.Arguments = []byte(`{ "Dhcp4": {} }`)
-		case daemon.GetName() == daemonname.CA:
-			// The CA daemon is online, so the puller should be able to
-			// retrieve its state.
-			r := responses[1].(*keactrl.Response)
-			r.Arguments = []byte(`{ "Control-agent": {} }`)
-		default:
-			require.FailNow(t, "unexpected call to fake agents")
-		}
-	}, nil)
+	fa := agentcommtest.NewFakeAgents(createKeaMockForAccessPointChange(t), nil)
 
 	fa.MachineState = &agentcomm.State{
 		AgentVersion: "2.4.0",
