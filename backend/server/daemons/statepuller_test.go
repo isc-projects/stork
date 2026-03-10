@@ -616,7 +616,7 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	err = dbmodel.InitializeSettings(db, 0)
 	require.NoError(t, err)
 
-	// prepare stats puller
+	// prepare state puller
 	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 	// shutdown state puller at the end
