@@ -69,9 +69,11 @@ func TestGetDHCPv4SharedNetworks(t *testing.T) {
 				Name: "foo",
 				Subnet4: []Subnet4{
 					{
-						MandatorySubnetParameters: MandatorySubnetParameters{
-							ID:     1,
-							Subnet: "192.0.2.0/24",
+						Subnet4Known: Subnet4Known{
+							MandatorySubnetParameters: MandatorySubnetParameters{
+								ID:     1,
+								Subnet: "192.0.2.0/24",
+							},
 						},
 					},
 				},
@@ -79,9 +81,11 @@ func TestGetDHCPv4SharedNetworks(t *testing.T) {
 		},
 		Subnet4: []Subnet4{
 			{
-				MandatorySubnetParameters: MandatorySubnetParameters{
-					ID:     2,
-					Subnet: "192.0.3.0/24",
+				Subnet4Known: Subnet4Known{
+					MandatorySubnetParameters: MandatorySubnetParameters{
+						ID:     2,
+						Subnet: "192.0.3.0/24",
+					},
 				},
 			},
 		},
@@ -115,9 +119,11 @@ func TestGetDHCPv4Subnets(t *testing.T) {
 	cfg := &DHCPv4Config{
 		Subnet4: []Subnet4{
 			{
-				MandatorySubnetParameters: MandatorySubnetParameters{
-					ID:     2,
-					Subnet: "192.0.2.0/24",
+				Subnet4Known: Subnet4Known{
+					MandatorySubnetParameters: MandatorySubnetParameters{
+						ID:     2,
+						Subnet: "192.0.2.0/24",
+					},
 				},
 			},
 		},
@@ -746,9 +752,11 @@ func TestGetDHCPv6SharedNetworks(t *testing.T) {
 				Name: "foo",
 				Subnet6: []Subnet6{
 					{
-						MandatorySubnetParameters: MandatorySubnetParameters{
-							ID:     1,
-							Subnet: "2001:db8:1::/64",
+						Subnet6Known: Subnet6Known{
+							MandatorySubnetParameters: MandatorySubnetParameters{
+								ID:     1,
+								Subnet: "2001:db8:1::/64",
+							},
 						},
 					},
 				},
@@ -756,9 +764,11 @@ func TestGetDHCPv6SharedNetworks(t *testing.T) {
 		},
 		Subnet6: []Subnet6{
 			{
-				MandatorySubnetParameters: MandatorySubnetParameters{
-					ID:     2,
-					Subnet: "2001:db8:2::/64",
+				Subnet6Known: Subnet6Known{
+					MandatorySubnetParameters: MandatorySubnetParameters{
+						ID:     2,
+						Subnet: "2001:db8:2::/64",
+					},
 				},
 			},
 		},
@@ -792,9 +802,11 @@ func TestGetDHCPv6Subnets(t *testing.T) {
 	cfg := &DHCPv6Config{
 		Subnet6: []Subnet6{
 			{
-				MandatorySubnetParameters: MandatorySubnetParameters{
-					ID:     2,
-					Subnet: "2001:db8:2::/64",
+				Subnet6Known: Subnet6Known{
+					MandatorySubnetParameters: MandatorySubnetParameters{
+						ID:     2,
+						Subnet: "2001:db8:2::/64",
+					},
 				},
 			},
 		},

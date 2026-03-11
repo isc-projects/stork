@@ -2,6 +2,7 @@
     "4o6-interface": "eth1",
     "4o6-interface-id": "ethx",
     "4o6-subnet": "2001:db8:1:1::/64",
+    "adaptive-lease-time-threshold": 0.5,
     "allocator": "iterative",
     "authoritative": false,
     "boot-file-name": "/tmp/boot",
