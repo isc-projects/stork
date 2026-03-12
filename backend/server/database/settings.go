@@ -62,7 +62,7 @@ type DatabaseSettings struct {
 	SSLCert      string
 	SSLKey       string
 	SSLRootCert  string
-	TLS12Enabled bool
+	TLS12Allowed bool
 	TraceSQL     LoggingQueryPreset
 	WriteTimeout time.Duration
 	ReadTimeout  time.Duration
@@ -89,7 +89,7 @@ func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 	default:
 		pgopts.Addr = net.JoinHostPort(s.Host, strconv.Itoa(s.Port))
 		pgopts.Network = "tcp"
-		tlsConfig, err := GetTLSConfig(s.SSLMode, s.Host, s.SSLCert, s.SSLKey, s.SSLRootCert, s.TLS12Enabled)
+		tlsConfig, err := GetTLSConfig(s.SSLMode, s.Host, s.SSLCert, s.SSLKey, s.SSLRootCert, s.TLS12Allowed)
 		if err != nil {
 			return nil, err
 		}
