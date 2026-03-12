@@ -1714,7 +1714,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/24",
@@ -1722,7 +1722,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.1.0/24",
@@ -1730,7 +1730,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     3,
 					Subnet: "192.168.2.0/24",
@@ -1738,7 +1738,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     4,
 					Subnet: "192.168.3.0/24",
@@ -1746,7 +1746,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001:0::/80",
@@ -1754,7 +1754,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:1::/80",
@@ -1762,7 +1762,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     7,
 					Subnet: "3001:2::/80",
@@ -1770,7 +1770,7 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     8,
 					Subnet: "3001:3::/80",
@@ -1791,7 +1791,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "0.0.0.0/0",
@@ -1799,7 +1799,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "0.0.0.0/32",
@@ -1807,7 +1807,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     3,
 					Subnet: "192.168.2.0/24",
@@ -1815,7 +1815,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     4,
 					Subnet: "192.168.2.0/24",
@@ -1823,7 +1823,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "::/0",
@@ -1831,7 +1831,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "::/128",
@@ -1839,7 +1839,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     7,
 					Subnet: "3001:2::/80",
@@ -1847,7 +1847,7 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     8,
 					Subnet: "3001:2::/80",
@@ -1868,7 +1868,7 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/24",
@@ -1876,7 +1876,7 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.0.0/24",
@@ -1884,7 +1884,7 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001:0::/80",
@@ -1892,7 +1892,7 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:0::/80",
@@ -1918,7 +1918,7 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/24",
@@ -1926,7 +1926,7 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.0.0/24",
@@ -1934,7 +1934,7 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     3,
 					Subnet: "192.168.0.0/24",
@@ -1942,7 +1942,7 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001:0::/80",
@@ -1950,7 +1950,7 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:0::/80",
@@ -1958,7 +1958,7 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     7,
 					Subnet: "3001:0::/80",
@@ -1992,7 +1992,7 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/16",
@@ -2000,7 +2000,7 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.0.0/24",
@@ -2008,7 +2008,7 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001:0::/64",
@@ -2016,7 +2016,7 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:0::/80",
@@ -2041,7 +2041,7 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/16",
@@ -2049,7 +2049,7 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.5.0/24",
@@ -2057,7 +2057,7 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001:0::/16",
@@ -2065,7 +2065,7 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:0::/80",
@@ -2090,7 +2090,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/16",
@@ -2098,7 +2098,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.5.0/24",
@@ -2106,7 +2106,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     3,
 					Subnet: "192.68.5.0/24",
@@ -2114,7 +2114,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     4,
 					Subnet: "192.68.5.0/24",
@@ -2122,7 +2122,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001:0::/16",
@@ -2130,7 +2130,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:1::/80",
@@ -2138,7 +2138,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     7,
 					Subnet: "2001:0::/16",
@@ -2146,7 +2146,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     8,
 					Subnet: "2001:0::/16",
@@ -2154,7 +2154,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     9,
 					Subnet: "4001:0::/16",
@@ -2162,7 +2162,7 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     10,
 					Subnet: "4001:0::/16",
@@ -2188,7 +2188,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     1,
 					Subnet: "192.168.0.0/16",
@@ -2196,7 +2196,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     2,
 					Subnet: "192.168.5.0/24",
@@ -2204,7 +2204,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     3,
 					Subnet: "192.68.0.0/16",
@@ -2212,7 +2212,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     4,
 					Subnet: "192.68.5.0/24",
@@ -2220,7 +2220,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     5,
 					Subnet: "3001::/16",
@@ -2228,7 +2228,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     6,
 					Subnet: "3001:1::/80",
@@ -2236,7 +2236,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     7,
 					Subnet: "2001::/16",
@@ -2244,7 +2244,7 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 			},
 		},
 		&keaconfig.Subnet6{
-			Subnet6Known: keaconfig.Subnet6Known{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     8,
 					Subnet: "2001:1::/80",
@@ -4393,7 +4393,7 @@ func TestGatheringStatsUnavailableReportForDifferentKeaVersions(t *testing.T) {
 func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4427,7 +4427,7 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t 
 func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4462,7 +4462,7 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubn
 func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetworkPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4497,7 +4497,7 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetw
 func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4537,7 +4537,7 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T
 func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4552,7 +4552,7 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *te
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4587,7 +4587,7 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *te
 func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4602,7 +4602,7 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *te
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4637,7 +4637,7 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *te
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4671,7 +4671,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubne
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGlobalSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4705,7 +4705,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGl
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSharedNetworkPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4741,7 +4741,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSh
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4782,7 +4782,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *t
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwork(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4798,7 +4798,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwo
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4833,7 +4833,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwo
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubnets(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -4849,7 +4849,7 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubne
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::/16",
 			},
@@ -5069,7 +5069,7 @@ func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []keaconfi
 		prefix := fmt.Sprintf("%d.%d.%d.%d/%d", part1, part2, part3, part4, mask)
 
 		subnet := keaconfig.Subnet4{
-			Subnet4Known: keaconfig.Subnet4Known{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 					ID:     id,
 					Subnet: prefix,

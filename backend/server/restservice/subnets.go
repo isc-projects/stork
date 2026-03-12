@@ -241,7 +241,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					StoreExtendedInfo: keaParameters.StoreExtendedInfo,
 				},
 				KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
-					Unknown: keaParameters.Unknown,
+					Unknown: keaParameters.UnknownParameters,
 				},
 			}
 			if keaParameters.Relay != nil {
@@ -442,11 +442,11 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 			}
 			if keaParameters.Unknown != nil {
 				unknown := keaParameters.Unknown.(map[string]any)
-				if localSubnet.KeaParameters.Unknown == nil {
-					localSubnet.KeaParameters.Unknown = make(map[string]any)
+				if localSubnet.KeaParameters.UnknownParameters == nil {
+					localSubnet.KeaParameters.UnknownParameters = make(map[string]any)
 				}
 				for key, value := range unknown {
-					localSubnet.KeaParameters.Unknown[key] = value
+					localSubnet.KeaParameters.UnknownParameters[key] = value
 				}
 			}
 

@@ -58,7 +58,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 		Name: "foo",
 		Subnet6: []keaconfig.Subnet6{
 			{
-				Subnet6Known: keaconfig.Subnet6Known{
+				Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 					MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 						ID:     1,
 						Subnet: "2001:db8:2::/64",
@@ -73,7 +73,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 				},
 			},
 			{
-				Subnet6Known: keaconfig.Subnet6Known{
+				Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 					MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 						ID:     2,
 						Subnet: "2001:db8:1::/64",
@@ -104,7 +104,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 func TestNewSubnetFromKea(t *testing.T) {
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				ID:     1,
 				Subnet: "2001:db8:1::/64",
@@ -203,7 +203,7 @@ func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
-		Subnet4Known: keaconfig.Subnet4Known{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "invalid",
 			},
@@ -226,7 +226,7 @@ func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
-		Subnet4Known: keaconfig.Subnet4Known{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "10.42.42.42",
 			},
@@ -249,7 +249,7 @@ func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "fe80::42",
 			},
@@ -272,7 +272,7 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
-		Subnet4Known: keaconfig.Subnet4Known{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "10.42.42.42/8",
 			},
@@ -295,7 +295,7 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "2001:db8:1::42/64",
 			},

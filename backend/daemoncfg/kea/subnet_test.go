@@ -108,21 +108,21 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.Equal(t, "bar", userContext["foo"])
 
 	// Check that unknown fields are included.
-	require.Contains(t, params.Unknown, "adaptive-lease-time-threshold")
-	require.EqualValues(t, 0.5, params.Unknown["adaptive-lease-time-threshold"])
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.5, params.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test that both known and unknown parameters are included in the IPv4
 // subnet output.
 func TestMarshalSubnet4(t *testing.T) {
 	subnet4 := keaconfig.Subnet4{
-		Subnet4Known: keaconfig.Subnet4Known{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				ID:     1,
 				Subnet: "192.0.2.1/24",
 			},
 		},
-		Unknown: map[string]any{
+		UnknownParameters: map[string]any{
 			"adaptive-lease-time-threshold": 0.5,
 		},
 	}
@@ -168,7 +168,7 @@ func TestGetPrefixMandatorySubnetParameters(t *testing.T) {
 // Test getting a canonical prefix for an IPv4 subnet.
 func TestGetCanonicalPrefixSubnet4(t *testing.T) {
 	subnet4 := keaconfig.Subnet4{
-		Subnet4Known: keaconfig.Subnet4Known{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "192.0.2.1/24",
 			},
@@ -182,7 +182,7 @@ func TestGetCanonicalPrefixSubnet4(t *testing.T) {
 // Test getting a canonical prefix for an IPv6 subnet.
 func TestGetCanonicalPrefixSubnet6(t *testing.T) {
 	subnet6 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "2001:db8:1:0:0::/64",
 			},
@@ -196,7 +196,7 @@ func TestGetCanonicalPrefixSubnet6(t *testing.T) {
 // Test getting a prefix for an IPv4 subnet.
 func TestGetPrefixSubnet4(t *testing.T) {
 	subnet4 := keaconfig.Subnet4{
-		Subnet4Known: keaconfig.Subnet4Known{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "192.0.2.1/24",
 			},
@@ -209,7 +209,7 @@ func TestGetPrefixSubnet4(t *testing.T) {
 // Test getting a prefix for an IPv6 subnet.
 func TestGetPrefixSubnet6(t *testing.T) {
 	subnet6 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				Subnet: "2001:db8:1:0:0::/64",
 			},
@@ -284,8 +284,8 @@ func TestGetParametersSubnet4(t *testing.T) {
 	require.EqualValues(t, 8000, *params.MaxValidLifetime)
 
 	// Check that unknown fields are included.
-	require.Contains(t, params.Unknown, "adaptive-lease-time-threshold")
-	require.EqualValues(t, 0.5, params.Unknown["adaptive-lease-time-threshold"])
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.5, params.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test that Kea subnet configuration is properly decoded into the
@@ -374,21 +374,21 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.Equal(t, "bar", userContext["foo"])
 
 	// Check that unknown fields are included.
-	require.Contains(t, params.Unknown, "adaptive-lease-time-threshold")
-	require.EqualValues(t, 0.5, params.Unknown["adaptive-lease-time-threshold"])
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.5, params.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test that both known and unknown parameters are included in the IPv6
 // subnet output.
 func TestMarshalSubnet6(t *testing.T) {
 	subnet6 := keaconfig.Subnet6{
-		Subnet6Known: keaconfig.Subnet6Known{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
 			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
 				ID:     1,
 				Subnet: "2001:db8:1::/64",
 			},
 		},
-		Unknown: map[string]any{
+		UnknownParameters: map[string]any{
 			"adaptive-lease-time-threshold": 0.5,
 		},
 	}
@@ -451,8 +451,8 @@ func TestGetParametersSubnet6(t *testing.T) {
 	require.EqualValues(t, 8000, *params.MaxValidLifetime)
 
 	// Check that unknown fields are included.
-	require.Contains(t, params.Unknown, "adaptive-lease-time-threshold")
-	require.EqualValues(t, 0.5, params.Unknown["adaptive-lease-time-threshold"])
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.5, params.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test converting an IPv4 subnet in Stork into the subnet configuration
