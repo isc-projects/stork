@@ -250,8 +250,8 @@ The following options pertain to both the ``db-`` and ``cert-`` commands:
 ``--db-write-timeout``
    The timeout for socket writes; if reached, commands fail instead of blocking. Zero disables the timeout. Requires a unit: ms (milliseconds), s (seconds), or m (minutes), e.g.: 42s. The default is 0. ``[$STORK_DATABASE_WRITE_TIMEOUT]``
 
-``--db-tls-1-2-allowed``
-   Enables TLS 1.2 support for database connections. By default, only TLS 1.3 connections are permitted. ``[$STORK_DATABASE_TLS_1_2_ALLOWED]``
+``--db-tls-1-2-enabled``
+   Enables TLS 1.2 support for database connections. By default, only TLS 1.3 connections are permitted. ``[$STORK_DATABASE_TLS_1_2_ENABLED]``
 
 ``-h|--help``
    Shows a help message.

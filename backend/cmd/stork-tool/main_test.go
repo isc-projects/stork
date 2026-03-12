@@ -94,7 +94,7 @@ func TestDbOptsHelp(t *testing.T) {
 		"--db-name",
 		"-d",
 		"--db-trace-queries",
-		"--db-tls-1-2-allowed",
+		"--db-tls-1-2-enabled",
 		"-h",
 		"--help",
 		"STORK_DATABASE_",

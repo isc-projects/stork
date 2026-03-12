@@ -35,9 +35,9 @@ func getExpectedSwitches() []string {
 		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout",
 		"--rest-max-header-size", "--rest-max-body-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
-		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--rest-tls-1-2-allowed",
+		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir", "--rest-tls-1-2-enabled",
 		"--initial-puller-interval", "--env-file", "--use-env-file", "--db-password",
-		"--db-tls-1-2-allowed",
+		"--db-tls-1-2-enabled",
 	}
 }
 
@@ -116,7 +116,6 @@ func TestNewStorkServer(t *testing.T) {
 		"--db-sslkey", "sslkey",
 		"--db-sslrootcert", "sslrootcert",
 		"--db-trace-queries", "all",
-		"--db-tls-1-2-allowed", "true",
 		"--rest-cleanup-timeout", "12s",
 		"--rest-max-header-size", "56",
 		"--rest-max-body-size", "67",
@@ -129,7 +128,7 @@ func TestNewStorkServer(t *testing.T) {
 		"--rest-tls-certificate", "tlscert",
 		"--rest-tls-key", "tlskey",
 		"--rest-tls-ca", "tlsca",
-		"--rest-tls-1-2-allowed", "true",
+		"--rest-tls-1-2-enabled", "true",
 		"--rest-static-files-dir", "staticdir",
 		"--initial-puller-interval", "54",
 		"--hook-directory", "hookdir",
@@ -152,7 +151,6 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "sslkey", ss.DBSettings.SSLKey)
 	require.EqualValues(t, "sslrootcert", ss.DBSettings.SSLRootCert)
 	require.EqualValues(t, "all", ss.DBSettings.TraceSQL)
-	require.True(t, ss.DBSettings.TLS12Allowed)
 	require.EqualValues(t, 12*time.Second, ss.RestAPISettings.CleanupTimeout)
 	require.EqualValues(t, 56, ss.RestAPISettings.MaxHeaderSize)
 	require.EqualValues(t, "resthost", ss.RestAPISettings.Host)
@@ -164,7 +162,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "tlscert", ss.RestAPISettings.TLSCertificate)
 	require.EqualValues(t, "tlskey", ss.RestAPISettings.TLSCertificateKey)
 	require.EqualValues(t, "tlsca", ss.RestAPISettings.TLSCACertificate)
-	require.True(t, ss.RestAPISettings.TLS12Allowed)
+	require.True(t, ss.RestAPISettings.TLS12Enabled)
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
 	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
 	require.EqualValues(t, "hookdir", ss.GeneralSettings.HookDirectory)

@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-allowed**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-allowed**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
 
 Description
 ~~~~~~~~~~~
@@ -114,8 +114,8 @@ variables are listed in square brackets, where applicable):
 ``--db-write-timeout``
    The timeout for socket writes; if reached, commands fail instead of blocking. Zero disables the timeout Requires a unit: either ms (milliseconds), s (seconds), or m (minutes), e.g.: 42s. The default is 0. ``[$STORK_DATABASE_WRITE_TIMEOUT]``
 
-``--db-tls-1-2-allowed``
-   Enables TLS 1.2 support for database connections. By default, only TLS 1.3 connections are permitted. ``[$STORK_DATABASE_TLS_1_2_ALLOWED]``
+``--db-tls-1-2-enabled``
+   Enables TLS 1.2 support for database connections. By default, only TLS 1.3 connections are permitted. ``[$STORK_DATABASE_TLS_1_2_ENABLED]``
 
 ``--rest-cleanup-timeout``
    Specifies the period, in seconds, to wait before killing idle connections. The default is 10. ``[$STORK_REST_CLEANUP_TIMEOUT]``
@@ -158,8 +158,8 @@ variables are listed in square brackets, where applicable):
 ``--rest-tls-ca``
    Specifies the Certificate Authority file to be used with a mutual TLS authority. ``[$STORK_REST_TLS_CA_CERTIFICATE]``
 
-``--rest-tls-1-2-allowed``
-   Enables TLS 1.2 support for clients that do not support TLS 1.3. By default, only TLS 1.3 connections are permitted. ``[$STORK_REST_TLS_1_2_ALLOWED]``
+``--rest-tls-1-2-enabled``
+   Enables TLS 1.2 support for clients that do not support TLS 1.3. By default, only TLS 1.3 connections are permitted. ``[$STORK_REST_TLS_1_2_ENABLED]``
 
 ``--rest-static-files-dir``
    Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``
