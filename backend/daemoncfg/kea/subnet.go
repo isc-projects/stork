@@ -209,11 +209,10 @@ type Subnet6Known struct {
 	CommonSubnetParameters
 	MandatorySubnetParameters
 	PreferredLifetimeParameters
-	PDAllocator *string        `json:"pd-allocator,omitempty"`
-	InterfaceID *string        `json:"interface-id,omitempty"`
-	PDPools     []PDPool       `json:"pd-pools,omitempty"`
-	RapidCommit *bool          `json:"rapid-commit,omitempty"`
-	Unknown     map[string]any `json:"-"`
+	PDAllocator *string  `json:"pd-allocator,omitempty"`
+	InterfaceID *string  `json:"interface-id,omitempty"`
+	PDPools     []PDPool `json:"pd-pools,omitempty"`
+	RapidCommit *bool    `json:"rapid-commit,omitempty"`
 }
 
 // Represents an IPv6 subnet in Kea. It holds a structure with known (supported by
