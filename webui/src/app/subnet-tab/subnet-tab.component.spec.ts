@@ -82,6 +82,9 @@ describe('SubnetTabComponent', () => {
                                 },
                             ],
                             optionsHash: 'abc',
+                            unknown: {
+                                'adaptive-lease-time-threshold': 0.5,
+                            },
                         },
                         sharedNetworkLevelParameters: {
                             cacheThreshold: 0.3,
@@ -140,6 +143,10 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[4].nativeElement.innerText).toContain('Cache Threshold')
         expect(fieldsets[4].nativeElement.innerText).toContain('0.25')
         expect(fieldsets[4].nativeElement.innerText).toContain('1000')
+
+        // Unknown parameters are not displayed.
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Unknown')
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Adaptive Lease Time Threshold')
 
         // Ensure that the DHCP options are excluded from this list.
         expect(fieldsets[4].nativeElement.innerText).not.toContain('Options')

@@ -6,6 +6,7 @@ import {
     UntypedFormGroup,
     FormsModule,
     ReactiveFormsModule,
+    FormRecord,
 } from '@angular/forms'
 import { getSeverityByIndex, uncamelCase } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
@@ -93,9 +94,7 @@ export class SharedParametersFormComponent<T extends { [K in keyof T]: AbstractC
         if (!this.formGroup || !this.formGroup.controls) {
             return names
         }
-        for (let key of Object.keys(this.formGroup?.controls)) {
-            names.push(key)
-        }
+        names = Object.keys(this.formGroup?.controls).filter((key) => !(this.formGroup.get(key) instanceof FormRecord))
         return names.sort()
     }
 

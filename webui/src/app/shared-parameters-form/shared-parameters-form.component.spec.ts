@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { AutoComplete } from 'primeng/autocomplete'
-import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { FormControl, FormGroup, FormRecord, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
@@ -21,6 +21,7 @@ interface SubnetForm {
     hostReservationIdentifiers?: SharedParameterFormGroup<string[]>
     requireClientClasses?: SharedParameterFormGroup<string[]>
     relayAddresses?: SharedParameterFormGroup<string[]>
+    unknown?: FormRecord<SharedParameterFormGroup<any>>
 }
 
 describe('SharedParametersFormComponent', () => {
@@ -111,10 +112,18 @@ describe('SharedParametersFormComponent', () => {
                     new FormControl(['192.0.2.1', '192.0.2.2', '192.0.2.3']),
                 ]
             ),
+            unknown: new FormRecord<SharedParameterFormGroup<any>>({
+                adaptiveLeaseTimeThreshold: new SharedParameterFormGroup(
+                    {
+                        type: 'number',
+                    },
+                    [new FormControl(0.5), new FormControl(0.6)]
+                ),
+            }),
         })
         fixture.detectChanges()
 
-        // Make sure the keys are sorted.
+        // Make sure the keys are sorted, and unknown parameters are not included.
         expect(component.parameterNames).toEqual([
             'allocator',
             'cacheMaxAge',

@@ -19,7 +19,7 @@ import {
     Subnet,
 } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
-import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { FormControl, FormGroup, FormRecord, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { IPType } from '../iptype'
 
 describe('SubnetSetFormService', () => {
@@ -1130,6 +1130,9 @@ describe('SubnetSetFormService', () => {
                 relay: {
                     ipAddresses: ['192.0.2.1', '192.0.2.2', '192.0.2.3'],
                 },
+                unknown: {
+                    'adaptive-lease-time-threshold': 0.5,
+                },
             },
             {
                 cacheThreshold: 0.5,
@@ -1178,6 +1181,9 @@ describe('SubnetSetFormService', () => {
                 storeExtendedInfo: false,
                 relay: {
                     ipAddresses: ['192.0.2.1', '192.0.2.2', '192.0.2.3'],
+                },
+                unknown: {
+                    'adaptive-lease-time-threshold': 0.6,
                 },
             },
         ]
@@ -1693,6 +1699,21 @@ describe('SubnetSetFormService', () => {
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
         expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBeTrue()
         expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBeFalse()
+
+        const fr = form.get('unknown') as FormRecord<SharedParameterFormGroup<any>>
+        expect(fr).toBeTruthy()
+        expect(Object.keys(fr.controls).length).toBe(1)
+        expect(fr.controls['adaptive-lease-time-threshold']?.controls).toBeTruthy()
+        expect((fr.controls['adaptive-lease-time-threshold']?.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
+        expect((fr.controls['adaptive-lease-time-threshold']?.get('values') as UntypedFormArray)?.controls.length).toBe(
+            2
+        )
+        expect(
+            (fr.controls['adaptive-lease-time-threshold']?.get('values') as UntypedFormArray)?.controls[0].value
+        ).toBe(0.5)
+        expect(
+            (fr.controls['adaptive-lease-time-threshold']?.get('values') as UntypedFormArray)?.controls[1].value
+        ).toBe(0.6)
     })
 
     it('should exclude evaluate-additional-classes and client-classes from an IPv4 subnet parameters form group for Kea versions prior to 2.7.4', () => {
@@ -1755,6 +1776,9 @@ describe('SubnetSetFormService', () => {
                 pdAllocator: 'flq',
                 rapidCommit: true,
                 serverHostname: 'foo.example.org.',
+                unknown: {
+                    'adaptive-lease-time-threshold': 0.5,
+                },
             },
         ]
         let form = service.convertKeaSubnetParametersToForm(IPType.IPv6, null, 'subnet', parameters)
@@ -1832,6 +1856,18 @@ describe('SubnetSetFormService', () => {
         expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(1)
         expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBeTrue()
+
+        const fr = form.get('unknown') as FormRecord<SharedParameterFormGroup<any>>
+        expect(fr).toBeTruthy()
+        expect(Object.keys(fr.controls).length).toBe(1)
+        expect(fr.controls['adaptive-lease-time-threshold']?.controls).toBeTruthy()
+        expect((fr.controls['adaptive-lease-time-threshold']?.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
+        expect((fr.controls['adaptive-lease-time-threshold']?.get('values') as UntypedFormArray)?.controls.length).toBe(
+            1
+        )
+        expect(
+            (fr.controls['adaptive-lease-time-threshold']?.get('values') as UntypedFormArray)?.controls[0].value
+        ).toBe(0.5)
     })
 
     it('should use a validator for generated prefix', () => {
@@ -1896,49 +1932,73 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv4, null)
-        expect(Object.keys(form.controls).length).toBe(38)
+        expect(Object.keys(form.controls).length).toBe(39)
 
         for (const key of Object.keys(form.controls)) {
-            let control = form.get(key) as SharedParameterFormGroup<any>
-            expect(control).toBeTruthy()
-            expect(control.controls?.unlocked?.value).toBeFalse()
-            expect(control.controls?.values?.value.length).toBe(1)
+            if (key === 'unknown') {
+                let control = form.get(key) as FormRecord<SharedParameterFormGroup<any>>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(Object.keys(control.controls).length).withContext(`control ${key} has no controls`).toBe(0)
+            } else {
+                let control = form.get(key) as SharedParameterFormGroup<any>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(control.controls?.unlocked?.value).withContext(`control ${key} is not unlocked`).toBeFalse()
+                expect(control.controls?.values?.value.length).withContext(`control ${key} has single value`).toBe(1)
+            }
         }
     })
 
     it('should create a default Kea parameters for for an IPv6 shared network', () => {
         let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv6, null)
-        expect(Object.keys(form.controls).length).toBe(39)
+        expect(Object.keys(form.controls).length).toBe(40)
 
         for (const key of Object.keys(form.controls)) {
-            let control = form.get(key) as SharedParameterFormGroup<any>
-            expect(control).toBeTruthy()
-            expect(control.controls?.unlocked?.value).toBeFalse()
-            expect(control.controls?.values?.value.length).toBe(1)
+            if (key === 'unknown') {
+                let control = form.get(key) as FormRecord<SharedParameterFormGroup<any>>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(Object.keys(control.controls).length).withContext(`control ${key} has no controls`).toBe(0)
+            } else {
+                let control = form.get(key) as SharedParameterFormGroup<any>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(control.controls?.unlocked?.value).withContext(`control ${key} is not unlocked`).toBeFalse()
+                expect(control.controls?.values?.value.length).withContext(`control ${key} has single value`).toBe(1)
+            }
         }
     })
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4, null)
-        expect(Object.keys(form.controls).length).toBe(41)
+        expect(Object.keys(form.controls).length).toBe(42)
 
         for (const key of Object.keys(form.controls)) {
-            let control = form.get(key) as SharedParameterFormGroup<any>
-            expect(control).toBeTruthy()
-            expect(control.controls?.unlocked?.value).toBeFalse()
-            expect(control.controls?.values?.value.length).toBe(1)
+            if (key === 'unknown') {
+                let control = form.get(key) as FormRecord<SharedParameterFormGroup<any>>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(Object.keys(control.controls).length).withContext(`control ${key} has no controls`).toBe(0)
+            } else {
+                let control = form.get(key) as SharedParameterFormGroup<any>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(control.controls?.unlocked?.value).withContext(`control ${key} is not unlocked`).toBeFalse()
+                expect(control.controls?.values?.value.length).withContext(`control ${key} has single value`).toBe(1)
+            }
         }
     })
 
     it('should create a default Kea parameters form for an IPv6 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6, null)
-        expect(Object.keys(form.controls).length).toBe(39)
+        expect(Object.keys(form.controls).length).toBe(40)
 
         for (const key of Object.keys(form.controls)) {
-            let control = form.get(key) as SharedParameterFormGroup<any>
-            expect(control).toBeTruthy()
-            expect(control.controls?.unlocked?.value).toBeFalse()
-            expect(control.controls?.values?.value.length).toBe(1)
+            if (key === 'unknown') {
+                let control = form.get(key) as FormRecord<SharedParameterFormGroup<any>>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(Object.keys(control.controls).length).withContext(`control ${key} has no controls`).toEqual(0)
+            } else {
+                let control = form.get(key) as SharedParameterFormGroup<any>
+                expect(control).withContext(`control ${key} is initialized correctly`).toBeTruthy()
+                expect(control.controls?.unlocked?.value).withContext(`control ${key} is not unlocked`).toBeFalse()
+                expect(control.controls?.values?.value.length).withContext(`control ${key} has single value`).toBe(1)
+            }
         }
     })
 
@@ -2500,6 +2560,9 @@ describe('SubnetSetFormService', () => {
                                 },
                             ],
                             optionsHash: '123',
+                            unknown: {
+                                'adaptive-lease-time-threshold': 0.5,
+                            },
                         },
                     },
                     userContext: {
@@ -2540,6 +2603,9 @@ describe('SubnetSetFormService', () => {
         expect(subnet1.localSubnets[0].userContext).toEqual({ foo: 'bar' })
         expect(subnet1.localSubnets[1].userContext).toEqual({ bar: 'foo' })
 
+        expect(subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.unknown).toEqual({
+            'adaptive-lease-time-threshold': 0.5,
+        })
         expect(subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.options?.length).toBe(1)
         expect(subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.options[0].code).toBe(5)
         expect(

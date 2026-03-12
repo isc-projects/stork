@@ -3,6 +3,7 @@ import {
     FormArray,
     FormControl,
     FormGroup,
+    FormRecord,
     UntypedFormArray,
     UntypedFormControl,
     UntypedFormGroup,
@@ -133,6 +134,7 @@ export interface KeaSubnetParametersForm {
     serverHostname?: SharedParameterFormGroup<string>
     storeExtendedInfo?: SharedParameterFormGroup<boolean>
     relayAddresses?: SharedParameterFormGroup<string[]>
+    unknown?: FormRecord<SharedParameterFormGroup<any>>
 }
 
 /**
@@ -417,16 +419,33 @@ export class SubnetSetFormService {
      * @returns An array of the parameter sets.
      */
     private convertFormToKeaParameters<
-        FormType extends { [K in keyof FormType]: SharedParameterFormGroup<any, any> },
+        FormType extends {
+            [K in keyof FormType]: SharedParameterFormGroup<any, any> | FormRecord<SharedParameterFormGroup<any, any>>
+        },
         ParamsType extends { [K in keyof ParamsType]: ParamsType[K] },
     >(daemons: VersionedDaemon[], form: FormGroup<FormType>): ParamsType[] {
-        const params: ParamsType[] = []
+        let params: ParamsType[] = []
         // Iterate over all parameters.
         for (let key in form.controls) {
+            if (form.controls[key] instanceof FormRecord) {
+                // Unknown parameters are held in a FormRecord.
+                // Get them recursively and append to the unknown
+                // parameter set.
+                const p = [
+                    ...this.convertFormToKeaParameters<FormType, ParamsType>(
+                        daemons,
+                        form.controls[key] as FormGroup<FormType>
+                    ),
+                ]
+                for (let i = 0; i < p.length; i++) {
+                    params[i]['unknown'] = p[i] || {}
+                }
+                continue
+            }
             const unlocked = form.get(key).get('unlocked')?.value
             // Get the values of the parameter for different servers.
             const values = form.get(key).get('values') as UntypedFormArray
-            const data = (form.controls[key] as SharedParameterFormGroup<any, any>)?.data
+            let data = (form.controls[key] as SharedParameterFormGroup<any, any>)?.data
             // For each server-specific value of the parameter.
             for (let i = 0; i < values?.length; i++) {
                 // If we haven't added the parameter set for the current index let's add one.
@@ -938,6 +957,22 @@ export class SubnetSetFormService {
                     },
                     parameters.map((params) => new FormControl<boolean>(params.rapidCommit))
                 )
+        }
+        form.unknown = new FormRecord<SharedParameterFormGroup<any>>({})
+        for (let paramsSet of parameters) {
+            for (let param of Object.keys(paramsSet.unknown || {})) {
+                if (!form.unknown.get(param)) {
+                    form.unknown?.addControl(
+                        param,
+                        new SharedParameterFormGroup<any>(
+                            {
+                                type: 'any',
+                            },
+                            parameters.map((params) => new FormControl<any>(params.unknown?.[param]))
+                        )
+                    )
+                }
+            }
         }
         let formGroup = new FormGroup<KeaSubnetParametersForm>(form)
         return formGroup
