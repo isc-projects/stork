@@ -376,7 +376,9 @@ func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Fla
 				defaultBool, err = strconv.ParseBool(definition.Default)
 				if err != nil {
 					return nil, errors.Wrapf(
-						err, "invalid default value ('%s') for parameter ('%s')",
+						err, "invalid default value ('%s') for boolean  "+
+							"parameter ('%s'), expected '1', 't', 'T', 'TRUE', "+
+							"'true', 'True', '0', 'f', 'F', 'FALSE', 'false', 'False'",
 						definition.Default, definition.Long,
 					)
 				}
@@ -393,7 +395,7 @@ func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Fla
 			valueInt, err := strconv.ParseInt(definition.Default, 10, 0)
 			if err != nil {
 				return nil, errors.Wrapf(
-					err, "invalid default value ('%s') for parameter ('%s')",
+					err, "invalid default value ('%s') for integer parameter ('%s'), expected an integer number",
 					definition.Default, definition.Long,
 				)
 			}
