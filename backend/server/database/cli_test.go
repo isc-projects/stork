@@ -22,10 +22,11 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 		FieldString              string `tag:"field-string"`
 		FieldInt                 int    `tag:"field-int"`
 		FieldWithoutTag          string
-		FieldWithUnexpectedTag   string `unexpected:"tag"`
-		FieldWithMultipleTags    string `tag:"field-multiple" another:"unexpected"`
-		FieldWithUnsupportedType bool   `tag:"field-boolean"`
-		FieldStringUnknown       string `tag:"field-unknown"`
+		FieldWithUnexpectedTag   string    `unexpected:"tag"`
+		FieldWithMultipleTags    string    `tag:"field-multiple" another:"unexpected"`
+		FieldWithBooleanType     bool      `tag:"field-boolean"`
+		FieldStringUnknown       string    `tag:"field-unknown"`
+		FieldWithUnsupportedType complex64 `tag:"field-complex"`
 	}
 
 	lookup := func(key string) (string, bool) {
@@ -40,6 +41,8 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 			return "true", true
 		case "nested-field-string":
 			return "nested-field-string", true
+		case "field-complex":
+			return "1+2i", true
 		default:
 			return "", false
 		}
@@ -56,9 +59,10 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 	require.Empty(t, obj.FieldWithoutTag)
 	require.Empty(t, obj.FieldWithUnexpectedTag)
 	require.EqualValues(t, "value-multiple", obj.FieldWithMultipleTags)
-	require.True(t, obj.FieldWithUnsupportedType)
+	require.True(t, obj.FieldWithBooleanType)
 	require.Empty(t, obj.FieldStringUnknown)
 	require.EqualValues(t, "nested-field-string", obj.Parent.FieldString)
+	require.Empty(t, obj.FieldWithUnsupportedType)
 }
 
 // Test that the values of the struct members are read from environment
