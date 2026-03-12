@@ -209,7 +209,7 @@ func TestGetTLSConfigDefaultTLS13(t *testing.T) {
 }
 
 // Test that the minimum TLS version is lowered to 1.2 when the flag is set.
-func TestGetTLSConfigWithTLS12Allowed(t *testing.T) {
+func TestGetTLSConfigWithTLS12Enabled(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 

@@ -236,7 +236,7 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 		SSLCert:      "sslcert",
 		SSLKey:       "sslkey",
 		SSLRootCert:  "sslrootcert",
-		TLS12Allowed: true,
+		TLS12Enabled: true,
 		TraceSQL:     "run",
 		ReadTimeout:  24 * time.Minute,
 		WriteTimeout: 42 * time.Second,
@@ -256,7 +256,7 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	require.EqualValues(t, "sslcert", settings.SSLCert)
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
-	require.True(t, settings.TLS12Allowed)
+	require.True(t, settings.TLS12Enabled)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
 	require.EqualValues(t, 24*time.Minute, settings.ReadTimeout)
 	require.EqualValues(t, 42*time.Second, settings.WriteTimeout)
@@ -365,7 +365,7 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 		"db-sslkey":          "sslkey",
 		"db-sslcert":         "sslcert",
 		"db-sslrootcert":     "sslrootcert",
-		"db-tls-1-2-allowed": "true",
+		"db-tls-1-2-enabled": "true",
 		"db-trace-queries":   "run",
 		"db-read-timeout":    "24m",
 		"db-write-timeout":   "42s",
@@ -384,7 +384,7 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 	require.EqualValues(t, "sslcert", cliFlags.SSLCert)
 	require.EqualValues(t, "sslkey", cliFlags.SSLKey)
 	require.EqualValues(t, "sslrootcert", cliFlags.SSLRootCert)
-	require.True(t, cliFlags.TLS12Allowed)
+	require.True(t, cliFlags.TLS12Enabled)
 	require.EqualValues(t, LoggingQueryPresetRuntime, cliFlags.TraceSQL)
 	require.EqualValues(t, 24*time.Minute, cliFlags.ReadTimeout)
 	require.EqualValues(t, 42*time.Second, cliFlags.WriteTimeout)
