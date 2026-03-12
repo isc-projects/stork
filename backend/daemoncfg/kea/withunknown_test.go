@@ -92,6 +92,26 @@ func TestWithUnknownEmbeddedStruct(t *testing.T) {
 	require.JSONEq(t, jsonInput, string(marshalled))
 }
 
+// Test that the WithUnknown type can be used with a structure that
+// has only known parameters.
+func TestWithUnknownOnlyKnown(t *testing.T) {
+	type Known struct {
+		Foo string `json:"foo"`
+	}
+	s := WithUnknown[Known]{}
+
+	jsonInput := `{"foo": "bar"}`
+	err := s.UnmarshalJSON([]byte(jsonInput))
+	require.NoError(t, err)
+	require.Equal(t, "bar", s.Known.Foo)
+	require.Nil(t, s.Unknown)
+
+	// Verify that the WithUnknown structure can be marshalled back to JSON.
+	marshalled, err := s.MarshalJSON()
+	require.NoError(t, err)
+	require.JSONEq(t, jsonInput, string(marshalled))
+}
+
 // Test that the WithUnknown type can be used with non-struct types.
 func TestWithUnknownNonStruct(t *testing.T) {
 	type Known int

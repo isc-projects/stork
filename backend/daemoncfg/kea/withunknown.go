@@ -80,11 +80,13 @@ func (w *WithUnknown[T]) UnmarshalJSON(data []byte) error {
 	}
 
 	// Walk over the map and collect unknown parameters.
-	w.Unknown = make(map[string]any)
 	for k, v := range all {
 		if _, exists := tags[k]; !exists {
 			// If the parameter is not in the list of known parameters,
 			// it is unknown.
+			if w.Unknown == nil {
+				w.Unknown = make(map[string]any)
+			}
 			w.Unknown[k] = v
 		}
 	}
