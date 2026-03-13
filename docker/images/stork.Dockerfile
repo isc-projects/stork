@@ -251,6 +251,7 @@ RUN apt-get update \
                 postgresql-client=15+* \
                 apt-transport-https=2.6.* \
                 gnupg=2.2.* \
+                ssl-cert=1.1.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 # Install Kea from Cloudsmith
@@ -337,7 +338,9 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
         # Puts empty credentials file to allow mount it as volume.
-        && mkdir -p /etc/stork/
+        && mkdir -p /etc/stork/ \
+        # Grant permissions to Kea user to read the SSL certificates.
+        && usermod -aG ssl-cert _kea
 
 FROM kea-base AS kea
 # Install agent
