@@ -343,11 +343,17 @@ func TestGetStateMultipleAccessPointsSameType(t *testing.T) {
 	require.Equal(t, stork.Version, rsp.AgentVersion)
 	require.Len(t, rsp.Daemons, 1)
 	daemon := rsp.Daemons[0]
-	require.Len(t, daemon.AccessPoints, 1)
+	require.Len(t, daemon.AccessPoints, 2)
 	accessPoint := daemon.AccessPoints[0]
 	require.Equal(t, AccessPointControl, accessPoint.Type)
 	require.Equal(t, "unix", accessPoint.Protocol)
 	require.Equal(t, "/var/run/kea/kea-dhcp4.sock", accessPoint.Address)
+	accessPoint = daemon.AccessPoints[1]
+	require.Equal(t, AccessPointControl, accessPoint.Type)
+	require.Equal(t, "http", accessPoint.Protocol)
+	require.Equal(t, "1.2.3.1", accessPoint.Address)
+	require.EqualValues(t, 1234, accessPoint.Port)
+	require.Empty(t, accessPoint.Key)
 }
 
 // Test forwarding command to Kea when HTTP 200 status code
