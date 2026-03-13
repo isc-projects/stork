@@ -133,9 +133,31 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	return nil
 }
 
+// It is an index key for comparing daemons. The daemons are considered equal
+// if their type matches and if they have at least one same control channel. The
+// control channel is unique for each daemon because only one process can
+// listen on a given address and port or a given Unix socket.
+// We don't compare the protocol here because we want to consider daemons same
+// even if they switched from HTTP to HTTPS or from RNDC without key to RNDC
+// with key, etc.
+type daemonCompareKey struct {
+	apType  dbmodel.AccessPointType
+	address string
+	port    int64
+}
+
+// Constructs a new daemon compare key from an access point.
+func newDaemonCompareKey(ap dbmodel.AccessPoint) daemonCompareKey {
+	return daemonCompareKey{
+		apType:  ap.Type,
+		address: ap.Address,
+		port:    ap.Port,
+	}
+}
+
 // daemonCompare compares two daemons for equality. Two daemons are considered
-// equal if their type matches and if they have the same control port. Return
-// true if equal, false otherwise.
+// equal if their type matches and if they have at least one same control
+// channel. Return true if equal, false otherwise.
 func daemonCompare(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool {
 	if dbDaemon.Name != grpcDaemon.Name {
 		return false
@@ -143,23 +165,68 @@ func daemonCompare(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool 
 	if len(dbDaemon.AccessPoints) != len(grpcDaemon.AccessPoints) {
 		return false
 	}
-	accessPointIndex := map[dbmodel.AccessPointType]*dbmodel.AccessPoint{}
+	if len(dbDaemon.AccessPoints) == 0 {
+		// If there are no access points, assume that these daemons are the
+		// same.
+		return true
+	}
+
+	accessPointIndex := map[daemonCompareKey]*dbmodel.AccessPoint{}
 	for _, pt := range dbDaemon.AccessPoints {
-		accessPointIndex[pt.Type] = pt
+		accessPointIndex[newDaemonCompareKey(*pt)] = pt
 	}
 
 	for _, grpcPt := range grpcDaemon.AccessPoints {
-		dbPt, ok := accessPointIndex[grpcPt.Type]
-		if !ok {
-			return false
-		}
-
-		if dbPt.Port != grpcPt.Port || dbPt.Address != grpcPt.Address || dbPt.Key != grpcPt.Key || dbPt.Protocol != grpcPt.Protocol {
-			return false
+		// Check if the gRPC daemon has at least common control channel with
+		// the database daemon.
+		if _, ok := accessPointIndex[newDaemonCompareKey(grpcPt)]; ok {
+			return true
 		}
 	}
+	return false
+}
 
-	return true
+// Updates the access points of the database daemon to match the access points
+// of the gRPC daemon. It preserves the existing access points and updates
+// their details, adds new access points and removes the access points which are
+// not present in the gRPC daemon.
+func updateAccessPoints(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) {
+	var accessPoints []*dbmodel.AccessPoint
+	grpcAccessPointIndex := map[daemonCompareKey]int{}
+	seenGrpcIndices := map[int]struct{}{}
+
+	for i, pt := range grpcDaemon.AccessPoints {
+		grpcAccessPointIndex[newDaemonCompareKey(pt)] = i
+	}
+
+	for _, dbAp := range dbDaemon.AccessPoints {
+		if i, ok := grpcAccessPointIndex[newDaemonCompareKey(*dbAp)]; ok {
+			// Update the existing access point.
+			grpcAp := grpcDaemon.AccessPoints[i]
+			dbAp.Key = grpcAp.Key
+			dbAp.Protocol = grpcAp.Protocol
+			accessPoints = append(accessPoints, dbAp)
+			seenGrpcIndices[i] = struct{}{}
+		}
+		// Skip the access points which are not present in the gRPC daemon.
+	}
+
+	// Add the access points which are present in the gRPC daemon but not in the database daemon.
+	for i, grpcAp := range grpcDaemon.AccessPoints {
+		if _, ok := seenGrpcIndices[i]; ok {
+			continue
+		}
+		accessPoints = append(accessPoints, &dbmodel.AccessPoint{
+			Type:     grpcAp.Type,
+			Address:  grpcAp.Address,
+			Port:     grpcAp.Port,
+			Key:      grpcAp.Key,
+			Protocol: grpcAp.Protocol,
+		})
+	}
+
+	// Set the updated access points to the database daemon.
+	dbDaemon.AccessPoints = accessPoints
 }
 
 // For each provided discovered daemon, try to find a matching daemon in the
@@ -183,8 +250,17 @@ DISCOVERED_LOOP:
 				continue
 			}
 
+			// Check if these entries represent the same daemon running on the
+			// machine.
 			if daemonCompare(oldDaemon, discoveredDaemon) {
+				// They refer to the same daemon.
+				// Mark as seen.
 				oldMatchedIndices[i] = struct{}{}
+				// Update the daemon access point. We want to preserve the
+				// existing access points and update their details, add new
+				// access points and remove the access points which are not
+				// present in the discovered daemon.
+				updateAccessPoints(oldDaemon, discoveredDaemon)
 				continue DISCOVERED_LOOP
 			}
 		}
