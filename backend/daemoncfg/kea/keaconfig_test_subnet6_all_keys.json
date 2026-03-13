@@ -22,6 +22,7 @@
     "option-data": [
         {
             "always-send": true,
+            "client-classes": ["KNOWN"],
             "code": 7,
             "csv-format": true,
             "data": "15",

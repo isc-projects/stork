@@ -1,6 +1,7 @@
 package keaconfig_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -22,12 +23,13 @@ type testDHCPOptionField struct {
 
 // DHCP option used in the tests implementing the DHCPOption interface.
 type testDHCPOption struct {
-	alwaysSend  bool
-	code        uint16
-	encapsulate string
-	fields      []testDHCPOptionField
-	name        string
-	space       string
+	alwaysSend        bool
+	code              uint16
+	encapsulate       string
+	fields            []testDHCPOptionField
+	name              string
+	space             string
+	unknownParameters map[string]any
 }
 
 // Convenience function creating new testDHCPOption instance.
@@ -85,6 +87,66 @@ func (option testDHCPOption) GetSpace() string {
 // Returns option universe (i.e., IPv4 or IPv6).
 func (option testDHCPOption) GetUniverse() storkutil.IPType {
 	return storkutil.IPv4
+}
+
+// Returns unknown (unsupported by Stork) parameters.
+func (option testDHCPOption) GetUnknownParameters() map[string]any {
+	return option.unknownParameters
+}
+
+// Test parsing a option-data item from Kea.
+func TestUnmarshalSingleOptionData(t *testing.T) {
+	jsonInput := `
+	{
+		"always-send": true,
+		"code": 1600,
+		"csv-format": true,
+		"data": "foo.example.org",
+		"name": "bar",
+		"space": "foobar",
+		"unknown-parameter": "foo"
+	}`
+	option := keaconfig.SingleOptionData{}
+	err := json.Unmarshal([]byte(jsonInput), &option)
+	require.NoError(t, err)
+	require.True(t, option.AlwaysSend)
+	require.EqualValues(t, 1600, option.Code)
+	require.True(t, option.CSVFormat)
+	require.Equal(t, "foo.example.org", option.Data)
+	require.Equal(t, "foobar", option.Space)
+	require.Equal(t, "bar", option.Name)
+	require.Equal(t, map[string]any{
+		"unknown-parameter": "foo",
+	}, option.UnknownParameters)
+}
+
+// Test marshalling a option-data item to Kea.
+func TestMarshalSingleOptionData(t *testing.T) {
+	option := keaconfig.SingleOptionData{
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			AlwaysSend: true,
+			Code:       1600,
+			CSVFormat:  true,
+			Data:       "foo.example.org",
+			Name:       "bar",
+			Space:      "foobar",
+		},
+		UnknownParameters: map[string]any{
+			"unknown-parameter": "foo",
+		},
+	}
+	marshalled, err := json.Marshal(option)
+	require.NoError(t, err)
+	require.JSONEq(t, `
+	{
+		"always-send": true,
+		"code": 1600,
+		"csv-format": true,
+		"data": "foo.example.org",
+		"name": "bar",
+		"space": "foobar",
+		"unknown-parameter": "foo"
+	}`, string(marshalled))
 }
 
 // Test that a DHCP option in the Kea format is created from the Stork's
@@ -151,6 +213,9 @@ func TestCreateSingleOptionDataMultipleFields(t *testing.T) {
 		},
 		name:  "bar",
 		space: "foobar",
+		unknownParameters: map[string]any{
+			"foo": "bar",
+		},
 	}
 
 	controller := gomock.NewController(t)
@@ -169,6 +234,9 @@ func TestCreateSingleOptionDataMultipleFields(t *testing.T) {
 	require.True(t, data.CSVFormat)
 	require.Equal(t, "foobar", data.Space)
 	require.Equal(t, "bar", data.Name)
+	require.Equal(t, map[string]any{
+		"foo": "bar",
+	}, data.UnknownParameters)
 
 	// Make sure that the option data were set correctly.
 	require.Equal(t, "123,234,369,-123,-234,-369,true,192.0.2.1,3000:12::,3001::/64,1644/12,foobar.example.org,foobar", data.Data)
@@ -203,6 +271,7 @@ func TestCreateSingleOptionDataBinaryField(t *testing.T) {
 	require.True(t, data.CSVFormat)
 	require.Empty(t, data.Space)
 	require.Empty(t, data.Name)
+	require.Nil(t, data.UnknownParameters)
 
 	// The colons should have been sanitized.
 	require.Equal(t, "01020304", data.Data)
@@ -299,12 +368,17 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 // representation of an option.
 func TestCreateDHCPOptionCSV(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		AlwaysSend: true,
-		Code:       244,
-		CSVFormat:  true,
-		Data:       "192.0.2.1, xyz, true, 1020, 3000::/64, 90/2, foobar.example.com., 2001:db8:1::12, -5",
-		Name:       "foo",
-		Space:      "bar",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			AlwaysSend: true,
+			Code:       244,
+			CSVFormat:  true,
+			Data:       "192.0.2.1, xyz, true, 1020, 3000::/64, 90/2, foobar.example.com., 2001:db8:1::12, -5",
+			Name:       "foo",
+			Space:      "bar",
+		},
+		UnknownParameters: map[string]any{
+			"foo": "bar",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -318,6 +392,9 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 	require.Equal(t, "bar", option.GetSpace())
 	require.Equal(t, storkutil.IPv4, option.GetUniverse())
 	require.Equal(t, "bar.244", option.GetEncapsulate())
+	require.Equal(t, map[string]any{
+		"foo": "bar",
+	}, option.GetUnknownParameters())
 
 	fields := option.GetFields()
 	require.Len(t, fields, 9)
@@ -364,12 +441,17 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 // into the Stork's representation of an option.
 func TestCreateDHCPOptionHex(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		AlwaysSend: false,
-		Code:       2048,
-		CSVFormat:  false,
-		Data:       "01 02 03 04 05 06 07 08 09 0A",
-		Name:       "foobar",
-		Space:      "baz",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			AlwaysSend: false,
+			Code:       2048,
+			CSVFormat:  false,
+			Data:       "01 02 03 04 05 06 07 08 09 0A",
+			Name:       "foobar",
+			Space:      "baz",
+		},
+		UnknownParameters: map[string]any{
+			"foo": "bar",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -383,6 +465,9 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 	require.Equal(t, "baz", option.GetSpace())
 	require.Equal(t, storkutil.IPv6, option.GetUniverse())
 	require.Equal(t, "baz.2048", option.GetEncapsulate())
+	require.Equal(t, map[string]any{
+		"foo": "bar",
+	}, option.GetUnknownParameters())
 
 	fields := option.GetFields()
 	require.Len(t, fields, 1)
@@ -395,10 +480,12 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 // Stork's representation of an option.
 func TestCreateDHCPOptionEmpty(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:      333,
-		CSVFormat: true,
-		Name:      "foobar",
-		Space:     "baz",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:      333,
+			CSVFormat: true,
+			Name:      "foobar",
+			Space:     "baz",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -412,14 +499,17 @@ func TestCreateDHCPOptionEmpty(t *testing.T) {
 	require.Equal(t, "baz", option.GetSpace())
 	require.Equal(t, storkutil.IPv6, option.GetUniverse())
 	require.Equal(t, "baz.333", option.GetEncapsulate())
+	require.Nil(t, option.GetUnknownParameters())
 	require.Empty(t, option.GetFields())
 }
 
 // Test encapsulated option space setting for top-level DHCPv4 options.
 func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:  253,
-		Space: dhcpmodel.DHCPv4OptionSpace,
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:  253,
+			Space: dhcpmodel.DHCPv4OptionSpace,
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -433,8 +523,10 @@ func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
 // Test encapsulated option space setting for DHCPv4 suboptions.
 func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:  1,
-		Space: "option-253",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:  1,
+			Space: "option-253",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -448,8 +540,10 @@ func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
 // Test encapsulated option space setting for top-level DHCPv6 options.
 func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:  1024,
-		Space: dhcpmodel.DHCPv6OptionSpace,
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:  1024,
+			Space: dhcpmodel.DHCPv6OptionSpace,
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -463,8 +557,10 @@ func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
 // Test encapsulated option space setting for DHCPv6 suboptions.
 func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:  1,
-		Space: "option-1024",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:  1,
+			Space: "option-1024",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -479,11 +575,16 @@ func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 // encapsulated option space and setting the option field types.
 func TestCreateStandardDHCPOption(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:      89,
-		CSVFormat: true,
-		Data:      "10, 9, 6, 192.0.2.1, 3000::/64",
-		Name:      "s46-rule",
-		Space:     "s46-cont-mape-options",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:      89,
+			CSVFormat: true,
+			Data:      "10, 9, 6, 192.0.2.1, 3000::/64",
+			Name:      "s46-rule",
+			Space:     "s46-cont-mape-options",
+		},
+		UnknownParameters: map[string]any{
+			"foo": "bar",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -499,6 +600,9 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 	require.Equal(t, "s46-cont-mape-options", option.GetSpace())
 	require.Equal(t, "s46-rule-options", option.GetEncapsulate())
 	require.Equal(t, storkutil.IPv6, option.GetUniverse())
+	require.Equal(t, map[string]any{
+		"foo": "bar",
+	}, option.GetUnknownParameters())
 
 	fields := option.GetFields()
 	require.Len(t, fields, 5)
@@ -524,11 +628,13 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 // definition with binary field types.
 func TestCreateStandardDHCPOptionBinary(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		Code:      97,
-		CSVFormat: true,
-		Data:      "1, 010203040102",
-		Name:      "uuid-guid",
-		Space:     "dhcp4",
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			Code:      97,
+			CSVFormat: true,
+			Data:      "1, 010203040102",
+			Name:      "uuid-guid",
+			Space:     "dhcp4",
+		},
 	}
 	controller := gomock.NewController(t)
 	defer controller.Finish()
@@ -598,8 +704,10 @@ func TestSplitByComma(t *testing.T) {
 	for i, c := range cases {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			optionData := keaconfig.SingleOptionData{
-				Code: 42, CSVFormat: true, Name: "foo-bar", Space: "dhcp4",
-				Data: c,
+				SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+					Code: 42, CSVFormat: true, Name: "foo-bar", Space: "dhcp4",
+					Data: c,
+				},
 			}
 
 			option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)

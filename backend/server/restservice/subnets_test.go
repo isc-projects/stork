@@ -415,6 +415,14 @@ func TestGetSubnet4(t *testing.T) {
 	require.EqualValues(t, storkutil.IPv4, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
 	require.EqualValues(t, 7, ls.Pools[0].KeaConfigPoolParameters.PoolID)
 
+	// Validate unknown option parameters.
+	unknownOptionParameters := ls.Pools[0].KeaConfigPoolParameters.Options[0].Unknown.(map[string]any)
+	require.Len(t, unknownOptionParameters, 1)
+	require.Contains(t, unknownOptionParameters, "client-classes")
+	clientClasses := unknownOptionParameters["client-classes"].([]any)
+	require.Len(t, clientClasses, 1)
+	require.Equal(t, "KNOWN", clientClasses[0])
+
 	require.NotNil(t, ls.Pools[1].Pool)
 	require.Equal(t, "192.3.0.1-192.3.0.200", *ls.Pools[1].Pool)
 	require.Equal(t, "phones_server2", *ls.Pools[1].KeaConfigPoolParameters.ClientClass)
@@ -558,6 +566,14 @@ func TestGetSubnet4(t *testing.T) {
 	require.Len(t, subnetParams.Options[0].Fields[0].Values, 1)
 	require.Equal(t, "192.0.3.1", subnetParams.Options[0].Fields[0].Values[0])
 	require.EqualValues(t, storkutil.IPv4, subnetParams.Options[0].Universe)
+
+	// Validate unknown option parameters.
+	require.IsType(t, map[string]any(nil), subnetParams.Options[0].Unknown)
+	unknownOptionParameters = subnetParams.Options[0].Unknown.(map[string]any)
+	require.Contains(t, unknownOptionParameters, "client-classes")
+	clientClasses = unknownOptionParameters["client-classes"].([]any)
+	require.Len(t, clientClasses, 1)
+	require.Equal(t, "KNOWN", clientClasses[0])
 
 	// Validate shared-network-level parameters
 	networkParams := ls.KeaConfigSubnetParameters.SharedNetworkLevelParameters
@@ -2272,6 +2288,9 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 							},
 						},
 						Universe: 4,
+						Unknown: map[string]any{
+							"client-classes": []any{"KNOWN"},
+						},
 					},
 				},
 			},
@@ -2316,6 +2335,9 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 												},
 											},
 											Universe: 4,
+											Unknown: map[string]any{
+												"client-classes": []any{"UNKNOWN"},
+											},
 										},
 									},
 								},
@@ -2356,6 +2378,9 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 												},
 											},
 											Universe: 4,
+											Unknown: map[string]any{
+												"client-classes": []any{"UNKNOWN"},
+											},
 										},
 									},
 								},
@@ -2402,7 +2427,8 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 											"code": 3,
 											"csv-format": true,
 											"data": "192.0.2.2",
-											"space": "dhcp4"
+											"space": "dhcp4",
+											"client-classes": ["UNKNOWN"]
 										}
 									]
 								},
@@ -2464,7 +2490,8 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 									"code": 3,
 									"csv-format": true,
 									"data": "192.0.2.1",
-									"space": "dhcp4"
+									"space": "dhcp4",
+									"client-classes": ["KNOWN"]
 								}
 							]
 						}

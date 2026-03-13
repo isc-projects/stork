@@ -25,6 +25,9 @@ func TestDHCPOptionInterface(t *testing.T) {
 				Values:    []interface{}{"bar"},
 			},
 		},
+		UnknownParameters: map[string]any{
+			"foo": "bar",
+		},
 	}
 	// Validate returned values.
 	require.True(t, option.IsAlwaysSend())
@@ -37,17 +40,22 @@ func TestDHCPOptionInterface(t *testing.T) {
 	require.Equal(t, dhcpmodel.StringField, option.GetFields()[0].GetFieldType())
 	require.Len(t, option.GetFields()[0].GetValues(), 1)
 	require.Equal(t, "bar", option.GetFields()[0].GetValues()[0])
+	require.Equal(t, map[string]any{
+		"foo": "bar",
+	}, option.GetUnknownParameters())
 }
 
 // Test creating a DHCP option in Stork from a DHCP option in Kea.
 func TestNewDHCPOptionFromKea(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
-		AlwaysSend: true,
-		Code:       23,
-		CSVFormat:  true,
-		Data:       "8",
-		Name:       "option-foo",
-		Space:      dhcpmodel.DHCPv4OptionSpace,
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			AlwaysSend: true,
+			Code:       23,
+			CSVFormat:  true,
+			Data:       "8",
+			Name:       "option-foo",
+			Space:      dhcpmodel.DHCPv4OptionSpace,
+		},
 	}
 	lookup := NewDHCPOptionDefinitionLookup()
 	option, err := NewDHCPOptionFromKea(optionData, storkutil.IPv4, lookup)

@@ -646,12 +646,14 @@ func TestNewHostFromKeaDHCPv4Reservation(t *testing.T) {
 		ServerHostname: "host.example.org",
 		OptionData: []keaconfig.SingleOptionData{
 			{
-				AlwaysSend: true,
-				Code:       5,
-				CSVFormat:  true,
-				Data:       "10.0.1.1",
-				Name:       "domain-name-server",
-				Space:      dhcpmodel.DHCPv4OptionSpace,
+				SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+					AlwaysSend: true,
+					Code:       5,
+					CSVFormat:  true,
+					Data:       "10.0.1.1",
+					Name:       "domain-name-server",
+					Space:      dhcpmodel.DHCPv4OptionSpace,
+				},
 			},
 		},
 	}

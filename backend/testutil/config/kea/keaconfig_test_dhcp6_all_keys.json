@@ -266,7 +266,8 @@
                                 "csv-format": false,
                                 "data": "f0",
                                 "name": "preference",
-                                "space": "dhcp6"
+                                "space": "dhcp6",
+                                "client-classes": ["KNOWN"]
                             }
                         ],
                         "pd-pools": [
@@ -282,7 +283,8 @@
                                         "csv-format": false,
                                         "data": "cafe",
                                         "name": "preference",
-                                        "space": "dhcp6"
+                                        "space": "dhcp6",
+                                        "client-classes": ["KNOWN"]
                                     }
                                 ],
                                 "pool-id": 2,

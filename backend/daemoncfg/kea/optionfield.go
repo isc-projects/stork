@@ -66,6 +66,11 @@ func (option DHCPOption) GetSpace() string {
 	return option.Space
 }
 
+// Returns unknown (unsupported by Stork) parameters.
+func (option DHCPOption) GetUnknownParameters() map[string]any {
+	return option.UnknownParameters
+}
+
 // Tries to infer option field type from its value and converts it to the
 // format used in Stork. The resulting format comprises an option field type
 // and the corresponding field value(s). It has some limitations:

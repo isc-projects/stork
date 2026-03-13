@@ -629,12 +629,14 @@ func TestSetDHCPv4OptionData(t *testing.T) {
 	cfg := &SettableDHCPv4Config{}
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
-			Name:       "routers",
-			AlwaysSend: true,
-			Code:       3,
-			CSVFormat:  true,
-			Data:       "foobar",
-			Space:      "dhcp4",
+			SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+				Name:       "routers",
+				AlwaysSend: true,
+				Code:       3,
+				CSVFormat:  true,
+				Data:       "foobar",
+				Space:      "dhcp4",
+			},
 		},
 	})
 	options := cfg.OptionData.GetValue()
@@ -658,12 +660,14 @@ func TestSetDHCPv4Options(t *testing.T) {
 	// Act
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
-			Name:       "routers",
-			AlwaysSend: true,
-			Code:       3,
-			CSVFormat:  true,
-			Data:       "foobar",
-			Space:      "dhcp4",
+			SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+				Name:       "routers",
+				AlwaysSend: true,
+				Code:       3,
+				CSVFormat:  true,
+				Data:       "foobar",
+				Space:      "dhcp4",
+			},
 		},
 	})
 
@@ -1302,12 +1306,14 @@ func TestSetDHCPv6OptionData(t *testing.T) {
 	cfg := &SettableDHCPv6Config{}
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
-			Name:       "routers",
-			AlwaysSend: true,
-			Code:       3,
-			CSVFormat:  true,
-			Data:       "foobar",
-			Space:      "dhcp6",
+			SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+				Name:       "routers",
+				AlwaysSend: true,
+				Code:       3,
+				CSVFormat:  true,
+				Data:       "foobar",
+				Space:      "dhcp6",
+			},
 		},
 	})
 	options := cfg.OptionData.GetValue()
@@ -1331,12 +1337,14 @@ func TestSetDHCPv6Options(t *testing.T) {
 	// Act
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
-			Name:       "routers",
-			AlwaysSend: true,
-			Code:       3,
-			CSVFormat:  true,
-			Data:       "foobar",
-			Space:      "dhcp6",
+			SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+				Name:       "routers",
+				AlwaysSend: true,
+				Code:       3,
+				CSVFormat:  true,
+				Data:       "foobar",
+				Space:      "dhcp6",
+			},
 		},
 	})
 

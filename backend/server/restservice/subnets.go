@@ -441,12 +441,13 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 				}
 			}
 			if keaParameters.Unknown != nil {
-				unknown := keaParameters.Unknown.(map[string]any)
-				if localSubnet.KeaParameters.UnknownParameters == nil {
-					localSubnet.KeaParameters.UnknownParameters = make(map[string]any)
-				}
-				for key, value := range unknown {
-					localSubnet.KeaParameters.UnknownParameters[key] = value
+				if unknown, ok := keaParameters.Unknown.(map[string]any); ok {
+					if localSubnet.KeaParameters.UnknownParameters == nil {
+						localSubnet.KeaParameters.UnknownParameters = make(map[string]any)
+					}
+					for key, value := range unknown {
+						localSubnet.KeaParameters.UnknownParameters[key] = value
+					}
 				}
 			}
 

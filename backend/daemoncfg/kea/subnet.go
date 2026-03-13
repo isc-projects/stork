@@ -359,7 +359,6 @@ func (s *Subnet4) UnmarshalJSON(data []byte) error {
 		Subnet4KnownParameters: subnet4WithUnknown.Known,
 		UnknownParameters:      subnet4WithUnknown.Unknown,
 	}
-	s.UnknownParameters = subnet4WithUnknown.Unknown
 	return nil
 }
 
@@ -436,7 +435,6 @@ func (s *Subnet6) UnmarshalJSON(data []byte) error {
 		Subnet6KnownParameters: subnet6WithUnknown.Known,
 		UnknownParameters:      subnet6WithUnknown.Unknown,
 	}
-	s.UnknownParameters = subnet6WithUnknown.Unknown
 	return nil
 }
 
