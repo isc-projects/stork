@@ -162,10 +162,7 @@ func daemonCompare(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool 
 	if dbDaemon.Name != grpcDaemon.Name {
 		return false
 	}
-	if len(dbDaemon.AccessPoints) != len(grpcDaemon.AccessPoints) {
-		return false
-	}
-	if len(dbDaemon.AccessPoints) == 0 {
+	if len(dbDaemon.AccessPoints) == 0 && len(grpcDaemon.AccessPoints) == 0 {
 		// If there are no access points, assume that these daemons are the
 		// same.
 		return true
