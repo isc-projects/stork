@@ -2541,19 +2541,21 @@ func TestGetDhcpOverview(t *testing.T) {
 	require.NoError(t, err)
 
 	// add daemon kea to machine
-	keaAccessPoint := &dbmodel.AccessPoint{
+	keaAccessPointDHCPv4 := dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
 		Address:  "localhost",
 		Port:     1234,
 		Protocol: protocoltype.HTTP,
 	}
-	dhcp4Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	keaAccessPointDHCPv6 := keaAccessPointDHCPv4
+
+	dhcp4Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&keaAccessPointDHCPv4})
 	dhcp4Daemon.Version = "2.6.9"
 	dhcp4Daemon.Monitored = true
 	err = dbmodel.AddDaemon(db, dhcp4Daemon)
 	require.NoError(t, err)
 
-	dhcp6Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{keaAccessPoint})
+	dhcp6Daemon := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&keaAccessPointDHCPv6})
 	dhcp6Daemon.Version = "2.6.9"
 	dhcp6Daemon.Monitored = false
 	err = dbmodel.AddDaemon(db, dhcp6Daemon)

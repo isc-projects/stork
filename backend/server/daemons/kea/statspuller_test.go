@@ -754,24 +754,23 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	accessPoints := []*dbmodel.AccessPoint{
-		{
-			Type:     dbmodel.AccessPointControl,
-			Address:  "192.0.2.33",
-			Port:     8000,
-			Key:      "",
-			Protocol: protocoltype.HTTPS,
-		},
+	accessPointDHCPv4 := dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "192.0.2.33",
+		Port:     8000,
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
-	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
+	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
 	daemon4.KeaDaemon.Config = getHATestConfigWithSubnets("Dhcp4", "server1", "load-balancing",
 		"server1", "server2", "server4")
 	err = dbmodel.AddDaemon(db, daemon4)
 	require.NoError(t, err)
 	daemons = append(daemons, daemon4)
 
-	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, accessPoints)
+	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 	daemon6.KeaDaemon.Config = getHATestConfigWithSubnets("Dhcp6", "server1", "hot-standby",
 		"server1", "server2")
 	err = dbmodel.AddDaemon(db, daemon6)
@@ -787,24 +786,23 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	accessPoints2 := []*dbmodel.AccessPoint{
-		{
-			Type:     dbmodel.AccessPointControl,
-			Address:  "192.0.2.66",
-			Port:     8000,
-			Key:      "",
-			Protocol: protocoltype.HTTP,
-		},
+	accessPoint2DHCPv4 := dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "192.0.2.66",
+		Port:     8000,
+		Key:      "",
+		Protocol: protocoltype.HTTP,
 	}
+	accessPoint2DHCPv6 := accessPoint2DHCPv4
 
-	daemon4_2 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints2)
+	daemon4_2 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPoint2DHCPv4})
 	daemon4_2.KeaDaemon.Config = getHATestConfigWithSubnets("Dhcp4", "server2", "load-balancing",
 		"server1", "server2", "server4")
 	err = dbmodel.AddDaemon(db, daemon4_2)
 	require.NoError(t, err)
 	daemons = append(daemons, daemon4_2)
 
-	daemon6_2 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, accessPoints2)
+	daemon6_2 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPoint2DHCPv6})
 	daemon6_2.KeaDaemon.Config = getHATestConfigWithSubnets("Dhcp6", "server2", "hot-standby",
 		"server1", "server2")
 	err = dbmodel.AddDaemon(db, daemon6_2)
@@ -820,7 +818,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	accessPoints3 := []*dbmodel.AccessPoint{
+	accessPoints3DHCPv4 := []*dbmodel.AccessPoint{
 		{
 			Type:     dbmodel.AccessPointControl,
 			Address:  "192.0.2.133",
@@ -830,7 +828,7 @@ func prepareHAEnvironment(t *testing.T, db *pg.DB) (loadBalancing *dbmodel.Servi
 		},
 	}
 
-	daemonBackup := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints3)
+	daemonBackup := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints3DHCPv4)
 	daemonBackup.KeaDaemon.Config = getHATestConfigWithSubnets("Dhcp4", "server4", "load-balancing",
 		"server1", "server2", "server4")
 	err = dbmodel.AddDaemon(db, daemonBackup)

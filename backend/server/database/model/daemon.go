@@ -644,7 +644,7 @@ func addDaemon(tx *pg.Tx, daemon *Daemon) error {
 	// Add access points.
 	for _, accessPoint := range daemon.AccessPoints {
 		accessPoint.DaemonID = daemon.ID
-		err = addOrUpdateAccessPoint(tx, accessPoint)
+		err = addAccessPoint(tx, accessPoint)
 		if err != nil {
 			return errors.WithMessagef(err, "problem adding access point %v for daemon %d",
 				accessPoint, daemon.ID)
@@ -776,22 +776,29 @@ func updateDaemon(dbi dbops.DBI, daemon *Daemon) error {
 // Updates the daemon-related entities.
 func updateDaemonRelations(dbi dbops.DBI, daemon *Daemon) error {
 	// Update the access points.
+	accessPointIDs := []int64{}
 	for _, accessPoint := range daemon.AccessPoints {
-		accessPoint.DaemonID = daemon.ID
-		err := addOrUpdateAccessPoint(dbi, accessPoint)
-		if err != nil {
-			return errors.WithMessagef(err, "problem adding or updating access point %v for daemon %d",
-				accessPoint, daemon.ID)
+		if accessPoint.ID > 0 {
+			accessPointIDs = append(accessPointIDs, accessPoint.ID)
 		}
 	}
-	// Remove access points that are not in the list.
-	accessPointTypes := []AccessPointType{}
-	for _, accessPoint := range daemon.AccessPoints {
-		accessPointTypes = append(accessPointTypes, accessPoint.Type)
-	}
-	err := deleteAccessPointsExcept(dbi, daemon.ID, accessPointTypes)
+	err := deleteAccessPointsExcept(dbi, daemon.ID, accessPointIDs)
 	if err != nil {
-		return errors.WithMessagef(err, "problem deleting access points for daemon %d", daemon.ID)
+		return errors.WithMessagef(err, "problem deleting access points for updated daemon %d", daemon.ID)
+	}
+
+	for _, accessPoint := range daemon.AccessPoints {
+		accessPoint.DaemonID = daemon.ID
+		if accessPoint.ID == 0 {
+			// This is a new access point, insert it.
+			err = addAccessPoint(dbi, accessPoint)
+		} else {
+			// This is an existing access point, update it.
+			err = updateAccessPoint(dbi, accessPoint)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	// Update the log targets.

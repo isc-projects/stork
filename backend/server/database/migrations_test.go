@@ -23,7 +23,7 @@ import (
 
 // Current schema version. This value must be bumped up every
 // time the schema is updated.
-const expectedSchemaVersion int64 = 73
+const expectedSchemaVersion int64 = 74
 
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, db *dbops.PgDB, expectedOldVersion, expectedNewVersion int64, action ...string) {
@@ -91,7 +91,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 	o, n, err := dbops.MigrateToLatest(db)
 	require.NoError(t, err)
 	require.Zero(t, o)
-	require.GreaterOrEqual(t, n, int64(18))
+	require.Equal(t, n, expectedSchemaVersion)
 }
 
 // Test that available schema version is returned as expected.
@@ -715,6 +715,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8000,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[0].Daemons[0].ID,
+		ID:       machines[0].Daemons[0].AccessPoints[0].ID,
 	}, *machines[0].Daemons[0].AccessPoints[0])
 	require.Equal(t, daemonname.DHCPv6, machines[0].Daemons[1].Name)
 	require.True(t, machines[0].Daemons[1].Active)
@@ -725,6 +726,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8000,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[0].Daemons[1].ID,
+		ID:       machines[0].Daemons[1].AccessPoints[0].ID,
 	}, *machines[0].Daemons[1].AccessPoints[0])
 
 	require.Len(t, machines[4].Daemons, 4)
@@ -737,6 +739,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8001,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[4].Daemons[3].ID,
+		ID:       machines[4].Daemons[3].AccessPoints[0].ID,
 	}, *machines[4].Daemons[3].AccessPoints[0])
 	require.Equal(t, daemonname.CA, machines[4].Daemons[0].Name)
 	require.True(t, machines[4].Daemons[0].Active)
@@ -747,6 +750,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8001,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[4].Daemons[0].ID,
+		ID:       machines[4].Daemons[0].AccessPoints[0].ID,
 	}, *machines[4].Daemons[0].AccessPoints[0])
 	require.Equal(t, daemonname.D2, machines[4].Daemons[1].Name)
 	require.False(t, machines[4].Daemons[1].Active)
@@ -757,6 +761,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8001,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[4].Daemons[1].ID,
+		ID:       machines[4].Daemons[1].AccessPoints[0].ID,
 	}, *machines[4].Daemons[1].AccessPoints[0])
 	require.Equal(t, daemonname.DHCPv4, machines[4].Daemons[2].Name)
 	require.True(t, machines[4].Daemons[2].Active)
@@ -767,7 +772,19 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8001,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[4].Daemons[2].ID,
+		ID:       machines[4].Daemons[2].AccessPoints[0].ID,
 	}, *machines[4].Daemons[2].AccessPoints[0])
+	require.Equal(t, daemonname.DHCPv6, machines[4].Daemons[3].Name)
+	require.False(t, machines[4].Daemons[3].Active)
+	require.Len(t, machines[4].Daemons[3].AccessPoints, 1)
+	require.Equal(t, dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     8001,
+		Protocol: protocoltype.HTTP,
+		DaemonID: machines[4].Daemons[3].ID,
+		ID:       machines[4].Daemons[3].AccessPoints[0].ID,
+	}, *machines[4].Daemons[3].AccessPoints[0])
 
 	require.Len(t, machines[8].Daemons, 1)
 	require.Equal(t, daemonname.Bind9, machines[8].Daemons[0].Name)
@@ -779,6 +796,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Port:     8053,
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[8].Daemons[0].ID,
+		ID:       machines[8].Daemons[0].AccessPoints[0].ID,
 	}, *machines[8].Daemons[0].AccessPoints[0])
 	require.Equal(t, dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
@@ -787,6 +805,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Protocol: protocoltype.HTTP,
 		Key:      "rndc-key:hmac-sha256:C0WsVMnbpYt3RxJEZCrmJmlRyQJp9vy2lKp887r19mY=",
 		DaemonID: machines[8].Daemons[0].ID,
+		ID:       machines[8].Daemons[0].AccessPoints[1].ID,
 	}, *machines[8].Daemons[0].AccessPoints[1])
 
 	// Shared networks.

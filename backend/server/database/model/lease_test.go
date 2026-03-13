@@ -33,17 +33,16 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		accessPoints := []*AccessPoint{
-			{
-				Type:    AccessPointControl,
-				Address: "cool.example.org",
-				Port:    int64(1234 + i),
-				Key:     "",
-			},
+		accessPointV4 := AccessPoint{
+			Type:    AccessPointControl,
+			Address: "cool.example.org",
+			Port:    int64(1234 + i),
+			Key:     "",
 		}
+		accessPointV6 := accessPointV4
 
 		// Create DHCPv4 daemon
-		daemon4 := NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
+		daemon4 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{&accessPointV4})
 		daemon4.KeaDaemon.Config = getTestConfigWithIPv4Subnets(t)
 		daemon4.KeaDaemon.Config.DHCPv4Config.LeaseDatabase = &keaconfig.Database{
 			Type: "memfile",
@@ -73,7 +72,7 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 		subnets = append(subnets, subnet4)
 
 		// Create DHCPv6 daemon
-		daemon6 := NewDaemon(m, daemonname.DHCPv6, true, accessPoints)
+		daemon6 := NewDaemon(m, daemonname.DHCPv6, true, []*AccessPoint{&accessPointV6})
 		daemon6.KeaDaemon.Config = getTestConfigWithIPv6Subnets(t)
 		daemon6.KeaDaemon.Config.DHCPv6Config.LeaseDatabase = &keaconfig.Database{
 			Type: "memfile",

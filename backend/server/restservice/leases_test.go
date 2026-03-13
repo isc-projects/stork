@@ -484,17 +484,16 @@ func TestFindDeclinedLeases(t *testing.T) {
 
 	// Add Kea daemons with a DHCPv4 and DHCPv6 configuration loading the
 	// lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{
-		{
-			Type:     dbmodel.AccessPointControl,
-			Address:  "localhost",
-			Port:     8000,
-			Protocol: protocoltype.HTTP,
-		},
+	accessPointDHCPv4 := dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     8000,
+		Protocol: protocoltype.HTTP,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
 	// Create DHCPv4 daemon
-	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
 	config4 := `{
 		"Dhcp4": {
 			"hooks-libraries": [
@@ -510,7 +509,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create DHCPv6 daemon
-	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 	config6 := `{
 		"Dhcp6": {
 			"hooks-libraries": [
@@ -609,17 +608,16 @@ func TestFindLeasesByHostID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add Kea daemons with a DHCPv4 and DHCPv6 configuration loading the lease_cmds hooks library.
-	accessPoints := []*dbmodel.AccessPoint{
-		{
-			Type:     dbmodel.AccessPointControl,
-			Address:  "localhost",
-			Port:     8000,
-			Protocol: protocoltype.HTTPS,
-		},
+	accessPointDHCPv4 := dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     8000,
+		Protocol: protocoltype.HTTPS,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
 	// Create DHCPv4 daemon
-	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, accessPoints)
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
 	config4 := `{
 		"Dhcp4": {
 			"hooks-libraries": [
@@ -635,7 +633,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create DHCPv6 daemon
-	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 	config6 := `{
 		"Dhcp6": {
 			"hooks-libraries": [

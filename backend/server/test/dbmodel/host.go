@@ -26,17 +26,25 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, allDaemons []*
 		err := dbmodel.AddMachine(db, m)
 		require.NoError(t, err)
 
-		accessPoints := []*dbmodel.AccessPoint{{
+		accessPointDHCPv4 := &dbmodel.AccessPoint{
 			Type:     dbmodel.AccessPointControl,
 			Address:  "localhost",
 			Port:     int64(8080 + i),
 			Key:      "",
 			Protocol: protocoltype.HTTPS,
-		}}
+		}
+
+		accessPointDHCPv6 := &dbmodel.AccessPoint{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     int64(8080 + i),
+			Key:      "",
+			Protocol: protocoltype.HTTPS,
+		}
 
 		daemons := []*dbmodel.Daemon{
-			dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints),
-			dbmodel.NewDaemon(m, daemonname.DHCPv6, true, accessPoints),
+			dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPointDHCPv4}),
+			dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{accessPointDHCPv6}),
 		}
 
 		err = daemons[0].SetKeaConfigFromJSON([]byte(`{

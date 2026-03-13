@@ -422,17 +422,16 @@ func TestGetKeaDaemonsByIDs(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// create daemons
-	accessPoints := []*AccessPoint{
-		{
-			Type:    AccessPointControl,
-			Address: "",
-			Port:    1234,
-			Key:     "",
-		},
-	}
-
 	var daemons []*Daemon
 	for _, daemonName := range []daemonname.Name{daemonname.DHCPv4, daemonname.DHCPv6, daemonname.D2, daemonname.CA} {
+		accessPoints := []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "",
+				Port:    1234,
+				Key:     "",
+			},
+		}
 		daemon := NewDaemon(m, daemonName, true, accessPoints)
 		daemon.LogTargets = []*LogTarget{{
 			Name:   "kea-dhcp4",
@@ -483,15 +482,14 @@ func TestGetKeaDHCPDaemons(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// Add several Kea daemons of different type.
-	accessPoints := []*AccessPoint{{
-		Type:    AccessPointControl,
-		Address: "",
-		Port:    1234,
-		Key:     "",
-	}}
-
 	daemonNames := []daemonname.Name{daemonname.DHCPv4, daemonname.DHCPv6, daemonname.CA, daemonname.D2}
 	for _, dn := range daemonNames {
+		accessPoints := []*AccessPoint{{
+			Type:    AccessPointControl,
+			Address: "localhost",
+			Port:    1234,
+			Key:     "",
+		}}
 		daemon := NewDaemon(m, dn, true, accessPoints)
 		daemon.LogTargets = []*LogTarget{{
 			Name:   "kea-dhcp4",
@@ -502,6 +500,12 @@ func TestGetKeaDHCPDaemons(t *testing.T) {
 	}
 
 	// Add named daemon.
+	accessPoints := []*AccessPoint{{
+		Type:    AccessPointControl,
+		Address: "",
+		Port:    1235,
+		Key:     "",
+	}}
 	daemon := NewDaemon(m, daemonname.Bind9, true, accessPoints)
 	err = AddDaemon(db, daemon)
 	require.NoError(t, err)

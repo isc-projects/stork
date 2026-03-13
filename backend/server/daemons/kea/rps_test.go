@@ -238,19 +238,20 @@ func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Acti
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
-	accessPoints := []*dbmodel.AccessPoint{{
+	accessPointDHCPv4 := dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
 		Address:  "cool.example.org",
 		Port:     1234,
 		Protocol: protocoltype.HTTPS,
-	}}
+	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
-	daemonV4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, dhcp4Active, accessPoints)
+	daemonV4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, dhcp4Active, []*dbmodel.AccessPoint{&accessPointDHCPv4})
 	err = dbmodel.AddDaemon(db, daemonV4)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, daemonV4.ID)
 
-	daemonV6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, dhcp6Active, accessPoints)
+	daemonV6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, dhcp6Active, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 	err = dbmodel.AddDaemon(db, daemonV6)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, daemonV6.ID)

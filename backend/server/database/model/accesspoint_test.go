@@ -24,7 +24,7 @@ func TestAddAccessPoint(t *testing.T) {
 	_ = AddDaemon(db, daemon)
 
 	// Act
-	err := addOrUpdateAccessPoint(db, &AccessPoint{
+	err := addAccessPoint(db, &AccessPoint{
 		DaemonID: daemon.ID,
 		Type:     AccessPointControl,
 		Address:  "foo",
@@ -66,7 +66,8 @@ func TestUpdateAccessPoint(t *testing.T) {
 	_ = AddDaemon(db, daemon)
 
 	// Act
-	err := addOrUpdateAccessPoint(db, &AccessPoint{
+	err := updateAccessPoint(db, &AccessPoint{
+		ID:       daemon.AccessPoints[0].ID,
 		DaemonID: daemon.ID,
 		Type:     AccessPointControl,
 		Address:  "updated-address",
@@ -101,7 +102,7 @@ func TestAddOrUpdateAccessPointDatabaseError(t *testing.T) {
 
 	// Act
 	teardown()
-	err := addOrUpdateAccessPoint(db, &AccessPoint{
+	err := addAccessPoint(db, &AccessPoint{
 		DaemonID: daemon.ID,
 		Type:     AccessPointControl,
 		Address:  "foo",
@@ -143,7 +144,7 @@ func TestDeleteAccessPoints(t *testing.T) {
 	_ = AddDaemon(db, daemon)
 
 	// Act
-	err := deleteAccessPointsExcept(db, daemon.ID, []AccessPointType{AccessPointControl})
+	err := deleteAccessPointsExcept(db, daemon.ID, []int64{daemon.AccessPoints[0].ID})
 	require.NoError(t, err)
 
 	// Assert

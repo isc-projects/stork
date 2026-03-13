@@ -54,18 +54,17 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	// add daemon to machine
-	accessPoints := []*dbmodel.AccessPoint{
-		{
-			Type:     dbmodel.AccessPointControl,
-			Address:  "localhost",
-			Port:     1234,
-			Key:      "",
-			Protocol: protocoltype.HTTPS,
-		},
+	accessPointDHCPv4 := dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     1234,
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
-	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
-	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, accessPoints)
+	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
+	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 
 	// Daemon has assigned configuration
 	configDHCP4 := []byte(`{
@@ -344,16 +343,17 @@ func TestGetDaemonConfigForNonActiveKeaDaemon(t *testing.T) {
 	require.NoError(t, err)
 
 	// add daemons to machine
-	accessPoint := &dbmodel.AccessPoint{
+	accessPointDHCPv4 := dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
 		Address:  "localhost",
 		Port:     1234,
 		Key:      "",
 		Protocol: protocoltype.HTTPS,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
-	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint})
-	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
+	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 
 	// Daemon has assigned configuration
 	configDhcp4 := []byte(`{
@@ -441,16 +441,17 @@ func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	// add daemons to machine
-	accessPoint := &dbmodel.AccessPoint{
+	accessPointDHCPv4 := dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
 		Address:  "localhost",
 		Port:     1234,
 		Key:      "",
 		Protocol: protocoltype.HTTP,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
-	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint})
-	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
+	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 
 	err = dbmodel.AddDaemon(db, daemon4)
 	require.NoError(t, err)
@@ -680,16 +681,17 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add daemons to machine
-	accessPoint := &dbmodel.AccessPoint{
+	accessPointDHCPv4 := dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
 		Address:  "localhost",
 		Port:     1234,
 		Key:      "",
 		Protocol: protocoltype.HTTP,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
-	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{accessPoint})
-	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{accessPoint})
+	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
+	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 
 	err = dbmodel.AddDaemon(db, daemon4)
 	require.NoError(t, err)

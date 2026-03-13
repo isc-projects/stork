@@ -225,6 +225,7 @@ func TestNewManager(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
@@ -244,6 +245,7 @@ func TestFetchZonesDatabaseError(t *testing.T) {
 	teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
@@ -266,6 +268,7 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Add a machine and daemon.
@@ -338,6 +341,7 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Add a machine and daemon.
@@ -411,6 +415,7 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Add a machine and daemon.
@@ -484,6 +489,7 @@ func TestFetchZonesInventoryDeleteLocalZonesError(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	randomZones := testutil.GenerateRandomZones(1)
@@ -557,6 +563,7 @@ func TestFetchZones(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	randomZones := testutil.GenerateRandomZones(1000)
@@ -681,6 +688,7 @@ func TestFetchZonesForcePopulate(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	randomZones := testutil.GenerateRandomZones(1000)
@@ -783,6 +791,7 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Return an empty iterator. Getting actual zones is not in scope for this test.
@@ -883,6 +892,7 @@ func TestFetchRepeatedZones(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	randomZones := testutil.GenerateRandomZones(10)
@@ -975,6 +985,7 @@ func TestGetZoneRRsWithFiltering(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create a machine and a daemon. The manager will determine the daemon
@@ -1120,6 +1131,7 @@ func TestGetZoneRRs(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create a machine and a daemon. The manager will determine the daemon
@@ -1266,6 +1278,7 @@ func TestGetZoneRRsExcludeTrailingSOA(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create a machine and a daemon. The manager will determine the daemon
@@ -1361,6 +1374,7 @@ func TestGetZoneRRsNoDaemon(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Make sure that the agent is not contacted by the DNS manager.
@@ -1413,6 +1427,7 @@ func TestGetZoneRRsNoZone(t *testing.T) {
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Make sure that the agent is not contacted by the DNS manager.
@@ -1445,6 +1460,7 @@ func TestGetZoneRRsAnotherRequestInProgress(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create the daemon.
@@ -1550,6 +1566,7 @@ func TestGetZoneRRsAnotherRequestInProgressDifferentZone(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create the machine and daemons.
@@ -1747,6 +1764,7 @@ func TestZoneRRsCacheWithEarlyReturn(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create a machine and a daemon. The manager will determine the daemon
@@ -1844,6 +1862,7 @@ func TestZoneRRsCacheDatabaseError(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create a machine and a daemon. The manager will determine the daemon
@@ -1950,6 +1969,7 @@ func TestGetBind9FormattedConfig(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	machine := &dbmodel.Machine{
@@ -2048,6 +2068,7 @@ func TestGetBind9FormattedConfigMultipleFiles(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	machine := &dbmodel.Machine{
@@ -2156,6 +2177,7 @@ func TestGetBind9FormattedConfigNoDaemon(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
@@ -2180,6 +2202,7 @@ func TestGetBind9FormattedConfigError(t *testing.T) {
 	teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
@@ -2204,6 +2227,7 @@ func TestGetBind9FormattedConfigNilResponse(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	machine := &dbmodel.Machine{
@@ -2248,6 +2272,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgress(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create the daemon.
@@ -2341,6 +2366,7 @@ func TestGetBind9FormattedConfigAnotherRequestInProgressDifferentDaemon(t *testi
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	// Create the daemon.
@@ -2458,6 +2484,7 @@ func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	defer teardown()
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	mock := NewMockConnectedAgents(controller)
 
 	machine := &dbmodel.Machine{

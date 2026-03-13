@@ -765,25 +765,24 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.NoError(t, err)
 
 	// Add Kea daemons to the machine
-	accessPoints := []*dbmodel.AccessPoint{
-		{
-			Type:     dbmodel.AccessPointControl,
-			Address:  "",
-			Port:     1234,
-			Key:      "",
-			Protocol: protocoltype.HTTP,
-		},
+	accessPointDHCPv4 := dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "",
+		Port:     1234,
+		Key:      "",
+		Protocol: protocoltype.HTTP,
 	}
+	accessPointDHCPv6 := accessPointDHCPv4
 
 	// Create DHCPv4 daemon
-	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
+	daemon4 := dbmodel.NewDaemon(m, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{&accessPointDHCPv4})
 	daemon4.KeaDaemon.Config = getHATestConfig("Dhcp4", "server1", "load-balancing",
 		"server1", "server2", "server4")
 	err = dbmodel.AddDaemon(db, daemon4)
 	require.NoError(t, err)
 
 	// Create DHCPv6 daemon
-	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, accessPoints)
+	daemon6 := dbmodel.NewDaemon(m, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{&accessPointDHCPv6})
 	daemon6.KeaDaemon.Config = getHATestConfig("Dhcp6", "server3", "hot-standby",
 		"server1", "server3", "server4")
 	err = dbmodel.AddDaemon(db, daemon6)
