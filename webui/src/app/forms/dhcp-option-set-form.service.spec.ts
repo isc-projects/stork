@@ -35,6 +35,10 @@ describe('DhcpOptionSetFormService', () => {
                         control: formBuilder.control('foobar'),
                     }),
                 ]),
+                unknown: formBuilder.record<any>({
+                    'never-send': formBuilder.control(true),
+                    'client-classes': formBuilder.control(['KNOWN']),
+                }),
             }),
             formBuilder.group({
                 alwaysSend: formBuilder.control(false),
@@ -136,6 +140,12 @@ describe('DhcpOptionSetFormService', () => {
         expect((fields.at(3) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.String)
         expect(fields.at(3).get('control')).toBeTruthy()
         expect(fields.at(3).get('control').value).toBe('foobar')
+
+        expect(clonedArray.at(0).get('unknown')).toBeTruthy()
+        expect(clonedArray.at(0).get('unknown').value).toEqual({
+            'never-send': true,
+            'client-classes': ['KNOWN'],
+        })
 
         // Option 2024.
         expect(clonedArray.at(1).get('alwaysSend')).toBeTruthy()
@@ -419,6 +429,10 @@ describe('DhcpOptionSetFormService', () => {
                     },
                 ],
                 options: [],
+                unknown: {
+                    'never-send': true,
+                    'client-classes': ['KNOWN'],
+                },
             },
             {
                 alwaysSend: false,
@@ -525,6 +539,14 @@ describe('DhcpOptionSetFormService', () => {
         expect((fields.at(3) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.String)
         expect(fields.at(3).get('control')).toBeTruthy()
         expect(fields.at(3).get('control').value).toBe('foobar')
+
+        // Option 1024 unknown parameters.
+        console.info(formArray.at(0))
+        expect(formArray.at(0).get('unknown')).toBeTruthy()
+        expect(formArray.at(0).get('unknown').value).toEqual({
+            'never-send': true,
+            'client-classes': ['KNOWN'],
+        })
 
         // Option 1024 suboptions.
         expect(formArray.at(0).get('suboptions')).toBeInstanceOf(UntypedFormArray)

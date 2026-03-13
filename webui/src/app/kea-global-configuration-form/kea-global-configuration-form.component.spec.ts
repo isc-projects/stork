@@ -308,6 +308,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                                 ],
                                 options: [],
                                 universe: 4,
+                                unknown: {},
                             },
                         ],
                     },
