@@ -118,7 +118,7 @@ export class DhcpOptionSetFormService extends FormProcessor {
                 options: new Array<DHCPOption>(),
             }
             if (option.get('unknown')) {
-                item.unknown ||= {}
+                item.unknown = {}
                 for (const key in (option.get('unknown') as FormRecord<any>)?.controls) {
                     item.unknown[key] = (option.get('unknown') as FormRecord<any>).get(key)?.value
                 }
