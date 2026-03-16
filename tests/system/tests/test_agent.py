@@ -245,3 +245,23 @@ def test_agent_registration_administratively_disabled(
     # the database.
     assert kea_service.has_encountered_machine_registration_disabled()
     assert len(server_service.list_machines().items) == 0
+
+
+@kea_parametrize("agent-kea-multiple-control-sockets")
+def test_agent_communication_with_kea_with_multiple_control_sockets(
+    server_service: Server, kea_service: Kea
+):
+    """Check if Stork agent can communicate with Kea when both DHCPv4 and DHCPv6
+    control sockets are configured."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    state, *_ = server_service.wait_for_next_machine_states()
+
+    assert len(state.daemons) == 2
+    for daemon in state.daemons:
+        assert len(daemon.access_points) == 2
+        assert daemon.access_points[0].type == "control"
+        assert daemon.access_points[1].type == "control"
+        access_point_protocols = [ap.protocol for ap in daemon.access_points]
+        assert "https" in access_point_protocols
+        assert "unix" in access_point_protocols

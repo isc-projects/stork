@@ -1,0 +1,12 @@
+"control-sockets": [
+    {
+        "socket-type": "unix",
+        "socket-name": "/var/run/kea/kea6-ctrl-socket"
+    },
+    {
+        <?include "/etc/kea/kea-tls.json"?>
+        "socket-type": "https",
+        "socket-address": "127.0.0.1",
+        "socket-port": 8006
+    }
+],

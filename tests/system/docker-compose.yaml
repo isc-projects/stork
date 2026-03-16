@@ -208,6 +208,12 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-hsts-header/kea-http-headers.json:/etc/kea/kea-http-headers.json
 
+  agent-kea-multiple-control-sockets:
+    extends: agent-kea-tls-optional-client-cert-no-verify
+    volumes:
+      - $PWD/tests/system/config/kea-multiple-control-sockets/kea-dhcp4-control-socket.json:/etc/kea/kea-dhcp4-control-socket.json
+      - $PWD/tests/system/config/kea-multiple-control-sockets/kea-dhcp6-control-socket.json:/etc/kea/kea-dhcp6-control-socket.json
+
   agent-kea-config-review:
     extends: agent-kea
     volumes:
