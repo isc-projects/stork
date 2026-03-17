@@ -320,6 +320,15 @@ func (statsPuller *StatsPuller) storePoolStats(
 	for subnetID, statisticsPerPool := range statisticsPerSubnetAndPool {
 		subnet := subnetsMap[subnetID]
 		if subnet == nil {
+			// This should be a temporary problem because it may happen when
+			// the subnet is added shortly before the stats puller fetches the
+			// statistics when the state puller has not yet updated the subnet
+			// information in the database.
+			// It may also occur due to the kea#4216 bug, which causes the Kea
+			// to return statistics for deleted subnets.
+			// In both cases, no user action is required, so we don't log it as
+			// an error, but we log it as a debug message to help with
+			// troubleshooting.
 			lastErr = errors.Errorf(
 				"cannot find LocalSubnet for daemon: %d, local subnet ID: %d",
 				daemon.ID, subnetID,
@@ -327,7 +336,7 @@ func (statsPuller *StatsPuller) storePoolStats(
 			log.WithFields(log.Fields{
 				"daemon_id":       daemon.ID,
 				"local_subnet_id": subnetID,
-			}).Error("Cannot find LocalSubnet for daemon")
+			}).Debug("Cannot find LocalSubnet for daemon")
 			continue
 		}
 
