@@ -191,6 +191,7 @@
         },
         "shared-networks": [
             {
+                "adaptive-lease-time-threshold": 0.3,
                 "allocator": "random",
                 "authoritative": false,
                 "boot-file-name": "/dev/null",

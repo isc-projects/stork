@@ -18,6 +18,7 @@ import (
 func getAllKeysSharedNetwork4() string {
 	return `
 	{
+		"adaptive-lease-time-threshold": 0.3,
 		"allocator": "random",
 		"authoritative": false,
 		"boot-file-name": "/dev/null",
@@ -80,6 +81,7 @@ func getAllKeysSharedNetwork4() string {
 func getAllKeysSharedNetwork6() string {
 	return `
 	{
+		"adaptive-lease-time-threshold": 0.3,
 		"allocator": "random",
 		"pd-allocator": "iterative",
 		"client-class": "foobar",
@@ -190,6 +192,29 @@ func TestDecodeAllKeysSharedNetwork4(t *testing.T) {
 	require.EqualValues(t, 6001, *params.ValidLifetime)
 	require.EqualValues(t, 4001, *params.MinValidLifetime)
 	require.EqualValues(t, 8001, *params.MaxValidLifetime)
+
+	// Check that unknown fields are included.
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, params.UnknownParameters["adaptive-lease-time-threshold"])
+}
+
+// Test that both known and unknown parameters are included in the IPv4
+// shared network output.
+func TestMarshalSharedNetwork4(t *testing.T) {
+	sharedNetwork4 := keaconfig.SharedNetwork4{
+		SharedNetwork4KnownParameters: keaconfig.SharedNetwork4KnownParameters{
+			Name: "my-secret-network",
+		},
+		UnknownParameters: map[string]any{
+			"adaptive-lease-time-threshold": 0.5,
+		},
+	}
+	marshalled, err := sharedNetwork4.MarshalJSON()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"name": "my-secret-network",
+		"adaptive-lease-time-threshold": 0.5
+	}`, string(marshalled))
 }
 
 // Test that Kea shared network configuration is properly decoded into the
@@ -245,6 +270,29 @@ func TestDecodeAllKeysSharedNetwork6(t *testing.T) {
 	require.EqualValues(t, 6001, *params.ValidLifetime)
 	require.EqualValues(t, 4001, *params.MinValidLifetime)
 	require.EqualValues(t, 8001, *params.MaxValidLifetime)
+
+	// Check that unknown fields are included.
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, params.UnknownParameters["adaptive-lease-time-threshold"])
+}
+
+// Test that both known and unknown parameters are included in the IPv6
+// shared network output.
+func TestMarshalSharedNetwork6(t *testing.T) {
+	sharedNetwork6 := keaconfig.SharedNetwork6{
+		SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+			Name: "my-secret-network",
+		},
+		UnknownParameters: map[string]any{
+			"adaptive-lease-time-threshold": 0.5,
+		},
+	}
+	marshalled, err := sharedNetwork6.MarshalJSON()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"name": "my-secret-network",
+		"adaptive-lease-time-threshold": 0.5
+	}`, string(marshalled))
 }
 
 // Test that the Kea DHCPv4 shared network configuration parameters are
@@ -295,6 +343,10 @@ func TestGetParametersSharedNetwork4(t *testing.T) {
 	require.EqualValues(t, 6001, *params.ValidLifetime)
 	require.EqualValues(t, 4001, *params.MinValidLifetime)
 	require.EqualValues(t, 8001, *params.MaxValidLifetime)
+
+	// Check that unknown fields are included.
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, params.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test that the Kea DHCPv6 shared network configuration parameters are
@@ -343,6 +395,10 @@ func TestGetParametersSharedNetwork6(t *testing.T) {
 	require.EqualValues(t, 6001, *params.ValidLifetime)
 	require.EqualValues(t, 4001, *params.MinValidLifetime)
 	require.EqualValues(t, 8001, *params.MaxValidLifetime)
+
+	// Check that unknown fields are included.
+	require.Contains(t, params.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, params.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test converting an DHCPv4 shared network in Stork into the shared network
@@ -410,6 +466,9 @@ func TestCreateSharedNetwork4(t *testing.T) {
 		},
 		ServerHostname:    ptr("hostname.example.org"),
 		StoreExtendedInfo: ptr(true),
+		UnknownParameters: map[string]any{
+			"adaptive-lease-time-threshold": 0.3,
+		},
 	})
 	// Return subnet-level DHCP options.
 	mock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{
@@ -494,6 +553,9 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	require.Len(t, network4.Subnet4, 1)
 	require.EqualValues(t, 5, network4.Subnet4[0].ID)
 	require.Equal(t, "192.0.2.0/24", network4.Subnet4[0].Subnet)
+
+	require.Contains(t, network4.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, network4.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test converting an DHCPv6 shared network in Stork into the shared network
@@ -564,6 +626,9 @@ func TestCreateSharedNetwork6(t *testing.T) {
 		},
 		ServerHostname:    ptr("hostname.example.org"),
 		StoreExtendedInfo: ptr(true),
+		UnknownParameters: map[string]any{
+			"adaptive-lease-time-threshold": 0.3,
+		},
 	})
 	// Return subnet-level DHCP options.
 	mock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{
@@ -646,6 +711,9 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	require.Len(t, network6.Subnet6, 1)
 	require.EqualValues(t, 5, network6.Subnet6[0].ID)
 	require.Equal(t, "2001:db8:1::/64", network6.Subnet6[0].Subnet)
+
+	require.Contains(t, network6.UnknownParameters, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, network6.UnknownParameters["adaptive-lease-time-threshold"])
 }
 
 // Test conversion of the shared network to a structure used when deleting

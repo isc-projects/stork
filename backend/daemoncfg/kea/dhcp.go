@@ -334,7 +334,9 @@ func (c *DHCPv4Config) GetSharedNetworks(includeRootSubnets bool) (sharedNetwork
 	}
 	if includeRootSubnets {
 		sharedNetworks = append(sharedNetworks, &SharedNetwork4{
-			Subnet4: c.Subnet4,
+			SharedNetwork4KnownParameters: SharedNetwork4KnownParameters{
+				Subnet4: c.Subnet4,
+			},
 		})
 	}
 	return
@@ -641,7 +643,9 @@ func (c *DHCPv6Config) GetSharedNetworks(includeRootSubnets bool) (sharedNetwork
 	}
 	if includeRootSubnets {
 		sharedNetworks = append(sharedNetworks, &SharedNetwork6{
-			Subnet6: c.Subnet6,
+			SharedNetwork6KnownParameters: SharedNetwork6KnownParameters{
+				Subnet6: c.Subnet6,
+			},
 		})
 	}
 	return

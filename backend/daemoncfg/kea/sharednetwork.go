@@ -1,6 +1,8 @@
 package keaconfig
 
 import (
+	"encoding/json"
+
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 )
 
@@ -71,10 +73,12 @@ type SharedNetworkParameters struct {
 	Relay             *Relay
 	ServerHostname    *string
 	StoreExtendedInfo *bool
+	UnknownParameters map[string]any
 }
 
-// Represents an IPv4 shared network in Kea.
-type SharedNetwork4 struct {
+// Represents known (supported by Stork) configuration parameters for an IPv4
+// shared network.
+type SharedNetwork4KnownParameters struct {
 	CommonSharedNetworkParameters
 	Authoritative  *bool     `json:"authoritative,omitempty"`
 	BootFileName   *string   `json:"boot-file-name,omitempty"`
@@ -85,8 +89,15 @@ type SharedNetwork4 struct {
 	Subnet4        []Subnet4 `json:"subnet4,omitempty"`
 }
 
-// Represents an IPv6 shared network in Kea.
-type SharedNetwork6 struct {
+// Represents an IPv4 shared network in Kea.
+type SharedNetwork4 struct {
+	SharedNetwork4KnownParameters
+	UnknownParameters map[string]any `json:"-"`
+}
+
+// Represents known (supported by Stork) configuration parameters for an IPv6
+// shared network.
+type SharedNetwork6KnownParameters struct {
 	CommonSharedNetworkParameters
 	PreferredLifetimeParameters
 	PDAllocator *string   `json:"pd-allocator,omitempty"`
@@ -94,6 +105,12 @@ type SharedNetwork6 struct {
 	Name        string    `json:"name"`
 	RapidCommit *bool     `json:"rapid-commit,omitempty"`
 	Subnet6     []Subnet6 `json:"subnet6,omitempty"`
+}
+
+// Represents an IPv6 shared network in Kea.
+type SharedNetwork6 struct {
+	SharedNetwork6KnownParameters
+	UnknownParameters map[string]any `json:"-"`
 }
 
 // Denotes what to do with the subnets of a deleted shared network.
@@ -152,7 +169,32 @@ func (s SharedNetwork4) GetSharedNetworkParameters() *SharedNetworkParameters {
 		NextServer:              s.NextServer,
 		ServerHostname:          s.ServerHostname,
 		StoreExtendedInfo:       s.StoreExtendedInfo,
+		UnknownParameters:       s.UnknownParameters,
 	}
+}
+
+// Unmarshals the JSON data into the SharedNetwork4 structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (s *SharedNetwork4) UnmarshalJSON(data []byte) error {
+	sharedNetwork4WithUnknown := WithUnknown[SharedNetwork4KnownParameters]{}
+	if err := json.Unmarshal(data, &sharedNetwork4WithUnknown); err != nil {
+		return err
+	}
+	*s = SharedNetwork4{
+		SharedNetwork4KnownParameters: sharedNetwork4WithUnknown.Known,
+		UnknownParameters:             sharedNetwork4WithUnknown.Unknown,
+	}
+	return nil
+}
+
+// Marshals the SharedNetwork4 structure into JSON. The output contains the known
+// parameters and a map of unknown parameters.
+func (s SharedNetwork4) MarshalJSON() ([]byte, error) {
+	sharedNetwork4WithUnknown := WithUnknown[SharedNetwork4KnownParameters]{
+		Known:   s.SharedNetwork4KnownParameters,
+		Unknown: s.UnknownParameters,
+	}
+	return json.Marshal(sharedNetwork4WithUnknown)
 }
 
 // Returns shared network name.
@@ -191,7 +233,32 @@ func (s SharedNetwork6) GetSharedNetworkParameters() *SharedNetworkParameters {
 		PDAllocator:                 s.PDAllocator,
 		RapidCommit:                 s.RapidCommit,
 		StoreExtendedInfo:           s.StoreExtendedInfo,
+		UnknownParameters:           s.UnknownParameters,
 	}
+}
+
+// Unmarshals the JSON data into the SharedNetwork6 structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (s *SharedNetwork6) UnmarshalJSON(data []byte) error {
+	sharedNetwork6WithUnknown := WithUnknown[SharedNetwork6KnownParameters]{}
+	if err := json.Unmarshal(data, &sharedNetwork6WithUnknown); err != nil {
+		return err
+	}
+	*s = SharedNetwork6{
+		SharedNetwork6KnownParameters: sharedNetwork6WithUnknown.Known,
+		UnknownParameters:             sharedNetwork6WithUnknown.Unknown,
+	}
+	return nil
+}
+
+// Marshals the SharedNetwork6 structure into JSON. The output contains the known
+// parameters and a map of unknown parameters.
+func (s SharedNetwork6) MarshalJSON() ([]byte, error) {
+	sharedNetwork6WithUnknown := WithUnknown[SharedNetwork6KnownParameters]{
+		Known:   s.SharedNetwork6KnownParameters,
+		Unknown: s.UnknownParameters,
+	}
+	return json.Marshal(sharedNetwork6WithUnknown)
 }
 
 // Creates an IPv4 shared network configuration in Kea from the shared network data
@@ -202,7 +269,9 @@ func (s SharedNetwork6) GetSharedNetworkParameters() *SharedNetworkParameters {
 // (e.g., dbmodel.SharedNetwork should implement this interface).
 func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sharedNetwork SharedNetworkAccessor) (*SharedNetwork4, error) {
 	sharedNetwork4 := &SharedNetwork4{
-		Name: sharedNetwork.GetName(),
+		SharedNetwork4KnownParameters: SharedNetwork4KnownParameters{
+			Name: sharedNetwork.GetName(),
+		},
 	}
 	if params := sharedNetwork.GetKeaParameters(daemonID); params != nil {
 		sharedNetwork4.CommonSharedNetworkParameters = CommonSharedNetworkParameters{
@@ -223,6 +292,7 @@ func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 		sharedNetwork4.MatchClientID = params.MatchClientID
 		sharedNetwork4.NextServer = params.NextServer
 		sharedNetwork4.ServerHostname = params.ServerHostname
+		sharedNetwork4.UnknownParameters = params.UnknownParameters
 	}
 	for _, option := range sharedNetwork.GetDHCPOptions(daemonID) {
 		optionData, err := CreateSingleOptionData(daemonID, lookup, option)
@@ -249,7 +319,9 @@ func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 // (e.g., dbmodel.SharedNetwork should implement this interface).
 func CreateSharedNetwork6(daemonID int64, lookup DHCPOptionDefinitionLookup, sharedNetwork SharedNetworkAccessor) (*SharedNetwork6, error) {
 	sharedNetwork6 := &SharedNetwork6{
-		Name: sharedNetwork.GetName(),
+		SharedNetwork6KnownParameters: SharedNetwork6KnownParameters{
+			Name: sharedNetwork.GetName(),
+		},
 	}
 	if params := sharedNetwork.GetKeaParameters(daemonID); params != nil {
 		sharedNetwork6.CommonSharedNetworkParameters = CommonSharedNetworkParameters{
@@ -269,6 +341,7 @@ func CreateSharedNetwork6(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 		sharedNetwork6.PDAllocator = params.PDAllocator
 		sharedNetwork6.InterfaceID = params.InterfaceID
 		sharedNetwork6.RapidCommit = params.RapidCommit
+		sharedNetwork6.UnknownParameters = params.UnknownParameters
 	}
 	for _, option := range sharedNetwork.GetDHCPOptions(daemonID) {
 		optionData, err := CreateSingleOptionData(daemonID, lookup, option)

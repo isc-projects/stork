@@ -350,6 +350,13 @@ func TestGetSharedNetwork4(t *testing.T) {
 	require.NotNil(t, networkParams.MaxValidLifetime)
 	require.EqualValues(t, 8001, *networkParams.MaxValidLifetime)
 
+	// Validate unknown parameters.
+	require.NotNil(t, networkParams.Unknown)
+	require.IsType(t, map[string]any(nil), networkParams.Unknown)
+	unknown := networkParams.Unknown.(map[string]any)
+	require.Contains(t, unknown, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, unknown["adaptive-lease-time-threshold"])
+
 	// Validate the options.
 	require.NotEmpty(t, networkParams.OptionsHash)
 	require.Len(t, networkParams.Options, 1)
@@ -596,6 +603,13 @@ func TestGetSharedNetwork6(t *testing.T) {
 	require.NotNil(t, ls.KeaConfigSharedNetworkParameters)
 	networkParams := ls.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters
 	require.NotNil(t, networkParams)
+
+	// Validate unknown parameters.
+	require.NotNil(t, networkParams.Unknown)
+	require.IsType(t, map[string]any(nil), networkParams.Unknown)
+	unknown := networkParams.Unknown.(map[string]any)
+	require.Contains(t, unknown, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.3, unknown["adaptive-lease-time-threshold"])
 
 	// pd-allocator
 	require.NotNil(t, networkParams.PdAllocator)
@@ -896,6 +910,11 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 				ServerHostname:    storkutil.Ptr("myhost.example.org"),
 				StoreExtendedInfo: storkutil.Ptr(true),
 			},
+			KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+				Unknown: map[string]any{
+					"adaptive-lease-time-threshold": 0.3,
+				},
+			},
 			DHCPOptions: models.DHCPOptions{
 				Options: []*models.DHCPOption{
 					{
@@ -908,6 +927,9 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 							},
 						},
 						Universe: 4,
+						Unknown: map[string]any{
+							"client-classes": []any{"KNOWN"},
+						},
 					},
 				},
 			},
@@ -953,6 +975,7 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 					"arguments": {
 						"shared-networks": [
 							{
+								"adaptive-lease-time-threshold": 0.3,
 								"cache-threshold": 0.25,
 								"cache-max-age": 1000,
 								"client-class": "foo",
@@ -990,7 +1013,8 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 										"code": 3,
 										"csv-format": true,
 										"data": "192.0.2.1",
-										"space": "dhcp4"
+										"space": "dhcp4",
+										"client-classes": ["KNOWN"]
 									}
 								],
 								"relay": {
@@ -1642,6 +1666,11 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 				ServerHostname:    storkutil.Ptr("myhost.example.org"),
 				StoreExtendedInfo: storkutil.Ptr(true),
 			},
+			KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+				Unknown: map[string]any{
+					"adaptive-lease-time-threshold": 0.3,
+				},
+			},
 			DHCPOptions: models.DHCPOptions{
 				Options: []*models.DHCPOption{
 					{
@@ -1753,6 +1782,7 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 					"arguments": {
 						"shared-networks": [
 							{
+								"adaptive-lease-time-threshold": 0.3,
 								"cache-threshold": 0.25,
 								"cache-max-age": 1000,
 								"client-class": "foo",
@@ -2113,6 +2143,11 @@ func TestUpdateSharedNetwork6BeginSubmit(t *testing.T) {
 				InterfaceID: storkutil.Ptr("ifaceid"),
 				PdAllocator: storkutil.Ptr("random"),
 			},
+			KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+				Unknown: map[string]any{
+					"adaptive-lease-time-threshold": 0.3,
+				},
+			},
 		},
 	}
 
@@ -2164,6 +2199,7 @@ func TestUpdateSharedNetwork6BeginSubmit(t *testing.T) {
 					"arguments": {
 						"shared-networks": [
 							{
+								"adaptive-lease-time-threshold": 0.3,
 								"preferred-lifetime": 4500,
 								"min-preferred-lifetime": 4000,
 								"max-preferred-lifetime": 5000,

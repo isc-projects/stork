@@ -12,8 +12,10 @@ import (
 // Tests network4-add command.
 func TestNewCommandNetwork4Add(t *testing.T) {
 	command := NewCommandNetwork4Add(&keaconfig.SharedNetwork4{
-		Name:          "foo",
-		Authoritative: storkutil.Ptr(true),
+		SharedNetwork4KnownParameters: keaconfig.SharedNetwork4KnownParameters{
+			Name:          "foo",
+			Authoritative: storkutil.Ptr(true),
+		},
 	}, daemonname.DHCPv4)
 	require.NotNil(t, command)
 	require.Len(t, command.Daemons, 1)
@@ -36,8 +38,10 @@ func TestNewCommandNetwork4Add(t *testing.T) {
 // Tests network6-add command.
 func TestNewCommandNetwork6Add(t *testing.T) {
 	command := NewCommandNetwork6Add(&keaconfig.SharedNetwork6{
-		Name:        "foo",
-		PDAllocator: storkutil.Ptr("flq"),
+		SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+			Name:        "foo",
+			PDAllocator: storkutil.Ptr("flq"),
+		},
 	}, daemonname.DHCPv6)
 	require.NotNil(t, command)
 	require.Len(t, command.Daemons, 1)

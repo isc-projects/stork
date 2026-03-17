@@ -66,13 +66,15 @@ func TestGetDHCPv4SharedNetworks(t *testing.T) {
 	cfg := &DHCPv4Config{
 		SharedNetworks: []SharedNetwork4{
 			{
-				Name: "foo",
-				Subnet4: []Subnet4{
-					{
-						Subnet4KnownParameters: Subnet4KnownParameters{
-							MandatorySubnetParameters: MandatorySubnetParameters{
-								ID:     1,
-								Subnet: "192.0.2.0/24",
+				SharedNetwork4KnownParameters: SharedNetwork4KnownParameters{
+					Name: "foo",
+					Subnet4: []Subnet4{
+						{
+							Subnet4KnownParameters: Subnet4KnownParameters{
+								MandatorySubnetParameters: MandatorySubnetParameters{
+									ID:     1,
+									Subnet: "192.0.2.0/24",
+								},
 							},
 						},
 					},
@@ -753,13 +755,15 @@ func TestGetDHCPv6SharedNetworks(t *testing.T) {
 	cfg := &DHCPv6Config{
 		SharedNetworks: []SharedNetwork6{
 			{
-				Name: "foo",
-				Subnet6: []Subnet6{
-					{
-						Subnet6KnownParameters: Subnet6KnownParameters{
-							MandatorySubnetParameters: MandatorySubnetParameters{
-								ID:     1,
-								Subnet: "2001:db8:1::/64",
+				SharedNetwork6KnownParameters: SharedNetwork6KnownParameters{
+					Name: "foo",
+					Subnet6: []Subnet6{
+						{
+							Subnet6KnownParameters: Subnet6KnownParameters{
+								MandatorySubnetParameters: MandatorySubnetParameters{
+									ID:     1,
+									Subnet: "2001:db8:1::/64",
+								},
 							},
 						},
 					},
