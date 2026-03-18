@@ -248,10 +248,16 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	hookManager := hookmanager.NewHookManager()
 	hookManager.RegisterCalloutCarriers(carrierMocks)
 
+	nonWritableDir, _ := sb.JoinDir("assets/authentication-methods")
+	_ = os.Chmod(nonWritableDir, 0o400)
+	defer func() {
+		_ = os.Chmod(nonWritableDir, 0o700)
+	}()
+
 	// Act
 	err := prepareAuthenticationIcons(
 		hookManager,
-		path.Join(sb.BasePath, "non-existing-directory"),
+		sb.BasePath,
 	)
 
 	// Assert
