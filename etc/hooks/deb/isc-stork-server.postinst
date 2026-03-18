@@ -9,8 +9,17 @@ setup_user () {
     fi
 }
 
+setup_authentication_methods_dir () {
+    # Ensures the authentication-methods directory exists and is writable by
+    # the stork-server user so that LDAP hook icons can be written there.
+    auth_methods_dir=/usr/share/stork/www/assets/authentication-methods
+    mkdir -p "${auth_methods_dir}"
+    chown stork-server "${auth_methods_dir}"
+}
+
 after_install () {
     setup_user
+    setup_authentication_methods_dir
 }
 
 after_upgrade () {
@@ -19,6 +28,7 @@ after_upgrade () {
     # The user is preserved during the upgrade if the version is 1.16.0 or
     # higher. For the older versions, the user must be recreated.
     setup_user
+    setup_authentication_methods_dir
 
     # Check if the systemd is available.
     has_active_systemd=0

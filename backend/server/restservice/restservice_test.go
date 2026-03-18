@@ -180,6 +180,47 @@ func TestPrepareAuthenticationIconsExtractFromCarriers(t *testing.T) {
 	}
 }
 
+// Test that prepareAuthenticationIcons creates the authentication-methods
+// directory if it does not exist.
+func TestPrepareAuthenticationIconsCreatesDirectory(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().GetID().Return("mock")
+	metadataMock.EXPECT().
+		GetIcon().
+		Return(
+			io.NopCloser(
+				bytes.NewReader(
+					[]byte("mock-icon"),
+				),
+			), nil,
+		)
+
+	carrierMock := NewMockAuthenticationCalloutCarrier(ctrl)
+	carrierMock.EXPECT().GetMetadata().Return(metadataMock)
+	carrierMocks := []hooks.CalloutCarrier{carrierMock}
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarriers(carrierMocks)
+
+	// Act
+	err := prepareAuthenticationIcons(hookManager, sb.BasePath)
+
+	// Assert
+	require.NoError(t, err)
+
+	iconPath := path.Join(sb.BasePath, "assets", "authentication-methods", "mock.png")
+	require.FileExists(t, iconPath)
+	content, _ := os.ReadFile(iconPath)
+	require.EqualValues(t, "mock-icon", string(content))
+}
+
 // Test that the error is returned if the icon directory is not writable.
 func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	// Arrange

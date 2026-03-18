@@ -2,14 +2,25 @@
 
 set -eu
 
+setup_authentication_methods_dir () {
+    # Ensures the authentication-methods directory exists and is writable by
+    # the stork-server user so that LDAP hook icons can be written there.
+    auth_methods_dir=/usr/share/stork/www/assets/authentication-methods
+    mkdir -p "${auth_methods_dir}"
+    chown stork-server "${auth_methods_dir}"
+}
+
 after_install () {
     # Add stork-server user if does not exist.
     if ! getent passwd stork-server > /dev/null; then
         useradd --system --base-dir /var/lib stork-server
     fi
+    setup_authentication_methods_dir
 }
 
 after_upgrade () {
+    setup_authentication_methods_dir
+
     # Check if the systemd is available.
     has_active_systemd=0
     if command -v systemctl > /dev/null; then

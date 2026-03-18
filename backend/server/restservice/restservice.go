@@ -317,6 +317,12 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 func prepareAuthenticationIcons(hookManager *hookmanager.HookManager, staticFilesDirectory string) error {
 	iconDirectory := path.Join(staticFilesDirectory, "assets", "authentication-methods")
 
+	// Ensure the icon directory exists. This is a defense-in-depth measure
+	// for dev/non-package environments where the directory might not exist.
+	if err := os.MkdirAll(iconDirectory, 0o755); err != nil {
+		return pkgerrors.Wrapf(err, "cannot create the icon directory: %s", iconDirectory)
+	}
+
 	var errs []error
 
 	// Create icons for the authentication provided by hooks.

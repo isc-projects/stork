@@ -6,3 +6,9 @@ home_dir=/var/lib/stork-server
 
 addgroup -S stork-server >/dev/null
 adduser -h "${home_dir}" -D -S -H -g "Stork Server User" -G stork-server stork-server >/dev/null
+
+# Ensure the authentication-methods directory exists and is writable by
+# the stork-server user so that LDAP hook icons can be written there.
+auth_methods_dir=/usr/share/stork/www/assets/authentication-methods
+mkdir -p "${auth_methods_dir}"
+chown stork-server "${auth_methods_dir}"
