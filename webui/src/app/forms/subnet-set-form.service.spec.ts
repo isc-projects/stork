@@ -208,6 +208,10 @@ describe('SubnetSetFormService', () => {
                                     },
                                 ],
                                 optionsHash: '123',
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -259,6 +263,10 @@ describe('SubnetSetFormService', () => {
                                     },
                                 ],
                                 optionsHash: '345',
+                                unknown: {
+                                    'hostname-char-replacement': 'y',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                     ],
@@ -274,6 +282,10 @@ describe('SubnetSetFormService', () => {
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -328,6 +340,15 @@ describe('SubnetSetFormService', () => {
         expect(params.get('poolID.unlocked')?.value).toBeFalse()
         expect(params.get('poolID.values.0')?.value).toBe(50)
         expect(params.get('poolID.values.1')?.value).toBe(50)
+
+        // Unknown pool parameters.
+        const fr = params.get('unknown') as FormRecord<SharedParameterFormGroup<any>>
+        expect(fr).toBeTruthy()
+        expect(Object.keys(fr.controls).length).toBe(2)
+        expect(fr.controls['hostname-char-replacement']?.get('values.0')?.value).toBe('x')
+        expect(fr.controls['hostname-char-replacement']?.get('values.1')?.value).toBe('x')
+        expect(fr.controls['hostname-char-set']?.get('values.0')?.value).toBe('[^A-Za-z0-9.-]')
+        expect(fr.controls['hostname-char-set']?.get('values.1')?.value).toBe('[^A-Za-z0-9.-]')
 
         let options = formArray.get('0.options.data') as UntypedFormArray
         expect(options.length).toBe(2)
@@ -429,6 +450,10 @@ describe('SubnetSetFormService', () => {
                                     },
                                 ],
                                 optionsHash: '123',
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -496,6 +521,10 @@ describe('SubnetSetFormService', () => {
                                 poolID: 80,
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -541,6 +570,10 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
         expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.1')
+        expect(pools[0].keaConfigPoolParameters.unknown).toEqual({
+            'hostname-char-replacement': 'x',
+            'hostname-char-set': '[^A-Za-z0-9.-]',
+        })
         expect(pools[1].pool).toBe('192.0.2.20-192.0.2.30')
         expect(pools[1].keaConfigPoolParameters).toBeTruthy()
         expect(pools[1].keaConfigPoolParameters.clientClass).toBe('foo')
@@ -555,6 +588,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.2')
+        expect(pools[1].keaConfigPoolParameters.unknown).toBeFalsy()
         expect(pools[2].pool).toBe('192.0.2.40-192.0.2.50')
         expect(pools[2].keaConfigPoolParameters).toBeTruthy()
         expect(pools[2].keaConfigPoolParameters.clientClass).toBe('bar')
@@ -569,6 +603,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.3')
+        expect(pools[2].keaConfigPoolParameters.unknown).toBeFalsy()
 
         pools = service.convertFormToAddressPools([], subnet.localSubnets[1], formArray)
         expect(pools.length).toBe(2)
@@ -580,6 +615,10 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.options).toEqual([])
+        expect(pools[0].keaConfigPoolParameters.unknown).toEqual({
+            'hostname-char-replacement': 'x',
+            'hostname-char-set': '[^A-Za-z0-9.-]',
+        })
         expect(pools[1].pool).toBe('192.0.2.20-192.0.2.30')
         expect(pools[1].keaConfigPoolParameters).toBeTruthy()
         expect(pools[1].keaConfigPoolParameters.clientClass).toBeFalsy()
@@ -594,6 +633,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.2')
+        expect(pools[1].keaConfigPoolParameters.unknown).toBeFalsy()
 
         // Make sure that the evaluateAdditionalClasses is not set for the Kea versions
         // prior to 2.7.4.
@@ -638,6 +678,10 @@ describe('SubnetSetFormService', () => {
                                     },
                                 ],
                                 optionsHash: '123',
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -711,6 +755,10 @@ describe('SubnetSetFormService', () => {
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -766,6 +814,15 @@ describe('SubnetSetFormService', () => {
         expect(params.get('poolID.unlocked')?.value).toBeFalse()
         expect(params.get('poolID.values.0')?.value).toBe(50)
         expect(params.get('poolID.values.1')?.value).toBe(50)
+
+        // Unknown pool parameters.
+        const fr = params.get('unknown') as FormRecord<SharedParameterFormGroup<any>>
+        expect(fr).toBeTruthy()
+        expect(Object.keys(fr.controls).length).toBe(2)
+        expect(fr.controls['hostname-char-replacement']?.get('values.0')?.value).toBe('x')
+        expect(fr.controls['hostname-char-replacement']?.get('values.1')?.value).toBe('x')
+        expect(fr.controls['hostname-char-set']?.get('values.0')?.value).toBe('[^A-Za-z0-9.-]')
+        expect(fr.controls['hostname-char-set']?.get('values.1')?.value).toBe('[^A-Za-z0-9.-]')
 
         let options = formArray.get('0.options.data') as UntypedFormArray
         expect(options.length).toBe(2)
@@ -878,6 +935,10 @@ describe('SubnetSetFormService', () => {
                                     },
                                 ],
                                 optionsHash: '123',
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -951,6 +1012,10 @@ describe('SubnetSetFormService', () => {
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
+                                unknown: {
+                                    'hostname-char-replacement': 'x',
+                                    'hostname-char-set': '[^A-Za-z0-9.-]',
+                                },
                             },
                         },
                         {
@@ -1000,6 +1065,10 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[0].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::1')
         expect(pools[0].keaConfigPoolParameters.poolID).toBe(50)
+        expect(pools[0].keaConfigPoolParameters.unknown).toEqual({
+            'hostname-char-replacement': 'x',
+            'hostname-char-set': '[^A-Za-z0-9.-]',
+        })
         expect(pools[1].prefix).toBe('3001::/16')
         expect(pools[1].delegatedLength).toBe(112)
         expect(pools[1].excludedPrefix).toBeFalsy()
@@ -1016,6 +1085,8 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::2')
         expect(pools[1].keaConfigPoolParameters.poolID).toBe(60)
+        expect(pools[1].keaConfigPoolParameters.unknown).toBeFalsy()
+
         expect(pools[2].prefix).toBe('3002::/16')
         expect(pools[2].delegatedLength).toBe(112)
         expect(pools[2].excludedPrefix).toBeFalsy()
@@ -1032,6 +1103,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::3')
         expect(pools[2].keaConfigPoolParameters.poolID).toBe(70)
+        expect(pools[2].keaConfigPoolParameters.unknown).toBeFalsy()
 
         pools = service.convertFormToPrefixPools([], subnet.localSubnets[1], formArray)
         expect(pools.length).toBe(2)
@@ -1045,6 +1117,10 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.options).toEqual([])
         expect(pools[0].keaConfigPoolParameters.poolID).toBe(50)
+        expect(pools[0].keaConfigPoolParameters.unknown).toEqual({
+            'hostname-char-replacement': 'x',
+            'hostname-char-set': '[^A-Za-z0-9.-]',
+        })
         expect(pools[1].prefix).toBe('3001::/16')
         expect(pools[1].delegatedLength).toBe(112)
         expect(pools[1].excludedPrefix).toBeFalsy()
@@ -1061,17 +1137,23 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::2')
         expect(pools[1].keaConfigPoolParameters.poolID).toBeFalsy()
+        expect(pools[1].keaConfigPoolParameters.unknown).toBeFalsy()
     })
 
     it('should create a default form for pool parameters', () => {
         let form = service.createDefaultKeaPoolParametersForm(['2.7.0', '2.7.1'])
-        expect(Object.keys(form.controls).length).toBe(3)
-
+        expect(Object.keys(form.controls).length).toBe(4)
         for (const key of Object.keys(form.controls)) {
-            let control = form.get(key) as SharedParameterFormGroup<any>
-            expect(control).toBeTruthy()
-            expect(control.controls?.unlocked?.value).toBeFalse()
-            expect(control.controls?.values?.value.length).toBe(1)
+            if (form.get(key) instanceof FormRecord) {
+                const control = form.get(key) as FormRecord<SharedParameterFormGroup<any>>
+                expect(control).toBeTruthy()
+                expect(Object.keys(control.controls).length).toBe(0)
+            } else {
+                const control = form.get(key) as SharedParameterFormGroup<any>
+                expect(control).toBeTruthy()
+                expect(control.controls?.unlocked?.value).toBeFalse()
+                expect(control.controls?.values?.value.length).toBe(1)
+            }
         }
     })
 
@@ -1081,8 +1163,9 @@ describe('SubnetSetFormService', () => {
         expect(form.get('range.end')?.value).toBe('')
         const parameters = form.get('parameters') as FormGroup<KeaPoolParametersForm>
         expect(parameters).toBeTruthy()
-        expect(Object.keys(parameters.controls).length).toBe(5)
+        expect(Object.keys(parameters.controls).length).toBe(6)
         expect(form.get('options')).toBeTruthy()
+        expect(parameters.get('unknown')).toBeTruthy()
     })
 
     it('should create a default form for a prefix pool', () => {
@@ -1092,8 +1175,9 @@ describe('SubnetSetFormService', () => {
         expect(form.get('prefixes.excludedPrefix')?.value).toBe('')
         const parameters = form.get('parameters') as FormGroup<KeaPoolParametersForm>
         expect(parameters).toBeTruthy()
-        expect(Object.keys(parameters.controls).length).toBe(3)
+        expect(Object.keys(parameters.controls).length).toBe(4)
         expect(form.get('options')).toBeTruthy()
+        expect(parameters.get('unknown')).toBeTruthy()
     })
 
     it('should convert Kea IPv4 subnet parameters to a form group', () => {
