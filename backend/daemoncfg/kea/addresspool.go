@@ -26,23 +26,30 @@ type AddressPool interface {
 // when they are implemented in Kea.
 type PoolParameters struct {
 	ClientClassParameters
-	PoolID int64 `json:"pool-id,omitempty"`
+	PoolID            int64 `json:"pool-id,omitempty"`
+	UnknownParameters map[string]any
 }
 
-// Represents an address pool structure within a Kea configuration.
-type Pool struct {
+// Represents known (supported by Stork) configuration parameters for an address pool.
+type PoolKnownParameters struct {
 	Pool       string             `json:"pool"`
 	PoolID     int64              `json:"pool-id,omitempty"`
 	OptionData []SingleOptionData `json:"option-data,omitempty"`
 	ClientClassParameters
 }
 
+// Represents an address pool structure within a Kea configuration.
+type Pool struct {
+	PoolKnownParameters
+	UnknownParameters map[string]any `json:"-"`
+}
+
 // A custom unmarshal function for a Kea address pool. It removes whitespaces from
 // the pool range definition. For example: 192.0.2.1 - 192.0.2.10 becomes
 // 192.0.2.1-192.0.2.10. If the pool is specified using the prefix form, it converts
 // it to the range form.
-func (p *Pool) UnmarshalJSON(data []byte) error {
-	type t Pool
+func (p *PoolKnownParameters) UnmarshalJSON(data []byte) error {
+	type t PoolKnownParameters
 	if err := json.Unmarshal(data, (*t)(p)); err != nil {
 		return err
 	}
@@ -64,6 +71,30 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Unmarshals the JSON data into the Pool structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (p *Pool) UnmarshalJSON(data []byte) error {
+	poolWithUnknown := WithUnknown[PoolKnownParameters]{}
+	if err := json.Unmarshal(data, &poolWithUnknown); err != nil {
+		return err
+	}
+	*p = Pool{
+		PoolKnownParameters: poolWithUnknown.Known,
+		UnknownParameters:   poolWithUnknown.Unknown,
+	}
+	return nil
+}
+
+// Marshals the Pool structure into JSON. The output contains the known
+// parameters and a map of unknown parameters.
+func (p Pool) MarshalJSON() ([]byte, error) {
+	poolWithUnknown := WithUnknown[PoolKnownParameters]{
+		Known:   p.PoolKnownParameters,
+		Unknown: p.UnknownParameters,
+	}
+	return json.Marshal(poolWithUnknown)
+}
+
 // Returns the pool boundaries (lower, upper bounds).
 func (p Pool) GetBoundaries() (net.IP, net.IP, error) {
 	lb, ub, err := storkutil.ParseIPRange(p.Pool)
@@ -75,5 +106,6 @@ func (p Pool) GetPoolParameters() *PoolParameters {
 	return &PoolParameters{
 		ClientClassParameters: p.ClientClassParameters,
 		PoolID:                p.PoolID,
+		UnknownParameters:     p.UnknownParameters,
 	}
 }

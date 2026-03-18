@@ -256,16 +256,8 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 					IPAddresses: keaParameters.Relay.IPAddresses,
 				}
 			}
-			if keaParameters.Unknown != nil {
-				if unknown, ok := keaParameters.Unknown.(map[string]any); ok {
-					if localSharedNetwork.KeaParameters.UnknownParameters == nil {
-						localSharedNetwork.KeaParameters.UnknownParameters = make(map[string]any)
-					}
-					for key, value := range unknown {
-						localSharedNetwork.KeaParameters.UnknownParameters[key] = value
-					}
-				}
-			}
+			// Unknown parameters.
+			localSharedNetwork.KeaParameters.UnknownParameters = convertUnknownParametersFromRestAPI(keaParameters.Unknown)
 			// DHCP options.
 			options, err := r.flattenDHCPOptions("", lsn.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.Options, 0)
 			if err != nil {

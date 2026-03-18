@@ -4400,7 +4400,9 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t 
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80::1 - fe80:f:ffff:ffff:ffff:ffff:ffff:ffff",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80::1 - fe80:f:ffff:ffff:ffff:ffff:ffff:ffff",
+						},
 					},
 				},
 			},
@@ -4436,7 +4438,9 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubn
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80::1 - fe80::2",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80::1 - fe80::2",
+						},
 					},
 				},
 			},
@@ -4473,7 +4477,9 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetw
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80::1 - fe80::2",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80::1 - fe80::2",
+						},
 					},
 				},
 			},
@@ -4510,12 +4516,16 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						// 2^63-1 addresses.
-						Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							// 2^63-1 addresses.
+							Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+						},
 					},
 					{
-						// 1 address.
-						Pool: "fe80:42::1 - fe80:42::1",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							// 1 address.
+							Pool: "fe80:42::1 - fe80:42::1",
+						},
 					},
 				},
 			},
@@ -4552,7 +4562,9 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *te
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+						},
 					},
 				},
 			},
@@ -4567,7 +4579,9 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *te
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80:42::1 - fe80:42::1",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80:42::1 - fe80:42::1",
+						},
 					},
 				},
 			},
@@ -4604,7 +4618,9 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *te
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+						},
 					},
 				},
 			},
@@ -4619,7 +4635,9 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *te
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "fe80:42::1 - fe80:42::1",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "fe80:42::1 - fe80:42::1",
+						},
 					},
 				},
 			},
@@ -4655,10 +4673,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubne
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80::",
-					// 2^63 delegated prefixes.
-					PrefixLen:    64,
-					DelegatedLen: 127,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80::",
+						// 2^63 delegated prefixes.
+						PrefixLen:    64,
+						DelegatedLen: 127,
+					},
 				},
 			},
 		},
@@ -4691,10 +4711,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGl
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80::",
-					// 1 delegated prefix.
-					PrefixLen:    64,
-					DelegatedLen: 64,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80::",
+						// 1 delegated prefix.
+						PrefixLen:    64,
+						DelegatedLen: 64,
+					},
 				},
 			},
 		},
@@ -4727,10 +4749,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSh
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80::",
-					// 1 delegated prefix.
-					PrefixLen:    64,
-					DelegatedLen: 64,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80::",
+						// 1 delegated prefix.
+						PrefixLen:    64,
+						DelegatedLen: 64,
+					},
 				},
 			},
 		},
@@ -4765,16 +4789,20 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *t
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80::",
-					// 2^62 delegated prefixes.
-					PrefixLen:    64,
-					DelegatedLen: 126,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80::",
+						// 2^62 delegated prefixes.
+						PrefixLen:    64,
+						DelegatedLen: 126,
+					},
 				},
 				{
-					Prefix: "fe80:42::",
-					// 2^62 delegated prefix.
-					PrefixLen:    64,
-					DelegatedLen: 126,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80:42::",
+						// 2^62 delegated prefix.
+						PrefixLen:    64,
+						DelegatedLen: 126,
+					},
 				},
 			},
 		},
@@ -4808,10 +4836,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwo
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80::",
-					// 2^62 delegated prefixes.
-					PrefixLen:    64,
-					DelegatedLen: 126,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80::",
+						// 2^62 delegated prefixes.
+						PrefixLen:    64,
+						DelegatedLen: 126,
+					},
 				},
 			},
 		},
@@ -4824,10 +4854,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwo
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80:42::",
-					// 2^62 delegated prefix.
-					PrefixLen:    64,
-					DelegatedLen: 126,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80:42::",
+						// 2^62 delegated prefix.
+						PrefixLen:    64,
+						DelegatedLen: 126,
+					},
 				},
 			},
 		},
@@ -4861,10 +4893,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubne
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80::",
-					// 2^62 delegated prefixes.
-					PrefixLen:    64,
-					DelegatedLen: 126,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80::",
+						// 2^62 delegated prefixes.
+						PrefixLen:    64,
+						DelegatedLen: 126,
+					},
 				},
 			},
 		},
@@ -4877,10 +4911,12 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubne
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix: "fe80:42::",
-					// 2^62 delegated prefix.
-					PrefixLen:    64,
-					DelegatedLen: 126,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix: "fe80:42::",
+						// 2^62 delegated prefix.
+						PrefixLen:    64,
+						DelegatedLen: 126,
+					},
 				},
 			},
 		},

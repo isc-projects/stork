@@ -414,6 +414,15 @@ func TestGetSubnet4(t *testing.T) {
 	require.Equal(t, "192.0.3.10", ls.Pools[0].KeaConfigPoolParameters.Options[0].Fields[0].Values[0])
 	require.EqualValues(t, storkutil.IPv4, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
 	require.EqualValues(t, 7, ls.Pools[0].KeaConfigPoolParameters.PoolID)
+	// Ensure that unknown parameters are returned.
+	require.NotNil(t, ls.Pools[0].KeaConfigPoolParameters.Unknown)
+	require.IsType(t, map[string]any(nil), ls.Pools[0].KeaConfigPoolParameters.Unknown)
+	unknown := ls.Pools[0].KeaConfigPoolParameters.Unknown.(map[string]any)
+	require.Len(t, unknown, 14)
+	require.Contains(t, unknown, "hostname-char-replacement")
+	require.Equal(t, "x", unknown["hostname-char-replacement"])
+	require.Contains(t, unknown, "hostname-char-set")
+	require.Equal(t, "[^A-Za-z0-9.-]", unknown["hostname-char-set"])
 
 	// Validate unknown option parameters.
 	unknownOptionParameters := ls.Pools[0].KeaConfigPoolParameters.Options[0].Unknown.(map[string]any)
@@ -551,7 +560,7 @@ func TestGetSubnet4(t *testing.T) {
 	// Validate unknown parameters.
 	require.NotNil(t, subnetParams.Unknown)
 	require.IsType(t, map[string]any(nil), subnetParams.Unknown)
-	unknown := subnetParams.Unknown.(map[string]any)
+	unknown = subnetParams.Unknown.(map[string]any)
 	require.Contains(t, unknown, "adaptive-lease-time-threshold")
 	require.EqualValues(t, 0.5, unknown["adaptive-lease-time-threshold"])
 
@@ -931,6 +940,19 @@ func TestGetSubnet6(t *testing.T) {
 	require.IsType(t, map[string]any(nil), ls.UserContext)
 	require.EqualValues(t, 42, ls.UserContext.(map[string]any)["answer"])
 
+	// Validate address pools.
+	require.Len(t, ls.Pools, 2)
+	require.NotNil(t, ls.Pools[0].Pool)
+	require.Equal(t, "2001:db8:0:1::-2001:db8:0:1:ffff:ffff:ffff:ffff", *ls.Pools[0].Pool)
+	require.NotNil(t, ls.Pools[0].KeaConfigPoolParameters)
+	poolParams := ls.Pools[0].KeaConfigPoolParameters
+	require.Equal(t, "phones_server1", *poolParams.ClientClass)
+	require.Len(t, poolParams.RequireClientClasses, 1)
+	require.EqualValues(t, 7, poolParams.PoolID)
+	// Ensure that unknown parameters are returned.
+	require.NotNil(t, poolParams.Unknown)
+	require.Len(t, poolParams.Unknown, 14)
+
 	// Validate the prefix delegation pools.
 	require.Len(t, ls.PrefixDelegationPools, 1)
 
@@ -942,10 +964,18 @@ func TestGetSubnet6(t *testing.T) {
 
 	require.NotNil(t, ls.PrefixDelegationPools[0].KeaConfigPoolParameters)
 
-	poolParams := ls.PrefixDelegationPools[0].KeaConfigPoolParameters
+	poolParams = ls.PrefixDelegationPools[0].KeaConfigPoolParameters
 	require.Equal(t, "phones_server1", *poolParams.ClientClass)
 	require.Len(t, poolParams.RequireClientClasses, 1)
 	require.EqualValues(t, 2, poolParams.PoolID)
+
+	// Ensure that unknown parameters are returned.
+	require.NotNil(t, poolParams.Unknown)
+	require.IsType(t, map[string]any(nil), poolParams.Unknown)
+	unknown := poolParams.Unknown.(map[string]any)
+	require.Len(t, unknown, 1)
+	require.Contains(t, unknown, "unknown-parameter")
+	require.Equal(t, "value", unknown["unknown-parameter"])
 
 	// DHCP options in a prefix pool.
 	require.Len(t, poolParams.Options, 1)
@@ -981,7 +1011,7 @@ func TestGetSubnet6(t *testing.T) {
 	// Validate unknown parameters.
 	require.NotNil(t, subnetParams.Unknown)
 	require.IsType(t, map[string]any(nil), subnetParams.Unknown)
-	unknown := subnetParams.Unknown.(map[string]any)
+	unknown = subnetParams.Unknown.(map[string]any)
 	require.Contains(t, unknown, "adaptive-lease-time-threshold")
 	require.EqualValues(t, 0.5, unknown["adaptive-lease-time-threshold"])
 
@@ -2341,6 +2371,12 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 										},
 									},
 								},
+								KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+									Unknown: map[string]any{
+										"hostname-char-replacement": "x",
+										"hostname-char-set":         "[^A-Za-z0-9.-]",
+									},
+								},
 							},
 						},
 						{
@@ -2384,6 +2420,12 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 										},
 									},
 								},
+								KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+									Unknown: map[string]any{
+										"hostname-char-replacement": "x",
+										"hostname-char-set":         "[^A-Za-z0-9.-]",
+									},
+								},
 							},
 						},
 						{
@@ -2422,6 +2464,8 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 									"client-classes": [ "foo", "bar" ],
 									"evaluate-additional-classes": [ "foo", "bar" ],
 									"require-client-classes": [ "foo", "bar" ],
+									"hostname-char-replacement": "x",
+									"hostname-char-set":         "[^A-Za-z0-9.-]",
 									"option-data": [
 										{
 											"code": 3,
@@ -3417,6 +3461,11 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 										},
 									},
 								},
+								KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+									Unknown: map[string]any{
+										"unknown-parameter": "value",
+									},
+								},
 							},
 						},
 						{
@@ -3457,6 +3506,11 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 											},
 											Universe: 6,
 										},
+									},
+								},
+								KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+									Unknown: map[string]any{
+										"unknown-parameter": "value",
 									},
 								},
 							},
@@ -3514,7 +3568,8 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 											"data": "2001:db8:1::1",
 											"space": "dhcp6"
 										}
-									]
+									],
+									"unknown-parameter": "value"
 								},
 								{
 									"prefix": "2001:db8:2::",

@@ -292,7 +292,8 @@
                                 "prefix": "2001:db8:1::",
                                 "prefix-len": 48,
                                 "require-client-classes": ["bar"],
-                                "evaluate-additional-classes": [ "early" ]
+                                "evaluate-additional-classes": [ "early" ],
+                                "unknown-parameter": "value"
                             }
                         ],
                         "pools": [
@@ -302,7 +303,21 @@
                                 "pool": "2001:db8:0:1::/64",
                                 "pool-id": 7,
                                 "require-client-classes": [ "late" ],
-                                "evaluate-additional-classes": []
+                                "evaluate-additional-classes": [],
+                                "ddns-generated-prefix": "mypool",
+                                "ddns-override-client-update": false,
+                                "ddns-override-no-update": false,
+                                "ddns-qualifying-suffix": "pool.example.com.",
+                                "ddns-replace-client-name": "always",
+                                "ddns-send-updates": true,
+                                "ddns-update-on-renew": false,
+                                "ddns-conflict-resolution-mode": "check-with-dhcid",
+                                "ddns-ttl-percent": 0.55,
+                                "ddns-ttl": 500,
+                                "ddns-ttl-min": 10000,
+                                "ddns-ttl-max": 20000,
+                                "hostname-char-replacement": "x",
+                                "hostname-char-set": "[^A-Za-z0-9.-]"
                             },
                             {
                                 "client-class": "phones_server2",

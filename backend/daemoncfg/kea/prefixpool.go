@@ -1,6 +1,8 @@
 package keaconfig
 
 import (
+	"encoding/json"
+
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	storkutil "isc.org/stork/util"
 )
@@ -12,8 +14,8 @@ type PrefixPool interface {
 	GetKeaParameters() *PoolParameters
 }
 
-// Represents prefix delegation pool structure within Kea configuration.
-type PDPool struct {
+// Represents known (supported by Stork) configuration parameters for a delegated prefix pool.
+type PDPoolKnownParameters struct {
 	Prefix            string             `json:"prefix"`
 	PrefixLen         int                `json:"prefix-len"`
 	DelegatedLen      int                `json:"delegated-len"`
@@ -22,6 +24,36 @@ type PDPool struct {
 	PoolID            int64              `json:"pool-id,omitempty"`
 	OptionData        []SingleOptionData `json:"option-data,omitempty"`
 	ClientClassParameters
+}
+
+// Represents prefix delegation pool structure within Kea configuration.
+type PDPool struct {
+	PDPoolKnownParameters
+	UnknownParameters map[string]any `json:"-"`
+}
+
+// Unmarshals the JSON data into the PDPool structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (p *PDPool) UnmarshalJSON(data []byte) error {
+	poolWithUnknown := WithUnknown[PDPoolKnownParameters]{}
+	if err := json.Unmarshal(data, &poolWithUnknown); err != nil {
+		return err
+	}
+	*p = PDPool{
+		PDPoolKnownParameters: poolWithUnknown.Known,
+		UnknownParameters:     poolWithUnknown.Unknown,
+	}
+	return nil
+}
+
+// Marshals the PDPool structure into JSON. The output contains the known
+// parameters and a map of unknown parameters.
+func (p PDPool) MarshalJSON() ([]byte, error) {
+	poolWithUnknown := WithUnknown[PDPoolKnownParameters]{
+		Known:   p.PDPoolKnownParameters,
+		Unknown: p.UnknownParameters,
+	}
+	return json.Marshal(poolWithUnknown)
 }
 
 // Returns a delegated prefix pool in a canonical form.
@@ -45,5 +77,6 @@ func (p PDPool) GetPoolParameters() *PoolParameters {
 	return &PoolParameters{
 		PoolID:                p.PoolID,
 		ClientClassParameters: p.ClientClassParameters,
+		UnknownParameters:     p.UnknownParameters,
 	}
 }

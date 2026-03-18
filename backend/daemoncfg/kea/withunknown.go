@@ -54,8 +54,7 @@ func collectTags(t reflect.Type) (tags []string) {
 // parameters.
 func (w *WithUnknown[T]) UnmarshalJSON(data []byte) error {
 	// Start by parsing the known fields.
-	type alias *T
-	if err := json.Unmarshal(data, (alias)(&w.Known)); err != nil {
+	if err := json.Unmarshal(data, &w.Known); err != nil {
 		return errors.Wrap(err, "problem unmarshalling known configuration parameters")
 	}
 

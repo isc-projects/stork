@@ -114,7 +114,9 @@ func TestNewSubnetFromKea(t *testing.T) {
 			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
 				Pools: []keaconfig.Pool{
 					{
-						Pool: "2001:db8:1:1::/120",
+						PoolKnownParameters: keaconfig.PoolKnownParameters{
+							Pool: "2001:db8:1:1::/120",
+						},
 					},
 				},
 				Reservations: []keaconfig.Reservation{
@@ -148,11 +150,13 @@ func TestNewSubnetFromKea(t *testing.T) {
 			},
 			PDPools: []keaconfig.PDPool{
 				{
-					Prefix:            "2001:db8:1:1::",
-					PrefixLen:         96,
-					DelegatedLen:      120,
-					ExcludedPrefix:    "2001:db8:1:1:1::",
-					ExcludedPrefixLen: 128,
+					PDPoolKnownParameters: keaconfig.PDPoolKnownParameters{
+						Prefix:            "2001:db8:1:1::",
+						PrefixLen:         96,
+						DelegatedLen:      120,
+						ExcludedPrefix:    "2001:db8:1:1:1::",
+						ExcludedPrefixLen: 128,
+					},
 				},
 			},
 		},
