@@ -221,8 +221,8 @@ func TestPrepareAuthenticationIconsCreatesDirectory(t *testing.T) {
 	require.EqualValues(t, "mock-icon", string(content))
 }
 
-// Test that the error is returned if the icon directory is not writable.
-func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
+// Test that the error is returned if the icon cannot be written.
+func TestPrepareAuthenticationIconsNonWritable(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -248,11 +248,9 @@ func TestPrepareAuthenticationIconsNonWritableDirectory(t *testing.T) {
 	hookManager := hookmanager.NewHookManager()
 	hookManager.RegisterCalloutCarriers(carrierMocks)
 
-	nonWritableDir, _ := sb.JoinDir("assets/authentication-methods")
-	_ = os.Chmod(nonWritableDir, 0o400)
-	defer func() {
-		_ = os.Chmod(nonWritableDir, 0o700)
-	}()
+	// Create a directory in a place where the icon file would be created to
+	// block writing even for the root user.
+	_, _ = sb.JoinDir("assets/authentication-methods/mock.png")
 
 	// Act
 	err := prepareAuthenticationIcons(
