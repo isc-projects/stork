@@ -42,14 +42,18 @@
             "option-data": [],
             "pool": "192.1.0.1 - 192.1.0.200",
             "pool-id": 7,
-            "require-client-classes": [ "late" ]
+            "require-client-classes": [ "late" ],
+            "hostname-char-replacement": "x",
+            "hostname-char-set": "[^A-Za-z0-9.-]"
         },
         {
             "client-class": "phones_server2",
             "client-classes": [],
             "option-data": [],
             "pool": "192.3.0.1 - 192.3.0.200",
-            "require-client-classes": []
+            "require-client-classes": [],
+            "hostname-char-replacement": "x",
+            "hostname-char-set": "[^A-Za-z0-9.-]"
         }
     ],
     "rebind-timer": 40,
