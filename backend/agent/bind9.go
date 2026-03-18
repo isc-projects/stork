@@ -22,7 +22,43 @@ var (
 	_ bind9FileParser = (*bind9config.Parser)(nil)
 
 	// Patterns for detecting named process.
-	bind9Pattern           = regexp.MustCompile(`(.*?)named(\s+.*)?`)
+	// It matches the named command line and captures the base named directory
+	// and the parameters passed to named.
+	//
+	// Pattern explanation:
+	// (?:^|\s) - non-capturing group to match the start of the string or a
+	//            whitespace before the named command; it allows to ignore any
+	//            binaries that ends with but are not exactly named, e.g.,
+	//            mynamed or my-named
+	// (\S*\/|) - captures the base named directory if it is specified; allows
+	//            the binary to be executable-only (without a path) as well
+	// named - matches the named command
+	// (\s+.*)?$ - captures the rest of the command line parameters (if any)
+	//     \s+ - at least one whitespace before the parameters
+	//     .* - the rest of the command line parameters
+	//     ? - makes the whole group optional, so it matches even if there are no parameters
+	// $ - end of the string
+	//
+	// Examples of matching command lines:
+	// /usr/sbin/named -c /etc/bind/named.conf -t /var/named/chroot
+	//    - base named directory: '/usr/sbin/'
+	//    - parameters: ' -c /etc/bind/named.conf -t /var/named/chroot'
+	// named -c /etc/bind/named.conf
+	//    - base named directory: ''
+	//    - parameters: ' -c /etc/bind/named.conf'
+	// /usr/local/bin/named
+	//    - base named directory: '/usr/local/bin/'
+	//    - parameters: ''
+	// /named -t /var/named/chroot
+	//    - base named directory: ''
+	//    - parameters: ' -t /var/named/chroot'
+	// rosetta /usr/sbin/named -c /etc/bind/named.conf
+	//    - base named directory: '/usr/sbin/'
+	//    - parameters: ' -c /etc/bind/named.conf'
+	// rosetta named -c /etc/bind/named.conf
+	//    - base named directory: ''
+	//    - parameters: ' -c /etc/bind/named.conf'
+	bind9Pattern           = regexp.MustCompile(`(?:^|\s)(\S*\/|)named(\s+.*)?$`)
 	bind9ChrootPattern     = regexp.MustCompile(`-t\s+(\S+)`)
 	bind9ConfigPathPattern = regexp.MustCompile(`-c\s+(\S+)`)
 )
