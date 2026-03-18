@@ -84,6 +84,8 @@ services:
       API_PORT: 8080
     depends_on:
       - server
+    volumes:
+      - authentication-icons:/usr/share/stork/www/assets/authentication-methods
 
   agent-kea:
     restart: always
