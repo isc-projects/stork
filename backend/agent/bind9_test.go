@@ -453,6 +453,101 @@ func (e *testCommandExecutor) GetFileInfo(path string) (os.FileInfo, error) {
 	return info, nil
 }
 
+// Verify that bind9Pattern correctly matches all expected command lines and
+// correctly captures the binary directory and parameters. It also checks that
+// the pattern doesn't match unexpected command lines.
+func TestBind9Pattern(t *testing.T) {
+	tests := []struct {
+		name           string
+		cmdline        string
+		expectedMatch  bool
+		expectedDir    string
+		expectedParams string
+	}{
+		{
+			name:           "absolute path with flags",
+			cmdline:        "/usr/sbin/named -c /etc/bind/named.conf -t /var/named/chroot",
+			expectedMatch:  true,
+			expectedDir:    "/usr/sbin/",
+			expectedParams: " -c /etc/bind/named.conf -t /var/named/chroot",
+		},
+		{
+			name:           "bare named with flags",
+			cmdline:        "named -c /etc/bind/named.conf",
+			expectedMatch:  true,
+			expectedDir:    "",
+			expectedParams: " -c /etc/bind/named.conf",
+		},
+		{
+			name:           "absolute path without flags",
+			cmdline:        "/usr/local/bin/named",
+			expectedMatch:  true,
+			expectedDir:    "/usr/local/bin/",
+			expectedParams: "",
+		},
+		{
+			name:           "relative path with flags",
+			cmdline:        "bin/named -c /etc/bind/named.conf -t /var/named/chroot",
+			expectedMatch:  true,
+			expectedDir:    "bin/",
+			expectedParams: " -c /etc/bind/named.conf -t /var/named/chroot",
+		},
+		{
+			name:           "root-relative path with flags",
+			cmdline:        "/named -t /var/named/chroot",
+			expectedMatch:  true,
+			expectedDir:    "/",
+			expectedParams: " -t /var/named/chroot",
+		},
+		{
+			name:           "named in path but not as binary",
+			cmdline:        "/usr/sbin/named-checkconf -c /etc/bind/named.conf",
+			expectedMatch:  false,
+			expectedDir:    "",
+			expectedParams: "",
+		},
+		{
+			name:           "named with a prefix in the binary name",
+			cmdline:        "my-named -c /etc/bind/named.conf",
+			expectedMatch:  false,
+			expectedDir:    "",
+			expectedParams: "",
+		},
+		{
+			name:           "relative named running by another binary",
+			cmdline:        "rosetta named -c /etc/bind/named.conf",
+			expectedMatch:  true,
+			expectedDir:    "",
+			expectedParams: " -c /etc/bind/named.conf",
+		},
+		{
+			name:           "absolute named running by another binary",
+			cmdline:        "rosetta /usr/sbin/named -c /etc/bind/named.conf",
+			expectedMatch:  true,
+			expectedDir:    "/usr/sbin/",
+			expectedParams: " -c /etc/bind/named.conf",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			match := bind9Pattern.FindStringSubmatch(tt.cmdline)
+			if !tt.expectedMatch {
+				require.Empty(t, match)
+				return
+			}
+			require.GreaterOrEqual(t, len(match), 2)
+			require.Equal(t, tt.expectedDir, match[1])
+
+			params := ""
+			if len(match) > 2 {
+				params = match[2]
+			}
+			require.Equal(t, tt.expectedParams, params)
+		})
+	}
+}
+
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	// Create alternate config files for each step.
@@ -525,6 +620,199 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 	require.Empty(t, rndcKeyPath)
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+}
+
+// Checks detection STEP 1: if BIND9 detection handles binary path containing
+// "named" as a directory component (e.g., /var/lib/named/sbin/named).
+func TestDetectBind9Step1ProcessCmdLineNamedInPath(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write("step1.conf", config1)
+	require.NoError(t, err)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(config1Path, config1).
+		addFileInfo(config1Path, &testFileInfo{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	// Binary path contains "named" as a directory component.
+	absolutePath := path.Join(sandbox.BasePath, "named", "sbin", "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+
+	// Act
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Empty(t, detectedFiles.chrootDir)
+	require.Equal(t, sandbox.BasePath+"/named", detectedFiles.baseDir)
+}
+
+// Checks detection STEP 1 with chroot: if BIND9 detection handles binary path
+// containing "named" as a directory component combined with the -t chroot flag.
+func TestDetectBind9ChrootStep1ProcessCmdLineNamedInPath(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
+	chrootPath := path.Join(sandbox.BasePath, "chroot")
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write(path.Join("chroot", config1Path), config1)
+	require.NoError(t, err)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
+		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	// Binary path contains "named" as a directory component.
+	absolutePath := path.Join(sandbox.BasePath, "named", "sbin", "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+
+	// Act
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Equal(t, chrootPath, detectedFiles.chrootDir)
+	require.Equal(t, sandbox.BasePath+"/named", detectedFiles.baseDir)
+}
+
+// Checks detection STEP 1: if BIND9 detection handles "named" appearing in
+// the config file path (e.g., /usr/sbin/named -c /etc/named/named.conf).
+func TestDetectBind9Step1ProcessCmdLineNamedInConfigPath(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "named", "named.conf")
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write(path.Join("named", "named.conf"), config1)
+	require.NoError(t, err)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(config1Path, config1).
+		addFileInfo(config1Path, &testFileInfo{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+
+	// Act
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Empty(t, detectedFiles.chrootDir)
+	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
+	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+}
+
+// Checks detection STEP 1: if BIND9 detection handles "named" appearing in
+// the chroot path (e.g., /usr/sbin/named -t /var/lib/named -c /etc/named.conf).
+func TestDetectBind9Step1ProcessCmdLineNamedInChrootPath(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
+	chrootPath := path.Join(sandbox.BasePath, "named")
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write(path.Join("named", config1Path), config1)
+	require.NoError(t, err)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
+		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "sbin", "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+
+	// Act
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Equal(t, chrootPath, detectedFiles.chrootDir)
+	require.Equal(t, sandbox.BasePath, detectedFiles.baseDir)
+}
+
+// Checks detection STEP 1: if BIND9 detection handles "named" appearing in
+// the config path with extra flags between the binary and config path
+// (e.g., /usr/sbin/named -4 -c /etc/named/named.conf -f).
+func TestDetectBind9Step1ProcessCmdLineNamedInConfigPathWithExtraFlags(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "named", "named.conf")
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write(path.Join("named", "named.conf"), config1)
+	require.NoError(t, err)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(config1Path, config1).
+		addFileInfo(config1Path, &testFileInfo{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -4 -c %s -f", absolutePath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+
+	// Act
+	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Empty(t, detectedFiles.chrootDir)
 	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
 	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
 }
