@@ -465,7 +465,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addFileInfo(config1Path, &testFileInfo{})
@@ -504,7 +504,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
 		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
@@ -547,7 +547,7 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor(confPath, "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{ExplicitBind9ConfigPath: confPath})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(confPath, config).
 		addFileInfo(confPath, &testFileInfo{})
@@ -591,7 +591,7 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor(fullConfPath, "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{ExplicitBind9ConfigPath: fullConfPath})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config).
 		addFileInfo(fullConfPath, &testFileInfo{})
@@ -636,7 +636,7 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config).
 		addFileInfo(fullConfPath, &testFileInfo{})
@@ -669,7 +669,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// ... and tell the fake executor to return it as the output of named -V.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(varPath, config).
 		setConfigPathInNamedOutput(varPath).
@@ -713,7 +713,7 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// ... and tell the fake executor to return it as the output of named -V.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, varPath), config).
 		// The named -V returns the path relative to the chroot directory.
@@ -759,7 +759,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 		// filename.
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
 
-		monitor := newMonitor("", "", HTTPClientConfig{})
+		monitor := newMonitor(MonitorSettings{})
 		monitor.commander = newTestCommandExecutor().
 			clear().
 			addCheckConfOutput(expectedConfigPath, config).
@@ -810,7 +810,7 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	for _, expectedPath := range getPotentialNamedConfLocations() {
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
-		monitor := newMonitor("", "", HTTPClientConfig{})
+		monitor := newMonitor(MonitorSettings{})
 		monitor.commander = newTestCommandExecutor().
 			clear().
 			addCheckConfOutput(path.Join(chrootPath, expectedConfigPath), config).
@@ -869,7 +869,7 @@ func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
 	// Create the command executor without adding an expectation for
 	// GetFileInfo call. It should return an error when this call is
 	// made. We want to make sure that this error is propagated to the caller.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config)
 
@@ -909,7 +909,7 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addCheckConfOutput(rndcKeyPath, rndcKeyConfig).
@@ -970,7 +970,7 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addFileInfo(configPath, &testFileInfo{})
@@ -1048,7 +1048,7 @@ func TestConfigureBind9DaemonIncludedFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the monitor with mock command executor.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addCheckConfOutput(include1Path, include1Config).
@@ -1108,7 +1108,7 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check BIND 9 daemon detection.
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config).
 		addFileInfo(configPath, &testFileInfo{})
@@ -1152,7 +1152,7 @@ func TestConfigureBind9DaemonParseError(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/chroot/etc/bind/named.conf", &testFileInfo{})
 
@@ -1206,7 +1206,7 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	config3Path := path.Join(sandbox.BasePath, "step3.conf")
 
 	// ... and tell the fake executor to return it as the output of named -V
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addCheckConfOutput(config2Path, config2).

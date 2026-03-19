@@ -58,7 +58,7 @@ const defaultPDNSConfig = `
 `
 
 func TestGetDaemons(t *testing.T) {
-	monitor := NewMonitor("", "", HTTPClientConfig{})
+	monitor := NewMonitor(MonitorSettings{})
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	sa := NewStorkAgent("foo", 42, monitor, bind9StatsClient, hm, false, 0)
@@ -70,7 +70,7 @@ func TestGetDaemons(t *testing.T) {
 
 // Check if detected daemons are returned by GetDaemonByAccessPoint.
 func TestGetDaemonByAccessPoint(t *testing.T) {
-	m := NewMonitor("", "", HTTPClientConfig{})
+	m := NewMonitor(MonitorSettings{})
 
 	daemons := []Daemon{
 		&keaDaemon{
@@ -581,7 +581,7 @@ func TestDetectBind9DaemonAbsPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
@@ -618,7 +618,7 @@ func TestDetectBind9DaemonRelativePath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/named.conf", "").AnyTimes().DoAndReturn(func(configPath string, _ string) (*bind9config.Config, error) {
@@ -697,10 +697,9 @@ func TestDetectKeaDaemon(t *testing.T) {
 		require.Empty(t, ctrlPoint.Key)
 	}
 
-	httpClientConfig := HTTPClientConfig{}
 	commander := newTestCommandExecutorDefault()
 
-	monitor := newMonitor("", "", httpClientConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	t.Run("config file without include statement", func(t *testing.T) {
@@ -946,7 +945,7 @@ func TestPopulateZoneInventories(t *testing.T) {
 	config := parseDefaultBind9Config(t)
 	require.NotNil(t, config)
 
-	m := NewMonitor("", "", HTTPClientConfig{})
+	m := NewMonitor(MonitorSettings{})
 	daemonMonitor, ok := m.(*monitor)
 	require.True(t, ok)
 

@@ -16,6 +16,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var _ Monitor = (*monitor)(nil)
+
 // Operations provided by the Stork agent to set up daemon-related configuration.
 type agentManager interface {
 	allowLog(path string)
@@ -236,47 +238,51 @@ type Monitor interface {
 	Shutdown()
 }
 
+// Represents monitor implementation.
 type monitor struct {
-	requests                   chan chan []Daemon // input to monitor, ie. channel for receiving requests
-	quit                       chan bool          // channel for stopping daemon monitor
-	running                    bool
-	wg                         *sync.WaitGroup
-	commander                  storkutil.CommandExecutor
-	processManager             *ProcessManager
-	bind9FileParser            bind9FileParser
-	explicitBind9ConfigPath    string
-	pdnsConfigParser           pdnsConfigParser
-	explicitPowerDNSConfigPath string
-	keaHTTPClientConfig        HTTPClientConfig
+	settings         MonitorSettings
+	requests         chan chan []Daemon // input to monitor, ie. channel for receiving requests
+	quit             chan bool          // channel for stopping daemon monitor
+	running          bool
+	wg               *sync.WaitGroup
+	commander        storkutil.CommandExecutor
+	processManager   *ProcessManager
+	bind9FileParser  bind9FileParser
+	pdnsConfigParser pdnsConfigParser
 
 	// List of detected daemons on the host.
 	// Nil if the monitor has no perform detection yet.
 	daemons []Daemon
 }
 
+// Represents monitor settings passed when the monitor is created.
+type MonitorSettings struct {
+	ExplicitBind9ConfigPath    string
+	ExplicitPowerDNSConfigPath string
+	KeaHTTPClientConfig        HTTPClientConfig
+}
+
 // Returns an exported interface to the monitor. It used to start it as well, but this is now done
 // by a dedicated method Start(). Make sure you call Start() before using daemon
 // monitor.
-func NewMonitor(explicitBind9ConfigPath string, explicitPowerDNSConfigPath string, keaHTTPClientConfig HTTPClientConfig) Monitor {
-	return newMonitor(explicitBind9ConfigPath, explicitPowerDNSConfigPath, keaHTTPClientConfig)
+func NewMonitor(settings MonitorSettings) Monitor {
+	return newMonitor(settings)
 }
 
 // Creates a new monitor instance. It is used internally by the NewMonitor function and
 // in the tests.
-func newMonitor(explicitBind9ConfigPath string, explicitPowerDNSConfigPath string, keaHTTPClientConfig HTTPClientConfig) *monitor {
+func newMonitor(settings MonitorSettings) *monitor {
 	return &monitor{
-		requests:                   make(chan chan []Daemon),
-		quit:                       make(chan bool),
-		wg:                         &sync.WaitGroup{},
-		commander:                  storkutil.NewSystemCommandExecutor(),
-		processManager:             NewProcessManager(),
-		bind9FileParser:            bind9config.NewParser(),
-		pdnsConfigParser:           pdnsconfig.NewParser(),
-		explicitBind9ConfigPath:    explicitBind9ConfigPath,
-		explicitPowerDNSConfigPath: explicitPowerDNSConfigPath,
-		keaHTTPClientConfig:        keaHTTPClientConfig,
-		running:                    false,
-		daemons:                    nil,
+		settings:         settings,
+		requests:         make(chan chan []Daemon),
+		quit:             make(chan bool),
+		wg:               &sync.WaitGroup{},
+		commander:        storkutil.NewSystemCommandExecutor(),
+		processManager:   NewProcessManager(),
+		bind9FileParser:  bind9config.NewParser(),
+		pdnsConfigParser: pdnsconfig.NewParser(),
+		running:          false,
+		daemons:          nil,
 	}
 }
 

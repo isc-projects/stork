@@ -327,7 +327,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 		// Credentials
 		// Key is a user name that Stork uses to authenticate with Kea.
 		var key string
-		httpClientConfig := sm.keaHTTPClientConfig
+		httpClientConfig := sm.settings.KeaHTTPClientConfig
 		if controlSocket.Authentication != nil {
 			allCredentials, err := readClientCredentials(controlSocket.Authentication)
 			if err != nil {

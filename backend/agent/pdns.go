@@ -214,22 +214,22 @@ func (sm *monitor) detectPowerDNSConfigPath(p supportedProcess) (*detectedDaemon
 
 	// STEP 2: Check if the config path is explicitly specified in settings. If
 	// it is, we'll use whatever value is provided.
-	if configPath == "" && sm.explicitPowerDNSConfigPath != "" {
+	if configPath == "" && sm.settings.ExplicitPowerDNSConfigPath != "" {
 		var candidatePath string
-		log.Debugf("Looking for PowerDNS config in the location explicitly specified in settings: %s", sm.explicitPowerDNSConfigPath)
+		log.Debugf("Looking for PowerDNS config in the location explicitly specified in settings: %s", sm.settings.ExplicitPowerDNSConfigPath)
 		if chrootDir != "" {
-			rel, err := filepath.Rel(chrootDir, sm.explicitPowerDNSConfigPath)
+			rel, err := filepath.Rel(chrootDir, sm.settings.ExplicitPowerDNSConfigPath)
 			if err != nil || strings.HasPrefix(rel, "..") {
 				// The explicit config path does not belong to the chroot directory when
 				// it is impossible to build a relative path between the two (error case).
 				// If the explicit path is a parent of the chroot directory, it is also
 				// wrong (the double dot case).
-				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, sm.explicitPowerDNSConfigPath)
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, sm.settings.ExplicitPowerDNSConfigPath)
 			} else {
-				candidatePath = sm.explicitPowerDNSConfigPath
+				candidatePath = sm.settings.ExplicitPowerDNSConfigPath
 			}
 		} else {
-			candidatePath = sm.explicitPowerDNSConfigPath
+			candidatePath = sm.settings.ExplicitPowerDNSConfigPath
 		}
 		if candidatePath != "" {
 			if sm.commander.IsFileExist(candidatePath) {

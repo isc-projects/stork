@@ -110,7 +110,11 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 	}
 
 	// Start daemon monitor.
-	daemonMonitor := agent.NewMonitor(settings.Bind9Path, settings.PowerDNSPath, keaHTTPClientConfig)
+	daemonMonitor := agent.NewMonitor(agent.MonitorSettings{
+		ExplicitBind9ConfigPath:    settings.Bind9Path,
+		ExplicitPowerDNSConfigPath: settings.PowerDNSPath,
+		KeaHTTPClientConfig:        keaHTTPClientConfig,
+	})
 
 	// Prepare agent gRPC handler
 	storkAgent := agent.NewStorkAgent(

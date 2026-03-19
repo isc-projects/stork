@@ -266,16 +266,16 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (*detectedDaemonFi
 	// We assume it is an absolute path and it includes the chroot directory if
 	// any.
 	if bind9ConfPath == "" {
-		if sm.explicitBind9ConfigPath != "" {
-			log.Debugf("Looking for BIND 9 config in %s as explicitly specified in settings.", sm.explicitBind9ConfigPath)
+		if sm.settings.ExplicitBind9ConfigPath != "" {
+			log.Debugf("Looking for BIND 9 config in %s as explicitly specified in settings.", sm.settings.ExplicitBind9ConfigPath)
 			switch {
-			case !strings.HasPrefix(sm.explicitBind9ConfigPath, chrootDir):
-				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, sm.explicitBind9ConfigPath)
-			case sm.commander.IsFileExist(sm.explicitBind9ConfigPath):
+			case !strings.HasPrefix(sm.settings.ExplicitBind9ConfigPath, chrootDir):
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", chrootDir, sm.settings.ExplicitBind9ConfigPath)
+			case sm.commander.IsFileExist(sm.settings.ExplicitBind9ConfigPath):
 				// Trim the chroot directory.
-				bind9ConfPath = sm.explicitBind9ConfigPath[len(chrootDir):]
+				bind9ConfPath = sm.settings.ExplicitBind9ConfigPath[len(chrootDir):]
 			default:
-				log.Errorf("File explicitly specified in settings (%s) not found or unreadable.", sm.explicitBind9ConfigPath)
+				log.Errorf("File explicitly specified in settings (%s) not found or unreadable.", sm.settings.ExplicitBind9ConfigPath)
 			}
 		}
 	}

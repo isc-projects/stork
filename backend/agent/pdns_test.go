@@ -219,7 +219,7 @@ func TestPowerDNSDaemonCmdLineError(t *testing.T) {
 
 	executor := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	configPath, err := monitor.detectPowerDNSConfigPath(process)
@@ -244,7 +244,7 @@ func TestDetectPowerDNSDaemon(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.pdnsConfigParser = parser
 	monitor.commander = executor
 
@@ -279,7 +279,7 @@ func TestDetectPowerDNSDaemonNoConfigDir(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -300,7 +300,7 @@ func TestDetectPowerDNSDaemonConfigDir(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -322,7 +322,7 @@ func TestDetectPowerDNSDaemonRelConfigDir(t *testing.T) {
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
 	process.EXPECT().getCwd().Return("/opt", nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -342,7 +342,7 @@ func TestDetectPowerDNSDaemonRelConfigDirCwdError(t *testing.T) {
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
 	process.EXPECT().getCwd().Return("", errors.New("test error"))
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -366,7 +366,7 @@ func TestDetectPowerDNSDaemonConfigName(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=foo", nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -388,7 +388,7 @@ func TestDetectPowerDNSDaemonChrootAbsConfigDir(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/chroot/etc/pdns-foo.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -412,7 +412,7 @@ func TestDetectPowerDNSDaemonChrootRelConfigDir(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -443,7 +443,7 @@ func TestDetectPowerDNSDaemonRelChroot(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -464,7 +464,7 @@ func TestDetectPowerDNSDaemonRelChrootCwdError(t *testing.T) {
 
 	executor := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -489,9 +489,10 @@ func TestDetectPowerDNSDaemonExplicitConfigPath(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/etc/custom/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{
+		ExplicitPowerDNSConfigPath: "/etc/custom/powerdns/pdns.conf",
+	})
 	monitor.commander = executor
-	monitor.explicitPowerDNSConfigPath = "/etc/custom/powerdns/pdns.conf"
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
@@ -514,9 +515,10 @@ func TestDetectPowerDNSDaemonExplicitConfigPathChroot(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/chroot/etc/custom/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{
+		ExplicitPowerDNSConfigPath: "/chroot/etc/custom/powerdns/pdns.conf",
+	})
 	monitor.commander = executor
-	monitor.explicitPowerDNSConfigPath = "/chroot/etc/custom/powerdns/pdns.conf"
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
@@ -542,11 +544,11 @@ func TestDetectPowerDNSDaemonExplicitConfigPathChrootMismatch(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	// Explicit path does not belong to the chroot directory.
-	monitor.explicitPowerDNSConfigPath = "/chroot/etc/custom/powerdns/pdns.conf"
+	monitor.settings.ExplicitPowerDNSConfigPath = "/chroot/etc/custom/powerdns/pdns.conf"
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
@@ -572,13 +574,13 @@ func TestDetectPowerDNSDaemonExplicitConfigPathInChrootParent(t *testing.T) {
 	})
 	executor.EXPECT().GetFileInfo("/var/chroot/etc/powerdns/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	// Explicit path does not belong to the chroot directory. The
 	// explicit path should be ignored and one of the default locations
 	// should be used.
-	monitor.explicitPowerDNSConfigPath = "/var/pdns.conf"
+	monitor.settings.ExplicitPowerDNSConfigPath = "/var/pdns.conf"
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
 	require.NoError(t, err)
@@ -604,7 +606,7 @@ func TestDetectPowerDNSDaemonConfigPathPotentialConfLocations(t *testing.T) {
 			process := NewMockSupportedProcess(ctrl)
 			process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=custom", nil)
 
-			monitor := newMonitor("", "", HTTPClientConfig{})
+			monitor := newMonitor(MonitorSettings{})
 			monitor.commander = executor
 
 			configPath, err := monitor.detectPowerDNSConfigPath(process)
@@ -624,7 +626,7 @@ func TestDetectPowerDNSDaemonConfigPathCmdLineError(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getCmdline().Return("", errors.New("test error"))
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -638,7 +640,7 @@ func TestConfigurePowerDNSDaemon(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/etc/pdns.conf", &testFileInfo{})
 
@@ -671,7 +673,7 @@ func TestConfigurePowerDNSDaemonParseError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/etc/pdns.conf", &testFileInfo{})
 
@@ -695,7 +697,7 @@ func TestConfigurePowerDNSDaemonDefaultWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/etc/pdns.conf", &testFileInfo{})
 
@@ -733,7 +735,7 @@ func TestConfigurePowerDNSDaemonNoAPIKey(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/etc/pdns.conf", &testFileInfo{})
 
@@ -761,7 +763,7 @@ func TestConfigurePowerDNSDaemonNoWebserver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/etc/pdns.conf", &testFileInfo{})
 
@@ -789,7 +791,7 @@ func TestConfigurePowerDNSDaemonNoAPI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addFileInfo("/etc/pdns.conf", &testFileInfo{})
 

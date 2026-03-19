@@ -938,7 +938,7 @@ func TestDetectKeaCAPrior3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("2.3.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
 	monitor.commander = commander
 
 	// Act
@@ -1001,8 +1001,6 @@ func TestDetectKeaCAPost3_0(t *testing.T) {
     }`)
 	exePath, _ := sb.Join("kea-ctrl-agent")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
@@ -1017,7 +1015,7 @@ func TestDetectKeaCAPost3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1069,7 +1067,7 @@ func TestDetectKeaDHCPPrior3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("2.3.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
 	monitor.commander = commander
 
 	// Act
@@ -1100,8 +1098,6 @@ func TestDetectKeaDHCPOnSocketPost3_0(t *testing.T) {
     }`)
 	exePath, _ := sb.Join("kea-dhcp4")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
@@ -1116,7 +1112,7 @@ func TestDetectKeaDHCPOnSocketPost3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1176,7 +1172,7 @@ func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
 	monitor.commander = commander
 
 	// Act
@@ -1217,8 +1213,6 @@ func TestDetectKeaDHCPOnHTTPPost3_0(t *testing.T) {
     }`)
 	exePath, _ := sb.Join("kea-dhcp4")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
@@ -1233,7 +1227,7 @@ func TestDetectKeaDHCPOnHTTPPost3_0(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1299,8 +1293,6 @@ func TestDetectKeaCAWithCredentials(t *testing.T) {
     }`)
 	exePath, _ := sb.Join("kea-ctrl-agent")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
@@ -1315,7 +1307,7 @@ func TestDetectKeaCAWithCredentials(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1359,8 +1351,6 @@ func TestDetectKeaDHCPWithCredentials(t *testing.T) {
     }`)
 	exePath, _ := sb.Join("kea-dhcp4")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
@@ -1375,7 +1365,7 @@ func TestDetectKeaDHCPWithCredentials(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1403,14 +1393,12 @@ func TestDetectKeaProcessNameUnavailable(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	httpConfig := HTTPClientConfig{}
-
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("", errors.New("unable to get the process name"))
 
 	commander := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1437,7 +1425,7 @@ func TestDetectKeaDaemonNameUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
 	monitor.commander = commander
 
 	// Act
@@ -1455,8 +1443,6 @@ func TestDetectKeaCommandLineUnavailable(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
@@ -1468,7 +1454,7 @@ func TestDetectKeaCommandLineUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1486,8 +1472,6 @@ func TestDetectKeaCwdUnavailable(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	httpConfig := HTTPClientConfig{}
 
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -1509,7 +1493,7 @@ func TestDetectKeaCwdUnavailable(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1534,8 +1518,6 @@ func TestDetectKeaWithDefaultConfigurationPath(t *testing.T) {
 	// Create a configuration file for Kea.
 	exePath, _ := sb.Join("kea-dhcp4")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
@@ -1549,7 +1531,7 @@ func TestDetectKeaWithDefaultConfigurationPath(t *testing.T) {
 
 	commander := NewMockCommandExecutor(ctrl)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1574,8 +1556,6 @@ func TestDetectKeaUnparsableVersion(t *testing.T) {
 	configPath, _ := sb.Join("kea-ctrl-agent.conf")
 	exePath, _ := sb.Join("kea-ctrl-agent")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
@@ -1590,7 +1570,7 @@ func TestDetectKeaUnparsableVersion(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("git+dirty\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1635,8 +1615,6 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 	configPath, _ = filepath.Rel(sb.BasePath, configPath)
 	exePath, _ := sb.Join("kea-ctrl-agent")
 
-	httpConfig := HTTPClientConfig{}
-
 	// Kea process mock.
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
@@ -1651,7 +1629,7 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = commander
 
 	// Act
@@ -1744,7 +1722,7 @@ func TestDetectKeaCommunicationError(t *testing.T) {
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("2.3.0\n"), nil)
 
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
 	monitor.commander = commander
 
 	// Act
