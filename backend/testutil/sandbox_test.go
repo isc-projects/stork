@@ -74,6 +74,24 @@ func TestSandboxWriteFail(t *testing.T) {
 	require.Empty(t, fpath)
 }
 
+// Check if Sandbox Append works.
+func TestSandboxAppend(t *testing.T) {
+	sb := NewSandbox()
+	defer sb.Close()
+
+	fpath, err := sb.Write("abc", "def")
+	require.NoError(t, err)
+	require.Contains(t, fpath, "abc")
+
+	fpath, err = sb.Append("abc", "hij")
+	require.NoError(t, err)
+	require.Contains(t, fpath, "abc")
+
+	content, err := os.ReadFile(fpath)
+	require.NoError(t, err)
+	require.EqualValues(t, "defhij", content)
+}
+
 // Check if Sandbox JoinDir works.
 func TestSandboxJoinDir(t *testing.T) {
 	sb := NewSandbox()

@@ -93,3 +93,27 @@ func (sb *Sandbox) Write(name string, content string) (string, error) {
 
 	return fpath, err
 }
+
+// Append content to a file.
+func (sb *Sandbox) Append(name string, content string) (string, error) {
+	fpath := path.Join(sb.BasePath, name)
+
+	// Open the file in append mode.
+	file, err := os.OpenFile(fpath, os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		return "", err
+	}
+
+	err = file.Sync()
+	if err != nil {
+		return "", err
+	}
+
+	return fpath, nil
+}

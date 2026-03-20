@@ -23,6 +23,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.11.1
 	github.com/miekg/dns v1.1.72
+	github.com/nxadm/tail v1.4.11
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
@@ -95,6 +96,7 @@ require (
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/tools v0.41.0 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )
