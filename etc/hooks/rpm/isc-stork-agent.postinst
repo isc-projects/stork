@@ -28,6 +28,9 @@ after_install () {
 
     # Change ownership of all folders and files in home dir to stork-agent user.
     chown -R stork-agent "${home_dir}"
+
+    # Create the hook directory.
+    mkdir -p /usr/lib/stork-agent/hooks
 }
 
 after_upgrade () {

@@ -6,3 +6,6 @@ home_dir=/var/lib/stork-server
 
 addgroup -S stork-server >/dev/null
 adduser -h "${home_dir}" -D -S -H -g "Stork Server User" -G stork-server stork-server >/dev/null
+
+# Create the hook directory.
+mkdir -p /usr/lib/stork-server/hooks

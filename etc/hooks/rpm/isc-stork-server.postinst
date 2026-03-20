@@ -7,6 +7,9 @@ after_install () {
     if ! getent passwd stork-server > /dev/null; then
         useradd --system --base-dir /var/lib stork-server
     fi
+
+    # Create the hook directory.
+    mkdir -p /usr/lib/stork-server/hooks
 }
 
 after_upgrade () {
