@@ -1,7 +1,9 @@
 package storkutil
 
 import (
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -117,4 +119,36 @@ func TestGetFirstExistingPathOrDefaultThirdDirectory(t *testing.T) {
 // Test that the default directory is returned when no directories exist.
 func TestGetFirstExistingPathOrDefaultDefaultDirectory(t *testing.T) {
 	require.Equal(t, "default", GetFirstExistingPathOrDefault("default", "non-existing", "another-non-existing", "yet-another-non-existing"))
+}
+
+// Test that an absolute path is returned as-is.
+func TestResolveRelativePathToExecAbsolutePath(t *testing.T) {
+	// Arrange
+	absPath := "/usr/lib/stork-server/hooks"
+
+	// Act
+	resolved, err := ResolveRelativePathToExec(absPath)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, absPath, resolved)
+}
+
+// Test that a relative path is resolved against the executable directory.
+func TestResolveRelativePathToExecRelativePath(t *testing.T) {
+	// Arrange
+	relPath := "../lib/stork-server/hooks"
+
+	// Act
+	resolved, err := ResolveRelativePathToExec(relPath)
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, filepath.IsAbs(resolved))
+
+	execPath, _ := os.Executable()
+	execPath, _ = filepath.EvalSymlinks(execPath)
+	execDir := filepath.Dir(execPath)
+	expected := filepath.Clean(filepath.Join(execDir, relPath))
+	require.Equal(t, expected, resolved)
 }

@@ -197,6 +197,14 @@ func (p *CLIParser) parseHookDirectory() (*HookDirectorySettings, error) {
 		err = errors.Wrap(err, "invalid CLI argument")
 		return nil, err
 	}
+
+	// Resolve relative paths against the executable directory.
+	hookDirectory, err := storkutil.ResolveRelativePathToExec(hookDirectorySettings.HookDirectory)
+	if err != nil {
+		return nil, err
+	}
+	hookDirectorySettings.HookDirectory = hookDirectory
+
 	return hookDirectorySettings, nil
 }
 

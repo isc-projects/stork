@@ -49,13 +49,16 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 	}
 
 	// Read the hook libraries.
-	hookDirectory := settings.HookDirectory
+	hookDirectory, err := storkutil.ResolveRelativePathToExec(settings.HookDirectory)
+	if err != nil {
+		log.WithError(err).Fatal("Cannot resolve the hook directory path")
+	}
 	hookManager := agent.NewHookManager()
 	// TODO: There is missing support for configuring agent hooks because the
 	// agent uses a different library to handle CLI/environment variables than
 	// the server. I think we should unify the CLI libraries to avoid
 	// duplicating the code.
-	err := hookManager.RegisterHooksFromDirectory(
+	err = hookManager.RegisterHooksFromDirectory(
 		hooks.HookProgramAgent,
 		hookDirectory,
 		map[string]hooks.HookSettings{},
