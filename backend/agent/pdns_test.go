@@ -208,6 +208,182 @@ func TestPowerDNSDaemonGetZoneInventory(t *testing.T) {
 	require.Equal(t, daemon.zoneInventory, daemon.getZoneInventory())
 }
 
+// Test that the parsePDNSServerCommandLine function correctly extracts the
+// binary path and the --chroot, --config-dir, --config-name flags from a
+// pdns_server process command line.
+func TestParsePDNSServerCommandLine(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected *pdnsServerCommandLine
+	}{
+		{
+			name: "absolute path with config-dir",
+			args: []string{"/usr/sbin/pdns_server", "--config-dir=/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/usr/sbin/pdns_server",
+				configDir:  "/etc",
+			},
+		},
+		{
+			name: "bare binary without flags",
+			args: []string{"pdns_server"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "pdns_server",
+			},
+		},
+		{
+			name: "all three flags",
+			args: []string{"/dir/pdns_server", "--chroot=/chroot", "--config-dir=/chroot/etc", "--config-name=foo"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				chrootDir:  "/chroot",
+				configDir:  "/chroot/etc",
+				configName: "foo",
+			},
+		},
+		{
+			name: "all three flags without equal signs",
+			args: []string{"/dir/pdns_server", "--chroot", "/chroot", "--config-dir", "/chroot/etc", "--config-name", "foo"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				chrootDir:  "/chroot",
+				configDir:  "/chroot/etc",
+				configName: "foo",
+			},
+		},
+		{
+			name: "chroot with trailing slash is trimmed",
+			args: []string{"/dir/pdns_server", "--chroot=/var/chroot/"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				chrootDir:  "/var/chroot",
+			},
+		},
+		{
+			name: "chroot with trailing slash is trimmed without equal sign",
+			args: []string{"/dir/pdns_server", "--chroot", "/var/chroot/"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				chrootDir:  "/var/chroot",
+			},
+		},
+		{
+			name: "config-dir with trailing slash is trimmed",
+			args: []string{"/dir/pdns_server", "--config-dir=/etc/powerdns/"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				configDir:  "/etc/powerdns",
+			},
+		},
+		{
+			name: "config-dir with trailing slash is trimmed without equal sign",
+			args: []string{"/dir/pdns_server", "--config-dir", "/etc/powerdns/"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				configDir:  "/etc/powerdns",
+			},
+		},
+		{
+			name: "relative chroot",
+			args: []string{"/dir/pdns_server", "--chroot=chroot"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				chrootDir:  "chroot",
+			},
+		},
+		{
+			name: "relative path to binary",
+			args: []string{"bin/pdns_server", "--config-dir=/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "bin/pdns_server",
+				configDir:  "/etc",
+			},
+		},
+		{
+			name: "path with spaces in directory name",
+			args: []string{"/home/user/pdns build/sbin/pdns_server", "--config-dir=/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/home/user/pdns build/sbin/pdns_server",
+				configDir:  "/etc",
+			},
+		},
+		{
+			name: "binary running by another binary",
+			args: []string{"rosetta", "/usr/sbin/pdns_server", "--config-dir=/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/usr/sbin/pdns_server",
+				configDir:  "/etc",
+			},
+		},
+		{
+			name:     "empty args",
+			args:     []string{},
+			expected: nil,
+		},
+		{
+			name:     "no pdns_server binary",
+			args:     []string{"/usr/sbin/other_server", "--config-dir=/etc"},
+			expected: nil,
+		},
+		{
+			name: "unknown flags are ignored",
+			args: []string{"/dir/pdns_server", "--daemon", "--config-dir=/etc", "--guardian=yes"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/dir/pdns_server",
+				configDir:  "/etc",
+			},
+		},
+		{
+			name: "pdns_server directory in binary path",
+			args: []string{"/opt/pdns_server/sbin/pdns_server", "--config-dir=/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/opt/pdns_server/sbin/pdns_server",
+				configDir:  "/etc",
+			},
+		},
+		{
+			name: "pdns_server directory in config-dir path",
+			args: []string{"/usr/sbin/pdns_server", "--config-dir=/opt/pdns_server/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/usr/sbin/pdns_server",
+				configDir:  "/opt/pdns_server/etc",
+			},
+		},
+		{
+			name: "pdns_server directory in chroot path",
+			args: []string{"/usr/sbin/pdns_server", "--chroot=/var/pdns_server", "--config-dir=/var/pdns_server/etc"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/usr/sbin/pdns_server",
+				chrootDir:  "/var/pdns_server",
+				configDir:  "/var/pdns_server/etc",
+			},
+		},
+		{
+			name: "pdns_server directory in all paths",
+			args: []string{"/opt/pdns_server/sbin/pdns_server", "--chroot=/opt/pdns_server", "--config-dir=/opt/pdns_server/etc", "--config-name=custom"},
+			expected: &pdnsServerCommandLine{
+				binaryPath: "/opt/pdns_server/sbin/pdns_server",
+				chrootDir:  "/opt/pdns_server",
+				configDir:  "/opt/pdns_server/etc",
+				configName: "custom",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parsePDNSServerCommandLine(tt.args)
+			if tt.expected == nil {
+				require.Nil(t, result)
+				return
+			}
+			require.NotNil(t, result)
+			require.Equal(t, *tt.expected, *result)
+		})
+	}
+}
+
 // Test that the PowerDNS config detection function returns an error when
 // getting the process command line fails.
 func TestPowerDNSDaemonCmdLineError(t *testing.T) {
@@ -215,7 +391,7 @@ func TestPowerDNSDaemonCmdLineError(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("", errors.New("test error"))
+	process.EXPECT().getCmdlineSlice().Return(nil, errors.New("test error"))
 
 	executor := NewMockCommandExecutor(ctrl)
 
@@ -234,7 +410,7 @@ func TestDetectPowerDNSDaemon(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--config-dir=/etc"}, nil)
 
 	parser := NewMockPDNSConfigParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
@@ -271,7 +447,7 @@ func TestDetectPowerDNSDaemonNoConfigDir(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
@@ -298,7 +474,7 @@ func TestDetectPowerDNSDaemonConfigDir(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--config-dir=/etc"}, nil)
 
 	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
@@ -319,7 +495,7 @@ func TestDetectPowerDNSDaemonRelConfigDir(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/opt/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--config-dir=etc"}, nil)
 	process.EXPECT().getCwd().Return("/opt", nil)
 
 	monitor := newMonitor(MonitorSettings{})
@@ -339,7 +515,7 @@ func TestDetectPowerDNSDaemonRelConfigDirCwdError(t *testing.T) {
 
 	executor := NewMockCommandExecutor(ctrl)
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=etc", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--config-dir=etc"}, nil)
 	process.EXPECT().getCwd().Return("", errors.New("test error"))
 
 	monitor := newMonitor(MonitorSettings{})
@@ -364,7 +540,7 @@ func TestDetectPowerDNSDaemonConfigName(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/powerdns/pdns-foo.conf").Return(&testFileInfo{}, nil)
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=foo", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--config-name=foo"}, nil)
 
 	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
@@ -383,7 +559,7 @@ func TestDetectPowerDNSDaemonChrootAbsConfigDir(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/chroot --config-dir=/chroot/etc --config-name=foo", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=/chroot", "--config-dir=/chroot/etc", "--config-name=foo"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/chroot/etc/pdns-foo.conf").Return(&testFileInfo{}, nil)
@@ -404,7 +580,7 @@ func TestDetectPowerDNSDaemonChrootRelConfigDir(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/var/chroot --config-dir=chroot/etc", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=/var/chroot", "--config-dir=chroot/etc"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
@@ -431,7 +607,7 @@ func TestDetectPowerDNSDaemonRelChroot(t *testing.T) {
 	// always set to the absolute path of the chroot directory, we should
 	// get correct absolute path by prepending cwd to the config path.
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=chroot", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=chroot"}, nil)
 	process.EXPECT().getCwd().Return("/var/chroot", nil)
 
 	executor := NewMockCommandExecutor(ctrl)
@@ -459,7 +635,7 @@ func TestDetectPowerDNSDaemonRelChrootCwdError(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=chroot", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=chroot"}, nil)
 	process.EXPECT().getCwd().Return("", errors.New("test error"))
 
 	executor := NewMockCommandExecutor(ctrl)
@@ -481,7 +657,7 @@ func TestDetectPowerDNSDaemonExplicitConfigPath(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
@@ -507,7 +683,7 @@ func TestDetectPowerDNSDaemonExplicitConfigPathChroot(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/chroot/", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=/chroot/"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
@@ -533,7 +709,7 @@ func TestDetectPowerDNSDaemonExplicitConfigPathChrootMismatch(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/var/chroot/", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=/var/chroot/"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
@@ -563,7 +739,7 @@ func TestDetectPowerDNSDaemonExplicitConfigPathInChrootParent(t *testing.T) {
 	defer ctrl.Finish()
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/pdns_server --chroot=/var/chroot", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--chroot=/var/chroot"}, nil)
 
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().IsFileExist(gomock.Any()).DoAndReturn(func(path string) bool {
@@ -604,7 +780,7 @@ func TestDetectPowerDNSDaemonConfigPathPotentialConfLocations(t *testing.T) {
 			executor.EXPECT().GetFileInfo(gomock.Any()).AnyTimes().Return(&testFileInfo{}, nil)
 
 			process := NewMockSupportedProcess(ctrl)
-			process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=custom", nil)
+			process.EXPECT().getCmdlineSlice().Return([]string{"/dir/pdns_server", "--config-name=custom"}, nil)
 
 			monitor := newMonitor(MonitorSettings{})
 			monitor.commander = executor
@@ -624,7 +800,7 @@ func TestDetectPowerDNSDaemonConfigPathCmdLineError(t *testing.T) {
 
 	executor := NewMockCommandExecutor(ctrl)
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("", errors.New("test error"))
+	process.EXPECT().getCmdlineSlice().Return(nil, errors.New("test error"))
 
 	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
@@ -783,6 +959,103 @@ func TestConfigurePowerDNSDaemonNoWebserver(t *testing.T) {
 	daemon, err := monitor.configurePowerDNSDaemon(detectedFiles)
 	require.ErrorContains(t, err, "webserver disabled in /etc/pdns.conf")
 	require.Nil(t, daemon)
+}
+
+// Test that the PowerDNS config path is correctly detected when the binary
+// path contains a pdns_server directory.
+func TestDetectPowerDNSDaemonBinaryPathContainsPDNSServerDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/opt/pdns_server/sbin/pdns_server", "--config-dir=/etc"}, nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/etc/pdns.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+}
+
+// Test that the PowerDNS config path is correctly detected when the config
+// directory path contains a pdns_server directory.
+func TestDetectPowerDNSDaemonConfigDirContainsPDNSServerDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/usr/sbin/pdns_server", "--config-dir=/opt/pdns_server/etc"}, nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/opt/pdns_server/etc/pdns.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/opt/pdns_server/etc/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+}
+
+// Test that the PowerDNS config path is correctly detected when the chroot
+// directory path contains a pdns_server directory.
+func TestDetectPowerDNSDaemonChrootContainsPDNSServerDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/usr/sbin/pdns_server", "--chroot=/opt/pdns_server", "--config-dir=/opt/pdns_server/etc"}, nil)
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/opt/pdns_server/etc/pdns.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = executor
+
+	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Equal(t, "/etc/pdns.conf", detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+}
+
+// Test that the PowerDNS daemon is correctly detected end-to-end when both
+// the binary path and the config directory contain a pdns_server directory.
+func TestDetectPowerDNSDaemonAllPathsContainPDNSServerDir(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/opt/pdns_server/sbin/pdns_server", "--config-dir=/opt/pdns_server/etc"}, nil)
+
+	parser := NewMockPDNSConfigParser(ctrl)
+	parser.EXPECT().ParseFile("/opt/pdns_server/etc/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
+		return pdnsconfig.NewParser().Parse(path, strings.NewReader(defaultPDNSConfig))
+	})
+
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().GetFileInfo("/opt/pdns_server/etc/pdns.conf").Return(&testFileInfo{}, nil)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.pdnsConfigParser = parser
+	monitor.commander = executor
+
+	daemon, err := monitor.detectPowerDNSDaemon(process)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	require.IsType(t, &pdnsDaemon{}, daemon)
+	require.Equal(t, daemonname.PDNS, daemon.GetName())
+	require.Len(t, daemon.GetAccessPoints(), 1)
+	require.Equal(t, AccessPointControl, daemon.GetAccessPoints()[0].Type)
+	require.EqualValues(t, 8081, daemon.GetAccessPoints()[0].Port)
+	require.Equal(t, "127.0.0.1", daemon.GetAccessPoints()[0].Address)
+	require.Equal(t, "stork", daemon.GetAccessPoints()[0].Key)
 }
 
 // Test that an error is returned when the API is disabled in the
