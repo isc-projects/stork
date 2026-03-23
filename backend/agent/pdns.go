@@ -259,7 +259,7 @@ func (sm *monitor) detectPowerDNSConfigPath(p supportedProcess) (*detectedDaemon
 		return nil, errors.Errorf("PowerDNS config file not found")
 	}
 
-	detectedFiles := newDetectedDaemonFiles(chrootDir, "")
+	detectedFiles := newDetectedDaemonFiles(chrootDir)
 	if err := detectedFiles.addFileFromChroot(detectedFileTypeConfig, configPath, sm.commander); err != nil {
 		return nil, err
 	}

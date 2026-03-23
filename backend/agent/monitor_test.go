@@ -246,7 +246,7 @@ func TestDetectDaemons(t *testing.T) {
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
 	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
-	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{"named", "-c", "/etc/named.conf"}, nil)
 	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
 	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
@@ -381,7 +381,7 @@ func TestDetectDaemonsConfigNoStatistics(t *testing.T) {
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
 	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
-	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{"named", "-c", "/etc/named.conf"}, nil)
 	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
 	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
@@ -435,7 +435,7 @@ func TestDetectDaemonsContinueOnNotAvailableCommandLine(t *testing.T) {
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
 	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
-	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{"named", "-c", "/etc/named.conf"}, nil)
 	bind9Process.EXPECT().getCwd().Return("", errors.New("no current working directory"))
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
 	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
@@ -480,7 +480,7 @@ func TestDetectDaemonsSkipOnNotAvailableCwd(t *testing.T) {
 	bind9Process := NewMockSupportedProcess(ctrl)
 	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
 	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
-	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{"named", "-c", "/etc/named.conf"}, nil)
 	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
 	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
@@ -590,7 +590,7 @@ func TestDetectBind9DaemonAbsPath(t *testing.T) {
 	monitor.bind9FileParser = parser
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/named -c /etc/named.conf", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/named", "-c", "/etc/named.conf"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 	process.EXPECT().getPid().Return(int32(1234))
 
@@ -627,7 +627,7 @@ func TestDetectBind9DaemonRelativePath(t *testing.T) {
 	monitor.bind9FileParser = parser
 
 	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getCmdline().Return("/dir/named -c named.conf", nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{"/dir/named", "-c", "named.conf"}, nil)
 	process.EXPECT().getCwd().Return("/etc", nil)
 	process.EXPECT().getPid().Return(int32(1234))
 	monitor.commander = newTestCommandExecutorDefault()

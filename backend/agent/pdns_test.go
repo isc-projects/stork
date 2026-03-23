@@ -27,7 +27,7 @@ func TestPowerDNSDaemonIsSame(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/pdns.conf").AnyTimes().Return(&testFileInfo{}, nil)
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", executor)
 	require.NoError(t, err)
 
@@ -648,7 +648,7 @@ func TestConfigurePowerDNSDaemon(t *testing.T) {
 	})
 	monitor.pdnsConfigParser = parser
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
 	require.NoError(t, err)
 
@@ -679,7 +679,7 @@ func TestConfigurePowerDNSDaemonParseError(t *testing.T) {
 	parser.EXPECT().ParseFile("/etc/pdns.conf").Return(nil, errors.New("test error"))
 	monitor.pdnsConfigParser = parser
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
 	require.NoError(t, err)
 
@@ -709,7 +709,7 @@ func TestConfigurePowerDNSDaemonDefaultWebserver(t *testing.T) {
 	})
 	monitor.pdnsConfigParser = parser
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
 	require.NoError(t, err)
 
@@ -746,7 +746,7 @@ func TestConfigurePowerDNSDaemonNoAPIKey(t *testing.T) {
 	})
 	monitor.pdnsConfigParser = parser
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
 	require.NoError(t, err)
 
@@ -774,7 +774,7 @@ func TestConfigurePowerDNSDaemonNoWebserver(t *testing.T) {
 	})
 	monitor.pdnsConfigParser = parser
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
 	require.NoError(t, err)
 
@@ -801,7 +801,7 @@ func TestConfigurePowerDNSDaemonNoAPI(t *testing.T) {
 	})
 	monitor.pdnsConfigParser = parser
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/pdns.conf", monitor.commander)
 	require.NoError(t, err)
 
