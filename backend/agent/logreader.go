@@ -7,6 +7,7 @@ import (
 
 	"github.com/nxadm/tail"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 var _ logReader = (*textFileLogReader)(nil)
@@ -104,7 +105,9 @@ func (lc *textFileLogReader) capture(ctx context.Context, options ...logReaderCa
 			select {
 			case <-ctx.Done():
 				// Stop reading when the caller cancelled the context.
-				_ = t.Stop()
+				if err := t.Stop(); err != nil {
+					log.WithError(err).Error("failed to stop the log reader")
+				}
 				return
 			case line, ok := <-t.Lines:
 				var output logReaderLine
@@ -125,7 +128,9 @@ func (lc *textFileLogReader) capture(ctx context.Context, options ...logReaderCa
 				select {
 				case lines <- output:
 				case <-ctx.Done():
-					_ = t.Stop()
+					if err := t.Stop(); err != nil {
+						log.WithError(err).Error("failed to stop the log reader")
+					}
 					return
 				}
 			}
