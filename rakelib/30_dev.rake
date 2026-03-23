@@ -350,11 +350,13 @@ namespace :unittest do
                     'backend/util/util.go:UTCNow',
                     'backend/server/restservice/restservice.go:prepareTLS',
 
-                    # The Output method of the "systemCommandExecutor" structure encapsulates the
-                    # "exec.Command" call to allow mocking of the system response in unit tests. The
-                    # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"
-                    # method.
+                    # The Output, Start and Wait methods of the "systemCommandExecutor" structure
+                    # encapsulate the "exec.Command" calls to allow mocking of the system response in
+                    # the unit tests. The "exec.Command" cannot be directly mocked, so it is
+                    # impossible to test its methods.
                     'backend/util/executor.go:Output',
+                    'backend/util/executor.go:Start',
+                    'backend/util/executor.go:Wait',
 
                     # We spent a lot of time to try test the main agent function. It is a problematic
                     # function because it starts listening and blocks itself until receiving SIGINT.

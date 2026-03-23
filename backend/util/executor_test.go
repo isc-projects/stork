@@ -1,14 +1,25 @@
 package storkutil
 
 import (
+	"bufio"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
 )
+
+// Test that the system command executor command returns the correct scanner.
+func TestSystemCommandExecutorCommandGetScanner(t *testing.T) {
+	scanner := bufio.NewScanner(strings.NewReader("test"))
+	command := &systemCommandExecutorCommand{
+		scanner: scanner,
+	}
+	require.Equal(t, scanner, command.GetScanner())
+}
 
 // Test that the system command executor is constructed properly.
 func TestNewSystemCommandExecutor(t *testing.T) {

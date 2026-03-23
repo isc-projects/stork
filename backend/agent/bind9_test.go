@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -362,6 +363,11 @@ func (e *testCommandExecutor) setRndcStatus(status string, err error) *testComma
 	e.rndcStatus = status
 	e.rndcStatusError = err
 	return e
+}
+
+// This function is not implemented as it is not used in the tests.
+func (e *testCommandExecutor) Start(ctx context.Context, command string, args ...string) (storkutil.CommandExecutorCommand, error) {
+	return nil, errors.New("not implemented")
 }
 
 // Pretends to run named-checkconf, but instead does a simple read of the
