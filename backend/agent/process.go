@@ -17,6 +17,7 @@ var (
 // allows for mocking listing the processes in the unit tests.
 type supportedProcess interface {
 	getCmdline() (string, error)
+	getCmdlineSlice() ([]string, error)
 	getCwd() (string, error)
 	getExe() (string, error)
 	getName() (string, error)
@@ -36,6 +37,13 @@ func (p *processWrapper) getCmdline() (string, error) {
 	cmdline, err := p.process.Cmdline()
 	err = errors.Wrapf(err, "failed to get process command line for pid %d", p.getPid())
 	return cmdline, err
+}
+
+// Returns the process command line as a slice of arguments.
+func (p *processWrapper) getCmdlineSlice() ([]string, error) {
+	args, err := p.process.CmdlineSlice()
+	err = errors.Wrapf(err, "failed to get process command line slice for pid %d", p.getPid())
+	return args, err
 }
 
 // Returns the process current working directory.

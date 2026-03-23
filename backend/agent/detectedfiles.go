@@ -76,20 +76,15 @@ func (df *detectedDaemonFile) isChanged() bool {
 type detectedDaemonFiles struct {
 	files     []*detectedDaemonFile
 	chrootDir string
-	baseDir   string
 }
 
 // Creates a new detected daemon files instance.
-func newDetectedDaemonFiles(chrootDir, baseDir string) *detectedDaemonFiles {
+func newDetectedDaemonFiles(chrootDir string) *detectedDaemonFiles {
 	if chrootDir != "" {
 		chrootDir = filepath.Clean(chrootDir)
 	}
-	if baseDir != "" {
-		baseDir = filepath.Clean(baseDir)
-	}
 	return &detectedDaemonFiles{
 		chrootDir: chrootDir,
-		baseDir:   baseDir,
 	}
 }
 
@@ -137,7 +132,7 @@ func (df *detectedDaemonFiles) getFirstFilePathByType(fileType detectedFileType)
 // a special case for when the detected files are not set and should be always
 // re-detected.
 func (df *detectedDaemonFiles) isSame(other *detectedDaemonFiles) bool {
-	if df == nil || other == nil || df.chrootDir != other.chrootDir || df.baseDir != other.baseDir || len(df.files) < len(other.files) {
+	if df == nil || other == nil || df.chrootDir != other.chrootDir || len(df.files) < len(other.files) {
 		return false
 	}
 	for _, file := range other.files {

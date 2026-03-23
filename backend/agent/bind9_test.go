@@ -34,7 +34,7 @@ func TestBind9DaemonIsSame(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/bind/named.conf").AnyTimes().Return(&testFileInfo{}, nil)
 
-	detectedFiles := newDetectedDaemonFiles("", "")
+	detectedFiles := newDetectedDaemonFiles("")
 	err := detectedFiles.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", executor)
 	require.NoError(t, err)
 
@@ -453,97 +453,119 @@ func (e *testCommandExecutor) GetFileInfo(path string) (os.FileInfo, error) {
 	return info, nil
 }
 
-// Verify that bind9Pattern correctly matches all expected command lines and
-// correctly captures the binary directory and parameters. It also checks that
-// the pattern doesn't match unexpected command lines.
-func TestBind9Pattern(t *testing.T) {
+// Verify that parseNamedCommandLine correctly identifies the named binary,
+// extracts the chroot directory (-t) and config path (-c) from command line
+// arguments. It also checks that it rejects unexpected command lines.
+func TestParseNamedCommandLine(t *testing.T) {
 	tests := []struct {
-		name           string
-		cmdline        string
-		expectedMatch  bool
-		expectedDir    string
-		expectedParams string
+		name     string
+		args     []string
+		expected *namedCommandLine
 	}{
 		{
-			name:           "absolute path with flags",
-			cmdline:        "/usr/sbin/named -c /etc/bind/named.conf -t /var/named/chroot",
-			expectedMatch:  true,
-			expectedDir:    "/usr/sbin/",
-			expectedParams: " -c /etc/bind/named.conf -t /var/named/chroot",
+			name: "absolute path with flags",
+			args: []string{"/usr/sbin/named", "-c", "/etc/bind/named.conf", "-t", "/var/named/chroot"},
+			expected: &namedCommandLine{
+				binaryPath: "/usr/sbin/named",
+				chrootDir:  "/var/named/chroot",
+				configPath: "/etc/bind/named.conf",
+			},
 		},
 		{
-			name:           "bare named with flags",
-			cmdline:        "named -c /etc/bind/named.conf",
-			expectedMatch:  true,
-			expectedDir:    "",
-			expectedParams: " -c /etc/bind/named.conf",
+			name: "bare named with flags",
+			args: []string{"named", "-c", "/etc/bind/named.conf"},
+			expected: &namedCommandLine{
+				binaryPath: "named",
+				configPath: "/etc/bind/named.conf",
+			},
 		},
 		{
-			name:           "absolute path without flags",
-			cmdline:        "/usr/local/bin/named",
-			expectedMatch:  true,
-			expectedDir:    "/usr/local/bin/",
-			expectedParams: "",
+			name: "absolute path without flags",
+			args: []string{"/usr/local/bin/named"},
+			expected: &namedCommandLine{
+				binaryPath: "/usr/local/bin/named",
+			},
 		},
 		{
-			name:           "relative path with flags",
-			cmdline:        "bin/named -c /etc/bind/named.conf -t /var/named/chroot",
-			expectedMatch:  true,
-			expectedDir:    "bin/",
-			expectedParams: " -c /etc/bind/named.conf -t /var/named/chroot",
+			name: "relative path with flags",
+			args: []string{"bin/named", "-c", "/etc/bind/named.conf", "-t", "/var/named/chroot"},
+			expected: &namedCommandLine{
+				binaryPath: "bin/named",
+				chrootDir:  "/var/named/chroot",
+				configPath: "/etc/bind/named.conf",
+			},
 		},
 		{
-			name:           "root-relative path with flags",
-			cmdline:        "/named -t /var/named/chroot",
-			expectedMatch:  true,
-			expectedDir:    "/",
-			expectedParams: " -t /var/named/chroot",
+			name: "root-relative path with flags",
+			args: []string{"/named", "-t", "/var/named/chroot"},
+			expected: &namedCommandLine{
+				binaryPath: "/named",
+				chrootDir:  "/var/named/chroot",
+			},
 		},
 		{
-			name:           "named in path but not as binary",
-			cmdline:        "/usr/sbin/named-checkconf -c /etc/bind/named.conf",
-			expectedMatch:  false,
-			expectedDir:    "",
-			expectedParams: "",
+			name:     "named-checkconf is not named",
+			args:     []string{"/usr/sbin/named-checkconf", "-c", "/etc/bind/named.conf"},
+			expected: nil,
 		},
 		{
-			name:           "named with a prefix in the binary name",
-			cmdline:        "my-named -c /etc/bind/named.conf",
-			expectedMatch:  false,
-			expectedDir:    "",
-			expectedParams: "",
+			name:     "my-named is not named",
+			args:     []string{"my-named", "-c", "/etc/bind/named.conf"},
+			expected: nil,
 		},
 		{
-			name:           "relative named running by another binary",
-			cmdline:        "rosetta named -c /etc/bind/named.conf",
-			expectedMatch:  true,
-			expectedDir:    "",
-			expectedParams: " -c /etc/bind/named.conf",
+			name: "relative named running by another binary",
+			args: []string{"rosetta", "named", "-c", "/etc/bind/named.conf"},
+			expected: &namedCommandLine{
+				binaryPath: "named",
+				configPath: "/etc/bind/named.conf",
+			},
 		},
 		{
-			name:           "absolute named running by another binary",
-			cmdline:        "rosetta /usr/sbin/named -c /etc/bind/named.conf",
-			expectedMatch:  true,
-			expectedDir:    "/usr/sbin/",
-			expectedParams: " -c /etc/bind/named.conf",
+			name: "absolute named running by another binary",
+			args: []string{"rosetta", "/usr/sbin/named", "-c", "/etc/bind/named.conf"},
+			expected: &namedCommandLine{
+				binaryPath: "/usr/sbin/named",
+				configPath: "/etc/bind/named.conf",
+			},
+		},
+		{
+			name: "path with named as directory component",
+			args: []string{"/var/lib/named/sbin/named", "-c", "/etc/named.conf"},
+			expected: &namedCommandLine{
+				binaryPath: "/var/lib/named/sbin/named",
+				configPath: "/etc/named.conf",
+			},
+		},
+		{
+			name: "path with spaces in directory name",
+			args: []string{"/home/marcin/devel/bind9 build/sbin/named", "-c", "/etc/bind/named.conf"},
+			expected: &namedCommandLine{
+				binaryPath: "/home/marcin/devel/bind9 build/sbin/named",
+				configPath: "/etc/bind/named.conf",
+			},
+		},
+		{
+			name:     "empty args",
+			args:     []string{},
+			expected: nil,
+		},
+		{
+			name:     "no named binary",
+			args:     []string{"/usr/sbin/bind9", "-c", "/etc/bind/named.conf"},
+			expected: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			match := bind9Pattern.FindStringSubmatch(tt.cmdline)
-			if !tt.expectedMatch {
-				require.Empty(t, match)
+			result := parseNamedCommandLine(tt.args)
+			if tt.expected == nil {
+				require.Nil(t, result)
 				return
 			}
-			require.GreaterOrEqual(t, len(match), 2)
-			require.Equal(t, tt.expectedDir, match[1])
-
-			params := ""
-			if len(match) > 2 {
-				params = match[2]
-			}
-			require.Equal(t, tt.expectedParams, params)
+			require.NotNil(t, result)
+			require.Equal(t, *tt.expected, *result)
 		})
 	}
 }
@@ -570,10 +592,10 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -581,8 +603,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Empty(t, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection with chroot STEP 1: if BIND9 detection takes -c parameter
@@ -609,9 +630,9 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -620,8 +641,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 	require.Empty(t, rndcKeyPath)
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection STEP 1: if BIND9 detection handles binary path containing
@@ -646,11 +666,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInPath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	// Binary path contains "named" as a directory component.
 	absolutePath := path.Join(sandbox.BasePath, "named", "sbin", "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
@@ -660,7 +680,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInPath(t *testing.T) {
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Empty(t, detectedFiles.chrootDir)
-	require.Equal(t, sandbox.BasePath+"/named", detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath+"/named/sbin", namedBinaryDir)
 }
 
 // Checks detection STEP 1 with chroot: if BIND9 detection handles binary path
@@ -686,11 +706,11 @@ func TestDetectBind9ChrootStep1ProcessCmdLineNamedInPath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	// Binary path contains "named" as a directory component.
 	absolutePath := path.Join(sandbox.BasePath, "named", "sbin", "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
@@ -699,7 +719,45 @@ func TestDetectBind9ChrootStep1ProcessCmdLineNamedInPath(t *testing.T) {
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
-	require.Equal(t, sandbox.BasePath+"/named", detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath+"/named/sbin", namedBinaryDir)
+}
+
+// Checks detection STEP 1: if BIND9 detection handles paths with spaces
+// in directory names (e.g., /home/user/bind9 build/sbin/named).
+func TestDetectBind9Step1ProcessCmdLinePathWithSpaces(t *testing.T) {
+	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
+	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
+                controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write("step1.conf", config1)
+	require.NoError(t, err)
+
+	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(config1Path, config1).
+		addFileInfo(config1Path, &testFileInfo{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	// Binary path contains a space in the directory name.
+	absolutePath := path.Join(sandbox.BasePath, "bind9 build", "sbin", "named")
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
+	process.EXPECT().getCwd().Return("", nil)
+
+	// Act
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, detectedFiles)
+	require.Len(t, detectedFiles.files, 1)
+	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
+	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
+	require.Empty(t, detectedFiles.chrootDir)
+	require.Equal(t, sandbox.BasePath+"/bind9 build/sbin", namedBinaryDir)
 }
 
 // Checks detection STEP 1: if BIND9 detection handles "named" appearing in
@@ -723,11 +781,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPath(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
@@ -736,8 +794,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPath(t *testing.T) {
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Empty(t, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection STEP 1: if BIND9 detection handles "named" appearing in
@@ -762,11 +819,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInChrootPath(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "sbin", "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
@@ -775,7 +832,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInChrootPath(t *testing.T) {
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
-	require.Equal(t, sandbox.BasePath, detectedFiles.baseDir)
+	require.Equal(t, path.Join(sandbox.BasePath, "sbin"), namedBinaryDir)
 }
 
 // Checks detection STEP 1: if BIND9 detection handles "named" appearing in
@@ -800,11 +857,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPathWithExtraFlags(t *testin
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -4 -c %s -f", absolutePath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-4", "-c", config1Path, "-f"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
@@ -813,8 +870,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPathWithExtraFlags(t *testin
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Empty(t, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection STEP 2: if BIND9 detection takes the explicit config path
@@ -844,10 +900,10 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "usr", "sbin", "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -856,7 +912,7 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 	require.Empty(t, rndcKeyPath)
 	require.Empty(t, detectedFiles.chrootDir)
-	require.Equal(t, sandbox.BasePath+"/usr", detectedFiles.baseDir)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "usr", "sbin"), namedBinaryDir)
 }
 
 // Checks detection with chroot STEP 2: if BIND9 detection takes
@@ -888,10 +944,10 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -900,8 +956,7 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 	require.Empty(t, rndcKeyPath)
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection with chroot STEP 2: the explicit config path must be
@@ -933,11 +988,12 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "BIND 9 config file not found")
 	require.Nil(t, detectedFiles)
+	require.Empty(t, namedBinaryDir)
 }
 
 // Checks detection STEP 3: parse output of the named -V command.
@@ -968,9 +1024,9 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
@@ -979,8 +1035,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 	require.Empty(t, rndcKeyPath)
 	require.Empty(t, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection with chroot STEP 3: parse output of the named -V command.
@@ -1013,18 +1068,17 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, varPath, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
 	require.Empty(t, detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey))
 	require.Equal(t, chrootPath, detectedFiles.chrootDir)
-	expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-	require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+	require.Equal(t, sandbox.BasePath, namedBinaryDir)
 }
 
 // Checks detection STEP 4: look at the typical locations.
@@ -1061,9 +1115,9 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			// Act
 			process := NewMockSupportedProcess(ctrl)
 			absolutePath := path.Join(sandbox.BasePath, "named")
-			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
+			process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 			process.EXPECT().getCwd().Return("", nil)
-			detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+			namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
 			require.NoError(t, err)
@@ -1074,8 +1128,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 			require.Empty(t, rndcKeyPath)
 			require.Empty(t, detectedFiles.chrootDir)
-			expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-			require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+			require.Equal(t, sandbox.BasePath, namedBinaryDir)
 		})
 	}
 }
@@ -1112,9 +1165,9 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			// Act
 			process := NewMockSupportedProcess(ctrl)
 			absolutePath := path.Join(sandbox.BasePath, "named")
-			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+			process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 			process.EXPECT().getCwd().Return("", nil)
-			detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+			namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
 			require.NoError(t, err)
@@ -1125,8 +1178,7 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			rndcKeyPath := detectedFiles.getFirstFilePathByType(detectedFileTypeRndcKey)
 			require.Empty(t, rndcKeyPath)
 			require.Equal(t, chrootPath, detectedFiles.chrootDir)
-			expectedBaseDir, _ := filepath.Split(sandbox.BasePath)
-			require.Equal(t, filepath.Clean(expectedBaseDir), detectedFiles.baseDir)
+			require.Equal(t, sandbox.BasePath, namedBinaryDir)
 		})
 	}
 }
@@ -1150,7 +1202,7 @@ func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
 
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, configPath), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", configPath}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 	process.EXPECT().getPid().Times(0)
 
@@ -1161,9 +1213,10 @@ func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config)
 
-	detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "file not found")
 	require.Nil(t, detectedFiles)
+	require.Empty(t, namedBinaryDir)
 }
 
 // Check that the detected BIND 9 daemon is instantiated and configured
@@ -1210,11 +1263,11 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getPid().Return(int32(1234))
 
-	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files := newDetectedDaemonFiles("")
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1269,11 +1322,11 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getPid().Return(int32(1234))
 
-	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files := newDetectedDaemonFiles("")
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1353,12 +1406,12 @@ func TestConfigureBind9DaemonIncludedFiles(t *testing.T) {
 
 	// Create the set of detected files with one config file
 	// and without the includes.
-	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files := newDetectedDaemonFiles("")
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
 	// Parse and expand the configuration files.
-	daemon, err := monitor.configureBind9Daemon(process, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1407,11 +1460,11 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getPid().Return(int32(1234))
 
-	files := newDetectedDaemonFiles("", sandbox.BasePath)
+	files := newDetectedDaemonFiles("")
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1449,11 +1502,11 @@ func TestConfigureBind9DaemonParseError(t *testing.T) {
 
 	monitor.bind9FileParser = parser
 
-	files := newDetectedDaemonFiles("/chroot", "")
+	files := newDetectedDaemonFiles("/chroot")
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, files)
+	daemon, err := monitor.configureBind9Daemon(process, "", files)
 	require.Error(t, err)
 	require.Nil(t, daemon)
 	require.ErrorContains(t, err, "failed to parse BIND 9 config file")
@@ -1509,7 +1562,7 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	defer ctrl.Finish()
 	process := NewMockSupportedProcess(ctrl)
 	absolutePath := path.Join(sandbox.BasePath, "named")
-	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 	process.EXPECT().getPid().Return(int32(1234))
 	daemon, err := monitor.detectBind9Daemon(process)
@@ -1539,7 +1592,7 @@ func TestDetermineDetailsUseDefaultKey(t *testing.T) {
 	}
 
 	// Act
-	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, nil)
+	err := client.DetermineDetails("/usr/sbin", "/conf_dir", "address", 42, nil)
 
 	// Assert
 	require.NoError(t, err)
@@ -1585,7 +1638,7 @@ func TestDetermineDetailsCustomKeyExistingConfig(t *testing.T) {
 	}
 
 	// Act
-	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
+	err := client.DetermineDetails("/usr/sbin", "/conf_dir", "address", 42, key)
 
 	// Assert
 	require.NoError(t, err)
@@ -1619,7 +1672,7 @@ func TestDetermineDetailsCustomKeyMissingConfigExistingKey(t *testing.T) {
 	}
 
 	// Act
-	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
+	err := client.DetermineDetails("/usr/sbin", "/conf_dir", "address", 42, key)
 
 	// Assert
 	require.NoError(t, err)
@@ -1650,7 +1703,7 @@ func TestDetermineDetailsCustomKeyMissingConfigMissingKey(t *testing.T) {
 	}
 
 	// Act
-	err := client.DetermineDetails("/exe_dir", "/conf_dir", "address", 42, key)
+	err := client.DetermineDetails("/usr/sbin", "/conf_dir", "address", 42, key)
 
 	// Assert
 	require.NoError(t, err)

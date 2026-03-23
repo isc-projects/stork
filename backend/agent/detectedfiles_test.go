@@ -64,13 +64,12 @@ func TestNewDetectedDaemonFiles(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/chroot/etc/bind/config/config.conf").Return(fileInfo, nil)
 	executor.EXPECT().GetFileInfo("/chroot/etc/bind/rndc.key").Return(fileInfo, nil)
 
-	files := newDetectedDaemonFiles("/chroot/.", "/base/../base")
+	files := newDetectedDaemonFiles("/chroot/.")
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
 	require.NoError(t, err)
 	require.Equal(t, "/chroot", files.chrootDir)
-	require.Equal(t, "/base", files.baseDir)
 	require.Len(t, files.files, 2)
 	require.Equal(t, detectedFileTypeConfig, files.files[0].fileType)
 	require.Equal(t, "/etc/bind/config/config.conf", files.files[0].path)
@@ -89,7 +88,7 @@ func TestDetectedDaemonFilesAddFileFromChroot(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/chroot/etc/bind/config/config.conf").Return(&testFileInfo{}, nil)
 
-	files := newDetectedDaemonFiles("/chroot", "")
+	files := newDetectedDaemonFiles("/chroot")
 	err := files.addFileFromChroot(detectedFileTypeConfig, "/chroot/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	require.Equal(t, "/etc/bind/config/config.conf", files.files[0].path)
@@ -105,7 +104,7 @@ func TestDetectedDaemonFilesAddFileFromEmptyChroot(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/chroot/etc/bind/config/config.conf").Return(&testFileInfo{}, nil)
 
-	files := newDetectedDaemonFiles("", "")
+	files := newDetectedDaemonFiles("")
 	err := files.addFileFromChroot(detectedFileTypeInclude, "/chroot/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	require.Equal(t, "/chroot/etc/bind/config/config.conf", files.files[0].path)
@@ -119,7 +118,7 @@ func TestDetectedDaemonFilesAddFileFromChrootError(t *testing.T) {
 
 	executor := NewMockCommandExecutor(ctrl)
 
-	files := newDetectedDaemonFiles("/chroot", "")
+	files := newDetectedDaemonFiles("/chroot")
 	err := files.addFileFromChroot(detectedFileTypeInclude, "/opt/etc/bind/config/config.conf", executor)
 	require.ErrorContains(t, err, "the path /opt/etc/bind/config/config.conf does not belong to the chroot directory /chroot")
 }
@@ -134,7 +133,7 @@ func TestDetectedDaemonFilesGetFirstFilePathByType(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").Return(fileInfo, nil)
 	executor.EXPECT().GetFileInfo("/etc/bind/rndc.key").Return(fileInfo, nil)
 
-	files := newDetectedDaemonFiles("", "")
+	files := newDetectedDaemonFiles("")
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
@@ -156,7 +155,7 @@ func TestDetectDaemonFilesAddFileError(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").Return(nil, errors.New("test error"))
 
-	files := newDetectedDaemonFiles("", "")
+	files := newDetectedDaemonFiles("")
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.ErrorContains(t, err, "test error")
 }
@@ -170,8 +169,8 @@ func TestDetectedDaemonFilesIsSame(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
 	executor.EXPECT().GetFileInfo("/etc/bind/rndc.key").AnyTimes().Return(&testFileInfo{}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 	require.True(t, files1.isSame(files2))
 
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
@@ -195,8 +194,8 @@ func TestDetectedDaemonFilesIsSameOutOfOrder(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
 	executor.EXPECT().GetFileInfo("/etc/bind/rndc.key").AnyTimes().Return(&testFileInfo{}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files1.addFile(detectedFileTypeRndcKey, "/etc/bind/rndc.key", executor)
@@ -218,8 +217,8 @@ func TestDetectedDaemonFilesIsSameSubset(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
 	executor.EXPECT().GetFileInfo("/etc/bind/rndc.key").AnyTimes().Return(&testFileInfo{}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 
 	// Add two files to the first set.
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
@@ -246,22 +245,8 @@ func TestDetectedDaemonFilesIsSameDifferentChrootDir(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
 
-	files1 := newDetectedDaemonFiles("/chroot1", "")
-	files2 := newDetectedDaemonFiles("/chroot2", "")
-	require.False(t, files1.isSame(files2))
-}
-
-// Test that it is correctly verified that two sets of detected files are not the same
-// if the base directories are different.
-func TestDetectedDaemonFilesIsSameDifferentBaseDir(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
-
-	files1 := newDetectedDaemonFiles("", "/base1")
-	files2 := newDetectedDaemonFiles("", "/base2")
+	files1 := newDetectedDaemonFiles("/chroot1")
+	files2 := newDetectedDaemonFiles("/chroot2")
 	require.False(t, files1.isSame(files2))
 }
 
@@ -275,8 +260,8 @@ func TestDetectedDaemonFilesIsSameDifferentFilePaths(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
 	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").AnyTimes().Return(&testFileInfo{}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
@@ -294,8 +279,8 @@ func TestDetectedDaemonFilesIsSameDifferentFileTypes(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeRndcKey, "/etc/bind/config/config.conf", executor)
@@ -314,8 +299,8 @@ func TestDetectedDaemonFilesIsSameDifferentFileSizes(t *testing.T) {
 	executor2 := NewMockCommandExecutor(ctrl)
 	executor2.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{size: 200}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor1)
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor2)
@@ -334,8 +319,8 @@ func TestDetectedDaemonFilesIsSameDifferentFileModificationTimes(t *testing.T) {
 	executor2 := NewMockCommandExecutor(ctrl)
 	executor2.EXPECT().GetFileInfo("/etc/bind/config/config.conf").AnyTimes().Return(&testFileInfo{modTime: time.Unix(0, 1)}, nil)
 
-	files1 := newDetectedDaemonFiles("", "")
-	files2 := newDetectedDaemonFiles("", "")
+	files1 := newDetectedDaemonFiles("")
+	files2 := newDetectedDaemonFiles("")
 	err := files1.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor1)
 	require.NoError(t, err)
 	err = files2.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor2)
@@ -347,11 +332,11 @@ func TestDetectedDaemonFilesIsSameDifferentFileModificationTimes(t *testing.T) {
 func TestDetectedDaemonFilesIsSameNil(t *testing.T) {
 	t.Run("receiver is nil", func(t *testing.T) {
 		var files1 *detectedDaemonFiles
-		files2 := newDetectedDaemonFiles("", "")
+		files2 := newDetectedDaemonFiles("")
 		require.False(t, files1.isSame(files2))
 	})
 	t.Run("argument is nil", func(t *testing.T) {
-		files1 := newDetectedDaemonFiles("", "")
+		files1 := newDetectedDaemonFiles("")
 		var files2 *detectedDaemonFiles
 		require.False(t, files1.isSame(files2))
 	})
@@ -382,7 +367,7 @@ func TestDetectedDaemonFilesSizeChanged(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").Return(&testFileInfo{size: 300}, nil)
 
 	// Add two files to the collection.
-	files := newDetectedDaemonFiles("", "")
+	files := newDetectedDaemonFiles("")
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files.addFile(detectedFileTypeRndcKey, "/etc/bind/config/rndc.key", executor)
@@ -409,7 +394,7 @@ func TestDetectedDaemonFilesModificationTimeChanged(t *testing.T) {
 	executor.EXPECT().GetFileInfo("/etc/bind/config/rndc.key").Return(&testFileInfo{modTime: time.Unix(0, 2)}, nil)
 
 	// Add two files to the collection.
-	files := newDetectedDaemonFiles("", "")
+	files := newDetectedDaemonFiles("")
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/config/config.conf", executor)
 	require.NoError(t, err)
 	err = files.addFile(detectedFileTypeRndcKey, "/etc/bind/config/rndc.key", executor)
