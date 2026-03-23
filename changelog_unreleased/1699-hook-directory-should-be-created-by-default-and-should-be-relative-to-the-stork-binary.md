@@ -1,4 +1,4 @@
-[func] slawek
+[func] ! slawek
 
     The default hook directory path is now relative to the binary
     location rather than an absolute path. The hook directory is created
