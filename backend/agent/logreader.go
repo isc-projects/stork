@@ -40,7 +40,9 @@ type textLogReaderConfig struct {
 type logReaderCaptureOption int
 
 const (
+	// Instructs the log reader to start reading from the end of the file.
 	logReaderCaptureOptionReadFromEnd logReaderCaptureOption = iota
+	// Instructs the log reader to follow the new lines.
 	logReaderCaptureOptionReadFollow
 )
 
