@@ -3,7 +3,6 @@ package agent
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -17,10 +16,88 @@ var (
 	_ Daemon           = (*pdnsDaemon)(nil)
 	_ dnsDaemon        = (*pdnsDaemon)(nil)
 	_ pdnsConfigParser = (*pdnsconfig.Parser)(nil)
-
-	// Pattern for detecting PowerDNS process.
-	pdnsPattern = regexp.MustCompile(`(.*?)pdns_server(\s+.*)?`)
 )
+
+// The name of the PowerDNS Authoritative Server binary.
+const pdnsServerExec = "pdns_server"
+
+// Holds the parsed components of a pdns_server process command line.
+type pdnsServerCommandLine struct {
+	binaryPath string
+	chrootDir  string
+	configDir  string
+	configName string
+}
+
+// Parses the command line arguments of a pdns_server process to extract the
+// binary path and the --chroot, --config-dir, --config-name flags.
+//
+// It scans the arguments for the pdns_server binary by comparing
+// filepath.Base(arg) == "pdns_server". Only arguments before the first
+// dash-prefixed argument are considered as the binary path.
+//
+// Returns nil if no pdns_server binary is found.
+func parsePDNSServerCommandLine(args []string) *pdnsServerCommandLine {
+	result := &pdnsServerCommandLine{}
+
+	// Phase 1: Find the pdns_server binary path. Only look at arguments
+	// before the first dash-prefixed argument.
+	found := false
+	flagsStart := len(args)
+	for i, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			flagsStart = i
+			break
+		}
+		if filepath.Base(arg) == pdnsServerExec {
+			result.binaryPath = filepath.Clean(arg)
+			found = true
+			flagsStart = i + 1
+			break
+		}
+	}
+	if !found {
+		return nil
+	}
+
+	// Phase 2: Parse --key=value flags from the remaining arguments.
+	flags := args[flagsStart:]
+	for i := 0; i < len(flags); i++ {
+		flag := flags[i]
+		key, value, ok := strings.Cut(flag, "=")
+		switch key {
+		case "--chroot":
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
+				i++
+				value = flags[i]
+			}
+			result.chrootDir = filepath.Clean(strings.TrimRight(value, "/"))
+		case "--config-dir":
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
+				i++
+				value = flags[i]
+			}
+			result.configDir = filepath.Clean(strings.TrimRight(value, "/"))
+		case "--config-name":
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
+				i++
+				value = flags[i]
+			}
+			result.configName = value
+		}
+	}
+
+	return result
+}
 
 // Returns potential locations of PowerDNS configs.
 func getPotentialPDNSConfLocations() []string {
@@ -113,41 +190,24 @@ func (sm *monitor) detectPowerDNSDaemon(p supportedProcess) (Daemon, error) {
 // - Prepend the chroot directory if it is set.
 func (sm *monitor) detectPowerDNSConfigPath(p supportedProcess) (*detectedDaemonFiles, error) {
 	// We can't proceed without the command line.
-	cmdline, err := p.getCmdline()
+	args, err := p.getCmdlineSlice()
 	if err != nil {
 		return nil, err
 	}
 
 	// The command line must contain pdns_server.
-	match := pdnsPattern.FindStringSubmatch(cmdline)
-	if match == nil {
-		return nil, errors.Errorf("failed to find pdns_server in cmdline: %s", cmdline)
+	parsedCommandLine := parsePDNSServerCommandLine(args)
+	if parsedCommandLine == nil {
+		return nil, errors.Errorf("failed to find pdns_server in cmdline: %s", strings.Join(args, " "))
 	}
 
 	// STEP 1: Let's try to parse --chroot, --config-dir and --config-name parameters passed to pdns_server.
 	log.Debug("Looking for PowerDNS config file in --config-dir and --config-name parameters of a running process.")
 
-	var configDir, configName, configPath, chrootDir string
-	if len(match) >= 3 {
-		// The command line contains parameters. Check if they specify config
-		// directory or config name.
-		pdnsParams := match[2]
-		paramsSlice := strings.Fields(pdnsParams)
-		for _, param := range paramsSlice {
-			key, value, found := strings.Cut(param, "=")
-			if !found {
-				continue
-			}
-			switch key {
-			case "--chroot":
-				chrootDir = strings.TrimRight(value, "/")
-			case "--config-dir":
-				configDir = strings.TrimRight(value, "/")
-			case "--config-name":
-				configName = value
-			}
-		}
-	}
+	var configPath string
+	chrootDir := parsedCommandLine.chrootDir
+	configDir := parsedCommandLine.configDir
+	configName := parsedCommandLine.configName
 	log.WithFields(log.Fields{
 		"config-dir":  configDir,
 		"config-name": configName,

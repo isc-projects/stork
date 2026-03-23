@@ -254,7 +254,7 @@ func TestDetectDaemons(t *testing.T) {
 	pdnsProcess := NewMockSupportedProcess(ctrl)
 	pdnsProcess.EXPECT().getName().AnyTimes().Return("pdns_server", nil)
 	pdnsProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.PDNS)
-	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server --config-dir=/etc/powerdns", nil)
+	pdnsProcess.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{"pdns_server", "--config-dir=/etc/powerdns"}, nil)
 	pdnsProcess.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	pdnsProcess.EXPECT().getPid().AnyTimes().Return(int32(7890))
 	pdnsProcess.EXPECT().getParentPid().AnyTimes().Return(int32(8901), nil)
