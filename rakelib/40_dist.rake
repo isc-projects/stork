@@ -367,14 +367,18 @@ namespace :install do
         end
         FileUtils.mkdir_p(ENV["DEST"], verbose: true)
 
-        # Copy only the files. Preserve the attributes of the existing
+        # Copy files and directories. Preserve the attributes of the existing
         # directories.
+        FileUtils.mkdir_p(File.join(agent_dist_dir, "hooks"), verbose: true)
         Dir.glob(File.join(agent_dist_dir, '**', '*'), File::FNM_DOTMATCH).each do |file|
+            dest_file = File.join(ENV["DEST"], file.sub(agent_dist_dir, ''))
+            if File.directory?(file)
+                FileUtils.mkdir_p(dest_file, verbose: true)
+            end
             if !File.file?(file)
                 next
             end
 
-            dest_file = File.join(ENV["DEST"], file.sub(agent_dist_dir, ''))
             dest_dir = File.dirname(dest_file)
             # Mkdir leaves the existing directories untouched.
             FileUtils.mkdir_p(dest_dir, verbose: true)
@@ -394,14 +398,18 @@ namespace :install do
         end
         FileUtils.mkdir_p(ENV["DEST"], verbose: true)
 
-        # Copy only the files. Preserve the attributes of the existing
+        # Copy files and directories. Preserve the attributes of the existing
         # directories.
+        FileUtils.mkdir_p(File.join(server_dist_dir, "hooks"), verbose: true)
         Dir.glob(File.join(server_dist_dir, '**', '*'), File::FNM_DOTMATCH).each do |file|
+            dest_file = File.join(ENV["DEST"], file.sub(server_dist_dir, ''))
+            if File.directory?(file)
+                FileUtils.mkdir_p(dest_file, verbose: true)
+            end
             if !File.file?(file)
                 next
             end
 
-            dest_file = File.join(ENV["DEST"], file.sub(server_dist_dir, ''))
             dest_dir = File.dirname(dest_file)
             # Mkdir leaves the existing directories untouched.
             FileUtils.mkdir_p(dest_dir, verbose: true)

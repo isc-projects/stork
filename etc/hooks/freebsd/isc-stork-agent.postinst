@@ -15,6 +15,3 @@ pw user add -n stork-agent -c "Stork Agent User" -g stork-agent -G bind -G _kea 
 
 # Change ownership of all folders and files in home dir to stork-agent user.
 chown -R stork-agent "${home_dir}"
-
-# Create the hook directory.
-mkdir -p /usr/lib/stork-agent/hooks

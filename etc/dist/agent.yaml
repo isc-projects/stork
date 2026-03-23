@@ -28,6 +28,9 @@ license: "MPL 2.0"
 contents:
 - src: dist/agent/lib/
   dst: /lib
+- src: dist/agent/lib/hooks/
+  dst: /usr/lib/stork-agent/hooks/
+  type: dir
 - src: dist/agent/usr/
   dst: /usr
 - src: dist/agent/etc/stork/agent.env

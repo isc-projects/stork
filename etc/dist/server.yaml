@@ -28,6 +28,9 @@ license: "MPL 2.0"
 contents:
 - src: dist/server/lib/
   dst: /lib
+- src: dist/server/lib/hooks
+  dst: /usr/lib/stork-server/hooks
+  type: dir
 - src: dist/server/usr/
   dst: /usr
 - src: dist/server/etc/stork/server.env

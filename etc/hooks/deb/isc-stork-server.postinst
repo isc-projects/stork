@@ -11,9 +11,6 @@ setup_user () {
 
 after_install () {
     setup_user
-
-    # Create the hook directory.
-    mkdir -p /usr/lib/stork-server/hooks
 }
 
 after_upgrade () {
