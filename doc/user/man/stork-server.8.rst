@@ -43,7 +43,7 @@ variables are listed in square brackets, where applicable):
    Returns the ``stork-server`` version.
 
 ``--hook-directory``
-   The path to the hook directory. ``[$STORK_SERVER_HOOK_DIRECTORY]``
+   The path to the hook directory. It can be an absolute path or a path relative to the ``stork-server`` executable directory. The default is ``../lib/stork-server/hooks``, which typically resolves to ``/usr/lib/stork-server/hooks``. ``[$STORK_SERVER_HOOK_DIRECTORY]``
 
 ``--env-file``
    The environment file location; applicable only if ``--use-env-file`` is provided. The default is ``/etc/stork/server.env``.

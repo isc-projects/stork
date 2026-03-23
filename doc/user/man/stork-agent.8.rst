@@ -47,7 +47,7 @@ where applicable)
    Instructs ``stork-agent`` to listen for Prometheus requests, but not for commands from the Stork server. ``[$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]``
 
 ``--hook-directory``
-   The path to the hook directory. ``[$STORK_AGENT_HOOK_DIRECTORY]``
+   The path to the hook directory. It can be an absolute path or a path relative to the ``stork-agent`` executable directory. The default is ``../lib/stork-agent/hooks``, which typically resolves to ``/usr/lib/stork-agent/hooks``. ``[$STORK_AGENT_HOOK_DIRECTORY]``
 
 ``--bind9-path``
    The path to the BIND 9 configuration file. Does not need to be specified, unless the location is uncommon. ``[$STORK_AGENT_BIND9_CONFIG]``
