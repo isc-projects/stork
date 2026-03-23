@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -201,6 +199,63 @@ func resolveKeaSocketPath(socketFilename string, keaExecutablePath string) strin
 	}
 }
 
+// Holds the parsed Kea command line arguments.
+type keaCommandLine struct {
+	binaryPath string
+	configPath string
+}
+
+// Parses the command line arguments of a Kea process to extract the binary
+// path and config path (-c flag).
+//
+// It scans the arguments for the Kea binary by comparing
+// filepath.Base(arg) == processName. Only arguments before the first
+// dash-prefixed argument are considered as the binary path.
+//
+// Returns nil if no matching binary is found.
+func parseKeaCommandLine(args []string, processName string) *keaCommandLine {
+	result := &keaCommandLine{}
+
+	// Phase 1: Find the Kea binary path. Only look at arguments before the
+	// first dash-prefixed argument.
+	found := false
+	flagsStart := len(args)
+	for i, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			flagsStart = i
+			break
+		}
+		if filepath.Base(arg) == processName {
+			result.binaryPath = filepath.Clean(arg)
+			found = true
+			flagsStart = i + 1
+			break
+		}
+	}
+	if !found {
+		return nil
+	}
+
+	// Phase 2: Parse flags from the remaining arguments.
+	flags := args[flagsStart:]
+	for i := 0; i < len(flags); i++ {
+		flag := flags[i]
+		key, value, ok := strings.Cut(flag, "=")
+		if key == "-c" {
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
+				i++
+				value = flags[i]
+			}
+			result.configPath = filepath.Clean(value)
+		}
+	}
+
+	return result
+}
+
 // Detect the Kea daemon(s).
 //
 // The communication model with Kea changed significantly with the release of
@@ -261,27 +316,39 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 	}
 
 	// Extract the config path and the executable path from the command line.
-	cmdline, err := p.getCmdline()
+	args, err := p.getCmdlineSlice()
 	if err != nil {
 		return nil, err
 	}
-
-	pattern := regexp.MustCompile(fmt.Sprintf(`(.*?)%s\s+.*-c\s+(\S+)`, processName))
-
-	match := pattern.FindStringSubmatch(cmdline)
-	if match == nil {
-		return nil, errors.Errorf("problem parsing Kea command line: %s", cmdline)
-	}
-
-	if len(match) < 3 {
-		return nil, errors.Errorf("problem parsing Kea command line: %s", match[0])
+	parsedCommandLine := parseKeaCommandLine(args, processName)
+	if parsedCommandLine.configPath == "" {
+		return nil, errors.Errorf("missing -c flag in Kea command line: %s", strings.Join(args, " "))
 	}
 
 	// Check the version of the Kea binary. We need to differentiate between
 	// Kea prior to 3.0 and Kea post 3.0.
-	executablePath, err := p.getExe()
-	if err != nil {
-		return nil, errors.WithMessagef(err, "cannot get Kea executable")
+	executablePath := parsedCommandLine.binaryPath
+	if !path.IsAbs(executablePath) {
+		if strings.Contains(executablePath, "/") {
+			// It is a relative path to the current working directory of the process.
+			// It isn't a command in PATH because it contains a slash.
+			cwd, err := p.getCwd()
+			if err != nil {
+				return nil, errors.WithMessage(err, "cannot get Kea process current working directory to resolve the path to the executable")
+			}
+
+			if cwd == "" {
+				return nil, errors.New("cannot resolve Kea executable path because the current working directory is unknown")
+			}
+			executablePath = path.Join(cwd, executablePath)
+		} else {
+			// It is a command in PATH.
+			// Look for the executable in PATH to get its full path. It is needed to correctly resolve the socket path later.
+			executablePath, err = sm.commander.LookPath(executablePath)
+			if err != nil {
+				return nil, errors.WithMessagef(err, "cannot find Kea executable in PATH: %s", executablePath)
+			}
+		}
 	}
 	versionRaw, err := sm.commander.Output(executablePath, "-v")
 	if err != nil {
@@ -299,7 +366,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 	}
 
 	// Read the configuration file.
-	configPath := match[2]
+	configPath := parsedCommandLine.configPath
 
 	if !strings.HasPrefix(configPath, "/") {
 		cwd, err := p.getCwd()
@@ -351,12 +418,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 		// Normalize socket path if the socket type is unix. Translate into full path if only name is given.
 		socketAddress := controlSocket.GetAddress()
 		if controlSocket.GetProtocol() == protocoltype.Socket && !strings.Contains(socketAddress, "/") {
-			exe, err := p.getExe()
-			if err != nil {
-				return nil, errors.WithMessagef(err, "could not get path to executable")
-			}
-
-			socketAddress = resolveKeaSocketPath(socketAddress, exe)
+			socketAddress = resolveKeaSocketPath(socketAddress, executablePath)
 		}
 
 		accessPoint := AccessPoint{

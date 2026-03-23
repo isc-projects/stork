@@ -419,7 +419,10 @@ func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, er
 // Looks for a given command in the system PATH and returns absolute path if found.
 // (This is the standard behavior that we don't override in tests here.)
 func (e *testCommandExecutor) LookPath(command string) (string, error) {
-	allowedCommands := []string{"named-checkconf", "named", "rndc"}
+	allowedCommands := []string{
+		"named-checkconf", "named", "rndc", "kea-ctrl-agent", "kea-dhcp4",
+		"kea-dhcp6", "pdns_server",
+	}
 	for _, allowedCommand := range allowedCommands {
 		if command == allowedCommand {
 			return "/usr/sbin/" + command, nil

@@ -16,10 +16,8 @@ var (
 // An interface to a process detected by the agent. Using the interface
 // allows for mocking listing the processes in the unit tests.
 type supportedProcess interface {
-	getCmdline() (string, error)
 	getCmdlineSlice() ([]string, error)
 	getCwd() (string, error)
-	getExe() (string, error)
 	getName() (string, error)
 	getPid() int32
 	getParentPid() (int32, error)
@@ -30,13 +28,6 @@ type supportedProcess interface {
 type processWrapper struct {
 	process    *process.Process
 	daemonName daemonname.Name
-}
-
-// Returns the process command line.
-func (p *processWrapper) getCmdline() (string, error) {
-	cmdline, err := p.process.Cmdline()
-	err = errors.Wrapf(err, "failed to get process command line for pid %d", p.getPid())
-	return cmdline, err
 }
 
 // Returns the process command line as a slice of arguments.
@@ -51,13 +42,6 @@ func (p *processWrapper) getCwd() (string, error) {
 	cwd, err := p.process.Cwd()
 	err = errors.Wrapf(err, "failed to get process current working directory for pid %d", p.getPid())
 	return cwd, err
-}
-
-// Returns the process path to the executable.
-func (p *processWrapper) getExe() (string, error) {
-	exe, err := p.process.Exe()
-	err = errors.Wrapf(err, "failed to get process executable path for pid %d", p.getPid())
-	return exe, err
 }
 
 // Returns the process pid.

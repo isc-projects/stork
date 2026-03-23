@@ -869,6 +869,125 @@ func TestReadClientCredentials(t *testing.T) {
 	})
 }
 
+// Test parsing Kea command line arguments.
+func TestParseKeaCommandLine(t *testing.T) {
+	tests := []struct {
+		name        string
+		args        []string
+		processName string
+		expected    *keaCommandLine
+	}{
+		{
+			name:        "absolute binary path with -c flag",
+			args:        []string{"/usr/sbin/kea-dhcp4", "-c", "/etc/kea/kea-dhcp4.conf"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4", configPath: "/etc/kea/kea-dhcp4.conf"},
+		},
+		{
+			name:        "absolute binary path with -c flag with equal sign",
+			args:        []string{"/usr/sbin/kea-dhcp4", "-c=/etc/kea/kea-dhcp4.conf"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4", configPath: "/etc/kea/kea-dhcp4.conf"},
+		},
+		{
+			name:        "absolute binary path with -c= flag",
+			args:        []string{"/usr/sbin/kea-dhcp6", "-c=/etc/kea/kea-dhcp6.conf"},
+			processName: "kea-dhcp6",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp6", configPath: "/etc/kea/kea-dhcp6.conf"},
+		},
+		{
+			name:        "relative binary path",
+			args:        []string{"sbin/kea-ctrl-agent", "-c", "kea-ctrl-agent.conf"},
+			processName: "kea-ctrl-agent",
+			expected:    &keaCommandLine{binaryPath: "sbin/kea-ctrl-agent", configPath: "kea-ctrl-agent.conf"},
+		},
+		{
+			name:        "bare binary name",
+			args:        []string{"kea-d2", "-c", "/etc/kea/kea-d2.conf"},
+			processName: "kea-d2",
+			expected:    &keaCommandLine{binaryPath: "kea-d2", configPath: "/etc/kea/kea-d2.conf"},
+		},
+		{
+			name:        "daemon directory in binary path",
+			args:        []string{"/usr/sbin/kea-dhcp4/kea-dhcp4", "-c", "/etc/kea/kea-dhcp4.conf"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4/kea-dhcp4", configPath: "/etc/kea/kea-dhcp4.conf"},
+		},
+		{
+			name:        "daemon directory in config path",
+			args:        []string{"/usr/sbin/kea-dhcp4", "-c", "/etc/kea-dhcp4/kea-dhcp4.conf"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4", configPath: "/etc/kea-dhcp4/kea-dhcp4.conf"},
+		},
+		{
+			name:        "daemon directory in both paths",
+			args:        []string{"/usr/sbin/kea-dhcp4/kea-dhcp4", "-c", "/etc/kea-dhcp4/kea-dhcp4.conf"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4/kea-dhcp4", configPath: "/etc/kea-dhcp4/kea-dhcp4.conf"},
+		},
+		{
+			name:        "no -c flag returns empty config path",
+			args:        []string{"/usr/sbin/kea-dhcp4"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4"},
+		},
+		{
+			name:        "-c flag without value",
+			args:        []string{"/usr/sbin/kea-dhcp4", "-c"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4"},
+		},
+		{
+			name:        "binary not found returns nil",
+			args:        []string{"/usr/sbin/kea-dhcp6", "-c", "/etc/kea/kea.conf"},
+			processName: "kea-dhcp4",
+			expected:    nil,
+		},
+		{
+			name:        "empty args returns nil",
+			args:        []string{},
+			processName: "kea-dhcp4",
+			expected:    nil,
+		},
+		{
+			name:        "nil args returns nil",
+			args:        nil,
+			processName: "kea-dhcp4",
+			expected:    nil,
+		},
+		{
+			name:        "path normalization",
+			args:        []string{"/usr/sbin/../sbin/kea-dhcp4", "-c", "/etc/kea/../kea/kea.conf"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4", configPath: "/etc/kea/kea.conf"},
+		},
+		{
+			name:        "unknown flags are ignored",
+			args:        []string{"/usr/sbin/kea-dhcp4", "-v", "-c", "/etc/kea/kea.conf", "-d"},
+			processName: "kea-dhcp4",
+			expected:    &keaCommandLine{binaryPath: "/usr/sbin/kea-dhcp4", configPath: "/etc/kea/kea.conf"},
+		},
+		{
+			name:        "flag before binary prevents detection",
+			args:        []string{"-v", "/usr/sbin/kea-dhcp4", "-c", "/etc/kea/kea.conf"},
+			processName: "kea-dhcp4",
+			expected:    nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseKeaCommandLine(tt.args, tt.processName)
+			if tt.expected == nil {
+				require.Nil(t, result)
+			} else {
+				require.NotNil(t, result)
+				require.Equal(t, *tt.expected, *result)
+			}
+		})
+	}
+}
+
 // Test that the Kea CA prior to 3.0 is detected. It should detect also all
 // daemons behind it.
 func TestDetectKeaCAPrior3_0(t *testing.T) {
@@ -928,11 +1047,10 @@ func TestDetectKeaCAPrior3_0(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1005,11 +1123,10 @@ func TestDetectKeaCAPost3_0(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1057,11 +1174,10 @@ func TestDetectKeaDHCPPrior3_0(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1102,11 +1218,10 @@ func TestDetectKeaDHCPOnSocketPost3_0(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1161,12 +1276,11 @@ func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	// First time called for calling -v. Second time called for figuring out socket path.
-	process.EXPECT().getExe().Return(exePath, nil).Times(2)
+	// First time called for calling -v. Second time called for figuring out socket path..Times(2)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1217,11 +1331,10 @@ func TestDetectKeaDHCPOnHTTPPost3_0(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1297,11 +1410,10 @@ func TestDetectKeaCAWithCredentials(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1355,11 +1467,10 @@ func TestDetectKeaDHCPWithCredentials(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1447,8 +1558,8 @@ func TestDetectKeaCommandLineUnavailable(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		"",
+	process.EXPECT().getCmdlineSlice().Return(
+		nil,
 		errors.New("unable to get the command line"),
 	)
 
@@ -1485,12 +1596,11 @@ func TestDetectKeaCwdUnavailable(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
 	process.EXPECT().getCwd().Return("", errors.New("unable to get the cwd"))
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
@@ -1524,9 +1634,9 @@ func TestDetectKeaWithDefaultConfigurationPath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-dhcp4", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
+	process.EXPECT().getCmdlineSlice().Return(
 		// Config path is default.
-		exePath,
+		[]string{exePath},
 		nil,
 	)
 
@@ -1540,7 +1650,7 @@ func TestDetectKeaWithDefaultConfigurationPath(t *testing.T) {
 
 	// Assert
 	require.False(t, gock.HasUnmatchedRequest())
-	require.ErrorContains(t, err, "problem parsing Kea command line")
+	require.ErrorContains(t, err, "missing -c flag")
 	require.Empty(t, daemons)
 }
 
@@ -1561,11 +1671,10 @@ func TestDetectKeaUnparsableVersion(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1620,12 +1729,11 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
 	process.EXPECT().getCwd().Return(sb.BasePath, nil)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1653,52 +1761,6 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 	require.EqualValues(t, 45634, accessPoint.Port)
 	require.Equal(t, protocoltype.HTTP, accessPoint.Protocol)
 	require.Empty(t, accessPoint.Key)
-}
-
-// Test that a Kea daemon with no information about the executable path reports an error.
-func TestDetectKeaNoExe(t *testing.T) {
-	// Arrange.
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
-	// Create a configuration file for Kea.
-	configPath, _ := sb.Write("kea-dhcp6.conf", `{
-      "Dhcp4": {
-				"control-socket": {
-					"socket-type": "unix",
-					"socket-name": "/var/run/kea/kea6-ctrl-socket"
-				}
-			}
-    }`)
-	exePath, _ := sb.Join("kea-dhcp6")
-
-	httpConfig := HTTPClientConfig{}
-
-	// Kea process mock.
-	process := NewMockSupportedProcess(ctrl)
-	process.EXPECT().getName().Return("kea-dhcp6", nil)
-	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
-		nil,
-	)
-	process.EXPECT().getExe().Return("", errors.New("cannot get Kea executable (mocked)"))
-
-	// System calls mock.
-	commander := NewMockCommandExecutor(ctrl)
-	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
-	monitor.commander = commander
-
-	// Act.
-	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
-
-	// Assert.
-	require.False(t, gock.HasUnmatchedRequest())
-	require.ErrorContains(t, err, "cannot get Kea executable (mocked)")
-	require.Len(t, daemons, 0)
 }
 
 // Test that the no error is returned when communication with Kea daemons
@@ -1760,11 +1822,10 @@ func TestDetectKeaCommunicationError(t *testing.T) {
 	process := NewMockSupportedProcess(ctrl)
 	process.EXPECT().getName().Return("kea-ctrl-agent", nil)
 	process.EXPECT().getDaemonName().Return(daemonname.CA)
-	process.EXPECT().getCmdline().Return(
-		fmt.Sprintf("%s -c %s", exePath, configPath),
+	process.EXPECT().getCmdlineSlice().Return(
+		[]string{exePath, "-c", configPath},
 		nil,
 	)
-	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
