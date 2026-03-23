@@ -472,6 +472,15 @@ func TestParseNamedCommandLine(t *testing.T) {
 			},
 		},
 		{
+			name: "absolute path with flags with equal signs",
+			args: []string{"/usr/sbin/named", "-c=/etc/bind/named.conf", "-t=/var/named/chroot"},
+			expected: &namedCommandLine{
+				binaryPath: "/usr/sbin/named",
+				chrootDir:  "/var/named/chroot",
+				configPath: "/etc/bind/named.conf",
+			},
+		},
+		{
 			name: "bare named with flags",
 			args: []string{"named", "-c", "/etc/bind/named.conf"},
 			expected: &namedCommandLine{

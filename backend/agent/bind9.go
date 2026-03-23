@@ -208,17 +208,28 @@ func parseNamedCommandLine(args []string) *namedCommandLine {
 	// Phase 2: Parse flags from the remaining arguments.
 	flags := args[flagsStart:]
 	for i := 0; i < len(flags); i++ {
-		switch flags[i] {
+		flag := flags[i]
+		key, value, ok := strings.Cut(flag, "=")
+
+		switch key {
 		case "-t":
-			if i+1 < len(flags) {
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
 				i++
-				result.chrootDir = filepath.Clean(flags[i])
+				value = flags[i]
 			}
+			result.chrootDir = filepath.Clean(value)
 		case "-c":
-			if i+1 < len(flags) {
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
 				i++
-				result.configPath = filepath.Clean(flags[i])
+				value = flags[i]
 			}
+			result.configPath = filepath.Clean(value)
 		}
 	}
 
