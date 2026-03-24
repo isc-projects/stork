@@ -1,7 +1,6 @@
 [bug] slawek
 
-    Fixed BIND 9 detection failing to parse -t (chroot) and
-    -c (config) flags when the path to the named binary
-    contained a directory component called "named" (e.g.,
-    /var/lib/named/sbin/named).
+    Fixed Kea, BIND 9, and PowerDNS detection failing to parse the CLI
+    flags when the path to the binary contained a directory named same
+    as the binary (e.g., /var/lib/named/sbin/named).
     (Gitlab #2410)
