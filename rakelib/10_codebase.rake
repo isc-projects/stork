@@ -268,8 +268,24 @@ CLEAN.append agent_grpc_python_file
 
 GRPC_PYTHON_API_FILES = [agent_pb_python_file, agent_grpc_python_file]
 
+##############
+#### Java ####
+##############
+
+def check_java_version
+    stdout, _, status = Open3.capture3(JAVA, "--version")
+    return unless status.success?
+
+    java_version = stdout.split("\n")[0]
+    java_version = java_version[/[0-9]+\.[0-9]+\.[0-9]+/]
+    return unless !java_version.empty? && Gem::Version.new(java_version) < Gem::Version.new("11.0.0")
+
+    raise("Java >= 11.0.0 is required. You have #{java_version}.")
+end
+
 OPEN_API_GENERATOR_PYTHON_DIR = "tests/system/openapi_client"
 file OPEN_API_GENERATOR_PYTHON_DIR => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
+    check_java_version
     sh "rm", "-rf", OPEN_API_GENERATOR_PYTHON_DIR
     sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
         "-i", SWAGGER_FILE,
@@ -366,6 +382,7 @@ DOC_DEV_CODEBASE = FileList["doc/static/**/*", "doc/dev/**/*", "backend/version.
 
 open_api_generator_webui_dir = "webui/src/app/backend"
 file open_api_generator_webui_dir => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
+    check_java_version
     sh "rm", "-rf", open_api_generator_webui_dir
     sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
     "-i", SWAGGER_FILE,

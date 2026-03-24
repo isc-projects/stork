@@ -318,7 +318,7 @@ Installing on Debian/Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Stork packages are available on CloudSmith. You must configure your
-package manager to use it. Visit 
+package manager to use it. Visit
 `setup page for Debian on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-deb>`_
 and follow the instructions.
 
@@ -334,7 +334,7 @@ Installing on CentOS/RHEL/Fedora
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Stork packages are available on CloudSmith. You must configure your
-package manager to use it. Visit 
+package manager to use it. Visit
 `setup page for RedHat on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-rpm>`_
 and follow the instructions.
 
@@ -354,7 +354,7 @@ Installing on Alpine
 ~~~~~~~~~~~~~~~~~~~~
 
 The Stork packages are available on CloudSmith. You must configure your
-package manager to use it. Visit 
+package manager to use it. Visit
 `setup page for Alpine on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-alpine>`_
 and follow the instructions.
 
@@ -1220,7 +1220,7 @@ details regarding supported systems. However, the sources can also be built sepa
 The dependencies that need to be installed to build the Stork sources are:
 
  - Rake
- - Java Runtime Environment (only if building natively, not using Docker)
+ - Java Runtime Environment 11 or newer (only if building natively, not using Docker)
  - Docker (only if running in containers; this is needed to build the demo)
  - Python 3.10 or newer (only if building natively, not using Docker)
 
