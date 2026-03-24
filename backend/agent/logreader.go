@@ -47,6 +47,7 @@ type logReaderCaptureConfig struct {
 	fromEnd      bool
 	sinceDaysAgo int
 	unitName     string
+	fileName     string
 }
 
 // A function representing a single option passed to the log reader capture() function.
@@ -86,17 +87,23 @@ func logReaderCaptureOptionUnitName(unitName string) logReaderCaptureOption {
 	}
 }
 
+// Returns the functional option instructing the log reader to read the log contents
+// from the specified file.
+func logReaderCaptureOptionFileName(fileName string) logReaderCaptureOption {
+	return func(config *logReaderCaptureConfig) {
+		config.fileName = fileName
+	}
+}
+
 // Implements the log reader for text files.
 type textFileLogReader struct {
-	path   string
 	config textLogReaderConfig
 }
 
 // Creates a new instance of the text file log reader. The path specifies the absolute
 // location of the log file. The config can be used to enable or disable polling the file.
-func newTextFileLogReader(path string, config textLogReaderConfig) *textFileLogReader {
+func newTextFileLogReader(config textLogReaderConfig) *textFileLogReader {
 	return &textFileLogReader{
-		path:   path,
 		config: config,
 	}
 }
@@ -115,6 +122,9 @@ func (lc *textFileLogReader) capture(ctx context.Context, options ...logReaderCa
 	for _, option := range options {
 		option(&config)
 	}
+	if config.fileName == "" {
+		return nil, errors.New("file name is required to capture the log contents")
+	}
 	// Check if the capture should read from the start or the end of the file.
 	whence := io.SeekStart
 	if config.fromEnd {
@@ -126,7 +136,7 @@ func (lc *textFileLogReader) capture(ctx context.Context, options ...logReaderCa
 		}
 	}
 	// Read the log file using specified configuration and options.
-	t, err := tail.TailFile(lc.path, tail.Config{
+	t, err := tail.TailFile(config.fileName, tail.Config{
 		Follow: config.follow,
 		ReOpen: config.follow,
 		Poll:   lc.config.poll,
@@ -136,7 +146,7 @@ func (lc *textFileLogReader) capture(ctx context.Context, options ...logReaderCa
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to capture the file: %s", lc.path)
+		return nil, errors.Wrapf(err, "failed to capture the file: %s", config.fileName)
 	}
 	// Create a channel for returning captured lines.
 	lines := make(chan logReaderLine)

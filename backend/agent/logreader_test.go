@@ -18,12 +18,11 @@ import (
 
 // Test that the text file log reader is constructed properly.
 func TestNewTextFileLogReader(t *testing.T) {
-	reader := newTextFileLogReader("test.log", textLogReaderConfig{
+	reader := newTextFileLogReader(textLogReaderConfig{
 		poll: true,
 	})
 	require.NotNil(t, reader)
 	require.True(t, reader.isSupported())
-	require.Equal(t, "test.log", reader.path)
 	require.True(t, reader.config.poll)
 }
 
@@ -40,7 +39,7 @@ func TestTextFileLogReaderFollowFromStart(t *testing.T) {
 	// Create text file log reader. It is necessary to poll the file to ensure test reliability
 	// on various systems (macOS, BSD). On these systems kqueue is used to monitor the file changes.
 	// It can miss file changes, especially when the temporary files (sandbox) are written to /tmp.
-	reader := newTextFileLogReader(filepath.Join(sandbox.BasePath, "test.log"), textLogReaderConfig{
+	reader := newTextFileLogReader(textLogReaderConfig{
 		poll: true,
 	})
 	require.NotNil(t, reader)
@@ -51,7 +50,7 @@ func TestTextFileLogReaderFollowFromStart(t *testing.T) {
 
 	// Seek to the start of the file and follow the new lines. It should return the existing
 	// first log line.
-	lines, err := reader.capture(ctx, logReaderCaptureOptionFollow())
+	lines, err := reader.capture(ctx, logReaderCaptureOptionFileName(filepath.Join(sandbox.BasePath, "test.log")), logReaderCaptureOptionFollow())
 	require.NoError(t, err)
 	require.NotNil(t, lines)
 
@@ -112,7 +111,7 @@ func TestTextFileLogReaderReadFromStart(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create text file log reader.
-	reader := newTextFileLogReader(filepath.Join(sandbox.BasePath, "test.log"), textLogReaderConfig{})
+	reader := newTextFileLogReader(textLogReaderConfig{})
 	require.NotNil(t, reader)
 
 	// Create the context with cancellation to make sure that the read is stopped when the test is done.
@@ -120,7 +119,7 @@ func TestTextFileLogReaderReadFromStart(t *testing.T) {
 	defer cancel()
 
 	// Read the file contents.
-	lines, err := reader.capture(ctx)
+	lines, err := reader.capture(ctx, logReaderCaptureOptionFileName(filepath.Join(sandbox.BasePath, "test.log")))
 	require.NoError(t, err)
 	require.NotNil(t, lines)
 
@@ -155,7 +154,7 @@ func TestTextFileLogReaderFollowFromEnd(t *testing.T) {
 	// Create text file log reader. It is necessary to poll the file to ensure test reliability
 	// on various systems (macOS, BSD). On these systems kqueue is used to monitor the file changes.
 	// It can miss file changes, especially when the temporary files (sandbox) are written to /tmp.
-	reader := newTextFileLogReader(filepath.Join(sandbox.BasePath, "test.log"), textLogReaderConfig{
+	reader := newTextFileLogReader(textLogReaderConfig{
 		poll: true,
 	})
 	require.NotNil(t, reader)
@@ -166,7 +165,7 @@ func TestTextFileLogReaderFollowFromEnd(t *testing.T) {
 
 	// Seek to the end of the file and follow the new lines. It should skip the existing
 	// first log line.
-	lines, err := reader.capture(ctx, logReaderCaptureOptionFromEnd(), logReaderCaptureOptionFollow())
+	lines, err := reader.capture(ctx, logReaderCaptureOptionFileName(filepath.Join(sandbox.BasePath, "test.log")), logReaderCaptureOptionFromEnd(), logReaderCaptureOptionFollow())
 	require.NoError(t, err)
 	require.NotNil(t, lines)
 
@@ -237,14 +236,14 @@ func TestTextFileLogReaderReadFromEnd(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create text file log reader.
-	reader := newTextFileLogReader(filepath.Join(sandbox.BasePath, "test.log"), textLogReaderConfig{})
+	reader := newTextFileLogReader(textLogReaderConfig{})
 	require.NotNil(t, reader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Try to read the file contents from the end without following. It should return an error.
-	lines, err := reader.capture(ctx, logReaderCaptureOptionFromEnd())
+	lines, err := reader.capture(ctx, logReaderCaptureOptionFileName(filepath.Join(sandbox.BasePath, "test.log")), logReaderCaptureOptionFromEnd())
 	require.ErrorContains(t, err, "cannot read from the end of the file without following")
 	require.Nil(t, lines)
 }
@@ -259,7 +258,7 @@ func TestTextFileLogReaderCaptureCancel(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create text file log reader.
-	reader := newTextFileLogReader(filepath.Join(sandbox.BasePath, "test.log"), textLogReaderConfig{
+	reader := newTextFileLogReader(textLogReaderConfig{
 		poll: true,
 	})
 	require.NotNil(t, reader)
@@ -269,7 +268,7 @@ func TestTextFileLogReaderCaptureCancel(t *testing.T) {
 	defer cancel()
 
 	// Read the file contents.
-	lines, err := reader.capture(ctx, logReaderCaptureOptionFollow())
+	lines, err := reader.capture(ctx, logReaderCaptureOptionFileName(filepath.Join(sandbox.BasePath, "test.log")), logReaderCaptureOptionFollow())
 	require.NoError(t, err)
 	require.NotNil(t, lines)
 
@@ -296,7 +295,7 @@ func TestTextFileLogReaderFollowBeforeFileExists(t *testing.T) {
 	// Create text file log reader. It is necessary to poll the file to ensure test reliability
 	// on various systems (macOS, BSD). On these systems kqueue is used to monitor the file changes.
 	// It can miss file changes, especially when the temporary files (sandbox) are written to /tmp.
-	reader := newTextFileLogReader(filepath.Join(sandbox.BasePath, "test.log"), textLogReaderConfig{
+	reader := newTextFileLogReader(textLogReaderConfig{
 		poll: true,
 	})
 	require.NotNil(t, reader)
@@ -306,7 +305,7 @@ func TestTextFileLogReaderFollowBeforeFileExists(t *testing.T) {
 	defer cancel()
 
 	// Follow the new lines.
-	lines, err := reader.capture(ctx, logReaderCaptureOptionFollow())
+	lines, err := reader.capture(ctx, logReaderCaptureOptionFileName(filepath.Join(sandbox.BasePath, "test.log")), logReaderCaptureOptionFollow())
 	require.NoError(t, err)
 	require.NotNil(t, lines)
 
@@ -360,6 +359,20 @@ func TestTextFileLogReaderFollowBeforeFileExists(t *testing.T) {
 	require.Len(t, capturedLines, 2)
 	require.Equal(t, "This is the first log line", capturedLines[0])
 	require.Equal(t, "This is the second log line", capturedLines[1])
+}
+
+// Test that an error is returned when no file name is specified
+// when using text file log reader.
+func TestTextFileLogReaderNoFileName(t *testing.T) {
+	reader := newTextFileLogReader(textLogReaderConfig{})
+	require.NotNil(t, reader)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	lines, err := reader.capture(ctx)
+	require.ErrorContains(t, err, "file name is required to capture the log contents")
+	require.Nil(t, lines)
 }
 
 // Test that the text file log reader is constructed properly.
