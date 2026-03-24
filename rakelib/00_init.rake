@@ -528,7 +528,7 @@ def fetch_file(url, target)
         wget_version = stdout.split("\n")[0]
         wget_version = wget_version[/[0-9]+\.[0-9]+/]
         # versions prior to 1.19 lack support for --retry-on-http-error
-        if wget_version.empty? or wget_version >= "1.19"
+        if wget_version.empty? || Gem::Version.new(wget_version) >= Gem::Version.new("1.19")
             wget.append "--retry-on-http-error=429,500,503,504"
         end
     end
