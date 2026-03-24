@@ -1655,6 +1655,52 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 	require.Empty(t, accessPoint.Key)
 }
 
+// Test that a Kea daemon with no information about the executable path reports an error.
+func TestDetectKeaNoExe(t *testing.T) {
+	// Arrange.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Create a configuration file for Kea.
+	configPath, _ := sb.Write("kea-dhcp6.conf", `{
+      "Dhcp4": {
+				"control-socket": {
+					"socket-type": "unix",
+					"socket-name": "/var/run/kea/kea6-ctrl-socket"
+				}
+			}
+    }`)
+	exePath, _ := sb.Join("kea-dhcp6")
+
+	httpConfig := HTTPClientConfig{}
+
+	// Kea process mock.
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getName().Return("kea-dhcp6", nil)
+	process.EXPECT().getDaemonName().Return(daemonname.DHCPv4)
+	process.EXPECT().getCmdline().Return(
+		fmt.Sprintf("%s -c %s", exePath, configPath),
+		nil,
+	)
+	process.EXPECT().getExe().Return("", errors.New("cannot get Kea executable (mocked)"))
+
+	// System calls mock.
+	commander := NewMockCommandExecutor(ctrl)
+	monitor := newMonitor("", "", httpConfig)
+	monitor.commander = commander
+
+	// Act.
+	daemons, err := monitor.detectKeaDaemons(t.Context(), process)
+
+	// Assert.
+	require.False(t, gock.HasUnmatchedRequest())
+	require.ErrorContains(t, err, "cannot get Kea executable (mocked)")
+	require.Len(t, daemons, 0)
+}
+
 // Test that the no error is returned when communication with Kea daemons
 // fails. It is only applicable for Kea prior to 3.0.
 func TestDetectKeaCommunicationError(t *testing.T) {
