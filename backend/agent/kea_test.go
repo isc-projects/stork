@@ -1689,7 +1689,7 @@ func TestDetectKeaNoExe(t *testing.T) {
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
-	monitor := newMonitor("", "", httpConfig)
+	monitor := newMonitor(MonitorSettings{KeaHTTPClientConfig: httpConfig})
 	monitor.commander = commander
 
 	// Act.
