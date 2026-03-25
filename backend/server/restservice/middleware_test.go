@@ -150,7 +150,7 @@ func TestFileServerMiddleware(t *testing.T) {
 		require.EqualValues(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 
-	t.Run("static files directory doesn't exist - api call", func(t *testing.T) {
+	t.Run("static files directory doesn't exist - api calls still work", func(t *testing.T) {
 		handler := fileServerMiddleware(apiHandler, filepath.Join(staticRoot, "non-exist"))
 		require.NotNil(t, handler)
 		req := httptest.NewRequest("GET", "http://localhost/api/version", nil)

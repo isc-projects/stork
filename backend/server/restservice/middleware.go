@@ -158,7 +158,7 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 				}
 			case err != nil:
 				// If there is an error other than file not existing, return internal server error.
-				log.WithError(err).Error("Cannot server the requested file")
+				log.WithError(err).Error("Cannot serve the requested file")
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprint(w, "Bad request")
 			case stat.IsDir():
