@@ -150,7 +150,6 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 				// to indicate that the requested file does not exist.
 				if strings.HasPrefix(resourcePath, "assets/static-page-content") {
 					w.WriteHeader(http.StatusNoContent)
-					fmt.Fprint(w, "No content")
 				} else {
 					// If file does not exist then return not found status.
 					w.WriteHeader(http.StatusNotFound)
@@ -164,7 +163,6 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 			case stat.IsDir():
 				// If the path is a directory, return NoContent status code.
 				w.WriteHeader(http.StatusNoContent)
-				fmt.Fprint(w, "No content")
 			default:
 				// If file exists then serve it.
 				http.FileServer(http.Dir(staticFilesDir)).ServeHTTP(w, r)
