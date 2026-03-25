@@ -547,7 +547,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "open", content)
-		require.Equal(t, 200, status)
+		require.Equal(t, http.StatusOK, status)
 		require.NoError(t, err)
 	})
 
@@ -557,7 +557,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "open", content)
-		require.Equal(t, 200, status)
+		require.Equal(t, http.StatusOK, status)
 		require.NoError(t, err)
 	})
 
@@ -566,7 +566,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("non-existing/../file")
 
 		// Assert
-		require.Equal(t, 404, status)
+		require.Equal(t, http.StatusNotFound, status)
 		require.Equal(t, "Not found", content)
 		require.NoError(t, err)
 	})
@@ -577,7 +577,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "index", content)
-		require.Equal(t, 200, status)
+		require.Equal(t, http.StatusOK, status)
 		require.NoError(t, err)
 	})
 
@@ -586,7 +586,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("foobar")
 
 		// Assert
-		require.Equal(t, 404, status)
+		require.Equal(t, http.StatusNotFound, status)
 		require.Equal(t, "Not found", content)
 		require.NoError(t, err)
 	})
@@ -597,7 +597,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Bad request", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, http.StatusBadRequest, status)
 		require.NoError(t, err)
 	})
 
@@ -607,7 +607,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Bad request", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, http.StatusBadRequest, status)
 		require.NoError(t, err)
 	})
 
@@ -617,7 +617,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Bad request", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, http.StatusBadRequest, status)
 		require.NoError(t, err)
 	})
 
@@ -627,7 +627,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Not found", content)
-		require.Equal(t, 404, status)
+		require.Equal(t, http.StatusNotFound, status)
 		require.NoError(t, err)
 	})
 
@@ -637,7 +637,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Bad request", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, http.StatusBadRequest, status)
 		require.NoError(t, err)
 	})
 
@@ -647,7 +647,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Bad request", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, http.StatusBadRequest, status)
 		require.NoError(t, err)
 	})
 
@@ -657,7 +657,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 		// Assert
 		require.Equal(t, "Bad request", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, http.StatusBadRequest, status)
 		require.NoError(t, err)
 	})
 }
