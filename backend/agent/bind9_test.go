@@ -668,7 +668,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInPath(t *testing.T) {
 	_, err := sandbox.Write("step1.conf", config1)
 	require.NoError(t, err)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addFileInfo(config1Path, &testFileInfo{})
@@ -708,7 +708,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLineNamedInPath(t *testing.T) {
 	_, err := sandbox.Write(path.Join("chroot", config1Path), config1)
 	require.NoError(t, err)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
 		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
@@ -746,7 +746,7 @@ func TestDetectBind9Step1ProcessCmdLinePathWithSpaces(t *testing.T) {
 	_, err := sandbox.Write("step1.conf", config1)
 	require.NoError(t, err)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addFileInfo(config1Path, &testFileInfo{})
@@ -784,7 +784,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPath(t *testing.T) {
 	_, err := sandbox.Write(path.Join("named", "named.conf"), config1)
 	require.NoError(t, err)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addFileInfo(config1Path, &testFileInfo{})
@@ -822,7 +822,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInChrootPath(t *testing.T) {
 	_, err := sandbox.Write(path.Join("named", config1Path), config1)
 	require.NoError(t, err)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(path.Join(chrootPath, config1Path), config1).
 		addFileInfo(path.Join(chrootPath, config1Path), &testFileInfo{})
@@ -860,7 +860,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPathWithExtraFlags(t *testin
 	_, err := sandbox.Write(path.Join("named", "named.conf"), config1)
 	require.NoError(t, err)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1).
 		addFileInfo(config1Path, &testFileInfo{})

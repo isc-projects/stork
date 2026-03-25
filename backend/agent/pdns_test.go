@@ -973,7 +973,7 @@ func TestDetectPowerDNSDaemonBinaryPathContainsPDNSServerDir(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -994,7 +994,7 @@ func TestDetectPowerDNSDaemonConfigDirContainsPDNSServerDir(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/opt/pdns_server/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -1015,7 +1015,7 @@ func TestDetectPowerDNSDaemonChrootContainsPDNSServerDir(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/opt/pdns_server/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.commander = executor
 
 	detectedFiles, err := monitor.detectPowerDNSConfigPath(process)
@@ -1041,7 +1041,7 @@ func TestDetectPowerDNSDaemonAllPathsContainPDNSServerDir(t *testing.T) {
 	executor := NewMockCommandExecutor(ctrl)
 	executor.EXPECT().GetFileInfo("/opt/pdns_server/etc/pdns.conf").Return(&testFileInfo{}, nil)
 
-	monitor := newMonitor("", "", HTTPClientConfig{})
+	monitor := newMonitor(MonitorSettings{})
 	monitor.pdnsConfigParser = parser
 	monitor.commander = executor
 
