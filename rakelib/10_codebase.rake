@@ -273,12 +273,23 @@ GRPC_PYTHON_API_FILES = [agent_pb_python_file, agent_grpc_python_file]
 ##############
 
 def check_java_version
-    stdout, _, status = Open3.capture3(JAVA, "--version")
+    # There are a few early returns from this function. The check basically passes in those cases.
+    # This makes the check more lenient. If the version cannot be detected, assume it works.
+
+    _, stderr, status = Open3.capture3(JAVA, "-version")
+    puts("stderr of #{JAVA} -version:")
+    puts(stderr)
     return unless status.success?
 
-    java_version = stdout.split("\n")[0]
-    java_version = java_version[/[0-9]+\.[0-9]+\.[0-9]+/]
-    return unless !java_version.empty? && Gem::Version.new(java_version) < Gem::Version.new("11.0.0")
+    first_line = stderr.split("\n")[0]
+    return if first_line.nil? || first_line.empty?
+
+    java_version = first_line[/[0-9]+\.[0-9]+\.[0-9]+/]
+    return if java_version.nil? || java_version.empty?
+
+    # Official OpenAPI Generator docs say that JDK 11+ is required.
+    puts("Found Java version #{java_version}.")
+    return if Gem::Version.new(java_version) >= Gem::Version.new("11.0.0")
 
     raise("Java >= 11.0.0 is required. You have #{java_version}.")
 end
