@@ -117,36 +117,55 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 		} else {
 			// The "r.URL.Path" is provided by the user and must be treated as
 			// untrusted. Otherwise, it can be used to perform the Path
-			// Traversal attack. The below "resourcePath" has limited usage; it
-			// is only used to check the existence of the resource. It means
-			// that without the "path.Clean" call, the attacker could check the
-			// existence of any file on the filesystem (available for a user
-			// that runs the Stork) but couldn't read its content because the
-			// resource reading is performed by "http.FileServer" call that
-			// sanitizes the path on its own.
-			urlPath := r.URL.Path
-			if !strings.HasPrefix(urlPath, "/") {
-				// The resource path must be rooted to work the "path.Clean"
-				// function properly. It causes the returned path to not point
-				// to any file outside the root directory (in this context, it
-				// is the "staticFilesDir" directory).
-				// The web framework always returns a rooted path, but the
-				// "url" package doesn't guarantee it.
-				urlPath = "/" + urlPath
+			// Traversal attack.
+			// We use the os.Root helper to prevent attacker from providing a
+			// path that points outside the static files directory. We call it
+			// to check if the file exists and is accessible. If it it doesn't
+			// exist, is unavailable or is outside of the static files
+			// directory, we return without serving the file.
+			// The verified path is passed to the "http.FileServer" that
+			// additionally sanitizes the path on its own.
+			staticRoot, err := os.OpenRoot(staticFilesDir)
+			if err != nil {
+				log.WithError(err).Errorf("Cannot open static files directory '%s'", staticFilesDir)
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "Internal server error")
+				return
 			}
-			resourcePath := path.Join(staticFilesDir, path.Clean(urlPath))
-			if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
+			defer staticRoot.Close()
+
+			// The URL.Path is always starting with "/", so we trim it to get
+			// a relative path to the static files directory.
+			resourcePath := strings.TrimPrefix(r.URL.Path, "/")
+			if resourcePath == "" {
+				resourcePath = "index.html"
+			}
+
+			stat, err := staticRoot.Stat(resourcePath)
+			switch {
+			case os.IsNotExist(err):
 				// The static-page-content subdirectory contains optional files that
 				// can hold html to be embedded in different components. It is not an
 				// error if these files do not exist. We return HTTP NoContent status
 				// to indicate that the requested file does not exist.
-				if strings.HasPrefix(urlPath, "/assets/static-page-content") {
+				if strings.HasPrefix(resourcePath, "assets/static-page-content") {
 					w.WriteHeader(http.StatusNoContent)
+					fmt.Fprint(w, "No content")
 				} else {
-					// If file does not exist then return content of index.html.
-					http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
+					// If file does not exist then return not found status.
+					w.WriteHeader(http.StatusNotFound)
+					fmt.Fprint(w, "Not found")
 				}
-			} else {
+			case err != nil:
+				// If there is an error other than file not existing, return internal server error.
+				log.WithError(err).Error("Cannot server the requested file")
+				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprint(w, "Bad request")
+			case stat.IsDir():
+				// If the path is a directory, return NoContent status code.
+				w.WriteHeader(http.StatusNoContent)
+				fmt.Fprint(w, "No content")
+			default:
 				// If file exists then serve it.
 				http.FileServer(http.Dir(staticFilesDir)).ServeHTTP(w, r)
 			}

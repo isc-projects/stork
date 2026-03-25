@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -22,43 +23,143 @@ import (
 
 // Check if fileServerMiddleware works and handles requests correctly.
 func TestFileServerMiddleware(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	staticRoot, _ := sb.JoinDir("public")
+	_, _ = sb.Join("public/file.ext")
+	_, _ = sb.Write("public/index.html", "index")
+	_, _ = sb.JoinDir("public/dir")
+	_, _ = sb.Join("private/file.ext")
+	_, _ = sb.JoinDir("private/dir")
+	err := os.Symlink(
+		filepath.Join(sb.BasePath, "private", "file.ext"),
+		filepath.Join(sb.BasePath, "public", "link"),
+	)
+	require.NoError(t, err)
+
 	apiRequestReceived := false
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiRequestReceived = true
 	})
 
-	handler := fileServerMiddleware(apiHandler, "./non-existing-static/")
+	handler := fileServerMiddleware(apiHandler, staticRoot)
 
-	// let request some static file, as it does not exist 404 code should be returned
-	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	resp := w.Result()
-	resp.Body.Close()
-	require.EqualValues(t, http.StatusNotFound, resp.StatusCode)
-	require.False(t, apiRequestReceived)
+	t.Run("request non-existing static file", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/abc", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusNotFound, resp.StatusCode)
+		require.False(t, apiRequestReceived)
+	})
 
-	// let request some API URL, it should be forwarded to apiHandler
-	req = httptest.NewRequest("GET", "http://localhost/api/users", nil)
-	w = httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	require.True(t, apiRequestReceived)
+	t.Run("request existing static file", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/file.ext", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusOK, resp.StatusCode)
+		require.False(t, apiRequestReceived)
+	})
 
-	// request for swagger.json also should be forwarded to apiHandler
-	req = httptest.NewRequest("GET", "http://localhost/swagger.json", nil)
-	w = httptest.NewRecorder()
-	apiRequestReceived = false
-	handler.ServeHTTP(w, req)
-	require.True(t, apiRequestReceived)
+	t.Run("request some API URL, it should be forwarded to apiHandler", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/api/users", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		require.True(t, apiRequestReceived)
+	})
 
-	// request non-existing static content file
-	req = httptest.NewRequest("GET", "http://localhost/assets/static-page-content/xyz.abc", nil)
-	w = httptest.NewRecorder()
-	apiRequestReceived = false
-	handler.ServeHTTP(w, req)
-	resp = w.Result()
-	resp.Body.Close()
-	require.EqualValues(t, http.StatusNoContent, resp.StatusCode)
+	t.Run("request for swagger.json also should be forwarded to apiHandler", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/swagger.json", nil)
+		w := httptest.NewRecorder()
+		apiRequestReceived = false
+		handler.ServeHTTP(w, req)
+		require.True(t, apiRequestReceived)
+	})
+
+	t.Run("request non-existing static content file directory", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/assets/static-page-content/xyz.abc", nil)
+		w := httptest.NewRecorder()
+		apiRequestReceived = false
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusNoContent, resp.StatusCode)
+	})
+
+	t.Run("request a root directory, it should return index.html content", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		require.NoError(t, err)
+		require.EqualValues(t, http.StatusOK, resp.StatusCode)
+		require.False(t, apiRequestReceived)
+		require.Equal(t, "index", string(body))
+	})
+
+	t.Run("request a directory inside the static files directory", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/dir", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusNoContent, resp.StatusCode)
+		require.False(t, apiRequestReceived)
+	})
+
+	t.Run("request a file outside of the static files directory using path traversal", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/../private/file.ext", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("request a directory outside of the static files directory using path traversal", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/../private/dir", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("request a file outside of the static files directory by a symlink in a public directory", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "http://localhost/link", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("static files directory doesn't exist", func(t *testing.T) {
+		handler := fileServerMiddleware(apiHandler, filepath.Join(staticRoot, "non-exist"))
+		require.NotNil(t, handler)
+		req := httptest.NewRequest("GET", "http://localhost/file.ext", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("static files directory doesn't exist - api call", func(t *testing.T) {
+		handler := fileServerMiddleware(apiHandler, filepath.Join(staticRoot, "non-exist"))
+		require.NotNil(t, handler)
+		req := httptest.NewRequest("GET", "http://localhost/api/version", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		resp.Body.Close()
+		require.EqualValues(t, http.StatusOK, resp.StatusCode)
+	})
 }
 
 // Check if InnerMiddleware works.
@@ -423,6 +524,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 	defer sb.Close()
 	_, _ = sb.Write("restricted/secret", "password")
 	_, _ = sb.Write("public/index.html", "index")
+	_, _ = sb.JoinDir("public/directory")
 	publicDirectory, _ := sb.Write("public/file", "open")
 	publicDirectory = path.Dir(publicDirectory)
 
@@ -459,9 +561,19 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("access to the public file with traversal through non-existing directory", func(t *testing.T) {
+		// Act
+		content, status, err := requestFileContent("non-existing/../file")
+
+		// Assert
+		require.Equal(t, 404, status)
+		require.Equal(t, "Not found", content)
+		require.NoError(t, err)
+	})
+
 	t.Run("access to the index", func(t *testing.T) {
 		// Act
-		content, status, err := requestFileContent("/")
+		content, status, err := requestFileContent("")
 
 		// Assert
 		require.Equal(t, "index", content)
@@ -471,20 +583,20 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 
 	t.Run("access to the non-exist file", func(t *testing.T) {
 		// Act
-		content, status, err := requestFileContent("/foobar")
+		content, status, err := requestFileContent("foobar")
 
 		// Assert
-		require.Equal(t, "index", content)
-		require.Equal(t, 200, status)
+		require.Equal(t, 404, status)
+		require.Equal(t, "Not found", content)
 		require.NoError(t, err)
 	})
 
 	t.Run("access to the restricted file", func(t *testing.T) {
 		// Act
-		content, status, err := requestFileContent("/../restricted/secret")
+		content, status, err := requestFileContent("../restricted/secret")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, "Bad request", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
@@ -494,7 +606,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("../restricted")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, "Bad request", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
@@ -504,37 +616,37 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("../restricted/secret")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, "Bad request", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
 
 	t.Run("access to the non-existing file with traversal", func(t *testing.T) {
 		// Act
-		content, status, err := requestFileContent("/public/directory/../foobar")
+		content, status, err := requestFileContent("public/directory/../foobar")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
-		require.Equal(t, 400, status)
+		require.Equal(t, "Not found", content)
+		require.Equal(t, 404, status)
 		require.NoError(t, err)
 	})
 
 	t.Run("access to the restricted directory", func(t *testing.T) {
 		// Act
-		content, status, err := requestFileContent("/../restricted")
+		content, status, err := requestFileContent("../restricted")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, "Bad request", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
 
 	t.Run("access to the restricted non-existing file", func(t *testing.T) {
 		// Act
-		content, status, err := requestFileContent("/../restricted/foobar")
+		content, status, err := requestFileContent("../restricted/foobar")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, "Bad request", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
@@ -544,7 +656,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("../restricted/foobar")
 
 		// Assert
-		require.Equal(t, "invalid URL path\n", content)
+		require.Equal(t, "Bad request", content)
 		require.Equal(t, 400, status)
 		require.NoError(t, err)
 	})
