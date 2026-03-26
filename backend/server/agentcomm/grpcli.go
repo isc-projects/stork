@@ -769,10 +769,7 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, dae
 
 	accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"address": accessPoint.Address,
-			"port":    accessPoint.Port,
-		}).Warnf("No Kea control access point found for daemon %s on machine %d", daemon.GetName(), daemon.GetMachineTag().GetID())
+		log.Warnf("No Kea control access point found for daemon %s on machine %d", daemon.GetName(), daemon.GetMachineTag().GetID())
 		return nil, err
 	}
 	controlAccessPointURL := storkutil.HostWithPortURL(accessPoint.Address, accessPoint.Port, string(accessPoint.Protocol))

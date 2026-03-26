@@ -1239,6 +1239,35 @@ func TestForwardToKeaOverHTTPUnreachableDaemonPost3_0_0AfterRedetection(t *testi
 	require.EqualValues(t, 1, agent.stats.GetKeaStats().GetErrorCount(daemonname.DHCPv4))
 }
 
+// Test that ForwardToKeaOverHTTP returns an error when the daemon has no
+// control access point instead of crashing with a nil pointer dereference.
+func TestForwardToKeaOverHTTPNoControlAccessPoint(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	_, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	command := keactrl.NewCommandBase(keactrl.CommandName("test-command"), daemonname.DHCPv4)
+	var response keactrl.Response
+
+	dbDaemon := &dbmodel.Daemon{
+		Name: daemonname.DHCPv4,
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{},
+	}
+
+	// Act
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbDaemon, []keactrl.SerializableCommand{command}, &response)
+
+	// Assert
+	require.ErrorContains(t, err, "no access point of type control found for daemon")
+	require.Nil(t, cmdsResult)
+}
+
 // Test that a statistics request can be successfully forwarded to named
 // statistics-channel and the output can be parsed.
 func TestForwardToNamedStats(t *testing.T) {
