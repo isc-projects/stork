@@ -350,7 +350,7 @@ namespace :unittest do
                     'backend/util/util.go:UTCNow',
                     'backend/server/restservice/restservice.go:prepareTLS',
 
-                    # The Output, Start and Wait methods of the "systemCommandExecutor" structure
+                    # The below methods of the "systemCommandExecutor" structure
                     # encapsulate the "exec.Command" calls to allow mocking of the system response in
                     # the unit tests. The "exec.Command" cannot be directly mocked, so it is
                     # impossible to test its methods.
