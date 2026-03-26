@@ -10,32 +10,43 @@ import (
 )
 
 var (
-	_ CommandExecutor        = (*systemCommandExecutor)(nil)
-	_ CommandExecutorCommand = (*systemCommandExecutorCommand)(nil)
+	_ CommandExecutor       = (*systemCommandExecutor)(nil)
+	_ CommandExecutorOutput = (*systemCommandExecutorOutput)(nil)
 )
 
-// A command executor command represents a command issued with the
-// CommandExecutor.Start() function. It returns a scanner to be used
-// to capture the command output. It also implements the Wait() function
-// to wait for the command to complete.
-type CommandExecutorCommand interface {
+// A CommandExecutorOutput represents output from the CommandExecutor.Start()
+// function. It returns a scanner to be used to capture the command output.
+// It also implements the Wait() function to wait for the command to complete.
+type CommandExecutorOutput interface {
+	// Returns the scanner to be used to capture the command output.
 	GetScanner() *bufio.Scanner
+	// Waits for the command to exit. The concrete implementation calls the
+	// exec.Cmd.Wait function. It waits for the command to exit and waits
+	// for any copying to stdin or copying from stdout or stderr to complete.
+	// It is called when the caller has received expected output from the command
+	// and is waiting for the command to exit. For long running processes, such as
+	// log tail with following, the caller should cancel the context passed to the
+	// CommandExecutor.Start(). Cancelling the context will cause the command to exit.
+	// This function should be called after cancelling the context to cleanly handle
+	// process termination.
 	Wait() error
 }
 
-// Implements the CommandExecutorCommand interface for the system command executor.
-type systemCommandExecutorCommand struct {
+// Implements the CommandExecutorOutput interface for the system command executor.
+type systemCommandExecutorOutput struct {
 	cmd     *exec.Cmd
 	scanner *bufio.Scanner
 }
 
-// Waits for the command to complete.
-func (c *systemCommandExecutorCommand) Wait() error {
+// Waits for the executed command to exit. It calls the exec.Cmd.Wait function
+// which waits for the command to exit and for any copying to stdin or copying
+// from stdout or stderr to complete.
+func (c *systemCommandExecutorOutput) Wait() error {
 	return c.cmd.Wait()
 }
 
 // Returns the scanner to be used to capture the command output.
-func (c *systemCommandExecutorCommand) GetScanner() *bufio.Scanner {
+func (c *systemCommandExecutorOutput) GetScanner() *bufio.Scanner {
 	return c.scanner
 }
 
@@ -43,7 +54,7 @@ func (c *systemCommandExecutorCommand) GetScanner() *bufio.Scanner {
 // improve testability and allow mock the operating system operations.
 type CommandExecutor interface {
 	Output(string, ...string) ([]byte, error)
-	Start(context.Context, string, ...string) (CommandExecutorCommand, error)
+	Start(context.Context, string, ...string) (CommandExecutorOutput, error)
 	LookPath(string) (string, error)
 	IsFileExist(string) bool
 	GetFileInfo(string) (os.FileInfo, error)
@@ -64,7 +75,11 @@ func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, 
 }
 
 // Executes a given command in the system shell without waiting for it to complete.
-func (e *systemCommandExecutor) Start(ctx context.Context, command string, args ...string) (CommandExecutorCommand, error) {
+// The context passed to the function can be used to cancel the command execution.
+// Suppose the function is used to tail and follow the log file, cancelling the context
+// will kill the process. Call Wait() after cancelling the context to cleanly handle
+// process termination.
+func (e *systemCommandExecutor) Start(ctx context.Context, command string, args ...string) (CommandExecutorOutput, error) {
 	cmd := exec.CommandContext(ctx, command, args...)
 
 	stdout, err := cmd.StdoutPipe()
@@ -77,7 +92,7 @@ func (e *systemCommandExecutor) Start(ctx context.Context, command string, args 
 	}
 
 	scanner := bufio.NewScanner(stdout)
-	return &systemCommandExecutorCommand{
+	return &systemCommandExecutorOutput{
 		cmd:     cmd,
 		scanner: scanner,
 	}, nil

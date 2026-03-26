@@ -15,7 +15,7 @@ import (
 // Test that the system command executor command returns the correct scanner.
 func TestSystemCommandExecutorCommandGetScanner(t *testing.T) {
 	scanner := bufio.NewScanner(strings.NewReader("test"))
-	command := &systemCommandExecutorCommand{
+	command := &systemCommandExecutorOutput{
 		scanner: scanner,
 	}
 	require.Equal(t, scanner, command.GetScanner())

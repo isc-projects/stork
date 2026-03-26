@@ -366,7 +366,7 @@ func (e *testCommandExecutor) setRndcStatus(status string, err error) *testComma
 }
 
 // This function is not implemented as it is not used in the tests.
-func (e *testCommandExecutor) Start(ctx context.Context, command string, args ...string) (storkutil.CommandExecutorCommand, error) {
+func (e *testCommandExecutor) Start(ctx context.Context, command string, args ...string) (storkutil.CommandExecutorOutput, error) {
 	return nil, errors.New("not implemented")
 }
 
