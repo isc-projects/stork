@@ -489,12 +489,12 @@ func TestSystemdFileLogReaderOptions(t *testing.T) {
 				}
 			}()
 
-			// Wait for the goroutine to read the log lines for up to 10 seconds.
+			// Wait for the goroutine to read the log lines.
 			require.Eventually(t, func() bool {
 				mutex.RLock()
 				defer mutex.RUnlock()
 				return len(capturedLines) > 1
-			}, 10*time.Second, 100*time.Millisecond)
+			}, 1*time.Second, 10*time.Millisecond)
 
 			// Ensure that the goroutine has read the log lines.
 			require.Len(t, capturedLines, 2)
