@@ -23,7 +23,7 @@ import (
 )
 
 //go:generate mockgen -package=agent -destination=commandexecutormock_test.go isc.org/stork/util CommandExecutor
-//go:generate mockgen -package=agent -destination=commandexecutorcommandmock_test.go isc.org/stork/util CommandExecutorCommand
+//go:generate mockgen -package=agent -destination=commandexecutoroutputmock_test.go isc.org/stork/util CommandExecutorOutput
 
 // Test the case that the command is successfully sent to Kea.
 func TestSendCommand(t *testing.T) {

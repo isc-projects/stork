@@ -446,7 +446,7 @@ func TestSystemdFileLogReaderOptions(t *testing.T) {
 			// Create a scanner that returns the log lines.
 			scanner := bufio.NewScanner(strings.NewReader("This is the first log line\nThis is the second log line\n"))
 			// Wrap the scanner in the command executor command.
-			command := NewMockCommandExecutorCommand(ctrl)
+			command := NewMockCommandExecutorOutput(ctrl)
 			// Make the scanner available to the reader.
 			command.EXPECT().GetScanner().AnyTimes().Return(scanner)
 			// Make sure that the command is waited after the scanner is closed.
