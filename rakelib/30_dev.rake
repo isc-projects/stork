@@ -350,10 +350,12 @@ namespace :unittest do
                     'backend/util/util.go:UTCNow',
                     'backend/server/restservice/restservice.go:prepareTLS',
 
-                    # The below methods of the "systemCommandExecutor" structure
-                    # encapsulate the "exec.Command" calls to allow mocking of the system response in
-                    # the unit tests. The "exec.Command" cannot be directly mocked, so it is
-                    # impossible to test its methods.
+                    # The below methods of the "systemCommandExecutor" structure wrap the "exec.Command" calls
+                    # to allow mocking system responses in the unit tests. Some of these methods are covered
+                    # by the unit tests, but since the unit tests interact with the underlying system, we cannot
+                    # guarantee that they are always reliable. We skip some of the tests if the system does not
+                    # provide expected commands (e.g., tail). Skipping the tests could trigger false alarms
+                    # about the lack of coverage. Thus, we explicitly ignore the coverage errors for these methods.
                     'backend/util/executor.go:Output',
                     'backend/util/executor.go:Start',
                     'backend/util/executor.go:Wait',
