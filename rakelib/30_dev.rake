@@ -356,9 +356,11 @@ namespace :unittest do
                     # guarantee that they are always reliable. We skip some of the tests if the system does not
                     # provide expected commands (e.g., tail). Skipping the tests could trigger false alarms
                     # about the lack of coverage. Thus, we explicitly ignore the coverage errors for these methods.
+                    # The ignore rules prefixed with "!" suppress the "unused rule" warnings when the test is
+                    # not skipped and the actual rule is therefore unused.
                     'backend/util/executor.go:Output',
-                    'backend/util/executor.go:Start',
-                    'backend/util/executor.go:Wait',
+                    '!backend/util/executor.go:Start',
+                    '!backend/util/executor.go:Wait',
 
                     # We spent a lot of time to try test the main agent function. It is a problematic
                     # function because it starts listening and blocks itself until receiving SIGINT.
@@ -434,12 +436,23 @@ namespace :unittest do
                         # Check if the function or file is ignored.
                         should_ignore = false
                         ignore_list.each { |ignored|
-                            if ignored.include? ":"
+                            rule = ignored.dup
+                            if rule.start_with? "!"
+                                # Some rules can start with an exclamation mark. Such rules are
+                                # matched similar to other rules, except that the exclamation mark
+                                # is excluded from matching. The exclamation mark indicates that
+                                # the rule should not be reported as unused when the test matching
+                                # the rule was executed. This should be used for tests that are
+                                # conditionally skipped.
+                                rule = rule.delete_prefix("!")
+                            end
+
+                            if rule.include? ":"
                                 # It is an ignore for a function.
-                                should_ignore = func_path == ignored
+                                should_ignore = func_path == rule
                             else
                                 # It is an ignore for a directory or file.
-                                should_ignore = rel_path.start_with? ignored
+                                should_ignore = rel_path.start_with? rule
                             end
 
                             if should_ignore
@@ -464,7 +477,9 @@ namespace :unittest do
                     fail("\nFAIL: Tests coverage is too low, add some tests\n\n")
                 else
                     unused_ignore_rules.each do |item|
-                        warn "Unused ignore rule: #{item}"
+                        if not item.start_with? "!"
+                            warn "Unused ignore rule: #{item}"
+                        end
                     end
                 end
             end
