@@ -33,5 +33,22 @@ h2.section-heading
 .utilization-row__bar
   min-width: 10em
 
+.utilization-row__name
+  // Truncate long shared network names with ellipsis to prevent column overlap.
+  // Hide the scrollbar if the name is too long.
+  overflow: hidden
+  // Instead, show an ellipsis to indicate that the name is truncated.
+  text-overflow: ellipsis
+  // Disable wrapping to keep the name on a single line. Otherwise, the
+  // ellipsis will not be shown and the name will wrap to multiple lines.
+  white-space: nowrap
+
+  // On hover, reset the truncation to show the full name wrapped across
+  // multiple lines.
+  &:hover
+    white-space: inherit
+    overflow: inherit
+    text-overflow: inherit
+
 .utilization-row__value
   padding-left: 1em

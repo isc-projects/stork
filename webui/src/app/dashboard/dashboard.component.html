@@ -130,29 +130,25 @@
                                 </p>
                             </app-help-tip>
                         </h2>
-                        <table class="dashboard-section__data">
-                            <tr *ngFor="let net of overview.sharedNetworks4?.items ?? []" class="utilization-row">
-                                <td class="utilization-row__name">
+                        <div class="dashboard-section__data flex flex-column gap-2">
+                            <div
+                                *ngFor="let net of overview.sharedNetworks4?.items ?? []"
+                                class="utilization-row grid grid-nogutter"
+                            >
+                                <div class="utilization-row__name col-6">
                                     <app-entity-link
                                         [showEntityName]="false"
                                         entity="shared-network"
                                         [attrs]="net"
                                     ></app-entity-link>
-                                </td>
-                                <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
-                                <td class="utilization-row__value">
+                                </div>
+                                <div class="utilization-row__count col-3">{{ net.subnets.length }} subnets</div>
+                                <div class="utilization-row__value col-3">
                                     {{ net.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '4' }">more</a>
-                                </td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        </table>
+                                </div>
+                            </div>
+                            <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '4' }">more</a>
+                        </div>
                     </div>
                     <div class="col-12 lg:col-4 dashboard-dhcp__globals dashboard-section">
                         <h2 class="section-heading dashboard-section__header">Statistics</h2>
@@ -255,29 +251,25 @@
                                 </p>
                             </app-help-tip>
                         </h2>
-                        <table class="dashboard-section__data">
-                            <tr *ngFor="let net of overview.sharedNetworks6?.items ?? []" class="utilization-row">
-                                <td class="utilization-row__name">
+                        <div class="dashboard-section__data flex flex-column gap-2">
+                            <div
+                                *ngFor="let net of overview.sharedNetworks6?.items ?? []"
+                                class="utilization-row grid grid-nogutter"
+                            >
+                                <div class="utilization-row__name col-6">
                                     <app-entity-link
                                         [showEntityName]="false"
                                         entity="shared-network"
                                         [attrs]="net"
                                     ></app-entity-link>
-                                </td>
-                                <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
-                                <td class="utilization-row__value">
+                                </div>
+                                <div class="utilization-row__count col-3">{{ net.subnets.length }} subnets</div>
+                                <div class="utilization-row__value col-3">
                                     {{ net.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '6' }">more</a>
-                                </td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        </table>
+                                </div>
+                            </div>
+                            <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '6' }">more</a>
+                        </div>
                     </div>
                     <div class="col-12 lg:col-4 dashboard-dhcp__globals dashboard-section">
                         <h2 class="section-heading dashboard-section__header">Statistics</h2>
