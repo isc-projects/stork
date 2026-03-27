@@ -450,7 +450,11 @@ func TestSystemdFileLogReaderOptions(t *testing.T) {
 			// Make the scanner available to the reader.
 			command.EXPECT().GetScanner().AnyTimes().Return(scanner)
 			// Make sure that the command is waited after the scanner is closed.
-			command.EXPECT().Wait().Return(nil)
+			waited := atomic.Bool{}
+			command.EXPECT().Wait().DoAndReturn(func() error {
+				waited.Store(true)
+				return nil
+			})
 
 			// Create a mock command executor.
 			executor := NewMockCommandExecutor(ctrl)
@@ -500,6 +504,10 @@ func TestSystemdFileLogReaderOptions(t *testing.T) {
 			require.Len(t, capturedLines, 2)
 			require.Equal(t, "This is the first log line", capturedLines[0])
 			require.Equal(t, "This is the second log line", capturedLines[1])
+
+			// Cancel the context and wait for the command to tear down.
+			cancel()
+			require.Eventually(t, waited.Load, 10*time.Second, 100*time.Millisecond)
 		})
 	}
 }
