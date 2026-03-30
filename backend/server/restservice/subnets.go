@@ -240,6 +240,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					ServerHostname:    storkutil.NullifyEmptyString(keaParameters.ServerHostname),
 					StoreExtendedInfo: keaParameters.StoreExtendedInfo,
 				},
+				KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+					Unknown: keaParameters.UnknownParameters,
+				},
 			}
 			if keaParameters.Relay != nil {
 				localSubnet.KeaConfigSubnetParameters.SubnetLevelParameters.Relay = &models.KeaConfigAssortedSubnetParametersRelay{
@@ -437,6 +440,16 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					IPAddresses: keaParameters.Relay.IPAddresses,
 				}
 			}
+			if keaParameters.Unknown != nil {
+				unknown := keaParameters.Unknown.(map[string]any)
+				if localSubnet.KeaParameters.UnknownParameters == nil {
+					localSubnet.KeaParameters.UnknownParameters = make(map[string]any)
+				}
+				for key, value := range unknown {
+					localSubnet.KeaParameters.UnknownParameters[key] = value
+				}
+			}
+
 			// DHCP options.
 			options, err := r.flattenDHCPOptions("", ls.KeaConfigSubnetParameters.SubnetLevelParameters.Options, 0)
 			if err != nil {

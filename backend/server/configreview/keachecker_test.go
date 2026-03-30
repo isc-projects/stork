@@ -1714,51 +1714,67 @@ func TestFindOverlapsNonOverlappingSubnets(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.1.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.1.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     3,
-				Subnet: "192.168.2.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     3,
+					Subnet: "192.168.2.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     4,
-				Subnet: "192.168.3.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     4,
+					Subnet: "192.168.3.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:1::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:1::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     7,
-				Subnet: "3001:2::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     7,
+					Subnet: "3001:2::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     8,
-				Subnet: "3001:3::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     8,
+					Subnet: "3001:3::/80",
+				},
 			},
 		},
 	}
@@ -1775,51 +1791,67 @@ func TestFindOverlapsZeroSubnet(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "0.0.0.0/0",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "0.0.0.0/0",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "0.0.0.0/32",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "0.0.0.0/32",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     3,
-				Subnet: "192.168.2.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     3,
+					Subnet: "192.168.2.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     4,
-				Subnet: "192.168.2.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     4,
+					Subnet: "192.168.2.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "::/0",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "::/0",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "::/128",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "::/128",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     7,
-				Subnet: "3001:2::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     7,
+					Subnet: "3001:2::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     8,
-				Subnet: "3001:2::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     8,
+					Subnet: "3001:2::/80",
+				},
 			},
 		},
 	}
@@ -1836,27 +1868,35 @@ func TestFindOverlapsForDuplicates(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 	}
@@ -1878,39 +1918,51 @@ func TestFindOverlapsForMultipleDuplicates(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     3,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     3,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     7,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     7,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 	}
@@ -1940,27 +1992,35 @@ func TestFindOverlapsForSameNetworkButDifferentPrefixLengths(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/16",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/16",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.0.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.0.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001:0::/64",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001:0::/64",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 	}
@@ -1981,27 +2041,35 @@ func TestFindOverlapsForContainingPrefixes(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/16",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/16",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.5.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.5.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001:0::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001:0::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:0::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:0::/80",
+				},
 			},
 		},
 	}
@@ -2022,63 +2090,83 @@ func TestFindOverlapsExceedLimitOnDuplicatedSubnets(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/16",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/16",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.5.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.5.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     3,
-				Subnet: "192.68.5.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     3,
+					Subnet: "192.68.5.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     4,
-				Subnet: "192.68.5.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     4,
+					Subnet: "192.68.5.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001:0::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001:0::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:1::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:1::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     7,
-				Subnet: "2001:0::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     7,
+					Subnet: "2001:0::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     8,
-				Subnet: "2001:0::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     8,
+					Subnet: "2001:0::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     9,
-				Subnet: "4001:0::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     9,
+					Subnet: "4001:0::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     10,
-				Subnet: "4001:0::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     10,
+					Subnet: "4001:0::/16",
+				},
 			},
 		},
 	}
@@ -2100,51 +2188,67 @@ func TestFindOverlapsExceedLimitOnContainingSubnets(t *testing.T) {
 	// Arrange
 	subnets := []keaconfig.Subnet{
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     1,
-				Subnet: "192.168.0.0/16",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.168.0.0/16",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     2,
-				Subnet: "192.168.5.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "192.168.5.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     3,
-				Subnet: "192.68.0.0/16",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     3,
+					Subnet: "192.68.0.0/16",
+				},
 			},
 		},
 		&keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     4,
-				Subnet: "192.68.5.0/24",
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     4,
+					Subnet: "192.68.5.0/24",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     5,
-				Subnet: "3001::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     5,
+					Subnet: "3001::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     6,
-				Subnet: "3001:1::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     6,
+					Subnet: "3001:1::/80",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     7,
-				Subnet: "2001::/16",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     7,
+					Subnet: "2001::/16",
+				},
 			},
 		},
 		&keaconfig.Subnet6{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     8,
-				Subnet: "2001:1::/80",
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     8,
+					Subnet: "2001:1::/80",
+				},
 			},
 		},
 	}
@@ -4289,13 +4393,15 @@ func TestGatheringStatsUnavailableReportForDifferentKeaVersions(t *testing.T) {
 func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					Pool: "fe80::1 - fe80:f:ffff:ffff:ffff:ffff:ffff:ffff",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80::1 - fe80:f:ffff:ffff:ffff:ffff:ffff:ffff",
+					},
 				},
 			},
 		},
@@ -4321,13 +4427,15 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t 
 func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					Pool: "fe80::1 - fe80::2",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80::1 - fe80::2",
+					},
 				},
 			},
 		},
@@ -4354,13 +4462,15 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubn
 func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetworkPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					Pool: "fe80::1 - fe80::2",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80::1 - fe80::2",
+					},
 				},
 			},
 		},
@@ -4387,18 +4497,20 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetw
 func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					// 2^63-1 addresses.
-					Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
-				},
-				{
-					// 1 address.
-					Pool: "fe80:42::1 - fe80:42::1",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						// 2^63-1 addresses.
+						Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+					},
+					{
+						// 1 address.
+						Pool: "fe80:42::1 - fe80:42::1",
+					},
 				},
 			},
 		},
@@ -4425,28 +4537,30 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T
 func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					// 2^63-1 addresses.
-					Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+					},
 				},
 			},
 		},
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					// 1 address.
-					Pool: "fe80:42::1 - fe80:42::1",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80:42::1 - fe80:42::1",
+					},
 				},
 			},
 		},
@@ -4473,28 +4587,30 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *te
 func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					// 2^63-1 addresses.
-					Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+					},
 				},
 			},
 		},
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					// 1 address.
-					Pool: "fe80:42::1 - fe80:42::1",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "fe80:42::1 - fe80:42::1",
+					},
 				},
 			},
 		},
@@ -4521,15 +4637,17 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *te
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80::",
-				// 2^63 delegated prefixes.
-				PrefixLen:    64,
-				DelegatedLen: 127,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80::",
+					// 2^63 delegated prefixes.
+					PrefixLen:    64,
+					DelegatedLen: 127,
+				},
 			},
 		},
 	}
@@ -4553,15 +4671,17 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubne
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGlobalSubnetPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80::",
-				// 1 delegated prefix.
-				PrefixLen:    64,
-				DelegatedLen: 64,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80::",
+					// 1 delegated prefix.
+					PrefixLen:    64,
+					DelegatedLen: 64,
+				},
 			},
 		},
 	}
@@ -4585,15 +4705,17 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGl
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSharedNetworkPool(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80::",
-				// 1 delegated prefix.
-				PrefixLen:    64,
-				DelegatedLen: 64,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80::",
+					// 1 delegated prefix.
+					PrefixLen:    64,
+					DelegatedLen: 64,
+				},
 			},
 		},
 	}
@@ -4619,21 +4741,23 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSh
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *testing.T) {
 	// Arrange
 	subnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80::",
-				// 2^62 delegated prefixes.
-				PrefixLen:    64,
-				DelegatedLen: 126,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
 			},
-			{
-				Prefix: "fe80:42::",
-				// 2^62 delegated prefix.
-				PrefixLen:    64,
-				DelegatedLen: 126,
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80::",
+					// 2^62 delegated prefixes.
+					PrefixLen:    64,
+					DelegatedLen: 126,
+				},
+				{
+					Prefix: "fe80:42::",
+					// 2^62 delegated prefix.
+					PrefixLen:    64,
+					DelegatedLen: 126,
+				},
 			},
 		},
 	}
@@ -4658,29 +4782,33 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *t
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwork(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80::",
-				// 2^62 delegated prefixes.
-				PrefixLen:    64,
-				DelegatedLen: 126,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80::",
+					// 2^62 delegated prefixes.
+					PrefixLen:    64,
+					DelegatedLen: 126,
+				},
 			},
 		},
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80:42::",
-				// 2^62 delegated prefix.
-				PrefixLen:    64,
-				DelegatedLen: 126,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80:42::",
+					// 2^62 delegated prefix.
+					PrefixLen:    64,
+					DelegatedLen: 126,
+				},
 			},
 		},
 	}
@@ -4705,29 +4833,33 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwo
 func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubnets(t *testing.T) {
 	// Arrange
 	subnet1 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80::",
-				// 2^62 delegated prefixes.
-				PrefixLen:    64,
-				DelegatedLen: 126,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80::",
+					// 2^62 delegated prefixes.
+					PrefixLen:    64,
+					DelegatedLen: 126,
+				},
 			},
 		},
 	}
 
 	subnet2 := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::/16",
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix: "fe80:42::",
-				// 2^62 delegated prefix.
-				PrefixLen:    64,
-				DelegatedLen: 126,
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::/16",
+			},
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix: "fe80:42::",
+					// 2^62 delegated prefix.
+					PrefixLen:    64,
+					DelegatedLen: 126,
+				},
 			},
 		},
 	}
@@ -4937,9 +5069,11 @@ func getOverlappingSubnets(n int, overlappingFactor float32) (subnets []keaconfi
 		prefix := fmt.Sprintf("%d.%d.%d.%d/%d", part1, part2, part3, part4, mask)
 
 		subnet := keaconfig.Subnet4{
-			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-				ID:     id,
-				Subnet: prefix,
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     id,
+					Subnet: prefix,
+				},
 			},
 		}
 		subnets = append(subnets, &subnet)

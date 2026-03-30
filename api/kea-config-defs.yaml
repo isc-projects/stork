@@ -234,6 +234,13 @@
         type: boolean
         x-nullable: true
 
+  KeaConfigUnknownParameters:
+    type: object
+    properties:
+      unknown:
+        type: object
+        additionalProperties: true
+
   KeaConfigSubnetDerivedParameters:
     type: object
     allOf:
@@ -248,6 +255,7 @@
       - $ref: '#/definitions/KeaConfigValidLifetimeParameters'
       - $ref: '#/definitions/KeaConfigAssortedSubnetParameters'
       - $ref: '#/definitions/DHCPOptions'
+      - $ref: '#/definitions/KeaConfigUnknownParameters'
 
   KeaConfigSubnetParameters:
     type: object

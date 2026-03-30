@@ -238,6 +238,7 @@
                 "store-extended-info": false,
                 "subnet6": [
                     {
+                        "adaptive-lease-time-threshold": 0.5,
                         "allocator": "iterative",
                         "pd-allocator": "iterative",
                         "client-class": "",

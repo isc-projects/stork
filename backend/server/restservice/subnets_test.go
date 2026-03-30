@@ -539,6 +539,13 @@ func TestGetSubnet4(t *testing.T) {
 	require.NotNil(t, subnetParams.MaxValidLifetime)
 	require.EqualValues(t, 8000, *subnetParams.MaxValidLifetime)
 
+	// Validate unknown parameters.
+	require.NotNil(t, subnetParams.Unknown)
+	require.IsType(t, map[string]any(nil), subnetParams.Unknown)
+	unknown := subnetParams.Unknown.(map[string]any)
+	require.Contains(t, unknown, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.5, unknown["adaptive-lease-time-threshold"])
+
 	// Validate the options.
 	require.NotEmpty(t, subnetParams.OptionsHash)
 	require.Len(t, subnetParams.Options, 1)
@@ -953,6 +960,13 @@ func TestGetSubnet6(t *testing.T) {
 	// max-preferred-lifetime
 	require.NotNil(t, subnetParams.MaxPreferredLifetime)
 	require.EqualValues(t, 2500, *subnetParams.MaxPreferredLifetime)
+
+	// Validate unknown parameters.
+	require.NotNil(t, subnetParams.Unknown)
+	require.IsType(t, map[string]any(nil), subnetParams.Unknown)
+	unknown := subnetParams.Unknown.(map[string]any)
+	require.Contains(t, unknown, "adaptive-lease-time-threshold")
+	require.EqualValues(t, 0.5, unknown["adaptive-lease-time-threshold"])
 
 	// Validate the options.
 	require.NotEmpty(t, subnetParams.OptionsHash)

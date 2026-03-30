@@ -1,6 +1,7 @@
 package keaconfig
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -183,8 +184,8 @@ type CommonSubnetParameters struct {
 	UserContext       map[string]any     `json:"user-context,omitempty"`
 }
 
-// Represents an IPv4 subnet in Kea.
-type Subnet4 struct {
+// Represents known (supported by Stork) configuration parameters for an IPv4 subnet.
+type Subnet4KnownParameters struct {
 	CommonSubnetParameters
 	FourOverSixParameters
 	MandatorySubnetParameters
@@ -195,8 +196,16 @@ type Subnet4 struct {
 	ServerHostname *string `json:"server-hostname,omitempty"`
 }
 
-// Represents an IPv6 subnet in Kea.
-type Subnet6 struct {
+// Represents an IPv4 subnet in Kea. It holds a structure with known (supported by
+// Stork) configuration parameters, and a map of unknown (unsupported by Stork)
+// configuration parameters.
+type Subnet4 struct {
+	Subnet4KnownParameters
+	UnknownParameters map[string]any `json:"-"`
+}
+
+// Represents known (supported by Stork) configuration parameters for an IPv6 subnet.
+type Subnet6KnownParameters struct {
 	CommonSubnetParameters
 	MandatorySubnetParameters
 	PreferredLifetimeParameters
@@ -204,6 +213,14 @@ type Subnet6 struct {
 	InterfaceID *string  `json:"interface-id,omitempty"`
 	PDPools     []PDPool `json:"pd-pools,omitempty"`
 	RapidCommit *bool    `json:"rapid-commit,omitempty"`
+}
+
+// Represents an IPv6 subnet in Kea. It holds a structure with known (supported by
+// Stork) configuration parameters, and a map of unknown (unsupported by Stork)
+// configuration parameters.
+type Subnet6 struct {
+	Subnet6KnownParameters
+	UnknownParameters map[string]any `json:"-"`
 }
 
 // Represents a union of DHCP parameters for the DHCPv4 and
@@ -232,6 +249,7 @@ type SubnetParameters struct {
 	Relay             *Relay
 	ServerHostname    *string
 	StoreExtendedInfo *bool
+	UnknownParameters map[string]any
 }
 
 // Represents deleted subnet. It includes the fields required by Kea to
@@ -326,22 +344,33 @@ func (s *Subnet4) GetSubnetParameters() *SubnetParameters {
 		NextServer:              s.NextServer,
 		ServerHostname:          s.ServerHostname,
 		StoreExtendedInfo:       s.StoreExtendedInfo,
+		UnknownParameters:       s.UnknownParameters,
 	}
 }
 
-// Returns subnet ID.
-func (s *Subnet6) GetID() int64 {
-	return s.MandatorySubnetParameters.GetID()
+// Unmarshals the JSON data into the Subnet4 structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (s *Subnet4) UnmarshalJSON(data []byte) error {
+	subnet4WithUnknown := WithUnknown[Subnet4KnownParameters]{}
+	if err := json.Unmarshal(data, &subnet4WithUnknown); err != nil {
+		return err
+	}
+	*s = Subnet4{
+		Subnet4KnownParameters: subnet4WithUnknown.Known,
+		UnknownParameters:      subnet4WithUnknown.Unknown,
+	}
+	s.UnknownParameters = subnet4WithUnknown.Unknown
+	return nil
 }
 
-// Returns the subnet prefix in the format received from Kea.
-func (s *Subnet6) GetPrefix() string {
-	return s.Subnet
-}
-
-// Returns a canonical IPv6 subnet prefix.
-func (s *Subnet6) GetCanonicalPrefix() (string, error) {
-	return s.MandatorySubnetParameters.GetCanonicalPrefix()
+// Marshals the Subnet4 structure into JSON. The output contains the known
+// parameters and a map of unknown parameters.
+func (s Subnet4) MarshalJSON() ([]byte, error) {
+	subnet4WithUnknown := WithUnknown[Subnet4KnownParameters]{
+		Known:   s.Subnet4KnownParameters,
+		Unknown: s.UnknownParameters,
+	}
+	return json.Marshal(subnet4WithUnknown)
 }
 
 // Returns subnet pools.
@@ -392,7 +421,33 @@ func (s *Subnet6) GetSubnetParameters() *SubnetParameters {
 		PDAllocator:                 s.PDAllocator,
 		RapidCommit:                 s.RapidCommit,
 		StoreExtendedInfo:           s.StoreExtendedInfo,
+		UnknownParameters:           s.UnknownParameters,
 	}
+}
+
+// Unmarshals the JSON data into the Subnet6 structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (s *Subnet6) UnmarshalJSON(data []byte) error {
+	subnet6WithUnknown := WithUnknown[Subnet6KnownParameters]{}
+	if err := json.Unmarshal(data, &subnet6WithUnknown); err != nil {
+		return err
+	}
+	*s = Subnet6{
+		Subnet6KnownParameters: subnet6WithUnknown.Known,
+		UnknownParameters:      subnet6WithUnknown.Unknown,
+	}
+	s.UnknownParameters = subnet6WithUnknown.Unknown
+	return nil
+}
+
+// Marshals the Subnet6 structure into JSON. The output contains the known
+// parameters and a map of unknown parameters.
+func (s Subnet6) MarshalJSON() ([]byte, error) {
+	subnet6WithUnknown := WithUnknown[Subnet6KnownParameters]{
+		Known:   s.Subnet6KnownParameters,
+		Unknown: s.UnknownParameters,
+	}
+	return json.Marshal(subnet6WithUnknown)
 }
 
 // Creates an IPv4 subnet configuration in Kea from the subnet data model in Stork.
@@ -404,12 +459,14 @@ func (s *Subnet6) GetSubnetParameters() *SubnetParameters {
 func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet SubnetAccessor) (*Subnet4, error) {
 	// Mandatory parameters.
 	subnet4 := &Subnet4{
-		MandatorySubnetParameters: MandatorySubnetParameters{
-			ID:     subnet.GetID(daemonID),
-			Subnet: subnet.GetPrefix(),
-		},
-		CommonSubnetParameters: CommonSubnetParameters{
-			UserContext: subnet.GetUserContext(daemonID),
+		Subnet4KnownParameters: Subnet4KnownParameters{
+			MandatorySubnetParameters: MandatorySubnetParameters{
+				ID:     subnet.GetID(daemonID),
+				Subnet: subnet.GetPrefix(),
+			},
+			CommonSubnetParameters: CommonSubnetParameters{
+				UserContext: subnet.GetUserContext(daemonID),
+			},
 		},
 	}
 	// Address pools.
@@ -459,6 +516,7 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		subnet4.MatchClientID = params.MatchClientID
 		subnet4.NextServer = params.NextServer
 		subnet4.ServerHostname = params.ServerHostname
+		subnet4.UnknownParameters = params.UnknownParameters
 	}
 	// Subnet-level DHCP options.
 	for _, option := range subnet.GetDHCPOptions(daemonID) {
@@ -479,12 +537,14 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 // implement this interface).
 func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet SubnetAccessor) (*Subnet6, error) {
 	subnet6 := &Subnet6{
-		MandatorySubnetParameters: MandatorySubnetParameters{
-			ID:     subnet.GetID(daemonID),
-			Subnet: subnet.GetPrefix(),
-		},
-		CommonSubnetParameters: CommonSubnetParameters{
-			UserContext: subnet.GetUserContext(daemonID),
+		Subnet6KnownParameters: Subnet6KnownParameters{
+			MandatorySubnetParameters: MandatorySubnetParameters{
+				ID:     subnet.GetID(daemonID),
+				Subnet: subnet.GetPrefix(),
+			},
+			CommonSubnetParameters: CommonSubnetParameters{
+				UserContext: subnet.GetUserContext(daemonID),
+			},
 		},
 	}
 	// Address pools.
@@ -574,6 +634,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		subnet6.PDAllocator = params.PDAllocator
 		subnet6.InterfaceID = params.InterfaceID
 		subnet6.RapidCommit = params.RapidCommit
+		subnet6.UnknownParameters = params.UnknownParameters
 	}
 	// Subnet-level DHCP options.
 	for _, option := range subnet.GetDHCPOptions(daemonID) {

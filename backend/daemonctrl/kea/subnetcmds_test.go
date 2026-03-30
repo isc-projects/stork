@@ -200,9 +200,11 @@ func TestNewCommandNetworkSubnetDelFamily6(t *testing.T) {
 // Tests subnet4-add command.
 func TestNewCommandSubnet4Add(t *testing.T) {
 	command := NewCommandSubnet4Add(&keaconfig.Subnet4{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			ID:     2,
-			Subnet: "192.0.2.0/24",
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.0.2.0/24",
+			},
 		},
 	}, daemonname.DHCPv4)
 	require.NotNil(t, command)
@@ -225,9 +227,11 @@ func TestNewCommandSubnet4Add(t *testing.T) {
 // Tests subnet6-add command.
 func TestNewCommandSubnet6Add(t *testing.T) {
 	command := NewCommandSubnet6Add(&keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			ID:     2,
-			Subnet: "2001:db8:1::/64",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "2001:db8:1::/64",
+			},
 		},
 	}, daemonname.DHCPv6)
 	require.NotNil(t, command)
@@ -322,9 +326,11 @@ func TestNewCommandSubnetDelFamily6(t *testing.T) {
 // Tests subnet4-update command.
 func TestNewCommandSubnet4Update(t *testing.T) {
 	command := NewCommandSubnet4Update(&keaconfig.Subnet4{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			ID:     2,
-			Subnet: "192.0.2.0/24",
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "192.0.2.0/24",
+			},
 		},
 	}, daemonname.DHCPv4)
 	require.NotNil(t, command)
@@ -347,9 +353,11 @@ func TestNewCommandSubnet4Update(t *testing.T) {
 // Tests subnet6-update command.
 func TestNewCommandSubnet6Update(t *testing.T) {
 	command := NewCommandSubnet6Update(&keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			ID:     2,
-			Subnet: "2001:db8:1::/64",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "2001:db8:1::/64",
+			},
 		},
 	}, daemonname.DHCPv6)
 	require.NotNil(t, command)

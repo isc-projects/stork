@@ -58,22 +58,26 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 		Name: "foo",
 		Subnet6: []keaconfig.Subnet6{
 			{
-				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-					ID:     1,
-					Subnet: "2001:db8:2::/64",
-				},
-				CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-					Reservations: []keaconfig.Reservation{
-						{
-							HWAddress: "01:02:03:04:05:06",
+				Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+					MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+						ID:     1,
+						Subnet: "2001:db8:2::/64",
+					},
+					CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+						Reservations: []keaconfig.Reservation{
+							{
+								HWAddress: "01:02:03:04:05:06",
+							},
 						},
 					},
 				},
 			},
 			{
-				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-					ID:     2,
-					Subnet: "2001:db8:1::/64",
+				Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+					MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+						ID:     2,
+						Subnet: "2001:db8:1::/64",
+					},
 				},
 			},
 		},
@@ -100,52 +104,54 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 func TestNewSubnetFromKea(t *testing.T) {
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			ID:     1,
-			Subnet: "2001:db8:1::/64",
-		},
-		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-			Pools: []keaconfig.Pool{
-				{
-					Pool: "2001:db8:1:1::/120",
-				},
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "2001:db8:1::/64",
 			},
-			Reservations: []keaconfig.Reservation{
-				{
-					DUID: "01:02:03:04:05:06",
-					IPAddresses: []string{
-						"2001:db8:1::1",
-						"2001:db8:1::2",
-					},
-					Prefixes: []string{
-						"3000:1::/64",
-						"3000:2::/64",
+			CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+				Pools: []keaconfig.Pool{
+					{
+						Pool: "2001:db8:1:1::/120",
 					},
 				},
-				{
-					HWAddress: "01:01:01:01:01:01",
-					IPAddresses: []string{
-						"2001:db8:1::1",
-						"2001:db8:1::2",
+				Reservations: []keaconfig.Reservation{
+					{
+						DUID: "01:02:03:04:05:06",
+						IPAddresses: []string{
+							"2001:db8:1::1",
+							"2001:db8:1::2",
+						},
+						Prefixes: []string{
+							"3000:1::/64",
+							"3000:2::/64",
+						},
 					},
-					Prefixes: []string{
-						"3000:1::/64",
-						"3000:2::/64",
+					{
+						HWAddress: "01:01:01:01:01:01",
+						IPAddresses: []string{
+							"2001:db8:1::1",
+							"2001:db8:1::2",
+						},
+						Prefixes: []string{
+							"3000:1::/64",
+							"3000:2::/64",
+						},
 					},
 				},
+				UserContext: map[string]any{
+					"foo":         "bar",
+					"subnet-name": "baz",
+				},
 			},
-			UserContext: map[string]any{
-				"foo":         "bar",
-				"subnet-name": "baz",
-			},
-		},
-		PDPools: []keaconfig.PDPool{
-			{
-				Prefix:            "2001:db8:1:1::",
-				PrefixLen:         96,
-				DelegatedLen:      120,
-				ExcludedPrefix:    "2001:db8:1:1:1::",
-				ExcludedPrefixLen: 128,
+			PDPools: []keaconfig.PDPool{
+				{
+					Prefix:            "2001:db8:1:1::",
+					PrefixLen:         96,
+					DelegatedLen:      120,
+					ExcludedPrefix:    "2001:db8:1:1:1::",
+					ExcludedPrefixLen: 128,
+				},
 			},
 		},
 	}
@@ -197,8 +203,10 @@ func TestNewSubnetFromKeaWithInvalidPrefix(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "invalid",
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "invalid",
+			},
 		},
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
@@ -218,8 +226,10 @@ func TestNewSubnetFromKeaWithDefaultIPv4PrefixMask(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "10.42.42.42",
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "10.42.42.42",
+			},
 		},
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
@@ -239,8 +249,10 @@ func TestNewSubnetFromKeaWithDefaultIPv6PrefixMask(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "fe80::42",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "fe80::42",
+			},
 		},
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv6, true, nil)
@@ -260,8 +272,10 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv4Prefix(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet4{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "10.42.42.42/8",
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "10.42.42.42/8",
+			},
 		},
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
@@ -281,8 +295,10 @@ func TestNewSubnetFromKeaWithNonCanonicalIPv6Prefix(t *testing.T) {
 	// Arrange
 	machine := &Machine{ID: 1}
 	keaSubnet := keaconfig.Subnet6{
-		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-			Subnet: "2001:db8:1::42/64",
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				Subnet: "2001:db8:1::42/64",
+			},
 		},
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv6, true, nil)
