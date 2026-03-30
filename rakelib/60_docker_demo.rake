@@ -16,11 +16,18 @@ namespace :demo do
     # Services - list of service names; if empty then all services are used
     # Detach - run services in the detached mode
     # Environment variables:
+    #     - CS_REPO_ACCESS_TOKEN - Cloudsmith repository access token to pull
+    #       the Kea Premium image from the private registry; optional, if not
+    #.      set then the premium containers are unavailable
     def get_docker_opts(server_mode, cache, detach, services)
         opts = [
             "--project-directory", ".",
             "-f", "docker/docker-compose.yaml",
         ]
+
+        if !ENV["CS_REPO_ACCESS_TOKEN"].nil?
+            opts.append "-f", "docker/docker-compose.premium.yaml"
+        end
 
         cache_opts = []
         if !cache

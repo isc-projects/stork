@@ -3,7 +3,7 @@
 #################
 
 ARG KEA_REPO=public/isc/kea-dev
-ARG KEA_VERSION=3.1.4-isc20251124141109
+ARG KEA_VERSION=3.1.7-isc20260320211159
 # Indicates if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
@@ -309,10 +309,9 @@ FROM kea-base AS keapremium-base
 ARG KEA_PREMIUM
 ARG KEA_VERSION
 ARG KEA_PRIOR_2_7_7
-# Execute only if the premium is enabled and Kea version is below 2.7.7.
-RUN [ "${KEA_PREMIUM}" != "premium" ] || [ "${KEA_PRIOR_2_7_7}" != "true" ] || ( \
-        apt-get update \
-        && apt-get install \
+RUN if [ "${KEA_PREMIUM}" == "premium" ] && [ "${KEA_PRIOR_2_7_7}" == "true" ]; then \
+        # Execute only if the premium is enabled and Kea version is below 2.7.7.
+        apt-get update && apt-get install \
                 --no-install-recommends \
                 -y \
                 isc-kea-premium-host-cmds=${KEA_VERSION} \
@@ -320,10 +319,23 @@ RUN [ "${KEA_PREMIUM}" != "premium" ] || [ "${KEA_PRIOR_2_7_7}" != "true" ] || (
                 isc-kea-premium-forensic-log=${KEA_VERSION} \
                 isc-kea-premium-host-cache=${KEA_VERSION} \
                 isc-kea-premium-radius=${KEA_VERSION} \
+                isc-kea-premium-cb-cmds=${KEA_VERSION} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
-)
+        ;\
+    elif [ "${KEA_PREMIUM}" == "premium" ]; then \
+        # Execute only if the premium is enabled and Kea version is 2.7.7 or above.
+        apt-get update && apt-get install \
+                --no-install-recommends \
+                -y \
+                isc-kea-subscriber-cb-cmds=${KEA_VERSION} \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && mkdir -p /var/run/kea/ \
+        ;\
+    fi
+
 
 # Use the "kea-base" or "keapremium-base" image as a base image
 # for this stage.
