@@ -127,6 +127,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 						EvaluateAdditionalClasses: poolDetails.KeaParameters.EvaluateAdditionalClasses,
 						RequireClientClasses:      poolDetails.KeaParameters.RequireClientClasses,
 					},
+					KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+						Unknown: poolDetails.KeaParameters.UnknownParameters,
+					},
 				}
 				// DHCP options.
 				pool.KeaConfigPoolParameters.OptionsHash = poolDetails.Hash
@@ -158,6 +161,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 						ClientClasses:             prefixPoolDetails.KeaParameters.ClientClasses,
 						EvaluateAdditionalClasses: prefixPoolDetails.KeaParameters.EvaluateAdditionalClasses,
 						RequireClientClasses:      prefixPoolDetails.KeaParameters.RequireClientClasses,
+					},
+					KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+						Unknown: prefixPoolDetails.KeaParameters.UnknownParameters,
 					},
 				}
 				// DHCP options.
@@ -291,6 +297,22 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	return subnet
 }
 
+// Converts unknown parameters from the format used in REST API to Stork representation.
+func convertUnknownParametersFromRestAPI(restParameters any) (unknownParameters map[string]any) {
+	if restParameters == nil {
+		return
+	}
+	unknown, ok := restParameters.(map[string]any)
+	if !ok || len(unknown) == 0 {
+		return
+	}
+	unknownParameters = make(map[string]any)
+	for key, value := range unknown {
+		unknownParameters[key] = value
+	}
+	return
+}
+
 // Convert subnet from the format used in REST API to a database subnet representation.
 // It is used when Stork user modifies or creates new subnet. Thus, it doesn't populate
 // subnet statistics as it is not specified by Stork user. It is pulled from the Kea
@@ -329,6 +351,8 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					},
 					PoolID: poolDetails.KeaConfigPoolParameters.PoolID,
 				}
+				// Unknown pool parameters.
+				pool.KeaParameters.UnknownParameters = convertUnknownParametersFromRestAPI(poolDetails.KeaConfigPoolParameters.Unknown)
 				// DHCP options.
 				options, err := r.flattenDHCPOptions("", poolDetails.KeaConfigPoolParameters.Options, 0)
 				if err != nil {
@@ -354,6 +378,8 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					},
 					PoolID: prefixPoolDetails.KeaConfigPoolParameters.PoolID,
 				}
+				// Unknown pool parameters.
+				pool.KeaParameters.UnknownParameters = convertUnknownParametersFromRestAPI(prefixPoolDetails.KeaConfigPoolParameters.Unknown)
 				// DHCP options.
 				pool.DHCPOptionSet, err = r.flattenDHCPOptions("", prefixPoolDetails.KeaConfigPoolParameters.Options, 0)
 				if err != nil {
@@ -440,16 +466,8 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					IPAddresses: keaParameters.Relay.IPAddresses,
 				}
 			}
-			if keaParameters.Unknown != nil {
-				if unknown, ok := keaParameters.Unknown.(map[string]any); ok {
-					if localSubnet.KeaParameters.UnknownParameters == nil {
-						localSubnet.KeaParameters.UnknownParameters = make(map[string]any)
-					}
-					for key, value := range unknown {
-						localSubnet.KeaParameters.UnknownParameters[key] = value
-					}
-				}
-			}
+			// Unknown parameters.
+			localSubnet.KeaParameters.UnknownParameters = convertUnknownParametersFromRestAPI(keaParameters.Unknown)
 
 			// DHCP options.
 			options, err := r.flattenDHCPOptions("", ls.KeaConfigSubnetParameters.SubnetLevelParameters.Options, 0)

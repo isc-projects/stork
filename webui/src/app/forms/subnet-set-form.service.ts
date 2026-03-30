@@ -77,6 +77,8 @@ export interface KeaPoolParametersForm {
     requireClientClasses?: SharedParameterFormGroup<string[]>
     // New since Kea 2.7.4.
     evaluateAdditionalClasses?: SharedParameterFormGroup<string[]>
+    // Unknown parameters.
+    unknown?: FormRecord<SharedParameterFormGroup<any>>
 }
 
 /**
@@ -533,6 +535,22 @@ export class SubnetSetFormService {
                 },
                 parameters.map((params) => new FormControl<string[]>(params?.evaluateAdditionalClasses ?? []))
             )
+        }
+        form.unknown = new FormRecord<SharedParameterFormGroup<any>>({})
+        for (let paramsSet of parameters) {
+            for (let param of Object.keys(paramsSet?.unknown || {})) {
+                if (!form.unknown.get(param)) {
+                    form.unknown?.addControl(
+                        param,
+                        new SharedParameterFormGroup<any>(
+                            {
+                                type: 'any',
+                            },
+                            parameters.map((params) => new FormControl<any>(params.unknown?.[param]))
+                        )
+                    )
+                }
+            }
         }
         let formGroup = new FormGroup<KeaPoolParametersForm>(form)
         return formGroup

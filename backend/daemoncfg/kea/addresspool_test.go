@@ -80,10 +80,49 @@ func TestParseAddressPoolEmptyRange(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Test that unknown parameters are parsed correctly.
+func TestParseAddressPoolWithUnknownParameters(t *testing.T) {
+	input := `{
+		"pool": "192.0.2.1-192.0.2.254",
+		"foo": "bar",
+		"baz": "qux"
+	}`
+	var pool Pool
+	err := json.Unmarshal([]byte(input), &pool)
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1-192.0.2.254", pool.Pool)
+	require.NotNil(t, pool.UnknownParameters)
+	require.Len(t, pool.UnknownParameters, 2)
+	require.Equal(t, "bar", pool.UnknownParameters["foo"])
+	require.Equal(t, "qux", pool.UnknownParameters["baz"])
+}
+
+// Test that unknown parameters are marshalled correctly.
+func TestMarshalAddressPoolWithUnknownParameters(t *testing.T) {
+	pool := Pool{
+		PoolKnownParameters: PoolKnownParameters{
+			Pool: "192.0.2.1-192.0.2.254",
+		},
+		UnknownParameters: map[string]any{
+			"foo": "bar",
+			"baz": "qux",
+		},
+	}
+	marshalled, err := json.Marshal(pool)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"pool": "192.0.2.1-192.0.2.254",
+		"foo": "bar",
+		"baz": "qux"
+	}`, string(marshalled))
+}
+
 // Test retrieving the address pool boundaries.
 func TestAddressPoolGetBoundaries(t *testing.T) {
 	pool := Pool{
-		Pool: "192.0.2.1-192.0.2.254",
+		PoolKnownParameters: PoolKnownParameters{
+			Pool: "192.0.2.1-192.0.2.254",
+		},
 	}
 	lb, ub, err := pool.GetBoundaries()
 	require.NoError(t, err)
@@ -95,7 +134,9 @@ func TestAddressPoolGetBoundaries(t *testing.T) {
 // bool boundaries when the lower bound is invalid.
 func TestAddressPoolGetBoundariesLowerBoundError(t *testing.T) {
 	pool := Pool{
-		Pool: "192.0.2.X-192.0.2.254",
+		PoolKnownParameters: PoolKnownParameters{
+			Pool: "192.0.2.X-192.0.2.254",
+		},
 	}
 	_, _, err := pool.GetBoundaries()
 	require.Error(t, err)
@@ -105,7 +146,9 @@ func TestAddressPoolGetBoundariesLowerBoundError(t *testing.T) {
 // bool boundaries when the upper bound is invalid.
 func TestAddressPoolGetBoundariesUpperBoundError(t *testing.T) {
 	pool := Pool{
-		Pool: "192.0.2.1-192.0.2.",
+		PoolKnownParameters: PoolKnownParameters{
+			Pool: "192.0.2.1-192.0.2.",
+		},
 	}
 	_, _, err := pool.GetBoundaries()
 	require.Error(t, err)
@@ -114,13 +157,18 @@ func TestAddressPoolGetBoundariesUpperBoundError(t *testing.T) {
 // Test retrieving the pool parameters.
 func TestAddressPoolGetParameters(t *testing.T) {
 	pool := Pool{
-		Pool:   "192.0.2.1-192.0.2.254",
-		PoolID: 1234,
-		ClientClassParameters: ClientClassParameters{
-			ClientClass:               storkutil.Ptr("foo"),
-			ClientClasses:             []string{"baz"},
-			RequireClientClasses:      []string{"foo", "bar"},
-			EvaluateAdditionalClasses: []string{"baz"},
+		PoolKnownParameters: PoolKnownParameters{
+			Pool:   "192.0.2.1-192.0.2.254",
+			PoolID: 1234,
+			ClientClassParameters: ClientClassParameters{
+				ClientClass:               storkutil.Ptr("foo"),
+				ClientClasses:             []string{"baz"},
+				RequireClientClasses:      []string{"foo", "bar"},
+				EvaluateAdditionalClasses: []string{"baz"},
+			},
+		},
+		UnknownParameters: map[string]any{
+			"foo": "bar",
 		},
 	}
 	params := pool.GetPoolParameters()
@@ -135,12 +183,17 @@ func TestAddressPoolGetParameters(t *testing.T) {
 	require.Len(t, params.EvaluateAdditionalClasses, 1)
 	require.Equal(t, "baz", params.EvaluateAdditionalClasses[0])
 	require.EqualValues(t, 1234, params.PoolID)
+	require.NotNil(t, params.UnknownParameters)
+	require.Len(t, params.UnknownParameters, 1)
+	require.Equal(t, "bar", params.UnknownParameters["foo"])
 }
 
 // Test that an empty set of parameters can be retrieved.
 func TestAddressPoolGetNoParameters(t *testing.T) {
 	pool := Pool{
-		Pool: "192.0.2.1-192.0.2.254",
+		PoolKnownParameters: PoolKnownParameters{
+			Pool: "192.0.2.1-192.0.2.254",
+		},
 	}
 	params := pool.GetPoolParameters()
 	require.NotNil(t, params)

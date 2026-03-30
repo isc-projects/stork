@@ -470,7 +470,9 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	// Address pools.
 	for _, pool := range subnet.GetAddressPools(daemonID) {
 		keaPool := Pool{
-			Pool: fmt.Sprintf("%s-%s", pool.GetLowerBound(), pool.GetUpperBound()),
+			PoolKnownParameters: PoolKnownParameters{
+				Pool: fmt.Sprintf("%s-%s", pool.GetLowerBound(), pool.GetUpperBound()),
+			},
 		}
 		// Pool-level DHCP options.
 		for _, option := range pool.GetDHCPOptions() {
@@ -491,6 +493,7 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			keaPool.RequireClientClasses = params.RequireClientClasses
 			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
 			keaPool.PoolID = params.PoolID
+			keaPool.UnknownParameters = params.UnknownParameters
 		}
 		// Add the pool to the subnet.
 		subnet4.Pools = append(subnet4.Pools, keaPool)
@@ -548,7 +551,9 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	// Address pools.
 	for _, pool := range subnet.GetAddressPools(daemonID) {
 		keaPool := Pool{
-			Pool: fmt.Sprintf("%s-%s", pool.GetLowerBound(), pool.GetUpperBound()),
+			PoolKnownParameters: PoolKnownParameters{
+				Pool: fmt.Sprintf("%s-%s", pool.GetLowerBound(), pool.GetUpperBound()),
+			},
 		}
 		// Pool-level DHCP options.
 		for _, option := range pool.GetDHCPOptions() {
@@ -569,6 +574,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			keaPool.RequireClientClasses = params.RequireClientClasses
 			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
 			keaPool.PoolID = params.PoolID
+			keaPool.UnknownParameters = params.UnknownParameters
 		}
 		// Add the pool to the subnet.
 		subnet6.Pools = append(subnet6.Pools, keaPool)
@@ -586,11 +592,13 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			return nil, err
 		}
 		keaPool := PDPool{
-			Prefix:            prefix,
-			PrefixLen:         length,
-			DelegatedLen:      pool.GetModel().DelegatedLen,
-			ExcludedPrefix:    excludedPrefix,
-			ExcludedPrefixLen: excludedPrefixLength,
+			PDPoolKnownParameters: PDPoolKnownParameters{
+				Prefix:            prefix,
+				PrefixLen:         length,
+				DelegatedLen:      pool.GetModel().DelegatedLen,
+				ExcludedPrefix:    excludedPrefix,
+				ExcludedPrefixLen: excludedPrefixLength,
+			},
 		}
 		// Pool-level DHCP options.
 		for _, option := range pool.GetDHCPOptions() {
@@ -611,6 +619,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			keaPool.RequireClientClasses = params.RequireClientClasses
 			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
 			keaPool.PoolID = params.PoolID
+			keaPool.UnknownParameters = params.UnknownParameters
 		}
 		// Add the pool to the subnet.
 		subnet6.PDPools = append(subnet6.PDPools, keaPool)
