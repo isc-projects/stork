@@ -120,6 +120,9 @@
       universe:
         type: integer
         enum: *IPTYPE
+      unknown:
+        type: object
+        additionalProperties: true
 
   DHCPOptions:
     type: object

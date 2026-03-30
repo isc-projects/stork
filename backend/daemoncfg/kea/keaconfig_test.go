@@ -2145,18 +2145,22 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 
 	err = config.SetDHCPOptions([]SingleOptionData{
 		{
-			AlwaysSend: true,
-			Code:       42,
-			CSVFormat:  true,
-			Data:       "foo",
-			Name:       "forty-two",
-			Space:      "dhcp4",
+			SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+				AlwaysSend: true,
+				Code:       42,
+				CSVFormat:  true,
+				Data:       "foo",
+				Name:       "forty-two",
+				Space:      "dhcp4",
+			},
 		},
 		{
-			Code:  24,
-			Data:  "bar",
-			Name:  "twenty-four",
-			Space: "dhcp4",
+			SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+				Code:  24,
+				Data:  "bar",
+				Name:  "twenty-four",
+				Space: "dhcp4",
+			},
 		},
 	})
 	require.NoError(t, err)

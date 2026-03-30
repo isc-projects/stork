@@ -1,6 +1,7 @@
 package keaconfig
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,15 +10,45 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Represents a DHCP option in the format used by Kea (i.e., an item of the
-// option-data list).
-type SingleOptionData struct {
+// Represents the known (supported by Stork) parameters of a DHCP option.
+type SingleOptionDataKnownParameters struct {
 	AlwaysSend bool   `json:"always-send,omitempty"`
 	Code       uint16 `json:"code,omitempty"`
 	CSVFormat  bool   `json:"csv-format"`
 	Data       string `json:"data,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Space      string `json:"space,omitempty"`
+}
+
+// Represents a DHCP option in the format used by Kea (i.e., an item of the
+// option-data list).
+type SingleOptionData struct {
+	SingleOptionDataKnownParameters
+	UnknownParameters map[string]any `json:"-"`
+}
+
+// Unmarshals the JSON data into the SingleOptionData structure. The output contains
+// the known parameters and a map of unknown parameters.
+func (option *SingleOptionData) UnmarshalJSON(data []byte) error {
+	optionWithUnknown := WithUnknown[SingleOptionDataKnownParameters]{}
+	if err := json.Unmarshal(data, &optionWithUnknown); err != nil {
+		return err
+	}
+	*option = SingleOptionData{
+		SingleOptionDataKnownParameters: optionWithUnknown.Known,
+		UnknownParameters:               optionWithUnknown.Unknown,
+	}
+	return nil
+}
+
+// Marshals the SingleOptionData structure into JSON. The output contains the
+// known parameters and a map of unknown parameters.
+func (option SingleOptionData) MarshalJSON() ([]byte, error) {
+	optionWithUnknown := WithUnknown[SingleOptionDataKnownParameters]{
+		Known:   option.SingleOptionDataKnownParameters,
+		Unknown: option.UnknownParameters,
+	}
+	return json.Marshal(optionWithUnknown)
 }
 
 // Creates a SingleOptionData instance from the DHCP option model used
@@ -30,11 +61,14 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 	// Create Kea representation of the option. Set csv-format to
 	// true for all options for which the definitions are known.
 	data := &SingleOptionData{
-		AlwaysSend: option.IsAlwaysSend(),
-		Code:       option.GetCode(),
-		CSVFormat:  lookup.DefinitionExists(daemonID, option),
-		Name:       option.GetName(),
-		Space:      option.GetSpace(),
+		SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
+			AlwaysSend: option.IsAlwaysSend(),
+			Code:       option.GetCode(),
+			CSVFormat:  lookup.DefinitionExists(daemonID, option),
+			Name:       option.GetName(),
+			Space:      option.GetSpace(),
+		},
+		UnknownParameters: option.GetUnknownParameters(),
 	}
 	// Convert option fields depending on the csv-format setting.
 	converted := []string{}
@@ -86,24 +120,26 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 // Represents a DHCP option and implements DHCPOption interface. It is returned
 // by the CreateDHCPOption function.
 type DHCPOption struct {
-	AlwaysSend  bool
-	Code        uint16
-	Encapsulate string
-	Fields      []dhcpmodel.DHCPOptionFieldAccessor
-	Name        string
-	Space       string
-	Universe    storkutil.IPType
+	AlwaysSend        bool
+	Code              uint16
+	Encapsulate       string
+	Fields            []dhcpmodel.DHCPOptionFieldAccessor
+	Name              string
+	Space             string
+	Universe          storkutil.IPType
+	UnknownParameters map[string]any
 }
 
 // Creates an instance of a DHCP option in Stork from the option representation
 // in Kea.
 func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lookup DHCPOptionDefinitionLookup) (dhcpmodel.DHCPOptionAccessor, error) {
 	option := DHCPOption{
-		AlwaysSend: optionData.AlwaysSend,
-		Code:       optionData.Code,
-		Name:       optionData.Name,
-		Space:      optionData.Space,
-		Universe:   universe,
+		AlwaysSend:        optionData.AlwaysSend,
+		Code:              optionData.Code,
+		Name:              optionData.Name,
+		Space:             optionData.Space,
+		Universe:          universe,
+		UnknownParameters: optionData.UnknownParameters,
 	}
 	data := strings.TrimSpace(optionData.Data)
 

@@ -1464,6 +1464,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                     optionsHash: '123',
@@ -1488,6 +1491,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                     optionsHash: '234',
@@ -1521,6 +1527,12 @@ describe('HostFormComponent', () => {
         optionFields = component.getOptionSetArray(1).get('0.optionFields') as UntypedFormArray
         expect(optionFields.length).toBe(1)
         expect(optionFields.get('0.control').value).toBe('192.0.2.2')
+        expect(component.getOptionSetArray(0).get('0.unknown').value).toEqual({
+            foo: 'bar',
+        })
+        expect(component.getOptionSetArray(1).get('0.unknown').value).toEqual({
+            foo: 'bar',
+        })
         expect(component.clientClassesArray.length).toBe(2)
         expect(component.getClientClassSetControl(0).value).toEqual(['foo'])
         expect(component.getClientClassSetControl(1).value).toEqual(['bar'])
@@ -1579,6 +1591,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                 },
@@ -1602,6 +1617,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                 },
@@ -1666,6 +1684,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                     optionsHash: '123',
@@ -1698,6 +1719,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 4,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                     optionsHash: '234',
@@ -1729,6 +1753,9 @@ describe('HostFormComponent', () => {
         expect(optionFields.get('0.control').value).toBe('3001::2')
         expect(optionFields.get('1.control').value).toBe('64')
         expect(optionFields.get('2.control').value).toBe('80')
+        expect(component.getOptionSetArray(0).get('0.unknown').value).toEqual({
+            foo: 'bar',
+        })
         expect(component.getOptionSetArray(1).length).toBe(1)
         expect(component.getOptionSetArray(1).get('0.alwaysSend').value).toBeTrue()
         expect(component.getOptionSetArray(1).get('0.optionCode').value).toBe(5)
@@ -1807,6 +1834,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 6,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                 },
@@ -1838,6 +1868,9 @@ describe('HostFormComponent', () => {
                             ],
                             options: [],
                             universe: 6,
+                            unknown: {
+                                foo: 'bar',
+                            },
                         },
                     ],
                 },

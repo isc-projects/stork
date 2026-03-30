@@ -275,7 +275,8 @@
                                 "csv-format": true,
                                 "data": "192.0.3.1",
                                 "name": "routers",
-                                "space": "dhcp4"
+                                "space": "dhcp4",
+                                "client-classes": ["KNOWN"]
                             }
                         ],
                         "pools": [
@@ -288,7 +289,8 @@
                                         "csv-format": true,
                                         "data": "192.0.3.10",
                                         "name": "routers",
-                                        "space": "dhcp4"
+                                        "space": "dhcp4",
+                                        "client-classes": ["KNOWN"]
                                     }
                                 ],
                                 "pool": "192.1.0.1 - 192.1.0.200",

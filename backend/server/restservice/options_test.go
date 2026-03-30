@@ -44,6 +44,9 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 						},
 					},
 					Universe: 4,
+					Unknown: map[string]any{
+						"client-classes": []any{"KNOWN"},
+					},
 				},
 				{
 					Code:        2,
@@ -55,6 +58,9 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 						},
 					},
 					Universe: 4,
+					Unknown: map[string]any{
+						"client-classes": []any{"UNKNOWN"},
+					},
 				},
 			},
 			Universe: 4,
@@ -169,6 +175,10 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 	require.Equal(t, "option-1001", options[0].Space)
 	require.Equal(t, "option-1001.1", options[0].Encapsulate)
 	require.Equal(t, storkutil.IPv4, options[0].Universe)
+	require.Contains(t, options[0].UnknownParameters, "client-classes")
+	clientClasses := options[0].UnknownParameters["client-classes"].([]any)
+	require.Len(t, clientClasses, 1)
+	require.Equal(t, "KNOWN", clientClasses[0])
 
 	require.False(t, options[1].AlwaysSend)
 	require.EqualValues(t, 2, options[1].Code)
@@ -178,6 +188,10 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 	require.Equal(t, "option-1001", options[1].Space)
 	require.Equal(t, "option-1001.2", options[1].Encapsulate)
 	require.Equal(t, storkutil.IPv4, options[1].Universe)
+	require.Contains(t, options[1].UnknownParameters, "client-classes")
+	clientClasses = options[1].UnknownParameters["client-classes"].([]any)
+	require.Len(t, clientClasses, 1)
+	require.Equal(t, "UNKNOWN", clientClasses[0])
 
 	require.False(t, options[2].AlwaysSend)
 	require.EqualValues(t, 3, options[2].Code)
@@ -268,6 +282,9 @@ func TestFlattenDHCPv6Options(t *testing.T) {
 							Values:    []string{"1"},
 						},
 					},
+					Unknown: map[string]any{
+						"client-classes": []any{"KNOWN"},
+					},
 					Options: []*models.DHCPOption{
 						{
 							Code:        93,
@@ -304,6 +321,10 @@ func TestFlattenDHCPv6Options(t *testing.T) {
 	require.Equal(t, "s46-cont-mape-options", options[0].Space)
 	require.Equal(t, "s46-rule-options", options[0].Encapsulate)
 	require.Equal(t, storkutil.IPv6, options[0].Universe)
+	require.Contains(t, options[0].UnknownParameters, "client-classes")
+	clientClasses := options[0].UnknownParameters["client-classes"].([]any)
+	require.Len(t, clientClasses, 1)
+	require.Equal(t, "KNOWN", clientClasses[0])
 
 	require.False(t, options[1].AlwaysSend)
 	require.EqualValues(t, 93, options[1].Code)
@@ -400,6 +421,9 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 					Values:    []any{"foo"},
 				},
 			},
+			UnknownParameters: map[string]any{
+				"client-classes": []any{"KNOWN"},
+			},
 		},
 		{
 			AlwaysSend: false,
@@ -410,8 +434,9 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 					Values:    []any{11},
 				},
 			},
-			Space:       "option-1001",
-			Encapsulate: "option-1001.1",
+			Space:             "option-1001",
+			Encapsulate:       "option-1001.1",
+			UnknownParameters: map[string]any{},
 		},
 		{
 			AlwaysSend: false,
@@ -439,6 +464,14 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.Equal(t, "foo", restOptions[0].Fields[0].Values[0])
 	require.Len(t, restOptions[0].Options, 1)
 
+	// Validate unknown option parameters.
+	require.IsType(t, map[string]any(nil), restOptions[0].Unknown)
+	unknownOptionParameters := restOptions[0].Unknown.(map[string]any)
+	require.Contains(t, unknownOptionParameters, "client-classes")
+	clientClasses := unknownOptionParameters["client-classes"].([]any)
+	require.Len(t, clientClasses, 1)
+	require.Equal(t, "KNOWN", clientClasses[0])
+
 	// First level suboption.
 	require.Len(t, restOptions[0].Options, 1)
 	require.False(t, restOptions[0].Options[0].AlwaysSend)
@@ -448,6 +481,9 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.Len(t, restOptions[0].Options[0].Fields[0].Values, 1)
 	require.Equal(t, "11", restOptions[0].Options[0].Fields[0].Values[0])
 	require.Equal(t, "option-1001.1", restOptions[0].Options[0].Encapsulate)
+	require.IsType(t, map[string]any(nil), restOptions[0].Options[0].Unknown)
+	unknownOptionParameters = restOptions[0].Options[0].Unknown.(map[string]any)
+	require.Empty(t, unknownOptionParameters)
 
 	// Second level suboption.
 	require.Len(t, restOptions[0].Options[0].Options, 1)
@@ -458,6 +494,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.Len(t, restOptions[0].Options[0].Options[0].Fields[0].Values, 1)
 	require.Equal(t, "22", restOptions[0].Options[0].Options[0].Fields[0].Values[0])
 	require.Equal(t, "option-1001.1.2", restOptions[0].Options[0].Options[0].Encapsulate)
+	require.Nil(t, restOptions[0].Options[0].Options[0].Unknown)
 }
 
 // Test that option field values of different types are correctly converted

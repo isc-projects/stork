@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core'
-import { AbstractControl, UntypedFormArray, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms'
+import {
+    AbstractControl,
+    FormRecord,
+    UntypedFormArray,
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators,
+} from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from './dhcp-option-form'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { IPType } from '../iptype'
@@ -109,6 +116,12 @@ export class DhcpOptionSetFormService extends FormProcessor {
                 fields: new Array<DHCPOptionField>(),
                 universe: universe,
                 options: new Array<DHCPOption>(),
+            }
+            if (option.get('unknown')) {
+                item.unknown = {}
+                for (const key in (option.get('unknown') as FormRecord<any>)?.controls) {
+                    item.unknown[key] = (option.get('unknown') as FormRecord<any>).get(key)?.value
+                }
             }
             const optionFieldsArray = option.get('optionFields') as UntypedFormArray
             // Option fields are not mandatory. It is possible to have an empty option.
@@ -274,6 +287,14 @@ export class DhcpOptionSetFormService extends FormProcessor {
                         continue
                 }
                 ;(optionFormGroup.get('optionFields') as UntypedFormArray).push(fieldGroup)
+            }
+            if (option.unknown) {
+                for (const key in option.unknown) {
+                    ;(optionFormGroup.get('unknown') as FormRecord<any>)?.addControl(
+                        key,
+                        new UntypedFormControl(option.unknown[key])
+                    )
+                }
             }
             if (option.options?.length > 0) {
                 optionFormGroup.setControl(

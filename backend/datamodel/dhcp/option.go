@@ -29,4 +29,6 @@ type DHCPOptionAccessor interface {
 	GetSpace() string
 	// Returns the universe (i.e., IPv4 or IPv6).
 	GetUniverse() storkutil.IPType
+	// Returns unknown (unsupported by Stork) parameters.
+	GetUnknownParameters() map[string]any
 }

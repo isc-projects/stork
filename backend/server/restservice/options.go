@@ -147,6 +147,17 @@ func (r *RestAPI) flattenDHCPOptions(optionSpace string, restOptions []*models.D
 			}
 			option.Fields = append(option.Fields, field)
 		}
+		// Convert unknown option parameters.
+		if restOption.Unknown != nil {
+			if unknown, ok := restOption.Unknown.(map[string]any); ok {
+				if option.UnknownParameters == nil {
+					option.UnknownParameters = make(map[string]any)
+				}
+				for key, value := range unknown {
+					option.UnknownParameters[key] = value
+				}
+			}
+		}
 		if len(restOption.Options) > 0 {
 			// Convert suboptions recursively.
 			suboptions, err := r.flattenDHCPOptions(option.Encapsulate, restOption.Options, recursionLevel+1)
@@ -184,6 +195,7 @@ func (r *RestAPI) unflattenDHCPOptions(options []dbmodel.DHCPOption, space strin
 				Code:        int64(option.Code),
 				Encapsulate: option.Encapsulate,
 				Universe:    int64(option.Universe),
+				Unknown:     option.UnknownParameters,
 			}
 			for _, field := range option.Fields {
 				restField := &models.DHCPOptionField{

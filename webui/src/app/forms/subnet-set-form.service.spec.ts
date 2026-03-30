@@ -19,7 +19,14 @@ import {
     Subnet,
 } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
-import { FormControl, FormGroup, FormRecord, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import {
+    FormControl,
+    FormGroup,
+    FormRecord,
+    UntypedFormArray,
+    UntypedFormControl,
+    UntypedFormGroup,
+} from '@angular/forms'
 import { IPType } from '../iptype'
 
 describe('SubnetSetFormService', () => {
@@ -195,6 +202,9 @@ describe('SubnetSetFormService', () => {
                                         ],
                                         options: [],
                                         universe: 4,
+                                        unknown: {
+                                            foo: 'bar',
+                                        },
                                     },
                                 ],
                                 optionsHash: '123',
@@ -282,6 +292,9 @@ describe('SubnetSetFormService', () => {
                                         ],
                                         options: [],
                                         universe: 4,
+                                        unknown: {
+                                            foo: 'bar',
+                                        },
                                     },
                                 ],
                                 optionsHash: '234',
@@ -319,6 +332,9 @@ describe('SubnetSetFormService', () => {
         let options = formArray.get('0.options.data') as UntypedFormArray
         expect(options.length).toBe(2)
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.1')
+        expect(options.get('0.0.unknown')?.value).toEqual({
+            foo: 'bar',
+        })
         expect((options.get('1') as UntypedFormArray).length).toBe(0)
 
         let selectedDaemons = formArray.get('0.selectedDaemons') as FormControl<number[]>
@@ -3606,6 +3622,7 @@ describe('SubnetSetFormService', () => {
                             optionCode: new FormControl(6),
                             optionFields: new UntypedFormArray([]),
                             suboptions: new UntypedFormArray([]),
+                            unknown: new UntypedFormGroup({}),
                         }),
                     ]),
                     new UntypedFormArray([
@@ -3614,6 +3631,7 @@ describe('SubnetSetFormService', () => {
                             optionCode: new FormControl(42),
                             optionFields: new UntypedFormArray([]),
                             suboptions: new UntypedFormArray([]),
+                            unknown: new UntypedFormGroup({}),
                         }),
                     ]),
                 ]),

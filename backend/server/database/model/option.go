@@ -61,13 +61,14 @@ type DHCPOptionField struct {
 
 // Represents a DHCP option.
 type DHCPOption struct {
-	AlwaysSend  bool
-	Code        uint16
-	Encapsulate string
-	Fields      []DHCPOptionField
-	Name        string
-	Space       string
-	Universe    storkutil.IPType
+	AlwaysSend        bool
+	Code              uint16
+	Encapsulate       string
+	Fields            []DHCPOptionField
+	Name              string
+	Space             string
+	Universe          storkutil.IPType
+	UnknownParameters map[string]any
 }
 
 // Returns option field type.
@@ -119,6 +120,11 @@ func (option DHCPOption) GetSpace() string {
 	return option.Space
 }
 
+// Returns unknown (unsupported by Stork) parameters.
+func (option DHCPOption) GetUnknownParameters() map[string]any {
+	return option.UnknownParameters
+}
+
 // Creates DHCP option instance in Stork from a DHCP option in Kea.
 func NewDHCPOptionFromKea(optionData keaconfig.SingleOptionData, universe storkutil.IPType, lookup keaconfig.DHCPOptionDefinitionLookup) (*DHCPOption, error) {
 	optionAccessor, err := keaconfig.CreateDHCPOption(optionData, universe, lookup)
@@ -126,12 +132,13 @@ func NewDHCPOptionFromKea(optionData keaconfig.SingleOptionData, universe storku
 		return nil, err
 	}
 	option := &DHCPOption{
-		AlwaysSend:  optionAccessor.IsAlwaysSend(),
-		Code:        optionAccessor.GetCode(),
-		Encapsulate: optionAccessor.GetEncapsulate(),
-		Name:        optionAccessor.GetName(),
-		Space:       optionAccessor.GetSpace(),
-		Universe:    optionAccessor.GetUniverse(),
+		AlwaysSend:        optionAccessor.IsAlwaysSend(),
+		Code:              optionAccessor.GetCode(),
+		Encapsulate:       optionAccessor.GetEncapsulate(),
+		Name:              optionAccessor.GetName(),
+		Space:             optionAccessor.GetSpace(),
+		Universe:          optionAccessor.GetUniverse(),
+		UnknownParameters: optionAccessor.GetUnknownParameters(),
 	}
 	for _, f := range optionAccessor.GetFields() {
 		option.Fields = append(option.Fields, DHCPOptionField{
