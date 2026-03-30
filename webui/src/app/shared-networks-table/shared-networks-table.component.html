@@ -149,7 +149,7 @@
     </ng-template>
     <ng-template #header>
         <tr>
-            <th rowspan="2" style="width: 7rem" [pSortableColumn]="NetworkSortField.Name">
+            <th rowspan="2" style="width: 16rem" [pSortableColumn]="NetworkSortField.Name">
                 Name
                 <p-sortIcon [field]="NetworkSortField.Name" />
             </th>
@@ -189,7 +189,7 @@
     </ng-template>
     <ng-template #body let-net>
         <tr>
-            <td>
+            <td class="word-break-all">
                 <app-entity-link entity="shared-network" [showEntityName]="false" [attrs]="net"></app-entity-link>
             </td>
             <td>
