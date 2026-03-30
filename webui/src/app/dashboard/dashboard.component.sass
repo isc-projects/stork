@@ -42,6 +42,9 @@ h2.section-heading
   // Disable wrapping to keep the name on a single line. Otherwise, the
   // ellipsis will not be shown and the name will wrap to multiple lines.
   white-space: nowrap
+  // Break the names that are delimited by other characters than dashes or
+  // spaces too or are not delimited at all.
+  word-break: break-all
 
   // On hover, reset the truncation to show the full name wrapped across
   // multiple lines.
