@@ -114,7 +114,7 @@ type Daemon struct {
 	Uptime          int64
 	CreatedAt       time.Time
 	ReloadedAt      time.Time
-	ServerTag       string
+	ServerTag       string `pg:",use_zero"`
 
 	MachineID int64
 	Machine   *Machine `pg:"rel:has-one"`

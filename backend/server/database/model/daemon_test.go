@@ -124,6 +124,41 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.EqualValues(t, 2000, updatedDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2)
 }
 
+// Test that a Kea DHCP daemon without a server tag in its configuration
+// can be updated in the database (the server_tag column defaults to empty).
+func TestUpdateKeaDHCPDaemonWithoutServerTag(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	daemon := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{})
+	err = AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// Act
+	// Missing server tag.
+	err = daemon.SetKeaConfigFromJSON([]byte(`{
+		"Dhcp4": { "valid-lifetime": 1234 }
+	}`))
+	require.NoError(t, err)
+
+	err = UpdateDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// Assert
+	updated, err := GetDaemonByID(db, daemon.ID)
+	require.NoError(t, err)
+	require.Empty(t, updated.ServerTag)
+}
+
 // Test that Bind9 daemon is properly updated.
 func TestUpdateBind9Daemon(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
