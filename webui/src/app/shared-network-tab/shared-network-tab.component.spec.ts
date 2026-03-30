@@ -152,6 +152,9 @@ describe('SharedNetworkTabComponent', () => {
                             },
                             serverHostname: 'off.example.org',
                             storeExtendedInfo: false,
+                            unknown: {
+                                'adaptive-lease-time-threshold': 0.3,
+                            },
                         },
                         globalParameters: {
                             cacheThreshold: 0.29,
@@ -264,6 +267,9 @@ describe('SharedNetworkTabComponent', () => {
                             },
                             serverHostname: 'off.example.org',
                             storeExtendedInfo: false,
+                            unknown: {
+                                'adaptive-lease-time-threshold': 0.3,
+                            },
                         },
                         globalParameters: {
                             cacheThreshold: 0.29,
@@ -350,6 +356,10 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets[4].nativeElement.innerText).toContain('Cache Threshold')
         expect(fieldsets[4].nativeElement.innerText).toContain('0.3')
         expect(fieldsets[4].nativeElement.innerText).toContain('900')
+
+        // Unknown parameters are not displayed.
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Unknown')
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Adaptive Lease Time Threshold')
 
         // Ensure that the DHCP options are excluded from this list.
         expect(fieldsets[4].nativeElement.innerText).not.toContain('Options')

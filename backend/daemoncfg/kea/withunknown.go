@@ -100,7 +100,7 @@ func (w WithUnknown[T]) MarshalJSON() ([]byte, error) {
 	// Serialize the known parameters.
 	kb, err := json.Marshal((alias)(&w.Known))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "problem marshalling known configuration parameters")
 	}
 
 	// If the type is not a structure, there are no unknown parameters.
@@ -113,7 +113,7 @@ func (w WithUnknown[T]) MarshalJSON() ([]byte, error) {
 	// Convert known parameters to a map.
 	var m map[string]any
 	if err := json.Unmarshal(kb, &m); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "problem unmarshalling known configuration parameters into a map")
 	}
 
 	// Identify known parameter names. It will be used to distinguish unknown
@@ -131,5 +131,6 @@ func (w WithUnknown[T]) MarshalJSON() ([]byte, error) {
 	}
 
 	// Serialize the entire configuration.
-	return json.Marshal(m)
+	marshalled, err := json.Marshal(m)
+	return marshalled, errors.Wrap(err, "problem marshalling known and unknown configuration parameters")
 }

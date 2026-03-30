@@ -188,6 +188,7 @@
         },
         "shared-networks": [
             {
+                "adaptive-lease-time-threshold": 0.3,
                 "allocator": "random",
                 "pd-allocator": "iterative",
                 "client-class": "",

@@ -55,28 +55,30 @@ func TestNewKeaConfigFromFilledMap(t *testing.T) {
 func TestNewSharedNetworkFromKea(t *testing.T) {
 	machine := &Machine{ID: 1}
 	network := &keaconfig.SharedNetwork6{
-		Name: "foo",
-		Subnet6: []keaconfig.Subnet6{
-			{
-				Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
-					MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-						ID:     1,
-						Subnet: "2001:db8:2::/64",
-					},
-					CommonSubnetParameters: keaconfig.CommonSubnetParameters{
-						Reservations: []keaconfig.Reservation{
-							{
-								HWAddress: "01:02:03:04:05:06",
+		SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+			Name: "foo",
+			Subnet6: []keaconfig.Subnet6{
+				{
+					Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+						MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+							ID:     1,
+							Subnet: "2001:db8:2::/64",
+						},
+						CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+							Reservations: []keaconfig.Reservation{
+								{
+									HWAddress: "01:02:03:04:05:06",
+								},
 							},
 						},
 					},
 				},
-			},
-			{
-				Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
-					MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-						ID:     2,
-						Subnet: "2001:db8:1::/64",
+				{
+					Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+						MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+							ID:     2,
+							Subnet: "2001:db8:1::/64",
+						},
 					},
 				},
 			},

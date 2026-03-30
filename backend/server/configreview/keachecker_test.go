@@ -4409,7 +4409,9 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t 
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4443,8 +4445,10 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubn
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Name:    "foo",
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Name:    "foo",
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4478,7 +4482,9 @@ func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetw
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4518,7 +4524,9 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4568,8 +4576,10 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *te
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Name:    "foo",
-			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Name:    "foo",
+				Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			},
 		},
 	}
 
@@ -4618,8 +4628,10 @@ func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *te
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			// Global subnets. Shared network name is empty.
-			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				// Global subnets. Shared network name is empty.
+				Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			},
 		},
 	}
 
@@ -4654,7 +4666,9 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubne
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4688,7 +4702,9 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGl
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4722,8 +4738,10 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSh
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Name:    "foo",
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Name:    "foo",
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4764,7 +4782,9 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *t
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Subnet6: []keaconfig.Subnet6{subnet},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Subnet6: []keaconfig.Subnet6{subnet},
+			},
 		},
 	}
 
@@ -4815,8 +4835,10 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwo
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			Name:    "foo",
-			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				Name:    "foo",
+				Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			},
 		},
 	}
 
@@ -4866,8 +4888,10 @@ func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubne
 
 	sharedNetworks := []keaconfig.SharedNetwork{
 		keaconfig.SharedNetwork6{
-			// Global subnets. Shared network name is empty.
-			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			SharedNetwork6KnownParameters: keaconfig.SharedNetwork6KnownParameters{
+				// Global subnets. Shared network name is empty.
+				Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+			},
 		},
 	}
 

@@ -85,6 +85,9 @@ func convertSharedNetworkParametersToRestAPI(keaParameters *keaconfig.SharedNetw
 			ServerHostname:    storkutil.NullifyEmptyString(keaParameters.ServerHostname),
 			StoreExtendedInfo: keaParameters.StoreExtendedInfo,
 		},
+		KeaConfigUnknownParameters: models.KeaConfigUnknownParameters{
+			Unknown: keaParameters.UnknownParameters,
+		},
 	}
 	if keaParameters.Relay != nil {
 		parameters.Relay = &models.KeaConfigAssortedSubnetParametersRelay{
@@ -251,6 +254,16 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 			if keaParameters.Relay != nil {
 				localSharedNetwork.KeaParameters.Relay = &keaconfig.Relay{
 					IPAddresses: keaParameters.Relay.IPAddresses,
+				}
+			}
+			if keaParameters.Unknown != nil {
+				if unknown, ok := keaParameters.Unknown.(map[string]any); ok {
+					if localSharedNetwork.KeaParameters.UnknownParameters == nil {
+						localSharedNetwork.KeaParameters.UnknownParameters = make(map[string]any)
+					}
+					for key, value := range unknown {
+						localSharedNetwork.KeaParameters.UnknownParameters[key] = value
+					}
 				}
 			}
 			// DHCP options.
