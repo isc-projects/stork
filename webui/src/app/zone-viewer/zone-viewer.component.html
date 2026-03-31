@@ -22,12 +22,6 @@
                 </p>
             </app-help-tip>
         </div>
-        <p-button
-            label="Refresh from DNS"
-            pTooltip="Refresh the zone contents from the DNS server using zone transfer (AXFR). The received data will be cached in Stork."
-            (click)="refreshRRsFromDNS()"
-            [disabled]="loading"
-        />
     </div>
     <p-table
         #table
@@ -49,43 +43,15 @@
         (onLazyLoad)="loadRRs($event)"
     >
         <ng-template #caption>
-            <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
-                <ng-template #header>
-                    <div class="flex align-items-center gap-2">
-                        <p-button
-                            [text]="true"
-                            [rounded]="true"
-                            severity="secondary"
-                            [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                            (click)="filtersPanel.toggle($event)"
-                        />
-                        <i class="pi pi-filter"></i>
-                        <span class="font-bold">Filters</span>
-                        <p-tag
-                            icon="pi pi-check"
-                            value="Filter applied"
-                            severity="success"
-                            *ngIf="tableHasFilter(table)"
-                        ></p-tag>
-                        <app-help-tip subject="Filtering" id="filtering-help-button">
-                            <p>
-                                Resource records in the table below can be filtered by explicitly selected RR types
-                                and/or using a text matching the RR names or data. Searching by text is case
-                                insensitive. If RR type and text filter are used together, they are combined using the
-                                logical AND operator.
-                            </p>
-                        </app-help-tip>
-                    </div>
+            <app-table-caption [tableElement]="table" tableKey="zone-viewer-table">
+                <ng-template #helptip>
+                    <p>
+                        Resource records in the table below can be filtered by explicitly selected RR types and/or using
+                        a text matching the RR names or data. Searching by text is case insensitive. If RR type and text
+                        filter are used together, they are combined using the logical AND operator.
+                    </p>
                 </ng-template>
-                <div class="flex flex-wrap gap-2 row-gap-3 mt-3 align-items-center">
-                    <p-button
-                        label="Clear"
-                        [severity]="tableHasFilter(table) ? 'info' : 'secondary'"
-                        icon="pi pi-filter-slash"
-                        (click)="clearTableState()"
-                        [disabled]="!tableHasFilter(table)"
-                    />
-                    <div class="flex-auto"></div>
+                <ng-template #filters>
                     <p-columnFilter field="rrType" matchMode="equals" [showMenu]="false" [showClearButton]="false">
                         <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                             <div class="flex align-items-center">
@@ -140,8 +106,16 @@
                             </div>
                         </ng-template>
                     </p-columnFilter>
-                </div>
-            </p-panel>
+                </ng-template>
+                <ng-template #buttons>
+                    <p-button
+                        label="Refresh from DNS"
+                        pTooltip="Refresh the zone contents from the DNS server using zone transfer (AXFR). The received data will be cached in Stork."
+                        (click)="refreshRRsFromDNS()"
+                        [disabled]="loading"
+                    />
+                </ng-template>
+            </app-table-caption>
         </ng-template>
         <ng-template #header let-columns>
             <tr>

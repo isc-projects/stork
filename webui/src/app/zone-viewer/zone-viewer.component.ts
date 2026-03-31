@@ -22,6 +22,7 @@ import { IconField } from 'primeng/iconfield'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { InputIcon } from 'primeng/inputicon'
 import { InputTextModule } from 'primeng/inputtext'
+import { TableCaptionComponent } from '../table-caption/table-caption.component'
 
 /**
  * Interface describing the columns of the table.
@@ -62,6 +63,7 @@ interface Column {
         LocaltimePipe,
         PlaceholderPipe,
         InputTextModule,
+        TableCaptionComponent,
     ],
 })
 export class ZoneViewerComponent implements OnInit {
