@@ -1,10 +1,10 @@
 import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core'
-import { ZoneRR } from '../backend/model/zoneRR'
+import { ZoneRR } from '../backend'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Button } from 'primeng/button'
 import { Tooltip } from 'primeng/tooltip'
-import { TableModule } from 'primeng/table'
-import { NgClass, NgFor, NgIf, NgTemplateOutlet } from '@angular/common'
+import { TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { NgClass, NgFor, NgTemplateOutlet } from '@angular/common'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { debounceTime, distinctUntilChanged, lastValueFrom, map, Observable, Subject, tap } from 'rxjs'
@@ -12,10 +12,7 @@ import { getErrorMessage } from '../utils'
 import { DNSRRType, DNSService, ZoneRRs } from '../backend'
 import { FilterMetadata, LazyLoadEvent, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
-import { tableHasFilter } from '../table'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { Panel } from 'primeng/panel'
-import { Tag } from 'primeng/tag'
 import { FloatLabel } from 'primeng/floatlabel'
 import { MultiSelect } from 'primeng/multiselect'
 import { IconField } from 'primeng/iconfield'
@@ -48,12 +45,9 @@ interface Column {
         Button,
         Tooltip,
         TableModule,
-        Panel,
         NgClass,
-        NgIf,
         NgFor,
         NgTemplateOutlet,
-        Tag,
         FormsModule,
         ReactiveFormsModule,
         FloatLabel,
@@ -86,7 +80,7 @@ export class ZoneViewerComponent implements OnInit {
     private destroyRef = inject(DestroyRef)
 
     /**
-     * Provides direct access to the the PrimeNG table component.
+     * Provides direct access to the PrimeNG table component.
      */
     @ViewChild('table') table: Table
 
@@ -250,7 +244,7 @@ export class ZoneViewerComponent implements OnInit {
      *
      * @param event lazy load event containing pagination information.
      */
-    loadRRs(event?: LazyLoadEvent): void {
+    loadRRs(event?: TableLazyLoadEvent): void {
         const req$ = this._dnsApi.getZoneRRs(
             this.daemonId,
             this.viewName,
@@ -353,12 +347,6 @@ export class ZoneViewerComponent implements OnInit {
     }
 
     /**
-     * Reference to hasFilter() utility function so it can be used in the html template.
-     * @protected
-     */
-    protected readonly tableHasFilter = tableHasFilter
-
-    /**
      * Filters the zone resource records table by RR type or text.
      *
      * @param value value of the filter.
@@ -376,12 +364,5 @@ export class ZoneViewerComponent implements OnInit {
         filterConstraint.value = null
         this.table.first = 0
         this.loadRRs(this.table.createLazyLoadMetadata())
-    }
-
-    /**
-     * Clears the PrimeNG table state (filtering, pagination are reset).
-     */
-    clearTableState() {
-        this.table?.clear()
     }
 }
