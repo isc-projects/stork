@@ -25,7 +25,7 @@ namespace :demo do
             "-f", "docker/docker-compose.yaml",
         ]
 
-        if !ENV["CS_REPO_ACCESS_TOKEN"].nil?
+        if !ENV["CS_REPO_ACCESS_TOKEN"].nil? && !ENV["CS_REPO_ACCESS_TOKEN"].empty?
             opts.append "-f", "docker/docker-compose.premium.yaml"
         end
 
