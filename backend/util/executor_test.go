@@ -84,7 +84,7 @@ func TestSystemCommandStartScanCancel(t *testing.T) {
 
 	// Try to run the blocking tail command.
 	ctx, cancel := context.WithCancel(context.Background())
-	output, err := executor.Start(ctx, "tail", "-f", filepath.Join(sb.BasePath, "test.txt"))
+	output, err := executor.Start(ctx, 1024, 2048, "tail", "-f", filepath.Join(sb.BasePath, "test.txt"))
 	if err != nil {
 		// If tail is not available, skip the test. It should not be the case in  most of the
 		// systems, but still possible in some minimal environments. We don't want to fail
@@ -120,4 +120,34 @@ func TestSystemCommandStartScanCancel(t *testing.T) {
 	// The goroutine should exit because the tail command was cancelled
 	// and the scanner is closed.
 	require.Eventually(t, done.Load, 10*time.Second, 100*time.Millisecond)
+}
+
+// Test that the system command executor returns an error when the buffer is too small.
+func TestSystemCommandStartScanToSmallBufferSize(t *testing.T) {
+	executor := NewSystemCommandExecutor()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Create a file with some content.
+	_, err := sb.Write("test.txt", "test\n")
+	require.NoError(t, err)
+
+	// Try to run the blocking tail command.
+	ctx, cancel := context.WithCancel(context.Background())
+	// Set too small buffer size to trigger the ErrTooLong error.
+	output, err := executor.Start(ctx, 1, 2, "tail", "-f", filepath.Join(sb.BasePath, "test.txt"))
+	if err != nil {
+		// If tail is not available, skip the test. It should not be the case in  most of the
+		// systems, but still possible in some minimal environments. We don't want to fail
+		// the test in such a case.
+		t.Skip("tail command is not available")
+	}
+	require.NotNil(t, output)
+	defer cancel()
+
+	// Read the output. It should return ErrTooLong error because
+	// we set too small buffer size.
+	for output.GetScanner().Scan() {
+		require.ErrorIs(t, output.GetScanner().Err(), bufio.ErrTooLong)
+	}
 }

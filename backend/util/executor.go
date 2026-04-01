@@ -54,7 +54,7 @@ func (c *systemCommandExecutorOutput) GetScanner() *bufio.Scanner {
 // improve testability and allow mock the operating system operations.
 type CommandExecutor interface {
 	Output(string, ...string) ([]byte, error)
-	Start(context.Context, string, ...string) (CommandExecutorOutput, error)
+	Start(context.Context, int, int, string, ...string) (CommandExecutorOutput, error)
 	LookPath(string) (string, error)
 	IsFileExist(string) bool
 	GetFileInfo(string) (os.FileInfo, error)
@@ -79,7 +79,7 @@ func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, 
 // Suppose the function is used to tail and follow the log file, cancelling the context
 // will kill the process. Call Wait() after cancelling the context to cleanly handle
 // process termination.
-func (e *systemCommandExecutor) Start(ctx context.Context, command string, args ...string) (CommandExecutorOutput, error) {
+func (e *systemCommandExecutor) Start(ctx context.Context, minBufferSize, maxBufferSize int, command string, args ...string) (CommandExecutorOutput, error) {
 	cmd := exec.CommandContext(ctx, command, args...)
 
 	stdout, err := cmd.StdoutPipe()
@@ -92,6 +92,7 @@ func (e *systemCommandExecutor) Start(ctx context.Context, command string, args 
 	}
 
 	scanner := bufio.NewScanner(stdout)
+	scanner.Buffer(make([]byte, 0, minBufferSize), maxBufferSize)
 	return &systemCommandExecutorOutput{
 		cmd:     cmd,
 		scanner: scanner,

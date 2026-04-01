@@ -11,6 +11,11 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+const (
+	systemdLogReaderMinBufferSize = 8 * 1024
+	systemdLogReaderMaxBufferSize = 64 * 1024
+)
+
 var (
 	_ logReader = (*textFileLogReader)(nil)
 	_ logReader = (*systemdLogReader)(nil)
@@ -254,7 +259,7 @@ func (lc *systemdLogReader) capture(ctx context.Context, options ...logReaderCap
 	}
 	// Run journalctl command with the arguments to start capturing the logs.
 	// The pipe is used to make the logs accessible via the scanner.
-	cmd, err := lc.executor.Start(ctx, "journalctl", args...)
+	cmd, err := lc.executor.Start(ctx, systemdLogReaderMinBufferSize, systemdLogReaderMaxBufferSize, "journalctl", args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to start the journalctl command")
 	}

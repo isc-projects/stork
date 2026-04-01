@@ -482,7 +482,7 @@ func TestLogTrackerStopStuckRead(t *testing.T) {
 		})
 
 		executor := NewMockCommandExecutor(ctrl)
-		executor.EXPECT().Start(gomock.Any(), "journalctl", "-f", "-u", "test.service", "-n", "0").Return(command, nil)
+		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "test.service", "-n", "0").Return(command, nil)
 		executor.EXPECT().LookPath(gomock.Any()).Return("", nil)
 
 		tracker := newLogTracker(executor, logTrackerConfig{

@@ -473,7 +473,7 @@ func TestSystemdFileLogReaderOptions(t *testing.T) {
 			executor := NewMockCommandExecutor(ctrl)
 			// Make sure that the correct command line switches were used for the
 			// specified capture options.
-			executor.EXPECT().Start(ctx, "journalctl", testCase.expectedArgs...).Return(command, nil)
+			executor.EXPECT().Start(ctx, gomock.Any(), gomock.Any(), "journalctl", testCase.expectedArgs...).Return(command, nil)
 
 			// Create the systemd log reader.
 			reader := newSystemdLogReader(executor)
