@@ -146,6 +146,23 @@
                                 <div class="col-12 sm:col-9">
                                     {{ daemon().reloadedAt | localtime | placeholder: 'never' }}
                                 </div>
+                                <ng-container *ngIf="cbCmdsLoaded()">
+                                    <div class="col-12 sm:col-3 pb-0 font-medium">
+                                        Server Tag
+                                        <app-help-tip subject="server tag">
+                                            <p>
+                                                The server tag identifies this Kea server in the configuration backend.
+                                                The server tag is an arbitrary string holding the name of the Kea server
+                                                instance. The tags of the DHCPv4 and DHCPv6 servers are independent in
+                                                the database, i.e. the same server tag can be created for both the
+                                                DHCPv4 and the DHCPv6 server. If the server tag is not set in the Kea
+                                                configuration file but the CB hook is loaded, the Stork server will use
+                                                the default server tag value, which is <strong>all</strong>.
+                                            </p>
+                                        </app-help-tip>
+                                    </div>
+                                    <div class="col-12 sm:col-9">{{ effectiveServerTag() }}</div>
+                                </ng-container>
                             </div>
                         </p-fieldset>
                     </div>

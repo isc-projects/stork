@@ -272,4 +272,50 @@ describe('KeaDaemonComponent', () => {
         expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).not.toContain('DHCPv4')
         expect((versionStatus[0].nativeElement as HTMLElement).innerHTML).toContain('text-green-500')
     })
+
+    it('should detect cb_cmds hook as loaded', () => {
+        fixture.componentRef.setInput('daemon', { hooks: [] })
+        expect(component.cbCmdsLoaded()).toBeFalse()
+
+        fixture.componentRef.setInput('daemon', { hooks: ['/usr/lib/libdhcp_cb_cmds.so'] })
+        expect(component.cbCmdsLoaded()).toBeTrue()
+
+        fixture.componentRef.setInput('daemon', { hooks: ['/usr/lib/libdhcp_host_cmds.so'] })
+        expect(component.cbCmdsLoaded()).toBeFalse()
+    })
+
+    it('should return the effective server tag', () => {
+        // cb_cmds not loaded — server tag is irrelevant; empty string expected.
+        fixture.componentRef.setInput('daemon', { hooks: [], serverTag: '' })
+        expect(component.effectiveServerTag()).toBe('')
+
+        // cb_cmds loaded, explicit server tag.
+        fixture.componentRef.setInput('daemon', { hooks: ['/usr/lib/libdhcp_cb_cmds.so'], serverTag: 'my-server' })
+        expect(component.effectiveServerTag()).toBe('my-server')
+
+        // cb_cmds loaded, empty server tag — falls back to "all".
+        fixture.componentRef.setInput('daemon', { hooks: ['/usr/lib/libdhcp_cb_cmds.so'], serverTag: '' })
+        expect(component.effectiveServerTag()).toBe('all')
+    })
+
+    it('should show the server tag row only when cb_cmds is loaded', () => {
+        fixture.componentRef.setInput('daemon', {
+            hooks: [],
+            serverTag: '',
+            active: true,
+        })
+        fixture.detectChanges()
+        let daemonInfo = fixture.debugElement.query(By.css('p-fieldset[legend="Daemon Information"]'))
+        expect(daemonInfo.nativeElement.innerText).not.toContain('Server Tag')
+
+        fixture.componentRef.setInput('daemon', {
+            hooks: ['/usr/lib/libdhcp_cb_cmds.so'],
+            serverTag: 'my-server',
+            active: true,
+        })
+        fixture.detectChanges()
+        daemonInfo = fixture.debugElement.query(By.css('p-fieldset[legend="Daemon Information"]'))
+        expect(daemonInfo.nativeElement.innerText).toContain('Server Tag')
+        expect(daemonInfo.nativeElement.innerText).toContain('my-server')
+    })
 })

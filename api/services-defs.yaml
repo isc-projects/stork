@@ -374,7 +374,9 @@
           $ref: '#/definitions/LogTarget'
       caCommErrors:
         type: integer
-      
+      serverTag:
+        type: string
+
   KeaDaemon:
     type: object
     allOf:

@@ -1170,8 +1170,11 @@ func (r *RestAPI) daemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.AnyDaemon {
 
 	switch {
 	case dbDaemon.Name.IsKea():
-		if dbDaemon.KeaDaemon != nil && dbDaemon.KeaDaemon.Config != nil {
-			daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
+		if dbDaemon.KeaDaemon != nil {
+			daemon.ServerTag = dbDaemon.KeaDaemon.ServerTag
+			if dbDaemon.KeaDaemon.Config != nil {
+				daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
+			}
 		}
 
 		if hooks := kea.GetDaemonHooks(dbDaemon); len(hooks) > 0 {

@@ -156,6 +156,23 @@ export class KeaDaemonComponent {
         return daemon.name === 'dhcp4' || daemon.name === 'dhcp6'
     })
 
+    /** Indicates if the cb_cmds hook library is loaded for this daemon. */
+    cbCmdsLoaded = computed(() => {
+        return this.daemon().hooks?.some((h) => this.basename(h) === 'libdhcp_cb_cmds.so') ?? false
+    })
+
+    /**
+     * Returns the effective server tag for this daemon.
+     *
+     * When cb_cmds is loaded and the stored tag is empty, Kea uses the
+     * implicit default tag "all", which is returned here so users see the
+     * active value.
+     */
+    effectiveServerTag = computed(() => {
+        const tag = this.daemon().serverTag
+        return tag || (this.cbCmdsLoaded() ? 'all' : '')
+    })
+
     /**
      * Checks if the specified log target can be viewed
      *

@@ -3066,6 +3066,7 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 		ReloadedAt:      time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
 		Machine:         machine,
 		KeaDaemon: &dbmodel.KeaDaemon{
+			ServerTag: "my-server",
 			Config: &dbmodel.KeaConfig{
 				Config: func() *keaconfig.Config {
 					cfg, _ := keaconfig.NewConfig([]byte(`{
@@ -3098,6 +3099,7 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 	require.Len(t, converted.Hooks, 2)
 	require.Contains(t, converted.Hooks, "hook_abc.so")
 	require.Contains(t, converted.Hooks, "hook_def.so")
+	require.Equal(t, "my-server", converted.ServerTag)
 }
 
 // This test verifies that the lease database configuration storing the
