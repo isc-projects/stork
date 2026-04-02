@@ -95,6 +95,8 @@ func init() {
              DROP TABLE IF EXISTS public.lease;
              -- Remove table with lease updates.
              DROP TABLE IF EXISTS public.lease_update;
+             -- Remove lease puller interval setting.
+             DELETE FROM setting WHERE name = 'kea_leases_puller_interval';
         `)
 		return err
 	})

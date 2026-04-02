@@ -202,6 +202,12 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		return err
 	}
 
+	// Set up Kea leases puller.
+	ss.Pullers.LeasesPuller, err = kea.NewLeasesPuller(ss.DB, ss.Agents)
+	if err != nil {
+		return err
+	}
+
 	if ss.GeneralSettings.EnableMetricsEndpoint {
 		ss.MetricsCollector, err = metrics.NewCollector(
 			metrics.NewDatabaseMetricsSource(ss.DB),
@@ -253,6 +259,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.StatePuller.Shutdown()
+		ss.Pullers.LeasesPuller.Shutdown()
 		ss.DNSManager.Shutdown()
 		if ss.MetricsCollector != nil {
 			ss.MetricsCollector.Shutdown()
@@ -301,6 +308,7 @@ func (ss *StorkServer) Shutdown(reload bool) {
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.StatePuller.Shutdown()
+		ss.Pullers.LeasesPuller.Shutdown()
 		ss.DNSManager.Shutdown()
 		ss.Agents.Shutdown()
 		ss.EventCenter.Shutdown()

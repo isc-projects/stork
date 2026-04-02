@@ -77,6 +77,11 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			Value:   mediumInterval,
 		},
 		{
+			Name:    "kea_leases_puller_interval", // in seconds
+			ValType: SettingValTypeInt,
+			Value:   longInterval,
+		},
+		{
 			Name:    "grafana_url",
 			ValType: SettingValTypeStr,
 			Value:   "",

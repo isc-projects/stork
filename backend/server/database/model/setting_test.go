@@ -49,6 +49,10 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 30, val)
 
+	val, err = GetSettingInt(db, "kea_leases_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 60, val)
+
 	boolVal, err := GetSettingBool(db, "enable_machine_registration")
 	require.NoError(t, err)
 	require.True(t, boolVal)

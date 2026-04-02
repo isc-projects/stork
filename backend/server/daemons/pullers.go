@@ -12,4 +12,5 @@ type Pullers struct {
 	KeaStatsPuller   *kea.StatsPuller
 	KeaHostsPuller   *kea.HostsPuller
 	HAStatusPuller   *kea.HAStatusPuller
+	LeasesPuller     *kea.LeasesPuller
 }

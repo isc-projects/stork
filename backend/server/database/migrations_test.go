@@ -864,6 +864,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, settings, 10)
 
+	// TODO: does kea_leases_puller_interval need to be in here?  It seems like it should be, but this test doesn't call InitializeSettings to add it.
 	expectSettings := map[string]any{
 		"kea_status_puller_interval":      int64(30),
 		"grafana_url":                     "",
