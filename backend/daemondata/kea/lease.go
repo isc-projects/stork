@@ -31,7 +31,7 @@ type Lease struct {
 	IPAddress         string           `json:"ip-address,omitempty"`
 	Type              string           `json:"type,omitempty"`
 	CLTT              uint64           `json:"cltt,omitempty"`
-	State             int              `json:"state,omitempty"`
+	State             int              `json:"state,omitempty" pg:",use_zero"`
 	UserContext       map[string]any   `json:"user-context,omitempty"`
 	ValidLifetime     uint32           `json:"valid-lft,omitempty"`
 	IAID              uint32           `json:"iaid,omitempty"`
