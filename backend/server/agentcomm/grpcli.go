@@ -1299,9 +1299,8 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 // Kea daemon's leases. The response is streamed back to the server one lease at
 // a time. The response does not include the full history of lease updates; only
 // a point-in-time view of what was current at the time of the request.
-func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon
-ControlledDaemon, minCLTT uint64) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp,
-error] {
+func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon ControlledDaemon, minCLTT uint64) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp,
+	error] {
 	return func(yield func(*agentapi.ReceiveKeaLeasesRsp, error) bool) {
 		request := &agentapi.ReceiveKeaLeasesReq{
 			MinCLTT: &minCLTT,

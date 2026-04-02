@@ -408,7 +408,13 @@ namespace :unittest do
                     'backend/testutil',
 
                     # Skip hook boilerplate,
-                    'backend/hooksutil/boilerplate'
+                    'backend/hooksutil/boilerplate',
+
+                    # william: The fetch part of Lease Tracking requires so much set-up and touches so many parts of Stork that it's not feasible to unit test. I will write a system test for it once the front-end API exists and can be used in a system test.
+                    'backend/server/daemons/kea/leasespuller.go:NewLeasesPuller',
+                    'backend/server/daemons/kea/leasespuller.go:Shutdown',
+                    'backend/server/daemons/kea/leasespuller.go:pullLeases',
+                    'backend/server/daemons/kea/leasespuller.go:getLeasesFromDaemon',
                 ]
 
                 unused_ignore_rules = ignore_list.dup
