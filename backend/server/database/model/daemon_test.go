@@ -115,7 +115,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.Equal(t, daemonname.DHCPv6, updatedDaemon.Name)
 	require.False(t, updatedDaemon.Active)
 	require.Equal(t, "2.0.0", updatedDaemon.Version)
-	require.Equal(t, "server-tag", updatedDaemon.ServerTag)
+	require.Equal(t, "server-tag", updatedDaemon.KeaDaemon.ServerTag)
 	require.Len(t, updatedDaemon.LogTargets, 1)
 	require.NotNil(t, updatedDaemon.KeaDaemon)
 	require.NotNil(t, updatedDaemon.KeaDaemon.Config)
@@ -156,7 +156,7 @@ func TestUpdateKeaDHCPDaemonWithoutServerTag(t *testing.T) {
 	// Assert
 	updated, err := GetDaemonByID(db, daemon.ID)
 	require.NoError(t, err)
-	require.Empty(t, updated.ServerTag)
+	require.Empty(t, updated.KeaDaemon.ServerTag)
 }
 
 // Test that Bind9 daemon is properly updated.
@@ -395,7 +395,7 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotNil(t, dmn.Machine)
 	require.Len(t, dmn.AccessPoints, 1)
 	require.Len(t, dmn.LogTargets, 1)
-	require.Equal(t, "server-tag", dmn.ServerTag)
+	require.Equal(t, "server-tag", dmn.KeaDaemon.ServerTag)
 }
 
 // Test getting multiple Kea daemons by IDs.
@@ -947,7 +947,7 @@ func TestSetKeaConfigServerTagReset(t *testing.T) {
 		AgentPort: 8080,
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
-	daemon.ServerTag = "old tag"
+	daemon.KeaDaemon.ServerTag = "old tag"
 
 	// Act
 	err := daemon.SetKeaConfigFromJSON([]byte(`{
@@ -956,7 +956,7 @@ func TestSetKeaConfigServerTagReset(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Empty(t, daemon.ServerTag)
+	require.Empty(t, daemon.KeaDaemon.ServerTag)
 }
 
 // Test that an empty server tag in the configuration results in an empty
@@ -979,7 +979,7 @@ func TestSetKeaConfigServerTagEmpty(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Empty(t, daemon.ServerTag)
+	require.Empty(t, daemon.KeaDaemon.ServerTag)
 }
 
 // Test that shallow copy of a Kea daemon can be created.

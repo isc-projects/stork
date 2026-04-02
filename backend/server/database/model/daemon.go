@@ -59,6 +59,7 @@ type KeaDaemon struct {
 	Config     *KeaConfig `pg:",use_zero"`
 	ConfigHash string
 	DaemonID   int64
+	ServerTag  string `pg:",use_zero"`
 
 	KeaDHCPDaemon *KeaDHCPDaemon `pg:"rel:belongs-to"`
 }
@@ -114,7 +115,6 @@ type Daemon struct {
 	Uptime          int64
 	CreatedAt       time.Time
 	ReloadedAt      time.Time
-	ServerTag       string `pg:",use_zero"`
 
 	MachineID int64
 	Machine   *Machine `pg:"rel:has-one"`
@@ -964,9 +964,9 @@ func (d *Daemon) setKeaConfigWithHash(config *keaconfig.Config, configHash strin
 			}
 		}
 		if serverTag := config.GetServerTag(); serverTag != nil {
-			d.ServerTag = *serverTag
+			d.KeaDaemon.ServerTag = *serverTag
 		} else {
-			d.ServerTag = ""
+			d.KeaDaemon.ServerTag = ""
 		}
 		d.KeaDaemon.Config = newKeaConfig(config)
 		d.KeaDaemon.ConfigHash = configHash
