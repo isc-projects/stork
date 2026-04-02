@@ -694,6 +694,12 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	require.Equal(t, "agent-bind9-2", machines[7].Address)
 	require.Equal(t, "agent-bind9", machines[8].Address)
 
+	for m := range machines {
+		sort.Slice(machines[m].Daemons, func(i, j int) bool {
+			return machines[m].Daemons[i].Name < machines[m].Daemons[j].Name
+		})
+	}
+
 	// Daemons.
 	daemons, err := dbmodel.GetAllDaemons(db)
 	require.NoError(t, err)
@@ -722,38 +728,8 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	}, *machines[0].Daemons[1].AccessPoints[0])
 
 	require.Len(t, machines[4].Daemons, 4)
-	require.Equal(t, daemonname.DHCPv6, machines[4].Daemons[0].Name)
-	require.False(t, machines[4].Daemons[0].Active)
-	require.Len(t, machines[4].Daemons[0].AccessPoints, 1)
-	require.Equal(t, dbmodel.AccessPoint{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "127.0.0.1",
-		Port:     8001,
-		Protocol: protocoltype.HTTP,
-		DaemonID: machines[4].Daemons[0].ID,
-	}, *machines[4].Daemons[0].AccessPoints[0])
-	require.Equal(t, daemonname.CA, machines[4].Daemons[1].Name)
-	require.True(t, machines[4].Daemons[1].Active)
-	require.Len(t, machines[4].Daemons[1].AccessPoints, 1)
-	require.Equal(t, dbmodel.AccessPoint{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "127.0.0.1",
-		Port:     8001,
-		Protocol: protocoltype.HTTP,
-		DaemonID: machines[4].Daemons[1].ID,
-	}, *machines[4].Daemons[1].AccessPoints[0])
-	require.Equal(t, daemonname.D2, machines[4].Daemons[2].Name)
-	require.False(t, machines[4].Daemons[2].Active)
-	require.Len(t, machines[4].Daemons[2].AccessPoints, 1)
-	require.Equal(t, dbmodel.AccessPoint{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "127.0.0.1",
-		Port:     8001,
-		Protocol: protocoltype.HTTP,
-		DaemonID: machines[4].Daemons[2].ID,
-	}, *machines[4].Daemons[2].AccessPoints[0])
-	require.Equal(t, daemonname.DHCPv4, machines[4].Daemons[3].Name)
-	require.True(t, machines[4].Daemons[3].Active)
+	require.Equal(t, daemonname.DHCPv6, machines[4].Daemons[3].Name)
+	require.False(t, machines[4].Daemons[3].Active)
 	require.Len(t, machines[4].Daemons[3].AccessPoints, 1)
 	require.Equal(t, dbmodel.AccessPoint{
 		Type:     dbmodel.AccessPointControl,
@@ -762,6 +738,36 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		Protocol: protocoltype.HTTP,
 		DaemonID: machines[4].Daemons[3].ID,
 	}, *machines[4].Daemons[3].AccessPoints[0])
+	require.Equal(t, daemonname.CA, machines[4].Daemons[0].Name)
+	require.True(t, machines[4].Daemons[0].Active)
+	require.Len(t, machines[4].Daemons[0].AccessPoints, 1)
+	require.Equal(t, dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     8001,
+		Protocol: protocoltype.HTTP,
+		DaemonID: machines[4].Daemons[0].ID,
+	}, *machines[4].Daemons[0].AccessPoints[0])
+	require.Equal(t, daemonname.D2, machines[4].Daemons[1].Name)
+	require.False(t, machines[4].Daemons[1].Active)
+	require.Len(t, machines[4].Daemons[1].AccessPoints, 1)
+	require.Equal(t, dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     8001,
+		Protocol: protocoltype.HTTP,
+		DaemonID: machines[4].Daemons[1].ID,
+	}, *machines[4].Daemons[1].AccessPoints[0])
+	require.Equal(t, daemonname.DHCPv4, machines[4].Daemons[2].Name)
+	require.True(t, machines[4].Daemons[2].Active)
+	require.Len(t, machines[4].Daemons[2].AccessPoints, 1)
+	require.Equal(t, dbmodel.AccessPoint{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "127.0.0.1",
+		Port:     8001,
+		Protocol: protocoltype.HTTP,
+		DaemonID: machines[4].Daemons[2].ID,
+	}, *machines[4].Daemons[2].AccessPoints[0])
 
 	require.Len(t, machines[8].Daemons, 1)
 	require.Equal(t, daemonname.Bind9, machines[8].Daemons[0].Name)
@@ -824,16 +830,16 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	require.Equal(t, []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x01}, identifier.Value)
 	require.Len(t, host.LocalHosts, 4)
 
-	require.Equal(t, machines[4].Daemons[3].ID, host.LocalHosts[0].DaemonID)
+	require.Equal(t, machines[4].Daemons[2].ID, host.LocalHosts[0].DaemonID)
 	require.Equal(t, dbmodel.HostDataSourceConfig, host.LocalHosts[0].DataSource)
 	require.Equal(t, "192.110.111.230/32", host.LocalHosts[0].IPReservations[0].Address)
-	require.Equal(t, machines[1].Daemons[1].ID, host.LocalHosts[1].DaemonID)
+	require.Equal(t, machines[1].Daemons[2].ID, host.LocalHosts[1].DaemonID)
 	require.Equal(t, dbmodel.HostDataSourceAPI, host.LocalHosts[1].DataSource)
 	require.Equal(t, "192.110.111.230/32", host.LocalHosts[1].IPReservations[0].Address)
 	require.Equal(t, machines[2].Daemons[2].ID, host.LocalHosts[2].DaemonID)
 	require.Equal(t, dbmodel.HostDataSourceAPI, host.LocalHosts[1].DataSource)
 	require.Equal(t, "192.110.111.230/32", host.LocalHosts[1].IPReservations[0].Address)
-	require.Equal(t, machines[4].Daemons[3].ID, host.LocalHosts[3].DaemonID)
+	require.Equal(t, machines[4].Daemons[2].ID, host.LocalHosts[3].DaemonID)
 	require.Equal(t, dbmodel.HostDataSourceAPI, host.LocalHosts[3].DataSource)
 	require.Equal(t, "192.110.111.230/32", host.LocalHosts[3].IPReservations[0].Address)
 
