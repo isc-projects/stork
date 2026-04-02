@@ -8,6 +8,15 @@ func init() {
 			-- Add a new column to store the server tag from the Kea config.
 			ALTER TABLE public.kea_daemon
 				ADD COLUMN server_tag TEXT NOT NULL DEFAULT '';
+
+			-- Backfill server_tag from the config.
+			UPDATE public.kea_daemon
+				SET server_tag = COALESCE(
+					config->'Dhcp4'->>'server-tag',
+					config->'Dhcp6'->>'server-tag',
+					''
+				)
+				WHERE config IS NOT NULL;
 		`)
 		return err
 	}, func(db migrations.DB) error {

@@ -938,3 +938,55 @@ func TestMigration71DropAppsWithNoDaemons(t *testing.T) {
 	_, _, err = dbops.Migrate(db, "down", "70")
 	require.NoError(t, err)
 }
+
+// Test that migration 72 backfills server_tag from the existing config JSON.
+func TestMigration72BackfillServerTag(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, nil)
+	err = daemon4.SetKeaConfigFromJSON([]byte(`{"Dhcp4": {"server-tag": "foo"}}`))
+	require.NoError(t, err)
+	require.NotEmpty(t, daemon4.KeaDaemon.ServerTag)
+	err = dbmodel.AddDaemon(db, daemon4)
+	require.NoError(t, err)
+
+	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, nil)
+	err = daemon6.SetKeaConfigFromJSON([]byte(`{"Dhcp6": {"server-tag": "bar"}}`))
+	require.NoError(t, err)
+	require.NotEmpty(t, daemon6.KeaDaemon.ServerTag)
+	err = dbmodel.AddDaemon(db, daemon6)
+	require.NoError(t, err)
+
+	daemonNoConfig := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, nil)
+	err = dbmodel.AddDaemon(db, daemonNoConfig)
+	require.NoError(t, err)
+
+	daemonCA := dbmodel.NewDaemon(machine, daemonname.CA, true, nil)
+	err = daemonCA.SetKeaConfigFromJSON([]byte(`{"Control-agent": {}}`))
+	require.NoError(t, err)
+	err = dbmodel.AddDaemon(db, daemonCA)
+	require.NoError(t, err)
+
+	_, _, err = dbops.Migrate(db, "down", "71")
+	require.NoError(t, err)
+
+	// Act
+	_, _, err = dbops.Migrate(db, "up")
+	require.NoError(t, err)
+
+	// Assert
+	daemons, err := dbmodel.GetAllDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 4)
+
+	require.Equal(t, "foo", daemons[0].KeaDaemon.ServerTag)
+	require.Equal(t, "bar", daemons[1].KeaDaemon.ServerTag)
+	require.Empty(t, daemons[2].KeaDaemon.ServerTag)
+	require.Empty(t, daemons[3].KeaDaemon.ServerTag)
+}
