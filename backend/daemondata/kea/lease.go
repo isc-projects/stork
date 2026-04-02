@@ -5,23 +5,20 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Constants representing various lease states in Kea. A valid
-// (non-expired) lease is in the default state. A lease for
-// which a client detected that it is used by another client
-// and sent the DHCP decline message is in the declined state.
-// A lease for which valid lifetime elapsed and the Kea server
-// detected that the lease is expired can be removed from the
-// database or left in the expired-reclaimed state. Keeping the
-// lease in the expired-reclaimed state increases chances that
-// the returning client will be allocated the same lease.
-// However, such lease can be allocated to any client requesting
-// it. Other states can be added in the future in Kea. In such
-// case this constants list should be extended.
+// Constants representing various lease states in Kea.  Other states can be
+// added in the future in Kea. In such case this constants list should be
+// updated to include the new states.
 const (
-	LeaseStateDefault          = 0
-	LeaseStateDeclined         = 1
+	// A valid (non-expired) lease.
+	LeaseStateDefault = 0
+	// A lease where a client sent a decline message because it detected another client using the address already.
+	LeaseStateDeclined = 1
+	// A lease where the valid lifetime has elapsed, but which is retained so that if the same client returns, they can get the same address.
 	LeaseStateExpiredReclaimed = 2
-	LeaseStateReleased         = 3
+	// A lease where a client sent a release message, but which is retained so that if they ask again, they can get the same address.
+	LeaseStateReleased = 3
+	// A lease where the client made up their own IP address and has notified the DHCP server which address they picked.  (Only supported by DHCPv6.)
+	LeaseStateRegistered = 4
 )
 
 // Represents a DHCP lease fetched from Kea.
