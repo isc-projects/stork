@@ -133,6 +133,7 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
       STORK_AGENT_PORT: "8888"
+      STORK_AGENT_ENABLE_LEASE_TRACKING: "true"
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -236,6 +237,7 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea6
       STORK_AGENT_PORT: "8887"
+      STORK_AGENT_ENABLE_LEASE_TRACKING: "true"
     volumes:
       - ./docker/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
@@ -281,6 +283,7 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha1
       STORK_AGENT_PORT: "8886"
+      STORK_AGENT_ENABLE_LEASE_TRACKING: "true"
     volumes:
       - ./docker/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -330,6 +333,7 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha2
       STORK_AGENT_PORT: "8885"
+      STORK_AGENT_ENABLE_LEASE_TRACKING: "true"
     volumes:
       - ./docker/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -382,6 +386,7 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha3
       STORK_AGENT_PORT: "8890"
+      STORK_AGENT_ENABLE_LEASE_TRACKING: "true"
     volumes:
       - ./docker/config/agent-kea-ha3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-ha3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -420,6 +425,7 @@ services:
       STORK_AGENT_HOST: agent-kea-large
       STORK_AGENT_PORT: "8884"
       STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
+      STORK_AGENT_ENABLE_LEASE_TRACKING: "true"
     volumes:
       - ./docker/config/agent-kea-large:/etc/kea
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf

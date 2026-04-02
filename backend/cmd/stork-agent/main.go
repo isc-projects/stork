@@ -131,8 +131,7 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 		daemonMonitor,
 		bind9StatsClient,
 		hookManager,
-		// settings.EnableLeaseTracking,
-		false,
+		settings.EnableLeaseTracking,
 		settings.LeaseTrackingMaxUpdateCount,
 	)
 
@@ -347,9 +346,8 @@ type generalSettings struct {
 	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory; if relative, it is resolved against the stork-agent executable directory" default:"../lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`
 	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is uncommon. See stork-agent(8) for a list of locations where Stork can automatically find BIND 9 configs." env:"STORK_AGENT_BIND9_CONFIG"`
 	PowerDNSPath                        string `long:"powerdns-path" description:"Specify the path to PowerDNS config file. Does not need to be specified, unless the location is uncommon. See stork-agent(8) for a list of locations where Stork can automatically find PowerDNS configs." env:"STORK_AGENT_POWERDNS_CONFIG"`
-	// EnableLeaseTracking                 bool   `long:"enable-lease-tracking" description:"Enable the agent to watch the Kea lease memfile and send lease change updates to the Stork Server. This feature is unfinished and may fill your RAM." env:"STORK_AGENT_ENABLE_LEASE_TRACKING"`
-	LeaseTrackingMaxUpdateCount int `long:"lease-tracking-max-update-count" description:"This is the maximum number of lease updates that will be stored in the agent's memory per monitored Kea daemon. If there is only one lease known to Kea, but that client acquires it and then renews it 5 times, that is 6 lease updates. The default is about 15 MB of RAM (100,000 updates)." default:"100000" env:"STORK_AGENT_LEASE_TRACKING_MAX_UPDATE_COUNT"`
-
+	EnableLeaseTracking                 bool   `long:"enable-lease-tracking" description:"Enable the agent to watch the Kea lease memfile and send lease change updates to the Stork Server. This feature is unfinished and may fill your RAM." env:"STORK_AGENT_ENABLE_LEASE_TRACKING"`
+	LeaseTrackingMaxUpdateCount         int    `long:"lease-tracking-max-update-count" description:"This is the maximum number of lease updates that will be stored in the agent's memory per monitored Kea daemon. If there is only one lease known to Kea, but that client acquires it and then renews it 5 times, that is 6 lease updates. The default is about 15 MB of RAM (100,000 updates)." default:"100000" env:"STORK_AGENT_LEASE_TRACKING_MAX_UPDATE_COUNT"`
 	// XFR tracking settings.
 	EnableXFRTracking      bool   `long:"enable-xfr-tracking" description:"Enable the agent to track zone transfers initiated by BIND 9." env:"STORK_AGENT_ENABLE_XFR_TRACKING"`
 	XFRInTrackingPath      string `long:"xfr-in-tracking-path" description:"Specify the path to the BIND 9 log file where incoming zone transfers are logged. This option is mutually exclusive with the xfr-tracking-systemd-unit option. If both are specified, the xfr-in-tracking-path option takes precedence." env:"STORK_AGENT_XFR_IN_TRACKING_PATH"`
