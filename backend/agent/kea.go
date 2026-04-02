@@ -671,7 +671,11 @@ func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconf
 
 // Get a snapshot of all current leases known for this daemon.
 func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
-	return d.snooper.GetSnapshot()
+	if d.snooper != nil {
+		return d.snooper.GetSnapshot()
+	}
+	log.Info("lease snapshot requested, but there's no snooper")
+	return []*keadata.Lease{}
 }
 
 // Called once before the daemon is removed.
