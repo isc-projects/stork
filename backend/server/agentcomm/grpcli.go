@@ -1294,3 +1294,52 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 		}
 	}
 }
+
+// Make a request to the agent to request a snapshot of the current state of the
+// Kea daemon's leases. The response is streamed back to the server one lease at
+// a time. The response does not include the full history of lease updates; only
+// a point-in-time view of what was current at the time of the request.
+func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon
+ControlledDaemon, minCLTT uint64) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp,
+error] {
+	return func(yield func(*agentapi.ReceiveKeaLeasesRsp, error) bool) {
+		request := &agentapi.ReceiveKeaLeasesReq{
+			MinCLTT: &minCLTT,
+		}
+
+		// Get the agent's state. It holds the connection with the agent.
+		agentAddressPort := net.JoinHostPort(daemon.GetMachineTag().GetAddress(), strconv.FormatInt(daemon.GetMachineTag().GetAgentPort(), 10))
+		agent, err := agents.getConnectedAgent(agentAddressPort)
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
+		var stream grpc.ServerStreamingClient[agentapi.ReceiveKeaLeasesRsp]
+		if stream, err = agent.connector.createClient().ReceiveKeaLeases(ctx, request); err != nil {
+			if err = agent.connector.connect(); err == nil {
+				stream, err = agent.connector.createClient().ReceiveKeaLeases(ctx, request)
+				err = errors.WithStack(err)
+			}
+		}
+		if err != nil {
+			_ = yield(nil, errors.WithMessage(err, "failed to open gRPC connection for receiving Kea leases from the agent"))
+			return
+		}
+		for {
+			// Receive the Kea leases from the agent.
+			response, err := stream.Recv()
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					// Report the error excluding the EOF which is just the end of the stream.
+					_ = yield(nil, errors.Wrap(err, "failed to receive Kea leases from the agent"))
+				}
+				return
+			}
+			if !yield(response, nil) {
+				// Stop if the caller no longer iterates over the configuration lines.
+				return
+			}
+		}
+	}
+}

@@ -2709,6 +2709,177 @@ func TestReceiveBind9FormattedConfigErrorResponse(t *testing.T) {
 	require.Nil(t, rsp)
 }
 
+// Verify that ReceiveKeaLeases propagates returned gRPC errors to its caller
+// correctly.
+func TestReceiveKeaLeasesGRPCError(t *testing.T) {
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Mock the gRPC client returning an error.
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// Return an error when trying to open the stream.
+	mockAgentClient.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, &testError{})
+
+	// Try to collect leases from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveKeaLeases(context.Background(), daemon, 0))
+	defer cancel()
+
+	// The error should be propagated.
+	rsp, err, ok := next()
+	require.True(t, ok)
+	require.ErrorContains(t, err, "failed to open gRPC connection for receiving Kea leases from the agent: test error")
+	require.Nil(t, rsp)
+}
+
+// Verify that ReceiveKeaLeases propagates a gRPC protocol error to its caller
+// correctly.
+func TestReceiveKeaLeasesStreamReturnsError(t *testing.T) {
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Mock the gRPC client returning an error.
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveKeaLeasesRsp](ctrl)
+	mockStreamingClient.EXPECT().Recv().Return(nil, &testError{})
+
+	// Return the mocked client when ReceiveKeaLeases() called.
+	mockAgentClient.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
+
+	// Collect the chunks from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveKeaLeases(context.Background(), daemon, 0))
+	defer cancel()
+
+	// The error should be propagated.
+	rsp, err, ok := next()
+	require.True(t, ok)
+	require.ErrorContains(t, err, "failed to receive Kea leases from the agent: test error")
+	require.Nil(t, rsp)
+}
+
+// Test the happy path for ReceiveKeaLeases, where it should receive the leases
+// sent by the mocked agent.
+func TestReceivesKeaLeasesReceivesLeases(t *testing.T) {
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Mock the gRPC client receiving two leases.
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveKeaLeasesRsp](ctrl)
+
+	// Lease one.
+	mockStreamingClient.EXPECT().Recv().Return(
+		&agentapi.ReceiveKeaLeasesRsp{
+			Lease: &agentapi.Lease{
+				IpVersion:     6,
+				IpAddress:     "fe80::67",
+				Duid:          "000000000000112233445566ee",
+				Cltt:          9001,
+				ValidLifetime: 86400,
+				SubnetID:      3,
+				State:         2,
+				PrefixLen:     128,
+			},
+		},
+		nil,
+	)
+	// Lease two.
+	mockStreamingClient.EXPECT().Recv().Return(
+		&agentapi.ReceiveKeaLeasesRsp{
+			Lease: &agentapi.Lease{
+				IpVersion:     6,
+				IpAddress:     "fe80::68",
+				Duid:          "000000000000112233445566ef",
+				Cltt:          9007,
+				ValidLifetime: 86400,
+				SubnetID:      3,
+				State:         2,
+				PrefixLen:     128,
+			},
+		},
+		nil,
+	)
+
+	// End of stream.
+	mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF)
+
+	mockAgentClient.
+		EXPECT().
+		ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(
+			func(ctx context.Context, req *agentapi.ReceiveKeaLeasesReq, opts ...any) (grpc.ServerStreamingClient[agentapi.ReceiveKeaLeasesRsp], error) {
+				require.NotNil(t, req)
+				require.NotNil(t, req.MinCLTT)
+				require.Equal(t, uint64(0), *req.MinCLTT)
+				return mockStreamingClient, nil
+			},
+		)
+
+	// Collect the leases from the stream.
+	next, cancel := iter.Pull2(agents.ReceiveKeaLeases(context.Background(), daemon, 0))
+	defer cancel()
+
+	// Verify lease one.
+	rsp, err, ok := next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Lease)
+	require.NotNil(t, rsp.Lease.IpAddress)
+	require.Equal(t, rsp.Lease.IpAddress, "fe80::67")
+
+	// Verify lease two.
+	rsp, err, ok = next()
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.NotNil(t, rsp.Lease)
+	require.NotNil(t, rsp.Lease.IpAddress)
+	require.Equal(t, rsp.Lease.IpAddress, "fe80::68")
+
+	// The stream should be exhausted.
+	rsp, err, ok = next()
+	require.False(t, ok)
+	require.NoError(t, err)
+	require.Nil(t, rsp)
+}
+
 // Test that the daemon always return the zero ID.
 func TestDaemonGetID(t *testing.T) {
 	daemon := Daemon{}

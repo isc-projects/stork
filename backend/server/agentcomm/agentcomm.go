@@ -47,6 +47,7 @@ type ConnectedAgents interface {
 	ReceiveZones(ctx context.Context, daemon ControlledDaemon, filter *dnsmodel.ZoneFilter, forcePopulate bool) iter.Seq2[*dnsmodel.ExtendedZone, error]
 	ReceiveZoneRRs(ctx context.Context, daemon ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsmodel.RR, error]
 	ReceiveBind9FormattedConfig(ctx context.Context, daemon ControlledDaemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error]
+	ReceiveKeaLeases(ctx context.Context, daemon ControlledDaemon, minCLTT uint64) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp, error]
 }
 
 // Interface representing a connector to a selected agent over gRPC.

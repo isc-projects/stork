@@ -259,3 +259,13 @@ func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, daemon agentcomm.Contr
 func (fa *FakeAgents) ReceiveBind9FormattedConfig(ctx context.Context, daemon agentcomm.ControlledDaemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error] {
 	return nil
 }
+
+// Stub function for ReceiveKeaLeases in the interface. The tests do not use
+// this method in the interface, so it does not need an implementation.
+func (fa *FakeAgents) ReceiveKeaLeases(
+	ctx context.Context,
+	daemon agentcomm.ControlledDaemon,
+	minCLTT uint64,
+) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp, error] {
+	return nil
+}
