@@ -44,14 +44,21 @@ func TestFileServerMiddleware(t *testing.T) {
 
 	handler := fileServerMiddleware(apiHandler, staticRoot)
 
+	requireIsIndex := func(resp *http.Response) {
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.EqualValues(t, http.StatusOK, resp.StatusCode)
+		require.False(t, apiRequestReceived)
+		require.Equal(t, "index", string(body))
+	}
+
 	t.Run("request non-existing static file", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "http://localhost/abc", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
-		resp.Body.Close()
-		require.EqualValues(t, http.StatusNotFound, resp.StatusCode)
-		require.False(t, apiRequestReceived)
+		defer resp.Body.Close()
+		requireIsIndex(resp)
 	})
 
 	t.Run("request existing static file", func(t *testing.T) {
@@ -94,12 +101,8 @@ func TestFileServerMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		require.NoError(t, err)
-		require.EqualValues(t, http.StatusOK, resp.StatusCode)
-		require.False(t, apiRequestReceived)
-		require.Equal(t, "index", string(body))
+		defer resp.Body.Close()
+		requireIsIndex(resp)
 	})
 
 	t.Run("request a directory inside the static files directory", func(t *testing.T) {
@@ -107,9 +110,8 @@ func TestFileServerMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
-		resp.Body.Close()
-		require.EqualValues(t, http.StatusNoContent, resp.StatusCode)
-		require.False(t, apiRequestReceived)
+		defer resp.Body.Close()
+		requireIsIndex(resp)
 	})
 
 	t.Run("request a file outside of the static files directory using path traversal", func(t *testing.T) {
@@ -566,8 +568,8 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("non-existing/../file")
 
 		// Assert
-		require.Equal(t, http.StatusNotFound, status)
-		require.Equal(t, "Not found", content)
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, "index", content)
 		require.NoError(t, err)
 	})
 
@@ -586,8 +588,8 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("foobar")
 
 		// Assert
-		require.Equal(t, http.StatusNotFound, status)
-		require.Equal(t, "Not found", content)
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, "index", content)
 		require.NoError(t, err)
 	})
 
@@ -626,8 +628,8 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 		content, status, err := requestFileContent("public/directory/../foobar")
 
 		// Assert
-		require.Equal(t, "Not found", content)
-		require.Equal(t, http.StatusNotFound, status)
+		require.Equal(t, "index", content)
+		require.Equal(t, http.StatusOK, status)
 		require.NoError(t, err)
 	})
 

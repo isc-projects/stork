@@ -151,9 +151,19 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 				if strings.HasPrefix(resourcePath, "assets/static-page-content") {
 					w.WriteHeader(http.StatusNoContent)
 				} else {
-					// If file does not exist then return not found status.
-					w.WriteHeader(http.StatusNotFound)
-					fmt.Fprint(w, "Not found")
+					// Modify the request URL to point to index.html. The
+					// http.ServerFile validates not only the provided path but
+					// also the r.URL.Path, so we need to modify it to prevent
+					// the file server from returning an error if the path
+					// contains path traversal characters.
+					// Note that we cannot set the r.URL.Path to "index.html"
+					// because the http.ServerFile handles this path
+					// differently and generate HTTP 301 Moved Permanently
+					// response instead of serving the file.
+					r.URL.Path = path.Clean(r.URL.Path)
+
+					// If file does not exist then return content of index.html.
+					http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
 				}
 			case err != nil:
 				// If there is an error other than file not existing, return
@@ -162,8 +172,9 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprint(w, "Bad request")
 			case stat.IsDir():
-				// If the path is a directory, return NoContent status code.
-				w.WriteHeader(http.StatusNoContent)
+				r.URL.Path = path.Clean(r.URL.Path)
+				// If the path is a directory, return content of index.html.
+				http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
 			default:
 				// If file exists then serve it.
 				http.FileServer(http.Dir(staticFilesDir)).ServeHTTP(w, r)
