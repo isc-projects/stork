@@ -283,8 +283,8 @@ func TestFromGRPC(t *testing.T) {
 	}
 
 	// Act
-	actualv4 := LeaseFromGRPC(&v4, 99, 1)
-	actualv6 := LeaseFromGRPC(&v6, 100, 2)
+	actualv4 := NewLeaseFromGRPC(&v4, 99, 1)
+	actualv6 := NewLeaseFromGRPC(&v6, 100, 2)
 
 	// Assert
 	require.Equal(t, &expectedv4, actualv4)
@@ -296,7 +296,7 @@ func TestFromGRPCWithErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("nil input", func(t *testing.T) {
 		t.Parallel()
-		require.Nil(t, LeaseFromGRPC(nil, 1, 1))
+		require.Nil(t, NewLeaseFromGRPC(nil, 1, 1))
 	})
 	t.Run("valid lifetime too big", func(t *testing.T) {
 		t.Parallel()
@@ -310,7 +310,7 @@ func TestFromGRPCWithErrors(t *testing.T) {
 			SubnetID:      10,
 			State:         1,
 		}
-		require.Nil(t, LeaseFromGRPC(&badLft, 1, 1))
+		require.Nil(t, NewLeaseFromGRPC(&badLft, 1, 1))
 	})
 	t.Run("prefix length too long", func(t *testing.T) {
 		t.Parallel()
@@ -325,7 +325,7 @@ func TestFromGRPCWithErrors(t *testing.T) {
 			State:         2,
 			PrefixLen:     9001,
 		}
-		require.Nil(t, LeaseFromGRPC(&badPrefixLen, 1, 1))
+		require.Nil(t, NewLeaseFromGRPC(&badPrefixLen, 1, 1))
 	})
 	t.Run("no IPv5", func(t *testing.T) {
 		t.Parallel()
@@ -340,6 +340,6 @@ func TestFromGRPCWithErrors(t *testing.T) {
 			State:         2,
 			PrefixLen:     128,
 		}
-		require.Nil(t, LeaseFromGRPC(&badIPVersion, 1, 1))
+		require.Nil(t, NewLeaseFromGRPC(&badIPVersion, 1, 1))
 	})
 }

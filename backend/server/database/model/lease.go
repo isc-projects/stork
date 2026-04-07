@@ -71,7 +71,7 @@ func GetLeaseByID(dbi dbops.DBI, leaseID int64) (*Lease, error) {
 }
 
 // Create a model.Lease from the gRPC Lease structure.
-func LeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
+func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 	if grpc == nil {
 		return nil
 	}

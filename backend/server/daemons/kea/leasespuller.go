@@ -249,7 +249,7 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 			default:
 				// Non-error response.
 				// TODO: get real lease ID
-				err := dbmodel.AddLease(tx, dbmodel.LeaseFromGRPC(response.Lease, daemon.ID, 0))
+				err := dbmodel.AddLease(tx, dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, 0))
 				if err != nil {
 					return err
 				}
