@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"fmt"
 	"maps"
 	"slices"
 	"sync"
@@ -132,10 +131,6 @@ func filterDaemons(daemons []dbmodel.Daemon, onlyMemfile bool) []*dbmodel.Daemon
 			continue
 		}
 		selectedDaemons[key] = &daemon
-	}
-
-	for key, value := range selectedDaemons {
-		fmt.Printf("%v: %v\n\n", key, value)
 	}
 
 	return slices.Collect(maps.Values(selectedDaemons))
