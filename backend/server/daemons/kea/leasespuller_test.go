@@ -163,6 +163,36 @@ func sortByID(daemons []*dbmodel.Daemon) []*dbmodel.Daemon {
 	return daemons
 }
 
+// Test a variety of inputs to checkIsLocalhost to ensure that it accurately
+// detects localhost URLs in a variety of normal and edge cases.
+func TestCheckIsLocalhost(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		input    string
+		expected bool
+	}{
+		{"127.0.0.1", true},              // plain IPv4 loopback
+		{"127.0.0.1:5432", true},         // IPv4 loopback with port
+		{"127.0.33.10", true},            // weird IPv4 in loopback subnet
+		{"::1", true},                    // plain IPv6 loopback
+		{"[::1]:80", true},               // IPv6 loopback in brackets with port
+		{"192.168.1.108", false},         // non-loopback IPv4 (private subnet)
+		{"8.8.8.8", false},               // non-loopback IPv4 (public subnet)
+		{"localhost:5432", true},         // localhost hostname with port
+		{"localhost", true},              // localhost hostname without port
+		{"postgres.example:5432", false}, // non-locahost hostname with port
+		{"postgres.example", false},      // non-locahost hostname without port
+		{"localhost.example", false},     // confusing subdomain
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.input, func(t *testing.T) {
+			t.Parallel()
+			result := checkIsLocalhost(testCase.input)
+			require.Equal(t, testCase.expected, result)
+		})
+	}
+}
+
 // Verify that filterDaemons correctly filters out duplicate daemons (pointing
 // to the same database) in a variety of conditions.
 func TestFilterDaemons(t *testing.T) {
@@ -172,6 +202,7 @@ func TestFilterDaemons(t *testing.T) {
 		dbMysql                 = "mysql"
 		dbFoo                   = "foo.example:5432"
 		dbBar                   = "bar.example:3306"
+		dbLocalhostV4           = "127.0.10.33:5432"
 		configuredLeasefilePath = "/opt/kea/lease-dhcp4.csv"
 		// Daemons configured to use a memfile lease DB:
 		memfileDaemonAOnMachine1 = daemonWithLeaseMemfile(
@@ -253,6 +284,22 @@ func TestFilterDaemons(t *testing.T) {
 			),
 			21,
 			20,
+		)
+		// Daemons using SQL databases on loopback addresses:
+		sqlDaemon17OnMachine10UsingLoopbackDB = daemonWithLeaseSQLDB(
+			mockFilterableDaemon(daemonname.DHCPv4, 23, 10),
+			dbPg,
+			dbLocalhostV4,
+		)
+		sqlDaemon18OnMachine11UsingLoopbackDB = daemonWithLeaseSQLDB(
+			mockFilterableDaemon(daemonname.DHCPv4, 24, 11),
+			dbPg,
+			dbLocalhostV4,
+		)
+		sqlDaemon19OnMachine10UsingLoopbackDB = daemonWithLeaseSQLDB(
+			mockFilterableDaemon(daemonname.DHCPv4, 25, 10),
+			dbPg,
+			dbLocalhostV4,
 		)
 		// Non-DHCP daemons:
 		bind9Daemon = mockFilterableDaemon(daemonname.Bind9, 100, 100)
@@ -418,5 +465,33 @@ func TestFilterDaemons(t *testing.T) {
 		require.Len(t, result, 2)
 		require.Equal(t, memfileDaemonAOnMachine1.ID, result[0].ID)
 		require.Equal(t, memfileDaemon12OnMachine6NoPersist.ID, result[1].ID)
+	})
+	t.Run("daemons using SQL lease databases on localhost on different machines are different from each other", func(t *testing.T) {
+		t.Parallel()
+		locahosts := []dbmodel.Daemon{
+			*sqlDaemon17OnMachine10UsingLoopbackDB,
+			*sqlDaemon18OnMachine11UsingLoopbackDB,
+		}
+
+		result := filterDaemons(locahosts, false)
+		result = sortByID(result)
+
+		// Assert
+		require.Len(t, result, 2)
+		require.Equal(t, sqlDaemon17OnMachine10UsingLoopbackDB.ID, result[0].ID)
+		require.Equal(t, sqlDaemon18OnMachine11UsingLoopbackDB.ID, result[1].ID)
+	})
+	t.Run("daemons using SQL lease databases on localhost on the same machine are the same as each other", func(t *testing.T) {
+		t.Parallel()
+		locahosts := []dbmodel.Daemon{
+			*sqlDaemon17OnMachine10UsingLoopbackDB,
+			*sqlDaemon19OnMachine10UsingLoopbackDB,
+		}
+
+		result := filterDaemons(locahosts, false)
+
+		// Assert
+		require.Len(t, result, 1)
+		require.Equal(t, sqlDaemon17OnMachine10UsingLoopbackDB.ID, result[0].ID)
 	})
 }

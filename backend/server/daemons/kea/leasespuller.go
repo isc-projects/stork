@@ -3,7 +3,9 @@ package kea
 import (
 	"context"
 	"maps"
+	"net/netip"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,19 +49,25 @@ func (puller *LeasesPuller) Shutdown() {
 
 // A unique key for identifying Keas that are talking to the same database or writing to the same leasefile.  In order to use this effectively, EITHER:
 //   - set `daemonName`, `machine` and `leasefilePath`, leaving all other fields
-//     at the zero value
+//     at the zero value;
 //   - set `daemonName`, `dbHost`, `dbPort`, and `dbName`, leaving all other
-//     fields at the zero value.
+//     fields at the zero value;
+//   - set `daemonName`, `machine`, `dbHost`, `dbPort`, and `dbName`, leaving
+//     all other fields set at the zero value (only if dbHost is
+//     localhost-like); or
 //   - set `daemonName` and `unique` to a non-zero unique value
 //
 // If two daemons with the same name (dhcpv4, dhcpv6, d2, ca, bind9, pdns) are
 // looking at the same leasefilePath on the same machine, they are using the
 // same lease database. If two daemons with the same name are looking at the
 // same database host, port, and database name, then they are using the same
-// lease database. Changing any one of those values (very likely) means that
-// they are pointed at different databases. `unique` is provided as an escape
-// hatch to deal gracefully with uncommon Kea configurations (persist=false, any
-// future enhancement to add a new lease database type).
+// lease database. (If a database host looks localhost-like, include the machine
+// ID to catch daemons running on different machines both pointed at different
+// RDMBS installations on localhost.) Changing any one of those values (very
+// likely) means that they are pointed at different databases. `unique` is
+// provided as an escape hatch to deal gracefully with uncommon Kea
+// configurations (persist=false, any future enhancement to add a new lease
+// database type).
 //
 // Known edge cases where this fails:
 //   - Using nftables/iptables to redirect two external ports to the same RDBMS
@@ -79,6 +87,23 @@ type leaseDBUniqueKey struct {
 	dbHost        string
 	dbName        string
 	unique        int
+}
+
+// Determine whether the provided host is likely to be localhost, without doing
+// any DNS lookups.
+func checkIsLocalhost(host string) bool {
+	var hostAddr netip.Addr
+	hostAddrPort, err := netip.ParseAddrPort(host)
+	if err != nil {
+		hostAddr, err = netip.ParseAddr(host)
+		if err != nil {
+			lowercase := strings.ToLower(host)
+			return lowercase == "localhost" || strings.HasPrefix(lowercase, "localhost:")
+		}
+	} else {
+		hostAddr = hostAddrPort.Addr()
+	}
+	return hostAddr.IsLoopback()
 }
 
 // Filter a list of daemons down to only daemons which use different databases.
@@ -115,6 +140,9 @@ func filterDaemons(daemons []dbmodel.Daemon, onlyMemfile bool) []*dbmodel.Daemon
 		case databases.Lease.Type == "mysql" || databases.Lease.Type == "postgresql":
 			if onlyMemfile {
 				continue
+			}
+			if checkIsLocalhost(databases.Lease.Host) {
+				key.machine = daemon.MachineID
 			}
 			key.dbHost = databases.Lease.Host
 			key.dbName = databases.Lease.Name
