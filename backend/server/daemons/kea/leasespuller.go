@@ -209,7 +209,7 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 			Where("daemon_id = ?", daemon.ID).
 			Select(&maxCLTT)
 		if err != nil {
-			log.WithError(err).WithField("daemon_id", daemon.ID).Info("Failed to fetch last CLTT from database for daemon")
+			log.WithError(err).WithField("daemon_id", daemon.ID).Error("Failed to fetch last CLTT from database for daemon")
 			maxCLTT = 0
 		}
 		for response, err := range puller.Agents.ReceiveKeaLeases(ctx, daemon, maxCLTT) {
