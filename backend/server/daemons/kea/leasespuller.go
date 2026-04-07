@@ -178,7 +178,6 @@ func (puller *LeasesPuller) pullLeases() error {
 
 	selectedDaemons := filterDaemons(daemons, true)
 	selectedDaemonsCount := len(selectedDaemons)
-	log.Debug("lease: daemons filtered")
 
 	// Get lease records from each daemon.
 	var wg sync.WaitGroup
@@ -187,8 +186,7 @@ func (puller *LeasesPuller) pullLeases() error {
 		wg.Go(func() {
 			err := puller.getLeasesFromDaemon(daemon)
 			if err != nil {
-				log.WithError(err).Warnf("Could not retrieve leases from daemon %d", daemon.ID)
-				errorPipe <- err
+				errorPipe <- errors.Wrapf(err, "could not retrieve leases from daemon %d", daemon.ID)
 			} else {
 				errorPipe <- nil
 			}
@@ -201,14 +199,13 @@ func (puller *LeasesPuller) pullLeases() error {
 	var errors []error
 	daemonsOkCnt := 0
 	for err := range errorPipe {
-		log.Debug("lease: ranging over errorPipe")
 		if err == nil {
 			daemonsOkCnt++
 		} else {
 			errors = append(errors, err)
 		}
 	}
-	log.Debug("lease: loop finished")
+	log.Debug("lease: results processed")
 	elapsed := time.Since(beginTimestamp)
 	log.WithField("successful_daemons", selectedDaemonsCount-len(errors)).
 		WithField("total_daemons", selectedDaemonsCount).
