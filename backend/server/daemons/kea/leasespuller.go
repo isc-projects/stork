@@ -249,7 +249,11 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 			default:
 				// Non-error response.
 				// TODO: get real lease ID
-				err := dbmodel.AddLease(tx, dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, 0))
+				modelLease := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, 0)
+				if modelLease == nil {
+					return errors.New("unable to convert lease from gRPC format to model format; data is missing or invalid")
+				}
+				err := dbmodel.AddLease(tx, modelLease)
 				if err != nil {
 					return err
 				}
