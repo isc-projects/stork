@@ -1295,7 +1295,7 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 	}
 }
 
-// Make a request to the agent to request a snapshot of the current state of the
+// Make a request to the agent to fetch a snapshot of the current state of the
 // Kea daemon's leases. The response is streamed back to the server one lease at
 // a time. The response does not include the full history of lease updates; only
 // a point-in-time view of what was current at the time of the request.

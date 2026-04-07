@@ -27,7 +27,7 @@ type LeasesPuller struct {
 }
 
 // Create a LeasesPuller object that, in the background, pulls lease records
-// from Kea. The retreived records are added to the database.
+// from Kea. The retrieved records are added to the database.
 func NewLeasesPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*LeasesPuller, error) {
 	puller := LeasesPuller{
 		nil,
@@ -133,7 +133,7 @@ func filterDaemons(daemons []dbmodel.Daemon, onlyMemfile bool) []*dbmodel.Daemon
 			daemonName: daemon.Name,
 		}
 		switch {
-		case databases.Lease.Type == "memfile" && ((databases.Lease.Persist != nil && *databases.Lease.Persist) || (databases.Lease.Persist == nil)):
+		case databases.Lease.Type == "memfile" && (databases.Lease.Persist == nil || *databases.Lease.Persist):
 			// TODO: get full memfile path from status-get response
 			key.leasefilePath = databases.Lease.Path
 			key.machine = daemon.MachineID
