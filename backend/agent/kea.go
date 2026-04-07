@@ -674,7 +674,7 @@ func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
 	if d.snooper != nil {
 		return d.snooper.GetSnapshot()
 	}
-	log.Info("lease snapshot requested, but there's no snooper")
+	log.Warn("the Stork server asked for a snapshot of leases, but there is no lease snooper configured for this daemon; this is an application programming error that should be corrected; if you see this message please report it to ISC")
 	return []*keadata.Lease{}
 }
 
