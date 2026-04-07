@@ -654,6 +654,52 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	return subnet6, nil
 }
 
+// Represents an IPv4 subnet wrapped for use with the remote-subnet4-set command
+// of the cb_cmds hook library. It embeds the standard Subnet4 structure and
+// CB-specific fields.
+type RemoteSubnet4 struct {
+	*Subnet4
+	SharedNetworkName string `json:"shared-network-name"`
+}
+
+// Marshals RemoteSubnet4 to JSON by merging the inner Subnet4 JSON with
+// the CB fields.
+func (s RemoteSubnet4) MarshalJSON() ([]byte, error) {
+	inner, err := json.Marshal(s.Subnet4)
+	if err != nil {
+		return nil, err
+	}
+	var merged map[string]any
+	if err := json.Unmarshal(inner, &merged); err != nil {
+		return nil, err
+	}
+	merged["shared-network-name"] = s.SharedNetworkName
+	return json.Marshal(merged)
+}
+
+// Represents an IPv6 subnet wrapped for use with the remote-subnet6-set command
+// of the cb_cmds hook library. It embeds the standard Subnet6 structure and adds
+// the CB-specific fields.
+type RemoteSubnet6 struct {
+	*Subnet6
+	SharedNetworkName string `json:"shared-network-name"`
+}
+
+// Marshals RemoteSubnet6 to JSON by merging the inner Subnet6 JSON with
+// the CB fields.
+func (s RemoteSubnet6) MarshalJSON() ([]byte, error) {
+	inner, err := json.Marshal(s.Subnet6)
+	if err != nil {
+		return nil, err
+	}
+	var merged map[string]any
+	if err := json.Unmarshal(inner, &merged); err != nil {
+		return nil, err
+	}
+	merged["shared-network-name"] = s.SharedNetworkName
+	return json.Marshal(merged)
+}
+
 // Converts a subnet in Stork to a structure accepted by the subnet4-del and
 // subnet6-del commands in Kea.
 func CreateSubnetCmdsDeletedSubnet(daemonID int64, subnet SubnetAccessor) (deletedSubnet *SubnetCmdsDeletedSubnet, err error) {

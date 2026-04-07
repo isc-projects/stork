@@ -35,6 +35,7 @@ type Database struct {
 	Type    string `json:"type"`
 	Name    string `json:"name"`
 	Host    string `json:"host"`
+	Port    int    `json:"port,omitempty"`
 	Persist *bool  `json:"persist,omitempty"`
 }
 

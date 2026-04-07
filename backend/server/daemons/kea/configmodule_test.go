@@ -3758,6 +3758,15 @@ func TestApplySubnetAdd(t *testing.T) {
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetAdd)
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
+	// Kea config with subnet_cmds enabled.
+	subnetCmdsConfig, err := keaconfig.NewConfig([]byte(`{
+		"Dhcp4": {
+			"hooks-libraries": [{"library": "libdhcp_subnet_cmds.so"}]
+		}
+	}`))
+	require.NoError(t, err)
+	keaConfigSubnetCmds := &dbmodel.KeaConfig{Config: subnetCmdsConfig}
+
 	// Simulate creating new subnet entry.
 	subnet := &dbmodel.Subnet{
 		ID:     1,
@@ -3767,6 +3776,9 @@ func TestApplySubnetAdd(t *testing.T) {
 				DaemonID: 1,
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
+					KeaDaemon: &dbmodel.KeaDaemon{
+						Config: keaConfigSubnetCmds,
+					},
 					AccessPoints: []*dbmodel.AccessPoint{
 						{
 							Type:    dbmodel.AccessPointControl,
@@ -3787,6 +3799,9 @@ func TestApplySubnetAdd(t *testing.T) {
 				Daemon: &dbmodel.Daemon{
 					Name:    "dhcp4",
 					Version: "2.5.0",
+					KeaDaemon: &dbmodel.KeaDaemon{
+						Config: keaConfigSubnetCmds,
+					},
 					AccessPoints: []*dbmodel.AccessPoint{
 						{
 							Type:    dbmodel.AccessPointControl,
@@ -3804,7 +3819,7 @@ func TestApplySubnetAdd(t *testing.T) {
 			},
 		},
 	}
-	ctx, err := module.ApplySubnetAdd(ctx, subnet)
+	ctx, err = module.ApplySubnetAdd(ctx, subnet)
 	require.NoError(t, err)
 
 	// Make sure that the transaction state exists and comprises expected data.
@@ -3830,8 +3845,8 @@ func TestApplySubnetAdd(t *testing.T) {
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
 
-		switch {
-		case i < 2:
+		switch i {
+		case 0, 1:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-add",
@@ -3851,24 +3866,71 @@ func TestApplySubnetAdd(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case i < 4:
+		case 2, 3:
 			require.JSONEq(t,
 				`{
 					"command": "config-write",
 					"service": [ "dhcp4" ]
 				}`,
 				string(marshalled))
-		default:
+		case 4:
 			require.JSONEq(t,
 				`{
 					"command": "config-reload",
 					"service": [ "dhcp4" ]
 				}`,
 				string(marshalled))
+		default:
+			require.Fail(t, "Unexpected number of calls")
 		}
 		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
 	}
+}
+
+// Tests applying subnet add when all daemons use the cb_cmds hook.
+// Two daemons sharing the same config backend should produce only one
+// remote-subnet4-set command.
+func TestApplySubnetAddCbCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetAdd)
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	// Both daemons use cb_cmds with the same server tag and config database.
+	// Only one remote-subnet4-set should be sent.
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server", hookCbCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server", hookCbCmds)
+	subnet := newTestSubnet(daemon1, daemon2)
+
+	ctx, err := module.ApplySubnetAdd(ctx, subnet)
+	require.NoError(t, err)
+
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, stateReturned.Updates, 1)
+	commands := stateReturned.Updates[0].Recipe.Commands
+
+	// Only one remote-subnet4-set should be issued.
+	require.Len(t, commands, 1)
+	marshalled, err := commands[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-set",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"id": 1, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"server-tags": ["server"]
+		}
+	}`, string(marshalled))
 }
 
 // Test committing created subnet, i.e. actually sending control commands to Kea.
@@ -3891,6 +3953,11 @@ func TestCommitSubnetAdd(t *testing.T) {
 			"shared-networks": [
 				{
 					"name": "foo"
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
 				}
 			]
 		}
@@ -3969,19 +4036,24 @@ func TestCommitSubnetAdd(t *testing.T) {
 	require.Len(t, agents.RecordedURLs, 6)
 	require.Len(t, agents.RecordedCommands, 6)
 
+	// Expected commands:
+	// daemon1: subnet4-add(0), network4-subnet-add(1), config-write(2)
+	// daemon2: subnet4-add(3), network4-subnet-add(4), config-write(5)
 	// The respective commands should be sent to different servers.
-	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
-	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
-	require.NotEqual(t, agents.RecordedURLs[4], agents.RecordedURLs[5])
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[3])
+	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[4])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[5])
 	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
-	require.Equal(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+	require.Equal(t, agents.RecordedURLs[3], agents.RecordedURLs[4])
+	require.Equal(t, agents.RecordedURLs[3], agents.RecordedURLs[5])
 
 	// Validate the sent commands and URLS.
 	for i, command := range agents.RecordedCommands {
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
 		switch i {
-		case 0, 2:
+		case 0, 3:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-add",
@@ -3997,7 +4069,7 @@ func TestCommitSubnetAdd(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case 1, 3:
+		case 1, 4:
 			require.JSONEq(t,
 				`{
 					"command": "network4-subnet-add",

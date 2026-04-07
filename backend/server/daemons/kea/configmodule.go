@@ -1090,67 +1090,36 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	}
 
 	var commands []ConfigCommand
-	// Update the subnet instances.
+	lookup := module.manager.GetDHCPOptionDefinitionLookup()
+	// Validate that every daemon has at least one supported hook library.
 	for _, ls := range subnet.LocalSubnets {
-		if ls.Daemon == nil {
-			return ctx, errors.Errorf("applied subnet %s is associated with nil daemon", subnet.Prefix)
-		}
-		// Convert the updated subnet information to Kea subnet.
-		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		command := ConfigCommand{}
-		switch subnet.GetFamily() {
-		case 4:
-			// Create subnet4-add command.
-			subnet4, err := keaconfig.CreateSubnet4(ls.DaemonID, lookup, subnet)
-			if err != nil {
-				return ctx, err
-			}
-			command.Command = keactrl.NewCommandSubnet4Add(subnet4, ls.Daemon.Name)
-			command.Daemon = ls.Daemon
-			commands = append(commands, command)
-
-			// If the subnet is associated with a shared network, add this association
-			// in Kea.
-			if sharedNetworkNameAfterUpdate != "" {
-				command.Command = keactrl.NewCommandNetwork4SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
-				commands = append(commands, command)
-			}
-		default:
-			// Create subnet6-add command.
-			subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
-			if err != nil {
-				return ctx, err
-			}
-			command.Command = keactrl.NewCommandSubnet6Add(subnet6, ls.Daemon.Name)
-			command.Daemon = ls.Daemon
-			commands = append(commands, command)
-
-			// If the subnet is associated with a new shared network, add this association
-			// in Kea.
-			if sharedNetworkNameAfterUpdate != "" {
-				command.Command = keactrl.NewCommandNetwork6SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
-				commands = append(commands, command)
-			}
+		if _, err = getSubnetHook(ls.Daemon); err != nil {
+			return ctx, err
 		}
 	}
-	// Create the commands to write the updated configuration to files. The subnet
-	// changes won't persist across the servers' restarts otherwise.
-	for _, ls := range subnet.LocalSubnets {
-		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
-		})
-		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
-		// subnet_cmds hook library. Therefore, for these versions we send the config-reload
-		// command to force the statistics update. There is no lighter command to force the
-		// statistics update unfortunately.
-		version := storkutil.ParseSemanticVersionOrLatest(ls.Daemon.Version)
-		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
-			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandBase(keactrl.ConfigReload, ls.Daemon.Name),
-				Daemon:  ls.Daemon,
-			})
+	// Create commands for each unique target: subnet_cmds daemons receive
+	// per-daemon commands; cb_cmds daemons are deduplicated by config-backend.
+	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
+		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, lookup)
+		if err != nil {
+			return err
 		}
+		commands = append(commands, cmds...)
+		return nil
+	}); err != nil {
+		return ctx, err
+	}
+
+	// Make the changes persistent.
+	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
+		cmds, err := createSubnetSaveCommands(ls.Daemon)
+		if err != nil {
+			return err
+		}
+		commands = append(commands, cmds...)
+		return nil
+	}); err != nil {
+		return ctx, err
 	}
 
 	// Store the data in the recipe.

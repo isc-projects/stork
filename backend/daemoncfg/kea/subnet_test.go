@@ -913,3 +913,79 @@ func TestCreateSubnetCmdsDeletedSubnetNoDaemon(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, subnet)
 }
+
+// Tests that RemoteSubnet4.MarshalJSON produces a flat object that contains
+// all subnet4 fields plus the CB-specific fields.
+func TestRemoteSubnet4MarshalJSON(t *testing.T) {
+	remote := keaconfig.RemoteSubnet4{
+		Subnet4: &keaconfig.Subnet4{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     1,
+					Subnet: "192.0.2.0/24",
+				},
+			},
+		},
+		SharedNetworkName: "",
+	}
+	raw, err := json.Marshal(remote)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"id": 1, "subnet": "192.0.2.0/24", "shared-network-name": ""}`, string(raw))
+}
+
+// Tests that RemoteSubnet4.MarshalJSON includes the shared-network-name
+// when the subnet is associated with a shared network.
+func TestRemoteSubnet4MarshalJSONWithSharedNetwork(t *testing.T) {
+	remote := keaconfig.RemoteSubnet4{
+		Subnet4: &keaconfig.Subnet4{
+			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     2,
+					Subnet: "10.0.0.0/8",
+				},
+			},
+		},
+		SharedNetworkName: "mynet",
+	}
+	raw, err := json.Marshal(remote)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"id": 2, "subnet": "10.0.0.0/8", "shared-network-name": "mynet"}`, string(raw))
+}
+
+// Tests that RemoteSubnet6.MarshalJSON produces a flat object with
+// CB-specific fields for an IPv6 subnet.
+func TestRemoteSubnet6MarshalJSON(t *testing.T) {
+	remote := keaconfig.RemoteSubnet6{
+		Subnet6: &keaconfig.Subnet6{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     3,
+					Subnet: "2001:db8:1::/64",
+				},
+			},
+		},
+		SharedNetworkName: "",
+	}
+	raw, err := json.Marshal(remote)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"id": 3, "subnet": "2001:db8:1::/64", "shared-network-name": ""}`, string(raw))
+}
+
+// Tests that RemoteSubnet6.MarshalJSON includes the CB-specific fields
+// when the subnet is associated with a shared network.
+func TestRemoteSubnet6MarshalJSONWithSharedNetwork(t *testing.T) {
+	remote := keaconfig.RemoteSubnet6{
+		Subnet6: &keaconfig.Subnet6{
+			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+					ID:     4,
+					Subnet: "2001:db8:2::/64",
+				},
+			},
+		},
+		SharedNetworkName: "inet6net",
+	}
+	raw, err := json.Marshal(remote)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"id": 4, "subnet": "2001:db8:2::/64", "shared-network-name": "inet6net"}`, string(raw))
+}

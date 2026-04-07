@@ -1493,7 +1493,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 
 	for i, c := range fa.RecordedCommands {
 		switch i {
-		case 0, 2:
+		case 0, 3:
 			require.JSONEq(t,
 				`{
 				"command": "subnet4-add",
@@ -1583,7 +1583,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 				}
 			}`,
 				func() string { data, _ := c.Marshal(); return string(data) }())
-		case 1, 3:
+		case 1, 4:
 			require.JSONEq(t,
 				`{
 						"command": "network4-subnet-add",
