@@ -10,7 +10,7 @@ func init() {
 			`-- Leases table.
              CREATE TABLE IF NOT EXISTS public.lease (
                  id                 BIGSERIAL NOT NULL,
-                 ip_version         SMALLINT NOT NULL,
+                 family             SMALLINT NOT NULL,
                  client_id          BYTEA,
                  hostname           TEXT,
                  hw_address         MACADDR,
@@ -53,7 +53,7 @@ func init() {
              -- Lease updates table.
              CREATE TABLE IF NOT EXISTS public.lease_update (
                  id                 BIGSERIAL NOT NULL,
-                 ip_version         SMALLINT NOT NULL,
+                 family             SMALLINT NOT NULL,
                  client_id          BYTEA,
                  hostname           TEXT,
                  hw_address         MACADDR,

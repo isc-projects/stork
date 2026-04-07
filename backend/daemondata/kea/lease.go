@@ -23,7 +23,7 @@ const (
 
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
-	IPVersion         storkutil.IPType `json:"-"`
+	Family            storkutil.IPType `json:"-"`
 	ClientID          string           `json:"client-id,omitempty"`
 	Hostname          string           `json:"hostname,omitempty"`
 	HWAddress         string           `json:"hw-address,omitempty"`
@@ -46,7 +46,7 @@ type Lease struct {
 // DHCPv4 lease.
 func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, subnetID uint32, state int) Lease {
 	return Lease{
-		IPVersion:     storkutil.IPv4,
+		Family:        storkutil.IPv4,
 		IPAddress:     ip,
 		HWAddress:     hwAddress,
 		CLTT:          cltt,
@@ -60,7 +60,7 @@ func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, s
 // DHCPv6 lease.
 func NewLease6(ip string, duid string, cltt uint64, validLifetime uint32, subnetID uint32, state int, prefixLen uint32) Lease {
 	return Lease{
-		IPVersion:     storkutil.IPv6,
+		Family:        storkutil.IPv6,
 		IPAddress:     ip,
 		DUID:          duid,
 		CLTT:          cltt,
@@ -75,7 +75,7 @@ func NewLease6(ip string, duid string, cltt uint64, validLifetime uint32, subnet
 // gRPC API.
 func (lease *Lease) ToGRPC() agentapi.Lease {
 	return agentapi.Lease{
-		IpVersion:     agentapi.Lease_IPVersion(lease.IPVersion),
+		Family:        agentapi.Lease_IPAddrFamily(lease.Family),
 		IpAddress:     lease.IPAddress,
 		HwAddress:     lease.HWAddress,
 		Duid:          lease.DUID,

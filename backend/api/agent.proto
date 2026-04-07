@@ -368,12 +368,12 @@ message ReceiveKeaLeasesRsp {
 }
 
 message Lease {
-  enum IPVersion {
+  enum IPAddrFamily {
     V_UNKNOWN = 0;
     V4 = 4;
     V6 = 6;
   }
-  IPVersion ipVersion = 1;
+  IPAddrFamily family = 1;
   string ipAddress = 2;
   string hwAddress = 3;
   string duid = 4;

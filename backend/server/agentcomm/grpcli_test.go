@@ -2807,7 +2807,7 @@ func TestReceivesKeaLeasesReceivesLeases(t *testing.T) {
 	mockStreamingClient.EXPECT().Recv().Return(
 		&agentapi.ReceiveKeaLeasesRsp{
 			Lease: &agentapi.Lease{
-				IpVersion:     6,
+				Family:        6,
 				IpAddress:     "fe80::67",
 				Duid:          "000000000000112233445566ee",
 				Cltt:          9001,
@@ -2823,7 +2823,7 @@ func TestReceivesKeaLeasesReceivesLeases(t *testing.T) {
 	mockStreamingClient.EXPECT().Recv().Return(
 		&agentapi.ReceiveKeaLeasesRsp{
 			Lease: &agentapi.Lease{
-				IpVersion:     6,
+				Family:        6,
 				IpAddress:     "fe80::68",
 				Duid:          "000000000000112233445566ef",
 				Cltt:          9007,

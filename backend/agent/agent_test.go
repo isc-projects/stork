@@ -3014,7 +3014,7 @@ func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name dae
 		snooper.EXPECT().GetSnapshot().DoAndReturn(func() ([]*keadata.Lease, error) {
 			return []*keadata.Lease{
 				{
-					IPVersion: version,
+					Family: version,
 					IPAddress: addr,
 				},
 			}, nil

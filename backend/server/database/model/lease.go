@@ -81,17 +81,17 @@ func LeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 	if grpc.PrefixLen > math.MaxUint8 {
 		return nil
 	}
-	if grpc.IpVersion != 4 && grpc.IpVersion != 6 {
+	if grpc.Family != 4 && grpc.Family != 6 {
 		return nil
 	}
 	ipv := storkutil.IPv4
-	if grpc.IpVersion == 6 {
+	if grpc.Family == 6 {
 		ipv = storkutil.IPv6
 	}
 	return &Lease{
 		0,
 		keadata.Lease{
-			IPVersion:     ipv,
+			Family:        ipv,
 			IPAddress:     grpc.IpAddress,
 			HWAddress:     grpc.HwAddress,
 			DUID:          grpc.Duid,

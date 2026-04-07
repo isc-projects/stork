@@ -110,7 +110,7 @@ func TestAddLease(t *testing.T) {
 		DaemonID:      daemons[0].ID,
 		StorkSubnetID: subnets[0].ID,
 		Lease: keadata.Lease{
-			IPVersion:     4,
+			Family:        4,
 			HWAddress:     "00:00:00:00:00:01",
 			IPAddress:     "192.0.2.9",
 			CLTT:          9999,
@@ -155,7 +155,7 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 		DaemonID:      daemons[1].ID,
 		StorkSubnetID: subnets[1].ID,
 		Lease: keadata.Lease{
-			IPVersion:     6,
+			Family:        6,
 			DUID:          "0000000000112233445566ff",
 			IPAddress:     "2001:db8:1::67",
 			CLTT:          9999,
@@ -215,7 +215,7 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 		DaemonID:      9001,
 		StorkSubnetID: subnets[0].ID,
 		Lease: keadata.Lease{
-			IPVersion:     4,
+			Family:        4,
 			HWAddress:     "00:00:00:00:00:01",
 			IPAddress:     "192.0.2.11",
 			CLTT:          9999,
@@ -233,7 +233,7 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 func TestFromGRPC(t *testing.T) {
 	// Arrange
 	v4 := agentapi.Lease{
-		IpVersion:     agentapi.Lease_V4,
+		Family:        agentapi.Lease_V4,
 		IpAddress:     "192.168.1.32",
 		HwAddress:     "00:00:00:00:00:00",
 		Expire:        1000,
@@ -243,7 +243,7 @@ func TestFromGRPC(t *testing.T) {
 		State:         1,
 	}
 	v6 := agentapi.Lease{
-		IpVersion:     agentapi.Lease_V6,
+		Family:        agentapi.Lease_V6,
 		IpAddress:     "fd75:9fa5:e76b:0:0:0:0:20",
 		Duid:          "00:00:00:00:00:00:00:00",
 		Expire:        1002,
@@ -256,7 +256,7 @@ func TestFromGRPC(t *testing.T) {
 
 	expectedv4 := Lease{
 		Lease: keadata.Lease{
-			IPVersion:     storkutil.IPv4,
+			Family:        storkutil.IPv4,
 			HWAddress:     v4.HwAddress,
 			IPAddress:     v4.IpAddress,
 			CLTT:          v4.Cltt,
@@ -269,7 +269,7 @@ func TestFromGRPC(t *testing.T) {
 	}
 	expectedv6 := Lease{
 		Lease: keadata.Lease{
-			IPVersion:     storkutil.IPv6,
+			Family:        storkutil.IPv6,
 			DUID:          v6.Duid,
 			IPAddress:     v6.IpAddress,
 			CLTT:          v6.Cltt,
@@ -301,7 +301,7 @@ func TestFromGRPCWithErrors(t *testing.T) {
 	t.Run("valid lifetime too big", func(t *testing.T) {
 		t.Parallel()
 		badLft := agentapi.Lease{
-			IpVersion:     agentapi.Lease_V4,
+			Family:        agentapi.Lease_V4,
 			IpAddress:     "192.168.1.32",
 			HwAddress:     "00:00:00:00:00:00",
 			Expire:        1000,
@@ -315,7 +315,7 @@ func TestFromGRPCWithErrors(t *testing.T) {
 	t.Run("prefix length too long", func(t *testing.T) {
 		t.Parallel()
 		badPrefixLen := agentapi.Lease{
-			IpVersion:     agentapi.Lease_V6,
+			Family:        agentapi.Lease_V6,
 			IpAddress:     "fd75:9fa5:e76b:0:0:0:0:20",
 			Duid:          "00:00:00:00:00:00:00:00",
 			Expire:        1002,
@@ -330,7 +330,7 @@ func TestFromGRPCWithErrors(t *testing.T) {
 	t.Run("no IPv5", func(t *testing.T) {
 		t.Parallel()
 		badIPVersion := agentapi.Lease{
-			IpVersion:     5,
+			Family:        5,
 			IpAddress:     "fd75:9fa5:e76b:0:0:0:0:20",
 			Duid:          "00:00:00:00:00:00:00:00",
 			Expire:        1002,

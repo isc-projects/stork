@@ -21,7 +21,7 @@ func TestNewLease4(t *testing.T) {
 	)
 
 	// Assert
-	require.Equal(t, storkutil.IPv4, lease.IPVersion)
+	require.Equal(t, storkutil.IPv4, lease.Family)
 	require.Equal(t, "", lease.ClientID)
 	require.Equal(t, uint64(1), lease.CLTT)
 	require.Equal(t, "", lease.DUID)
@@ -46,7 +46,7 @@ func TestNewLease6(t *testing.T) {
 	)
 
 	// Assert
-	require.Equal(t, storkutil.IPv6, lease.IPVersion)
+	require.Equal(t, storkutil.IPv6, lease.Family)
 	require.Equal(t, "", lease.ClientID)
 	require.Equal(t, uint64(6), lease.CLTT)
 	require.Equal(t, "00:00:00:00:00:00:00:00", lease.DUID)
@@ -61,7 +61,7 @@ func TestNewLease6(t *testing.T) {
 func TestToGRPC(t *testing.T) {
 	// Arrange
 	input := Lease{
-		IPVersion:     storkutil.IPv6,
+		Family:        storkutil.IPv6,
 		IPAddress:     "fe80::7",
 		DUID:          "00:01:02:03:04:05:06:07",
 		CLTT:          100,
@@ -75,7 +75,7 @@ func TestToGRPC(t *testing.T) {
 	result := input.ToGRPC()
 
 	// Assert
-	require.Equal(t, agentapi.Lease_IPVersion(storkutil.IPv6), result.IpVersion)
+	require.Equal(t, agentapi.Lease_IPAddrFamily(storkutil.IPv6), result.Family)
 	require.Equal(t, input.IPAddress, result.IpAddress)
 	require.Equal(t, input.DUID, result.Duid)
 	require.Equal(t, uint64(input.ValidLifetime), result.ValidLifetime)

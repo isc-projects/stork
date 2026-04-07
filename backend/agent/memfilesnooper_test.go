@@ -498,7 +498,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			},
 			0,
 			&keadata.Lease{
-				IPVersion:     storkutil.IPv4,
+				Family:     storkutil.IPv4,
 				IPAddress:     "192.110.111.2",
 				HWAddress:     "03:00:00:00:00:00",
 				CLTT:          1761254249,
@@ -728,7 +728,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			},
 			0,
 			&keadata.Lease{
-				IPVersion:     storkutil.IPv6,
+				Family:     storkutil.IPv6,
 				IPAddress:     "51a4:14ec:1::",
 				DUID:          "01:00:00:00:00:00",
 				CLTT:          1761669049,
