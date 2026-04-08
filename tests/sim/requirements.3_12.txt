@@ -29,7 +29,7 @@ markupsafe==3.0.3
     #   werkzeug
 packaging==26.0
     # via gunicorn
-requests==2.32.5
+requests==2.33.0
     # via -r rakelib/init_deps/flask.in
 urllib3==2.6.3
     # via requests
