@@ -4040,20 +4040,20 @@ func TestCommitSubnetAdd(t *testing.T) {
 	// daemon1: subnet4-add(0), network4-subnet-add(1), config-write(2)
 	// daemon2: subnet4-add(3), network4-subnet-add(4), config-write(5)
 	// The respective commands should be sent to different servers.
-	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[3])
-	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[4])
-	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[5])
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[2])
+	require.NotEqual(t, agents.RecordedURLs[4], agents.RecordedURLs[5])
 	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
-	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
-	require.Equal(t, agents.RecordedURLs[3], agents.RecordedURLs[4])
-	require.Equal(t, agents.RecordedURLs[3], agents.RecordedURLs[5])
+	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[4])
+	require.Equal(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Equal(t, agents.RecordedURLs[2], agents.RecordedURLs[5])
 
 	// Validate the sent commands and URLS.
 	for i, command := range agents.RecordedCommands {
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
 		switch i {
-		case 0, 3:
+		case 0, 2:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-add",
@@ -4069,7 +4069,7 @@ func TestCommitSubnetAdd(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case 1, 4:
+		case 1, 3:
 			require.JSONEq(t,
 				`{
 					"command": "network4-subnet-add",
@@ -4081,13 +4081,15 @@ func TestCommitSubnetAdd(t *testing.T) {
 				}`,
 				string(marshalled))
 
-		default:
+		case 4, 5:
 			require.JSONEq(t,
 				`{
 					"command": "config-write",
 					"service": [ "dhcp4" ]
 				}`,
 				string(marshalled))
+		default:
+			require.Fail(t, "Unexpected number of calls")
 		}
 	}
 

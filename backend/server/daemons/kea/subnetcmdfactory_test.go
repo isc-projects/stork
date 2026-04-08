@@ -60,7 +60,7 @@ func newTestDaemonWithConfig(t *testing.T, name daemonname.Name, serverTag strin
 	json, err := json.Marshal(configMap)
 	require.NoError(t, err)
 
-	config, err := keaconfig.NewConfig([]byte(json))
+	config, err := keaconfig.NewConfig(json)
 	require.NoError(t, err)
 	return &dbmodel.Daemon{
 		Name: name,
@@ -74,7 +74,7 @@ func newTestDaemonWithConfig(t *testing.T, name daemonname.Name, serverTag strin
 // Constructs a minimal subnet with a matching Daemon entry.
 func newTestSubnet(daemons ...*dbmodel.Daemon) *dbmodel.Subnet {
 	prefix := "192.0.2.0/24"
-	if len(daemons) >= 0 && daemons[0].Name == daemonname.DHCPv6 {
+	if len(daemons) > 0 && daemons[0].Name == daemonname.DHCPv6 {
 		prefix = "2001:db8:1::/64"
 	}
 
@@ -242,7 +242,9 @@ func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmd, err := createCbCmdsSetCommand(
+		subnet.LocalSubnets[0], subnet, "", []string{"all"}, lookup,
+	)
 
 	// Assert
 	require.NoError(t, err)
@@ -268,7 +270,9 @@ func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 	subnet := newTestSubnet(daemon)
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmd, err := createCbCmdsSetCommand(
+		subnet.LocalSubnets[0], subnet, "", []string{"server1", "server2"}, lookup,
+	)
 
 	// Assert
 	require.NoError(t, err)
@@ -279,7 +283,7 @@ func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 		"service": ["dhcp4"],
 		"arguments": {
 			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
-			"server-tags": ["server1"]
+			"server-tags": ["server1", "server2"]
 		}
 	}`, string(marshalled))
 }
@@ -291,7 +295,9 @@ func TestCreateCbCmdsSetCommandIPv6(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmd, err := createCbCmdsSetCommand(
+		subnet.LocalSubnets[0], subnet, "", []string{"all"}, lookup,
+	)
 
 	// Assert
 	require.NoError(t, err)
@@ -316,7 +322,9 @@ func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(subnet.LocalSubnets[0], subnet, "mynet", lookup)
+	cmd, err := createCbCmdsSetCommand(
+		subnet.LocalSubnets[0], subnet, "mynet", []string{"all", "server"}, lookup,
+	)
 
 	// Assert
 	require.NoError(t, err)
@@ -327,7 +335,7 @@ func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 		"service": ["dhcp4"],
 		"arguments": {
 			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": "mynet"}],
-			"server-tags": ["all"]
+			"server-tags": ["all", "server"]
 		}
 	}`, string(marshalled))
 }
@@ -341,7 +349,9 @@ func TestCreateSubnetAddCommandsSubnetCmds(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmds, err := createSubnetAddCommands(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmds, err := createSubnetAddCommands(
+		subnet.LocalSubnets[0], subnet, "", nil, lookup,
+	)
 
 	// Assert
 	require.NoError(t, err)
@@ -365,7 +375,9 @@ func TestCreateSubnetAddCommandsCbCmds(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmds, err := createSubnetAddCommands(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmds, err := createSubnetAddCommands(
+		subnet.LocalSubnets[0], subnet, "", []string{"server"}, lookup,
+	)
 
 	// Assert
 	require.NoError(t, err)

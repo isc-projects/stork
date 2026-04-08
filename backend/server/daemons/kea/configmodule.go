@@ -1099,8 +1099,8 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	}
 	// Create commands for each unique target: subnet_cmds daemons receive
 	// per-daemon commands; cb_cmds daemons are deduplicated by config-backend.
-	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
-		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, lookup)
+	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, serverTags, lookup)
 		if err != nil {
 			return err
 		}
@@ -1111,7 +1111,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	}
 
 	// Make the changes persistent.
-	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
+	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		cmds, err := createSubnetSaveCommands(ls.Daemon)
 		if err != nil {
 			return err

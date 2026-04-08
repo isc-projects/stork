@@ -95,19 +95,15 @@ func createSubnetCmdsAddCommands(
 // daemon. The server tags are derived from the daemon configuration; when the
 // server tag is absent, "all" is used.
 func createCbCmdsSetCommand(
-	ls *dbmodel.LocalSubnet,
+	localSubnet *dbmodel.LocalSubnet,
 	subnet *dbmodel.Subnet,
 	sharedNetworkName string,
+	serverTags []string,
 	lookup keaconfig.DHCPOptionDefinitionLookup,
 ) (ConfigCommand, error) {
-	serverTag := "all"
-	if ls.Daemon.KeaDaemon.ServerTag != "" {
-		serverTag = ls.Daemon.KeaDaemon.ServerTag
-	}
-	serverTags := []string{serverTag}
 	switch subnet.GetFamily() {
 	case 4:
-		subnet4, err := keaconfig.CreateSubnet4(ls.DaemonID, lookup, subnet)
+		subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
 		if err != nil {
 			return ConfigCommand{}, err
 		}
@@ -119,12 +115,12 @@ func createCbCmdsSetCommand(
 			Command: keactrl.NewCommandRemoteSubnet4Set(
 				remoteSubnet,
 				serverTags,
-				ls.Daemon.Name,
+				localSubnet.Daemon.Name,
 			),
-			Daemon: ls.Daemon,
+			Daemon: localSubnet.Daemon,
 		}, nil
 	default:
-		subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
+		subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
 		if err != nil {
 			return ConfigCommand{}, err
 		}
@@ -136,9 +132,9 @@ func createCbCmdsSetCommand(
 			Command: keactrl.NewCommandRemoteSubnet6Set(
 				remoteSubnet,
 				serverTags,
-				ls.Daemon.Name,
+				localSubnet.Daemon.Name,
 			),
-			Daemon: ls.Daemon,
+			Daemon: localSubnet.Daemon,
 		}, nil
 	}
 }
@@ -146,24 +142,25 @@ func createCbCmdsSetCommand(
 // Creates all commands required to add a subnet for a given local subnet's
 // daemon. The hook type is derived from the daemon's configuration.
 func createSubnetAddCommands(
-	ls *dbmodel.LocalSubnet,
+	localSubnet *dbmodel.LocalSubnet,
 	subnet *dbmodel.Subnet,
 	sharedNetworkName string,
+	serverTags []string,
 	lookup keaconfig.DHCPOptionDefinitionLookup,
 ) ([]ConfigCommand, error) {
-	hook, err := getHookForAlteringSubnets(ls.Daemon)
+	hook, err := getHookForAlteringSubnets(localSubnet.Daemon)
 	if err != nil {
 		return nil, err
 	}
 	switch hook {
 	case hookSubnetCmds:
-		cmds, err := createSubnetCmdsAddCommands(ls, subnet, sharedNetworkName, lookup)
+		cmds, err := createSubnetCmdsAddCommands(localSubnet, subnet, sharedNetworkName, lookup)
 		if err != nil {
 			return nil, err
 		}
 		return cmds, nil
 	case hookCbCmds:
-		cmd, err := createCbCmdsSetCommand(ls, subnet, sharedNetworkName, lookup)
+		cmd, err := createCbCmdsSetCommand(localSubnet, subnet, sharedNetworkName, serverTags, lookup)
 		if err != nil {
 			return nil, err
 		}

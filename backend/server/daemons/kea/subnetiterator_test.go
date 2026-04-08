@@ -19,7 +19,6 @@ func TestBuildConfigBackendIDNoServerTag(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Equal(t, "all", id.ServerTag)
 	require.Equal(t, "keatest", id.DBName)
 	require.Equal(t, "localhost", id.DBHost)
 	require.Equal(t, 5432, id.DBPort)
@@ -35,7 +34,6 @@ func TestBuildConfigBackendIDWithServerTag(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Equal(t, "server1", id.ServerTag)
 	require.Equal(t, "keatest", id.DBName)
 	require.Equal(t, "localhost", id.DBHost)
 	require.Equal(t, 5432, id.DBPort)
@@ -78,8 +76,9 @@ func TestForEachUniqueTargetDeduplicatesCbCmds(t *testing.T) {
 	called := 0
 
 	// Act
-	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
+	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
+		require.Equal(t, []string{"server1"}, serverTags)
 		return nil
 	})
 
@@ -88,7 +87,8 @@ func TestForEachUniqueTargetDeduplicatesCbCmds(t *testing.T) {
 	require.Equal(t, 1, called)
 }
 
-// Tests that the target iterator calls fn for multiple unique config backend.
+// Tests that the target iterator calls a function only once for two daemons
+// sharing the same config backend, even if they have different server tags.
 func TestForEachUniqueTargetDifferentCbCmdsBackends(t *testing.T) {
 	// Arrange
 	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1", hookCbCmds)
@@ -106,14 +106,15 @@ func TestForEachUniqueTargetDifferentCbCmdsBackends(t *testing.T) {
 	called := 0
 
 	// Act
-	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
+	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
+		require.Equal(t, []string{"server1", "server2"}, serverTags)
 		return nil
 	})
 
 	// Assert
 	require.NoError(t, err)
-	require.Equal(t, 2, called)
+	require.Equal(t, 1, called)
 }
 
 // Tests that the target iterator processes all daemons with the subnet_cmds
@@ -135,8 +136,9 @@ func TestForEachUniqueTargetProcessesSubnetCmds(t *testing.T) {
 	called := 0
 
 	// Act
-	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
+	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
+		require.Nil(t, serverTags)
 		return nil
 	})
 
@@ -151,15 +153,13 @@ func TestForEachUniqueTargetSkipsNilConfig(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1")
 	subnet := newTestSubnet(daemon)
-	called := 0
 
 	// Act
-	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet) error {
-		called++
+	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+		require.Fail(t, "it should not been called")
 		return nil
 	})
 
 	// Assert
 	require.NoError(t, err)
-	require.Equal(t, 0, called)
 }
