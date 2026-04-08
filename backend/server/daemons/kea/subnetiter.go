@@ -55,7 +55,7 @@ func forEachUniqueTarget(
 ) error {
 	seen := map[configBackendID]struct{}{}
 	for _, ls := range localSubnets {
-		hook, err := getSubnetHook(ls.Daemon)
+		hook, err := getHookForAlteringSubnets(ls.Daemon)
 		if err != nil {
 			continue
 		}

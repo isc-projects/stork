@@ -10,7 +10,8 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// TBD
+// Creates a test daemon with the specified name, server tag and hooks. If the
+// config backend hook is included, a config database will also be configured.
 func newTestDaemonWithConfig(t *testing.T, name daemonname.Name, serverTag string, hooks ...hook) *dbmodel.Daemon {
 	hookLibraries := []map[string]any{}
 	var configDatabases []map[string]any
@@ -98,12 +99,12 @@ func newTestSubnet(daemons ...*dbmodel.Daemon) *dbmodel.Subnet {
 }
 
 // Tests that the CB hook enum is returned when only the CB hook is loaded.
-func TestGetSubnetHookCbCmds(t *testing.T) {
+func TestGetHookForAlteringSubnetsCbCmds(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "", hookCbCmds)
 
 	// Act
-	hook, err := getSubnetHook(daemon)
+	hook, err := getHookForAlteringSubnets(daemon)
 
 	// Assert
 	require.NoError(t, err)
@@ -112,12 +113,12 @@ func TestGetSubnetHookCbCmds(t *testing.T) {
 
 // Tests that the subnet_cmds hook is returned when only the subnet_cmds hook
 // is loaded.
-func TestGetSubnetHookSubnetCmds(t *testing.T) {
+func TestGetHookForAlteringSubnetsSubnetCmds(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "", hookSubnetCmds)
 
 	// Act
-	hook, err := getSubnetHook(daemon)
+	hook, err := getHookForAlteringSubnets(daemon)
 
 	// Assert
 	require.NoError(t, err)
@@ -125,25 +126,25 @@ func TestGetSubnetHookSubnetCmds(t *testing.T) {
 }
 
 // Tests that CB hook takes precedence over subnet_cmds when both are loaded.
-func TestGetSubnetHookCbCmdsPrecedence(t *testing.T) {
+func TestGetHookForAlteringSubnetsCbCmdsPrecedence(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "", hookSubnetCmds, hookCbCmds)
 
 	// Act
-	hook, err := getSubnetHook(daemon)
+	hook, err := getHookForAlteringSubnets(daemon)
 
 	// Assert
 	require.NoError(t, err)
 	require.Equal(t, hookCbCmds, hook)
 }
 
-// Tests that getSubnetHook returns an error when neither hook is loaded.
-func TestGetSubnetHookNeither(t *testing.T) {
+// Tests that the error is returned when neither hook is loaded.
+func TestGetHookForAlteringSubnetsNeither(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "")
 
 	// Act
-	hook, err := getSubnetHook(daemon)
+	hook, err := getHookForAlteringSubnets(daemon)
 
 	// Assert
 	require.ErrorContains(t, err, "no subnet hook nor config backend hook found")
@@ -251,7 +252,7 @@ func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 		"command": "remote-subnet4-set",
 		"service": ["dhcp4"],
 		"arguments": {
-			"subnets": [{"id": 4, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
 			"server-tags": ["all"]
 		}
 	}`, string(marshalled))
@@ -325,7 +326,7 @@ func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 		"command": "remote-subnet4-set",
 		"service": ["dhcp4"],
 		"arguments": {
-			"subnets": [{"id": 7, "subnet": "192.0.2.0/24", "shared-network-name": "mynet"}],
+			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": "mynet"}],
 			"server-tags": ["all"]
 		}
 	}`, string(marshalled))
@@ -359,7 +360,7 @@ func TestCreateSubnetAddCommandsSubnetCmds(t *testing.T) {
 // cb_cmds daemon.
 func TestCreateSubnetAddCommandsCbCmds(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "", hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server", hookCbCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
@@ -375,8 +376,8 @@ func TestCreateSubnetAddCommandsCbCmds(t *testing.T) {
 		"command": "remote-subnet4-set",
 		"service": ["dhcp4"],
 		"arguments": {
-			"subnets": [{"id": 11, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
-			"server-tags": ["server1"]
+			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"server-tags": ["server"]
 		}
 	}`, string(marshalled))
 }

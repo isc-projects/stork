@@ -57,7 +57,7 @@ func TestNewCommandRemoteSubnet4SetWithSharedNetwork(t *testing.T) {
 		},
 		SharedNetworkName: "mynet",
 	}
-	command := NewCommandRemoteSubnet4Set(subnet, []string{"server1"}, daemonname.DHCPv4)
+	command := NewCommandRemoteSubnet4Set(subnet, []string{"server"}, daemonname.DHCPv4)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
 	require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestNewCommandRemoteSubnet4SetWithSharedNetwork(t *testing.T) {
 					"shared-network-name": "mynet"
 				}
 			],
-			"server-tags": ["server1"]
+			"server-tags": ["server"]
 		}
 	}`, string(marshalled))
 }
@@ -125,7 +125,7 @@ func TestNewCommandRemoteSubnet6SetWithSharedNetwork(t *testing.T) {
 		},
 		SharedNetworkName: "ipv6net",
 	}
-	command := NewCommandRemoteSubnet6Set(subnet, []string{"server2"}, daemonname.DHCPv6)
+	command := NewCommandRemoteSubnet6Set(subnet, []string{"server"}, daemonname.DHCPv6)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
 	require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestNewCommandRemoteSubnet6SetWithSharedNetwork(t *testing.T) {
 					"shared-network-name": "ipv6net"
 				}
 			],
-			"server-tags": ["server2"]
+			"server-tags": ["server"]
 		}
 	}`, string(marshalled))
 }

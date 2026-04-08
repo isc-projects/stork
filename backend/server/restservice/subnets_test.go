@@ -1594,13 +1594,15 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 						}
 				}`,
 				func() string { data, _ := c.Marshal(); return string(data) }())
-		default:
+		case 4, 5:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 				}`,
 				func() string { data, _ := c.Marshal(); return string(data) }())
+		default:
+			require.Fail(t, "unexpected command")
 		}
 	}
 

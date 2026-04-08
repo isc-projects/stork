@@ -1093,7 +1093,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	lookup := module.manager.GetDHCPOptionDefinitionLookup()
 	// Validate that every daemon has at least one supported hook library.
 	for _, ls := range subnet.LocalSubnets {
-		if _, err = getSubnetHook(ls.Daemon); err != nil {
+		if _, err = getHookForAlteringSubnets(ls.Daemon); err != nil {
 			return ctx, err
 		}
 	}

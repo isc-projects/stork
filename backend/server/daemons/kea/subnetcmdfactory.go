@@ -19,10 +19,10 @@ const (
 	hookCbCmds
 )
 
-// Returns the hook enum for a daemon configuration. When both libdhcp_cb_cmds
+// Returns the hook to modify subnets for a daemon. When both libdhcp_cb_cmds
 // and libdhcp_subnet_cmds are configured, cb_cmds takes precedence. Returns an
 // error wrapping NoSubnetHookError when neither hook is loaded.
-func getSubnetHook(daemon *dbmodel.Daemon) (hook, error) {
+func getHookForAlteringSubnets(daemon *dbmodel.Daemon) (hook, error) {
 	if daemon == nil || daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
 		return 0, pkgerrors.New("daemon or Kea configuration is nil")
 	}
@@ -42,7 +42,7 @@ func getSubnetHook(daemon *dbmodel.Daemon) (hook, error) {
 // a shared network, also the corresponding network4-subnet-add or
 // network6-subnet-add command.
 func createSubnetCmdsAddCommands(
-	ls *dbmodel.LocalSubnet,
+	localSubnet *dbmodel.LocalSubnet,
 	subnet *dbmodel.Subnet,
 	sharedNetworkName string,
 	lookup keaconfig.DHCPOptionDefinitionLookup,
@@ -50,33 +50,41 @@ func createSubnetCmdsAddCommands(
 	var commands []ConfigCommand
 	switch subnet.GetFamily() {
 	case 4:
-		subnet4, err := keaconfig.CreateSubnet4(ls.DaemonID, lookup, subnet)
+		subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
 		if err != nil {
 			return nil, err
 		}
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommandSubnet4Add(subnet4, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
+			Command: keactrl.NewCommandSubnet4Add(subnet4, localSubnet.Daemon.Name),
+			Daemon:  localSubnet.Daemon,
 		})
 		if sharedNetworkName != "" {
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandNetwork4SubnetAdd(sharedNetworkName, ls.LocalSubnetID, ls.Daemon.Name),
-				Daemon:  ls.Daemon,
+				Command: keactrl.NewCommandNetwork4SubnetAdd(
+					sharedNetworkName,
+					localSubnet.LocalSubnetID,
+					localSubnet.Daemon.Name,
+				),
+				Daemon: localSubnet.Daemon,
 			})
 		}
 	default:
-		subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
+		subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
 		if err != nil {
 			return nil, err
 		}
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommandSubnet6Add(subnet6, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
+			Command: keactrl.NewCommandSubnet6Add(subnet6, localSubnet.Daemon.Name),
+			Daemon:  localSubnet.Daemon,
 		})
 		if sharedNetworkName != "" {
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandNetwork6SubnetAdd(sharedNetworkName, ls.LocalSubnetID, ls.Daemon.Name),
-				Daemon:  ls.Daemon,
+				Command: keactrl.NewCommandNetwork6SubnetAdd(
+					sharedNetworkName,
+					localSubnet.LocalSubnetID,
+					localSubnet.Daemon.Name,
+				),
+				Daemon: localSubnet.Daemon,
 			})
 		}
 	}
@@ -108,8 +116,12 @@ func createCbCmdsSetCommand(
 			SharedNetworkName: sharedNetworkName,
 		}
 		return ConfigCommand{
-			Command: keactrl.NewCommandRemoteSubnet4Set(remoteSubnet, serverTags, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
+			Command: keactrl.NewCommandRemoteSubnet4Set(
+				remoteSubnet,
+				serverTags,
+				ls.Daemon.Name,
+			),
+			Daemon: ls.Daemon,
 		}, nil
 	default:
 		subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
@@ -121,8 +133,12 @@ func createCbCmdsSetCommand(
 			SharedNetworkName: sharedNetworkName,
 		}
 		return ConfigCommand{
-			Command: keactrl.NewCommandRemoteSubnet6Set(remoteSubnet, serverTags, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
+			Command: keactrl.NewCommandRemoteSubnet6Set(
+				remoteSubnet,
+				serverTags,
+				ls.Daemon.Name,
+			),
+			Daemon: ls.Daemon,
 		}, nil
 	}
 }
@@ -135,7 +151,7 @@ func createSubnetAddCommands(
 	sharedNetworkName string,
 	lookup keaconfig.DHCPOptionDefinitionLookup,
 ) ([]ConfigCommand, error) {
-	hook, err := getSubnetHook(ls.Daemon)
+	hook, err := getHookForAlteringSubnets(ls.Daemon)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +177,7 @@ func createSubnetAddCommands(
 // the subnet directly in the config backend database, so no config-write or
 // config-reload is needed afterward.
 func createSubnetSaveCommands(daemon *dbmodel.Daemon) ([]ConfigCommand, error) {
-	hook, err := getSubnetHook(daemon)
+	hook, err := getHookForAlteringSubnets(daemon)
 	if err != nil {
 		return nil, err
 	}
