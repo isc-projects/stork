@@ -186,7 +186,7 @@ func (puller *LeasesPuller) pullLeases() error {
 		wg.Go(func() {
 			err := puller.getLeasesFromDaemon(daemon)
 			if err != nil {
-				errorPipe <- errors.Wrapf(err, "could not retrieve leases from daemon %d", daemon.ID)
+				errorPipe <- errors.WithMessagef(err, "could not retrieve leases from daemon %d", daemon.ID)
 			} else {
 				errorPipe <- nil
 			}
