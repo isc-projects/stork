@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   server-base:
     platform: linux/amd64
