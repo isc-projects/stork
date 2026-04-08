@@ -21,12 +21,9 @@ type Lease struct {
 
 	DaemonID int64
 	Daemon   *Daemon `pg:"rel:has-one"`
-	// Stork's subnet ID, not Kea's subnet ID, named to avoid collision with the SubnetID field in keadata.Lease.
-	StorkSubnetID int64
-	// Named StorkSubnet so that the ORM doesn't try to look up the subnet by the
-	// field named `subnet_id`. I would vastly prefer to do development work
-	// rather than fighting the ORM, but alas, here I am.
-	StorkSubnet *Subnet `pg:"rel:has-one"`
+	// Stork's subnet ID.
+	SubnetID int64
+	Subnet   *Subnet `pg:"rel:has-one"`
 }
 
 // Adds a new lease into the database within a transaction.
@@ -57,7 +54,7 @@ func GetLeaseByID(dbi dbops.DBI, leaseID int64) (*Lease, error) {
 	lease := &Lease{}
 	err := dbi.Model(lease).
 		Relation("Daemon").
-		Relation("StorkSubnet").
+		Relation("Subnet").
 		Where("lease.id = ?", leaseID).
 		Select()
 	if err != nil {
@@ -97,7 +94,7 @@ func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 			DUID:          grpc.Duid,
 			CLTT:          grpc.Cltt,
 			ValidLifetime: uint32(grpc.ValidLifetime),
-			SubnetID:      grpc.SubnetID,
+			LocalSubnetID: grpc.SubnetID,
 			State:         int(grpc.State),
 			PrefixLength:  uint8(grpc.PrefixLen),
 		},

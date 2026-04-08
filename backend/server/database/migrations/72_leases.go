@@ -25,14 +25,14 @@ func init() {
                  valid_lifetime     INT NOT NULL,
                  iaid               INT,
                  preferred_lifetime INT,
+                 local_subnet_id    BIGINT,
                  subnet_id          BIGINT,
-                 stork_subnet_id    BIGINT,
                  fqdn_fwd           BOOLEAN,
                  fqdn_rev           BOOLEAN,
                  prefix_length      SMALLINT,
                  daemon_id          BIGINT,
                  CONSTRAINT lease_pkey PRIMARY KEY (id),
-                 CONSTRAINT lease_subnet_fkey FOREIGN KEY (stork_subnet_id)
+                 CONSTRAINT lease_subnet_fkey FOREIGN KEY (subnet_id)
 	                 REFERENCES subnet (id) MATCH SIMPLE
                          ON UPDATE CASCADE
                          ON DELETE SET NULL,
@@ -66,14 +66,14 @@ func init() {
                  valid_lifetime     INT NOT NULL,
                  iaid               INT,
                  preferred_lifetime INT,
+                 local_subnet_id    BIGINT,
                  subnet_id          BIGINT,
-                 stork_subnet_id    BIGINT,
                  fqdn_fwd           BOOLEAN,
                  fqdn_rev           BOOLEAN,
                  prefix_length      SMALLINT,
                  daemon_id          BIGINT,
                  CONSTRAINT lease_updates_pkey PRIMARY KEY (id),
-                 CONSTRAINT lease_updates_subnet_fkey FOREIGN KEY (stork_subnet_id)
+                 CONSTRAINT lease_updates_subnet_fkey FOREIGN KEY (subnet_id)
 	                 REFERENCES subnet (id) MATCH SIMPLE
                          ON UPDATE CASCADE
                          ON DELETE SET NULL,

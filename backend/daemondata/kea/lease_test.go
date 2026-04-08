@@ -29,7 +29,7 @@ func TestNewLease4(t *testing.T) {
 	require.Equal(t, "00:00:00:00:00:00", lease.HWAddress)
 	require.Equal(t, uint8(0), lease.PrefixLength)
 	require.Equal(t, 3, lease.State)
-	require.Equal(t, uint32(3), lease.SubnetID)
+	require.Equal(t, uint32(3), lease.LocalSubnetID)
 	require.Equal(t, uint32(2), lease.ValidLifetime)
 }
 
@@ -54,7 +54,7 @@ func TestNewLease6(t *testing.T) {
 	require.Equal(t, "", lease.HWAddress)
 	require.Equal(t, uint8(64), lease.PrefixLength)
 	require.Equal(t, 2, lease.State)
-	require.Equal(t, uint32(8), lease.SubnetID)
+	require.Equal(t, uint32(8), lease.LocalSubnetID)
 	require.Equal(t, uint32(7), lease.ValidLifetime)
 }
 
@@ -66,7 +66,7 @@ func TestToGRPC(t *testing.T) {
 		DUID:          "00:01:02:03:04:05:06:07",
 		CLTT:          100,
 		ValidLifetime: 3600,
-		SubnetID:      9,
+		LocalSubnetID: 9,
 		State:         0,
 		PrefixLength:  64,
 	}
@@ -79,7 +79,7 @@ func TestToGRPC(t *testing.T) {
 	require.Equal(t, input.IPAddress, result.IpAddress)
 	require.Equal(t, input.DUID, result.Duid)
 	require.Equal(t, uint64(input.ValidLifetime), result.ValidLifetime)
-	require.Equal(t, input.SubnetID, result.SubnetID)
+	require.Equal(t, input.LocalSubnetID, result.SubnetID)
 	require.Equal(t, uint32(input.State), result.State)
 	require.Equal(t, uint32(input.PrefixLength), result.PrefixLen)
 	require.Empty(t, result.HwAddress)

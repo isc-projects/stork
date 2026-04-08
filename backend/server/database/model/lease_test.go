@@ -107,8 +107,8 @@ func TestAddLease(t *testing.T) {
 
 	// Add a lease in subnet 1 (192.0.2.0/24).
 	lease := &Lease{
-		DaemonID:      daemons[0].ID,
-		StorkSubnetID: subnets[0].ID,
+		DaemonID: daemons[0].ID,
+		SubnetID: subnets[0].ID,
 		Lease: keadata.Lease{
 			Family:        4,
 			HWAddress:     "00:00:00:00:00:01",
@@ -116,7 +116,7 @@ func TestAddLease(t *testing.T) {
 			CLTT:          9999,
 			State:         keadata.LeaseStateDefault,
 			ValidLifetime: 3600,
-			SubnetID:      7,
+			LocalSubnetID: 7,
 		},
 	}
 	err := AddLease(db, lease)
@@ -134,13 +134,13 @@ func TestAddLease(t *testing.T) {
 	require.Equal(t, lease.CLTT, returned.CLTT)
 	require.Equal(t, lease.State, returned.State)
 	require.Equal(t, lease.ValidLifetime, returned.ValidLifetime)
-	require.Equal(t, lease.SubnetID, returned.SubnetID)
+	require.Equal(t, lease.LocalSubnetID, returned.LocalSubnetID)
 
 	// Make sure the linked relations worked too
 	require.Equal(t, lease.SubnetID, returned.SubnetID)
 	require.Equal(t, lease.DaemonID, returned.DaemonID)
 	require.NotNil(t, returned.Daemon)
-	require.NotNil(t, returned.StorkSubnet)
+	require.NotNil(t, returned.Subnet)
 }
 
 // Verify that AddLease also works if you give it a transaction struct, rather
@@ -152,8 +152,8 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 
 	// Add a lease in subnet 2 (2001:db8:1::0).
 	lease := &Lease{
-		DaemonID:      daemons[1].ID,
-		StorkSubnetID: subnets[1].ID,
+		DaemonID: daemons[1].ID,
+		SubnetID: subnets[1].ID,
 		Lease: keadata.Lease{
 			Family:        6,
 			DUID:          "0000000000112233445566ff",
@@ -161,7 +161,7 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 			CLTT:          9999,
 			State:         keadata.LeaseStateExpiredReclaimed,
 			ValidLifetime: 3600,
-			SubnetID:      4,
+			LocalSubnetID: 4,
 			PrefixLength:  128,
 		},
 	}
@@ -182,13 +182,13 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 	require.Equal(t, lease.CLTT, returned.CLTT)
 	require.Equal(t, lease.State, returned.State)
 	require.Equal(t, lease.ValidLifetime, returned.ValidLifetime)
-	require.Equal(t, lease.SubnetID, returned.SubnetID)
+	require.Equal(t, lease.LocalSubnetID, returned.LocalSubnetID)
 
 	// Make sure the linked relations worked too
 	require.Equal(t, lease.SubnetID, returned.SubnetID)
 	require.Equal(t, lease.DaemonID, returned.DaemonID)
 	require.NotNil(t, returned.Daemon)
-	require.NotNil(t, returned.StorkSubnet)
+	require.NotNil(t, returned.Subnet)
 }
 
 // Confirm that the return values from GetLeaseByID are as expected when there
@@ -212,8 +212,8 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 
 	// Add a lease in subnet 1 (192.0.2.0/24).
 	lease := &Lease{
-		DaemonID:      9001,
-		StorkSubnetID: subnets[0].ID,
+		DaemonID: 9001,
+		SubnetID: subnets[0].ID,
 		Lease: keadata.Lease{
 			Family:        4,
 			HWAddress:     "00:00:00:00:00:01",
@@ -221,7 +221,7 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 			CLTT:          9999,
 			State:         keadata.LeaseStateDefault,
 			ValidLifetime: 3600,
-			SubnetID:      7,
+			LocalSubnetID: 7,
 		},
 	}
 	err := AddLease(db, lease)
@@ -261,11 +261,11 @@ func TestFromGRPC(t *testing.T) {
 			IPAddress:     v4.IpAddress,
 			CLTT:          v4.Cltt,
 			ValidLifetime: 900,
-			SubnetID:      v4.SubnetID,
+			LocalSubnetID: v4.SubnetID,
 			State:         1,
 		},
-		DaemonID:      99,
-		StorkSubnetID: 1,
+		DaemonID: 99,
+		SubnetID: 1,
 	}
 	expectedv6 := Lease{
 		Lease: keadata.Lease{
@@ -274,12 +274,12 @@ func TestFromGRPC(t *testing.T) {
 			IPAddress:     v6.IpAddress,
 			CLTT:          v6.Cltt,
 			ValidLifetime: 901,
-			SubnetID:      v6.SubnetID,
+			LocalSubnetID: v6.SubnetID,
 			State:         2,
 			PrefixLength:  128,
 		},
-		DaemonID:      100,
-		StorkSubnetID: 2,
+		DaemonID: 100,
+		SubnetID: 2,
 	}
 
 	// Act

@@ -81,7 +81,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		daemonLabel := l.Daemon.GetLabel()
 		cltt := int64(l.CLTT)
 		state := int64(l.State)
-		subnetID := int64(l.SubnetID)
+		localSubnetID := int64(l.LocalSubnetID)
 		validLifetime := int64(l.ValidLifetime)
 
 		// Handle a special case when returned DUID is equal to 00. Kea returns such DUID
@@ -107,7 +107,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			PreferredLifetime: int64(l.PreferredLifetime),
 			PrefixLength:      int64(l.PrefixLength),
 			State:             &state,
-			SubnetID:          &subnetID,
+			SubnetID:          &localSubnetID,
 			ValidLifetime:     &validLifetime,
 			UserContext:       l.UserContext,
 		}

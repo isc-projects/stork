@@ -36,7 +36,7 @@ type Lease struct {
 	ValidLifetime     uint32           `json:"valid-lft,omitempty"`
 	IAID              uint32           `json:"iaid,omitempty"`
 	PreferredLifetime uint32           `json:"preferred-lft,omitempty"`
-	SubnetID          uint32           `json:"subnet-id,omitempty"`
+	LocalSubnetID     uint32           `json:"subnet-id,omitempty"`
 	FqdnFwd           bool             `json:"fqdn-fwd,omitempty"`
 	FqdnRev           bool             `json:"fqdn-rev,omitempty"`
 	PrefixLength      uint8            `json:"prefix-len,omitempty"`
@@ -51,7 +51,7 @@ func NewLease4(ip string, hwAddress string, cltt uint64, validLifetime uint32, s
 		HWAddress:     hwAddress,
 		CLTT:          cltt,
 		ValidLifetime: validLifetime,
-		SubnetID:      subnetID,
+		LocalSubnetID: subnetID,
 		State:         state,
 	}
 }
@@ -65,7 +65,7 @@ func NewLease6(ip string, duid string, cltt uint64, validLifetime uint32, subnet
 		DUID:          duid,
 		CLTT:          cltt,
 		ValidLifetime: validLifetime,
-		SubnetID:      subnetID,
+		LocalSubnetID: subnetID,
 		State:         state,
 		PrefixLength:  uint8(prefixLen),
 	}
@@ -81,7 +81,7 @@ func (lease *Lease) ToGRPC() agentapi.Lease {
 		Duid:          lease.DUID,
 		Cltt:          lease.CLTT,
 		ValidLifetime: uint64(lease.ValidLifetime),
-		SubnetID:      lease.SubnetID,
+		SubnetID:      lease.LocalSubnetID,
 		State:         uint32(lease.State),
 		PrefixLen:     uint32(lease.PrefixLength),
 	}
