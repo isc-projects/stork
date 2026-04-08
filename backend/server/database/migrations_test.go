@@ -860,11 +860,12 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	require.Len(t, zones, 120)
 
 	// Settings.
+	err = dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
 	settings, err := dbmodel.GetAllSettings(db)
 	require.NoError(t, err)
-	require.Len(t, settings, 10)
+	require.Len(t, settings, 11)
 
-	// TODO: does kea_leases_puller_interval need to be in here?  It seems like it should be, but this test doesn't call InitializeSettings to add it.
 	expectSettings := map[string]any{
 		"kea_status_puller_interval":      int64(30),
 		"grafana_url":                     "",
@@ -875,6 +876,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		"bind9_stats_puller_interval":     int64(60),
 		"kea_stats_puller_interval":       int64(60),
 		"kea_hosts_puller_interval":       int64(60),
+		"kea_leases_puller_interval":      int64(60),
 		"enable_online_software_versions": true,
 	}
 
