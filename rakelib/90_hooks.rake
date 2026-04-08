@@ -353,6 +353,16 @@ namespace :hook do
             end
         end
     end
+
+    desc "Audit the hook dependencies for known vulnerabilities.
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
+    task :audit => [GOVULNCHECK] do
+        forEachHook do |dir_name, project_path, src_path|
+            Dir.chdir(src_path) do
+                sh GOVULNCHECK, "./..."
+            end
+        end
+    end
 end
 
 namespace :run do
