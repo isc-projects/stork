@@ -670,12 +670,11 @@ func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconf
 }
 
 // Get a snapshot of all current leases known for this daemon.
-func (d *keaDaemon) GetLeaseSnapshot() []*keadata.Lease {
+func (d *keaDaemon) GetLeaseSnapshot() ([]*keadata.Lease, error) {
 	if d.snooper != nil {
-		return d.snooper.GetSnapshot()
+		return d.snooper.GetSnapshot(), nil
 	}
-	log.Warn("the Stork server asked for a snapshot of leases, but there is no lease snooper configured for this daemon; this is an application programming error that should be corrected; if you see this message please report it to ISC")
-	return []*keadata.Lease{}
+	return nil, errors.New("cannot provide lease snapshot from a daemon with no lease snooper configured")
 }
 
 // Called once before the daemon is removed.

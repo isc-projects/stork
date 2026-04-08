@@ -16,6 +16,7 @@ import (
 	"gopkg.in/h2non/gock.v1"
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
 	"isc.org/stork/testutil"
@@ -2041,6 +2042,46 @@ func TestKeaMultiConnectorEmpty(t *testing.T) {
 
 	// Assert
 	require.ErrorContains(t, err, "no connectors available")
+}
+
+// Test that GetLeaseSnapshot calls the snooper when it exists.
+func TestGetLeaseSnapshotCallsSnooperWhenExists(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	snooper := NewMockMemfileSnooper(ctrl)
+	snooper.EXPECT().GetSnapshot().Return([]*keadata.Lease{
+		{
+			IPAddress: "192.168.1.67",
+		},
+	})
+	daemon := &keaDaemon{
+		snooper: snooper,
+	}
+
+	// Act
+	leases, err := daemon.GetLeaseSnapshot()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, leases)
+	require.Len(t, leases, 1)
+	require.NotNil(t, leases[0])
+	require.Equal(t, leases[0].IPAddress, "192.168.1.67")
+}
+
+// Test that GetLeaseSnapshot returns an error when there is no snooper.
+func TestGetLeaseSnapshotReturnsErrorWhenNoSnooper(t *testing.T) {
+	// Arrange
+	daemon := &keaDaemon{
+		snooper: nil,
+	}
+
+	// Act
+	leases, err := daemon.GetLeaseSnapshot()
+
+	// Assert
+	require.Nil(t, leases)
+	require.ErrorContains(t, err, "no lease snooper configured")
 }
 
 // Mock a Kea status-get command HTTP request/response sequence.

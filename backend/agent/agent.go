@@ -964,7 +964,13 @@ func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server
 				log.Warn("Answering GetKeaLeases; found a daemon with DHCP daemonname, but which could not be cast to keaDaemon")
 				continue
 			}
-			leases := keadaemon.GetLeaseSnapshot()
+			leases, err := keadaemon.GetLeaseSnapshot()
+			if err != nil {
+				log.WithError(err).
+					WithField("daemon", daemon.String()).
+					Error("unable to get lease snapshot from daemon")
+				continue
+			}
 			for _, lease := range leases {
 				grpcLease := lease.ToGRPC()
 				err := server.Send(&agentapi.ReceiveKeaLeasesRsp{
