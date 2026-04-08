@@ -108,7 +108,7 @@ func TestForEachUniqueTargetDifferentCbCmdsBackends(t *testing.T) {
 	// Act
 	err := forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
-		require.Equal(t, []string{"server1", "server2"}, serverTags)
+		require.ElementsMatch(t, []string{"server1", "server2"}, serverTags)
 		return nil
 	})
 

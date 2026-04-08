@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -3891,7 +3892,7 @@ func TestApplySubnetAdd(t *testing.T) {
 // Tests applying subnet add when all daemons use the cb_cmds hook.
 // Two daemons sharing the same config backend should produce only one
 // remote-subnet4-set command.
-func TestApplySubnetAddCbCmds(t *testing.T) {
+func TestApplySubnetAddToConfigBackend(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -3931,6 +3932,171 @@ func TestApplySubnetAddCbCmds(t *testing.T) {
 			"server-tags": ["server"]
 		}
 	}`, string(marshalled))
+}
+
+// Tests committing a subnet add when four daemons use the cb_cmds hook.
+// Three daemons share the same config database; two of those three also share
+// the same server tag. The fourth daemon uses a different config database.
+// The iterator should produce exactly two remote-subnet4-set commands:
+//   - one addressed to the shared config database, carrying the two distinct
+//     server tags ("tag-a1" and "tag-a2"); duplicated "tag-a1" is dropped.
+//   - one addressed to the separate config database with only "tag-b".
+func TestCommitSubnetAddToConfigBackend(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// Daemon A1: shared config DB, server-tag "tag-a1".
+	configA1 := `{
+		"Dhcp4": {
+			"server-tag": "tag-a1",
+			"hooks-libraries": [{"library": "libdhcp_cb_cmds.so"}],
+			"config-control": {
+				"config-databases": [{"name": "keatest", "host": "localhost", "type": "mysql"}]
+			}
+		}
+	}`
+	// Daemon A2: same config DB, different server-tag.
+	configA2 := `{
+		"Dhcp4": {
+			"server-tag": "tag-a2",
+			"hooks-libraries": [{"library": "libdhcp_cb_cmds.so"}],
+			"config-control": {
+				"config-databases": [{"name": "keatest", "host": "localhost", "type": "mysql"}]
+			}
+		}
+	}`
+	// Daemon A3: same config DB and same server-tag as A1 — the duplicate
+	// tag must be collapsed into a single "tag-a1" entry.
+	configA3 := configA1
+	// Daemon B: entirely different config DB.
+	configB := `{
+		"Dhcp4": {
+			"server-tag": "tag-b",
+			"hooks-libraries": [{"library": "libdhcp_cb_cmds.so"}],
+			"config-control": {
+				"config-databases": [{"name": "keatest", "host": "otherhost", "type": "mysql"}]
+			}
+		}
+	}`
+
+	serverA1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	require.NoError(t, serverA1.Configure(configA1))
+	daemonA1, err := serverA1.GetDaemon()
+	require.NoError(t, err)
+
+	serverA2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	require.NoError(t, serverA2.Configure(configA2))
+	daemonA2, err := serverA2.GetDaemon()
+	require.NoError(t, err)
+
+	serverA3, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	require.NoError(t, serverA3.Configure(configA3))
+	daemonA3, err := serverA3.GetDaemon()
+	require.NoError(t, err)
+
+	serverB, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	require.NoError(t, serverB.Configure(configB))
+	daemonB, err := serverB.GetDaemon()
+	require.NoError(t, err)
+
+	err = CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemonA1, daemonA2, daemonA3, daemonB},
+		&storktest.FakeEventCenter{},
+		[]DaemonStateMeta{
+			{IsConfigChanged: true},
+			{IsConfigChanged: true},
+			{IsConfigChanged: true},
+			{IsConfigChanged: true},
+		},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
+	require.NoError(t, err)
+
+	daemons, err := dbmodel.GetAllDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 4)
+
+	subnet := dbmodel.Subnet{
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{DaemonID: daemons[0].ID},
+			{DaemonID: daemons[1].ID},
+			{DaemonID: daemons[2].ID},
+			{DaemonID: daemons[3].ID},
+		},
+	}
+	err = subnet.PopulateDaemons(db)
+	require.NoError(t, err)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetAdd)
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	ctx, err = module.ApplySubnetAdd(ctx, &subnet)
+	require.NoError(t, err)
+
+	ctx, err = module.Commit(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, ctx)
+
+	// Two remote-subnet4-set commands total — one per unique config database.
+	require.Len(t, agents.RecordedCommands, 2)
+
+	// The two commands must be sent to different agents (different machines).
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+
+	// Parse both commands and identify which belongs to which config database
+	// by inspecting the server-tags array.
+	var cmdA, cmdB string
+	for _, c := range agents.RecordedCommands {
+		marshalled, err := c.Marshal()
+		require.NoError(t, err)
+		if strings.Contains(string(marshalled), "tag-b") {
+			cmdB = string(marshalled)
+		} else {
+			cmdA = string(marshalled)
+		}
+	}
+	require.NotEmpty(t, cmdA)
+	require.NotEmpty(t, cmdB)
+
+	// The shared-database command must include two server tags without
+	// duplicates.
+	var cmdAMap map[string]any
+	require.NoError(t, json.Unmarshal([]byte(cmdA), &cmdAMap))
+	serverTagsA, ok := cmdAMap["arguments"].(map[string]any)["server-tags"].([]any)
+	require.True(t, ok)
+	require.Len(t, serverTagsA, 2)
+	require.ElementsMatch(t, []any{"tag-a1", "tag-a2"}, serverTagsA)
+
+	// The separate-database command must include only "tag-b".
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-set",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"id": 1, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"server-tags": ["tag-b"]
+		}
+	}`, cmdB)
+
+	// Make sure the subnet was persisted in the database.
+	addedSubnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, addedSubnets, 1)
+	require.Len(t, addedSubnets[0].LocalSubnets, 4)
 }
 
 // Test committing created subnet, i.e. actually sending control commands to Kea.
