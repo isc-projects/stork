@@ -17,8 +17,8 @@ func init() {
                  duid               BYTEA,
                  ip_address         INET NOT NULL,
                  type               VARCHAR(255),
-                 -- TODO: figure out how to make this a TIMESTAMP WITH TIME ZONE
-                 -- without also breaking the JSON representation
+                 -- TODO: figure out how to make this a TIMESTAMP WITHOUT TIME
+                 -- ZONE without also breaking the JSON representation
                  cltt               INT NOT NULL,
                  state              SMALLINT NOT NULL,
                  user_context       JSONB,
