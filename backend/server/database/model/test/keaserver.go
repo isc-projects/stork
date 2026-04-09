@@ -37,6 +37,32 @@ func NewKeaDHCPv6Server(db *pg.DB) (*KeaServer, error) {
 	return dhcp6, nil
 }
 
+// Creates a new Kea daemon and a CA server daemon in the database.
+func NewKeaCAServer(db *pg.DB) (*KeaServer, error) {
+	m, err := NewMachine(db)
+	if err != nil {
+		return nil, err
+	}
+	daemon, err := m.NewKeaCAServer()
+	if err != nil {
+		return nil, err
+	}
+	return daemon, nil
+}
+
+// Creates a new Kea daemon and a D2 server daemon in the database.
+func NewKeaD2Server(db *pg.DB) (*KeaServer, error) {
+	m, err := NewMachine(db)
+	if err != nil {
+		return nil, err
+	}
+	daemon, err := m.NewKeaD2Server()
+	if err != nil {
+		return nil, err
+	}
+	return daemon, nil
+}
+
 // Applies a new configuration in the Kea server.
 func (server *KeaServer) Configure(config string) error {
 	d, err := dbmodel.GetKeaDaemonByID(server.machine.db, server.DaemonID)

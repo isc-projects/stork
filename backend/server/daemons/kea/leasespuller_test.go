@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	agentapi "isc.org/stork/api"
@@ -330,6 +331,10 @@ func TestFilterDaemons(t *testing.T) {
 			dbPg,
 			dbLocalhostV4,
 		)
+		noLeaseDB = daemonWithLeaseDB(
+			mockFilterableDaemon(daemonname.DHCPv6, 26, 12),
+			nil,
+		)
 		// Non-DHCP daemons:
 		bind9Daemon = mockFilterableDaemon(daemonname.Bind9, 100, 100)
 		keaCADaemon = mockFilterableDaemon(daemonname.CA, 101, 101)
@@ -523,6 +528,17 @@ func TestFilterDaemons(t *testing.T) {
 		require.Len(t, result, 1)
 		require.Equal(t, sqlDaemon17OnMachine10UsingLoopbackDB.ID, result[0].ID)
 	})
+	t.Run("daemons without a lease database are skipped", func(t *testing.T) {
+		t.Parallel()
+		locahosts := []dbmodel.Daemon{
+			*noLeaseDB,
+		}
+
+		result := filterDaemons(locahosts, false)
+
+		// Assert
+		require.Len(t, result, 0)
+	})
 }
 
 // Test that the lease puller can pull leases from a daemon in the simplest
@@ -570,4 +586,443 @@ func TestLeasePullingBasic(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
+}
+
+// Test that the lease puller collects all errors from failed daemons.
+func TestPullLeasesCollectsAllErrors(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemon4, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemon4.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+
+	daemon6, _ := dbmodeltest.NewKeaDHCPv6Server(db)
+	err = daemon6.Configure(`{ "Dhcp6": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases6.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	ctrl := gomock.NewController(t)
+
+	defer ctrl.Finish()
+
+	mockLeases4 := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{nil},
+		[]error{errors.New("four")},
+	)
+	mockLeases6 := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{nil},
+		[]error{errors.New("six")},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases4)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases6)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.pullLeases()
+
+	// Assert
+	require.ErrorContains(t, err, "four")
+	require.ErrorContains(t, err, "six")
+}
+
+// Test to ensure that getLeasesFromDaemon doesn't try to get leases from an
+// inactive daemon.
+func TestGetLeasesFromDaemonWhenInactive(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+	daemon.Active = false
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fa := NewMockConnectedAgents(ctrl)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Test that getLeasesFromDaemon skips Kea daemons that are not DHCPv4 or DHCPv6.
+func TestGetLeasesFromDaemonWhenNotDHCPD(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	caDaemonServer, _ := dbmodeltest.NewKeaCAServer(db)
+	err := caDaemonServer.Configure(`{"Control-agent": {
+		"http-host": "127.0.0.1",
+		"http-port": 8000,
+		"control-sockets": {
+			"dhcp4": {
+				"socket-type": "unix",
+				"socket-name": "/var/run/kea/dhcp-v4.sock"
+			},
+			"dhcp6": {
+				"socket-type": "unix",
+				"socket-name": "/var/run/kea/dhcp-v6.sock"
+			}
+		},
+		"loggers": [
+			{ "name": "kea-ctrl-agent", "severity": "INFO" }
+		]
+	}}`)
+	require.NoError(t, err)
+	caDaemon, err := caDaemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	d2DaemonServer, _ := dbmodeltest.NewKeaD2Server(db)
+	err = d2DaemonServer.Configure(`{ "DhcpDdns": {
+		"ip-address": "127.0.0.1",
+		"port": 53001,
+		"dns-server-timeout": 500,
+		"ncr-protocol": "UDP",
+		"ncr-format": "JSON",
+		"tsig-keys": [],
+		"forward-ddns": {
+			"ddns-domains": []
+		},
+		"reverse-dns": {
+			"ddns-domains": []
+		}
+	}}`)
+	require.NoError(t, err)
+	d2Daemon, err := d2DaemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fa := NewMockConnectedAgents(ctrl)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	caErr := puller.getLeasesFromDaemon(caDaemon)
+	d2Err := puller.getLeasesFromDaemon(d2Daemon)
+
+	// Assert
+	require.NoError(t, caErr)
+	require.NoError(t, d2Err)
+}
+
+// Test getLeasesFromDaemon to ensure that it defaults to 0 when it can't get
+// the largest CLTT from the database.
+/*
+func TestGetLeasesFromDaemonWhenFailedToFetchCLTT(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	// TODO: how to cause a failure in the database that makes it into RunInTransaction, hits the error check for Select, and then doesn't also cause an error at AddLease
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{Lease: &agentapi.Lease{
+				Family:        4,
+				IpAddress:     "192.0.2.1",
+				Cltt:          42,
+				ValidLifetime: 420,
+			}},
+		},
+		[]error{nil},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.NoError(t, err)
+}
+*/
+
+// Test getLeasesFromDaemon to ensure that it returns an error when
+// ReceiveKeaLeases returns an error.
+func TestGetLeasesFromDaemonWhenReceiveKeaLeasesReturnsErr(t *testing.T) {
+	// Arrange
+	errorText := "According to all known laws of aviation, there is no way a bee should be able to fly."
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{nil},
+		[]error{errors.New(errorText)},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.ErrorContains(t, err, errorText)
+}
+
+// Test getLeasesFromDaemon to ensure that it returns an error when
+// there's a nil in the stream of leases.
+func TestGetLeasesFromDaemonWhenReceiveKeaLeasesReturnsNilInStream(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{
+				Lease: &agentapi.Lease{
+					IpAddress:     "192.168.1.180",
+					HwAddress:     "00:01:02:03:04:05",
+					Cltt:          1000,
+					ValidLifetime: 3600,
+					Family:        4,
+					SubnetID:      10,
+					State:         0,
+				},
+			},
+			nil,
+			{
+				Lease: &agentapi.Lease{
+					IpAddress:     "192.168.1.27",
+					HwAddress:     "00:01:02:03:04:06",
+					Cltt:          1009,
+					ValidLifetime: 3600,
+					Family:        4,
+					SubnetID:      10,
+					State:         0,
+				},
+			},
+		},
+		[]error{nil, nil, nil},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.ErrorContains(t, err, "unexpected nil")
+}
+
+// Test getLeasesFromDaemon to ensure that it returns an error when
+// there's an invalid lease.
+func TestGetLeasesFromDaemonWhenReceiveKeaLeasesReturnsInvalidLease(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{Lease: nil},
+		},
+		[]error{nil},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.ErrorContains(t, err, "unable to convert")
+}
+
+// Test getLeasesFromDaemon to ensure that it correctly reads the maximum CLTT
+// out of the database when fetching from a daemon the second time.
+func TestGetLeasesFromDaemonReadsMaxCLTTFromDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeasesFirst := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{
+				Lease: &agentapi.Lease{
+					IpAddress:     "192.168.1.180",
+					HwAddress:     "00:01:02:03:04:05",
+					Cltt:          1000,
+					ValidLifetime: 3600,
+					Family:        4,
+					SubnetID:      10,
+					State:         0,
+				},
+			},
+		},
+		[]error{nil},
+	)
+	mockLeasesSecond := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{
+				Lease: &agentapi.Lease{
+					IpAddress:     "192.168.1.27",
+					HwAddress:     "00:01:02:03:04:06",
+					Cltt:          1009,
+					ValidLifetime: 3600,
+					Family:        4,
+					SubnetID:      10,
+					State:         0,
+				},
+			},
+		},
+		[]error{nil},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeasesFirst)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(1000))).Return(mockLeasesSecond)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	errFirst := puller.getLeasesFromDaemon(daemon)
+	errSecond := puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.NoError(t, errFirst)
+	require.NoError(t, errSecond)
 }

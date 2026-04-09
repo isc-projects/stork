@@ -31,7 +31,11 @@ func addLease(tx *pg.Tx, lease *Lease) (err error) {
 	// Add the subnet first.
 	_, err = tx.Model(lease).Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem inserting lease for %s to (mac:%s/duid:%s/clientid:%s)", lease.IPAddress, lease.HWAddress, lease.DUID, lease.ClientID)
+		if lease == nil {
+			err = pkgerrors.Wrapf(err, "cannot insert nil lease into database")
+		} else {
+			err = pkgerrors.Wrapf(err, "problem inserting lease for %s to (mac:%s/duid:%s/clientid:%s)", lease.IPAddress, lease.HWAddress, lease.DUID, lease.ClientID)
+		}
 		return err
 	}
 	return nil
