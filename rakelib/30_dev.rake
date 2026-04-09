@@ -304,7 +304,7 @@ namespace :unittest do
             opts += ["-v"]
         end
 
-        with_cov_tests = scope == "./..." && ENV["TEST"].nil?
+        with_cov_tests = (ENV["PRESERVE_COVERAGE"] == "true") || (scope == "./..." && ENV["TEST"].nil?)
 
         if with_cov_tests
             opts += ["-coverprofile=coverage.out"]
