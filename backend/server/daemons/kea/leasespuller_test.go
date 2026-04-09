@@ -7,10 +7,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	agentapi "isc.org/stork/api"
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
+	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
+
+//go:generate mockgen -package=kea -destination=connectedagentsmock_test.go -source=../../agentcomm/agentcomm.go ConnectedAgents
 
 // Return a fake daemon that can be filtered by filterDaemons in the tests below.
 func mockFilterableDaemon(name daemonname.Name, id, machineID int64) *dbmodel.Daemon {
@@ -191,6 +198,28 @@ func TestCheckIsLocalhost(t *testing.T) {
 			require.Equal(t, testCase.expected, result)
 		})
 	}
+}
+
+// Test that the leases puller instance is created properly.
+func TestNewLeasesPuller(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	fa := NewMockConnectedAgents(ctrl)
+
+	// Act
+	puller, err := NewLeasesPuller(db, fa)
+	defer puller.Shutdown()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+	require.Equal(t, fa, puller.Agents)
 }
 
 // Verify that filterDaemons correctly filters out duplicate daemons (pointing
@@ -494,4 +523,51 @@ func TestFilterDaemons(t *testing.T) {
 		require.Len(t, result, 1)
 		require.Equal(t, sqlDaemon17OnMachine10UsingLoopbackDB.ID, result[0].ID)
 	})
+}
+
+// Test that the lease puller can pull leases from a daemon in the simplest
+// possible happy-path case.
+func TestLeasePullingBasic(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemon, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemon.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{Lease: &agentapi.Lease{
+				Family:        4,
+				IpAddress:     "192.0.2.1",
+				Cltt:          42,
+				ValidLifetime: 420,
+			}},
+		},
+		[]error{nil},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeases)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.pullLeases()
+
+	// Assert
+	require.NoError(t, err)
 }
