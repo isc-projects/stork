@@ -108,49 +108,42 @@ func daemonWithHAHotStandbyTriangle(d *dbmodel.Daemon, standbyFor, primaryFor in
 			Parameters: (json.RawMessage)(fmt.Sprintf(`{
 				"high-availability": [
 					{
-						"this-server-name": "server%d",
+						"this-server-name": "server%[1]d",
 						"mode": "hot-standby",
 						"heartbeat-delay": 10000,
 						"peers": [{
-							"name": "server%d",
-							"url": "http://192.168.1.%d:8005/",
+							"name": "server%[1]d",
+							"url": "http://192.168.1.%[1]d:8005/",
 							"role": "primary",
 							"auto-failover": true
 						}, {
-							"name": "server%d",
-							"url": "http://192.168.1.%d:8005/",
+							"name": "server%[2]d",
+							"url": "http://192.168.1.%[2]d:8005/",
 							"role": "standby",
 							"auto-failover": true
 						}]
 					},
 					{
-						"this-server-name": "server%d",
+						"this-server-name": "server%[1]d",
 						"mode": "hot-standby",
 						"heartbeat-delay": 10000,
 						"peers": [{
-							"name": "server%d",
-							"url": "http://192.168.1.%d:8005/",
+							"name": "server%[3]d",
+							"url": "http://192.168.1.%[3]d:8005/",
 							"role": "primary",
 							"auto-failover": true
 						}, {
-							"name": "server%d",
-							"url": "http://192.168.1.%d:8005/",
+							"name": "server%[1]d",
+							"url": "http://192.168.1.%[1]d:8005/",
 							"role": "standby",
 							"auto-failover": true
 						}]
 					}
 				]
 			}`,
-				myID,       // this-server-name
-				myID,       // primary name
-				myID,       // primary url
-				primaryFor, // secondary name
-				primaryFor, // secondary url
-				myID,       // this-server-name
-				standbyFor, // primary name
-				standbyFor, // primary url
-				myID,       // secondary name
-				myID,       // secondary url
+				myID,
+				primaryFor,
+				standbyFor,
 			)),
 		},
 	}
