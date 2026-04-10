@@ -16,6 +16,7 @@ import (
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
+	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
 )
@@ -568,6 +569,52 @@ func TestGetSubnetsByDaemonID(t *testing.T) {
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.EqualValues(t, 345, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
 	require.EqualValues(t, daemons[2].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
+}
+
+// Add a subnet to the database and link it to a daemon. Assert that both of
+// those steps worked.
+func testHelperLinkSubnetAndDaemon(t *testing.T, db dbops.DBI, subnet *Subnet, daemon *Daemon) {
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+	err = AddDaemonToSubnet(db, subnet, daemon)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+}
+
+// Verify that GetSubnetIDByDaemonIDAndKeaLocalID gets the Stork subnet ID for
+// a local subnet ID that exists in the DB, and returns nil and no error when
+// the local subnet ID doesn't exist in the DB.
+func TestGetSubnetIDByDaemonIDAndKeaLocalID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add daemons to the database. They must exist to make any association between
+	// them and the subnet.
+	daemons := addTestSubnetDaemons(t, db)
+	require.Len(t, daemons, 4)
+
+	// Add two subnets matching configuration of the daemons we have added.
+	subnets := []Subnet{
+		{Prefix: "192.0.2.0/24"},
+		{Prefix: "10.0.0.0/8"},
+	}
+	testHelperLinkSubnetAndDaemon(t, db, &subnets[0], daemons[0])
+	testHelperLinkSubnetAndDaemon(t, db, &subnets[1], daemons[2])
+
+	// Look up the first subnet (which has a local ID).
+	workingSubnet, err := GetSubnetIDByDaemonIDAndLocalID(db, daemons[0].ID, 123)
+	// Look up a subnet by local ID which doesn't correspond to anything.
+	missingSubnet, err2 := GetSubnetIDByDaemonIDAndLocalID(db, daemons[1].ID, 67)
+
+	// Assert
+	require.NoError(t, err)
+	require.NoError(t, err2)
+
+	require.NotNil(t, workingSubnet)
+	require.EqualValues(t, subnets[0].ID, *workingSubnet)
+
+	require.Nil(t, missingSubnet)
 }
 
 // This test verifies that subnets can be filtered by search text.

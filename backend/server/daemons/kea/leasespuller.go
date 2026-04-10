@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"net/netip"
 	"slices"
@@ -245,12 +246,28 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 				return errors.New("unexpected nil in response stream of Kea leases")
 			default:
 				// Non-error response.
-				// TODO: get real lease ID
-				modelLease := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, 0)
+				if response.Lease == nil {
+					return errors.New("unexpected nil Lease inside ReceiveKeaLeases response")
+				}
+				subnetID, err := dbmodel.GetSubnetIDByDaemonIDAndLocalID(
+					tx,
+					daemon.ID,
+					response.Lease.SubnetID,
+				)
+				if err != nil {
+					return err
+				}
+				if subnetID == nil {
+					return errors.New(fmt.Sprintf(
+						"unable to insert lease for subnet whose local ID (%d) is not known to Stork",
+						response.Lease.SubnetID,
+					))
+				}
+				modelLease := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, *subnetID)
 				if modelLease == nil {
 					return errors.New("unable to convert lease from gRPC format to model format; data is missing or invalid")
 				}
-				err := dbmodel.AddLease(tx, modelLease)
+				err = dbmodel.AddLease(tx, modelLease)
 				if err != nil {
 					return err
 				}

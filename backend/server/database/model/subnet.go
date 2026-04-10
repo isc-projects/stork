@@ -580,6 +580,25 @@ func GetSubnetsByDaemonID(dbi dbops.DBI, daemonID int64) ([]Subnet, error) {
 	return subnets, err
 }
 
+// Fetches the subnet ID matching a given daemon ID and local (Kea) subnet ID.
+func GetSubnetIDByDaemonIDAndLocalID(dbi dbops.DBI, daemonID int64, localSubnetID uint32) (*int64, error) {
+	q := dbi.Model((*LocalSubnet)(nil)).
+		Column("subnet_id").
+		Where("daemon_id = ?", daemonID).
+		Where("local_subnet_id = ?", localSubnetID)
+
+	var subnetID int64
+	err := q.Select(&subnetID)
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, nil
+		}
+		err = pkgerrors.Wrapf(err, "problem getting subnet ID by daemon ID %d and local subnet id %d", daemonID, localSubnetID)
+		return nil, err
+	}
+	return &subnetID, err
+}
+
 // Fetches the subnet by prefix from the database.
 func GetSubnetsByPrefix(dbi dbops.DBI, prefix string) ([]Subnet, error) {
 	subnets := []Subnet{}
