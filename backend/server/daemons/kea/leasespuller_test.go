@@ -100,7 +100,7 @@ func daemonWithLeaseSQLDB(d *dbmodel.Daemon, kind, host string) *dbmodel.Daemon 
 // the primary for the relationship with the peer ID in primaryFor. Callers
 // should not rely on the structures entering and leaving this function to be at
 // the same location in memory.
-func daemonWithHAHotStandbyTriangle(d *dbmodel.Daemon, standbyFor, primaryFor int64) *dbmodel.Daemon {
+func daemonWithHAHotStandbyTriangle(t *testing.T, d *dbmodel.Daemon, standbyFor, primaryFor int64) *dbmodel.Daemon {
 	myID := d.ID
 	hooks := keaconfig.HookLibraries{
 		{
@@ -153,7 +153,7 @@ func daemonWithHAHotStandbyTriangle(d *dbmodel.Daemon, standbyFor, primaryFor in
 	case daemonname.DHCPv6:
 		d.KeaDaemon.Config.DHCPv6Config.HookLibraries = hooks
 	default:
-		panic("test function used incorrectly, must pass a DHCPv4 or DHCPv6 daemon.")
+		require.FailNow(t, "test function used incorrectly, must pass a DHCPv4 or DHCPv6 daemon.")
 	}
 	return d
 }
@@ -284,6 +284,7 @@ func TestFilterDaemons(t *testing.T) {
 		)
 		// Daemons in a triangle of HA relationships:
 		haDaemon14OnMachine7 = daemonWithHAHotStandbyTriangle(
+			t,
 			daemonWithLeaseMemfile(
 				mockFilterableDaemon(daemonname.DHCPv6, 20, 7),
 				configuredLeasefilePath,
@@ -293,6 +294,7 @@ func TestFilterDaemons(t *testing.T) {
 			21,
 		)
 		haDaemon15OnMachine8 = daemonWithHAHotStandbyTriangle(
+			t,
 			daemonWithLeaseMemfile(
 				mockFilterableDaemon(daemonname.DHCPv6, 21, 8),
 				configuredLeasefilePath,
@@ -302,6 +304,7 @@ func TestFilterDaemons(t *testing.T) {
 			22,
 		)
 		haDaemon16OnMachine9 = daemonWithHAHotStandbyTriangle(
+			t,
 			daemonWithLeaseMemfile(
 				mockFilterableDaemon(daemonname.DHCPv6, 22, 9),
 				configuredLeasefilePath,
