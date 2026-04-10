@@ -1,6 +1,7 @@
 package kea
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -12,6 +13,7 @@ import (
 	agentapi "isc.org/stork/api"
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
@@ -972,4 +974,60 @@ func TestGetLeasesFromDaemonReadsMaxCLTTFromDatabase(t *testing.T) {
 	// Assert
 	require.NoError(t, errFirst)
 	require.NoError(t, errSecond)
+}
+
+// Test getLeasesFromDaemon to ensure that the error occurred when the lease
+// is added to the database is handled property.
+func TestGetLeasesFromDaemonAddLeaseError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
+	err := daemonServer.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	}
+	}}`)
+	require.NoError(t, err)
+	daemon, err := daemonServer.GetDaemon()
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{Lease: &agentapi.Lease{
+				Family:        4,
+				IpAddress:     "192.0.2.1",
+				Cltt:          42,
+				ValidLifetime: 420,
+			}},
+		},
+		[]error{nil},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().
+		ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).
+		Do(func(ctx context.Context, daemon agentcomm.ControlledDaemon, minCLTT uint64) {
+			// Tear down the database to cause an error when the puller tries
+			// to add leases to it.
+			teardown()
+		}).
+		Return(mockLeases)
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	err = puller.getLeasesFromDaemon(daemon)
+
+	// Assert
+	require.ErrorContains(t, err, "problem inserting lease")
 }
