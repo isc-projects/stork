@@ -159,7 +159,7 @@ func daemonWithHAHotStandbyTriangle(t *testing.T, d *dbmodel.Daemon, standbyFor,
 }
 
 // Sort the provided slice of daemons by their daemon IDs, in ascending order.
-func sortByID(daemons []*dbmodel.Daemon) []*dbmodel.Daemon {
+func testHelperSortByID(daemons []*dbmodel.Daemon) []*dbmodel.Daemon {
 	slices.SortStableFunc(daemons, func(a, b *dbmodel.Daemon) int {
 		return int(a.ID - b.ID)
 	})
@@ -394,7 +394,7 @@ func TestFilterDaemons(t *testing.T) {
 		}
 		result := filterDaemons(four, false)
 
-		result = sortByID(result)
+		result = testHelperSortByID(result)
 
 		// Assert
 		require.Len(t, result, 2)
@@ -411,7 +411,7 @@ func TestFilterDaemons(t *testing.T) {
 		}
 		result := filterDaemons(two, false)
 
-		result = sortByID(result)
+		result = testHelperSortByID(result)
 
 		// Assert
 		require.Len(t, result, 2)
@@ -431,7 +431,7 @@ func TestFilterDaemons(t *testing.T) {
 		}
 		result := filterDaemons(three, false)
 
-		result = sortByID(result)
+		result = testHelperSortByID(result)
 
 		// Assert
 		require.Len(t, result, 3)
@@ -470,7 +470,7 @@ func TestFilterDaemons(t *testing.T) {
 		}
 		result := filterDaemons(two, false)
 
-		result = sortByID(result)
+		result = testHelperSortByID(result)
 
 		// Assert
 		require.Len(t, result, 2)
@@ -491,7 +491,7 @@ func TestFilterDaemons(t *testing.T) {
 		}
 
 		result := filterDaemons(mixed, true)
-		result = sortByID(result)
+		result = testHelperSortByID(result)
 
 		// Assert
 		require.Len(t, result, 2)
@@ -506,7 +506,7 @@ func TestFilterDaemons(t *testing.T) {
 		}
 
 		result := filterDaemons(locahosts, false)
-		result = sortByID(result)
+		result = testHelperSortByID(result)
 
 		// Assert
 		require.Len(t, result, 2)
