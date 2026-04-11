@@ -21,11 +21,10 @@ import (
 // Creates new instance of the user model used by REST API from the
 // user instance returned from the database.
 func newRestUser(u dbmodel.SystemUser) *models.User {
-	id := int64(u.ID)
 	r := &models.User{
 		Email:                  u.Email,
 		Name:                   u.Name,
-		ID:                     &id,
+		ID:                     &u.ID,
 		Lastname:               u.Lastname,
 		Login:                  u.Login,
 		AuthenticationMethodID: &u.AuthenticationMethodID,
@@ -37,7 +36,7 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 	// Append an array of groups.
 	for _, g := range u.Groups {
 		if g.ID > 0 {
-			r.Groups = append(r.Groups, int64(g.ID))
+			r.Groups = append(r.Groups, g.ID)
 		}
 	}
 
@@ -47,9 +46,8 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 // Create new instance of the group model used by REST API from the
 // group instance returned from the database.
 func newRestGroup(g dbmodel.SystemGroup) *models.Group {
-	id := int64(g.ID)
 	r := &models.Group{
-		ID:          &id,
+		ID:          &g.ID,
 		Name:        &g.Name,
 		Description: &g.Description,
 	}
@@ -98,7 +96,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		return nil, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
-	groupIDMapping := map[authenticationcallouts.UserGroupID]int{
+	groupIDMapping := map[authenticationcallouts.UserGroupID]int64{
 		authenticationcallouts.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
 		authenticationcallouts.UserGroupIDAdmin:      dbmodel.AdminGroupID,
 		authenticationcallouts.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
@@ -289,7 +287,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 
 // Returns user information by user ID.
 func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
-	id := int(params.ID)
+	id := params.ID
 	su, err := dbmodel.GetUserByID(r.DB, id)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -364,7 +362,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	}
 
 	for _, gid := range u.Groups {
-		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: gid})
 	}
 
 	con, err := dbmodel.CreateUserWithPassword(r.DB, su, string(*p))
@@ -393,7 +391,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		return users.NewCreateUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 	}
 
-	*u.ID = int64(su.ID)
+	*u.ID = su.ID
 	return users.NewCreateUserOK().WithPayload(u)
 }
 
@@ -453,7 +451,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	su := &dbmodel.SystemUser{
-		ID:             int(*u.ID),
+		ID:             *u.ID,
 		Login:          u.Login,
 		Email:          u.Email,
 		Lastname:       u.Lastname,
@@ -462,7 +460,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	for _, gid := range u.Groups {
-		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: gid})
 	}
 
 	con, err := dbmodel.UpdateUser(r.DB, su)
@@ -491,7 +489,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	if password != "" {
-		err = dbmodel.SetPassword(r.DB, int(*u.ID), password)
+		err = dbmodel.SetPassword(r.DB, *u.ID, password)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"userID": *u.ID,
@@ -517,7 +515,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 
 // Deletes existing user account from the database.
 func (r *RestAPI) DeleteUser(ctx context.Context, params users.DeleteUserParams) middleware.Responder {
-	id := int(params.ID)
+	id := params.ID
 
 	_, currentUser := r.SessionManager.Logged(ctx)
 	if currentUser.ID == id {
@@ -662,7 +660,7 @@ func validatePassword(password string) []string {
 // Updates password of the given user in the database.
 // It validates if the new password meets the password policy requirements.
 func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUserPasswordParams) middleware.Responder {
-	id := int(params.ID)
+	id := params.ID
 	passwords := params.Passwords
 	if passwords == nil || passwords.Newpassword == nil || passwords.Oldpassword == nil {
 		log.Warnf("Failed to update password for user ID %d: missing data", id)

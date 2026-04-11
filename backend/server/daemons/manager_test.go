@@ -491,21 +491,21 @@ func TestCommitDue(t *testing.T) {
 	changes := []dbmodel.ScheduledConfigChange{
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
-			UserID:     int64(user.ID),
+			UserID:     user.ID,
 			Updates: []*dbmodel.ConfigUpdate{
 				dbmodel.NewConfigUpdate(dbmodel.ConfigOperationKeaHostAdd),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 100),
-			UserID:     int64(user.ID),
+			UserID:     user.ID,
 			Updates: []*dbmodel.ConfigUpdate{
 				dbmodel.NewConfigUpdate(dbmodel.ConfigOperationKeaGlobalParametersUpdate),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
-			UserID:     int64(user.ID),
+			UserID:     user.ID,
 			Updates: []*dbmodel.ConfigUpdate{
 				dbmodel.NewConfigUpdate(dbmodel.ConfigOperationKeaHostUpdate),
 			},
@@ -579,14 +579,14 @@ func TestCommitDueErrors(t *testing.T) {
 	changes := []dbmodel.ScheduledConfigChange{
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
-			UserID:     int64(user.ID),
+			UserID:     user.ID,
 			Updates: []*dbmodel.ConfigUpdate{
 				dbmodel.NewConfigUpdate(dbmodel.ConfigOperationKeaHostAdd),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 100),
-			UserID:     int64(user.ID),
+			UserID:     user.ID,
 			Updates: []*dbmodel.ConfigUpdate{
 				dbmodel.NewConfigUpdate(dbmodel.ConfigOperationKeaGlobalParametersUpdate),
 			},
@@ -645,7 +645,7 @@ func TestDeleteUserDropDueChanges(t *testing.T) {
 	changes := []dbmodel.ScheduledConfigChange{
 		{
 			DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
-			UserID:     int64(user.ID),
+			UserID:     user.ID,
 			Updates: []*dbmodel.ConfigUpdate{
 				dbmodel.NewConfigUpdate(dbmodel.ConfigOperationKeaGlobalParametersUpdate),
 			},

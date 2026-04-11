@@ -392,7 +392,7 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkSubmit(ctx context.Context, t
 	}
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, user.ID)
 	if cctx == nil {
 		msg := "Transaction expired for the shared network update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
@@ -452,7 +452,7 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkSubmit(ctx context.Context, t
 func (r *RestAPI) commonCreateOrUpdateSharedNetworkDelete(ctx context.Context, transactionID int64) (int, string) {
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, user.ID)
 	if cctx == nil {
 		msg := "Transaction expired for the shared network update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
@@ -697,7 +697,7 @@ func (r *RestAPI) DeleteSharedNetwork(ctx context.Context, params dhcp.DeleteSha
 	}
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	cctx, err := r.ConfigManager.CreateContext(user.ID)
 	if err != nil {
 		msg := "Problem with creating transaction context for deleting the shared network"
 		log.WithError(err).Error(msg)

@@ -773,7 +773,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	}
 
 	// Make sure that the transaction is done.
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent
@@ -923,7 +923,7 @@ func TestCreateHostBeginSubmitHostnameIPReservationsFromLocalHosts(t *testing.T)
 	}`, string(commandMarshaled))
 
 	// Make sure that the transaction is done.
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent
@@ -1211,7 +1211,7 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	rsp2 := rapi.CreateHostDelete(ctx, params2)
 	require.IsType(t, &dhcp.CreateHostDeleteOK{}, rsp2)
 
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent
@@ -1458,7 +1458,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	}
 
 	// Make sure that the transaction is done.
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent
@@ -1784,7 +1784,7 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	rsp2 := rapi.UpdateHostDelete(ctx, params2)
 	require.IsType(t, &dhcp.UpdateHostDeleteOK{}, rsp2)
 
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent

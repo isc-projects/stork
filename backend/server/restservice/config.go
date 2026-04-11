@@ -521,7 +521,7 @@ func (r *RestAPI) DeleteKeaDaemonConfigHashes(ctx context.Context, params servic
 func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhcp.UpdateKeaGlobalParametersBeginParams) middleware.Responder {
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	cctx, err := r.ConfigManager.CreateContext(user.ID)
 	if err != nil {
 		msg := "Problem with creating transaction context"
 		log.WithError(err).Error(msg)
@@ -634,7 +634,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dhcp.UpdateKeaGlobalParametersSubmitParams) middleware.Responder {
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(params.ID, user.ID)
 	if cctx == nil {
 		msg := "Transaction expired for the Kea configs update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)
@@ -815,7 +815,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 func (r *RestAPI) UpdateKeaGlobalParametersDelete(ctx context.Context, params dhcp.UpdateKeaGlobalParametersDeleteParams) middleware.Responder {
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(params.ID, user.ID)
 	if cctx == nil {
 		msg := "Transaction expired for updating Kea global parameters"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)

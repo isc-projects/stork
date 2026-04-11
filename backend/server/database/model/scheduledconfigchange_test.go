@@ -40,7 +40,7 @@ func TestAddScheduledConfigChange(t *testing.T) {
 	change := &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
 			NewConfigUpdate(ConfigOperationKeaHostUpdate, 3),
@@ -52,7 +52,7 @@ func TestAddScheduledConfigChange(t *testing.T) {
 	change = &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 15),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostDelete, 1),
 		},
@@ -63,7 +63,7 @@ func TestAddScheduledConfigChange(t *testing.T) {
 	change = &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostDelete, 2),
 		},
@@ -121,7 +121,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 	change := &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
 			NewConfigUpdate(ConfigOperationKeaHostUpdate, 3),
@@ -133,7 +133,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 	change = &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 15),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostDelete, 1),
 		},
@@ -144,7 +144,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 	change = &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostDelete, 2),
 		},
@@ -204,7 +204,7 @@ func TestSetConfigChangeExecuted(t *testing.T) {
 	change := &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
 		},
@@ -268,7 +268,7 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 	change := &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Executed:   true,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostAdd, 1, 2, 3),
@@ -281,7 +281,7 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 	change = &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 25),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostDelete, 1),
 		},
@@ -292,7 +292,7 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 	change = &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostDelete, 2),
 		},
@@ -328,7 +328,7 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 	change1 := &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostAdd, 1),
 		},
@@ -340,7 +340,7 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 	change2 := &ScheduledConfigChange{
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
-		UserID:     int64(user.ID),
+		UserID:     user.ID,
 		Updates: []*ConfigUpdate{
 			NewConfigUpdate(ConfigOperationKeaHostUpdate, 1),
 		},
