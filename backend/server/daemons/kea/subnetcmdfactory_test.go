@@ -242,13 +242,14 @@ func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(
+	cmd, err := createSubnetAddCommands(
 		subnet.LocalSubnets[0], subnet, "", []string{"all"}, lookup,
 	)
 
 	// Assert
 	require.NoError(t, err)
-	marshalled, err := cmd.Command.Marshal()
+	require.Len(t, cmd, 1)
+	marshalled, err := cmd[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
 		"command": "remote-subnet4-set",
@@ -258,7 +259,7 @@ func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 			"server-tags": ["all"]
 		}
 	}`, string(marshalled))
-	require.Equal(t, daemon, cmd.Daemon)
+	require.Equal(t, daemon, cmd[0].Daemon)
 }
 
 // Tests creating a cb_cmds set command for an IPv4 subnet with an explicit
@@ -270,13 +271,14 @@ func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 	subnet := newTestSubnet(daemon)
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(
+	cmd, err := createSubnetAddCommands(
 		subnet.LocalSubnets[0], subnet, "", []string{"server1", "server2"}, lookup,
 	)
 
 	// Assert
 	require.NoError(t, err)
-	marshalled, err := cmd.Command.Marshal()
+	require.Len(t, cmd, 1)
+	marshalled, err := cmd[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
 		"command": "remote-subnet4-set",
@@ -295,13 +297,14 @@ func TestCreateCbCmdsSetCommandIPv6(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(
+	cmd, err := createSubnetAddCommands(
 		subnet.LocalSubnets[0], subnet, "", []string{"all"}, lookup,
 	)
 
 	// Assert
 	require.NoError(t, err)
-	marshalled, err := cmd.Command.Marshal()
+	require.Len(t, cmd, 1)
+	marshalled, err := cmd[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
 		"command": "remote-subnet6-set",
@@ -322,13 +325,14 @@ func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmd, err := createCbCmdsSetCommand(
+	cmd, err := createSubnetAddCommands(
 		subnet.LocalSubnets[0], subnet, "mynet", []string{"all", "server"}, lookup,
 	)
 
 	// Assert
 	require.NoError(t, err)
-	marshalled, err := cmd.Command.Marshal()
+	require.Len(t, cmd, 1)
+	marshalled, err := cmd[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
 		"command": "remote-subnet4-set",

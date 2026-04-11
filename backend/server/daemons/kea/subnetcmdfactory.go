@@ -91,54 +91,6 @@ func createSubnetCmdsAddCommands(
 	return commands, nil
 }
 
-// Creates a remote-subnet4-set or remote-subnet6-set command for a cb_cmds
-// daemon. The server tags are derived from the daemon configuration; when the
-// server tag is absent, "all" is used.
-func createCbCmdsSetCommand(
-	localSubnet *dbmodel.LocalSubnet,
-	subnet *dbmodel.Subnet,
-	sharedNetworkName string,
-	serverTags []string,
-	lookup keaconfig.DHCPOptionDefinitionLookup,
-) (ConfigCommand, error) {
-	switch subnet.GetFamily() {
-	case 4:
-		subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
-		if err != nil {
-			return ConfigCommand{}, err
-		}
-		remoteSubnet := &keaconfig.RemoteSubnet4{
-			Subnet4:           subnet4,
-			SharedNetworkName: sharedNetworkName,
-		}
-		return ConfigCommand{
-			Command: keactrl.NewCommandRemoteSubnet4Set(
-				remoteSubnet,
-				serverTags,
-				localSubnet.Daemon.Name,
-			),
-			Daemon: localSubnet.Daemon,
-		}, nil
-	default:
-		subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
-		if err != nil {
-			return ConfigCommand{}, err
-		}
-		remoteSubnet := &keaconfig.RemoteSubnet6{
-			Subnet6:           subnet6,
-			SharedNetworkName: sharedNetworkName,
-		}
-		return ConfigCommand{
-			Command: keactrl.NewCommandRemoteSubnet6Set(
-				remoteSubnet,
-				serverTags,
-				localSubnet.Daemon.Name,
-			),
-			Daemon: localSubnet.Daemon,
-		}, nil
-	}
-}
-
 // Creates all commands required to add a subnet for a given local subnet's
 // daemon. The hook type is derived from the daemon's configuration.
 func createSubnetAddCommands(
@@ -152,19 +104,87 @@ func createSubnetAddCommands(
 	if err != nil {
 		return nil, err
 	}
+	family := subnet.GetFamily()
+
 	switch hook {
 	case hookSubnetCmds:
-		cmds, err := createSubnetCmdsAddCommands(localSubnet, subnet, sharedNetworkName, lookup)
-		if err != nil {
-			return nil, err
+		switch family {
+		case 4:
+			subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
+			if err != nil {
+				return nil, err
+			}
+			commands := []ConfigCommand{{
+				Command: keactrl.NewCommandSubnet4Add(subnet4, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			}}
+			if sharedNetworkName != "" {
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetwork4SubnetAdd(
+						sharedNetworkName,
+						localSubnet.LocalSubnetID,
+						localSubnet.Daemon.Name,
+					),
+					Daemon: localSubnet.Daemon,
+				})
+			}
+			return commands, nil
+		default:
+			subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
+			if err != nil {
+				return nil, err
+			}
+			commands := []ConfigCommand{{
+				Command: keactrl.NewCommandSubnet6Add(subnet6, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			}}
+			if sharedNetworkName != "" {
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetwork6SubnetAdd(
+						sharedNetworkName,
+						localSubnet.LocalSubnetID,
+						localSubnet.Daemon.Name,
+					),
+					Daemon: localSubnet.Daemon,
+				})
+			}
+			return commands, nil
 		}
-		return cmds, nil
 	case hookCbCmds:
-		cmd, err := createCbCmdsSetCommand(localSubnet, subnet, sharedNetworkName, serverTags, lookup)
-		if err != nil {
-			return nil, err
+		switch family {
+		case 4:
+			subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
+			if err != nil {
+				return nil, err
+			}
+			return []ConfigCommand{{
+				Command: keactrl.NewCommandRemoteSubnet4Set(
+					&keaconfig.RemoteSubnet4{
+						Subnet4:           subnet4,
+						SharedNetworkName: sharedNetworkName,
+					},
+					serverTags,
+					localSubnet.Daemon.Name,
+				),
+				Daemon: localSubnet.Daemon,
+			}}, nil
+		default:
+			subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
+			if err != nil {
+				return nil, err
+			}
+			return []ConfigCommand{{
+				Command: keactrl.NewCommandRemoteSubnet6Set(
+					&keaconfig.RemoteSubnet6{
+						Subnet6:           subnet6,
+						SharedNetworkName: sharedNetworkName,
+					},
+					serverTags,
+					localSubnet.Daemon.Name,
+				),
+				Daemon: localSubnet.Daemon,
+			}}, nil
 		}
-		return []ConfigCommand{cmd}, nil
 	default:
 		return nil, pkgerrors.Errorf("unrecognized subnet hook type %d", hook)
 	}

@@ -1124,7 +1124,9 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 
 	// Merge commands into a single slice. The commands to save changes must
 	// be last.
-	commands := append(addCommands, saveCommands...)
+	var commands []ConfigCommand
+	commands = append(commands, addCommands...)
+	commands = append(commands, saveCommands...)
 
 	// Store the data in the recipe.
 	recipe := &ConfigRecipe{
