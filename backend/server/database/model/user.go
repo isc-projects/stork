@@ -25,7 +25,7 @@ const AuthenticationMethodIDInternal string = "internal"
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
-	ID                     int
+	ID                     int64
 	Login                  string
 	Email                  string
 	Lastname               string
@@ -39,14 +39,14 @@ type SystemUser struct {
 
 // Represents a user password entry in system_user_password table in the database.
 type SystemUserPassword struct {
-	ID       int
+	ID       int64  `pg:",pk,notnull"`
 	Password string `pg:"password_hash"`
 }
 
 // Represents an association table between the system user and group tables.
 type SystemUserToGroup struct {
-	UserID  int `pg:",pk,notnull,on_delete:CASCADE"`
-	GroupID int `pg:",pk,notnull,on_delete:CASCADE"`
+	UserID  int64 `pg:",pk,notnull,on_delete:CASCADE"`
+	GroupID int64 `pg:",pk,notnull,on_delete:CASCADE"`
 }
 
 // Returns user's identity for logging purposes. It includes login, email or both.
@@ -217,7 +217,7 @@ func DeleteUser(db *pg.DB, user *SystemUser) (err error) {
 }
 
 // Sets new password for the given user id.
-func SetPassword(db *pg.DB, id int, password string) (err error) {
+func SetPassword(db *pg.DB, id int64, password string) (err error) {
 	userPassword := SystemUserPassword{
 		ID:       id,
 		Password: password,
@@ -236,7 +236,7 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 
 // Checks if the old password matches the one in the database and modifies
 // it to the new password if it does.
-func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) error {
+func ChangePassword(db *pg.DB, id int64, oldPassword, newPassword string) error {
 	password := SystemUserPassword{
 		ID: id,
 	}
@@ -347,7 +347,7 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 // Fetches a user with a given id from the database. If the user does not exist
 // the nil value is returned. The user is returned along with the list of groups
 // it belongs to.
-func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
+func GetUserByID(db *dbops.PgDB, id int64) (*SystemUser, error) {
 	user := &SystemUser{}
 	err := db.Model(user).Relation("Groups").Where("id = ?", id).First()
 	if errors.Is(err, pg.ErrNoRows) {

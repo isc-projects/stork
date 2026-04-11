@@ -11,14 +11,14 @@ import (
 
 // List of the user group IDs used in the server.
 const (
-	SuperAdminGroupID int = 1
-	AdminGroupID      int = 2
-	ReadOnlyGroupID   int = 3
+	SuperAdminGroupID int64 = 1
+	AdminGroupID      int64 = 2
+	ReadOnlyGroupID   int64 = 3
 )
 
 // Represents a group of users having some specific permissions.
 type SystemGroup struct {
-	ID          int
+	ID          int64
 	Name        string
 	Description string
 

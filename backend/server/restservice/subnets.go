@@ -640,7 +640,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	}
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	cctx, err := r.ConfigManager.CreateContext(user.ID)
 	if err != nil {
 		msg := "Problem with creating transaction context"
 		log.WithError(err).Error(msg)
@@ -672,7 +672,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	}
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, user.ID)
 	if cctx == nil {
 		msg := "Transaction expired for the subnet update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
@@ -737,7 +737,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transactionID int64) (int, string) {
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, user.ID)
 	if cctx == nil {
 		msg := "Transaction expired for the subnet update"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
@@ -977,7 +977,7 @@ func (r *RestAPI) DeleteSubnet(ctx context.Context, params dhcp.DeleteSubnetPara
 	}
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	cctx, err := r.ConfigManager.CreateContext(user.ID)
 	if err != nil {
 		msg := "Problem with creating transaction context for deleting the subnet"
 		log.WithError(err).Error(msg)

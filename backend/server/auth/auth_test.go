@@ -9,11 +9,11 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-const noneGroupID int = 0
+const noneGroupID int64 = 0
 
 // Helper function checking if the user belonging to the specified group
 // has access to the resource.
-func authorizeAccept(t *testing.T, groupID int, path, method string) bool {
+func authorizeAccept(t *testing.T, groupID int64, path, method string) bool {
 	// Create user with ID 5 and specified group id if the group id is
 	// positive.
 	user := &dbmodel.SystemUser{

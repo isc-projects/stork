@@ -1852,7 +1852,7 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	}
 
 	// Make sure that the transaction is done.
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent
@@ -2141,7 +2141,7 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	}
 
 	// Make sure that the transaction is done.
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent
@@ -2534,7 +2534,7 @@ func TestUpdateGlobalParametersBeginCancel(t *testing.T) {
 	rsp2 := rapi.UpdateKeaGlobalParametersDelete(ctx, params2)
 	require.IsType(t, &dhcp.UpdateKeaGlobalParametersDeleteOK{}, rsp2)
 
-	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := cm.RecoverContext(transactionID, user.ID)
 	// Remove the context from the config manager before testing that
 	// the returned context is nil. If it happens to be non-nil the
 	// require.Nil() would otherwise spit out errors about the concurrent

@@ -81,7 +81,7 @@ func (s *SessionMgr) UpdateUser(ctx context.Context, user *dbmodel.SystemUser) e
 			if i > 0 {
 				groups += ","
 			}
-			groups += strconv.Itoa(g.ID)
+			groups += strconv.FormatInt(g.ID, 10)
 		}
 		s.scsSessionMgr.Put(ctx, "userGroupIds", groups)
 	}
@@ -99,7 +99,7 @@ func (s *SessionMgr) LogoutHandler(ctx context.Context) error {
 // Logout specific user.
 func (s *SessionMgr) LogoutUser(ctx context.Context, user *dbmodel.SystemUser) error {
 	err := s.scsSessionMgr.Iterate(ctx, func(ctx context.Context) error {
-		id := s.scsSessionMgr.GetInt(ctx, "userID")
+		id := s.scsSessionMgr.GetInt64(ctx, "userID")
 
 		if id == user.ID {
 			return s.LogoutHandler(ctx)
@@ -129,7 +129,7 @@ func (s *SessionMgr) HasToken(token string) bool {
 // The returned values are: ok - if the user is logged, user identifier and user
 // login.
 func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemUser) {
-	id := s.scsSessionMgr.GetInt(ctx, "userID")
+	id := s.scsSessionMgr.GetInt64(ctx, "userID")
 	// User has no session.
 	if id == 0 {
 		return false, nil
@@ -151,7 +151,7 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 	if len(userGroups) > 0 {
 		groups := strings.Split(userGroups, ",")
 		for _, g := range groups {
-			if id, err := strconv.Atoi(g); err == nil {
+			if id, err := strconv.ParseInt(g, 10, 64); err == nil {
 				user.Groups = append(user.Groups, &dbmodel.SystemGroup{ID: id})
 			}
 		}

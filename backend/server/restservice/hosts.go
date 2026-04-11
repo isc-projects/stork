@@ -304,7 +304,7 @@ func (r *RestAPI) commonCreateOrUpdateHostBegin(ctx context.Context) ([]*models.
 	}
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	cctx, err := r.ConfigManager.CreateContext(user.ID)
 	if err != nil {
 		msg := "Problem with creating transaction context for host reservation"
 		log.WithError(err).Error(msg)
@@ -384,7 +384,7 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 	}
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, user.ID)
 	if cctx == nil {
 		msg := "Transaction for host reservation expired"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
@@ -451,7 +451,7 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 func (r *RestAPI) commonCreateOrUpdateHostDelete(ctx context.Context, transactionID int64) (int, string) {
 	// Retrieve the context from the config manager.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, _ := r.ConfigManager.RecoverContext(transactionID, int64(user.ID))
+	cctx, _ := r.ConfigManager.RecoverContext(transactionID, user.ID)
 	if cctx == nil {
 		msg := "Transaction for deleting the host reservation expired"
 		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", transactionID, user.ID)
@@ -606,7 +606,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	}
 	// Create configuration context.
 	_, user := r.SessionManager.Logged(ctx)
-	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	cctx, err := r.ConfigManager.CreateContext(user.ID)
 	if err != nil {
 		msg := "Problem with creating transaction context for deleting the host"
 		log.WithError(err).Error(msg)

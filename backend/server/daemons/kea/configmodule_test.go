@@ -830,7 +830,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Set user id in the context.
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+	ctx = context.WithValue(ctx, config.UserContextKey, user.ID)
 
 	// Create the host and store it in the context.
 	host := &dbmodel.Host{
@@ -1482,7 +1482,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	// Prepare the context.
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+	ctx = context.WithValue(ctx, config.UserContextKey, user.ID)
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaHostUpdate, daemonIDs...)
 	recipe := ConfigRecipe{
@@ -1768,7 +1768,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	// Prepare the context.
 	daemonIDs := []int64{1}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+	ctx = context.WithValue(ctx, config.UserContextKey, user.ID)
 
 	// Create the host and store it in the context.
 	host, err := dbmodel.GetHost(db, hosts[0].ID)
@@ -2314,7 +2314,7 @@ func TestCommitScheduledSharedNetworkAdd(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
 
 	// Set user id in the context.
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+	ctx = context.WithValue(ctx, config.UserContextKey, user.ID)
 
 	// New shared network entry.
 	sharedNetwork := &dbmodel.SharedNetwork{
@@ -3243,7 +3243,7 @@ func TestCommitScheduledSharedNetworkUpdate(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
 	// Set user id in the context.
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+	ctx = context.WithValue(ctx, config.UserContextKey, user.ID)
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSharedNetworkUpdate, daemonIDs...)
 	recipe := ConfigRecipe{
@@ -4603,7 +4603,7 @@ func TestCommitScheduledSubnetUpdate(t *testing.T) {
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
 
 	// Set user id in the context.
-	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+	ctx = context.WithValue(ctx, config.UserContextKey, user.ID)
 
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemonIDs...)
 	recipe := ConfigRecipe{
