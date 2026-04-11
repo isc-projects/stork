@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
@@ -26,7 +29,7 @@ func TestCreateUserMissingIdentifier(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Both login and email missing here.
@@ -57,7 +60,7 @@ func TestCreateUserConflictLogin(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Email is missing here.
@@ -92,18 +95,18 @@ func TestCreateUserConflictEmail(t *testing.T) {
 
 	_, _ = dbmodel.CreateUser(db, &dbmodel.SystemUser{
 		Login:    "foo",
-		Email:    "foo@example.com",
+		Email:    "foo@example.org",
 		Name:     "foo",
 		Lastname: "bar",
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Login is missing here.
 	su := dbmodel.SystemUser{
 		Login:    "bar",
-		Email:    "foo@example.com",
+		Email:    "foo@example.org",
 		Lastname: "Doe",
 		Name:     "John",
 	}
@@ -137,7 +140,7 @@ func TestCreateUserConflictEmailEmpty(t *testing.T) {
 		Lastname: "bar",
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	su := dbmodel.SystemUser{
@@ -167,17 +170,17 @@ func TestCreateUserConflictEmailEmptyLogin(t *testing.T) {
 	defer teardown()
 
 	_, _ = dbmodel.CreateUser(db, &dbmodel.SystemUser{
-		Email:    "foo@example.com",
+		Email:    "foo@example.org",
 		Name:     "foo",
 		Lastname: "bar",
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Login is missing here.
 	su := dbmodel.SystemUser{
-		Email:    "foo@example.com",
+		Email:    "foo@example.org",
 		Lastname: "Doe",
 		Name:     "John",
 	}
@@ -203,7 +206,7 @@ func TestCreateUserEmptyParams(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Try empty params - it should raise an error
@@ -222,7 +225,7 @@ func TestCreateUserEmptyFirstAndLastNames(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	params := users.CreateUserParams{
@@ -249,7 +252,7 @@ func TestCreateUserEmptyRequest(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Try empty request - it should raise an error
@@ -268,7 +271,7 @@ func TestCreateUserMissingData(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Try missing data - it should raise an error
@@ -289,7 +292,7 @@ func TestCreateUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	// Create the user and verify the response.
@@ -330,7 +333,7 @@ func TestCreateUser(t *testing.T) {
 	require.Equal(t, okRsp.Payload.Name, su.Name)
 
 	// Also check that the user is indeed in the database.
-	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
+	returned, err := dbmodel.GetUserByID(db, *okRsp.Payload.ID)
 	require.NoError(t, err)
 	require.Equal(t, su.Login, returned.Login)
 
@@ -346,7 +349,7 @@ func TestDeleteUserEmptyParams(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -387,7 +390,7 @@ func TestDeleteUserInvalidUserID(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -416,7 +419,7 @@ func TestDeleteUserInvalidUserID(t *testing.T) {
 
 	// Try using invalid user ID - it should raise an error
 	params := users.DeleteUserParams{
-		ID: int64(su.ID + 1),
+		ID: su.ID + 1,
 	}
 
 	rsp := rapi.DeleteUser(ctx, params)
@@ -431,7 +434,7 @@ func TestDeleteUserSameUserAsSession(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -460,7 +463,7 @@ func TestDeleteUserSameUserAsSession(t *testing.T) {
 
 	// Try same user ID as current session - it should raise an error - trying to delete itself
 	params := users.DeleteUserParams{
-		ID: int64(su.ID),
+		ID: su.ID,
 	}
 
 	rsp := rapi.DeleteUser(ctx, params)
@@ -475,7 +478,7 @@ func TestDeleteUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -512,7 +515,7 @@ func TestDeleteUser(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx, &su)
 	require.NoError(t, err)
 	params := users.DeleteUserParams{
-		ID: int64(su2.ID),
+		ID: su2.ID,
 	}
 
 	rsp := rapi.DeleteUser(ctx, params)
@@ -525,7 +528,7 @@ func TestDeleteUser(t *testing.T) {
 	require.Equal(t, okRsp.Payload.Name, su2.Name)
 
 	// Also check that the user is indeed not in the database.
-	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
+	returned, err := dbmodel.GetUserByID(db, *okRsp.Payload.ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
@@ -542,7 +545,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -585,7 +588,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	params := users.DeleteUserParams{
-		ID: int64(su2.ID),
+		ID: su2.ID,
 	}
 
 	rsp := rapi.DeleteUser(ctx, params)
@@ -598,7 +601,7 @@ func TestDeleteUserInGroup(t *testing.T) {
 	require.Equal(t, okRsp.Payload.Name, su2.Name)
 
 	// Also check that the user is indeed not in the database.
-	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
+	returned, err := dbmodel.GetUserByID(db, *okRsp.Payload.ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
@@ -615,7 +618,7 @@ func TestUpdateUserEmptyParams(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -646,7 +649,7 @@ func TestUpdateUserEmptyParamsForInternalUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	su := dbmodel.SystemUser{
@@ -682,7 +685,7 @@ func TestUpdateUserEmptyParamsForExternalUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	su := dbmodel.SystemUser{
@@ -715,7 +718,7 @@ func TestUpdateUserEmptyRequest(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -746,7 +749,7 @@ func TestUpdateUserMissingData(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -779,7 +782,7 @@ func TestUpdateUserInvalidUserID(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -814,7 +817,7 @@ func TestUpdateUserWithPassword(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -878,7 +881,7 @@ func TestUpdateUserWithoutPassword(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -928,7 +931,7 @@ func TestUpdateUserWithEmptyPassword(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
@@ -966,7 +969,7 @@ func TestUpdateUserPasswordMissingData(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -983,7 +986,7 @@ func TestUpdateUserPasswordMissingData(t *testing.T) {
 
 	// Try empty request - it should raise an error.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
+		ID: user.ID,
 	}
 	rsp := rapi.UpdateUserPassword(ctx, params)
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
@@ -997,7 +1000,7 @@ func TestUpdateUserPasswordWrongUserID(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -1017,7 +1020,7 @@ func TestUpdateUserPasswordWrongUserID(t *testing.T) {
 
 	// Update user password via the API with wrong ID.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.ID + 1),
+		ID: user.ID + 1,
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("updated")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
@@ -1035,7 +1038,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -1055,7 +1058,7 @@ func TestUpdateUserPassword(t *testing.T) {
 
 	// Update user password via the API.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
+		ID: user.ID,
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
@@ -1068,7 +1071,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	// HTTP error 400 (Bad Request) because the old password is
 	// not matching anymore.
 	params = users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
+		ID: user.ID,
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
@@ -1082,7 +1085,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	// An attempt to update the password with a new password that doesn't
 	// meet the password policy should also result in HTTP error 400 (Bad Request).
 	params = users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
+		ID: user.ID,
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("short©")),
 			Oldpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
@@ -1105,7 +1108,7 @@ func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -1126,7 +1129,7 @@ func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
 
 	// Update user password via the API.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
+		ID: user.ID,
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
@@ -1150,7 +1153,7 @@ func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -1166,7 +1169,7 @@ func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
 
 	// Update user password via the API.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.ID),
+		ID: user.ID,
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("updatedPass2026!")),
 		},
@@ -1229,7 +1232,7 @@ func TestGetGroups(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, db)
 
 	params := users.GetGroupsParams{}
@@ -1248,7 +1251,7 @@ func TestGetUsers(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -1335,7 +1338,7 @@ func TestGetUser(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
@@ -1377,7 +1380,7 @@ func TestCreateSessionEmptyParams(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	hookManager := hookmanager.NewHookManager()
 	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 
@@ -1401,7 +1404,7 @@ func TestCreateSessionInvalidCredentials(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	hookManager := hookmanager.NewHookManager()
 	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 
@@ -1436,7 +1439,7 @@ func TestCreateSession(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	hookManager := hookmanager.NewHookManager()
 	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 
@@ -1501,7 +1504,7 @@ func TestDeleteSessionOfExternalUser(t *testing.T) {
 	hookManager.RegisterCalloutCarrier(mock)
 	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 
-	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
 
 	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
 		ID:                     42,
@@ -1525,7 +1528,7 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	identifier := "foo@example.com"
+	identifier := "foo@example.org"
 	secret := "secret"
 	authenticationMethodID := "external"
 
@@ -1553,7 +1556,7 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	hookManager.RegisterCalloutCarrier(mock)
 	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 
-	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
 
 	// Act
 	params := users.CreateSessionParams{
@@ -1568,14 +1571,472 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	// Assert
 	require.IsType(t, &users.CreateSessionOK{}, rsp)
 	okRsp := rsp.(*users.CreateSessionOK)
-	require.Greater(t, *okRsp.Payload.ID, int64(0))
+	require.NotNil(t, okRsp.Payload.ID)
+	require.NotZero(t, *okRsp.Payload.ID)
+	user, err := dbmodel.GetUserByID(db, *okRsp.Payload.ID)
+	require.NotNil(t, user)
+	require.NoError(t, err)
+	require.Equal(t, identifier, user.Email)
+	require.Equal(t, "foo", user.Login)
+	require.Equal(t, "oof", user.Lastname)
+	require.Equal(t, "ofo", user.Name)
+	require.Equal(t, "external-id", user.ExternalID)
+}
+
+// Tests that new session cannot be created for a user that uses the
+// external authentication if the hook cannot retrieve the external ID.
+func TestCreateSessionOfExternalUserMissingExternalID(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	identifier := "foo@example.org"
+	secret := "secret"
+	authenticationMethodID := "external"
+
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethodID)
+
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
+	mock.EXPECT().
+		Authenticate(gomock.Any(), gomock.Any(), &identifier, &secret).
+		Return(nil, errors.Errorf("missing unique identifier")).
+		Times(1)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	// Act
+	params := users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             &identifier,
+			Secret:                 &secret,
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	}
+	rsp := rapi.CreateSession(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
+}
+
+// Tests that the user data authenticated by an external service is updated in
+// the database when creating a session.
+func TestCreateSessionOfExternalUserUpdatesData(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	authenticationMethodID := "external"
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethodID).
+		Times(2)
+
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
+	gomock.InOrder(
+		// First log-in.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(&authenticationcallouts.User{
+				ID:       "external-id",
+				Login:    "foo",
+				Email:    "foo@example.org",
+				Lastname: "oof",
+				Name:     "ofo",
+			}, nil),
+		// Second log-in with updated data.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(&authenticationcallouts.User{
+				ID:       "external-id",
+				Login:    "foo",
+				Email:    "foo@example.org",
+				Lastname: "bar",
+				Name:     "baz",
+			}, nil),
+	)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock).
+		Times(2)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	// Act
+	params := users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("foo"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	}
+	rsp1 := rapi.CreateSession(ctx, params)
+	rsp2 := rapi.CreateSession(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.CreateSessionOK{}, rsp1)
+	require.IsType(t, &users.CreateSessionOK{}, rsp2)
+	okRsp1 := rsp1.(*users.CreateSessionOK)
+	okRsp2 := rsp2.(*users.CreateSessionOK)
+	require.Equal(t, *okRsp1.Payload.ID, *okRsp2.Payload.ID)
+	user, err := dbmodel.GetUserByID(db, *okRsp1.Payload.ID)
+	require.NotNil(t, user)
+	require.NoError(t, err)
+	require.Equal(t, "bar", user.Lastname)
+	require.Equal(t, "baz", user.Name)
+}
+
+// Inserts a new user into the database just before someone tries to do it.
+// It causes a violation of the integrity constraint.
+type systemUserConflictQueryHook struct {
+	t              *testing.T
+	db             *pg.DB
+	user           *dbmodel.SystemUser
+	deactivated    bool
+	insertionCount int
+}
+
+// It waits until a new user is inserted into the database and then it inserts
+// the user just before the original query is executed. It simulates a race
+// condition when two sessions try to create a user with the same external ID at
+// the same time.
+func (h *systemUserConflictQueryHook) BeforeQuery(ctx context.Context, event *pg.QueryEvent) (context.Context, error) {
+	// Deactivates the hook when it is already called to avoid infinite loop
+	// caused by the queries executed in this hook.
+	if h.deactivated {
+		return ctx, nil
+	}
+	h.deactivated = true
+	defer func() {
+		h.deactivated = false
+	}()
+
+	tableModel, ok := event.Model.(orm.TableModel)
+	if !ok {
+		return ctx, nil
+	}
+	if tableModel.Table().ModelName != "system_user" {
+		return ctx, nil
+	}
+
+	_, ok = event.Query.(*orm.InsertQuery)
+	if !ok {
+		return ctx, nil
+	}
+
+	_, err := dbmodel.CreateUser(h.db, h.user)
+	require.NoError(h.t, err)
+	h.insertionCount++
+
+	return ctx, nil
+}
+
+// Do nothing. Required by the interface.
+func (h *systemUserConflictQueryHook) AfterQuery(context.Context, *pg.QueryEvent) error {
+	// Do nothing.
+	return nil
+}
+
+// Tests that the user data authenticated by an external service is updated in
+// the database when creating a session. In this scenario, the user profile
+// doesn't exist in the database when the first session checks if the user
+// exists, but it is created by the second session before the first session
+// creates the user. This tests that the race condition is handled properly.
+func TestCreateSessionOfExternalUserRace(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// This hook will cause a conflict in the database by inserting a user with
+	// the same external ID just before the original query is executed.
+	queryHook := &systemUserConflictQueryHook{db: db, t: t, user: &dbmodel.SystemUser{
+		Login:                  "foo",
+		Email:                  "foo@example.org",
+		Lastname:               "oof",
+		Name:                   "ofo",
+		ExternalID:             "external-id",
+		AuthenticationMethodID: "external",
+	}}
+	db.AddQueryHook(queryHook)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	authenticationMethodID := "external"
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethodID)
+
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
+	// First log-in.
+	mock.EXPECT().
+		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&authenticationcallouts.User{
+			ID:       "external-id",
+			Login:    "bar",
+			Email:    "bar@example.org",
+			Lastname: "bar",
+			Name:     "baz",
+		}, nil)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	// Act
+	params := users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("foo"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	}
+	rsp := rapi.CreateSession(ctx, params)
+
+	// Assert
+	require.IsType(t, &users.CreateSessionOK{}, rsp)
+	okRsp := rsp.(*users.CreateSessionOK)
+	user, err := dbmodel.GetUserByID(db, *okRsp.Payload.ID)
+	require.NotNil(t, user)
+	require.NoError(t, err)
+	require.Equal(t, "bar", user.Lastname)
+	require.Equal(t, "baz", user.Name)
+	require.Equal(t, 1, queryHook.insertionCount)
+}
+
+// Test that the external users may have duplicated logins and they don't cause
+// conflict with the internal users.
+func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	user := &dbmodel.SystemUser{
+		Login:    "login",
+		Email:    "baz@example.org",
+		Lastname: "baz",
+		Name:     "baz",
+	}
+	password := "pass"
+	con, err := dbmodel.CreateUserWithPassword(db, user, password)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	authenticationMethodID := "external"
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethodID).
+		Times(2)
+
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
+	gomock.InOrder(
+		// First log-in.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("foo@example.org")), gomock.Any()).
+			Return(&authenticationcallouts.User{
+				ID:       "external-id-1",
+				Login:    "login",
+				Email:    "foo@example.org",
+				Lastname: "foo",
+				Name:     "foo",
+			}, nil),
+		// Second log-in with updated data.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("bar@example.org")), gomock.Any()).
+			Return(&authenticationcallouts.User{
+				ID:       "external-id-2",
+				Login:    "login",
+				Email:    "bar@example.org",
+				Lastname: "bar",
+				Name:     "bar",
+			}, nil),
+	)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock).
+		Times(2)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	// Act
+	rsp1 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("foo@example.org"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	})
+	rsp2 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("bar@example.org"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	})
+	rsp3 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier: storkutil.Ptr("baz@example.org"),
+			Secret:     &password,
+		},
+	})
+
+	// Assert
+	require.IsType(t, &users.CreateSessionOK{}, rsp1)
+	require.IsType(t, &users.CreateSessionOK{}, rsp2)
+	require.IsType(t, &users.CreateSessionOK{}, rsp3)
+	okRsp1 := rsp1.(*users.CreateSessionOK)
+	okRsp2 := rsp2.(*users.CreateSessionOK)
+	okRsp3 := rsp3.(*users.CreateSessionOK)
+	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp2.Payload.ID)
+	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp3.Payload.ID)
+	require.Equal(t, "foo", okRsp1.Payload.Name)
+	require.Equal(t, "bar", okRsp2.Payload.Name)
+	require.Equal(t, "baz", okRsp3.Payload.Name)
+	require.Equal(t, "login", okRsp1.Payload.Login)
+	require.Equal(t, "login", okRsp2.Payload.Login)
+	require.Equal(t, "login", okRsp3.Payload.Login)
+}
+
+// Test that the external users may have duplicated email and they don't cause
+// conflict with the internal users.
+func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	user := &dbmodel.SystemUser{
+		Login:    "baz",
+		Email:    "common@example.org",
+		Lastname: "baz",
+		Name:     "baz",
+	}
+	password := "pass"
+	con, err := dbmodel.CreateUserWithPassword(db, user, password)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	authenticationMethodID := "external"
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethodID).
+		Times(2)
+
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
+	gomock.InOrder(
+		// First log-in.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("foo")), gomock.Any()).
+			Return(&authenticationcallouts.User{
+				ID:       "external-id-1",
+				Login:    "foo",
+				Email:    "common@example.org",
+				Lastname: "foo",
+				Name:     "foo",
+			}, nil),
+		// Second log-in with updated data.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("bar")), gomock.Any()).
+			Return(&authenticationcallouts.User{
+				ID:       "external-id-2",
+				Login:    "bar",
+				Email:    "common@example.org",
+				Lastname: "bar",
+				Name:     "bar",
+			}, nil),
+	)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock).
+		Times(2)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	// Act
+	rsp1 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("foo"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	})
+	rsp2 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("bar"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	})
+	rsp3 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier: storkutil.Ptr("baz"),
+			Secret:     &password,
+		},
+	})
+
+	// Assert
+	require.IsType(t, &users.CreateSessionOK{}, rsp1)
+	require.IsType(t, &users.CreateSessionOK{}, rsp2)
+	require.IsType(t, &users.CreateSessionOK{}, rsp3)
+	okRsp1 := rsp1.(*users.CreateSessionOK)
+	okRsp2 := rsp2.(*users.CreateSessionOK)
+	okRsp3 := rsp3.(*users.CreateSessionOK)
+	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp2.Payload.ID)
+	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp3.Payload.ID)
+	require.Equal(t, "foo", okRsp1.Payload.Name)
+	require.Equal(t, "bar", okRsp2.Payload.Name)
+	require.Equal(t, "baz", okRsp3.Payload.Name)
+	require.Equal(t, "common@example.org", okRsp1.Payload.Email)
+	require.Equal(t, "common@example.org", okRsp2.Payload.Email)
+	require.Equal(t, "common@example.org", okRsp3.Payload.Email)
 }
 
 // Test that the internal authentication method is always returned.
 func TestGetAuthenticationMethodsInternal(t *testing.T) {
 	// Arrange
 	dbSettings := &dbops.DatabaseSettings{}
-	ctx := context.Background()
+	ctx := t.Context()
 	hookManager := hookmanager.NewHookManager()
 	rapi, _ := NewRestAPI(dbSettings, hookManager)
 
@@ -1620,7 +2081,7 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 	hookManager.RegisterCalloutCarriers(mocks)
 
 	dbSettings := &dbops.DatabaseSettings{}
-	ctx := context.Background()
+	ctx := t.Context()
 	rapi, _ := NewRestAPI(dbSettings, hookManager)
 
 	// Act
@@ -1646,7 +2107,7 @@ func TestGetSession(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	hookManager := hookmanager.NewHookManager()
 	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
 

@@ -64,7 +64,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	require.Greater(t, user.ID, 0)
+	require.NotZero(t, user.ID)
 
 	authOk, err := Authenticate(db, user, "pass")
 	require.NoError(t, err)
@@ -232,9 +232,9 @@ func TestCreateUserWithEmptyPassword(t *testing.T) {
 	require.False(t, conflict)
 }
 
-// Test that logins and emails of the users from the same authentication service
-// must be unique.
-func TestCreateUsersWithDuplicatedPasswordFromTheSameAuthentication(t *testing.T) {
+// Test that logins and emails of the users authenticated with the internal
+// method cannot be duplicated.
+func TestCreateUsersWithDuplicatedUserAndEmailFromInternalAuthentication(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -267,9 +267,52 @@ func TestCreateUsersWithDuplicatedPasswordFromTheSameAuthentication(t *testing.T
 	require.Error(t, errEmail)
 }
 
+// Test that logins and emails of the users from the same but not internal
+// authentication service may be duplicated.
+func TestCreateUsersWithDuplicatedUserAndEmailFromNonInternalAuthentication(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:                  "same",
+		Email:                  "same",
+		Name:                   "n",
+		Lastname:               "l",
+		AuthenticationMethodID: "external",
+	}
+
+	_, _ = CreateUser(db, user)
+
+	// Act
+	_, errLogin := CreateUser(db, &SystemUser{
+		Login:                  "same",
+		Email:                  "unique",
+		AuthenticationMethodID: "external",
+		ExternalID:             "ex-id-1",
+		Name:                   "n-login",
+		Lastname:               "l-login",
+	})
+	_, errEmail := CreateUser(db, &SystemUser{
+		Login:                  "unique",
+		Email:                  "same",
+		AuthenticationMethodID: "external",
+		ExternalID:             "ex-id-2",
+		Name:                   "n-email",
+		Lastname:               "l-email",
+	})
+
+	// Assert
+	require.NoError(t, errLogin)
+	require.NoError(t, errEmail)
+	users, _, err := GetUsersByPage(db, 0, 10, nil, "", "")
+	require.NoError(t, err)
+	require.Len(t, users, 3)
+}
+
 // Test that logins and emails of the users from the different authentication
 // services may be duplicated.
-func TestCreateUsersWithDuplicatedPasswordFromDifferentAuthentications(t *testing.T) {
+func TestCreateUsersWithDuplicatedUserAndEmailFromDifferentAuthentications(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -371,7 +414,7 @@ func TestSetPassword(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	require.Greater(t, user.ID, 0)
+	require.NotZero(t, user.ID)
 
 	// Set new password for the user.
 	err = SetPassword(db, user.ID, "newpass")
@@ -475,7 +518,7 @@ func TestGetUsers(t *testing.T) {
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
 
-	prevID := 0
+	var prevID int64
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
 		require.Greater(t, u.ID, prevID)
@@ -516,7 +559,7 @@ func TestGetUsersPage(t *testing.T) {
 	require.EqualValues(t, 51, users[0].ID)
 	require.EqualValues(t, 101, total)
 
-	prevID := 0
+	var prevID int64
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
 		require.Greater(t, u.ID, prevID)
@@ -537,7 +580,7 @@ func TestGetUsersLastPage(t *testing.T) {
 	require.EqualValues(t, 91, users[0].ID)
 	require.EqualValues(t, 101, total)
 
-	prevID := 0
+	var prevID int64
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
 		require.Greater(t, u.ID, prevID)
@@ -607,7 +650,7 @@ func TestUserGroups(t *testing.T) {
 
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
-	require.Greater(t, user.ID, 0)
+	require.NotZero(t, user.ID)
 
 	// Fetch the user by id. It should also return the groups it belongs to.
 	returned, err := GetUserByID(db, user.ID)
@@ -697,7 +740,7 @@ func TestAddToGroupByID(t *testing.T) {
 	}
 	_, err := CreateUser(db, user)
 	require.NoError(t, err)
-	require.Greater(t, user.ID, 0)
+	require.NotZero(t, user.ID)
 
 	// Associate the user with two predefined groups.
 	added, err := user.AddToGroupByID(db, &SystemGroup{ID: 1})
