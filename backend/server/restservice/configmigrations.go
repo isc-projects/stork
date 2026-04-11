@@ -34,7 +34,7 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status *configmigrator.Migrati
 	var userID int64
 	if ok, user := r.SessionManager.Logged(status.Context); ok {
 		userLogin = user.Login
-		userID = user.ID
+		userID = int64(user.ID)
 	}
 
 	return &models.MigrationStatus{

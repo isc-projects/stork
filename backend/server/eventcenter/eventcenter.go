@@ -90,7 +90,7 @@ func CreateEvent(level dbmodel.EventLevel, text string, objects ...interface{}) 
 
 		case *dbmodel.SystemUser:
 			text = strings.ReplaceAll(text, "{user}", userTag(entity))
-			relations.UserID = entity.ID
+			relations.UserID = int64(entity.ID)
 
 		case dbmodel.SSEStream:
 			streams = append(streams, entity)

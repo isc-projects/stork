@@ -2804,7 +2804,7 @@ func TestDeleteDaemon(t *testing.T) {
 
 	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
 		ID: 42, Groups: []*dbmodel.SystemGroup{
-			{ID: int64(authenticationcallouts.UserGroupIDSuperAdmin)},
+			{ID: int(authenticationcallouts.UserGroupIDSuperAdmin)},
 		},
 	})
 
