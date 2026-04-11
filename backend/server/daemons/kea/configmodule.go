@@ -1089,7 +1089,6 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 		sharedNetworkNameAfterUpdate = subnet.SharedNetwork.Name
 	}
 
-	var commands []ConfigCommand
 	lookup := module.manager.GetDHCPOptionDefinitionLookup()
 	// Validate that every daemon has at least one supported hook library.
 	for _, ls := range subnet.LocalSubnets {
@@ -1098,29 +1097,34 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 		}
 	}
 	// Create commands for each unique target: subnet_cmds daemons receive
-	// per-daemon commands; cb_cmds daemons are deduplicated by config-backend.
+	// per-daemon commands; cb_cmds daemons are deduplicated by a config
+	// backend database.
+	var addCommands []ConfigCommand
+	var saveCommands []ConfigCommand
 	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+		// Generate commands to add the subnet to the Kea configuration/config
+		// backend database and eventually to assign the subnet to the shared
+		// network.
 		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, serverTags, lookup)
 		if err != nil {
 			return err
 		}
-		commands = append(commands, cmds...)
+		addCommands = append(addCommands, cmds...)
+
+		// Generate commands to save the subnet configuration if applicable.
+		cmds, err = createSubnetSaveCommands(ls.Daemon)
+		if err != nil {
+			return err
+		}
+		saveCommands = append(saveCommands, cmds...)
 		return nil
 	}); err != nil {
 		return ctx, err
 	}
 
-	// Make the changes persistent.
-	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
-		cmds, err := createSubnetSaveCommands(ls.Daemon)
-		if err != nil {
-			return err
-		}
-		commands = append(commands, cmds...)
-		return nil
-	}); err != nil {
-		return ctx, err
-	}
+	// Merge commands into a single slice. The commands to save changes must
+	// be last.
+	commands := append(addCommands, saveCommands...)
 
 	// Store the data in the recipe.
 	recipe := &ConfigRecipe{

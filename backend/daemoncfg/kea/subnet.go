@@ -665,10 +665,12 @@ type RemoteSubnet4 struct {
 // Marshals RemoteSubnet4 to JSON by merging the inner Subnet4 JSON with
 // the CB fields.
 func (s RemoteSubnet4) MarshalJSON() ([]byte, error) {
+	// Execute the special marshaling for the inner Subnet4 structure.
 	inner, err := json.Marshal(s.Subnet4)
 	if err != nil {
 		return nil, err
 	}
+	// Merge the result with the CB-specific fields.
 	var merged map[string]any
 	if err := json.Unmarshal(inner, &merged); err != nil {
 		return nil, err
@@ -688,10 +690,12 @@ type RemoteSubnet6 struct {
 // Marshals RemoteSubnet6 to JSON by merging the inner Subnet6 JSON with
 // the CB fields.
 func (s RemoteSubnet6) MarshalJSON() ([]byte, error) {
+	// Execute the special marshaling for the inner Subnet6 structure.
 	inner, err := json.Marshal(s.Subnet6)
 	if err != nil {
 		return nil, err
 	}
+	// Merge the result with the CB-specific fields.
 	var merged map[string]any
 	if err := json.Unmarshal(inner, &merged); err != nil {
 		return nil, err

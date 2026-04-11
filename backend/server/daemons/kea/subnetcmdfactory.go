@@ -8,20 +8,20 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Identifies which Kea hook library is used to manage subnets for a
+// Identifies which Kea hook library is used to manage an entity for a
 // particular daemon.
 type hook int
 
 const (
-	// Indicates the libdhcp_subnet_cmds hook library.
+	// Indicates the subnet_cmds hook library.
 	hookSubnetCmds hook = iota
-	// Indicates the libdhcp_cb_cmds hook library.
+	// Indicates the cb_cmds hook library.
 	hookCbCmds
 )
 
-// Returns the hook to modify subnets for a daemon. When both libdhcp_cb_cmds
-// and libdhcp_subnet_cmds are configured, cb_cmds takes precedence. Returns an
-// error wrapping NoSubnetHookError when neither hook is loaded.
+// Returns the hook to modify subnets for a daemon. When both cb_cmds
+// and subnet_cmds are configured, cb_cmds takes precedence. Returns an
+// error when neither hook is loaded.
 func getHookForAlteringSubnets(daemon *dbmodel.Daemon) (hook, error) {
 	if daemon == nil || daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
 		return 0, pkgerrors.New("daemon or Kea configuration is nil")
