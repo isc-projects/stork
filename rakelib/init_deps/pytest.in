@@ -8,3 +8,4 @@ protobuf
 grpclib
 asyncio
 plotly
+pytest-playwright

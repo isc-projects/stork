@@ -8,6 +8,12 @@ annotated-types==0.7.0
     # via pydantic
 asyncio==4.0.0
     # via -r rakelib/init_deps/pytest.in
+certifi==2026.4.22
+    # via requests
+charset-normalizer==3.4.7
+    # via requests
+greenlet==3.5.0
+    # via playwright
 grpclib==0.4.9
     # via -r rakelib/init_deps/pytest.in
 h2==4.3.0
@@ -16,6 +22,8 @@ hpack==4.1.0
     # via h2
 hyperframe==6.1.0
     # via h2
+idna==3.15
+    # via requests
 iniconfig==2.3.0
     # via pytest
 multidict==6.7.1
@@ -26,6 +34,8 @@ packaging==26.0
     # via
     #   plotly
     #   pytest
+playwright==1.59.0
+    # via pytest-playwright
 plotly==6.6.0
     # via -r rakelib/init_deps/pytest.in
 pluggy==1.6.0
@@ -36,24 +46,39 @@ pydantic==2.12.5
     # via -r rakelib/init_deps/pytest.in
 pydantic-core==2.41.5
     # via pydantic
+pyee==13.0.1
+    # via playwright
 pygments==2.20.0
     # via pytest
 pytest==9.0.3
     # via
     #   -r rakelib/init_deps/pytest.in
+    #   pytest-base-url
+    #   pytest-playwright
     #   pytest-timeout
+pytest-base-url==2.1.0
+    # via pytest-playwright
+pytest-playwright==0.7.2
+    # via -r rakelib/init_deps/pytest.in
 pytest-timeout==2.4.0
     # via -r rakelib/init_deps/pytest.in
 python-dateutil==2.9.0.post0
     # via -r rakelib/init_deps/pytest.in
+python-slugify==8.0.4
+    # via pytest-playwright
 pyyaml==6.0.3
     # via -r rakelib/init_deps/pytest.in
+requests==2.34.2
+    # via pytest-base-url
 six==1.17.0
     # via python-dateutil
+text-unidecode==1.3
+    # via python-slugify
 typing-extensions==4.15.0
     # via
     #   pydantic
     #   pydantic-core
+    #   pyee
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic

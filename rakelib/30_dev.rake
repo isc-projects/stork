@@ -1280,7 +1280,7 @@ namespace :gen do
     end
 
     desc 'Regenerate Python requirements file'
-    task :python_requirements => [python_requirement_txt_files]
+    task :python_requirements => python_requirement_txt_files
 
     desc 'Regenerate Ruby lock file'
     task :ruby_gemlocks => [BUNDLE] do

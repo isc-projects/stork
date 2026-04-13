@@ -1114,12 +1114,27 @@ add_version_guard(PIP_COMPILE, pip_tools_ver)
 PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
 file PIP_SYNC => [PIP_COMPILE]
 
-rule Regexp.new("(init_deps/.*\.#{PYTHON3_VERSION}\.txt|/requirements\.#{PYTHON3_VERSION}\.txt)") => [PIP_COMPILE] do |t|
     # Trim the extension and the Python version from the filename.
     # E.g. "init_deps/pytest.3_11.txt" -> "init_deps/pytest"
-    base = t.name[0..-('.'.length + PYTHON3_VERSION.length + '.txt'.length + 1)]
-    in_file = "#{base}.in"
-    sh PIP_COMPILE, "--output-file", t.name, in_file
+def convert_to_requirements_in(requirements_txt_path)
+    dir = File.dirname(requirements_txt_path)
+    base = File.basename(requirements_txt_path, ".txt")  # Trim the .txt extension
+    base = File.basename(base, ".#{PYTHON3_VERSION}")  # Trim the Python version
+    in_file = File.join(dir, "#{base}.in")
+    return in_file
+end
+
+# It is a rule that generates the requirements.txt file from the corresponding
+# .in file using the pip-compile tool.
+# The rule-generated task depends on the pip-compile task and the .in file.
+# It is expected that the .in file has the same name as the .txt file but with
+# the .in extension and without the Python version in the name and is located
+# in the same directory.
+rule Regexp.new("(init_deps/.*\.#{PYTHON3_VERSION}\.txt|/requirements\.#{PYTHON3_VERSION}\.txt)") => [PIP_COMPILE, proc { |task_name| convert_to_requirements_in(task_name) }] do |t|
+    filepath = t.name.to_s
+    in_file = convert_to_requirements_in(filepath)
+
+    sh PIP_COMPILE, "--strip-extras", "--output-file", t.name, in_file
     sh "touch", "-c", t.name
 end
 
