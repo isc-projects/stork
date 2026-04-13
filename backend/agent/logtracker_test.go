@@ -10,6 +10,7 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	"isc.org/stork/testutil"
@@ -486,9 +487,6 @@ func TestLogTrackerStopStuckRead(t *testing.T) {
 		executor.EXPECT().LookPath(gomock.Any()).Return("", nil)
 
 		tracker := newLogTracker(executor, logTrackerConfig{
-			textLogReaderConfig: textLogReaderConfig{
-				poll: true,
-			},
 			// Use unbuffered channel so that the first write blocks
 			// until the reader reads it.
 			channelSize: 0,
@@ -524,5 +522,139 @@ func TestLogTrackerStopStuckRead(t *testing.T) {
 		// Wait until the reader is unblocked.
 		synctest.Wait()
 		require.True(t, waited.Load())
+	})
+}
+
+// Test that an error is returned when executor fails to start the log reader.
+func TestLogTrackerStartReaderError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Starting the reader returns an error.
+	executor := NewMockCommandExecutor(ctrl)
+	executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f").Return(nil, errors.New("test error"))
+	executor.EXPECT().LookPath(gomock.Any()).Return("", nil)
+
+	tracker := newLogTracker(executor, logTrackerConfig{
+		channelSize: 128,
+	})
+	require.NotNil(t, tracker)
+	defer tracker.stop()
+
+	// Make sure that the subscription returns the error to the caller.
+	sub, err := tracker.subscribe(logReaderCaptureOptionUnitName("test.service"), logReaderCaptureOptionFollow())
+	require.ErrorContains(t, err, "test error")
+	require.Nil(t, sub)
+
+	require.False(t, tracker.isBusy())
+}
+
+// Test that an error is returned to the caller when an attempt to find
+// the log tracking binary (i.e., journalctl) fails.
+func TestLogTrackerStartReaderUnsupported(t *testing.T) {
+	testCases := []struct {
+		name    string
+		options []logReaderCaptureOption
+	}{
+		{
+			name:    "follow",
+			options: []logReaderCaptureOption{logReaderCaptureOptionFollow(), logReaderCaptureOptionFromEnd()},
+		},
+		{
+			name:    "backfill",
+			options: []logReaderCaptureOption{logReaderCaptureOptionFromEnd()},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// Return an error when trying to find the log tracking binary.
+			executor := NewMockCommandExecutor(ctrl)
+			executor.EXPECT().LookPath(gomock.Any()).Return("", errors.New("command not found"))
+
+			tracker := newLogTracker(executor, logTrackerConfig{
+				channelSize: 128,
+			})
+			require.NotNil(t, tracker)
+			defer tracker.stop()
+
+			// A descriptive error should be returned informing that there are no
+			// log tracking methods to be used. Note that tailing the file is not
+			// taken into account because no file name was specified. Only the
+			// systemd log tracking could be used in this case.
+			sub, err := tracker.subscribe(testCase.options...)
+			require.ErrorContains(t, err, "no supported log tracking method available")
+			require.Nil(t, sub)
+
+			require.False(t, tracker.isBusy())
+		})
+	}
+}
+
+// Test that an error is returned when the second subscriber attempts to attach to the
+// same capture as the first subscriber, but this attempt failed for some reason. In
+// this case, the second subscriber should be cancelled but the first subscriber
+// should remain active.
+func TestLogTrackerBackfillError(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// The scanner should return some log contents.
+		scanner := bufio.NewScanner(strings.NewReader("This is the first log line\nThis is the second log line\n"))
+		// Wrap the scanner in the command executor command.
+		command := NewMockCommandExecutorOutput(ctrl)
+		// Make the scanner available to the reader.
+		command.EXPECT().GetScanner().AnyTimes().Return(scanner)
+		command.EXPECT().Wait().AnyTimes().Return(nil)
+
+		executor := NewMockCommandExecutor(ctrl)
+		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-n", "0").Return(command, nil)
+		// Creating log reader results in checking whether or not journalctl is available.
+		// We expect that it is called once for each subscriber, and it should be successful.
+		executor.EXPECT().LookPath(gomock.Any()).Times(2).Return("", nil)
+		// The third attempt results from second's reader attempt to backfill the logs
+		// from the beginning before it starts tailing. Let's return an error to simulate
+		// backfill failure.
+		executor.EXPECT().LookPath(gomock.Any()).Times(1).Return("", errors.New("command not found"))
+
+		// Create the log tracker with unbuffered channel. Since reading from the
+		// unbuffered channel blocks the synctest framework is able to detect blocked
+		// goroutines and coordinate the test.
+		tracker := newLogTracker(executor, logTrackerConfig{})
+		require.NotNil(t, tracker)
+		defer tracker.stop()
+
+		sub1, err := tracker.subscribe(logReaderCaptureOptionFollow(), logReaderCaptureOptionFromEnd())
+		require.NoError(t, err)
+		require.NotNil(t, sub1)
+		defer sub1.stop()
+
+		// This is the semaphore to ensure that the read is not reading
+		// the log lines fed by the writer until we release it.
+		waitBeforeReadCh := make(chan struct{})
+		defer close(waitBeforeReadCh)
+		go func() {
+			// Do not read the log lines. It should block.
+			<-waitBeforeReadCh
+			for range sub1.ch {
+				// Drain the channel to cleanup.
+			}
+		}()
+
+		// Wait until the first subscriber is settled.
+		synctest.Wait()
+
+		// Try to create another subscription while the first subscriber
+		// is still active.
+		sub2, err := tracker.subscribe(logReaderCaptureOptionFollow())
+		require.ErrorContains(t, err, "no supported log tracking method available")
+		require.Nil(t, sub2)
+
+		// Make sure that the first subscriber is still active.
+		require.True(t, tracker.isBusy())
 	})
 }

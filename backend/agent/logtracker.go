@@ -370,29 +370,27 @@ func (l *logTracker) read(subscriber *logTrackingSubscriber, onComplete func(), 
 		}
 		return nil, err
 	}
+	ch, err := reader.capture(subscriber.ctx, slices.DeleteFunc(options, func(option logReaderCaptureOption) bool {
+		var config logReaderCaptureConfig
+		option(&config)
+		// While backfilling, we need to ensure that we don't follow the log afterwards. Preserve
+		// all options except following and reading from the end.
+		return config.fromEnd || config.follow
+	})...)
+	if err != nil {
+		return nil, err
+	}
 	// Log reader successfully created. Let's start backfilling the log.
 	go func() {
 		// Make sure we cancel the subscriber or mark it as ready to tail the log
 		// after backfilling is complete.
 		defer onComplete()
-		lines, err := reader.capture(subscriber.ctx, slices.DeleteFunc(options, func(option logReaderCaptureOption) bool {
-			var config logReaderCaptureConfig
-			option(&config)
-			// While backfilling, we need to ensure that we don't follow the log afterwards. Preserve
-			// all options except following and reading from the end.
-			return config.fromEnd || config.follow
-		})...)
-		if err != nil {
-			// Signal the error to the subscriber and return.
-			_ = subscriber.consumeLogLine(logReaderLine{err: err})
-			return
-		}
 		for {
 			select {
 			case <-subscriber.ctx.Done():
 				// Stop reading when the caller cancelled the context.
 				return
-			case line, ok := <-lines:
+			case line, ok := <-ch:
 				// Send the log line to the subscriber or stop if the caller cancelled the context
 				// in the meantime.
 				if !ok || !subscriber.consumeLogLine(line) {
@@ -402,6 +400,11 @@ func (l *logTracker) read(subscriber *logTrackingSubscriber, onComplete func(), 
 		}
 	}()
 	return subscriber, nil
+}
+
+// Deletes a capture from the log tracker by key.
+func (l *logTracker) removeCapture(captureKey logTrackerCaptureKey) {
+	delete(l.captures, captureKey)
 }
 
 // Attaches new subscriber to a log tracking capture or reads the requested part of the log.
@@ -450,7 +453,7 @@ func (l *logTracker) subscribe(options ...logReaderCaptureOption) (*logTrackingS
 	candidateCapture := newLogTrackingCapture(l.ctx, candidateReader, func() {
 		l.mutex.Lock()
 		defer l.mutex.Unlock()
-		delete(l.captures, captureKey)
+		l.removeCapture(captureKey)
 	})
 	// Try to use the capture. If the capture with the same configuration already
 	// exists, it is returned and loaded is set to true. Otherwise, the candidate
@@ -487,13 +490,22 @@ func (l *logTracker) subscribe(options ...logReaderCaptureOption) (*logTrackingS
 	} else if _, err := l.read(subscriber, subscriber.signalReady, options...); err != nil {
 		// The capture was already started by another subscriber. Since we're not reading
 		// from the tail, but rather want to read historical logs, we need to open a
-		// separate backfill reader to get the missing log lines.
+		// separate backfill reader to get the missing log lines. If it fails we tear down
+		// the subscriber but we leave the capture, as there must be other subscribers
+		// attached to it.
+		subscriber.teardown()
 		return nil, err
 	}
 	// Ensure that the capture is started. This will only be fired if this is a new
 	// capture with the first subscriber.
 	err = capture.ensureStarted(options...)
 	if err != nil {
+		// Make sure that the subscriber is removed and the capture is removed.
+		// Note that an error can only occur if we are starting the capture, so
+		// this is the first subscriber. In that case the capture can be removed
+		// without affecting any subscribers.
+		subscriber.teardown()
+		l.removeCapture(captureKey)
 		return nil, err
 	}
 	return subscriber, nil
