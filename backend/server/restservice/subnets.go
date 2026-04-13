@@ -602,8 +602,10 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	clientClassesMap := make(map[string]bool)
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
-			// Filter the daemons with subnet_cmds hook library.
-			if _, _, exists := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); exists {
+			// Filter the daemons with subnet_cmds or cb_cmds hook (mutually exclusive) library.
+			_, _, isSubnetCmdsLoaded := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds")
+			_, _, isCbCmdsLoaded := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_cb_cmds")
+			if isSubnetCmdsLoaded != isCbCmdsLoaded {
 				respDaemons = append(respDaemons, r.keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()

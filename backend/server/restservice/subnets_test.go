@@ -1803,6 +1803,114 @@ func TestCreateSubnetBeginSubmitNoServers(t *testing.T) {
 	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds hooks library available", *defaultRsp.Payload.Message)
 }
 
+// Test that a daemon with both subnet_cmds and cb_cmds hooks loaded is excluded
+// from the list of available daemons returned by commonCreateOrUpdateNetworkBegin.
+func TestCreateSubnetBeginExcludesDaemonWithBothHooks(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// A daemon that has both hooks loaded simultaneously.
+	bothHooksConfig := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				},
+				{
+					"library": "libdhcp_cb_cmds"
+				}
+			]
+		}
+	}`
+	// A valid daemon with only subnet_cmds.
+	subnetCmdsConfig := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+	// A valid daemon with only cb_cmds.
+	cbCmdsConfig := `{
+		"Dhcp4": {
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_cb_cmds"
+				}
+			]
+		}
+	}`
+
+	// Create a daemon with both hooks.
+	serverBoth, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = serverBoth.Configure(bothHooksConfig)
+	require.NoError(t, err)
+	daemonBoth, err := serverBoth.GetDaemon()
+	require.NoError(t, err)
+
+	// Create a daemon with only subnet_cmds.
+	serverSubnetCmds, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = serverSubnetCmds.Configure(subnetCmdsConfig)
+	require.NoError(t, err)
+	daemonSubnetCmds, err := serverSubnetCmds.GetDaemon()
+	require.NoError(t, err)
+
+	// Create a daemon with only cb_cmds.
+	serverCbCmds, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = serverCbCmds.Configure(cbCmdsConfig)
+	require.NoError(t, err)
+	daemonCbCmds, err := serverCbCmds.GetDaemon()
+	require.NoError(t, err)
+
+	err = kea.CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemonBoth, daemonSubnetCmds, daemonCbCmds},
+		&storktest.FakeEventCenter{},
+		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
+	require.NoError(t, err)
+
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	cm := daemons.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	params := dhcp.CreateSubnetBeginParams{}
+	rsp := rapi.CreateSubnetBegin(ctx, params)
+
+	// The daemon with both hooks must be excluded. The two daemons with exactly
+	// one hook (subnet_cmds-only and cb_cmds-only) must be returned.
+	require.IsType(t, &dhcp.CreateSubnetBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateSubnetBeginOK)
+	require.Len(t, okRsp.Payload.Daemons, 2)
+	daemonIDs := []int64{okRsp.Payload.Daemons[0].ID, okRsp.Payload.Daemons[1].ID}
+	require.Contains(t, daemonIDs, daemonSubnetCmds.ID)
+	require.Contains(t, daemonIDs, daemonCbCmds.ID)
+}
+
 // Test error cases for submitting new subnet.
 func TestCreateSubnetBeginSubmitError(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
