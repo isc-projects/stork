@@ -48,8 +48,16 @@ file CHROME_LINK => [NPX, NODE_MODULES, playwright_browsers_dir] do
             # Playwright couldn't install the browser, probably due to missing
             # system dependencies. It may occur when running on the system that
             # is not officially supported by Playwright and, for example,
-            # misses apt-get. We ignore this error and try to detect the
-            # browser in the system.
+            # misses apt-get. In some cases dependencies may be installed manually in OS specific way.
+            # We ignore this error and try first to install without dependencies and if that fails too, 
+            # we fallback to detection of system-wide chromium.
+            puts stdout
+            puts stderr
+            warn "Playwright Chromium installation failed with exit code #{exit_code}. Falling back to install without dependencies."
+        end
+
+        stdout, stderr, exit_code = Open3.capture3 NPX, "playwright", "install", "chromium"
+        if exit_code.exitstatus != 0
             puts stdout
             puts stderr
             warn "Playwright Chromium installation failed with exit code #{exit_code}. Falling back to detection of system-wide chromium."
