@@ -947,13 +947,13 @@ func TestGetLeasesFromDaemonWhenReceiveKeaLeasesReturnsLeaseWithInvalidSubnetID(
 	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
 	err := daemonServer.Configure(`{ "Dhcp4": {
 		"lease-database": {
-        	"type": "memfile",
-        	"lfc-interval": 3600,
-        	"name": "/var/lib/kea/kea-leases4.csv"
-    	},
-    "subnet4": [
-      { "id": 67, "subnet": "192.168.1.0/24" }
-    ]
+			"type": "memfile",
+			"lfc-interval": 3600,
+			"name": "/var/lib/kea/kea-leases4.csv"
+		},
+		"subnet4": [
+			{ "id": 67, "subnet": "192.168.1.0/24" }
+		]
 	}}`)
 	require.NoError(t, err)
 	daemon, err := daemonServer.GetDaemon()
@@ -1006,13 +1006,13 @@ func TestGetLeasesFromDaemonWhenReceiveKeaLeasesReturnsNilLease(t *testing.T) {
 	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
 	err := daemonServer.Configure(`{ "Dhcp4": {
 		"lease-database": {
-        	"type": "memfile",
-        	"lfc-interval": 3600,
-        	"name": "/var/lib/kea/kea-leases4.csv"
-    	},
-    "subnet4": [
-      { "id": 67, "subnet": "192.168.1.0/24" }
-    ]
+			"type": "memfile",
+			"lfc-interval": 3600,
+			"name": "/var/lib/kea/kea-leases4.csv"
+		},
+		"subnet4": [
+			{ "id": 67, "subnet": "192.168.1.0/24" }
+		]
 	}}`)
 	require.NoError(t, err)
 	daemon, err := daemonServer.GetDaemon()
@@ -1053,13 +1053,13 @@ func TestGetLeasesFromDaemonReadsMaxCLTTFromDatabase(t *testing.T) {
 	daemonServer, _ := dbmodeltest.NewKeaDHCPv4Server(db)
 	err := daemonServer.Configure(`{ "Dhcp4": {
 		"lease-database": {
-        	"type": "memfile",
-        	"lfc-interval": 3600,
-        	"name": "/var/lib/kea/kea-leases4.csv"
-    	},
-    "subnet4": [
-      { "id": 67, "subnet": "192.168.1.0/24" }
-    ]
+		"type": "memfile",
+		"lfc-interval": 3600,
+			"name": "/var/lib/kea/kea-leases4.csv"
+		},
+		"subnet4": [
+			{ "id": 67, "subnet": "192.168.1.0/24" }
+	]
 	}}`)
 	require.NoError(t, err)
 	daemon, err := daemonServer.GetDaemon()
