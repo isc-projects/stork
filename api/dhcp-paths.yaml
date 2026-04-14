@@ -1,6 +1,6 @@
   /leases:
     get:
-      summary: Get leases allocated by DHCP servers.
+      summary: Search for leases by directly querying Kea.
       description: >-
         This call searches for leases allocated by monitored DHCP servers.
         The text parameter may contain an IP address, delegated prefix,
@@ -32,6 +32,54 @@
           description: Generic error message.
           schema:
             $ref: '#/definitions/ApiError'
+
+  /lease-list:
+    get:
+      summary: Get list of all leases.
+      description: >-
+        A list of leases is returned in the items field accompanied by a total
+        count which indicates the number of total leases for pagination and
+        filtering parameters.
+      operationId: getLeaseList
+      tags:
+        - DHCP
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - name: machineId
+          in: query
+          description: Limit returned list of leases to these which are allocated by daemons on given machine ID.
+          type: integer
+        - name: daemonId
+          in: query
+          description: Limit returned list of leases to these which are allocated by the given daemon ID.
+          type: integer
+        - name: subnetId
+          in: query
+          description: Limit returned list of leases to these which belong to a given subnet.
+          type: integer
+        - name: localSubnetId
+          in: query
+          description: >-
+            Limit returned list of leases to these which belong to a given
+            subnet having a specified subnet ID in the Kea configuration.
+          type: integer
+        - name: text
+          in: query
+          description: >-
+            Limit returned list of leases to the ones containing the given text.
+          type: string
+        - $ref: '#/parameters/leaseListSortField'
+        - $ref: '#/parameters/sortDir'
+      responses:
+        200:
+          description: List of leases
+          schema:
+            $ref: "#/definitions/Leases"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
 
   /hosts:
     get:

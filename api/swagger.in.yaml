@@ -261,6 +261,19 @@ definitions:
       - config
       - rndc-key
 
+  LeaseListSortField:
+    type: string
+    enum: &LEASELISTSORTFIELD
+      - cltt
+      - duid
+      - hostname
+      - hwAddress
+      - ipAddress
+      - leaseType
+      - state
+      - preferredLifetime
+      - prefixLength
+
   MachineSortField:
     type: string
     enum: &MACHINESORTFIELD
@@ -501,3 +514,10 @@ parameters:
     description: Sorting direction - either ascending or descending.
     type: string
     enum: *SORTDIR
+
+  leaseListSortField:
+     name: sortField
+     in: query
+     description: Field name by which returned results shall be sorted.
+     type: string
+     enum: *LEASELISTSORTFIELD
