@@ -1,6 +1,7 @@
 package agent
 
 import (
+	bufio "bufio"
 	"context"
 	"fmt"
 	"os"
@@ -155,6 +156,114 @@ func TestBind9DaemonIsSame(t *testing.T) {
 		}
 		require.False(t, comparedDaemon.IsSame(otherDaemon))
 	})
+}
+
+// Test that the daemon is bootstrapped when XFR tracking in the log file is enabled.
+func TestBind9BootstrapCleanupLogFileXfrTracking(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	sandbox.Write("test.log", "This is a test log\n")
+
+	// Create the log and XFR tracker.
+	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{})
+	xfrTracker := newXfrTracker(logTracker)
+
+	// Create the daemon with the XFR tracker and configure it to track the log file.
+	daemon := &Bind9Daemon{
+		xfrTracker:      xfrTracker,
+		xfrTrackingPath: "test.log",
+	}
+
+	// Bootstrap the daemon.
+	err := daemon.Bootstrap()
+	require.NoError(t, err)
+	defer daemon.Cleanup()
+
+	// Make sure that the subscription is created.
+	require.NotNil(t, daemon.xfrTracker)
+	require.NotNil(t, daemon.xfrTracker.subscriber)
+
+	// Cleanup the daemon. It should stop the subscription.
+	daemon.Cleanup()
+	require.NotNil(t, daemon.xfrTracker)
+	require.Nil(t, daemon.xfrTracker.subscriber)
+}
+
+// Test that the daemon is bootstrapped when XFR tracking in the systemd logs is enabled.
+func TestBind9BootstrapCleanupSystemdXfrTracking(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Create the mock command executor output.
+	output := NewMockCommandExecutorOutput(ctrl)
+	output.EXPECT().GetScanner().AnyTimes().Return(bufio.NewScanner(strings.NewReader("This is a test log\n")))
+	output.EXPECT().Wait().AnyTimes().Return(nil)
+
+	// Create the mock command executor.
+	commander := NewMockCommandExecutor(ctrl)
+	commander.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
+	commander.EXPECT().LookPath(gomock.Any()).AnyTimes().Return("", nil)
+
+	// Create the log tracker and the XFR tracker.
+	logTracker := newLogTracker(commander, logTrackerConfig{})
+	xfrTracker := newXfrTracker(logTracker)
+
+	// Create the daemon with the XFR tracker and configure it to track the systemd logs.
+	daemon := &Bind9Daemon{
+		xfrTracker:             xfrTracker,
+		xfrTrackingSystemdUnit: "named.service",
+	}
+
+	// Bootstrap the daemon.
+	err := daemon.Bootstrap()
+	require.NoError(t, err)
+	defer daemon.Cleanup()
+
+	// Make sure that the subscription is created.
+	require.NotNil(t, daemon.xfrTracker)
+	require.NotNil(t, daemon.xfrTracker.subscriber)
+
+	// Cleanup the daemon. It should stop the subscription.
+	daemon.Cleanup()
+	require.NotNil(t, daemon.xfrTracker)
+	require.Nil(t, daemon.xfrTracker.subscriber)
+}
+
+// Test that the daemon is bootstrapped when XFR tracking is not enabled.
+func TestBind9BootstrapCleanupNoXfrTracking(t *testing.T) {
+	// Create the log tracker and the XFR tracker.
+	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{})
+	xfrTracker := newXfrTracker(logTracker)
+
+	// Create the daemon using the XFR tracker but neglect the settings
+	// to track the log file or the systemd logs.
+	daemon := &Bind9Daemon{
+		xfrTracker: xfrTracker,
+	}
+
+	// Bootstrap the daemon.
+	err := daemon.Bootstrap()
+	require.NoError(t, err)
+	defer daemon.Cleanup()
+
+	// Make sure that the subscription is created.
+	require.NotNil(t, daemon.xfrTracker)
+	require.Nil(t, daemon.xfrTracker.subscriber)
+}
+
+// Test that the daemon is bootstrapped when the XFR tracker is nil.
+func TestBind9BootstrapCleanupNilXfrTracker(t *testing.T) {
+	// Create the daemon with the XFR tracker set to nil.
+	daemon := &Bind9Daemon{}
+
+	// Bootstrap the daemon.
+	err := daemon.Bootstrap()
+	require.NoError(t, err)
+	defer daemon.Cleanup()
+
+	// Make sure that the XFR tracker is nil.
+	require.Nil(t, daemon.xfrTracker)
 }
 
 // Test the state is refreshed properly. It should fetch the zone inventory

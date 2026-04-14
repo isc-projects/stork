@@ -16,7 +16,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-var _ Monitor = (*monitor)(nil)
+var (
+	_ Monitor = (*monitor)(nil)
+	_ Daemon  = (*dnsDaemonImpl)(nil)
+)
 
 // Operations provided by the Stork agent to set up daemon-related configuration.
 type agentManager interface {
@@ -249,6 +252,7 @@ type monitor struct {
 	processManager   *ProcessManager
 	bind9FileParser  bind9FileParser
 	pdnsConfigParser pdnsConfigParser
+	logTracker       *logTracker
 
 	// List of detected daemons on the host.
 	// Nil if the monitor has no perform detection yet.
@@ -257,9 +261,12 @@ type monitor struct {
 
 // Represents monitor settings passed when the monitor is created.
 type MonitorSettings struct {
-	ExplicitBind9ConfigPath    string
-	ExplicitPowerDNSConfigPath string
-	KeaHTTPClientConfig        HTTPClientConfig
+	EnableXFRTracking              bool
+	ExplicitBind9ConfigPath        string
+	ExplicitPowerDNSConfigPath     string
+	ExplicitXFRTrackingPath        string
+	ExplicitXFRTrackingSystemdUnit string
+	KeaHTTPClientConfig            HTTPClientConfig
 }
 
 // Returns an exported interface to the monitor. It used to start it as well, but this is now done
@@ -272,17 +279,25 @@ func NewMonitor(settings MonitorSettings) Monitor {
 // Creates a new monitor instance. It is used internally by the NewMonitor function and
 // in the tests.
 func newMonitor(settings MonitorSettings) *monitor {
+	// Create common command executor that wraps the system commands.
+	commander := storkutil.NewSystemCommandExecutor()
+	// Create the common log tracker that can monitor the logs of the daemons.
+	logTracker := newLogTracker(commander, logTrackerConfig{
+		// TODO: This may be a configurable setting.
+		channelSize: 128,
+	})
 	return &monitor{
 		settings:         settings,
 		requests:         make(chan chan []Daemon),
 		quit:             make(chan bool),
 		wg:               &sync.WaitGroup{},
-		commander:        storkutil.NewSystemCommandExecutor(),
+		commander:        commander,
 		processManager:   NewProcessManager(),
 		bind9FileParser:  bind9config.NewParser(),
 		pdnsConfigParser: pdnsconfig.NewParser(),
 		running:          false,
 		daemons:          nil,
+		logTracker:       logTracker,
 	}
 }
 

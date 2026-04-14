@@ -1,6 +1,7 @@
 package agent
 
 import (
+	bufio "bufio"
 	"bytes"
 	"fmt"
 	"path"
@@ -540,6 +541,90 @@ func TestDetectDaemonsNoDaemonDetectedWarning(t *testing.T) {
 
 	// Assert
 	require.Contains(t, buffer.String(), "No daemon detected for monitoring")
+}
+
+// Test detecting and re-redetecting BIND 9 daemon when XFR tracking is enabled.
+func TestDetectDaemonsWithXfrTracking(t *testing.T) {
+	// Prepare the mocks.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Mock the output of the journalctl command.
+	output := NewMockCommandExecutorOutput(ctrl)
+	output.EXPECT().GetScanner().AnyTimes().Return(bufio.NewScanner(strings.NewReader("This is a test log\n")))
+	output.EXPECT().Wait().AnyTimes().Return(nil)
+
+	// Mock the command executor to return the output of the journalctl command.
+	// Also, mock the file system operations to return the test file information.
+	commander := NewMockCommandExecutor(ctrl)
+	commander.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
+	commander.EXPECT().LookPath(gomock.Any()).AnyTimes().Return("", nil)
+	commander.EXPECT().GetFileInfo(gomock.Any()).AnyTimes().Return(&testFileInfo{}, nil)
+	commander.EXPECT().IsFileExist(gomock.Any()).AnyTimes().Return(true)
+
+	// Mock the bind9 process.
+	bind9Process := NewMockSupportedProcess(ctrl)
+	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getDaemonName().AnyTimes().Return(daemonname.Bind9)
+	bind9Process.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{"named", "-c", "/etc/named.conf"}, nil)
+	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
+	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
+
+	// Mock the process manager to return the bind9 process.
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().Times(2).Return([]supportedProcess{
+		bind9Process,
+	}, nil)
+	processManager.lister = lister
+
+	// Mock the bind9 config parser to return the default bind9 config.
+	bind9ConfigParser := NewMockBind9FileParser(ctrl)
+	bind9ConfigParser.EXPECT().ParseFile(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(configPath, rootPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, rootPath, strings.NewReader(defaultBind9Config))
+	})
+
+	// Create the monitor with the XFR tracking enabled using journalctl.
+	monitor := &monitor{
+		settings: MonitorSettings{
+			EnableXFRTracking:              true,
+			ExplicitXFRTrackingSystemdUnit: "named.service",
+		},
+		processManager:  processManager,
+		commander:       commander,
+		bind9FileParser: bind9ConfigParser,
+		logTracker:      newLogTracker(commander, logTrackerConfig{}),
+	}
+
+	// Detect the daemon.
+	monitor.detectDaemons(t.Context())
+	daemons := monitor.daemons
+
+	// There should be one named daemon detected.
+	require.Len(t, daemons, 1)
+	daemon1 := daemons[0].(*Bind9Daemon)
+	defer daemon1.Cleanup()
+	// Make sure that the XFR tracker is created.
+	require.NotNil(t, daemon1.xfrTracker)
+	require.NotNil(t, daemon1.xfrTracker.subscriber)
+
+	// Detect tha daemon again.
+	monitor.detectDaemons(t.Context())
+	daemons = monitor.daemons
+
+	// There should be one named daemon detected again.
+	require.Len(t, daemons, 1)
+	daemon2 := daemons[0].(*Bind9Daemon)
+	defer daemon2.Cleanup()
+	// Make sure that the XFR tracker is created again.
+	require.NotNil(t, daemon2.xfrTracker)
+	require.NotNil(t, daemon2.xfrTracker.subscriber)
+
+	// Make sure that the re-detected daemon is the same and that the XFR
+	// tracker has not changed.
+	require.Equal(t, daemon1, daemon2)
+	require.Equal(t, daemon1.xfrTracker, daemon2.xfrTracker)
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.

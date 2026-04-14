@@ -31,10 +31,13 @@ type bind9FileParser interface {
 // It holds common and BIND 9 specific runtime information.
 type Bind9Daemon struct {
 	dnsDaemonImpl
-	rndcClient    *RndcClient // to communicate with BIND 9 via rndc
-	pid           int32       // PID of the named process
-	bind9Config   *bind9config.Config
-	rndcKeyConfig *bind9config.Config
+	rndcClient             *RndcClient // to communicate with BIND 9 via rndc
+	pid                    int32       // PID of the named process
+	bind9Config            *bind9config.Config
+	rndcKeyConfig          *bind9config.Config
+	xfrTrackingPath        string
+	xfrTrackingSystemdUnit string
+	xfrTracker             *xfrTracker
 }
 
 // Checks if the current daemon instance is the same as the other daemon instance.
@@ -47,6 +50,35 @@ func (b *Bind9Daemon) IsSame(other Daemon) bool {
 	default:
 		return false
 	}
+}
+
+// Bootstrap the BIND 9 daemon. It starts the zone inventory, if available.
+// It also starts the zone transfer tracker, if enabled.
+func (b *Bind9Daemon) Bootstrap() error {
+	if err := b.dnsDaemonImpl.Bootstrap(); err != nil {
+		return err
+	}
+	switch {
+	case b.xfrTracker == nil || (b.xfrTrackingPath == "" && b.xfrTrackingSystemdUnit == ""):
+		return nil
+	case b.xfrTrackingPath != "":
+		return b.xfrTracker.trackFile(b.xfrTrackingPath)
+	case b.xfrTrackingSystemdUnit != "":
+		return b.xfrTracker.trackSystemdUnit(b.xfrTrackingSystemdUnit)
+	}
+	return nil
+}
+
+// Cleanup the BIND 9 daemon. It stops the zone inventory and the zone transfer tracker,
+// if enabled.
+func (b *Bind9Daemon) Cleanup() error {
+	if err := b.dnsDaemonImpl.Cleanup(); err != nil {
+		return err
+	}
+	if b.xfrTracker != nil {
+		b.xfrTracker.stop()
+	}
+	return nil
 }
 
 // List of BIND 9 executables used during daemon detection.
@@ -475,6 +507,23 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 		return nil, errors.Wrapf(err, "failed to determine BIND 9 rndc details")
 	}
 
+	var (
+		xfrTracker             *xfrTracker
+		xfrTrackingPath        string
+		xfrTrackingSystemdUnit string
+	)
+	if sm.settings.EnableXFRTracking {
+		// TODO: to set the tracking path and systemd unit name we should take into
+		// account the BIND 9 logging configuration. In this case there will be no
+		// need to explicitly set the tracking path and systemd unit name. They should
+		// be only set when BIND 9 configuration is not clear about the location of the
+		// XFR-related logs.
+		xfrTrackingPath = sm.settings.ExplicitXFRTrackingPath
+		xfrTrackingSystemdUnit = sm.settings.ExplicitXFRTrackingSystemdUnit
+		if sm.logTracker != nil {
+			xfrTracker = newXfrTracker(sm.logTracker)
+		}
+	}
 	// prepare final BIND 9 daemon
 	daemon := &Bind9Daemon{
 		dnsDaemonImpl: dnsDaemonImpl{
@@ -485,10 +534,13 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 			zoneInventory: inventory,
 			detectedFiles: files,
 		},
-		rndcClient:    rndcClient,
-		pid:           p.getPid(),
-		bind9Config:   bind9Config,
-		rndcKeyConfig: rndcConfig,
+		rndcClient:             rndcClient,
+		pid:                    p.getPid(),
+		bind9Config:            bind9Config,
+		rndcKeyConfig:          rndcConfig,
+		xfrTrackingPath:        xfrTrackingPath,
+		xfrTrackingSystemdUnit: xfrTrackingSystemdUnit,
+		xfrTracker:             xfrTracker,
 	}
 
 	return daemon, nil
