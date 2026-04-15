@@ -174,27 +174,40 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		systemUser, err = r.externalAuthentication(ctx, params)
 	}
 
+	// The safe identifier is used for logging purposes. It prevents untrusted
+	// user for injecting very long or many lines into the logs by using the
+	// identifier field.
+	safeIdentifier := "<nil>"
+	if params.Credentials.Identifier != nil {
+		safeIdentifier = (*params.Credentials.Identifier)[0:255]
+		if len(*params.Credentials.Identifier) > 255 {
+			safeIdentifier += "..."
+		}
+	}
+
+	logFields := log.Fields{
+		"method":     authenticationMethod,
+		"identifier": safeIdentifier,
+	}
+
 	if systemUser == nil && err == nil {
 		log.
-			WithField("method", authenticationMethod).
-			WithField("identifier", *params.Credentials.Identifier).
+			WithFields(logFields).
 			Debug("User not found, cannot authenticate")
 		return users.NewCreateSessionBadRequest()
 	} else if err != nil {
 		log.
+			WithFields(logFields).
 			WithError(err).
-			WithField("method", authenticationMethod).
-			WithField("identifier", *params.Credentials.Identifier).
-			Debug("Cannot authenticate a user")
+			Error("Cannot authenticate a user")
 		return users.NewCreateSessionBadRequest()
 	}
 
 	err = r.SessionManager.LoginHandler(ctx, systemUser)
 	if err != nil {
 		log.
-			WithError(err).
-			WithField("identifier", *params.Credentials.Identifier).
-			Debug("Cannot log in a user")
+			WithFields(logFields).
+			Error("Cannot log in a user")
 		return users.NewCreateSessionBadRequest()
 	}
 
