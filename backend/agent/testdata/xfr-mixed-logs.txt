@@ -1,0 +1,44 @@
+16-Apr-2026 12:08:06.054 statistics channel listening on 127.0.0.1#8053
+16-Apr-2026 12:08:06.056 command channel listening on 127.0.0.1#953
+16-Apr-2026 12:08:06.065 managed-keys-zone: loaded serial 0
+16-Apr-2026 12:08:06.148 zone test/IN: loaded serial 1
+16-Apr-2026 12:08:06.148 zone bind9.example.org/IN: loaded serial 2024031401
+16-Apr-2026 12:08:06.148 zone rpz.local/IN: loaded serial 201702121
+16-Apr-2026 12:08:06.149 zone bind9.example.org/IN: sending notifies (serial 2024031401)
+16-Apr-2026 12:08:06.149 all zones loaded
+16-Apr-2026 12:08:06.193 zone bind9.example.org/IN: sending notify to 12.0.0.3#53
+16-Apr-2026 12:08:06.222 FIPS mode is disabled
+16-Apr-2026 12:08:06.224 running
+16-Apr-2026 12:08:06.225 rpz: rpz.local: reload start
+16-Apr-2026 12:08:06.255 rpz: rpz.local: reload done: success
+16-Apr-2026 12:08:06.290 zone ./IN: Transfer started.
+16-Apr-2026 12:08:06.325 zone drop.rpz.example.com/IN: refresh: unexpected rcode (REFUSED) from primary 172.24.0.53#53 (source 0.0.0.0#0)
+16-Apr-2026 12:08:06.326 zone drop.rpz.example.com/IN: Transfer started.
+16-Apr-2026 12:08:06.331 0x7ffffb12d000: transfer of './IN' from 192.5.5.241#53: connected using 192.5.5.241#53
+16-Apr-2026 12:08:06.332 0x7ffff8e41000: transfer of 'drop.rpz.example.com/IN' from 172.24.0.53#53: connected using 172.24.0.53#53 TSIG trusted-key
+16-Apr-2026 12:08:06.346 zone drop.rpz.example.com/IN: transferred serial 201702121: TSIG 'trusted-key'
+16-Apr-2026 12:08:06.346 0x7ffff8e41000: transfer of 'drop.rpz.example.com/IN' from 172.24.0.53#53: Transfer status: success
+16-Apr-2026 12:08:06.346 0x7ffff8e41000: transfer of 'drop.rpz.example.com/IN' from 172.24.0.53#53: Transfer completed: 1 messages, 5 records, 294 bytes, 0.014 secs (21000 bytes/sec) (serial 201702121)
+16-Apr-2026 12:08:06.347 rpz: drop.rpz.example.com: reload start
+16-Apr-2026 12:08:06.356 rpz: drop.rpz.example.com: reload done: success
+16-Apr-2026 12:08:06.496 Verifying the zone using the following algorithms:
+16-Apr-2026 12:08:06.496 - RSASHA256
+16-Apr-2026 12:08:06.667 Zone fully signed:
+16-Apr-2026 12:08:06.667 Algorithm: RSASHA256: KSKs: 1 active, 1 stand-by, 0 revoked
+16-Apr-2026 12:08:06.667                       ZSKs: 1 active, 0 stand-by, 0 revoked
+16-Apr-2026 12:08:06.667 zone ./IN: transferred serial 2026041600
+16-Apr-2026 12:08:06.667 0x7ffffb12d000: transfer of './IN' from 192.5.5.241#53: Transfer status: success
+16-Apr-2026 12:08:06.667 0x7ffffb12d000: transfer of './IN' from 192.5.5.241#53: Transfer completed: 123 messages, 24872 records, 1321903 bytes, 0.335 secs (3945979 bytes/sec) (serial 2026041600)
+16-Apr-2026 12:08:06.667 zone ./IN: mirror zone is now in use
+16-Apr-2026 12:08:16.222 managed-keys-zone: Unable to fetch DNSKEY set '.': timed out
+16-Apr-2026 12:08:16.239 resolver priming query complete: timed out
+16-Apr-2026 12:08:21.231 zone bind9.example.org/IN: notify to 12.0.0.3#53 failed: timed out: retrying over TCP
+16-Apr-2026 12:08:21.233 zone bind9.example.org/IN: sending notify to 12.0.0.3#53
+16-Apr-2026 12:08:36.248 zone bind9.example.org/IN: notify to 12.0.0.3#53 failed: timed out: retries exceeded
+16-Apr-2026 12:08:59.967 client @0x7ffff983b000 127.0.0.1#56830 (drop.rpz.example.com): transfer of 'drop.rpz.example.com/IN': AXFR started (serial 201702121)
+16-Apr-2026 12:08:59.969 client @0x7ffff983b000 127.0.0.1#56830 (drop.rpz.example.com): transfer of 'drop.rpz.example.com/IN': AXFR ended: 1 messages, 5 records, 199 bytes, 0.003 secs (66333 bytes/sec) (serial 201702121)
+16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (.): transfer of './IN': AXFR started (serial 2026041600)
+16-Apr-2026 12:09:11.702 client @0x7ffffa436000 127.0.0.1#55256 (.): transfer of './IN': AXFR ended: 79 messages, 24872 records, 1320233 bytes, 0.052 secs (25389096 bytes/sec) (serial 2026041600)
+16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': AXFR started (serial 2026041600)
+16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': setting up zone transfer: failed
+
