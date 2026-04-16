@@ -98,6 +98,73 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 	return daemons, subnets
 }
 
+func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, subnets []*Subnet) []*Lease {
+	leases := []*Lease{
+		// Valid IPv4 lease.
+		{
+			DaemonID: daemons[0].ID,
+			SubnetID: subnets[0].ID,
+			Lease: keadata.Lease{
+				Family:        4,
+				HWAddress:     "00:00:00:00:00:01",
+				IPAddress:     "192.0.2.9",
+				CLTT:          9999,
+				State:         keadata.LeaseStateDefault,
+				ValidLifetime: 3600,
+				LocalSubnetID: 7,
+			},
+		},
+		// Expired IPv4 lease.
+		{
+			DaemonID: daemons[0].ID,
+			SubnetID: subnets[0].ID,
+			Lease: keadata.Lease{
+				Family:        4,
+				HWAddress:     "00:00:00:00:00:02",
+				IPAddress:     "192.0.2.11",
+				CLTT:          10000,
+				State:         keadata.LeaseStateExpiredReclaimed,
+				ValidLifetime: 3600,
+				LocalSubnetID: 7,
+			},
+		},
+		// Valid IPv6 lease.
+		{
+			DaemonID: daemons[1].ID,
+			SubnetID: subnets[1].ID,
+			Lease: keadata.Lease{
+				Family:        6,
+				DUID:          "01:01:01:01:01:01:01:01",
+				IPAddress:     "2001:db8:1::4",
+				CLTT:          10001,
+				State:         keadata.LeaseStateDefault,
+				ValidLifetime: 3600,
+				LocalSubnetID: 6,
+			},
+		},
+		// Registered IPv6 lease.
+		{
+			DaemonID: daemons[1].ID,
+			SubnetID: subnets[1].ID,
+			Lease: keadata.Lease{
+				Family:        6,
+				DUID:          "01:01:01:01:01:01:01:02",
+				IPAddress:     "2001:db8:1::402",
+				CLTT:          10002,
+				State:         keadata.LeaseStateDefault,
+				ValidLifetime: 3600,
+				LocalSubnetID: 6,
+			},
+		},
+	}
+	for _, lease := range leases {
+		err := AddLease(db, lease)
+		require.NoError(t, err)
+		require.NotZero(t, lease.ID)
+	}
+	return leases
+}
+
 // Verify that AddLease adds a lease to the database with correct values (and
 // can come back out of the database unmodified).
 func TestAddLease(t *testing.T) {
@@ -226,6 +293,57 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 	}
 	err := AddLease(db, lease)
 	require.ErrorContains(t, err, "problem inserting lease")
+}
+
+func TestGetLeasesByPageNoFilter(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+
+	lease := &Lease{
+		DaemonID: daemons[0].ID,
+		SubnetID: subnets[0].ID,
+		Lease: keadata.Lease{
+			Family:        4,
+			HWAddress:     "00:00:00:00:00:01",
+			IPAddress:     "192.0.2.9",
+			CLTT:          9999,
+			State:         keadata.LeaseStateDefault,
+			ValidLifetime: 3600,
+			LocalSubnetID: 7,
+		},
+	}
+	err := AddLease(db, lease)
+	require.NoError(t, err)
+	require.NotZero(t, lease.ID)
+
+	filters := LeasesByPageFilters{}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAny)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.EqualValues(t, 9999, returned[0].CLTT)
+}
+
+func TestGetLeasesByPageFilteredBySubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	leases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	filters := LeasesByPageFilters{
+		SubnetID: &subnets[1].ID,
+	}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAny)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	require.NotNil(t, returned[0])
+	require.Equal(t, leases[2].ID, returned[0].ID)
+	require.NotNil(t, returned[1])
+	require.Equal(t, leases[3].ID, returned[1].ID)
 }
 
 // Verify that the conversion from the gRPC API structure to this one copies all
