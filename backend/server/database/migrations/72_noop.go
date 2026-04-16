@@ -1,3 +1,0 @@
-package dbmigs
-
-func init() {}
