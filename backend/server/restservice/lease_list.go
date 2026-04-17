@@ -2,9 +2,11 @@ package restservice
 
 import (
 	"context"
+	"math"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	dbmodel "isc.org/stork/server/database/model"
@@ -12,9 +14,45 @@ import (
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
 
-func (r *RestAPI) convertLeaseFromRestAPI(dbLease *dbmodel.Lease) *models.Lease {
-	// TODO: implement conversion
-	return nil
+func convertLeaseFromRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
+	if dbLease == nil {
+		return nil, errors.New("cannot convert a nil dbmodel.Lease to a models.Lease")
+	}
+	if dbLease.CLTT > math.MaxInt64 {
+		return nil, errors.New("CLTT is greater than math.MaxInt64, so no safe conversion is possible")
+	}
+	if dbLease.Daemon == nil {
+		return nil, errors.New("database did not return a Daemon for this Lease")
+	}
+	if dbLease.Subnet == nil {
+		return nil, errors.New("database did not return a Subnet for this Lease")
+	}
+	cltt := int64(dbLease.CLTT)
+	daemonLabel := dbLease.Daemon.GetLabel()
+	state := int64(dbLease.State)
+	validLifetime := int64(dbLease.ValidLifetime)
+	return &models.Lease{
+			ClientID:          dbLease.ClientID,
+			Cltt:              &cltt,
+			DaemonID:          &dbLease.DaemonID,
+			DaemonLabel:       &daemonLabel,
+			Duid:              dbLease.DUID,
+			FqdnFwd:           dbLease.FqdnFwd,
+			FqdnRev:           dbLease.FqdnRev,
+			Hostname:          dbLease.Hostname,
+			HwAddress:         dbLease.HWAddress,
+			Iaid:              int64(dbLease.IAID),
+			ID:                &dbLease.ID,
+			IPAddress:         &dbLease.IPAddress,
+			LeaseType:         dbLease.Type,
+			PreferredLifetime: int64(dbLease.PreferredLifetime),
+			PrefixLength:      int64(dbLease.PrefixLength),
+			State:             &state,
+			SubnetID:          &dbLease.Subnet.ID,
+			UserContext:       dbLease.UserContext,
+			ValidLifetime:     &validLifetime,
+		},
+		nil
 }
 
 // Fetches leases from the database and converts to the data formats
@@ -32,7 +70,10 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 
 	// Convert hosts fetched from the database to REST.
 	for i := range dbLeases {
-		host := r.convertLeaseFromRestAPI(&dbLeases[i])
+		host, err := convertLeaseFromRestAPI(&dbLeases[i])
+		if err != nil {
+			continue
+		}
 		hosts.Items = append(hosts.Items, host)
 	}
 
