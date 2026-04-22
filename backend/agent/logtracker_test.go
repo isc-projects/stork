@@ -230,7 +230,7 @@ func TestLogTrackerSubscriptions(t *testing.T) {
 			// Capture all the lines into first subscription.
 			capturedLines := make([]string, 0)
 			go func() {
-				for line := range sub1.ch {
+				for line := range sub1.dataChan {
 					mutex.Lock()
 					capturedLines = append(capturedLines, line.text)
 					mutex.Unlock()
@@ -254,7 +254,7 @@ func TestLogTrackerSubscriptions(t *testing.T) {
 			// Create second subscription.
 			capturedLines2 := make([]string, 0)
 			go func() {
-				for line := range sub2.ch {
+				for line := range sub2.dataChan {
 					mutex.Lock()
 					capturedLines2 = append(capturedLines2, line.text)
 					mutex.Unlock()
@@ -377,11 +377,11 @@ func TestLogTrackerStop(t *testing.T) {
 	// Make sure that all the subscriptions are cancelled.
 	for _, sub := range subs {
 		// There must be some data buffered but the channel should be closed.
-		require.LessOrEqual(t, len(sub.ch), 2)
-		for range sub.ch {
+		require.LessOrEqual(t, len(sub.dataChan), 2)
+		for range sub.dataChan {
 			// Drain the channel.
 		}
-		_, ok := <-sub.ch
+		_, ok := <-sub.dataChan
 		// Check that the channel is closed.
 		require.False(t, ok)
 		// Check that the subscriber was cancelled.
@@ -432,11 +432,11 @@ func TestLogTrackerStopSubscriptions(t *testing.T) {
 	for i := 0; i < 10; i += 2 {
 		sub := subs[i]
 		// There must be some data buffered but the channel should be closed.
-		require.LessOrEqual(t, len(sub.ch), 2)
-		for range sub.ch {
+		require.LessOrEqual(t, len(sub.dataChan), 2)
+		for range sub.dataChan {
 			// Drain the channel.
 		}
-		_, ok := <-sub.ch
+		_, ok := <-sub.dataChan
 		// Check that the channel is closed.
 		require.False(t, ok)
 		// Check that the subscriber was cancelled.
@@ -507,7 +507,7 @@ func TestLogTrackerStopStuckRead(t *testing.T) {
 		go func() {
 			// Do not read the log lines. Write should block.
 			<-waitBeforeReadCh
-			for range sub.ch {
+			for range sub.dataChan {
 				// Drain the channel.
 			}
 		}()
@@ -640,7 +640,7 @@ func TestLogTrackerBackfillError(t *testing.T) {
 		go func() {
 			// Do not read the log lines. It should block.
 			<-waitBeforeReadCh
-			for range sub1.ch {
+			for range sub1.dataChan {
 				// Drain the channel to cleanup.
 			}
 		}()

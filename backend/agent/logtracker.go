@@ -14,14 +14,23 @@ import (
 // The subscriber can be attached to a capture to follow the logs. It exposes the
 // channel to receive the log lines from the capture by the caller.
 type logTrackingSubscriber struct {
-	ch              chan logReaderLine
-	ctx             context.Context
-	cancelFn        context.CancelFunc
+	// The channel used to send the captured log lines to the subscriber.
+	dataChan chan logReaderLine
+	// The context used to cancel the subscription.
+	ctx context.Context
+	// The function used to cancel the subscription.
+	cancelFn context.CancelFunc
+	// The guard to ensure that the signalReady function is called only once.
 	signalReadyOnce sync.Once
-	mutex           sync.RWMutex
-	readyCh         chan struct{}
-	stoppedChan     chan struct{}
-	teardownOnce    sync.Once
+	// The mutex to protect the subscriber state from concurrent access. Specifically,
+	// it ensures that the data cannot be sent over the closed channel.
+	mutex sync.RWMutex
+	// The channel used to signal that the subscriber is ready to receive the log lines.
+	readyChan chan struct{}
+	// The channel used to signal that the subscriber is stopped.
+	stoppedChan chan struct{}
+	// The guard to ensure that the teardown function is called only once.
+	teardownOnce sync.Once
 }
 
 // Instantiates a new subscriber. The context can be used to cancel subscription,
@@ -29,10 +38,10 @@ type logTrackingSubscriber struct {
 func newLogTrackingSubscriber(ctx context.Context, channelSize int) *logTrackingSubscriber {
 	ctx, cancel := context.WithCancel(ctx)
 	return &logTrackingSubscriber{
-		ch:          make(chan logReaderLine, channelSize),
+		dataChan:    make(chan logReaderLine, channelSize),
 		ctx:         ctx,
 		cancelFn:    cancel,
-		readyCh:     make(chan struct{}),
+		readyChan:   make(chan struct{}),
 		stoppedChan: make(chan struct{}),
 	}
 }
@@ -56,7 +65,7 @@ func (s *logTrackingSubscriber) consumeLogLine(line logReaderLine) bool {
 		// Subscriber context is cancelled (perhaps because the capture
 		// is being cancelled). Stop sending the log lines to the subscriber.
 		return false
-	case s.ch <- line:
+	case s.dataChan <- line:
 		// Otherwise, send it.
 		return true
 	}
@@ -80,7 +89,7 @@ func (s *logTrackingSubscriber) teardown() {
 		s.signalReady()
 		// Close the subscriber channel as we no longer send the log
 		// to this subscriber.
-		close(s.ch)
+		close(s.dataChan)
 		// Signal to the stop function that it can now return.
 		close(s.stoppedChan)
 	})
@@ -110,7 +119,7 @@ func (s *logTrackingSubscriber) isStopped() bool {
 // once. Subsequent calls are ignored.
 func (s *logTrackingSubscriber) signalReady() {
 	s.signalReadyOnce.Do(func() {
-		close(s.readyCh)
+		close(s.readyChan)
 	})
 }
 
@@ -119,13 +128,21 @@ func (s *logTrackingSubscriber) signalReady() {
 // capture. The capture is responsible for reading the log (using the dedicated
 // reader), and sending the log lines to the subscribers.
 type logTrackingCapture struct {
-	cancelFn    context.CancelFunc
-	ctx         context.Context
-	mutex       sync.Mutex
-	emptyFn     func()
-	reader      logReader
-	startOnce   sync.Once
-	startErr    error
+	// The function used to cancel the capture.
+	cancelFn context.CancelFunc
+	// The context used to cancel the capture.
+	ctx context.Context
+	// The mutex to protect the capture state from concurrent access.
+	mutex sync.Mutex
+	// The function used to clean up the capture when all subscribers are cancelled.
+	emptyFn func()
+	// The reader used to read the log contents from the log source.
+	reader logReader
+	// The guard to ensure that the start function is called only once.
+	startOnce sync.Once
+	// The error returned by the start function.
+	startErr error
+	// The subscribers attached to the capture.
 	subscribers []*logTrackingSubscriber
 }
 
@@ -209,7 +226,7 @@ func (c *logTrackingCapture) start(options ...logReaderCaptureOption) error {
 			// Send the log line to the subscribers.
 			for _, subscriber := range subscribers {
 				select {
-				case <-subscriber.readyCh:
+				case <-subscriber.readyChan:
 					// If this is a new subscriber, it may be backfilling the log.
 					// We should not send any new log lines until the subscriber is ready
 					// to receive. Otherwise, the subscribers will get out of sync.
