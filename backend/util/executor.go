@@ -76,6 +76,8 @@ func (e *systemCommandExecutor) Output(command string, args ...string) ([]byte, 
 
 // Executes a given command in the system shell without waiting for it to complete.
 // The context passed to the function can be used to cancel the command execution.
+// The minBufferSize sets the initial reusable buffer capacity for the scanner. The
+// maxBufferSize sets the maximum buffer capacity to which the buffer can be allocated.
 // Suppose the function is used to tail and follow the log file, cancelling the context
 // will kill the process. Call Wait() after cancelling the context to cleanly handle
 // process termination.
