@@ -112,7 +112,7 @@ func (s *logTrackingSubscriber) isStopped() bool {
 	}
 }
 
-// Signals that the subscriber as ready to receive the log lines from the capture. It is
+// Signals that the subscriber is ready to receive the log lines from the capture. It is
 // called to signal that the subscriber backfilled the logs and is ready to follow the
 // new logs. Until the subscriber is ready, the capture will hold from sending the
 // log lines to the subscribers. This function is guaranteed to be executed only
