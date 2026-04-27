@@ -83,6 +83,65 @@ func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbm
 	return user, err
 }
 
+func (r *RestAPI) AuthenticateExternalUser(ctx context.Context, externalUser *auth.User, methodID string) (*dbmodel.SystemUser, error) {
+	if externalUser == nil {
+		return nil, errors.New("cannot authenticate nil user")
+	}
+
+	groupIDMapping := map[auth.UserGroupID]int64{
+		auth.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
+		auth.UserGroupIDAdmin:      dbmodel.AdminGroupID,
+		auth.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
+	}
+
+	var groups []*dbmodel.SystemGroup
+	for _, g := range externalUser.Groups {
+		systemGroupID, ok := groupIDMapping[g]
+		if !ok {
+			log.Warningf("Unknown group returned from external authenticator: %d", g)
+			continue
+		}
+
+		groups = append(groups, &dbmodel.SystemGroup{
+			ID: systemGroupID,
+		})
+	}
+
+	systemUser := &dbmodel.SystemUser{
+		Login:                  externalUser.Login,
+		Email:                  externalUser.Email,
+		Lastname:               externalUser.Lastname,
+		Name:                   externalUser.Name,
+		Groups:                 groups,
+		AuthenticationMethodID: methodID,
+		ExternalID:             externalUser.ID,
+		ChangePassword:         false,
+	}
+
+	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
+	if conflict {
+		var dbUser *dbmodel.SystemUser
+		dbUser, err = dbmodel.GetUserByExternalID(
+			r.DB,
+			methodID,
+			externalUser.ID,
+		)
+		if err != nil {
+			return nil, errors.Errorf("cannot fetch the internal user profile")
+		}
+
+		systemUser.ID = dbUser.ID
+
+		if externalUser.Groups == nil {
+			// The groups are not managed by the hook.
+			systemUser.Groups = dbUser.Groups
+		}
+
+		_, err = dbmodel.UpdateUser(r.DB, systemUser)
+	}
+	return systemUser, err
+}
+
 // The external authentication flow handled by the hooks.
 func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	calloutUser, err := r.HookManager.Authenticate(
@@ -97,57 +156,7 @@ func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSes
 		return nil, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
-	groupIDMapping := map[auth.UserGroupID]int64{
-		auth.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
-		auth.UserGroupIDAdmin:      dbmodel.AdminGroupID,
-		auth.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
-	}
-
-	var groups []*dbmodel.SystemGroup
-	for _, g := range calloutUser.Groups {
-		systemGroupID, ok := groupIDMapping[g]
-		if !ok {
-			log.Warningf("Unknown group returned from hook: %d", g)
-			continue
-		}
-
-		groups = append(groups, &dbmodel.SystemGroup{
-			ID: systemGroupID,
-		})
-	}
-
-	systemUser := &dbmodel.SystemUser{
-		Login:                  calloutUser.Login,
-		Email:                  calloutUser.Email,
-		Lastname:               calloutUser.Lastname,
-		Name:                   calloutUser.Name,
-		Groups:                 groups,
-		AuthenticationMethodID: *params.Credentials.AuthenticationMethodID,
-		ExternalID:             calloutUser.ID,
-		ChangePassword:         false,
-	}
-
-	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
-	if conflict {
-		var dbUser *dbmodel.SystemUser
-		dbUser, err = dbmodel.GetUserByExternalID(
-			r.DB,
-			*params.Credentials.AuthenticationMethodID,
-			calloutUser.ID,
-		)
-		if err != nil {
-			return nil, errors.Errorf("cannot fetch the internal user profile")
-		}
-
-		systemUser.ID = dbUser.ID
-
-		if calloutUser.Groups == nil {
-			// The groups are not managed by the hook.
-			systemUser.Groups = dbUser.Groups
-		}
-
-		_, err = dbmodel.UpdateUser(r.DB, systemUser)
-	}
+	systemUser, err := r.AuthenticateExternalUser(ctx, calloutUser, *params.Credentials.AuthenticationMethodID)
 	return systemUser, err
 }
 
