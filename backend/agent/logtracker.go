@@ -132,7 +132,10 @@ type logTrackingCapture struct {
 	cancelFn context.CancelFunc
 	// The context used to cancel the capture.
 	ctx context.Context
-	// The mutex to protect the capture state from concurrent access.
+	// The mutex to protect the capture state from concurrent access. Specifically,
+	// it protects the subscribers slice from concurrent access. It is locked when
+	// a snapshot of the subscribers is taken to feed them with the new data. It is
+	// also locked when new subscribers are added or removed from the capture.
 	mutex sync.Mutex
 	// The function used to clean up the capture when all subscribers are cancelled.
 	emptyFn func()
