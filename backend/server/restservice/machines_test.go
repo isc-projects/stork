@@ -20,10 +20,10 @@ import (
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
-	"isc.org/stork/hooks/server/authenticationcallouts"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
+	"isc.org/stork/server/auth"
 	"isc.org/stork/server/certs"
 	"isc.org/stork/server/daemons"
 	"isc.org/stork/server/daemons/kea"
@@ -2827,7 +2827,7 @@ func TestDeleteDaemon(t *testing.T) {
 
 	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
 		ID: 42, Groups: []*dbmodel.SystemGroup{
-			{ID: int64(authenticationcallouts.UserGroupIDSuperAdmin)},
+			{ID: int64(auth.UserGroupIDSuperAdmin)},
 		},
 	})
 

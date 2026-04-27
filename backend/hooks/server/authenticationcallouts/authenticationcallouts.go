@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"net/http"
+
+	"isc.org/stork/server/auth"
 )
 
 // The metadata of the authentication method is used to display a selector on
@@ -32,37 +34,13 @@ type AuthenticationMetadataForm interface {
 	GetSecretFormLabel() string
 }
 
-// User group ID enum.
-type UserGroupID int
-
-// List of the user group IDs used in the server.
-const (
-	UserGroupIDSuperAdmin UserGroupID = 1
-	UserGroupIDAdmin      UserGroupID = 2
-	UserGroupIDReadOnly   UserGroupID = 3
-)
-
-// The logged user metadata. It's a data transfer object (DTO) to avoid using
-// heavy dbmodel dependencies.
-type User struct {
-	// It must be a unique and persistent ID.
-	ID       string
-	Login    string
-	Email    string
-	Lastname string
-	Name     string
-	// It must contain internal Stork group IDs. It means that the hook should
-	// map the authentication API identifiers.
-	Groups []UserGroupID
-}
-
 // Set of callouts used to perform authentication.
 type AuthenticationCallouts interface {
 	// Called to perform authentication. It accepts an HTTP request (header,
 	// cookie) and the credentials provided in the login form. Returns a user
 	// metadata or error if an authentication failed.
 	// A session ID (if applicable) may be stored in the context.
-	Authenticate(ctx context.Context, request *http.Request, identifier, secret *string) (*User, error)
+	Authenticate(ctx context.Context, request *http.Request, identifier, secret *string) (*auth.User, error)
 	// Called to perform unauthentication (closing the session). It accepts the
 	// context passed previously to the authentication callout.
 	Unauthenticate(ctx context.Context) error

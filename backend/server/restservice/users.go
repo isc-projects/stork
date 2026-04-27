@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/hooks/server/authenticationcallouts"
+	"isc.org/stork/server/auth"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
@@ -82,8 +83,8 @@ func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbm
 	return user, err
 }
 
-// The internal authentication flow handled by the hooks.
-func (r *RestAPI) externalAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
+// The external authentication flow handled by the hooks.
+func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	calloutUser, err := r.HookManager.Authenticate(
 		ctx,
 		params.HTTPRequest,
@@ -96,10 +97,10 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		return nil, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
-	groupIDMapping := map[authenticationcallouts.UserGroupID]int64{
-		authenticationcallouts.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
-		authenticationcallouts.UserGroupIDAdmin:      dbmodel.AdminGroupID,
-		authenticationcallouts.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
+	groupIDMapping := map[auth.UserGroupID]int64{
+		auth.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
+		auth.UserGroupIDAdmin:      dbmodel.AdminGroupID,
+		auth.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
 	}
 
 	var groups []*dbmodel.SystemGroup
@@ -171,7 +172,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	if authenticationMethod == dbmodel.AuthenticationMethodIDInternal {
 		systemUser, err = r.internalAuthentication(params)
 	} else {
-		systemUser, err = r.externalAuthentication(ctx, params)
+		systemUser, err = r.hookAuthentication(ctx, params)
 	}
 
 	// The safe identifier is used for logging purposes. It prevents untrusted
