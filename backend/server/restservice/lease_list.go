@@ -81,6 +81,22 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 }
 
 func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListParams) middleware.Responder {
+	_, user := r.SessionManager.Logged(ctx)
+	if user == nil {
+		msg := "Unable to identify the user requesting leases (for access control purposes)"
+		rsp := dhcp.NewGetLeaseListDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if !user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) &&
+		!user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.AdminGroupID}) {
+		msg := "User is forbidden to access lease information"
+		rsp := dhcp.NewGetLeaseListDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	var start int64
 	if params.Start != nil {
 		start = *params.Start
@@ -113,12 +129,12 @@ func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListPara
 	if err != nil {
 		msg := "Problem fetching hosts from the database"
 		log.WithError(err).Error(msg)
-		rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		rsp := dhcp.NewGetLeaseListDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 
-	rsp := dhcp.NewGetLeasesOK().WithPayload(leases)
+	rsp := dhcp.NewGetLeaseListOK().WithPayload(leases)
 	return rsp
 }
