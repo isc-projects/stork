@@ -3,7 +3,6 @@ package agent
 import (
 	"container/list"
 	"context"
-	"iter"
 	"slices"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	storkutil "isc.org/stork/util"
 )
 
 // The default number of days to look into the past for the XFR tracking
@@ -26,6 +26,7 @@ type xfrStatus int
 const (
 	xfrStatusUnknown xfrStatus = iota
 	xfrStatusStarted
+	xfrStatusConnected
 	xfrStatusCompleted
 	xfrStatusMessage
 )
@@ -89,6 +90,7 @@ type xfrState struct {
 	timeFormat     xfrTimeFormat
 	message        string
 }
+
 type xfrStateKey struct {
 	viewName string
 	zoneName string
@@ -218,47 +220,70 @@ func (t *xfrTracker) stop() {
 	t.subscribers = nil
 }
 
-func parseTime(tokens []string) (time.Time, xfrTimeFormat) {
-	if len(tokens) == 0 {
-		return time.Time{}, xfrTimeFormatUnknown
+// Parses the time at the position of the iterator. It recognizes both RFC3339 and
+// BIND 9 time formats. In case of a different time format, it returns the
+// xfrTimeFormatUnknown.
+func parseTime(iterator *storkutil.PeekingIterator[string]) (parsedTime time.Time, timeFormat xfrTimeFormat) {
+	timeFormat = xfrTimeFormatUnknown
+	firstToken, _ := iterator.Peek()
+	if firstToken == "" {
+		// If there are no more tokens, there is nothing to do.
+		return
 	}
-	if len(tokens) > 1 {
-		localTime := strings.Join(tokens[:2], " ")
-		parsedTime, err := time.ParseInLocation("02-Jan-2006 15:04:05.000", localTime, time.Local)
+	var err error
+	if strings.Contains(firstToken, "T") {
+		// The data in the RFC3339 format is typically in the form of
+		// 2026-02-23T10:41:27.071Z. It contains the letter T to separate
+		// the date and the time.
+		parsedTime, err = time.Parse(time.RFC3339, firstToken)
 		if err == nil {
-			return parsedTime, xfrTimeFormatBind9
+			// If parsing was successful, set the time format and consume the token.
+			timeFormat = xfrTimeFormatRFC3339
+			iterator.Next()
 		}
+		// No point in trying to parse the time in the BIND 9 format.
+		return
 	}
-	parsedTime, err := time.Parse(time.RFC3339, tokens[0])
+	// Before we consume the first token, let's see if it is even recognized
+	// as a date. Otherwise, we don't want to consume the token because it
+	// may belong to some other statement we want to parse (e.g., zone name).
+	// Note that some logs may lack timestamps.
+	if _, err = time.Parse("02-Jan-2006", firstToken); err != nil {
+		return
+	}
+	// It is apparently a date in the BIND 9 format. Let's consume the
+	// first token.
+	iterator.Next()
+	secondToken, _ := iterator.Peek()
+	if secondToken == "" {
+		// No more tokens.
+		return
+	}
+	// The BIND 9 format is in the form of "23-Feb-2026 10:41:27.071". Let's
+	// re-create it from two consecutive tokens.
+	localTime := firstToken + " " + secondToken
+	parsedTime, err = time.ParseInLocation("02-Jan-2006 15:04:05.000", localTime, time.Local)
 	if err == nil {
-		return parsedTime, xfrTimeFormatRFC3339
+		// Parsing was successful. Set the time format and consume the second token.
+		timeFormat = xfrTimeFormatBind9
+		iterator.Next()
 	}
-	return time.Time{}, xfrTimeFormatUnknown
+	// Failed to parse.
+	return
 }
 
-func pull(tokens []string) (func(n int) (string, bool, int), func()) {
-	seq := slices.Values(tokens)
-	next, stop := iter.Pull(seq)
-	index := 0
-	return func(n int) (string, bool, int) {
-		var (
-			token string
-			ok    bool
-		)
-		for i := 0; i < n; i++ {
-			token, ok = next()
-			if !ok {
-				return "", false, index
-			}
-			index++
-		}
-		token = strings.TrimFunc(token, func(r rune) bool {
-			return strings.ContainsRune("():',", r)
-		})
-		return token, ok, index
-	}, stop
+// Sanitizes the token so it can be used in switch statements. It removes
+// any parentheses, commas, semicolons and single quotes. Note that all of
+// these extra characters may appear in the log messages. For example, zone
+// names are often enclosed in quotes. The serial number is often enclosed in
+// parentheses. The message blocks are terminated with a semicolon.
+func sanitizeToken(token string) string {
+	return strings.TrimFunc(token, func(r rune) bool {
+		return strings.ContainsRune("():',", r)
+	})
 }
 
+// Parses the single log line and returns the corresponding state.
 func (t *xfrTracker) parse(logLine string) *xfrState {
 	// Limit the length of the log line to 1024 characters to avoid
 	// parsing excessively long log lines.
@@ -268,7 +293,7 @@ func (t *xfrTracker) parse(logLine string) *xfrState {
 		logLine = string(runes)
 	}
 
-	// Remove any trailing dot from the log line. Some BIND9 logs contain
+	// Remove any trailing dot from the log line. Some BIND 9 logs contain
 	// trailing dots, other don't.
 	logLine = strings.TrimRight(logLine, ".")
 
@@ -287,155 +312,284 @@ func (t *xfrTracker) parse(logLine string) *xfrState {
 		return nil
 	}
 
+	// Create a peeking iterator over the tokens.
+	iterator := storkutil.NewPeekingIterator(tokens)
+
 	var (
 		parsedTime time.Time
-		s          xfrState
+		state      xfrState
 	)
 
 	// The log line typically begins with a timestamp. Parse it and determine
 	// the time format used by BIND 9.
-	parsedTime, s.timeFormat = parseTime(tokens)
+	parsedTime, state.timeFormat = parseTime(iterator)
 
-	// Go over the tokens.
-	next, stop := pull(tokens)
-	defer stop()
-
-	var (
-		prevToken string
-		msgIndex  int
-	)
+	// Parse the tokens starting after the timestamp.
 	for {
 		// Get the next token.
-		token, ok, _ := next(1)
+		currToken, ok := iterator.Next()
 		if !ok {
 			// No more tokens to process.
 			break
 		}
-		// Process the token.
+		// Tokens are parsed case-insensitively.
+		token := strings.ToLower(sanitizeToken(currToken))
 		switch token {
 		case "zone":
-			parseZone(next, &s)
-		case "view":
-			parseView(next, &s)
-		case "transfer":
-			if index := parseTransfer(next, &s); index >= 0 {
-				msgIndex = index
-				s.status = xfrStatusMessage
+			// The secondary server logs the beginning of the zone transfer with a short
+			// message beginning with the "zone" keyword (i.e., zone <name>: Transfer started.).
+			// Parse the zone name and record the rest of the message.
+			if parseZone(iterator, &state) {
+				state.message = strings.Join(iterator.PeekSubsequent(), " ")
 			}
+		case "view":
+			// View name is sometimes logged as view <name>. More often it is logged within
+			// the zone name string, but sometimes it is logged separately.
+			parseView(iterator, &state)
+		case "transfer":
+			// In most cases, the log message contains the "transfer of". It may also contain
+			// "Transfer started". This call handles both cases.
+			parseTransfer(iterator, parsedTime, &state)
+		case "connected":
+			// The secondary server logs a useful message when it connects to the primary server
+			// including the server address. Note that the server address is not logged when the
+			// zone transfer is started. Let's capture the "connected using <address>" messages
+			// to set the server address for a started zone transfer.
+			parseConnectedUsing(iterator, &state)
+		case "axfr", "ixfr":
+			// Parse the "AXFR started" and "IXFR started" messages to capture when a zone transfer
+			// has started. Mark the zone transfer completed when we come across the "AXFR ended"
+			// or "IXFR ended" messages. This call handles all these cases.
+			parseXFR(iterator, parsedTime, &state)
 		case "serial":
-			if err := parseSerial(next, &s); err != nil {
+			// Zone serial is logged in many messages. It is very important for zone transfer
+			// monitoring.
+			if err := parseSerial(iterator, &state); err != nil {
 				log.WithError(err).Debugf("Failed to parse serial %s", token)
 			}
-		case "from":
-			parseFrom(next, &s)
 		case "client":
-			parseClient(next, &s)
-		case "started":
-			s.status = xfrStatusStarted
-			s.startTime = parsedTime
-		case "completed", "ended":
-			s.status = xfrStatusCompleted
-			s.completionTime = parsedTime
+			// The client address is logged on the primary server when the secondary connects.
+			parseClient(iterator, &state)
 		case "messages", "records", "bytes":
-			if err := parseMessagesRecordsBytes(prevToken, parsedTime, token, &s); err != nil {
-				log.WithError(err).Debugf("Failed to parse the number of %s", token)
+			// Parse zone transfer statistics. The actual value should have been logged before
+			// the current token.
+			prevToken, ok := iterator.PeekBack()
+			if !ok {
+				log.WithField("token", currToken).Debug("Previous token not found")
+			}
+			if err := parseMessagesRecordsBytes(prevToken, token, &state); err != nil {
+				log.WithError(err).Debugf("Failed to parse the number of %s", currToken)
 			}
 		case "secs":
-			if err := parseSecs(prevToken, &s); err != nil {
+			// Parse the zone transfer duration. The actual value should have been logged before
+			// the current token.
+			prevToken, ok := iterator.PeekBack()
+			if !ok {
+				log.WithField("token", currToken).Debug("Previous token not found")
+			}
+			if err := parseSecs(prevToken, &state); err != nil {
 				log.WithError(err).Debugf("Failed to parse the duration %s", prevToken)
 			}
 		}
-		prevToken = token
 	}
-	if s.zoneName == "" {
-		log.Debug("zone name not found in the log message")
+	if state.zoneName == "" || state.status == xfrStatusUnknown {
+		// Zone name and status are required. If they are not set, the log message is
+		// malformed or not related to a zone transfer.
 		return nil
 	}
-	if msgIndex > 0 {
-		s.message = strings.Join(tokens[msgIndex:], " ")
+	if state.recordsCount > 0 {
+		// The presence of these counters indicates that the zone transfer has completed.
+		state.status = xfrStatusCompleted
+		state.completionTime = parsedTime
 	}
-	return &s
+	return &state
 }
 
-func parseTransfer(next func(n int) (string, bool, int), s *xfrState) int {
-	var (
-		token string
-		ok    bool
-		index int
-	)
-	if token, ok, index = next(1); !ok || token != "of" {
-		return -1
+// Parses the "transfer of" and "Transfer started" statements.
+func parseTransfer(iterator *storkutil.PeekingIterator[string], parsedTime time.Time, s *xfrState) {
+	token, _ := iterator.Peek()
+	token = strings.ToLower(sanitizeToken(token))
+	switch token {
+	case "of":
+		// Consume the token and parse the "transfer of" statement.
+		iterator.Next()
+		parseTransferOf(iterator, s)
+	case "started":
+		// Consume the token. We came across the "Transfer started" statement.
+		// Let's mark the zone transfer started and record the start time.
+		iterator.Next()
+		s.status = xfrStatusStarted
+		s.startTime = parsedTime
+	default:
+		// Unknown statement. The log message simply contains the "transfer" keyword
+		// in some unrecognized context.
 	}
-	index = parseZone(next, s)
-	return index
 }
 
-func parseZone(next func(n int) (string, bool, int), s *xfrState) (index int) {
-	if s.zoneName != "" {
+// Parses the "transfer of" statement contents.
+func parseTransferOf(iterator *storkutil.PeekingIterator[string], s *xfrState) {
+	// The "transfer of" is followed by the zone name. Parse it.
+	if !parseZone(iterator, s) {
+		// Parsing the zone name failed. Perhaps the "transfer of" was used in
+		// some other context.
 		return
 	}
+	// Get next token because the zone name is optionally followed by the server
+	// address. The server address is preceded by the "from" keyword.
+	token, _ := iterator.Peek()
+	if token == "from" {
+		// The server address follows. Let's consume the "from" token.
+		iterator.Next()
+		// Parse the server address.
+		parseFrom(iterator, s)
+	}
+	// The "transfer of" statement can be followed by different messages indicating
+	// the status of the zone transfer (including errors). Some of these messages may
+	// mark the beginning or end of the zone transfer but we don't know what exactly.
+	// This will be known later as we process the following tokens. For now, let's just
+	// assume it is a general message (hence set the xfrStatusMessage).
+	s.message = strings.Join(iterator.PeekSubsequent(), " ")
+	s.status = xfrStatusMessage
+}
+
+// Parses the "connected using" statement containing the server address.
+func parseConnectedUsing(iterator *storkutil.PeekingIterator[string], s *xfrState) {
+	token, _ := iterator.Next()
+	if token != "using" {
+		// It is not the "connected using" statement.
+		return
+	}
+	// The "connected using" statement is followed by the server address in the
+	// same format as the "from <address>" statement
+	if parseFrom(iterator, s) {
+		s.status = xfrStatusConnected
+	}
+}
+
+// Parses the "AXFR/IXFR started/ended" statements.
+func parseXFR(iterator *storkutil.PeekingIterator[string], parsedTime time.Time, s *xfrState) {
+	token, ok := iterator.Next()
+	if !ok {
+		// No more tokens to process.
+		return
+	}
+	token = sanitizeToken(token)
+	switch token {
+	case "started":
+		// AXFR or IXFR started.
+		s.status = xfrStatusStarted
+		s.startTime = parsedTime
+	case "completed", "ended":
+		// AXFR or IXFR ended.
+		s.status = xfrStatusCompleted
+		s.completionTime = parsedTime
+	}
+}
+
+// Parses the zone name and view name from the log message.
+func parseZone(iterator *storkutil.PeekingIterator[string], s *xfrState) bool {
 	var (
-		token string
-		ok    bool
+		zoneName string
+		viewName string
 	)
-	if token, ok, index = next(1); ok {
+	if token, ok := iterator.Next(); ok {
+		token = sanitizeToken(token)
+		// The zone name is followed by the class name IN, and may be followed
+		// by the view name. For example, "example.com/IN" or "example.com/IN/trusted".
 		split := strings.Split(token, "/")
 		if len(split) > 1 {
-			s.zoneName = split[0]
+			// The first part is always the zone name.
+			zoneName = split[0]
 		}
 		if len(split) > 2 {
-			s.viewName = split[2]
+			// The third part is the view name.
+			viewName = split[2]
 		}
+		if viewName != "" && s.viewName == "" {
+			// Only override the view name if it is not already set.
+			s.viewName = viewName
+		}
+		if zoneName != "" && s.zoneName == "" {
+			// Only override the zone name if it is not already set.
+			s.zoneName = zoneName
+		}
+	}
+	// Indicate whether or not we have been successful. At least there must be
+	// a zone name parsed.
+	return zoneName != ""
+}
+
+// Parses the view name from the log message.
+func parseView(iterator *storkutil.PeekingIterator[string], s *xfrState) {
+	if token, ok := iterator.Next(); ok {
+		if s.viewName == "" {
+			// Only override the view name if it is not already set.
+			s.viewName = strings.Trim(token, ":")
+		}
+	}
+}
+
+// Parses the server address following the "from" keyword.
+func parseFrom(iterator *storkutil.PeekingIterator[string], s *xfrState) bool {
+	var server string
+	if token, ok := iterator.Next(); ok {
+		// The server address is followed by the port number (e.g., 192.5.5.241#53).
+		split := strings.Split(token, "#")
+		if len(split) > 0 {
+			// The first part is the server address.
+			server = split[0]
+		}
+	}
+	if server != "" && s.server == "" {
+		// Only override the server address if it is not already set.
+		s.server = server
+	}
+	// Indicate if parsing was successful.
+	return server != ""
+}
+
+// Parses the client address from the log message.
+func parseClient(iterator *storkutil.PeekingIterator[string], s *xfrState) {
+	// The first token is not interesting. It holds the pointer similar to @0x7ffffaa28c00.
+	iterator.Next()
+	token, ok := iterator.Next()
+	if s.client != "" || !ok {
+		// If the client address is already set or there are no more tokens to process,
+		// there is nothing to parse.
+		return
+	}
+	// The second token is the client address.
+	split := strings.Split(token, "#")
+	if len(split) > 0 {
+		// The first part is the client address.
+		s.client = split[0]
+	}
+}
+
+// Parses the zone serial number.
+func parseSerial(iterator *storkutil.PeekingIterator[string], s *xfrState) (err error) {
+	token, ok := iterator.Next()
+	if s.serial != 0 || !ok {
+		// If the serial number is already set or there are no more tokens to process,
+		// there is nothing to parse.
+		return
+	}
+	// Make sure that the token has no junk like parentheses.
+	token = sanitizeToken(token)
+	if s.serial, err = strconv.ParseInt(token, 10, 64); err != nil {
+		// It is not a valid number.
+		err = errors.WithStack(err)
 	}
 	return
 }
 
-func parseView(next func(n int) (string, bool, int), s *xfrState) {
-	if s.viewName != "" {
-		return
-	}
-	if token, ok, _ := next(1); ok {
-		s.viewName = token
-	}
-}
-
-func parseFrom(next func(n int) (string, bool, int), s *xfrState) {
-	if token, ok, _ := next(1); ok {
-		split := strings.Split(token, "#")
-		if len(split) > 0 {
-			s.server = split[0]
-		}
-	}
-}
-
-func parseClient(next func(n int) (string, bool, int), s *xfrState) {
-	if token, ok, _ := next(2); ok {
-		split := strings.Split(token, "#")
-		if len(split) > 0 {
-			s.client = split[0]
-		}
-	}
-}
-
-func parseSerial(next func(n int) (string, bool, int), s *xfrState) (err error) {
-	if s.serial != 0 {
-		return
-	}
-	if token, ok, _ := next(1); ok {
-		if s.serial, err = strconv.ParseInt(token, 10, 64); err != nil {
-			err = errors.WithStack(err)
-			return
-		}
-	}
-	return err
-}
-
-func parseMessagesRecordsBytes(prevToken string, parsedTime time.Time, token string, s *xfrState) (err error) {
+// Parses the number of messages, records or bytes. The value to parse is
+// specified as a prevToken. The current token should be one of the following:
+// "messages", "records", "bytes".
+func parseMessagesRecordsBytes(prevToken, token string, s *xfrState) (err error) {
 	if prevToken == "" {
 		return
 	}
-	s.status = xfrStatusCompleted
-	s.completionTime = parsedTime
 	v, err := strconv.ParseInt(prevToken, 10, 64)
 	if err != nil {
 		err = errors.WithStack(err)
@@ -452,11 +606,12 @@ func parseMessagesRecordsBytes(prevToken string, parsedTime time.Time, token str
 	return
 }
 
-func parseSecs(prevToken string, s *xfrState) (err error) {
-	if prevToken == "" {
+// Parses the duration as float number of seconds (e.g., 0.014 secs).
+func parseSecs(secs string, s *xfrState) (err error) {
+	if secs == "" {
 		return
 	}
-	duration, err := strconv.ParseFloat(prevToken, 64)
+	duration, err := strconv.ParseFloat(secs, 64)
 	if err != nil {
 		err = errors.WithStack(err)
 		return
@@ -465,18 +620,31 @@ func parseSecs(prevToken string, s *xfrState) (err error) {
 	return
 }
 
+// Puts new state into the zone transfer containers. It is specifically
+// called when the zone transfer has started. It creates a new state entry
+// for the zone or it replaces an existing one. This function is safe for
+// concurrent use.
 func (t *xfrTracker) putState(key *xfrStateKey, s *xfrState) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
+	// Check if the given transfer already exists.
 	element, ok := t.startedMap[*key]
 	if ok {
+		// It exists, so let's replace it with a new one.
 		element.Value = s
+		// Move the element to the back of the list to keep the most recent one
+		// at the end.
 		t.startedList.MoveToBack(element)
 	} else {
+		// It does not exist, so let's append it at the end. Also.
+		// remember the element in the map for quick access using the key.
 		element := t.startedList.PushBack(s)
 		t.startedMap[*key] = element
 	}
+	// Ensure that the number of started transfers does not exceed the maximum
+	// allowed number. If it does, remove the oldest one.
 	if t.startedList.Len() > t.maxStates {
+		// Remove the oldest one from the front of the list.
 		element := t.startedList.Remove(t.startedList.Front())
 		state := element.(*xfrState)
 		key := xfrStateKey{
@@ -484,43 +652,81 @@ func (t *xfrTracker) putState(key *xfrStateKey, s *xfrState) {
 			zoneName: state.zoneName,
 			client:   state.client,
 		}
+		// Remove the element from the map.
 		delete(t.startedMap, key)
 	}
 }
 
+// Updates the existing zone transfer state. It is no-op if the
+// specified transfer does not exist. This function is safe for concurrent use.
+// It is typically called to update from xfrStatusStarted to xfrStatusMessage
+// (when the started transfer fails). However, it also handles the case when
+// the new state is xfrStatusConnected. This new state indicates that the
+// transfer is starting up but successful connection was established to the
+// primary server. So, we preserve the xfrStatusStarted status in the existing
+// state, but update the rest of the fields. Note that we only want to track
+// started, completed and failed transfers. The connected status indicates that
+// the transfer is still started. The original transfer start time is preserved
+// during the update.
 func (t *xfrTracker) updateState(key *xfrStateKey, s *xfrState) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
+	// Check if the given transfer exists.
 	element, ok := t.startedMap[*key]
 	if !ok {
+		// It does not exist. Nothing to update.
 		return
 	}
 	state := element.Value.(*xfrState)
-	if state.startTime.IsZero() {
-		return
-	}
+	// Preserve the original start time.
 	s.startTime = state.startTime
+	if s.status == xfrStatusConnected && state.status == xfrStatusStarted {
+		// If the status is connected it indicates that we have received an
+		// intermediate message between starting and completing the transfer.
+		// This message has some useful information concerning the server from
+		// which the transfer is received. Let's hold this new status but still
+		// keep it as started rather than connected. The user is not interested
+		// in distinguishing between started and connected transfers.
+		s.status = xfrStatusStarted
+	}
+	// If the transfer was updated we can move it to the back of the list to keep
+	// the most recent one at the end.
 	t.startedList.MoveToBack(element)
+	// Update the element with the new state.
 	element.Value = s
 }
 
+// Moves the zone transfer state to the completed container. It is called when
+// the zone transfer has completed. It is safe for concurrent use. It removes
+// the state from the started container and adds it to the completed container.
+// If the number of completed transfers exceeds the maximum allowed number, the
+// oldest one is removed.
 func (t *xfrTracker) moveStateToCompleted(key *xfrStateKey, s *xfrState) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
+	// Check if the given transfer exists.
 	element, ok := t.startedMap[*key]
 	if ok {
+		// It exists, so let's remove it from the started container.
 		t.startedList.Remove(element)
 		delete(t.startedMap, *key)
 	}
+	// Add the state to the completed container.
 	t.completedList.PushBack(s)
+	// Ensure that the number of completed transfers does not exceed the maximum
+	// allowed number. If it does, remove the oldest one.
 	if t.completedList.Len() > t.maxStates {
 		t.completedList.Remove(t.completedList.Front())
 	}
 }
 
+// Feeds the log line to the XFR tracker. It parses the log line and updates
+// the zone transfer state. It is safe for concurrent use.
 func (t *xfrTracker) feed(logLine string) {
 	s := t.parse(logLine)
 	if s == nil {
+		// The log line was not related to a zone transfer or we did not
+		// consider it useful.
 		return
 	}
 	key := xfrStateKey{
@@ -530,15 +736,22 @@ func (t *xfrTracker) feed(logLine string) {
 	}
 	switch s.status {
 	case xfrStatusStarted:
+		// This is a new zone transfer. Add it or replace the existing one for
+		// the given zone and client.
 		t.putState(&key, s)
-	case xfrStatusMessage:
+	case xfrStatusMessage, xfrStatusConnected:
+		// This is an intermediate message between starting and completing the transfer.
+		// It may indicate an error or that the secondary established a connection
+		// to the primary server.
 		t.updateState(&key, s)
 	case xfrStatusCompleted:
+		// This is a completed zone transfer. Move it to the completed container.
 		t.moveStateToCompleted(&key, s)
 	default:
 	}
 }
 
+// Returns the list of ongoing or stuck zone transfers. It is safe for concurrent use.
 func (t *xfrTracker) getNotCompleted() []*xfrState {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
@@ -549,6 +762,7 @@ func (t *xfrTracker) getNotCompleted() []*xfrState {
 	return states
 }
 
+// Returns the list of completed zone transfers. It is safe for concurrent use.
 func (t *xfrTracker) getCompleted() []*xfrState {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
