@@ -32,7 +32,6 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
-	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
@@ -948,40 +947,34 @@ func (sa *StorkAgent) ReceiveBind9Config(req *agentapi.ReceiveBind9ConfigReq, se
 	return
 }
 
-// Stream a point-in-time snapshot of all the active leases that all monitored
-// Kea daemons know about.
+// Stream a point-in-time snapshot of all the active leases that the specific
+// requested Kea daemon knows about.
 func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server grpc.ServerStreamingServer[agentapi.ReceiveKeaLeasesRsp]) error {
 	if !sa.isLeaseTrackingAllowed {
 		return errors.New("This feature is not enabled. Pass `--enable-lease-tracking` or set `STORK_AGENT_ENABLE_LEASE_TRACKING` when starting the agent.")
 	}
-	daemons := sa.Monitor.GetDaemons()
-	for _, daemon := range daemons {
-		name := daemon.GetName()
-		switch name {
-		case daemonname.DHCPv4, daemonname.DHCPv6:
-			keadaemon, ok := daemon.(*keaDaemon)
-			if !ok {
-				log.Warn("Answering GetKeaLeases; found a daemon with DHCP daemonname, but which could not be cast to keaDaemon")
-				continue
-			}
-			leases, err := keadaemon.GetLeaseSnapshot()
-			if err != nil {
-				log.WithError(err).
-					WithField("daemon", daemon.String()).
-					Error("unable to get lease snapshot from daemon")
-				continue
-			}
-			for _, lease := range leases {
-				grpcLease := lease.ToGRPC()
-				err := server.Send(&agentapi.ReceiveKeaLeasesRsp{
-					Lease: &grpcLease,
-				})
-				if err != nil {
-					return err
-				}
-			}
-		default:
-			continue
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, req.ControlAddress, req.ControlPort)
+	if daemon == nil {
+		return status.Newf(codes.FailedPrecondition, "Kea server %s:%d not found", req.ControlAddress, req.ControlPort).Err()
+	}
+	keadaemon, ok := daemon.(*keaDaemon)
+	if !ok {
+		return status.Newf(codes.InvalidArgument, "attempted to get leases from daemon %s instead of Kea", daemon.GetName()).Err()
+	}
+	leases, err := keadaemon.GetLeaseSnapshot()
+	if err != nil {
+		log.WithError(err).
+			WithField("daemon", daemon.String()).
+			Error("unable to get lease snapshot from daemon")
+		return status.New(codes.Internal, "unable to get lease snapshot from daemon").Err()
+	}
+	for _, lease := range leases {
+		grpcLease := lease.ToGRPC()
+		err := server.Send(&agentapi.ReceiveKeaLeasesRsp{
+			Lease: &grpcLease,
+		})
+		if err != nil {
+			return err
 		}
 	}
 	return nil

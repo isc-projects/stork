@@ -1301,8 +1301,19 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon ControlledDaemon, minCLTT uint64) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp,
 	error] {
 	return func(yield func(*agentapi.ReceiveKeaLeasesRsp, error) bool) {
+		// Get control access point for the specified daemon. It will be sent
+		// in the request to the agent, so the agent can identify the correct
+		// leases.
+		accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
 		request := &agentapi.ReceiveKeaLeasesReq{
-			MinCLTT: &minCLTT,
+			MinCLTT:        &minCLTT,
+			ControlAddress: accessPoint.Address,
+			ControlPort:    accessPoint.Port,
 		}
 
 		// Get the agent's state. It holds the connection with the agent.

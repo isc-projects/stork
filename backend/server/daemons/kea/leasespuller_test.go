@@ -593,6 +593,100 @@ func TestLeasePullingBasic(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Verify that pullLeases only pulls leases once for each daemon, and doesn't
+// duplicate the leases from the v4 daemon into the v6 daemon.
+func TestPullLeasesDoesntDuplicateLeasesWhenFetchingFromDHCPv4Andv6OnOneMachine(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+
+	machine, err := dbmodeltest.NewMachine(db)
+	require.NoError(t, err)
+
+	daemon4Server, _ := machine.NewKeaDHCPv4Server()
+	err = daemon4Server.Configure(`{ "Dhcp4": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases4.csv"
+    	},
+    "subnet4": [
+      { "id": 67, "subnet": "192.168.1.0/24" }
+    ]
+	}}`)
+	require.NoError(t, err)
+	daemon4, err := daemon4Server.GetDaemon()
+	require.NoError(t, err)
+	daemon6Server, _ := machine.NewKeaDHCPv6Server()
+	err = daemon6Server.Configure(`{ "Dhcp6": {
+		"lease-database": {
+        	"type": "memfile",
+        	"lfc-interval": 3600,
+        	"name": "/var/lib/kea/kea-leases6.csv"
+    	},
+    "subnet6": [
+      { "id": 67, "subnet": "fe81::0/64" }
+    ]
+	}}`)
+	require.NoError(t, err)
+	daemon6, err := daemon6Server.GetDaemon()
+	require.NoError(t, err)
+
+	testHelperAddDemoSubnet(t, db, daemon4, "192.168.1.0/24")
+	testHelperAddDemoSubnet(t, db, daemon6, "fe81::0/64")
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{
+			{Lease: &agentapi.Lease{
+				Family:        4,
+				IpAddress:     "192.168.1.3",
+				HwAddress:     "01:02:03:04:05:06",
+				Cltt:          42,
+				ValidLifetime: 420,
+				SubnetID:      67,
+			}},
+		},
+		[]error{nil},
+	)
+	emptyMockLeases := storkutil.ZipPairs(
+		[]*agentapi.ReceiveKeaLeasesRsp{},
+		[]error{},
+	)
+	fa := NewMockConnectedAgents(ctrl)
+	fa.EXPECT().ReceiveKeaLeases(
+		gomock.Any(),
+		gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+			return daemon.ID == daemon4.ID
+		}),
+		gomock.Eq(uint64(0))).Return(mockLeases).AnyTimes()
+	fa.EXPECT().ReceiveKeaLeases(
+		gomock.Any(),
+		gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+			return daemon.ID == daemon6.ID
+		}),
+		gomock.Eq(uint64(0))).Return(emptyMockLeases).AnyTimes()
+
+	puller, err := NewLeasesPuller(db, fa)
+	require.NoError(t, err)
+	defer puller.Shutdown()
+
+	// Act
+	pullErr := puller.pullLeases()
+	filters := dbmodel.LeasesByPageFilters{}
+	leases, leaseCount, queryErr := dbmodel.GetLeasesByPage(db, 0, 100, filters, "", dbmodel.SortDirAny)
+
+	// Assert
+	require.NoError(t, pullErr)
+	require.NoError(t, queryErr)
+	require.EqualValues(t, 1, leaseCount)
+	require.EqualValues(t, "192.168.1.3", leases[0].IPAddress)
+}
+
 // Test that the lease puller collects all errors from failed daemons.
 func TestPullLeasesCollectsAllErrors(t *testing.T) {
 	// Arrange
@@ -869,6 +963,7 @@ func TestGetLeasesFromDaemonWhenReceiveKeaLeasesReturnsNilInStream(t *testing.T)
 
 // Add a demo subnet matching the arguments provided.
 func testHelperAddDemoSubnet(t *testing.T, db *dbops.PgDB, daemon *dbmodel.Daemon, prefix string) {
+	t.Helper()
 	subnet := dbmodel.Subnet{
 		Prefix: prefix,
 	}

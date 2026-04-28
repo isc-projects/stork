@@ -3008,7 +3008,7 @@ func TestAllowLeaseTracking(t *testing.T) {
 // Make a "happy path" keaDaemon structure with a mocked MemfileSnooper.
 // keaDaemon will have `name` as its name, and the snooper will provide
 // snapshots containing single-element lists with each element of `addrs`.
-func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name daemonname.Name, addrs []string) Daemon {
+func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name daemonname.Name, port int64, addrs []string) Daemon {
 	snooper := NewMockMemfileSnooper(ctrl)
 	for _, addr := range addrs {
 		snooper.EXPECT().GetSnapshot().DoAndReturn(func() ([]*keadata.Lease, error) {
@@ -3023,6 +3023,13 @@ func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name dae
 	return &keaDaemon{
 		daemon: daemon{
 			Name: name,
+			AccessPoints: []AccessPoint{
+				{
+					Address: "127.0.0.1",
+					Port:    port,
+					Type:    AccessPointControl,
+				},
+			},
 		},
 		snooper: snooper,
 	}
@@ -3040,19 +3047,13 @@ func checkExpectedLeases(t *testing.T, received []*agentapi.Lease, expected []st
 // Test that GetKeaLeases fetches the leases from the MemfileSnooper, streams
 // the leases back to the Stork server, works with multiple Kea daemons, and
 // doesn't try to get leases from e.g. Bind9.
-func TestGetKeaLeasesHappyPath(t *testing.T) {
+func TestReceiveKeaLeasesHappyPath(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	sa.isLeaseTrackingAllowed = true
 	defer teardown()
 
-	expectedAll := []string{
-		"fe80::1",
-		"192.168.1.1",
-	}
-	expectedFiltered := []string{
-		"fe80::2",
-		"192.168.1.2",
-	}
+	expectedV4 := "192.168.1.108"
+	expectedV6 := "fe80::67"
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -3061,20 +3062,30 @@ func TestGetKeaLeasesHappyPath(t *testing.T) {
 			ctrl,
 			storkutil.IPv6,
 			daemonname.DHCPv6,
-			[]string{expectedAll[0], expectedFiltered[0]},
+			8081,
+			[]string{expectedV6},
 		),
 		makeHappyDaemon(
 			ctrl,
 			storkutil.IPv4,
 			daemonname.DHCPv4,
-			[]string{expectedAll[1], expectedFiltered[1]},
+			8082,
+			[]string{expectedV4},
 		),
-		makeHappyDaemon(
-			ctrl,
-			storkutil.IPv6,
-			daemonname.Bind9,
-			[]string{},
-		),
+		&Bind9Daemon{
+			dnsDaemonImpl: dnsDaemonImpl{
+				daemon: daemon{
+					Name: daemonname.Bind9,
+					AccessPoints: []AccessPoint{
+						{
+							Address: "127.0.0.1",
+							Port:    8083,
+							Type:    AccessPointControl,
+						},
+					},
+				},
+			},
+		},
 	}
 	fdm, _ := sa.Monitor.(*FakeMonitor)
 	fdm.Daemons = daemons
@@ -3087,29 +3098,101 @@ func TestGetKeaLeasesHappyPath(t *testing.T) {
 		return nil
 	})
 
-	// Act 1
-	errAll := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
-		MinCLTT: new(uint64),
+	// DHCPv6 daemon.
+	ap := daemons[0].GetAccessPoint(AccessPointControl)
+	require.NotNil(t, ap)
+	errV6 := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT:        new(uint64),
+		ControlAddress: ap.Address,
+		ControlPort:    ap.Port,
 	}, sss)
-	require.NoError(t, errAll)
-	checkExpectedLeases(t, receivedLeases, expectedAll)
+	require.NoError(t, errV6)
+	checkExpectedLeases(t, receivedLeases, []string{expectedV6})
 
-	// Act 2
+	// DHCPv4 daemon.
+	ap = daemons[1].GetAccessPoint(AccessPointControl)
 	receivedLeases = make([]*agentapi.Lease, 0, 2)
 	minCLTT := uint64(2)
-	errFiltered := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
-		MinCLTT: &minCLTT,
+	errV4 := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT:        &minCLTT,
+		ControlAddress: ap.Address,
+		ControlPort:    ap.Port,
 	}, sss)
 
-	require.NoError(t, errFiltered)
-	checkExpectedLeases(t, receivedLeases, expectedFiltered)
+	require.NoError(t, errV4)
+	checkExpectedLeases(t, receivedLeases, []string{expectedV4})
+
+	// Non-DHCP daemon.
+	ap = daemons[2].GetAccessPoint(AccessPointControl)
+	receivedLeases = make([]*agentapi.Lease, 0, 2)
+	errNonDHCP := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT:        new(uint64),
+		ControlAddress: ap.Address,
+		ControlPort:    ap.Port,
+	}, sss)
+
+	require.ErrorContains(t, errNonDHCP, "Kea")
+	require.Empty(t, receivedLeases)
 }
 
 // Test to ensure that the GetKeaLeases handler returns an error if lease tracking is not enabled in the agent.
-func TestGetKeaLeasesDisabled(t *testing.T) {
+func TestReceiveKeaLeasesDisabled(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 	err := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{}, nil)
 
 	require.ErrorContains(t, err, "STORK_AGENT_ENABLE_LEASE_TRACKING")
+}
+
+// Verify that ReceiveKeaLeases returns an error if there is no daemon
+// matching the access point provided.
+func TestReceiveKeaLeasesNoDaemon(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	sa.isLeaseTrackingAllowed = true
+	defer teardown()
+	minCLTT := uint64(0)
+	err := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT:        &minCLTT,
+		ControlAddress: "203.0.113.1",
+		ControlPort:    9001,
+	}, nil)
+
+	require.ErrorContains(t, err, "not found")
+}
+
+// Verify that ReceiveKeaLeases returns an error when the snapshot function
+// for the daemon also returned an error.
+func TestReceiveKeaLeasesSnapshotFnReturnsError(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	sa.isLeaseTrackingAllowed = true
+	defer teardown()
+	minCLTT := uint64(0)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	daemon := &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.DHCPv4,
+			AccessPoints: []AccessPoint{
+				{
+					Address: "127.0.0.1",
+					Port:    8080,
+					Type:    AccessPointControl,
+				},
+			},
+		},
+		snooper: nil,
+	}
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = []Daemon{daemon}
+	sss := NewMockServerStreamingServer[agentapi.ReceiveKeaLeasesRsp](ctrl)
+	ap := daemon.GetAccessPoint(AccessPointControl)
+	require.NotNil(t, ap)
+	errNilSnooper := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT:        &minCLTT,
+		ControlAddress: ap.Address,
+		ControlPort:    ap.Port,
+	}, sss)
+	require.ErrorContains(t, errNilSnooper, "unable to get lease snapshot")
 }

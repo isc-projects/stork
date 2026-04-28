@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
@@ -13,7 +14,6 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	storktest "isc.org/stork/server/test/dbmodel"
-	log "github.com/sirupsen/logrus"
 )
 
 func TestConvertLeaseFromRestAPIWithNilLease(t *testing.T) {
@@ -100,25 +100,25 @@ func testHelperMakeUser(t *testing.T, db *dbops.PgDB, user *dbmodel.SystemUser, 
 
 func TestGetLeaseListUserAuth(t *testing.T) {
 	roUser := &dbmodel.SystemUser{
-		Email: "san.zhang@example.com",
+		Email:    "san.zhang@example.com",
 		Lastname: "张",
-		Name: "三",
+		Name:     "三",
 		Groups: []*dbmodel.SystemGroup{
 			{ID: dbmodel.ReadOnlyGroupID},
 		},
 	}
 	adminUser := &dbmodel.SystemUser{
-		Email: "fulana.alfulaniyya@example.com",
+		Email:    "fulana.alfulaniyya@example.com",
 		Lastname: "AlFulaniyya",
-		Name: "Fulan",
+		Name:     "Fulan",
 		Groups: []*dbmodel.SystemGroup{
 			{ID: dbmodel.AdminGroupID},
 		},
 	}
 	superAdminUser := &dbmodel.SystemUser{
-		Email: "erika.mustermann@example.com",
+		Email:    "erika.mustermann@example.com",
 		Lastname: "Mustermann",
-		Name: "Erika",
+		Name:     "Erika",
 		Groups: []*dbmodel.SystemGroup{
 			{ID: dbmodel.SuperAdminGroupID},
 		},
@@ -156,7 +156,7 @@ func TestGetLeaseListUserAuth(t *testing.T) {
 
 		err = rapi.SessionManager.LoginHandler(ctx, roUser)
 		require.NoError(t, err)
-		
+
 		getLeaseListParams := dhcp.GetLeaseListParams{}
 		rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
 		require.IsType(t, &dhcp.GetLeaseListDefault{}, rsp)
@@ -183,7 +183,7 @@ func TestGetLeaseListUserAuth(t *testing.T) {
 		rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
 		log.WithField("rsp", rsp).Info("response structure")
 		require.IsType(t, &dhcp.GetLeaseListOK{}, rsp)
-		
+
 	})
 	t.Run("allow super-admin user", func(t *testing.T) {
 		db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

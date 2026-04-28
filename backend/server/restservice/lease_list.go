@@ -64,20 +64,21 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 		return nil, err
 	}
 
-	hosts := &models.Leases{
+	leasesResponse := &models.Leases{
 		Total: total,
+		Items: make([]*models.Lease, 0, total),
 	}
 
 	// Convert hosts fetched from the database to REST.
 	for i := range dbLeases {
-		host, err := convertLeaseFromRestAPI(&dbLeases[i])
+		lease, err := convertLeaseFromRestAPI(&dbLeases[i])
 		if err != nil {
 			continue
 		}
-		hosts.Items = append(hosts.Items, host)
+		leasesResponse.Items = append(leasesResponse.Items, lease)
 	}
 
-	return hosts, nil
+	return leasesResponse, nil
 }
 
 func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListParams) middleware.Responder {

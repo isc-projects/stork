@@ -361,6 +361,10 @@ message ReceiveBind9ConfigRsp {
 
 message ReceiveKeaLeasesReq {
   optional uint64 minCLTT = 1;
+  // Control address of the Kea server from which to return leases.
+  string controlAddress = 2;
+  // Control port of the Kea server from which to return leases.
+  int64 controlPort = 3;
 }
 
 message ReceiveKeaLeasesRsp {
