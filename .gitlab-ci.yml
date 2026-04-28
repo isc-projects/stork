@@ -100,7 +100,7 @@ stages:
   needs: []
   rules:
     - when: always
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:13
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:14
   tags:
     - linux
     - aws

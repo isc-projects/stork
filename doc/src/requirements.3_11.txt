@@ -8,27 +8,27 @@ alabaster==1.0.0
     # via sphinx
 babel==2.18.0
     # via sphinx
-certifi==2026.1.4
+certifi==2026.4.22
     # via requests
-charset-normalizer==3.4.4
+charset-normalizer==3.4.7
     # via requests
 docutils==0.22.4
     # via
     #   sphinx
     #   sphinx-rtd-theme
-idna==3.11
+idna==3.13
     # via requests
-imagesize==1.4.1
+imagesize==2.0.0
     # via sphinx
 jinja2==3.1.6
     # via sphinx
 markupsafe==3.0.3
     # via jinja2
-packaging==26.0
+packaging==26.2
     # via sphinx
-pygments==2.19.2
+pygments==2.20.0
     # via sphinx
-requests==2.32.5
+requests==2.33.1
     # via sphinx
 roman-numerals==4.1.0
     # via sphinx
@@ -36,11 +36,11 @@ snowballstemmer==3.0.1
     # via sphinx
 sphinx==9.0.4
     # via
-    #   -r rakelib/init_deps/sphinx.in
+    #   -r doc/src/../../rakelib/init_deps/sphinx.in
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
 sphinx-rtd-theme==3.1.0
-    # via -r rakelib/init_deps/sphinx.in
+    # via -r doc/src/../../rakelib/init_deps/sphinx.in
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
 sphinxcontrib-devhelp==2.0.0

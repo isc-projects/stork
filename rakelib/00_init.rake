@@ -598,32 +598,32 @@ any_system = true
 
 ### Define package versions
 # Golang-related
-go_ver = '1.25.7'
+go_ver = '1.25.9'
 gocover_cobertura_ver = 'v1.4.0'
 tparse_ver = 'v0.18.0'
 go_junit_report_ver = 'v2.1.0'
-go_live_pprof_ver = 'v1.0.8'
+go_live_pprof_ver = 'v1.0.9'
 mockgen_ver = 'v0.6.0'
-dlv_ver = 'v1.26.0'
+dlv_ver = 'v1.26.3'
 gdlv_ver = 'v1.16.0'
 govulncheck_ver = 'v1.1.4'
-goswagger_ver = 'v0.31.0'
+goswagger_ver = 'v0.33.2'
 protoc_ver = '31.1'
 protoc_gen_go_ver = 'v1.36.11'
 protoc_gen_go_grpc_ver = 'v1.6.1'
-nfpm_ver = 'v2.45.0'
+nfpm_ver = 'v2.46.3'
 golangcilint_ver = '2.8.0'
 
 # UI-related
-node_ver = '20.20.0'
-npm_ver = '11.9.0'
+node_ver = '20.20.2'
+npm_ver = '11.13.0'
 yamlinc_ver = '0.1.10'
-openapi_generator_ver = '7.19.0'
+openapi_generator_ver = '7.22.0'
 
 # Other
 bundler_ver = '2.6.9'
 shellcheck_ver = '0.11.0'
-pip_tools_ver = '7.5.2'
+pip_tools_ver = '7.5.3'
 pip_audit_ver = '2.10.0'
 
 # System-dependent variables
