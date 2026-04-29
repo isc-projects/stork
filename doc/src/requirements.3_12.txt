@@ -36,11 +36,11 @@ snowballstemmer==3.0.1
     # via sphinx
 sphinx==9.0.4
     # via
-    #   -r doc/src/../../rakelib/init_deps/sphinx.in
+    #   -r rakelib/init_deps/sphinx.in
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
 sphinx-rtd-theme==3.1.0
-    # via -r doc/src/../../rakelib/init_deps/sphinx.in
+    # via -r rakelib/init_deps/sphinx.in
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
 sphinxcontrib-devhelp==2.0.0
