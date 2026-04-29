@@ -219,7 +219,7 @@ desc 'Run system tests
     POSTGRES_VERSION - use specific Postgres database version - optional
     EXIT_FIRST - exit on the first error - optional, default: false
     ONLY_KEA_TESTS - run only Kea-related tests - optional, default: false'
-task :systemtest => [PYTEST, DOCKER_COMPOSE, OPEN_API_GENERATOR_PYTHON_DIR, *GRPC_PYTHON_API_FILES, *volume_files, "systemtest:setup_version_envvars"] do
+task :systemtest => [PYTEST, DOCKER_COMPOSE, OPEN_API_GENERATOR_PYTHON_DIR, *GRPC_PYTHON_API_FILES, *volume_files, "systemtest:setup_version_envvars", CHROME_HEADLESS_LINK] do
     opts = []
 
     # Used in GitLab CI.
