@@ -376,29 +376,6 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 	return user, err
 }
 
-// Fetches the internal database ID of the user using the authentication method
-// and the external user ID. Returns zero and no error if the user doesn't
-// exist.
-func GetUserByExternalID(db *dbops.PgDB, authenticationMethodID, externalID string) (*SystemUser, error) {
-	user := &SystemUser{}
-	err := db.Model(user).
-		Relation("Groups").
-		Column("id").
-		Where("auth_method = ?", authenticationMethodID).
-		Where("external_id = ?", externalID).
-		Select()
-	if errors.Is(err, pg.ErrNoRows) {
-		return nil, nil
-	}
-	err = pkgerrors.Wrapf(
-		err,
-		"problem fetching profile of the user authorized by %s with %s ID",
-		authenticationMethodID,
-		externalID,
-	)
-	return user, err
-}
-
 // Fetches the internal database ID of the user using the login
 // and authentication method. Returns zero and no error if the user doesn't
 // exist.
