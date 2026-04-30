@@ -783,11 +783,15 @@ func TestGetUserByLogin(t *testing.T) {
 
 	// Act
 	nonExistUser, nonExistErr := GetUserByLogin(db, "nonExistingLogin", "method")
+	nonExistUser2, nonExistErr2 := GetUserByLogin(db, "login", "nonExistingMethod")
 	dbUser, err := GetUserByLogin(db, "login", "method")
 
 	// Assert
 	require.NoError(t, nonExistErr)
 	require.Nil(t, nonExistUser)
+
+	require.NoError(t, nonExistErr2)
+	require.Nil(t, nonExistUser2)
 
 	require.NoError(t, err)
 	require.EqualValues(t, user.ID, dbUser.ID)
