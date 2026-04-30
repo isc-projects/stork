@@ -139,7 +139,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		if dbUser == nil {
 			// This is special case. CreateUser returned conflict, but there is no user in DB with matching Login.
 			// It means that there is another user with conflicting Email.
-			return nil, errors.Errorf("User account with provided email %s already exists for auth method %s", calloutUser.Email, *params.Credentials.AuthenticationMethodID)
+			return nil, errors.Errorf("user account with provided email %s already exists for auth method %s", calloutUser.Email, *params.Credentials.AuthenticationMethodID)
 		}
 		if err != nil {
 			return nil, errors.Errorf("cannot fetch the internal user profile")
@@ -182,7 +182,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	}
 
 	// The safe identifier is used for logging purposes. It prevents untrusted
-	// user for injecting very long or many lines into the logs by using the
+	// user from injecting very long or many lines into the logs using the
 	// identifier field.
 	safeIdentifier := "<nil>"
 	if params.Credentials.Identifier != nil {

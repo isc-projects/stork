@@ -820,7 +820,7 @@ func TestGetUserByLogin(t *testing.T) {
 
 	// Assert
 	require.NoError(t, nonExistErr)
-	require.Zero(t, nonExistUser)
+	require.Nil(t, nonExistUser)
 
 	require.NoError(t, err)
 	require.EqualValues(t, user.ID, dbUser.ID)
