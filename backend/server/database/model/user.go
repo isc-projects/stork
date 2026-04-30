@@ -169,7 +169,6 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	result, err := db.
 		Model(user).
 		ExcludeColumn("auth_method").
-		ExcludeColumn("external_id").
 		WherePK().
 		Update()
 	if err == nil {
