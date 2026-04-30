@@ -754,3 +754,47 @@ func TestDeleteUserInGroup(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, pkgerrors.Cause(err), ErrNotExists)
 }
+
+// Test that the internal database ID is fetched by the authentication method
+// and Login properly.
+func TestGetUserByLogin(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Login:                  "login",
+		Email:                  "email@example.com",
+		Lastname:               "Last",
+		Name:                   "Name",
+		AuthenticationMethodID: "method",
+		ExternalID:             "externalID",
+		Groups:                 []*SystemGroup{{ID: SuperAdminGroupID}},
+	}
+
+	_, _ = CreateUser(db, user)
+
+	internalUser := &SystemUser{
+		Login:                  "login",
+		Email:                  "email@example.com",
+		Lastname:               "Last",
+		Name:                   "Name",
+		AuthenticationMethodID: "internal",
+		Groups:                 []*SystemGroup{{ID: AdminGroupID}},
+	}
+
+	_, _ = CreateUser(db, internalUser)
+
+	// Act
+	nonExistUser, nonExistErr := GetUserByLogin(db, "nonExistingLogin", "method")
+	dbUser, err := GetUserByLogin(db, "login", "method")
+
+	// Assert
+	require.NoError(t, nonExistErr)
+	require.Zero(t, nonExistUser)
+
+	require.NoError(t, err)
+	require.EqualValues(t, user.ID, dbUser.ID)
+	require.Len(t, dbUser.Groups, 1)
+	require.EqualValues(t, SuperAdminGroupID, dbUser.Groups[0].ID)
+}
