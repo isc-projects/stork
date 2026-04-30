@@ -131,11 +131,16 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
 	if conflict {
 		var dbUser *dbmodel.SystemUser
-		dbUser, err = dbmodel.GetUserByExternalID(
+		dbUser, err = dbmodel.GetUserByLogin(
 			r.DB,
+			calloutUser.Login,
 			*params.Credentials.AuthenticationMethodID,
-			calloutUser.ID,
 		)
+		if dbUser == nil {
+			// This is special case. CreateUser returned conflict, but there is no user in DB with matching Login.
+			// It means that there is another user with conflicting Email.
+			return nil, errors.Errorf("User account with provided email %s already exists for auth method %s", calloutUser.Email, *params.Credentials.AuthenticationMethodID)
+		}
 		if err != nil {
 			return nil, errors.Errorf("cannot fetch the internal user profile")
 		}
