@@ -268,7 +268,6 @@ func parseTime(iterator *storkutil.PeekingIterator[string]) (parsedTime time.Tim
 		timeFormat = xfrTimeFormatBind9
 		iterator.Next()
 	}
-	// Failed to parse.
 	return
 }
 
@@ -392,7 +391,7 @@ func (t *xfrTracker) parse(logLine string) *xfrState {
 			}
 		}
 	}
-	if state.zoneName == "" || state.status == xfrStatusUnknown {
+	if state.zoneName == "" || state.status == xfrStatusUnknown || (state.status == xfrStatusConnected && state.server == "") {
 		// Zone name and status are required. If they are not set, the log message is
 		// malformed or not related to a zone transfer.
 		return nil
@@ -535,7 +534,8 @@ func parseFrom(iterator *storkutil.PeekingIterator[string], s *xfrState) bool {
 	if token, ok := iterator.Next(); ok {
 		// The server address is followed by the port number (e.g., 192.5.5.241#53).
 		split := strings.Split(token, "#")
-		if len(split) > 0 {
+		// There must be two parts: the server address and the port number.
+		if len(split) > 1 {
 			// The first part is the server address.
 			server = split[0]
 		}
@@ -620,134 +620,83 @@ func parseSecs(secs string, s *xfrState) (err error) {
 	return
 }
 
-// Puts new state into the zone transfer containers. It is specifically
-// called when the zone transfer has started. It creates a new state entry
-// for the zone or it replaces an existing one. This function is safe for
-// concurrent use.
-func (t *xfrTracker) putState(key *xfrStateKey, s *xfrState) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	// Check if the given transfer already exists.
-	element, ok := t.startedMap[*key]
-	if ok {
-		// It exists, so let's replace it with a new one.
-		element.Value = s
-		// Move the element to the back of the list to keep the most recent one
-		// at the end.
-		t.startedList.MoveToBack(element)
-	} else {
-		// It does not exist, so let's append it at the end. Also.
-		// remember the element in the map for quick access using the key.
-		element := t.startedList.PushBack(s)
-		t.startedMap[*key] = element
-	}
-	// Ensure that the number of started transfers does not exceed the maximum
-	// allowed number. If it does, remove the oldest one.
-	if t.startedList.Len() > t.maxStates {
-		// Remove the oldest one from the front of the list.
-		element := t.startedList.Remove(t.startedList.Front())
-		state := element.(*xfrState)
-		key := xfrStateKey{
-			viewName: state.viewName,
-			zoneName: state.zoneName,
-			client:   state.client,
-		}
-		// Remove the element from the map.
-		delete(t.startedMap, key)
-	}
-}
-
-// Updates the existing zone transfer state. It is no-op if the
-// specified transfer does not exist. This function is safe for concurrent use.
-// It is typically called to update from xfrStatusStarted to xfrStatusMessage
-// (when the started transfer fails). However, it also handles the case when
-// the new state is xfrStatusConnected. This new state indicates that the
-// transfer is starting up but successful connection was established to the
-// primary server. So, we preserve the xfrStatusStarted status in the existing
-// state, but update the rest of the fields. Note that we only want to track
-// started, completed and failed transfers. The connected status indicates that
-// the transfer is still started. The original transfer start time is preserved
-// during the update.
-func (t *xfrTracker) updateState(key *xfrStateKey, s *xfrState) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	// Check if the given transfer exists.
-	element, ok := t.startedMap[*key]
-	if !ok {
-		// It does not exist. Nothing to update.
-		return
-	}
-	state := element.Value.(*xfrState)
-	// Preserve the original start time.
-	s.startTime = state.startTime
-	if s.status == xfrStatusConnected && state.status == xfrStatusStarted {
-		// If the status is connected it indicates that we have received an
-		// intermediate message between starting and completing the transfer.
-		// This message has some useful information concerning the server from
-		// which the transfer is received. Let's hold this new status but still
-		// keep it as started rather than connected. The user is not interested
-		// in distinguishing between started and connected transfers.
-		s.status = xfrStatusStarted
-	}
-	// If the transfer was updated we can move it to the back of the list to keep
-	// the most recent one at the end.
-	t.startedList.MoveToBack(element)
-	// Update the element with the new state.
-	element.Value = s
-}
-
-// Moves the zone transfer state to the completed container. It is called when
-// the zone transfer has completed. It is safe for concurrent use. It removes
-// the state from the started container and adds it to the completed container.
-// If the number of completed transfers exceeds the maximum allowed number, the
-// oldest one is removed.
-func (t *xfrTracker) moveStateToCompleted(key *xfrStateKey, s *xfrState) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	// Check if the given transfer exists.
-	element, ok := t.startedMap[*key]
-	if ok {
-		// It exists, so let's remove it from the started container.
-		t.startedList.Remove(element)
-		delete(t.startedMap, *key)
-	}
-	// Add the state to the completed container.
-	t.completedList.PushBack(s)
-	// Ensure that the number of completed transfers does not exceed the maximum
-	// allowed number. If it does, remove the oldest one.
-	if t.completedList.Len() > t.maxStates {
-		t.completedList.Remove(t.completedList.Front())
-	}
-}
-
 // Feeds the log line to the XFR tracker. It parses the log line and updates
 // the zone transfer state. It is safe for concurrent use.
 func (t *xfrTracker) feed(logLine string) {
-	s := t.parse(logLine)
-	if s == nil {
+	newState := t.parse(logLine)
+	if newState == nil {
 		// The log line was not related to a zone transfer or we did not
 		// consider it useful.
 		return
 	}
 	key := xfrStateKey{
-		viewName: s.viewName,
-		zoneName: s.zoneName,
-		client:   s.client,
+		viewName: newState.viewName,
+		zoneName: newState.zoneName,
+		client:   newState.client,
 	}
-	switch s.status {
-	case xfrStatusStarted:
-		// This is a new zone transfer. Add it or replace the existing one for
-		// the given zone and client.
-		t.putState(&key, s)
-	case xfrStatusMessage, xfrStatusConnected:
-		// This is an intermediate message between starting and completing the transfer.
-		// It may indicate an error or that the secondary established a connection
-		// to the primary server.
-		t.updateState(&key, s)
-	case xfrStatusCompleted:
-		// This is a completed zone transfer. Move it to the completed container.
-		t.moveStateToCompleted(&key, s)
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	// Check if the zone transfer state already exists.
+	var currState *xfrState
+	element, ok := t.startedMap[key]
+	if ok && element != nil {
+		st, ok := element.Value.(*xfrState)
+		if !ok {
+			return
+		}
+		currState = st
+	}
+
+	switch newState.status {
+	case xfrStatusStarted, xfrStatusMessage, xfrStatusConnected:
+		if currState != nil {
+			// It exists, so let's replace it with a new one.
+			element.Value = newState
+			// Move the element to the back of the list to keep the most recent one
+			// at the end.
+			t.startedList.MoveToBack(element)
+			if !currState.startTime.IsZero() && newState.status != xfrStatusStarted {
+				// Preserve the original start time.
+				newState.startTime = currState.startTime
+			}
+			break
+		}
+		// The state does not exist. Let's add it to the container.
+		element := t.startedList.PushBack(newState)
+		t.startedMap[key] = element
+
+		// Ensure that the number of started transfers does not exceed the maximum
+		// allowed number. If it does, remove the oldest one.
+		if t.startedList.Len() > t.maxStates {
+			// Remove the oldest one from the front of the list.
+			if element := t.startedList.Remove(t.startedList.Front()); element != nil {
+				if state, ok := element.(*xfrState); ok {
+					key := xfrStateKey{
+						viewName: state.viewName,
+						zoneName: state.zoneName,
+						client:   state.client,
+					}
+					// Remove the element from the map.
+					delete(t.startedMap, key)
+				}
+			}
+		}
 	default:
+		if currState != nil {
+			// It exists, so let's remove it from the started container.
+			t.startedList.Remove(element)
+			delete(t.startedMap, key)
+			newState.startTime = currState.startTime
+		}
+		// Add the state to the completed container.
+		t.completedList.PushBack(newState)
+		// Ensure that the number of completed transfers does not exceed the maximum
+		// allowed number. If it does, remove the oldest one.
+		if t.completedList.Len() > t.maxStates {
+			t.completedList.Remove(t.completedList.Front())
+		}
 	}
 }
 

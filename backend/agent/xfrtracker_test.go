@@ -264,6 +264,71 @@ func TestXfrTrackerTrackSystemdUnit(t *testing.T) {
 	})
 }
 
+// Test parsing the time in the BIND 9 format.
+func TestXfrTrackerParseTimeBind9Format(t *testing.T) {
+	iterator := storkutil.NewPeekingIterator([]string{"23-Feb-2026", "10:41:27.071"})
+	parsedTime, timeFormat := parseTime(iterator)
+	require.Equal(t, xfrTimeFormatBind9, timeFormat)
+	require.NotZero(t, parsedTime)
+	require.Equal(t, time.Date(2026, 2, 23, 10, 41, 27, 71*int(time.Millisecond), time.Local), parsedTime)
+	_, ok := iterator.Peek()
+	// The tokens should be consumed.
+	require.False(t, ok)
+}
+
+// Test parsing the time in the RFC3339 format.
+func TestXfrTrackerParseTimeRFC3339Format(t *testing.T) {
+	iterator := storkutil.NewPeekingIterator([]string{"2026-02-23T10:41:27.071Z"})
+	parsedTime, timeFormat := parseTime(iterator)
+	require.Equal(t, xfrTimeFormatRFC3339, timeFormat)
+	require.NotZero(t, parsedTime)
+	require.Equal(t, time.Date(2026, 2, 23, 10, 41, 27, 71*int(time.Millisecond), time.UTC), parsedTime)
+	_, ok := iterator.Peek()
+	// The tokens should be consumed.
+	require.False(t, ok)
+}
+
+// Test that unrecognized time formats are ignored, and that further
+// parsing starts from first token.
+func TestXfrTrackerParseTimeUnknownFormat(t *testing.T) {
+	type testCase struct {
+		name     string
+		timeText string
+	}
+	tests := []testCase{
+		{
+			name:     "no time",
+			timeText: "foo",
+		},
+		{
+			name:     "invalid month name",
+			timeText: "23-Febr-2026 10:41:27.071",
+		},
+		{
+			name:     "extraneous character in RFC3339 format",
+			timeText: "2026-02-23T10:41:27.071X",
+		},
+		{
+			name:     "no separator in RFC3339 format",
+			timeText: "2026-02-23 10:41:27.071",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tokens := strings.Fields(test.timeText)
+			iterator := storkutil.NewPeekingIterator(tokens)
+			parsedTime, timeFormat := parseTime(iterator)
+			// The time format should be unknown.
+			require.Equal(t, xfrTimeFormatUnknown, timeFormat)
+			require.Zero(t, parsedTime)
+			// The tokens should not be consumed.
+			nextToken, ok := iterator.Peek()
+			require.True(t, ok)
+			require.Equal(t, tokens[0], nextToken)
+		})
+	}
+}
+
 // Test parsing the incoming transfer started message.
 func TestXfrTrackerParseIncomingTransferStarted(t *testing.T) {
 	xfrTracker := newXfrTracker(nil)
@@ -283,6 +348,42 @@ func TestXfrTrackerParseIncomingTransferStarted(t *testing.T) {
 	require.Zero(t, xfrState.completionTime)
 	require.Equal(t, xfrTimeFormatBind9, xfrState.timeFormat)
 	require.Equal(t, "Transfer started", xfrState.message)
+}
+
+func TestXfrTrackerParseIncomingTransferStartedMalformed(t *testing.T) {
+	type testCase struct {
+		name    string
+		logLine string
+	}
+	tests := []testCase{
+		{
+			name:    "no zone keyword",
+			logLine: "bind9.example.org/IN: Transfer started.",
+		},
+		{
+			name:    "wrong zone keyword",
+			logLine: "zonee bind9.example.org/IN: Transfer started.",
+		},
+		{
+			name:    "no transfer keyword",
+			logLine: "zone bind9.example.org/IN: started.",
+		},
+		{
+			name:    "no started keyword",
+			logLine: "zone bind9.example.org/IN: Transfer.",
+		},
+		{
+			name:    "no zone name",
+			logLine: "zone: Transfer started.",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			xfrTracker := newXfrTracker(nil)
+			xfrState := xfrTracker.parse(test.logLine)
+			require.Nil(t, xfrState)
+		})
+	}
 }
 
 // Test parsing the incoming transfer connected message.
@@ -503,15 +604,71 @@ func TestXfrTrackerFeed(t *testing.T) {
 		xfrTracker.feed(logLine)
 	}
 
+	// There is one failed zone transfer.
 	notCompleted := xfrTracker.getNotCompleted()
 	require.Len(t, notCompleted, 1)
+	require.Equal(t, notCompleted[0].zoneName, "bind.example.org")
+	require.Equal(t, notCompleted[0].status, xfrStatusMessage)
+	require.Equal(t, notCompleted[0].client, "127.0.0.1")
+	require.Equal(t, notCompleted[0].server, "")
+	require.NotZero(t, notCompleted[0].startTime)
+	require.Zero(t, notCompleted[0].completionTime)
+	require.Equal(t, notCompleted[0].message, "setting up zone transfer: failed")
+
+	// There are four completed zone transfers.
 	completed := xfrTracker.getCompleted()
 	require.Len(t, completed, 4)
+
+	require.Equal(t, completed[0].zoneName, "drop.rpz.example.com")
+	require.Equal(t, completed[0].status, xfrStatusCompleted)
+	require.NotZero(t, completed[0].startTime)
+	require.NotZero(t, completed[0].completionTime)
+	require.Equal(t, completed[0].server, "172.24.0.53")
+	require.EqualValues(t, completed[0].messagesCount, 1)
+	require.EqualValues(t, completed[0].recordsCount, 5)
+	require.EqualValues(t, completed[0].bytesCount, 294)
+	require.Equal(t, completed[0].duration, 14*time.Millisecond)
+	require.EqualValues(t, completed[0].serial, 201702121)
+	require.Equal(t, completed[0].message, "Transfer completed: 1 messages, 5 records, 294 bytes, 0.014 secs (21000 bytes/sec) (serial 201702121)")
+
+	require.Equal(t, completed[1].zoneName, ".")
+	require.Equal(t, completed[1].status, xfrStatusCompleted)
+	require.NotZero(t, completed[1].startTime)
+	require.NotZero(t, completed[1].completionTime)
+	require.Equal(t, completed[1].server, "192.5.5.241")
+	require.EqualValues(t, completed[1].messagesCount, 123)
+	require.EqualValues(t, completed[1].recordsCount, 24872)
+	require.EqualValues(t, completed[1].bytesCount, 1321903)
+	require.Equal(t, completed[1].duration, 335*time.Millisecond)
+	require.EqualValues(t, completed[1].serial, 2026041600)
+	require.Equal(t, completed[1].message, "Transfer completed: 123 messages, 24872 records, 1321903 bytes, 0.335 secs (3945979 bytes/sec) (serial 2026041600)")
+
+	require.Equal(t, completed[2].zoneName, "drop.rpz.example.com")
+	require.Equal(t, completed[2].status, xfrStatusCompleted)
+	require.NotZero(t, completed[2].startTime)
+	require.NotZero(t, completed[2].completionTime)
+	require.EqualValues(t, completed[2].messagesCount, 1)
+	require.EqualValues(t, completed[2].recordsCount, 5)
+	require.EqualValues(t, completed[2].bytesCount, 199)
+	require.Equal(t, completed[2].duration, 3*time.Millisecond)
+	require.EqualValues(t, completed[2].serial, 201702121)
+	require.Equal(t, completed[2].message, "AXFR ended: 1 messages, 5 records, 199 bytes, 0.003 secs (66333 bytes/sec) (serial 201702121)")
+
+	require.Equal(t, completed[3].zoneName, ".")
+	require.Equal(t, completed[3].status, xfrStatusCompleted)
+	require.NotZero(t, completed[3].startTime)
+	require.NotZero(t, completed[3].completionTime)
+	require.EqualValues(t, completed[3].messagesCount, 79)
+	require.EqualValues(t, completed[3].recordsCount, 24872)
+	require.EqualValues(t, completed[3].bytesCount, 1320233)
+	require.Equal(t, completed[3].duration, 52*time.Millisecond)
+	require.EqualValues(t, completed[3].serial, 2026041600)
+	require.Equal(t, completed[3].message, "AXFR ended: 79 messages, 24872 records, 1320233 bytes, 0.052 secs (25389096 bytes/sec) (serial 2026041600)")
 }
 
 // Test feeding the XFR tracker with started and connected log lines.
 // It is expected that the connected message is used to update the server
-// address but does not change the status to connected.
+// address.
 func TestXfrTrackerFeedStartedConnected(t *testing.T) {
 	xfrTracker := newXfrTracker(nil)
 	xfrTracker.feed("23-Feb-2026 10:41:27.071 zone ./IN: Transfer started.")
@@ -519,8 +676,50 @@ func TestXfrTrackerFeedStartedConnected(t *testing.T) {
 	transfers := xfrTracker.getNotCompleted()
 	require.Len(t, transfers, 1)
 	require.Equal(t, transfers[0].zoneName, ".")
-	require.Equal(t, transfers[0].status, xfrStatusStarted)
+	require.Equal(t, transfers[0].status, xfrStatusConnected)
 	require.Equal(t, transfers[0].server, "172.24.0.54")
+}
+
+// Test that when the connected message appears before the started message, the
+// connected state is recorded.
+func TestXfrTrackerFeedConnectedBeforeStarted(t *testing.T) {
+	xfrTracker := newXfrTracker(nil)
+	xfrTracker.feed("23-Feb-2026 10:41:27.141 @0x7ffffaa28c00 172.24.0.54#34961: transfer of './IN': connected using 172.24.0.54#34961")
+	transfers := xfrTracker.getNotCompleted()
+	require.Len(t, transfers, 1)
+	require.Equal(t, transfers[0].zoneName, ".")
+	require.Equal(t, transfers[0].status, xfrStatusConnected)
+	require.Equal(t, transfers[0].server, "172.24.0.54")
+	require.Zero(t, transfers[0].startTime)
+}
+
+// Test that the completed message overrides the started message but the start time is preserved.
+func TestXfrTrackerFeedStartedCompleted(t *testing.T) {
+	xfrTracker := newXfrTracker(nil)
+	xfrTracker.feed("23-Feb-2026 10:41:27.071 zone ./IN: Transfer started.")
+	xfrTracker.feed("23-Feb-2026 10:41:27.141 @0x7ffffaa28c00 172.24.0.54#34961: transfer of './IN': AXFR ended")
+	transfers := xfrTracker.getNotCompleted()
+	require.Empty(t, transfers)
+	completed := xfrTracker.getCompleted()
+	require.Len(t, completed, 1)
+	require.Equal(t, completed[0].zoneName, ".")
+	require.Equal(t, completed[0].status, xfrStatusCompleted)
+	require.NotZero(t, completed[0].startTime)
+	require.NotZero(t, completed[0].completionTime)
+}
+
+// Test that the completed message is recorded even if there is no corresponding started message.
+func TestXfrTrackerFeedCompletedBeforeStarted(t *testing.T) {
+	xfrTracker := newXfrTracker(nil)
+	xfrTracker.feed("23-Feb-2026 10:41:27.141 @0x7ffffaa28c00 172.24.0.54#34961: transfer of 'example.com/IN': AXFR ended")
+	transfers := xfrTracker.getNotCompleted()
+	require.Empty(t, transfers)
+	completed := xfrTracker.getCompleted()
+	require.Len(t, completed, 1)
+	require.Equal(t, completed[0].zoneName, "example.com")
+	require.Equal(t, completed[0].status, xfrStatusCompleted)
+	require.Zero(t, completed[0].startTime, time.Time{})
+	require.NotZero(t, completed[0].completionTime)
 }
 
 // Test the limits of the XFR tracker containers.
