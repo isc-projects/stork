@@ -157,8 +157,9 @@ func createUser(dbi dbops.DBI, user *SystemUser) (conflict bool, err error) {
 
 // Updates user information in the database. The returned conflict value indicates
 // if the updated data is in conflict with some other user information or the
-// updated user doesn't exist.
-func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
+// updated user doesn't exist. It takes boolean flag updateExternalID which
+// sets whether user's ExternalID should be updated or not.
+func updateUser(db *pg.DB, user *SystemUser, updateExternalID bool) (conflict bool, err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
@@ -166,11 +167,14 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 	defer dbops.RollbackOnError(tx, &err)
 
-	result, err := db.
+	q := db.
 		Model(user).
 		ExcludeColumn("auth_method").
-		WherePK().
-		Update()
+		WherePK()
+	if !updateExternalID {
+		q = q.ExcludeColumn("external_id")
+	}
+	result, err := q.Update()
 	if err == nil {
 		if result.RowsAffected() <= 0 {
 			conflict = true
@@ -199,6 +203,21 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 
 	return conflict, err
+}
+
+// Updates user information in the database. The returned conflict value indicates
+// if the updated data is in conflict with some other user information or the
+// updated user doesn't exist.
+func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
+	return updateUser(db, user, false)
+}
+
+// Updates user information in the database. This function works in the same way
+// as UpdateUser, but it also updates user's ExternalID.
+// It is necessary for cases when external authentication provider may update user ID
+// for a user (e.g. when LDAP user DN changes).
+func UpdateUserWithExternalID(db *pg.DB, user *SystemUser) (conflict bool, err error) {
+	return updateUser(db, user, true)
 }
 
 // Deletes existing user from the database. The returned error value indicates if

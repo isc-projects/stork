@@ -152,7 +152,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 			systemUser.Groups = dbUser.Groups
 		}
 
-		_, err = dbmodel.UpdateUser(r.DB, systemUser)
+		_, err = dbmodel.UpdateUserWithExternalID(r.DB, systemUser)
 	}
 	return systemUser, err
 }
