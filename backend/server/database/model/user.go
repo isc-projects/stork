@@ -207,7 +207,7 @@ func updateUser(db *pg.DB, user *SystemUser, updateExternalID bool) (conflict bo
 
 // Updates user information in the database. The returned conflict value indicates
 // if the updated data is in conflict with some other user information or the
-// updated user doesn't exist.
+// updated user doesn't exist. This function does not update user's ExternalID in the database.
 func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	return updateUser(db, user, false)
 }
@@ -377,8 +377,9 @@ func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 }
 
 // Fetches the internal database ID of the user using the login
-// and authentication method. Returns zero and no error if the user doesn't
-// exist.
+// and authentication method. Returns nil and no error if the user doesn't
+// exist. In successful scenario, the returned SystemUser contains only
+// internal database ID and the list of groups it belongs to.
 func GetUserByLogin(db *dbops.PgDB, login, authenticationMethodID string) (*SystemUser, error) {
 	user := &SystemUser{}
 	err := db.Model(user).
