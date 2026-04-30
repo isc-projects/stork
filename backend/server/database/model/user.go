@@ -381,6 +381,29 @@ func GetUserByExternalID(db *dbops.PgDB, authenticationMethodID, externalID stri
 	return user, err
 }
 
+// Fetches the internal database ID of the user using the login
+// and authentication method. Returns zero and no error if the user doesn't
+// exist.
+func GetUserByLogin(db *dbops.PgDB, login, authenticationMethodID string) (*SystemUser, error) {
+	user := &SystemUser{}
+	err := db.Model(user).
+		Relation("Groups").
+		Column("id").
+		Where("login = ?", login).
+		Where("auth_method = ?", authenticationMethodID).
+		Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		return nil, nil
+	}
+	err = pkgerrors.Wrapf(
+		err,
+		"problem fetching profile of the user authorized by %s with login %s",
+		authenticationMethodID,
+		login,
+	)
+	return user, err
+}
+
 // Associates a user with a group. Currently only insertion by group id is supported.
 func (user *SystemUser) AddToGroupByID(db *dbops.PgDB, group *SystemGroup) (added bool, err error) {
 	if group.ID > 0 {
