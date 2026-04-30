@@ -111,7 +111,7 @@ func TestUpdateNoUser(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Test that the authentication method and external ID cannot be changed.
+// Test that the authentication method cannot be changed.
 func TestUpdateUserFixedMembers(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -136,8 +136,11 @@ func TestUpdateUserFixedMembers(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, conflict)
 	user, _ = GetUserByID(db, user.ID)
+	// Authentication method must not change.
 	require.EqualValues(t, "foo", user.AuthenticationMethodID)
-	require.EqualValues(t, "foo", user.ExternalID)
+	// External authentication provider may update user ID (e.g. when in LDAP user DN changes).
+	// So, updating External ID must be possible.
+	require.EqualValues(t, "bar", user.ExternalID)
 }
 
 // Test that the user is created properly.
