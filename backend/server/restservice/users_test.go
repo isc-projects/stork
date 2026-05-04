@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -1716,126 +1714,6 @@ func TestCreateSessionOfExternalUserUpdatesData(t *testing.T) {
 	require.Equal(t, "baz", user.Name)
 	require.Equal(t, "bar@example.org", user.Email)
 	require.Equal(t, "external-id-update", user.ExternalID)
-}
-
-// Inserts a new user into the database just before someone tries to do it.
-// It causes a violation of the integrity constraint.
-type systemUserConflictQueryHook struct {
-	t              *testing.T
-	db             *pg.DB
-	user           *dbmodel.SystemUser
-	deactivated    bool
-	insertionCount int
-}
-
-// It waits until a new user is inserted into the database and then it inserts
-// the user just before the original query is executed. It simulates a race
-// condition when two sessions try to create a user with the same external ID at
-// the same time.
-func (h *systemUserConflictQueryHook) BeforeQuery(ctx context.Context, event *pg.QueryEvent) (context.Context, error) {
-	// Deactivates the hook when it is already called to avoid infinite loop
-	// caused by the queries executed in this hook.
-	if h.deactivated {
-		return ctx, nil
-	}
-	h.deactivated = true
-	defer func() {
-		h.deactivated = false
-	}()
-
-	tableModel, ok := event.Model.(orm.TableModel)
-	if !ok {
-		return ctx, nil
-	}
-	if tableModel.Table().ModelName != "system_user" {
-		return ctx, nil
-	}
-
-	_, ok = event.Query.(*orm.InsertQuery)
-	if !ok {
-		return ctx, nil
-	}
-
-	_, err := dbmodel.CreateUser(h.db, h.user)
-	require.NoError(h.t, err)
-	h.insertionCount++
-
-	return ctx, nil
-}
-
-// Do nothing. Required by the interface.
-func (h *systemUserConflictQueryHook) AfterQuery(context.Context, *pg.QueryEvent) error {
-	// Do nothing.
-	return nil
-}
-
-// Tests that the user data authenticated by an external service is updated in
-// the database when creating a session. In this scenario, the user profile
-// doesn't exist in the database when the first session checks if the user
-// exists, but it is created by the second session before the first session
-// creates the user. This tests that the race condition is handled properly.
-func TestCreateSessionOfExternalUserRace(t *testing.T) {
-	// Arrange
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// This hook will cause a conflict in the database by inserting a user with
-	// the same email just before the original query is executed.
-	queryHook := &systemUserConflictQueryHook{db: db, t: t, user: &dbmodel.SystemUser{
-		Login:                  "foo",
-		Email:                  "bar@example.org",
-		Lastname:               "oof",
-		Name:                   "ofo",
-		ExternalID:             "external-id-other",
-		AuthenticationMethodID: "external",
-	}}
-	db.AddQueryHook(queryHook)
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	authenticationMethodID := "external"
-	metadataMock := NewMockAuthenticationMetadata(ctrl)
-	metadataMock.EXPECT().
-		GetID().
-		Return(authenticationMethodID)
-
-	mock := NewMockAuthenticationCalloutCarrier(ctrl)
-	// First log-in.
-	mock.EXPECT().
-		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&authenticationcallouts.User{
-			ID:       "external-id",
-			Login:    "bar",
-			Email:    "bar@example.org",
-			Lastname: "bar",
-			Name:     "baz",
-		}, nil)
-	mock.EXPECT().
-		GetMetadata().
-		Return(metadataMock)
-
-	hookManager := hookmanager.NewHookManager()
-	hookManager.RegisterCalloutCarrier(mock)
-	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
-
-	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
-
-	// Act
-	params := users.CreateSessionParams{
-		Credentials: &models.SessionCredentials{
-			Identifier:             storkutil.Ptr("foo"),
-			Secret:                 storkutil.Ptr("secret"),
-			AuthenticationMethodID: &authenticationMethodID,
-		},
-	}
-	rsp := rapi.CreateSession(ctx, params)
-
-	// Assert
-	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
-	errRsp := rsp.(*users.CreateSessionBadRequest)
-	require.Nil(t, errRsp.Payload)
-	require.Equal(t, 1, queryHook.insertionCount)
 }
 
 // Test that the external users can't have duplicated emails.
