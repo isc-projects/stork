@@ -1,3 +1,53 @@
+Stork 2.4.1 released on 2026-05-06.
+
+* 622 [bug] slawek, piotrek
+
+    Fixed a bug that could cause the server to panic during user
+    authentication via LDAP. Authentication could be rejected if the
+    user's Distinguished Name differed from the value known to the Stork
+    server.
+    (Gitlab #2411)
+
+* 621 [build] marcin
+
+    Updated dependencies including Go 1.25.9, and several
+    JavaScript, Python, Ruby and Go packages.
+    (Gitlab #2431)
+
+* 620 [bug] slawek
+
+    Fixed the Stork server crash when the monitored daemon had no
+    control sockets specified.
+    (Gitlab #2426)
+
+* 619 [bug] marcin
+
+    Stork no longer erases Kea configuration parameters it does not
+    recognize when it updates Kea configuration. This is important
+    when Stork version is behind Kea version, and new parameters
+    were introduced to Kea.
+    (Gitlab #2412)
+
+* 618 [func] slawek
+
+    Added the --db-tls-1-2-enabled flag (STORK_DATABASE_TLS_1_2_ENABLED
+    environment variable) to allow lowering the minimum TLS version for
+    database connections from 1.3 to 1.2.
+    (Gitlab #2409)
+
+* 617 [bug] slawek
+
+    Fixed a database migration failure for the application with no
+    daemons.
+    (Gitlab #2408)
+
+* 616 [bug] slawek
+
+    Fixed Kea, BIND 9, and PowerDNS detection failing to parse the CLI
+    flags when the path to the binary contained a directory named same
+    as the binary (e.g., /var/lib/named/sbin/named).
+    (Gitlab #2410)
+
 Stork 2.4.0 released on 2026-02-25.
 
 * 615 [bug] slawek
