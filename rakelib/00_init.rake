@@ -615,8 +615,8 @@ nfpm_ver = 'v2.45.0'
 golangcilint_ver = '2.8.0'
 
 # UI-related
-node_ver = '20.20.0'
-npm_ver = '11.9.0'
+node_ver = '20.20.2'
+npm_ver = '11.13.0'
 yamlinc_ver = '0.1.10'
 openapi_generator_ver = '7.19.0'
 
