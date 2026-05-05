@@ -18,7 +18,7 @@ Stork will continue to support communication with pre-3.0.0 Kea daemons using
 the Kea Control Agent until those Kea versions have reached the end of support.
 
 Kea instance detection begins by looking for the ``kea-ctrl-agent``,
-``kea-dhcp4``, ``kea-dhcp6``, and ``kea-d2`` processes, which are expected to
+``kea-dhcp4``, ``kea-dhcp6``, and ``kea-dhcp-ddns`` processes, which are expected to
 run with the ``-c`` parameter specifying the path to their configuration files.
 The Stork agent then reads the following configuration parameters from each file:
 
@@ -878,7 +878,7 @@ configurations they validate:
 - ``kea-dhcp-daemon`` - run for DHCPv4 and DHCPv6 daemons
 - ``kea-dhcp-v4-daemon`` - run for Kea DHCPv4 daemons
 - ``kea-dhcp-v6-daemon`` - run for Kea DHCPv6 daemons
-- ``kea-d2-daemon`` - run for Kea D2 daemons
+- ``kea-dhcp-ddns-daemon`` - run for Kea D2 daemons
 - ``bind9-daemon`` - run for BIND 9 daemons
 
 The ``Triggers`` indicate the conditions under which the checkers are executed. Currently,

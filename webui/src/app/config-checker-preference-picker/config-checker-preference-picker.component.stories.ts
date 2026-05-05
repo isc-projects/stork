@@ -44,7 +44,7 @@ const mockData: ConfigChecker[] = [
             'kea-dhcp-daemon',
             'kea-dhcp-v4-daemon',
             'kea-dhcp-v6-daemon',
-            'kea-d2-daemon',
+            'kea-dhcp-ddns-daemon',
             'bind9-daemon',
             'unknown',
         ],

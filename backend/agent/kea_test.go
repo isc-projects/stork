@@ -905,9 +905,9 @@ func TestParseKeaCommandLine(t *testing.T) {
 		},
 		{
 			name:        "bare binary name",
-			args:        []string{"kea-d2", "-c", "/etc/kea/kea-d2.conf"},
-			processName: "kea-d2",
-			expected:    &keaCommandLine{binaryPath: "kea-d2", configPath: "/etc/kea/kea-d2.conf"},
+			args:        []string{"kea-dhcp-ddns", "-c", "/etc/kea/kea-dhcp-ddns.conf"},
+			processName: "kea-dhcp-ddns",
+			expected:    &keaCommandLine{binaryPath: "kea-dhcp-ddns", configPath: "/etc/kea/kea-dhcp-ddns.conf"},
 		},
 		{
 			name:        "daemon directory in binary path",

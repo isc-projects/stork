@@ -23,7 +23,7 @@ This section describes the solutions for some common issues with the Stork agent
               - PowerDNS
 
               Stork looks for the processes named ``kea-ctrl-agent`` (for Kea CA), ``kea-dhcp4`` or ``kea-dhcp6``
-              (for Kea DHCP servers), ``kea-d2`` (for Kea DDNS), ``named`` (for BIND 9), or ``pdns_server`` (for PowerDNS). Make sure
+              (for Kea DHCP servers), ``kea-dhcp-ddns`` (for Kea DDNS), ``named`` (for BIND 9), or ``pdns_server`` (for PowerDNS). Make sure
               those processes are running and are named appropriately. Use the ``ps aux`` (or similar) command
               to determine whether the processes are running. Currently, Stork does not support detecting off-line services. If
               BIND 9 or PowerDNS is located in an uncommon location and the Stork agent is unable to detect it, there are several steps that
