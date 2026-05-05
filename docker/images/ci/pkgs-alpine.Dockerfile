@@ -1,4 +1,4 @@
-FROM golang:1.25.7-alpine3.22
+FROM golang:1.25.9-alpine3.22
 
 RUN apk add --no-cache \
     ruby-rake~13 \
