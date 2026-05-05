@@ -1,6 +1,5 @@
 import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { v4 as uuidv4 } from 'uuid'
 import { AddressPoolForm, KeaPoolParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
@@ -71,9 +70,9 @@ export class AddressPoolFormComponent implements OnInit {
      * UUIDS used as unique element identifiers.
      */
     uuids = {
-        poolStart: uuidv4(),
-        poolEnd: uuidv4(),
-        selectedDaemons: uuidv4(),
+        poolStart: crypto.randomUUID(),
+        poolEnd: crypto.randomUUID(),
+        selectedDaemons: crypto.randomUUID(),
     }
 
     /**

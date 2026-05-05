@@ -1,6 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { v4 as uuidv4 } from 'uuid'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 import { AutoCompleteCompleteEvent, AutoComplete } from 'primeng/autocomplete'
 import { FloatLabel } from 'primeng/floatlabel'
@@ -59,7 +58,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
      * It sorts the list of client classes specified as an input.
      */
     ngOnInit(): void {
-        this.inputId = uuidv4()
+        this.inputId = crypto.randomUUID()
     }
 
     /**

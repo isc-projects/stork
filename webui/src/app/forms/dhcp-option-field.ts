@@ -1,5 +1,4 @@
 import { AbstractControl, AbstractControlOptions, AsyncValidatorFn, ValidatorFn } from '@angular/forms'
-import { v4 as uuidv4 } from 'uuid'
 import { LinkedFormGroup } from './linked-form-group'
 
 /**
@@ -51,7 +50,7 @@ export class DhcpOptionField {
         this.fieldType = fieldType
         for (let i = 0; i < inputNum; i++) {
             // Generate UUID identifiers.
-            this._inputIds.push(uuidv4())
+            this._inputIds.push(crypto.randomUUID())
         }
     }
 

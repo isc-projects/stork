@@ -38,7 +38,6 @@
         "rxjs": "^7.8.2",
         "swagger-ui-dist": "^5.31.0",
         "tslib": "^2.8.1",
-        "uuid": "^11.1.0",
         "zone.js": "^0.15.1"
     },
     "devDependencies": {

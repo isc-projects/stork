@@ -1,6 +1,5 @@
 import { Component, EventEmitter, forwardRef, Input, OnInit, Output, inject } from '@angular/core'
 import { UntypedFormArray, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { v4 as uuidv4 } from 'uuid'
 import { MenuItem } from 'primeng/api'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DhcpOptionsService } from '../dhcp-options.service'
@@ -284,8 +283,8 @@ export class DhcpOptionFormComponent implements OnInit {
     ngOnInit(): void {
         this.lastFieldType = DhcpOptionFieldType.Binary
         this.lastFieldCommand = this.addBinaryField
-        this.codeInputId = uuidv4()
-        this.alwaysSendCheckboxId = uuidv4()
+        this.codeInputId = crypto.randomUUID()
+        this.alwaysSendCheckboxId = crypto.randomUUID()
         this.fieldTypes = [
             {
                 label: DhcpOptionFieldType.Binary,

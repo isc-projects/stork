@@ -1,6 +1,5 @@
 import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { v4 as uuidv4 } from 'uuid'
 import { KeaPoolParametersForm, PrefixPoolForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { getSeverityByIndex, getVersionRange } from '../utils'
@@ -73,10 +72,10 @@ export class PrefixPoolFormComponent implements OnInit {
      * UUIDS used as unique element identifiers.
      */
     uuids = {
-        prefix: uuidv4(),
-        delegatedLength: uuidv4(),
-        excludedPrefix: uuidv4(),
-        selectedDaemons: uuidv4(),
+        prefix: crypto.randomUUID(),
+        delegatedLength: crypto.randomUUID(),
+        excludedPrefix: crypto.randomUUID(),
+        selectedDaemons: crypto.randomUUID(),
     }
 
     /**
