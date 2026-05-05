@@ -173,7 +173,7 @@ func (s DispatchGroupSelector) String() string {
 	case KeaDHCPv6Daemon:
 		return "kea-dhcp-v6-daemon"
 	case KeaD2Daemon:
-		return "kea-d2-daemon"
+		return "kea-dhcp-ddns-daemon"
 	case Bind9Daemon:
 		return "bind9-daemon"
 	}

@@ -780,7 +780,7 @@ func TestDispatchGroupSelectorToString(t *testing.T) {
 	require.EqualValues(t, "kea-ca-daemon", KeaCADaemon.String())
 	require.EqualValues(t, "kea-dhcp-v4-daemon", KeaDHCPv4Daemon.String())
 	require.EqualValues(t, "kea-dhcp-v6-daemon", KeaDHCPv6Daemon.String())
-	require.EqualValues(t, "kea-d2-daemon", KeaD2Daemon.String())
+	require.EqualValues(t, "kea-dhcp-ddns-daemon", KeaD2Daemon.String())
 	require.EqualValues(t, "bind9-daemon", Bind9Daemon.String())
 	require.EqualValues(t, "unknown", DispatchGroupSelector(42).String())
 }

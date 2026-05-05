@@ -146,7 +146,7 @@ func NewProcessManager() *ProcessManager {
 			supportedProcesses: map[string]daemonname.Name{
 				"kea-dhcp4":      daemonname.DHCPv4,
 				"kea-dhcp6":      daemonname.DHCPv6,
-				"kea-d2":         daemonname.D2,
+				"kea-dhcp-ddns":  daemonname.D2,
 				"kea-ctrl-agent": daemonname.CA,
 				"named":          daemonname.Bind9,
 				"pdns_server":    daemonname.PDNS,

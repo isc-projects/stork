@@ -169,7 +169,7 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'fa fa-dice-four'
             case 'kea-dhcp-v6-daemon':
                 return 'fa fa-dice-six'
-            case 'kea-d2-daemon':
+            case 'kea-dhcp-ddns-daemon':
                 return 'fa fa-dice-two'
             case 'bind9-daemon':
                 return 'fa fa-dot-circle'

@@ -262,6 +262,7 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                         isc-kea-ctrl-agent=${KEA_VERSION} \
                         isc-kea-dhcp4-server=${KEA_VERSION} \
                         isc-kea-dhcp6-server=${KEA_VERSION} \
+                        isc-kea-dhcp-ddns-server=${KEA_VERSION} \
                         isc-kea-admin=${KEA_VERSION} \
                         isc-kea-common=${KEA_VERSION} \
                         ;\
@@ -272,6 +273,7 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                         isc-kea-ctrl-agent=${KEA_VERSION} \
                         isc-kea-dhcp4=${KEA_VERSION} \
                         isc-kea-dhcp6=${KEA_VERSION} \
+                        isc-kea-dhcp-ddns=${KEA_VERSION} \
                         isc-kea-admin=${KEA_VERSION} \
                         isc-kea-common=${KEA_VERSION} \
                         isc-kea-hooks=${KEA_VERSION} \
@@ -284,6 +286,7 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                         isc-kea-ctrl-agent=${KEA_VERSION} \
                         isc-kea-dhcp4=${KEA_VERSION} \
                         isc-kea-dhcp6=${KEA_VERSION} \
+                        isc-kea-dhcp-ddns=${KEA_VERSION} \
                         isc-kea-admin=${KEA_VERSION} \
                         isc-kea-common=${KEA_VERSION} \
                         isc-kea-hooks=${KEA_VERSION} \

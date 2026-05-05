@@ -50,7 +50,7 @@ func TestGetD2ControlSockets(t *testing.T) {
 		ControlSockets: []ControlSocket{
 			{
 				SocketType: "unix",
-				SocketName: storkutil.Ptr("/var/run/kea/kea-d2.sock"),
+				SocketName: storkutil.Ptr("/var/run/kea/kea-dhcp-ddns.sock"),
 			},
 			{
 				SocketType:    "http",
@@ -60,7 +60,7 @@ func TestGetD2ControlSockets(t *testing.T) {
 		},
 		ControlSocket: &ControlSocket{
 			SocketType: "unix",
-			SocketName: storkutil.Ptr("/var/run/kea/kea-d2-legacy.sock"),
+			SocketName: storkutil.Ptr("/var/run/kea/kea-dhcp-ddns-legacy.sock"),
 		},
 	}
 
@@ -72,7 +72,7 @@ func TestGetD2ControlSockets(t *testing.T) {
 		require.Len(t, sockets, 2)
 
 		require.Equal(t, "unix", sockets[0].SocketType)
-		require.Equal(t, "/var/run/kea/kea-d2.sock", *sockets[0].SocketName)
+		require.Equal(t, "/var/run/kea/kea-dhcp-ddns.sock", *sockets[0].SocketName)
 
 		require.Equal(t, "http", sockets[1].SocketType)
 		require.Equal(t, "localhost", *sockets[1].SocketAddress)
@@ -89,7 +89,7 @@ func TestGetD2ControlSockets(t *testing.T) {
 		require.Len(t, sockets, 1)
 
 		require.Equal(t, "unix", sockets[0].SocketType)
-		require.Equal(t, "/var/run/kea/kea-d2-legacy.sock", *sockets[0].SocketName)
+		require.Equal(t, "/var/run/kea/kea-dhcp-ddns-legacy.sock", *sockets[0].SocketName)
 	})
 
 	cfg.ControlSocket = nil
