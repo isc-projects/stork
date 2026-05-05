@@ -145,6 +145,12 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 
+**Tag: 14**
+
+    - ``pkgs-alpine``:
+
+        Introduced in the #2445 ticket. Upgrades Golang to 1.25.9.
+
 **Tag: 13**
 
     - ``pkgs-alpine``:
