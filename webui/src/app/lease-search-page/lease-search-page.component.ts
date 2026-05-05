@@ -22,6 +22,7 @@ import { ProgressSpinner } from 'primeng/progressspinner'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { Lease, LeasesSearchErredDaemon } from '../backend'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { stateToString } from '../lease-utils'
 
 /**
  * Enumeration specifying the status of the leases search.
@@ -281,31 +282,9 @@ export class LeaseSearchPageComponent implements OnInit {
     }
 
     /**
-     * Converts Kea lease state specified as a number to string.
-     *
-     * @param state lease state code.
-     * @returns State name.
+     * Duplicate this function into the component so the template can use it.
      */
-    leaseStateAsText(state) {
-        if (!state) {
-            return 'Valid'
-        }
-        switch (state) {
-            case 0: {
-                return 'Valid'
-            }
-            case 1: {
-                return 'Declined'
-            }
-            case 2: {
-                return 'Expired/Reclaimed'
-            }
-            default: {
-                break
-            }
-        }
-        return 'Unknown'
-    }
+    leaseStateAsText = stateToString
 
     /**
      * Checks if the current search text is valid.

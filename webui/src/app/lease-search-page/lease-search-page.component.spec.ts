@@ -123,7 +123,9 @@ describe('LeaseSearchPageComponent', () => {
         expect(component.leaseStateAsText(0)).toBe('Valid')
         expect(component.leaseStateAsText(1)).toBe('Declined')
         expect(component.leaseStateAsText(2)).toBe('Expired/Reclaimed')
-        expect(component.leaseStateAsText(3)).toBe('Unknown')
+        expect(component.leaseStateAsText(3)).toBe('Released')
+        expect(component.leaseStateAsText(4)).toBe('Registered')
+        expect(component.leaseStateAsText(5)).toBe('(invalid state)')
     })
 
     it('should return correct lease type name', () => {

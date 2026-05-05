@@ -153,6 +153,12 @@ export class AppComponent implements OnInit, OnDestroy {
                         routerLink: '/dhcp/leases',
                     },
                     {
+                        label: 'Leases List',
+                        id: 'leases-list',
+                        icon: 'fa fa-list',
+                        routerLink: '/dhcp/leases-list',
+                    },
+                    {
                         label: 'Host Reservations',
                         id: 'host-reservations',
                         icon: 'fa fa-laptop',

@@ -27,6 +27,7 @@ interface SettingsForm {
     keaHostsPullerInterval: FormControl<number>
     keaStatsPullerInterval: FormControl<number>
     keaStatusPullerInterval: FormControl<number>
+    keaLeasesPullerInterval: FormControl<number>
     grafanaUrl: FormControl<string>
     grafanaDhcp4DashboardId: FormControl<string>
     grafanaDhcp6DashboardId: FormControl<string>
@@ -129,6 +130,11 @@ export class SettingsPageComponent implements OnInit {
             formControlName: 'keaStatusPullerInterval',
             help: 'This puller fetches the high-availability status from the Kea servers.',
         },
+        {
+            title: 'Kea Leases Puller Interval',
+            formControlName: 'keaLeasesPullerInterval',
+            help: 'This puller fetches leases from Kea servers.',
+        },
     ]
 
     /**
@@ -184,6 +190,7 @@ export class SettingsPageComponent implements OnInit {
             keaHostsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            keaLeasesPullerInterval: [0, [Validators.required, Validators.min(0)]],
             grafanaUrl: [''],
             grafanaDhcp4DashboardId: ['hRf18FvWz'],
             grafanaDhcp6DashboardId: ['AQPHKJUGz'],

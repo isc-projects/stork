@@ -1,0 +1,27 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>
+            This page displays a list of leases in the network. Leases are retrieved at regular intervals, which can be
+            configured in the Settings panel under the Configuration menu in the top bar. Kea must be configured to use
+            a memfile, <em>not</em> an SQL database, for lease storage.
+        </p>
+    </div>
+</app-breadcrumbs>
+
+<app-tab-view
+    routePath="/dhcp/leases-list/"
+    [tableQueryParamFilters]="{
+        machineId: { type: 'numeric', matchMode: 'equals' },
+        daemonId: { type: 'numeric', matchMode: 'equals' },
+        subnetId: { type: 'numeric', matchMode: 'equals' },
+        localSubnetId: { type: 'numeric', matchMode: 'equals' },
+        text: { type: 'string', matchMode: 'contains' },
+    }"
+    [entitiesTable]="leasesListTable()?.table"
+    entityTypeName="Lease"
+    firstTabTitle="Leases"
+>
+    <ng-template #firstTab>
+        <app-leases-list-table #leasesListTableComponent></app-leases-list-table>
+    </ng-template>
+</app-tab-view>

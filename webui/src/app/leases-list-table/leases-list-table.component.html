@@ -1,0 +1,308 @@
+<p-table
+    id="leases-list-table"
+    #leasesListTable
+    [value]="dataCollection"
+    [paginator]="true"
+    [rows]="rows"
+    [lazy]="true"
+    [loading]="dataLoading"
+    (onLazyLoad)="loadData($event)"
+    [lazyLoadOnInit]="false"
+    [totalRecords]="totalRecords"
+    [rowsPerPageOptions]="[10, 30, 100]"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    [stripedRows]="true"
+    stateStorage="local"
+    (rowsChange)="storeTableRowsPerPage($event)"
+    class="full-w-table"
+>
+    <ng-template #caption>
+        <app-table-caption [tableElement]="leasesListTable" tableKey="leases-list-table" [wideHelpTip]="true">
+            <ng-template #helptip>
+                <p>
+                    Leases in the table below can be filtered by entering text in the search box; the table shows all
+                    leases matching the filter text. The currently supported fields for filtering are:
+                </p>
+                <ul>
+                    <li>Hardware Address</li>
+                    <li>DUID</li>
+                    <li>Client ID</li>
+                    <li>IP Address</li>
+                </ul>
+                <p>
+                    Leases can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of the
+                    identifier (e.g. the initial three bytes of a MAC address that denotes OUI, a unique identifier of
+                    the vendor, effectively showing all devices produced by the same vendor); or identifier type (e.g.
+                    <b>hw-address</b> to show all leases issued to a MAC address).
+                </p>
+                <p>
+                    Leases can be also filtered by a full or partial IP address. For example, all leases in a
+                    192.0.2.0/24 subnet can found by entering
+                    <b>192.0.2</b> as the filter text.
+                </p>
+                <p>
+                    In addition, leases can be filtered by an explicitly selected field using text input filters. The
+                    currently supported fields for explicit filtering are:
+                </p>
+                <ul>
+                    <li>Machine ID - the ID of the machine used by Stork.</li>
+                    <li>
+                        Daemon - pick a daemon from the dropdown list or type to search the daemon by machine's
+                        hostname, address, daemon ID, or daemon name.
+                    </li>
+                    <li>Subnet ID - the subnet ID used by Stork.</li>
+                    <li>Local Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
+                </ul>
+                <p>
+                    Leases can be filtered by multiple fields. Currently, all provided filtering conditions are joined
+                    using a logical AND.
+                </p>
+            </ng-template>
+            <ng-template #filters>
+                <p-columnFilter field="machineId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <p-floatlabel variant="on">
+                                <p-inputNumber
+                                    inputId="machine-id"
+                                    mode="decimal"
+                                    [useGrouping]="false"
+                                    min="1"
+                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    class="max-w-8rem"
+                                ></p-inputNumber>
+                                <label for="machine-id">Machine ID</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="daemonId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <app-daemon-filter
+                                [daemonID]="value"
+                                (daemonIDChange)="filterTable($event, filterMetadata)"
+                                [daemonNames]="['dhcp4', 'dhcp6']"
+                                label="Daemon"
+                                (errorOccurred)="onAutocompleteError($event)"
+                            />
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <p-floatlabel variant="on">
+                                <p-inputNumber
+                                    inputId="subnet-id"
+                                    mode="decimal"
+                                    [useGrouping]="false"
+                                    min="1"
+                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    class="max-w-8rem"
+                                ></p-inputNumber>
+                                <label for="subnet-id">Subnet ID</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="localSubnetId" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex align-items-center">
+                            <p-floatlabel variant="on">
+                                <p-inputNumber
+                                    inputId="local-subnet-id"
+                                    mode="decimal"
+                                    [useGrouping]="false"
+                                    min="1"
+                                    (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    class="max-w-8rem"
+                                ></p-inputNumber>
+                                <label for="local-subnet-id">Local Subnet ID</label>
+                            </p-floatlabel>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
+                        <div class="flex">
+                            <p-iconfield iconPosition="left">
+                                <p-inputicon>
+                                    <i class="pi pi-search"></i>
+                                </p-inputicon>
+                                <input
+                                    class="max-w-13rem sm:max-w-20rem"
+                                    pInputText
+                                    type="text"
+                                    (input)="filterTable($event.target.value, filterMetadata)"
+                                    [ngModel]="value"
+                                    placeholder="Search IP or identifier"
+                                />
+                            </p-iconfield>
+                            <p-button
+                                icon="pi pi-filter-slash"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="secondary"
+                                [styleClass]="value ? '' : 'hidden-space'"
+                                (onClick)="clearFilter(filterMetadata)"
+                            />
+                        </div>
+                    </ng-template>
+                </p-columnFilter>
+            </ng-template>
+            <ng-template #buttons>
+                <p-button
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(leasesListTable.createLazyLoadMetadata())"
+                ></p-button>
+            </ng-template>
+            <ng-template #splitbutton>
+                <p-splitbutton
+                    label="Refresh List"
+                    icon="pi pi-refresh"
+                    (onClick)="loadData(leasesListTable.createLazyLoadMetadata())"
+                    [model]="toolbarButtons"
+                    size="small"
+                />
+            </ng-template>
+        </app-table-caption>
+    </ng-template>
+    <ng-template #header>
+        <tr>
+            <th style="width: 20%" [pSortableColumn]="LeaseListSortField.IpAddress">
+                <div class="flex gap-1 white-space-nowrap">
+                    IP Address<p-sortIcon [field]="LeaseListSortField.IpAddress" />
+                </div>
+            </th>
+            <th style="width: 14%" [pSortableColumn]="LeaseListSortField.HwAddress">
+                <div class="flex gap-1 white-space-nowrap">
+                    HW Address<p-sortIcon [field]="LeaseListSortField.HwAddress" />
+                </div>
+            </th>
+            <th style="width: 14%" [pSortableColumn]="LeaseListSortField.Duid">
+                <div class="flex gap-1 white-space-nowrap">DUID<p-sortIcon [field]="LeaseListSortField.Duid" /></div>
+            </th>
+            <th style="width: 14%" [pSortableColumn]="LeaseListSortField.ClientId">
+                <div class="flex gap-1">Client ID<p-sortIcon [field]="LeaseListSortField.ClientId" /></div>
+            </th>
+            <th style="width: 8%" [pSortableColumn]="LeaseListSortField.PrefixLength">
+                <div class="flex gap-1">Prefix Length<p-sortIcon [field]="LeaseListSortField.PrefixLength" /></div>
+            </th>
+            <th style="width: 10%" [pSortableColumn]="LeaseListSortField.State">
+                <div class="flex gap-1">State<p-sortIcon [field]="LeaseListSortField.State" /></div>
+            </th>
+            <th style="width: 8%">Daemon</th>
+            <th style="width: 12%">Subnet</th>
+        </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+        <tr>
+            <td colspan="6">
+                No leases found.
+                @if (tableHasFilter(leasesListTable)) {
+                    Clear filters and try again.
+                    <p-button
+                        label="Clear"
+                        [outlined]="true"
+                        icon="pi pi-filter-slash"
+                        (click)="clearTableFiltering()"
+                    ></p-button>
+                }
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template #body let-l>
+        <tr id="lease-row-{{ l.id }}">
+            <td>
+                {{ l.ipAddress }}
+            </td>
+            <td>
+                {{ l.hwAddress || '—' }}
+            </td>
+            <td>
+                {{ l.duid || '—' }}
+            </td>
+            <td>
+                {{ l.clientId || '—' }}
+            </td>
+            <td>
+                {{ l.prefixLength || '—' }}
+            </td>
+            <td>
+                {{ stateToString(l.state) }}
+            </td>
+            <td>
+                <app-entity-link
+                    entity="daemon"
+                    [showEntityName]="false"
+                    [attrs]="{ id: l.daemonId, daemonLabel: l.daemonLabel }"
+                ></app-entity-link>
+            </td>
+            <td>
+                <app-entity-link
+                    entity="subnet"
+                    [showEntityName]="false"
+                    [attrs]="{ id: l.subnetId, subnet: l.subnetPrefix }"
+                    [showIdentifier]="true"
+                ></app-entity-link>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template #paginatorright let-paginatorState>
+        Total: {{ paginatorState.totalRecords | pluralize: 'lease' }}
+    </ng-template>
+    <ng-template #emptymessage>
+        <tr>
+            <td colspan="6">
+                No leases found.
+                @if (tableHasFilter(leasesListTable)) {
+                    Clear filters and try again.
+                    <p-button
+                        label="Clear"
+                        [outlined]="true"
+                        icon="pi pi-filter-slash"
+                        (click)="clearTableFiltering()"
+                    ></p-button>
+                }
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
