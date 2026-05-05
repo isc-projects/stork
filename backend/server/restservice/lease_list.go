@@ -49,6 +49,7 @@ func convertLeaseFromRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 			PrefixLength:      int64(dbLease.PrefixLength),
 			State:             &state,
 			SubnetID:          &dbLease.Subnet.ID,
+			SubnetPrefix:      dbLease.Subnet.Prefix,
 			UserContext:       dbLease.UserContext,
 			ValidLifetime:     &validLifetime,
 		},

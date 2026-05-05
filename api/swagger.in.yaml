@@ -268,11 +268,12 @@ definitions:
       - duid
       - hostname
       - hwAddress
+      - clientID
       - ipAddress
-      - leaseType
       - state
-      - preferredLifetime
+      - validLifetime
       - prefixLength
+      - subnetPrefix
 
   MachineSortField:
     type: string

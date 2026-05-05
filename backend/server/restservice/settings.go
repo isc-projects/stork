@@ -94,6 +94,11 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		log.WithError(err).Error("Cannot update kea_status_puller_interval")
 		return errRsp
 	}
+	err = dbmodel.SetSettingInt(r.DB, "kea_leases_puller_interval", s.KeaLeasesPullerInterval)
+	if err != nil {
+		log.WithError(err).Error("Cannot update kea_leases_puller_interval")
+		return errRsp
+	}
 	err = dbmodel.SetSettingInt(r.DB, "state_puller_interval", s.StatePullerInterval)
 	if err != nil {
 		log.WithError(err).Error("Cannot update state_puller_interval")

@@ -12,6 +12,7 @@ import (
 	agentapi "isc.org/stork/api"
 	keadata "isc.org/stork/daemondata/kea"
 	dbops "isc.org/stork/server/database"
+	models "isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -84,20 +85,6 @@ type LeasesByPageFilters struct {
 	FilterText    *string
 }
 
-// Sort field which may be used in GetLeasesByPage.
-type LeaseSortField string
-
-// Valid lease sort fields.
-const (
-	LeaseSortFieldSubnet        LeaseSortField = "subnet"
-	LeaseSortFieldHWAddr        LeaseSortField = "hw_address"
-	LeaseSortFieldIPAddr        LeaseSortField = "address"
-	LeaseSortFieldClientID      LeaseSortField = "client_id"
-	LeaseSortFieldDUID          LeaseSortField = "duid"
-	LeaseSortFieldCLTT          LeaseSortField = "cltt"
-	LeaseSortFieldValidLifetime LeaseSortField = "valid_lifetime"
-)
-
 // Fetches a collection of leases from the database.
 // Returns an ordered subset of hosts and the total number of hosts, or an error.
 //
@@ -115,21 +102,25 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 
 	// Convert friendly API field names to database column names.
 	var dbSortField string
-	switch LeaseSortField(sortField) {
-	case LeaseSortFieldSubnet:
+	switch models.LeaseListSortField(sortField) {
+	case models.LeaseListSortFieldSubnetPrefix:
 		dbSortField = "subnet.prefix"
-	case LeaseSortFieldHWAddr:
+	case models.LeaseListSortFieldHwAddress:
 		dbSortField = "hw_address"
-	case LeaseSortFieldIPAddr:
+	case models.LeaseListSortFieldIPAddress:
 		dbSortField = "ip_address"
-	case LeaseSortFieldClientID:
+	case models.LeaseListSortFieldHostname:
+		dbSortField = "hostname"
+	case models.LeaseListSortFieldClientID:
 		dbSortField = "client_id"
-	case LeaseSortFieldDUID:
+	case models.LeaseListSortFieldDuid:
 		dbSortField = "duid"
-	case LeaseSortFieldCLTT:
+	case models.LeaseListSortFieldCltt:
 		dbSortField = "cltt"
-	case LeaseSortFieldValidLifetime:
+	case models.LeaseListSortFieldValidLifetime:
 		dbSortField = "valid_lifetime"
+	case models.LeaseListSortFieldPrefixLength:
+		dbSortField = "prefix_length"
 	default:
 		dbSortField = sortField
 	}
@@ -157,9 +148,9 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 		colonlessFilterExpr := "%" + strings.ReplaceAll(*filters.FilterText, ":", "") + "%"
 		regFilterExpr := "%" + *filters.FilterText + "%"
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
-			q = q.WhereOr("text(r.ip_address) ILIKE ?", regFilterExpr).
+			q = q.WhereOr("text(ip_address) ILIKE ?", regFilterExpr).
 				WhereOr("encode(duid, 'hex') ILIKE ?", colonlessFilterExpr).
-				WhereOr("encode(hw_address, 'hex') ILIKE ?", colonlessFilterExpr).
+				WhereOr("REPLACE(CAST(hw_address AS TEXT),':','') ILIKE ?", colonlessFilterExpr).
 				WhereOr("encode(client_id, 'hex') ILIKE ?", colonlessFilterExpr).
 				WhereOr("hostname ILIKE ?", regFilterExpr)
 			return q, nil
