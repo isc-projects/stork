@@ -5,8 +5,8 @@ in the provided directory prefixed by the process name. The scripts remember if
 it was already executed for a particular application instance and if it was, it
 will not execute again.
 
-The scripts directory must contain a subdirectory for application processes,
-and each subdirectory must contain the initialization scripts for that process.
+The scripts directory may contain a subdirectory for application processes,
+and each subdirectory may contain the initialization scripts for that process.
 
 For troubleshooting, the event listener writes logs to stderr, which are then
 saved by supervisorD in a separate log file: /var/log/supervisor/process_initializer.err.log
