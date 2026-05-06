@@ -1,6 +1,6 @@
 """
 The supervisorD event listener for initializing the application instances.
-It waits until the application process is running, the executes all the scripts
+It waits until the application process is running, then executes all the scripts
 in the provided directory prefixed by the process name. The scripts remember if
 it was already executed for a particular application instance and if it was, it
 will not execute again.
@@ -231,8 +231,8 @@ def execute_scripts(scripts_dir, process_name) -> bool:
 
 def single_iteration(scripts_dir, temp_dir) -> bool:
     """
-    Processes a single event from supervisorD. It reads the event from stdin
-    check if the related process has already been initialized, and if not, it
+    Processes a single event from supervisorD. It reads the event from stdin,
+    checks if the related process has already been initialized, and if not, it
     executes the initialization scripts for that process. It returns True if
     the processing was successful, or False if it failed.
     """
