@@ -59,7 +59,7 @@ type KeaDaemon struct {
 	Config     *KeaConfig `pg:",use_zero"`
 	ConfigHash string
 	DaemonID   int64
-	ServerTag  string `pg:",use_zero"`
+	ServerTag  *string
 
 	KeaDHCPDaemon *KeaDHCPDaemon `pg:"rel:belongs-to"`
 }
@@ -963,11 +963,7 @@ func (d *Daemon) setKeaConfigWithHash(config *keaconfig.Config, configHash strin
 				d.LogTargets = append(d.LogTargets, targets[i])
 			}
 		}
-		if serverTag := config.GetServerTag(); serverTag != nil {
-			d.KeaDaemon.ServerTag = *serverTag
-		} else {
-			d.KeaDaemon.ServerTag = ""
-		}
+		d.KeaDaemon.ServerTag = config.GetServerTag()
 		d.KeaDaemon.Config = newKeaConfig(config)
 		d.KeaDaemon.ConfigHash = configHash
 	}

@@ -958,14 +958,14 @@ func TestMigration72BackfillServerTag(t *testing.T) {
 	daemon4 := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, nil)
 	err = daemon4.SetKeaConfigFromJSON([]byte(`{"Dhcp4": {"server-tag": "foo"}}`))
 	require.NoError(t, err)
-	require.NotEmpty(t, daemon4.KeaDaemon.ServerTag)
+	require.NotNil(t, daemon4.KeaDaemon.ServerTag)
 	err = dbmodel.AddDaemon(db, daemon4)
 	require.NoError(t, err)
 
 	daemon6 := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, nil)
 	err = daemon6.SetKeaConfigFromJSON([]byte(`{"Dhcp6": {"server-tag": "bar"}}`))
 	require.NoError(t, err)
-	require.NotEmpty(t, daemon6.KeaDaemon.ServerTag)
+	require.NotNil(t, daemon6.KeaDaemon.ServerTag)
 	err = dbmodel.AddDaemon(db, daemon6)
 	require.NoError(t, err)
 
@@ -991,8 +991,10 @@ func TestMigration72BackfillServerTag(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, daemons, 4)
 
-	require.Equal(t, "foo", daemons[0].KeaDaemon.ServerTag)
-	require.Equal(t, "bar", daemons[1].KeaDaemon.ServerTag)
-	require.Empty(t, daemons[2].KeaDaemon.ServerTag)
-	require.Empty(t, daemons[3].KeaDaemon.ServerTag)
+	require.NotNil(t, daemons[0].KeaDaemon.ServerTag)
+	require.Equal(t, "foo", *daemons[0].KeaDaemon.ServerTag)
+	require.NotNil(t, daemons[1].KeaDaemon.ServerTag)
+	require.Equal(t, "bar", *daemons[1].KeaDaemon.ServerTag)
+	require.Nil(t, daemons[2].KeaDaemon.ServerTag)
+	require.Nil(t, daemons[3].KeaDaemon.ServerTag)
 }

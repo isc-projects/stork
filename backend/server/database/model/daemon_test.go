@@ -11,6 +11,7 @@ import (
 	"isc.org/stork/datamodel/daemonname"
 	"isc.org/stork/datamodel/protocoltype"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 // Test that new instance of the generic Kea daemon can be created.
@@ -115,7 +116,8 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.Equal(t, daemonname.DHCPv6, updatedDaemon.Name)
 	require.False(t, updatedDaemon.Active)
 	require.Equal(t, "2.0.0", updatedDaemon.Version)
-	require.Equal(t, "server-tag", updatedDaemon.KeaDaemon.ServerTag)
+	require.NotNil(t, updatedDaemon.KeaDaemon.ServerTag)
+	require.Equal(t, "server-tag", *updatedDaemon.KeaDaemon.ServerTag)
 	require.Len(t, updatedDaemon.LogTargets, 1)
 	require.NotNil(t, updatedDaemon.KeaDaemon)
 	require.NotNil(t, updatedDaemon.KeaDaemon.Config)
@@ -125,7 +127,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 }
 
 // Test that a Kea DHCP daemon without a server tag in its configuration
-// can be updated in the database (the server_tag column defaults to empty).
+// can be updated in the database with a NULL server tag.
 func TestUpdateKeaDHCPDaemonWithoutServerTag(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -156,7 +158,7 @@ func TestUpdateKeaDHCPDaemonWithoutServerTag(t *testing.T) {
 	// Assert
 	updated, err := GetDaemonByID(db, daemon.ID)
 	require.NoError(t, err)
-	require.Empty(t, updated.KeaDaemon.ServerTag)
+	require.Nil(t, updated.KeaDaemon.ServerTag)
 }
 
 // Test that Bind9 daemon is properly updated.
@@ -395,7 +397,8 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotNil(t, dmn.Machine)
 	require.Len(t, dmn.AccessPoints, 1)
 	require.Len(t, dmn.LogTargets, 1)
-	require.Equal(t, "server-tag", dmn.KeaDaemon.ServerTag)
+	require.NotNil(t, dmn.KeaDaemon.ServerTag)
+	require.Equal(t, "server-tag", *dmn.KeaDaemon.ServerTag)
 }
 
 // Test getting multiple Kea daemons by IDs.
@@ -937,8 +940,8 @@ func TestSetConfig(t *testing.T) {
 	require.NotEmpty(t, daemon.KeaDaemon.ConfigHash)
 }
 
-// Test that the server tag is reset to an empty string when the configuration
-// does not contain a server tag.
+// Test that the server tag is reset to nil when the configuration does not
+// contain a server tag.
 func TestSetKeaConfigServerTagReset(t *testing.T) {
 	// Arrange
 	machine := &Machine{
@@ -947,7 +950,7 @@ func TestSetKeaConfigServerTagReset(t *testing.T) {
 		AgentPort: 8080,
 	}
 	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
-	daemon.KeaDaemon.ServerTag = "old tag"
+	daemon.KeaDaemon.ServerTag = storkutil.Ptr("old tag")
 
 	// Act
 	err := daemon.SetKeaConfigFromJSON([]byte(`{
@@ -956,7 +959,7 @@ func TestSetKeaConfigServerTagReset(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Empty(t, daemon.KeaDaemon.ServerTag)
+	require.Nil(t, daemon.KeaDaemon.ServerTag)
 }
 
 // Test that an empty server tag in the configuration results in an empty
@@ -979,7 +982,8 @@ func TestSetKeaConfigServerTagEmpty(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Empty(t, daemon.KeaDaemon.ServerTag)
+	require.NotNil(t, daemon.KeaDaemon.ServerTag)
+	require.Empty(t, *daemon.KeaDaemon.ServerTag)
 }
 
 // Test that shallow copy of a Kea daemon can be created.
