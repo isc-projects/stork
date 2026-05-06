@@ -114,6 +114,7 @@ type Daemon struct {
 	Uptime          int64
 	CreatedAt       time.Time
 	ReloadedAt      time.Time
+	ServerTag       string
 
 	MachineID int64
 	Machine   *Machine `pg:"rel:has-one"`
@@ -961,6 +962,11 @@ func (d *Daemon) setKeaConfigWithHash(config *keaconfig.Config, configHash strin
 				}
 				d.LogTargets = append(d.LogTargets, targets[i])
 			}
+		}
+		if serverTag := config.GetServerTag(); serverTag != nil {
+			d.ServerTag = *serverTag
+		} else {
+			d.ServerTag = ""
 		}
 		d.KeaDaemon.Config = newKeaConfig(config)
 		d.KeaDaemon.ConfigHash = configHash

@@ -951,6 +951,111 @@ func TestGetAllocator(t *testing.T) {
 	require.Equal(t, "random", *cfg.GetAllocator())
 }
 
+// Test that server tag is parsed and returned correctly for DHCPv4.
+func TestGetServerTagDHCPv4(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "server-tag": "my DHCPv4 server"
+        }
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetServerTag())
+	require.Equal(t, "my DHCPv4 server", *cfg.GetServerTag())
+}
+
+// Test that server tag is parsed and returned correctly for DHCPv6.
+func TestGetServerTagDHCPv6(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "server-tag": "my DHCPv6 server"
+        }
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetServerTag())
+	require.Equal(t, "my DHCPv6 server", *cfg.GetServerTag())
+}
+
+// Test that server tag is nil for non-DHCP daemons.
+func TestGetServerTagNonDHCP(t *testing.T) {
+	configStr := `{
+        "Control-agent": {
+            "http-host": "0.0.0.0"
+        }
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetServerTag())
+}
+
+// Test that server tag is nil when the property is missing from DHCPv4 config.
+func TestGetMissingServerTagDHCPv4(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {}
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetServerTag())
+}
+
+// Test that server tag is nil when the property is missing from DHCPv6 config.
+func TestGetMissingServerTagDHCPv6(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {}
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.Nil(t, cfg.GetServerTag())
+}
+
+// Test that an empty server tag is parsed and returned correctly for DHCPv4.
+func TestGetEmptyServerTagDHCPv4(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "server-tag": ""
+        }
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetServerTag())
+	require.Empty(t, *cfg.GetServerTag())
+}
+
+// Test that an empty server tag is parsed and returned correctly for DHCPv6.
+func TestGetEmptyServerTagDHCPv6(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "server-tag": ""
+        }
+    }`
+
+	cfg, err := NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetServerTag())
+	require.Empty(t, *cfg.GetServerTag())
+}
+
 // Test that PD allocator parameter is parsed and returned correctly.
 func TestGetPDAllocator(t *testing.T) {
 	configStr := `{

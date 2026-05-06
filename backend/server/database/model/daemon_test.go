@@ -90,6 +90,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	daemon.Version = "2.0.0"
 	err = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
+            "server-tag": "server-tag",
             "valid-lifetime": 1234,
 			"loggers": [{
 				"name": "kea-dhcp4",
@@ -114,6 +115,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.Equal(t, daemonname.DHCPv6, updatedDaemon.Name)
 	require.False(t, updatedDaemon.Active)
 	require.Equal(t, "2.0.0", updatedDaemon.Version)
+	require.Equal(t, "server-tag", updatedDaemon.ServerTag)
 	require.Len(t, updatedDaemon.LogTargets, 1)
 	require.NotNil(t, updatedDaemon.KeaDaemon)
 	require.NotNil(t, updatedDaemon.KeaDaemon.Config)
@@ -324,9 +326,10 @@ func TestGetDaemonByID(t *testing.T) {
 	}
 	daemon := NewDaemon(m, daemonname.DHCPv4, true, accessPoints)
 
-	// Set initial configuration with one logger.
+	// Set initial configuration with one logger and a server tag.
 	err = daemon.SetKeaConfigFromJSON([]byte(`{
         "Dhcp4": {
+            "server-tag": "server-tag",
             "loggers": [
                 {
                     "name": "kea-dhcp4",
@@ -357,6 +360,7 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotNil(t, dmn.Machine)
 	require.Len(t, dmn.AccessPoints, 1)
 	require.Len(t, dmn.LogTargets, 1)
+	require.Equal(t, "server-tag", dmn.ServerTag)
 }
 
 // Test getting multiple Kea daemons by IDs.
@@ -896,6 +900,51 @@ func TestSetConfig(t *testing.T) {
 	require.NotNil(t, daemon.KeaDaemon)
 	require.NotNil(t, daemon.KeaDaemon.Config)
 	require.NotEmpty(t, daemon.KeaDaemon.ConfigHash)
+}
+
+// Test that the server tag is reset to an empty string when the configuration
+// does not contain a server tag.
+func TestSetKeaConfigServerTagReset(t *testing.T) {
+	// Arrange
+	machine := &Machine{
+		ID:        1,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+	daemon.ServerTag = "old tag"
+
+	// Act
+	err := daemon.SetKeaConfigFromJSON([]byte(`{
+        "Dhcp4": {}
+    }`))
+
+	// Assert
+	require.NoError(t, err)
+	require.Empty(t, daemon.ServerTag)
+}
+
+// Test that an empty server tag in the configuration results in an empty
+// server tag on the daemon.
+func TestSetKeaConfigServerTagEmpty(t *testing.T) {
+	// Arrange
+	machine := &Machine{
+		ID:        1,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	daemon := NewDaemon(machine, daemonname.DHCPv4, true, []*AccessPoint{})
+
+	// Act
+	err := daemon.SetKeaConfigFromJSON([]byte(`{
+        "Dhcp4": {
+            "server-tag": ""
+        }
+    }`))
+
+	// Assert
+	require.NoError(t, err)
+	require.Empty(t, daemon.ServerTag)
 }
 
 // Test that shallow copy of a Kea daemon can be created.

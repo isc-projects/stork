@@ -205,6 +205,7 @@ type CommonDHCPConfig struct {
 	MultiThreading          *MultiThreading          `json:"multi-threading,omitempty"`
 	OptionData              []SingleOptionData       `json:"option-data,omitempty"`
 	Reservations            []Reservation            `json:"reservations,omitempty"`
+	ServerTag               *string                  `json:"server-tag,omitempty"`
 	StoreExtendedInfo       *bool                    `json:"store-extended-info,omitempty"`
 }
 

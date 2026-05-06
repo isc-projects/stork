@@ -309,6 +309,14 @@ func (c *Config) GetAllocator() (allocator *string) {
 	return
 }
 
+// Returns the server tag from the DHCP configuration.
+func (c *Config) GetServerTag() (serverTag *string) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		serverTag = accessor.GetCommonDHCPConfig().ServerTag
+	}
+	return
+}
+
 // Returns prefix delegation allocator.
 func (c *Config) GetPDAllocator() (allocator *string) {
 	if c.IsDHCPv6() {
