@@ -16,10 +16,11 @@ after_upgrade () {
         fi
     fi
 
-    # Restart the systemd service.
+    # Restart the systemd service if it was active prior to the upgrade.
     if [ $has_active_systemd -eq 1 ]; then
         is_active_service=$(systemctl is-active isc-stork-server || true)
         if [ "${is_active_service}" = "active" ]; then
+            systemctl --system daemon-reload > /dev/null || true
             systemctl restart isc-stork-server
         fi
     fi
