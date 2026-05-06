@@ -1298,3 +1298,32 @@ func TestConfigGetExpandedConfigs(t *testing.T) {
 	require.Equal(t, filepath.Join(sandbox.BasePath, "include2.conf"), includes[1])
 	require.Equal(t, filepath.Join(sandbox.BasePath, "include3.conf"), includes[2])
 }
+
+// Test that the non-nil logging statement can be retrieved from the config.
+func TestConfigGetLogging(t *testing.T) {
+	config := `
+		logging {
+			channel docker {
+				stderr;
+			};
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.GetLogging())
+	require.Len(t, cfg.GetLogging().Clauses, 1)
+	require.NotNil(t, cfg.GetLogging().Clauses[0].Channel)
+	require.Equal(t, "docker", cfg.GetLogging().Clauses[0].Channel.Name.GetValue())
+	require.Len(t, cfg.GetLogging().Clauses[0].Channel.Clauses, 1)
+	require.True(t, cfg.GetLogging().Clauses[0].Channel.Clauses[0].Stderr)
+}
+
+// Test that nil is returned when the logging statement is not found.
+func TestConfigGetLoggingNone(t *testing.T) {
+	config := ``
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Nil(t, cfg.GetLogging())
+}

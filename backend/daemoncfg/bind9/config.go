@@ -592,3 +592,13 @@ func (c *Config) areSameFiles(first, second string) bool {
 	}
 	return os.SameFile(firstInfo, secondInfo)
 }
+
+// Returns the logging statement or nil if it is not found.
+func (c *Config) GetLogging() *Logging {
+	for _, statement := range c.Statements {
+		if statement.Logging != nil {
+			return statement.Logging
+		}
+	}
+	return nil
+}

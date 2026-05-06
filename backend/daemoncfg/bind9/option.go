@@ -38,6 +38,7 @@ func (o *Option) getFormattedOutput(filter *Filter) formatterOutput {
 }
 
 // An option switch is a string or identifier switch.
+// TODO: Remove it and migrate to String.
 type OptionSwitch struct {
 	StringSwitch *string `parser:"@String"`
 	IdentSwitch  *string `parser:"| @Ident"`

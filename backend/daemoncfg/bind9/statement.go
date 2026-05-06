@@ -36,6 +36,9 @@ type Statement struct {
 	// The "zone" statement is used to define a DNS zone.
 	Zone *Zone `parser:"| 'zone' @@" filter:"zone"`
 
+	// The "logging" statement is used to define logging options.
+	Logging *Logging `parser:"| 'logging' @@" filter:"config"`
+
 	// Any statement that looks like an option with potentially
 	// several switches followed by a block.
 	Option *Option `parser:"| @@" filter:"config"`

@@ -193,9 +193,30 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 	require.Len(t, statement.Zone.Clauses[2].Option.Switches, 1)
 	require.Equal(t, "/etc/bind/db.nsd.example.com", statement.Zone.Clauses[2].Option.Switches[0].GetStringValue())
 
+	// Logging. Test selected channel and category. Testing all of them
+	// can be overkill.
 	statement, _ = next()
-	require.NotNil(t, statement.Option)
-	require.Equal(t, "logging", statement.Option.Identifier)
+	require.NotNil(t, statement.Logging)
+	require.Len(t, statement.Logging.Clauses, 14)
+
+	// Test the first channel.
+	require.NotNil(t, statement.Logging.Clauses[0].Channel)
+	require.Equal(t, "transfers", statement.Logging.Clauses[0].Channel.Name.GetValue())
+	require.Len(t, statement.Logging.Clauses[0].Channel.Clauses, 3)
+	require.NotNil(t, statement.Logging.Clauses[0].Channel.Clauses[0].File)
+	require.Equal(t, "/var/log/bind/transfers", statement.Logging.Clauses[0].Channel.Clauses[0].File.Name.GetValue())
+	require.Len(t, statement.Logging.Clauses[0].Channel.Clauses[0].File.Switches, 4)
+	require.Equal(t, "versions", statement.Logging.Clauses[0].Channel.Clauses[0].File.Switches[0].GetValue())
+	require.Equal(t, "3", statement.Logging.Clauses[0].Channel.Clauses[0].File.Switches[1].GetValue())
+	require.Equal(t, "size", statement.Logging.Clauses[0].Channel.Clauses[0].File.Switches[2].GetValue())
+	require.Equal(t, "10M", statement.Logging.Clauses[0].Channel.Clauses[0].File.Switches[3].GetValue())
+
+	// Test the first category.
+	require.NotNil(t, statement.Logging.Clauses[6].Category)
+	require.Equal(t, "xfer-out", statement.Logging.Clauses[6].Category.Name.GetValue())
+	require.Len(t, statement.Logging.Clauses[6].Category.Channels, 2)
+	require.Equal(t, "transfers", statement.Logging.Clauses[6].Category.Channels[0].GetValue())
+	require.Equal(t, "slog", statement.Logging.Clauses[6].Category.Channels[1].GetValue())
 }
 
 // Test successfully parsing the named configuration file.
@@ -1480,4 +1501,164 @@ func TestParseControlsUnix(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Test parsing the logging channel with file clause, and several other clauses.
+func TestParseLoggingChannelWithFile(t *testing.T) {
+	cfgText := `
+	logging {
+		channel transfers {
+			file "/var/log/bind/transfers" versions 3 size 10M;
+			print-time yes;
+			print-category yes;
+			print-severity yes;
+			print-time iso8601;
+			severity info;
+			buffered yes;
+		};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel)
+	require.Equal(t, "transfers", cfg.Statements[0].Logging.Clauses[0].Channel.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses, 7)
+
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File)
+	require.Equal(t, "/var/log/bind/transfers", cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File.Switches, 4)
+	require.Equal(t, "versions", cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File.Switches[0].GetValue())
+	require.Equal(t, "3", cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File.Switches[1].GetValue())
+	require.Equal(t, "size", cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File.Switches[2].GetValue())
+	require.Equal(t, "10M", cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].File.Switches[3].GetValue())
+
+	// All other clauses should be parsed into generic options.
+	for i := 1; i < 7; i++ {
+		require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[i].Option)
+	}
+}
+
+// Test parsing the logging channel with syslog clause, and without facility.
+func TestParseLoggingChannelWithSyslogNoFacility(t *testing.T) {
+	cfgText := `
+	logging {
+		channel xfer-out {
+			syslog;
+		};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel)
+	require.Equal(t, "xfer-out", cfg.Statements[0].Logging.Clauses[0].Channel.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Syslog)
+	require.Nil(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Syslog.Facility)
+}
+
+// Test parsing the logging channel with syslog clause, and with facility.
+func TestParseLoggingChannelWithSyslogFacility(t *testing.T) {
+	cfgText := `
+	logging {
+		channel xfer-out {
+			syslog local0;
+		};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel)
+	require.Equal(t, "xfer-out", cfg.Statements[0].Logging.Clauses[0].Channel.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Syslog)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Syslog.Facility)
+	require.Equal(t, "local0", cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Syslog.Facility.GetValue())
+}
+
+// Test parsing the logging channel with null destination.
+func TestParseLoggingChannelWithNull(t *testing.T) {
+	cfgText := `
+	logging {
+		channel default {
+			null;
+		};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel)
+	require.Equal(t, "default", cfg.Statements[0].Logging.Clauses[0].Channel.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses, 1)
+	require.True(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Null)
+}
+
+// Test parsing the logging channel with stderr destination.
+func TestParseLoggingChannelWithStderr(t *testing.T) {
+	cfgText := `
+	logging {
+		channel default {
+			stderr;
+		};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Channel)
+	require.Equal(t, "default", cfg.Statements[0].Logging.Clauses[0].Channel.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses, 1)
+	require.True(t, cfg.Statements[0].Logging.Clauses[0].Channel.Clauses[0].Stderr)
+}
+
+// Test parsing the logging category with two channels.
+func TestParseLoggingCategory(t *testing.T) {
+	cfgText := `
+	logging {
+		category xfer-out {
+			transfers;
+			"slog";
+		};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Category)
+	require.Equal(t, "xfer-out", cfg.Statements[0].Logging.Clauses[0].Category.Name.GetValue())
+	require.Len(t, cfg.Statements[0].Logging.Clauses[0].Category.Channels, 2)
+	require.Equal(t, "transfers", cfg.Statements[0].Logging.Clauses[0].Category.Channels[0].GetValue())
+	require.Equal(t, "slog", cfg.Statements[0].Logging.Clauses[0].Category.Channels[1].GetValue())
+}
+
+// Test parsing the logging category with no channels.
+func TestParseLoggingCategoryEmpty(t *testing.T) {
+	cfgText := `
+	logging {
+		category "xfer-out" {};
+	};`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Logging)
+	require.Len(t, cfg.Statements[0].Logging.Clauses, 1)
+	require.NotNil(t, cfg.Statements[0].Logging.Clauses[0].Category)
+	require.Equal(t, "xfer-out", cfg.Statements[0].Logging.Clauses[0].Category.Name.GetValue())
+	require.Empty(t, cfg.Statements[0].Logging.Clauses[0].Category.Channels)
 }
