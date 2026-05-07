@@ -120,6 +120,7 @@ func (r *RestAPI) AuthenticateExternalUser(ctx context.Context, externalUser *au
 
 	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
 	if conflict {
+		conflictErr := err
 		var dbUser *dbmodel.SystemUser
 		dbUser, err = dbmodel.GetUserByExternalID(
 			r.DB,
@@ -128,6 +129,11 @@ func (r *RestAPI) AuthenticateExternalUser(ctx context.Context, externalUser *au
 		)
 		if err != nil {
 			return nil, errors.Errorf("cannot fetch the internal user profile")
+		}
+		if dbUser == nil {
+			// Corner case: CreateUser returned conflict but no user with externalUser.ID was found in DB.
+			// There is another user in DB with conflicting data.
+			return nil, errors.WithMessage(conflictErr, "error creating internal user profile for external authentication")
 		}
 
 		systemUser.ID = dbUser.ID
