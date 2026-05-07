@@ -73,6 +73,7 @@ backend/**/tools/golang/gopath/pkg/sumdb/sum.golang.org/latest
 /tests/system/test-results/
 /tests/system/performance-results/
 .vscode/
+.idea/
 /isc-stork-*.deb
 /isc-stork-*.rpm
 *.code-workspace
