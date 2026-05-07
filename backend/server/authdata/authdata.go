@@ -1,4 +1,4 @@
-package authcontrol
+package authdata
 
 // User group ID enum.
 type UserGroupID int

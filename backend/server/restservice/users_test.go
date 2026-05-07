@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
-	"isc.org/stork/server/authcontrol"
+	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -1540,7 +1540,7 @@ func TestCreateSessionOfExternalUser(t *testing.T) {
 	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), &identifier, &secret).
-		Return(&authcontrol.User{
+		Return(&authdata.User{
 			ID:       "external-id",
 			Login:    "foo",
 			Email:    identifier,
@@ -1653,7 +1653,7 @@ func TestCreateSessionOfExternalUserUpdatesData(t *testing.T) {
 		// First log-in.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(&authcontrol.User{
+			Return(&authdata.User{
 				ID:       "external-id",
 				Login:    "foo",
 				Email:    "foo@example.org",
@@ -1663,7 +1663,7 @@ func TestCreateSessionOfExternalUserUpdatesData(t *testing.T) {
 		// Second log-in with updated data.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(&authcontrol.User{
+			Return(&authdata.User{
 				ID:       "external-id",
 				Login:    "foo",
 				Email:    "foo@example.org",
@@ -1792,7 +1792,7 @@ func TestCreateSessionOfExternalUserRace(t *testing.T) {
 	// First log-in.
 	mock.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&authcontrol.User{
+		Return(&authdata.User{
 			ID:       "external-id",
 			Login:    "bar",
 			Email:    "bar@example.org",
@@ -1863,7 +1863,7 @@ func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
 		// First log-in.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("foo@example.org")), gomock.Any()).
-			Return(&authcontrol.User{
+			Return(&authdata.User{
 				ID:       "external-id-1",
 				Login:    "login",
 				Email:    "foo@example.org",
@@ -1873,7 +1873,7 @@ func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
 		// Second log-in with updated data.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("bar@example.org")), gomock.Any()).
-			Return(&authcontrol.User{
+			Return(&authdata.User{
 				ID:       "external-id-2",
 				Login:    "login",
 				Email:    "bar@example.org",
@@ -1964,7 +1964,7 @@ func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 		// First log-in.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("foo")), gomock.Any()).
-			Return(&authcontrol.User{
+			Return(&authdata.User{
 				ID:       "external-id-1",
 				Login:    "foo",
 				Email:    "common@example.org",
@@ -1974,7 +1974,7 @@ func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 		// Second log-in with updated data.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("bar")), gomock.Any()).
-			Return(&authcontrol.User{
+			Return(&authdata.User{
 				ID:       "external-id-2",
 				Login:    "bar",
 				Email:    "common@example.org",

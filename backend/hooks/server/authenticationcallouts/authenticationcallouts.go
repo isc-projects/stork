@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"isc.org/stork/server/authcontrol"
+	"isc.org/stork/server/authdata"
 )
 
 // The metadata of the authentication method is used to display a selector on
@@ -40,7 +40,7 @@ type AuthenticationCallouts interface {
 	// cookie) and the credentials provided in the login form. Returns a user
 	// metadata or error if an authentication failed.
 	// A session ID (if applicable) may be stored in the context.
-	Authenticate(ctx context.Context, request *http.Request, identifier, secret *string) (*authcontrol.User, error)
+	Authenticate(ctx context.Context, request *http.Request, identifier, secret *string) (*authdata.User, error)
 	// Called to perform unauthentication (closing the session). It accepts the
 	// context passed previously to the authentication callout.
 	Unauthenticate(ctx context.Context) error

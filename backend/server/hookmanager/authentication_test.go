@@ -10,7 +10,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooks/server/authenticationcallouts"
-	"isc.org/stork/server/authcontrol"
+	"isc.org/stork/server/authdata"
 )
 
 // Carrier mock interface for mockgen.
@@ -39,13 +39,13 @@ func TestAuthenticate(t *testing.T) {
 	mock := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), &identifier, &secret).
-		Return(&authcontrol.User{
+		Return(&authdata.User{
 			ID:       "42",
 			Login:    "foo",
 			Email:    "foo@example.com",
 			Lastname: "oof",
 			Name:     "ofo",
-			Groups:   []authcontrol.UserGroupID{1, 2, 3},
+			Groups:   []authdata.UserGroupID{1, 2, 3},
 		}, nil).
 		Times(1)
 	mock.EXPECT().
@@ -77,7 +77,7 @@ func TestAuthenticateOnlyFirst(t *testing.T) {
 	mock1 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock1.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&authcontrol.User{}, nil).
+		Return(&authdata.User{}, nil).
 		Times(1)
 	mock1.EXPECT().
 		GetMetadata().
@@ -86,7 +86,7 @@ func TestAuthenticateOnlyFirst(t *testing.T) {
 	mock2 := NewMockAuthenticationCalloutCarrier(ctrl)
 	mock2.EXPECT().
 		Authenticate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(&authcontrol.User{}, nil).
+		Return(&authdata.User{}, nil).
 		Times(0)
 
 	hookManager := NewHookManager()
