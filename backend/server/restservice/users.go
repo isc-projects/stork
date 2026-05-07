@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/hooks/server/authenticationcallouts"
-	"isc.org/stork/server/auth"
+	"isc.org/stork/server/authcontrol"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
@@ -83,15 +83,15 @@ func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbm
 	return user, err
 }
 
-func (r *RestAPI) AuthenticateExternalUser(ctx context.Context, externalUser *auth.User, methodID string) (*dbmodel.SystemUser, error) {
+func (r *RestAPI) AuthenticateExternalUser(ctx context.Context, externalUser *authcontrol.User, methodID string) (*dbmodel.SystemUser, error) {
 	if externalUser == nil {
 		return nil, errors.New("cannot authenticate nil user")
 	}
 
-	groupIDMapping := map[auth.UserGroupID]int64{
-		auth.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
-		auth.UserGroupIDAdmin:      dbmodel.AdminGroupID,
-		auth.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
+	groupIDMapping := map[authcontrol.UserGroupID]int64{
+		authcontrol.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
+		authcontrol.UserGroupIDAdmin:      dbmodel.AdminGroupID,
+		authcontrol.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
 	}
 
 	var groups []*dbmodel.SystemGroup

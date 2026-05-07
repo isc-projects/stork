@@ -7,14 +7,14 @@ import (
 	"github.com/pkg/errors"
 	"isc.org/stork/hooks/server/authenticationcallouts"
 	"isc.org/stork/hooksutil"
-	"isc.org/stork/server/auth"
+	"isc.org/stork/server/authcontrol"
 )
 
 // Callout to authenticate the user based on HTTP request (headers, cookie)
 // and the credentials provided in the login form (email, password).
-func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, authenticationMethodID string, identifier, secret *string) (*auth.User, error) {
+func (hm *HookManager) Authenticate(ctx context.Context, request *http.Request, authenticationMethodID string, identifier, secret *string) (*authcontrol.User, error) {
 	type output struct {
-		user *auth.User
+		user *authcontrol.User
 		err  error
 	}
 

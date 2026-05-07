@@ -23,7 +23,7 @@ import (
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
-	"isc.org/stork/server/auth"
+	"isc.org/stork/server/authcontrol"
 	"isc.org/stork/server/certs"
 	"isc.org/stork/server/daemons"
 	"isc.org/stork/server/daemons/kea"
@@ -2827,7 +2827,7 @@ func TestDeleteDaemon(t *testing.T) {
 
 	_ = rapi.SessionManager.LoginHandler(ctx, &dbmodel.SystemUser{
 		ID: 42, Groups: []*dbmodel.SystemGroup{
-			{ID: int64(auth.UserGroupIDSuperAdmin)},
+			{ID: int64(authcontrol.UserGroupIDSuperAdmin)},
 		},
 	})
 
