@@ -305,7 +305,7 @@ describe('KeaDaemonComponent', () => {
         expect(daemonInfo.nativeElement.innerText).toContain('my-server')
     })
 
-    it('should show placeholder text when explicit server tag is not set', () => {
+    it('should show placeholder text when explicit server tag is empty', () => {
         fixture.componentRef.setInput('daemon', {
             hooks: ['/usr/lib/libdhcp_cb_cmds.so'],
             serverTag: '',
@@ -316,6 +316,20 @@ describe('KeaDaemonComponent', () => {
         const daemonInfo = fixture.debugElement.query(By.css('p-fieldset[legend="Daemon Information"]'))
         expect(daemonInfo.nativeElement.innerText).toContain('Server Tag')
         expect(daemonInfo.nativeElement.innerText).toContain('(empty)')
+        expect(daemonInfo.nativeElement.innerText).not.toContain('all')
+    })
+
+    it('should show placeholder text when explicit server tag is not set', () => {
+        fixture.componentRef.setInput('daemon', {
+            hooks: ['/usr/lib/libdhcp_cb_cmds.so'],
+            serverTag: null,
+            active: true,
+        })
+        fixture.detectChanges()
+
+        const daemonInfo = fixture.debugElement.query(By.css('p-fieldset[legend="Daemon Information"]'))
+        expect(daemonInfo.nativeElement.innerText).toContain('Server Tag')
+        expect(daemonInfo.nativeElement.innerText).toContain('(not specified)')
         expect(daemonInfo.nativeElement.innerText).not.toContain('all')
     })
 })
