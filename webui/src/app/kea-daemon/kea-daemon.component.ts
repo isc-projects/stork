@@ -51,6 +51,7 @@ import { AccessPointsComponent } from '../access-points/access-points.component'
         PlaceholderPipe,
         EventsPanelComponent,
         AccessPointsComponent,
+        PlaceholderPipe,
     ],
 })
 export class KeaDaemonComponent {
@@ -159,18 +160,6 @@ export class KeaDaemonComponent {
     /** Indicates if the cb_cmds hook library is loaded for this daemon. */
     cbCmdsLoaded = computed(() => {
         return this.daemon().hooks?.some((h) => this.basename(h) === 'libdhcp_cb_cmds.so') ?? false
-    })
-
-    /**
-     * Returns the effective server tag for this daemon.
-     *
-     * When cb_cmds is loaded and the stored tag is empty, Kea uses the
-     * implicit default tag "all", which is returned here so users see the
-     * active value.
-     */
-    effectiveServerTag = computed(() => {
-        const tag = this.daemon().serverTag
-        return tag || (this.cbCmdsLoaded() ? 'all' : '')
     })
 
     /**

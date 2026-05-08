@@ -148,20 +148,29 @@
                                 </div>
                                 <ng-container *ngIf="cbCmdsLoaded()">
                                     <div class="col-12 sm:col-3 pb-0 font-medium">
-                                        Server Tag
-                                        <app-help-tip subject="server tag">
-                                            <p>
-                                                The server tag identifies this Kea server in the configuration backend.
-                                                The server tag is an arbitrary string holding the name of the Kea server
-                                                instance. The tags of the DHCPv4 and DHCPv6 servers are independent in
-                                                the database, i.e. the same server tag can be created for both the
-                                                DHCPv4 and the DHCPv6 server. If the server tag is not set in the Kea
-                                                configuration file but the CB hook is loaded, the Stork server will use
-                                                the default server tag value, which is <strong>all</strong>.
-                                            </p>
-                                        </app-help-tip>
+                                        <div class="flex align-items-center gap-1">
+                                            <span>Server Tag</span>
+                                            <app-help-tip subject="server tag">
+                                                <p>
+                                                    The server tag is an arbitrary string assigned by the Kea
+                                                    administrator.
+                                                </p>
+                                                <p>
+                                                    The same server tag can be assigned to one or multiple Kea servers.
+                                                    Configuration elements associated with a shared server tag are
+                                                    applied to all servers that use this tag.
+                                                </p>
+                                                <p>
+                                                    Configuration elements associated with the
+                                                    <strong>all</strong> server tag apply to all servers, including
+                                                    servers that also have an explicit server tag.
+                                                </p>
+                                            </app-help-tip>
+                                        </div>
                                     </div>
-                                    <div class="col-12 sm:col-9">{{ effectiveServerTag() }}</div>
+                                    <div class="col-12 sm:col-9">
+                                        {{ daemon().serverTag | placeholder }}
+                                    </div>
                                 </ng-container>
                             </div>
                         </p-fieldset>
