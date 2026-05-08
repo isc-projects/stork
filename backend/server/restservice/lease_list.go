@@ -81,7 +81,7 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 	case models.LeaseListSortFieldPrefixLength:
 		dbSortCol = dbmodel.GetLeasesByPageSortColumnNamePrefixLength
 	default:
-		return nil, errors.Errorf("invalid sort field: '%s'", sortField)
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameNone
 	}
 	// Get the hosts from the database.
 	dbLeases, total, err := dbmodel.GetLeasesByPage(r.DB, offset, limit, filters, dbSortCol, sortDir)

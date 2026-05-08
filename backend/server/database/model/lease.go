@@ -96,6 +96,7 @@ const (
 	GetLeasesByPageSortColumnNameCltt          = "cltt"
 	GetLeasesByPageSortColumnNameValidLifetime = "valid_lifetime"
 	GetLeasesByPageSortColumnNamePrefixLength  = "prefix_length"
+	GetLeasesByPageSortColumnNameNone          = ""
 )
 
 // Fetches a collection of leases from the database.
