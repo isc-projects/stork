@@ -134,6 +134,10 @@ agent-kea-ha1 and agent-kea-ha2
 agent-kea-large
    This container runs an agent with a Kea DHCPv4 server that has many (nearly
    7000) subnets defined in its configuration.
+agent-kea-premium-1 and agent-kea-premium-2
+   These two containers should also be run together. They each have a Kea
+   DHCPv4 server instance configured with the premium hooks. They have a common
+   Config Backend database.
 
 These are containers with third-party services that are required by Stork:
 
