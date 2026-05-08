@@ -5,8 +5,6 @@ Stork 2.4.1 released on 2026-05-13.
     Fixed detection and monitoring of the kea-dhcp-ddns process.
     (Gitlab #2446)
 
-Stork 2.4.1 released on 2026-05-06.
-
 * 622 [bug] slawek, piotrek
 
     Fixed a bug that could cause the server to panic during user
