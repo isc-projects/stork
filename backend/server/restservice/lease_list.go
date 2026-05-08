@@ -59,8 +59,32 @@ func convertLeaseFromRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 // Fetches leases from the database and converts to the data formats
 // used in the REST API.
 func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFilters, sortField string, sortDir dbmodel.SortDirEnum) (*models.Leases, error) {
+	// Convert friendly API field names to database column names.
+	var dbSortCol dbmodel.GetLeasesByPageSortColumnName
+	switch models.LeaseListSortField(sortField) {
+	case models.LeaseListSortFieldSubnetPrefix:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix
+	case models.LeaseListSortFieldHwAddress:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameHwAddress
+	case models.LeaseListSortFieldIPAddress:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameIPAddress
+	case models.LeaseListSortFieldHostname:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameHostname
+	case models.LeaseListSortFieldClientID:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameClientID
+	case models.LeaseListSortFieldDuid:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameDuid
+	case models.LeaseListSortFieldCltt:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameCltt
+	case models.LeaseListSortFieldValidLifetime:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameValidLifetime
+	case models.LeaseListSortFieldPrefixLength:
+		dbSortCol = dbmodel.GetLeasesByPageSortColumnNamePrefixLength
+	default:
+		return nil, errors.Errorf("invalid sort field: '%s'", sortField)
+	}
 	// Get the hosts from the database.
-	dbLeases, total, err := dbmodel.GetLeasesByPage(r.DB, offset, limit, filters, sortField, sortDir)
+	dbLeases, total, err := dbmodel.GetLeasesByPage(r.DB, offset, limit, filters, dbSortCol, sortDir)
 	if err != nil {
 		return nil, err
 	}

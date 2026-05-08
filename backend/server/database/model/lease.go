@@ -12,7 +12,6 @@ import (
 	agentapi "isc.org/stork/api"
 	keadata "isc.org/stork/daemondata/kea"
 	dbops "isc.org/stork/server/database"
-	models "isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
 
@@ -85,6 +84,20 @@ type LeasesByPageFilters struct {
 	FilterText    *string
 }
 
+type GetLeasesByPageSortColumnName = string
+
+const (
+	GetLeasesByPageSortColumnNameSubnetPrefix  = "subnet.prefix"
+	GetLeasesByPageSortColumnNameHwAddress     = "hw_address"
+	GetLeasesByPageSortColumnNameIPAddress     = "ip_address"
+	GetLeasesByPageSortColumnNameHostname      = "hostname"
+	GetLeasesByPageSortColumnNameClientID      = "client_id"
+	GetLeasesByPageSortColumnNameDuid          = "duid"
+	GetLeasesByPageSortColumnNameCltt          = "cltt"
+	GetLeasesByPageSortColumnNameValidLifetime = "valid_lifetime"
+	GetLeasesByPageSortColumnNamePrefixLength  = "prefix_length"
+)
+
 // Fetches a collection of leases from the database.
 // Returns an ordered subset of hosts and the total number of hosts, or an error.
 //
@@ -96,35 +109,11 @@ type LeasesByPageFilters struct {
 //
 // sortDir specifies the direction for the sort. If SortDirAny is provided,
 // results will be sorted in ascending order.
-func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFilters, sortField string, sortDir SortDirEnum) ([]Lease, int64, error) {
+func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFilters, sortCol GetLeasesByPageSortColumnName, sortDir SortDirEnum) ([]Lease, int64, error) {
 	leases := []Lease{}
 	q := dbi.Model(&leases)
 
-	// Convert friendly API field names to database column names.
-	var dbSortField string
-	switch models.LeaseListSortField(sortField) {
-	case models.LeaseListSortFieldSubnetPrefix:
-		dbSortField = "subnet.prefix"
-	case models.LeaseListSortFieldHwAddress:
-		dbSortField = "hw_address"
-	case models.LeaseListSortFieldIPAddress:
-		dbSortField = "ip_address"
-	case models.LeaseListSortFieldHostname:
-		dbSortField = "hostname"
-	case models.LeaseListSortFieldClientID:
-		dbSortField = "client_id"
-	case models.LeaseListSortFieldDuid:
-		dbSortField = "duid"
-	case models.LeaseListSortFieldCltt:
-		dbSortField = "cltt"
-	case models.LeaseListSortFieldValidLifetime:
-		dbSortField = "valid_lifetime"
-	case models.LeaseListSortFieldPrefixLength:
-		dbSortField = "prefix_length"
-	default:
-		dbSortField = sortField
-	}
-	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("lease", dbSortField, sortDir, nil)
+	orderExpr, distinctOnFields := prepareOrderAndDistinctExpr("lease", sortCol, sortDir, nil)
 	q = q.DistinctOn(distinctOnFields)
 
 	if filters.MachineID != nil && *filters.MachineID != 0 {
