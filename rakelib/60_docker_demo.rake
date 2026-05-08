@@ -155,6 +155,14 @@ namespace :demo do
             docker_up_services("agent-kea-ha1", "agent-kea-ha2", "agent-kea-ha3")
         end
 
+        desc 'Build and run containers with Stork Agent and Kea with the
+        premium hook loaded.
+        The CS_REPO_ACCESS_TOKEN environment variable must be set to run the
+        containers.'
+        task :kea_premium => [DOCKER_COMPOSE] do
+            docker_up_services("agent-kea-premium-1", "agent-kea-premium-2")
+        end
+
         desc 'Build and run container with Stork Agent and BIND 9
         See "up" command for arguments.'
         task :bind9 => [DOCKER_COMPOSE] do
