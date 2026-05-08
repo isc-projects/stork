@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  agent-kea-premium:
+  agent-kea-premium-1:
     restart: always
     build:
       context: .
@@ -10,26 +10,20 @@ services:
       args:
         KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-dev-prv
         KEA_PREMIUM: "premium"
-    # Explicitly add entries to /etc/hosts for the hosts which are connected
-    # to more than two networks. These explicit entries should be added at the
-    # beginning of the /etc/hosts file enforcing that the connections by hostname
-    # are established with the IP addresses belonging to the storknet network.
-    # Before this change, agents sometimes listened on IP addresses dedicated for
-    # DHCP communication instead.
     extra_hosts:
-      - "agent-kea-premium:172.24.0.109"
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-premium:latest"
-    hostname: agent-kea-premium
+      - "agent-kea-premium-1:172.24.0.109"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-premium-1:latest"
+    hostname: agent-kea-premium-1
     networks:
       storknet:
         ipv4_address: 172.24.0.109
         interface_name: eth0
     expose:
-      - "8889" # stork server to agent
+      - "8879" # stork server to agent
       - "9100" # node_exporter for prometheus
       - "9547" # kea_exporter for prometheus
     ports:
-      - "8889:8889" # port to agent
+      - "8879:8879" # port to agent
     environment:
       DB_TYPE: pgsql
       DB_HOST: postgres
@@ -39,12 +33,12 @@ services:
       DB_ROOT_PASSWORD: stork
       DB_NAME: agent_kea_premium
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
-      STORK_AGENT_HOST: agent-kea-premium
-      STORK_AGENT_PORT: "8889"
+      STORK_AGENT_HOST: agent-kea-premium-1
+      STORK_AGENT_PORT: "8879"
     volumes:
-      - ./docker/config/agent-kea-premium/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./docker/config/agent-kea-premium/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - ./docker/config/agent-kea-premium/init_kea.sh:/var/lib/process-initializer/kea-dhcp4/init_kea.sh
+      - ./docker/config/agent-kea-premium-1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ./docker/config/agent-kea-premium-1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-premium-1/init_kea.sh:/var/lib/process-initializer/kea-dhcp4/init_kea.sh
       - ./docker/config/supervisor/process_initializer.conf:/etc/supervisor/conf.d/process_initializer.conf
       - ./docker/tools/process_initializer.py:/usr/lib/process_initializer.py
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
@@ -56,3 +50,54 @@ services:
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
     depends_on:
       - postgres
+
+  agent-kea-premium-2:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: kea
+      args:
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-dev-prv
+        KEA_PREMIUM: "premium"
+    extra_hosts:
+      - "agent-kea-premium-2:172.24.0.108"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-premium-2:latest"
+    hostname: agent-kea-premium-2
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.108
+        interface_name: eth0
+    expose:
+      - "8878" # stork server to agent
+      - "9100" # node_exporter for prometheus
+      - "9547" # kea_exporter for prometheus
+    ports:
+      - "8878:8878" # port to agent
+    environment:
+      DB_TYPE: pgsql
+      DB_HOST: postgres
+      DB_USER: agent_kea_premium
+      DB_PASSWORD: agent_kea_premium
+      DB_ROOT_USER: stork
+      DB_ROOT_PASSWORD: stork
+      DB_NAME: agent_kea_premium
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
+      STORK_AGENT_HOST: agent-kea-premium-2
+      STORK_AGENT_PORT: "8878"
+    volumes:
+      - ./docker/config/agent-kea-premium-2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ./docker/config/agent-kea-premium-2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./docker/config/agent-kea-premium-2/init_kea.sh:/var/lib/process-initializer/kea-dhcp4/init_kea.sh
+      - ./docker/config/supervisor/process_initializer.conf:/etc/supervisor/conf.d/process_initializer.conf
+      - ./docker/tools/process_initializer.py:/usr/lib/process_initializer.py
+      - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
+      - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
+      - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+      - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
+      - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
+      - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+    depends_on:
+      - postgres
+      - agent-kea-premium-1

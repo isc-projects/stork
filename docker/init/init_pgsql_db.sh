@@ -67,19 +67,30 @@ then
 fi
 
 echo "Initializing the database"
+set +e
 kea-admin db-init "${DB_TYPE}" \
     -u "${DB_USER}" \
     -p "${DB_PASSWORD}" \
     -n "${DB_NAME}" \
     -h "${DB_HOST}"
+init_status=$?
+set -e
 
-echo "Seed database"
+# Status 0 - initialization successful, status 2 - database already initialized.
+if [ $init_status -ne 0 ] && [ $init_status -ne 2 ]
+then
+    echo "Database initialization failed with status ${init_status}"
+    exit $init_status
+fi
+
 path=$(dirname "${BASH_SOURCE[0]}")
 seed_file="${path}/init_pgsql_query.sql"
-
-PGPASSWORD=${DB_ROOT_PASSWORD} \
-psql \
-    -U "${DB_ROOT_USER}" \
-    -h "${DB_HOST}" \
-    -d "${DB_NAME}" \
-    < "${seed_file}"
+if [ -f "${seed_file}" ]; then
+    echo "Seed database"
+    PGPASSWORD=${DB_ROOT_PASSWORD} \
+    psql \
+        -U "${DB_ROOT_USER}" \
+        -h "${DB_HOST}" \
+        -d "${DB_NAME}" \
+        < "${seed_file}"
+fi
