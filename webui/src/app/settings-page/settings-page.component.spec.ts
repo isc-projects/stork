@@ -89,7 +89,7 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
-            leasesPullerInterval: 33,
+            keaLeasesPullerInterval: 33,
             enableMachineRegistration: true,
             enableOnlineSoftwareVersions: true,
         }
@@ -108,7 +108,7 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(30)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
-        expect(component.settingsForm.get('leasesPullerInterval')?.value).toBe(33)
+        expect(component.settingsForm.get('keaLeasesPullerInterval')?.value).toBe(33)
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeTrue()
         expect(component.settingsForm.get('enableOnlineSoftwareVersions')?.value).toBeTrue()
     }))
@@ -146,7 +146,7 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
-            leasesPullerInterval: 33,
+            keaLeasesPullerInterval: 33,
             enableMachineRegistration: true,
             enableOnlineSoftwareVersions: true,
         }
@@ -159,7 +159,7 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 13,
             keaStatsPullerInterval: 13,
             keaStatusPullerInterval: 13,
-            leasesPullerInterval: 13,
+            keaLeasesPullerInterval: 13,
             enableMachineRegistration: false,
             enableOnlineSoftwareVersions: false,
         }
@@ -183,7 +183,7 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: null,
             keaStatsPullerInterval: null,
             keaStatusPullerInterval: null,
-            leasesPullerInterval: null,
+            keaLeasesPullerInterval: null,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
