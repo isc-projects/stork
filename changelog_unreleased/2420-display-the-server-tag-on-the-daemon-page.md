@@ -1,4 +1,4 @@
 [ui] slawek
 
-    Display the Kea daemon's server tag the daemon page.
+    Display the Kea daemon's server tag on the daemon page.
     (Gitlab #2420)
