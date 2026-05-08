@@ -34,7 +34,7 @@ func getHookForAlteringSubnets(daemon *dbmodel.Daemon) (hook, error) {
 	if _, _, ok := config.GetHookLibrary("libdhcp_subnet_cmds"); ok {
 		return hookSubnetCmds, nil
 	}
-	return 0, pkgerrors.Errorf("no subnet hook nor config backend hook found")
+	return 0, pkgerrors.Errorf("no subnet_cmds nor cb_cmds hook library found")
 }
 
 // Creates commands to add a subnet via the subnet_cmds hook library.

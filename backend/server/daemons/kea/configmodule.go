@@ -1099,12 +1099,10 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	// Create commands for each unique target: subnet_cmds daemons receive
 	// per-daemon commands; cb_cmds daemons are deduplicated by a config
 	// backend database.
-	var addCommands []ConfigCommand
-	var saveCommands []ConfigCommand
+	var addCommands, saveCommands []ConfigCommand
 	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
-		// Generate commands to add the subnet to the Kea configuration/config
-		// backend database and eventually to assign the subnet to the shared
-		// network.
+		// Generate commands to add the subnet to the Kea configuration or config
+		// backend database and assign the subnet to a shared network, if necessary.
 		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, serverTags, lookup)
 		if err != nil {
 			return err

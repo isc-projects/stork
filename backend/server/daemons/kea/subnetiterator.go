@@ -53,17 +53,13 @@ func forEachUniqueTarget(
 	// Group daemons by config backend for cb_cmds.
 	for _, ls := range localSubnets {
 		hook, err := getHookForAlteringSubnets(ls.Daemon)
-		if err != nil {
-			continue
-		}
-		if hook != hookCbCmds {
+		if err != nil || hook != hookCbCmds {
 			continue
 		}
 		key, err := buildConfigBackendID(ls.Daemon)
-		if err != nil {
-			continue
+		if err == nil {
+			configBackendGroups[key] = append(configBackendGroups[key], ls.Daemon)
 		}
-		configBackendGroups[key] = append(configBackendGroups[key], ls.Daemon)
 	}
 
 	// Call fn for each unique target. For cb_cmds, only the first daemon per
@@ -96,9 +92,7 @@ func forEachUniqueTarget(
 				}
 				serverTagSet[serverTag] = struct{}{}
 			}
-			for tag := range serverTagSet {
-				serverTags = append(serverTags, tag)
-			}
+			serverTags = slices.Collect(maps.Keys(serverTagSet))
 		}
 		if err := fn(ls, serverTags); err != nil {
 			return err
