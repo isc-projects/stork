@@ -8,11 +8,11 @@ Stork 2.4.1 released on 2026-05-06.
     server.
     (Gitlab #2411)
 
-* 621 [build] marcin
+* 621 [build] marcin, slawek
 
-    Updated dependencies including Go 1.25.9, and several
+    Updated dependencies including Go 1.25.10, and several
     JavaScript, Python, Ruby and Go packages.
-    (Gitlab #2431)
+    (Gitlab #2431, #2448)
 
 * 620 [bug] slawek
 
