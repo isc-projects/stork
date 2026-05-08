@@ -183,7 +183,6 @@ func TestGetLeaseListUserAuth(t *testing.T) {
 		rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
 		log.WithField("rsp", rsp).Info("response structure")
 		require.IsType(t, &dhcp.GetLeaseListOK{}, rsp)
-
 	})
 	t.Run("allow super-admin user", func(t *testing.T) {
 		db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
