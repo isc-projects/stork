@@ -3066,7 +3066,7 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 		ReloadedAt:      time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
 		Machine:         machine,
 		KeaDaemon: &dbmodel.KeaDaemon{
-			ServerTag: "my-server",
+			ServerTag: storkutil.Ptr("my-server"),
 			Config: &dbmodel.KeaConfig{
 				Config: func() *keaconfig.Config {
 					cfg, _ := keaconfig.NewConfig([]byte(`{
