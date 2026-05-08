@@ -376,6 +376,7 @@
         type: integer
       serverTag:
         type: string
+        x-nullable: true
 
   KeaDaemon:
     type: object
