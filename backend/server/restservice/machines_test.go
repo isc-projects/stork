@@ -3099,7 +3099,8 @@ func TestKeaDaemonToRestAPI(t *testing.T) {
 	require.Len(t, converted.Hooks, 2)
 	require.Contains(t, converted.Hooks, "hook_abc.so")
 	require.Contains(t, converted.Hooks, "hook_def.so")
-	require.Equal(t, "my-server", converted.ServerTag)
+	require.NotNil(t, converted.ServerTag)
+	require.Equal(t, "my-server", *converted.ServerTag)
 }
 
 // This test verifies that the lease database configuration storing the
