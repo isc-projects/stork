@@ -1,6 +1,9 @@
 package kea
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/pkg/errors"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -86,9 +89,9 @@ func forEachUniqueTarget(
 			daemons := configBackendGroups[key]
 			serverTagSet := make(map[string]struct{})
 			for _, d := range daemons {
-				serverTag := d.KeaDaemon.ServerTag
-				if serverTag == "" {
-					serverTag = "all"
+				serverTag := "all"
+				if d.KeaDaemon.ServerTag != nil {
+					serverTag = *d.KeaDaemon.ServerTag
 				}
 				serverTagSet[serverTag] = struct{}{}
 			}

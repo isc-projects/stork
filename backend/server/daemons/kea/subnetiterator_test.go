@@ -6,13 +6,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/datamodel/daemonname"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Tests that the server tag defaults to "all" when no server-tag is present in
 // the daemon configuration.
 func TestBuildConfigBackendIDNoServerTag(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "", hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookCbCmds)
 
 	// Act
 	id, err := buildConfigBackendID(daemon)
@@ -27,7 +28,7 @@ func TestBuildConfigBackendIDNoServerTag(t *testing.T) {
 // Tests that the server tag is included in the config backend ID.
 func TestBuildConfigBackendIDWithServerTag(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1", hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), hookCbCmds)
 
 	// Act
 	id, err := buildConfigBackendID(daemon)
@@ -61,8 +62,8 @@ func TestBuildConfigBackendIDNoConfigDB(t *testing.T) {
 // backend database.
 func TestForEachUniqueTargetDeduplicatesCbCmds(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1", hookCbCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1", hookCbCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), hookCbCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), hookCbCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -91,8 +92,8 @@ func TestForEachUniqueTargetDeduplicatesCbCmds(t *testing.T) {
 // sharing the same config backend, even if they have different server tags.
 func TestForEachUniqueTargetDifferentCbCmdsBackends(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1", hookCbCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server2", hookCbCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), hookCbCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), hookCbCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -121,8 +122,8 @@ func TestForEachUniqueTargetDifferentCbCmdsBackends(t *testing.T) {
 // hook.
 func TestForEachUniqueTargetProcessesSubnetCmds(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1", hookSubnetCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server2", hookSubnetCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), hookSubnetCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), hookSubnetCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -151,7 +152,7 @@ func TestForEachUniqueTargetProcessesSubnetCmds(t *testing.T) {
 // or Kea configuration is nil.
 func TestForEachUniqueTargetSkipsNilConfig(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, "server1")
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"))
 	subnet := newTestSubnet(daemon)
 
 	// Act
