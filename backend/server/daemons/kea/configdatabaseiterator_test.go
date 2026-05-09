@@ -189,3 +189,74 @@ func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetID(t *testing.T)
 	// Assert
 	require.ErrorContains(t, err, "inconsistent local subnets")
 }
+
+// Tests that cb_cmds daemons sharing one config backend must use consistent
+// local subnet data.
+func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetData(t *testing.T) {
+	testCases := []struct {
+		name      string
+		configure func(ls *dbmodel.LocalSubnet)
+	}{
+		{
+			name: "inconsistent Kea parameters",
+			configure: func(ls *dbmodel.LocalSubnet) {
+				ls.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("iterative")}
+			},
+		},
+		{
+			name: "inconsistent prefix pools",
+			configure: func(ls *dbmodel.LocalSubnet) {
+				ls.PrefixPools = []dbmodel.PrefixPool{{Prefix: "2001:db8:2::/64", DelegatedLen: 80}}
+			},
+		},
+		{
+			name: "inconsistent address pools",
+			configure: func(ls *dbmodel.LocalSubnet) {
+				ls.AddressPools = []dbmodel.AddressPool{{LowerBound: "192.0.2.11", UpperBound: "192.0.2.20"}}
+			},
+		},
+		{
+			name: "inconsistent user context",
+			configure: func(ls *dbmodel.LocalSubnet) {
+				ls.UserContext = map[string]any{"site": "dc2"}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+			daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+			daemon2.ID = 2
+
+			subnet := newTestSubnet(daemon1)
+			reference := subnet.LocalSubnets[0]
+			reference.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
+			reference.PrefixPools = []dbmodel.PrefixPool{{Prefix: "2001:db8:1::/64", DelegatedLen: 80}}
+			reference.AddressPools = []dbmodel.AddressPool{{LowerBound: "192.0.2.10", UpperBound: "192.0.2.20"}}
+			reference.UserContext = map[string]any{"site": "dc1"}
+
+			localSubnet := &dbmodel.LocalSubnet{
+				DaemonID:      daemon2.ID,
+				Daemon:        daemon2,
+				LocalSubnetID: reference.LocalSubnetID,
+				SubnetID:      subnet.ID,
+				KeaParameters: &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")},
+				PrefixPools:   []dbmodel.PrefixPool{{Prefix: "2001:db8:1::/64", DelegatedLen: 80}},
+				AddressPools:  []dbmodel.AddressPool{{LowerBound: "192.0.2.10", UpperBound: "192.0.2.20"}},
+				UserContext:   map[string]any{"site": "dc1"},
+			}
+			tc.configure(localSubnet)
+			subnet.LocalSubnets = append(subnet.LocalSubnets, localSubnet)
+
+			// Act
+			err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+				return nil
+			})
+
+			// Assert
+			require.ErrorContains(t, err, "inconsistent local subnets")
+		})
+	}
+}
