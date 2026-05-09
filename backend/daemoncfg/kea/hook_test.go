@@ -108,3 +108,104 @@ func TestGetLegalLogHookLibrary(t *testing.T) {
 	require.Equal(t, "kea", params.Name)
 	require.Equal(t, "/tmp/path", params.Path)
 }
+
+// Tests that the missing subnet-altering hook library is correctly detected.
+func TestGetSubnetAlteringHookLibraryNone(t *testing.T) {
+	hooks := HookLibraries{{Library: "libdhcp_lease_cmds"}}
+
+	require.Equal(t, SubnetAlteringHookLibraryNone, hooks.GetSubnetAlteringHookLibrary())
+}
+
+// Tests that the subnet_cmds hook library is correctly detected.
+func TestGetSubnetAlteringHookLibrarySubnetCmds(t *testing.T) {
+	hooks := HookLibraries{{Library: "libdhcp_subnet_cmds"}}
+
+	require.Equal(t, SubnetAlteringHookLibrarySubnetCmds, hooks.GetSubnetAlteringHookLibrary())
+}
+
+// Tests that the cb_cmds hook library is correctly detected.
+func TestGetSubnetAlteringHookLibraryCBCmds(t *testing.T) {
+	hooks := HookLibraries{{Library: "libdhcp_cb_cmds"}}
+
+	require.Equal(t, SubnetAlteringHookLibraryCBCmds, hooks.GetSubnetAlteringHookLibrary())
+}
+
+// Tests that the case when both subnet_cmds and cb_cmds hook libraries are
+// configured is correctly detected as ambiguous.
+func TestGetSubnetAlteringHookLibraryAmbiguous(t *testing.T) {
+	hooks := HookLibraries{
+		{Library: "libdhcp_subnet_cmds"},
+		{Library: "libdhcp_cb_cmds"},
+	}
+
+	require.Equal(t, SubnetAlteringHookLibraryAmbiguous, hooks.GetSubnetAlteringHookLibrary())
+}
+
+// Tests that the hook for altering subnets is correctly identified based on
+// the configuration.
+func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
+	testCases := []struct {
+		name     string
+		config   string
+		expected SubnetAlteringHookLibrary
+	}{
+		{
+			name:     "no daemon config",
+			config:   `{}`,
+			expected: SubnetAlteringHookLibraryNone,
+		},
+		{
+			name: "no subnet-altering hook",
+			config: `{
+				"Dhcp4": {
+					"hooks-libraries": [
+						{"library": "libdhcp_lease_cmds"}
+					]
+				}
+			}`,
+			expected: SubnetAlteringHookLibraryNone,
+		},
+		{
+			name: "subnet_cmds hook",
+			config: `{
+				"Dhcp4": {
+					"hooks-libraries": [
+						{"library": "libdhcp_subnet_cmds"}
+					]
+				}
+			}`,
+			expected: SubnetAlteringHookLibrarySubnetCmds,
+		},
+		{
+			name: "cb_cmds hook",
+			config: `{
+				"Dhcp4": {
+					"hooks-libraries": [
+						{"library": "libdhcp_cb_cmds"}
+					]
+				}
+			}`,
+			expected: SubnetAlteringHookLibraryCBCmds,
+		},
+		{
+			name: "both hooks",
+			config: `{
+				"Dhcp4": {
+					"hooks-libraries": [
+						{"library": "libdhcp_subnet_cmds"},
+						{"library": "libdhcp_cb_cmds"}
+					]
+				}
+			}`,
+			expected: SubnetAlteringHookLibraryAmbiguous,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, err := NewConfig([]byte(tc.config))
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, cfg.GetSubnetAlteringHookLibrary())
+		})
+	}
+}

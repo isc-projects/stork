@@ -417,6 +417,15 @@ func (c *Config) GetHookLibrary(name string) (path string, params map[string]any
 	return
 }
 
+// Returns the hook library type used to alter subnets. If both cb_cmds and
+// subnet_cmds are configured, cb_cmds takes precedence.
+func (c *Config) GetSubnetAlteringHookLibrary() SubnetAlteringHookLibrary {
+	if accessor := c.getCommonConfigAccessor(); accessor != nil {
+		return accessor.GetHookLibraries().GetSubnetAlteringHookLibrary()
+	}
+	return SubnetAlteringHookLibraryNone
+}
+
 // Returns configured loggers.
 func (c *Config) GetLoggers() (loggers []Logger) {
 	if accessor := c.getCommonConfigAccessor(); accessor != nil {

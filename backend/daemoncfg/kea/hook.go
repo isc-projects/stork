@@ -15,6 +15,21 @@ type HookLibrary struct {
 	Parameters json.RawMessage `json:"parameters"`
 }
 
+// Represents the hook library type that can alter subnets.
+type SubnetAlteringHookLibrary int
+
+const (
+	// Indicates that no supported hook library is loaded.
+	SubnetAlteringHookLibraryNone SubnetAlteringHookLibrary = iota
+	// Indicates that the subnet_cmds and cb_cmds hook libraries are loaded
+	// both.
+	SubnetAlteringHookLibraryAmbiguous
+	// Indicates that the subnet_cmds hook library is loaded.
+	SubnetAlteringHookLibrarySubnetCmds
+	// Indicates that the cb_cmds hook library is loaded.
+	SubnetAlteringHookLibraryCBCmds
+)
+
 // A generic function parsing the hook library configuration into a custom
 // structure, specific to the hook library. The last parameter is set false
 // when the hook library is not configured.
@@ -61,6 +76,24 @@ func (hl HookLibraries) GetHookLibrary(name string) (path string, params map[str
 		ok = exists
 	}
 	return
+}
+
+// Returns the hook library type that can alter subnets. If both cb_cmds and
+// subnet_cmds are configured, cb_cmds takes precedence.
+func (hl HookLibraries) GetSubnetAlteringHookLibrary() SubnetAlteringHookLibrary {
+	_, _, hasCBHook := hl.GetHookLibrary("libdhcp_cb_cmds")
+	_, _, hasSubnetHook := hl.GetHookLibrary("libdhcp_subnet_cmds")
+
+	switch {
+	case hasCBHook && hasSubnetHook:
+		return SubnetAlteringHookLibraryAmbiguous
+	case hasCBHook:
+		return SubnetAlteringHookLibraryCBCmds
+	case hasSubnetHook:
+		return SubnetAlteringHookLibrarySubnetCmds
+	default:
+		return SubnetAlteringHookLibraryNone
+	}
 }
 
 // Returns a configuration of the HA hook library in the parsed form.

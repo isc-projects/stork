@@ -1092,15 +1092,15 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	lookup := module.manager.GetDHCPOptionDefinitionLookup()
 	// Validate that every daemon has at least one supported hook library.
 	for _, ls := range subnet.LocalSubnets {
-		if _, err = getHookForAlteringSubnets(ls.Daemon); err != nil {
-			return ctx, err
+		if hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary(); hook == keaconfig.SubnetAlteringHookLibraryNone {
+			return ctx, errors.New("daemon lacks a supported hook library")
 		}
 	}
 	// Create commands for each unique target: subnet_cmds daemons receive
 	// per-daemon commands; cb_cmds daemons are deduplicated by a config
 	// backend database.
 	var addCommands, saveCommands []ConfigCommand
-	if err = forEachUniqueTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	if err = forEachConfigDatabaseTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		// Generate commands to add the subnet to the Kea configuration or config
 		// backend database and assign the subnet to a shared network, if necessary.
 		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, serverTags, lookup)
@@ -1194,7 +1194,7 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 		if ls.Daemon.KeaDaemon.Config == nil {
 			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
 		}
-		if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
+		if hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary(); hook == keaconfig.SubnetAlteringHookLibraryNone {
 			return ctx, errors.WithStack(config.NewNoSubnetCmdsHookError())
 		}
 		daemonIDs = append(daemonIDs, ls.DaemonID)

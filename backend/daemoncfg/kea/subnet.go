@@ -654,54 +654,78 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	return subnet6, nil
 }
 
-// Represents an IPv4 subnet wrapped for use with the remote-subnet4-set command
-// of the cb_cmds hook library. It embeds the standard Subnet4 structure and
-// CB-specific fields.
-type RemoteSubnet4 struct {
-	*Subnet4
+// Represents known (supported by Stork) configuration parameters for an IPv4
+// subnet sent to the config backend with remote-subnet4-set.
+type ConfigBackendSubnet4KnownParameters struct {
+	Subnet4KnownParameters
 	SharedNetworkName string `json:"shared-network-name"`
 }
 
-// Marshals RemoteSubnet4 to JSON by merging the inner Subnet4 JSON with
-// the CB fields.
-func (s RemoteSubnet4) MarshalJSON() ([]byte, error) {
-	// Execute the special marshaling for the inner Subnet4 structure.
-	inner, err := json.Marshal(s.Subnet4)
-	if err != nil {
-		return nil, err
-	}
-	// Merge the result with the CB-specific fields.
-	var merged map[string]any
-	if err := json.Unmarshal(inner, &merged); err != nil {
-		return nil, err
-	}
-	merged["shared-network-name"] = s.SharedNetworkName
-	return json.Marshal(merged)
+// Represents an IPv4 subnet payload sent with remote-subnet4-set.
+type ConfigBackendSubnet4 struct {
+	ConfigBackendSubnet4KnownParameters
+	UnknownParameters map[string]any `json:"-"`
 }
 
-// Represents an IPv6 subnet wrapped for use with the remote-subnet6-set command
-// of the cb_cmds hook library. It embeds the standard Subnet6 structure and adds
-// the CB-specific fields.
-type RemoteSubnet6 struct {
-	*Subnet6
+// Marshals the ConfigBackendSubnet4 structure into JSON. The output contains
+// the known parameters and a map of unknown parameters.
+func (s ConfigBackendSubnet4) MarshalJSON() ([]byte, error) {
+	subnet4WithUnknown := WithUnknown[ConfigBackendSubnet4KnownParameters]{
+		Known:   s.ConfigBackendSubnet4KnownParameters,
+		Unknown: s.UnknownParameters,
+	}
+	return json.Marshal(subnet4WithUnknown)
+}
+
+// Creates a config backend IPv4 subnet payload for remote-subnet4-set.
+func CreateConfigBackendSubnet4(subnet4 *Subnet4, sharedNetworkName string) *ConfigBackendSubnet4 {
+	if subnet4 == nil {
+		return nil
+	}
+	return &ConfigBackendSubnet4{
+		ConfigBackendSubnet4KnownParameters: ConfigBackendSubnet4KnownParameters{
+			Subnet4KnownParameters: subnet4.Subnet4KnownParameters,
+			SharedNetworkName:      sharedNetworkName,
+		},
+		UnknownParameters: subnet4.UnknownParameters,
+	}
+}
+
+// Represents known (supported by Stork) configuration parameters for an IPv6
+// subnet sent to the config backend with remote-subnet6-set.
+type ConfigBackendSubnet6KnownParameters struct {
+	Subnet6KnownParameters
 	SharedNetworkName string `json:"shared-network-name"`
 }
 
-// Marshals RemoteSubnet6 to JSON by merging the inner Subnet6 JSON with
-// the CB fields.
-func (s RemoteSubnet6) MarshalJSON() ([]byte, error) {
-	// Execute the special marshaling for the inner Subnet6 structure.
-	inner, err := json.Marshal(s.Subnet6)
-	if err != nil {
-		return nil, err
+// Represents an IPv6 subnet payload sent with remote-subnet6-set.
+type ConfigBackendSubnet6 struct {
+	ConfigBackendSubnet6KnownParameters
+	UnknownParameters map[string]any `json:"-"`
+}
+
+// Marshals the ConfigBackendSubnet6 structure into JSON. The output contains
+// the known parameters and a map of unknown parameters.
+func (s ConfigBackendSubnet6) MarshalJSON() ([]byte, error) {
+	subnet6WithUnknown := WithUnknown[ConfigBackendSubnet6KnownParameters]{
+		Known:   s.ConfigBackendSubnet6KnownParameters,
+		Unknown: s.UnknownParameters,
 	}
-	// Merge the result with the CB-specific fields.
-	var merged map[string]any
-	if err := json.Unmarshal(inner, &merged); err != nil {
-		return nil, err
+	return json.Marshal(subnet6WithUnknown)
+}
+
+// Creates a config backend IPv6 subnet payload for remote-subnet6-set.
+func CreateConfigBackendSubnet6(subnet6 *Subnet6, sharedNetworkName string) *ConfigBackendSubnet6 {
+	if subnet6 == nil {
+		return nil
 	}
-	merged["shared-network-name"] = s.SharedNetworkName
-	return json.Marshal(merged)
+	return &ConfigBackendSubnet6{
+		ConfigBackendSubnet6KnownParameters: ConfigBackendSubnet6KnownParameters{
+			Subnet6KnownParameters: subnet6.Subnet6KnownParameters,
+			SharedNetworkName:      sharedNetworkName,
+		},
+		UnknownParameters: subnet6.UnknownParameters,
+	}
 }
 
 // Converts a subnet in Stork to a structure accepted by the subnet4-del and

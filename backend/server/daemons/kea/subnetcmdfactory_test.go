@@ -13,22 +13,21 @@ import (
 
 // Creates a test daemon with the specified name, server tag and hooks. If the
 // config backend hook is included, a config database will also be configured.
-func newTestDaemonWithConfig(t *testing.T, name daemonname.Name, serverTag *string, hooks ...hook) *dbmodel.Daemon {
-	hookLibraries := []map[string]any{}
-	var configDatabases []map[string]any
+func newTestDaemonWithConfig(t *testing.T, name daemonname.Name, serverTag *string, hooks ...keaconfig.SubnetAlteringHookLibrary) *dbmodel.Daemon {
+	var configDatabases, hookLibraries []map[string]any
 	for _, h := range hooks {
 		var library string
 		switch h {
-		case hookSubnetCmds:
+		case keaconfig.SubnetAlteringHookLibrarySubnetCmds:
 			library = "libdhcp_subnet_cmds.so"
-		case hookCbCmds:
+		case keaconfig.SubnetAlteringHookLibraryCBCmds:
 			library = "libdhcp_cb_cmds.so"
 			configDatabase := map[string]any{
 				"name": "keatest", "host": "localhost", "type": "mysql", "port": 5432,
 			}
 			configDatabases = append(configDatabases, configDatabase)
 		default:
-			t.Fatalf("unrecognized hook type %d", h)
+			t.Fatalf("unrecognized hook library %d", h)
 		}
 		hookLibraries = append(hookLibraries, map[string]any{"library": library})
 	}
@@ -99,68 +98,15 @@ func newTestSubnet(daemons ...*dbmodel.Daemon) *dbmodel.Subnet {
 	}
 }
 
-// Tests that the CB hook enum is returned when only the CB hook is loaded.
-func TestGetHookForAlteringSubnetsCbCmds(t *testing.T) {
-	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookCbCmds)
-
-	// Act
-	hook, err := getHookForAlteringSubnets(daemon)
-
-	// Assert
-	require.NoError(t, err)
-	require.Equal(t, hookCbCmds, hook)
-}
-
-// Tests that the subnet_cmds hook is returned when only the subnet_cmds hook
-// is loaded.
-func TestGetHookForAlteringSubnetsSubnetCmds(t *testing.T) {
-	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookSubnetCmds)
-
-	// Act
-	hook, err := getHookForAlteringSubnets(daemon)
-
-	// Assert
-	require.NoError(t, err)
-	require.Equal(t, hookSubnetCmds, hook)
-}
-
-// Tests that CB hook takes precedence over subnet_cmds when both are loaded.
-func TestGetHookForAlteringSubnetsCbCmdsPrecedence(t *testing.T) {
-	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookSubnetCmds, hookCbCmds)
-
-	// Act
-	hook, err := getHookForAlteringSubnets(daemon)
-
-	// Assert
-	require.NoError(t, err)
-	require.Equal(t, hookCbCmds, hook)
-}
-
-// Tests that the error is returned when neither hook is loaded.
-func TestGetHookForAlteringSubnetsNeither(t *testing.T) {
-	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil)
-
-	// Act
-	hook, err := getHookForAlteringSubnets(daemon)
-
-	// Assert
-	require.ErrorContains(t, err, "no subnet_cmds nor cb_cmds hook library found")
-	require.Zero(t, hook)
-}
-
 // Tests creating subnet_cmds commands for an IPv4 subnet.
-func TestCreateSubnetCmdsAddCommandsIPv4(t *testing.T) {
+func TestCreateSubnetCmdsSubnetAddCommandsIPv4(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookSubnetCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAlteringHookLibrarySubnetCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmds, err := createSubnetCmdsAddCommands(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmds, err := createSubnetCmdsSubnetAddCommands(subnet.LocalSubnets[0], subnet, "", lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -178,14 +124,14 @@ func TestCreateSubnetCmdsAddCommandsIPv4(t *testing.T) {
 }
 
 // Tests creating subnet_cmds commands for an IPv6 subnet.
-func TestCreateSubnetCmdsAddCommandsIPv6(t *testing.T) {
+func TestCreateSubnetCmdsSubnetAddCommandsIPv6(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv6, nil, hookSubnetCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv6, nil, keaconfig.SubnetAlteringHookLibrarySubnetCmds)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	subnet := newTestSubnet(daemon)
 
 	// Act
-	cmds, err := createSubnetCmdsAddCommands(subnet.LocalSubnets[0], subnet, "", lookup)
+	cmds, err := createSubnetCmdsSubnetAddCommands(subnet.LocalSubnets[0], subnet, "", lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -202,16 +148,16 @@ func TestCreateSubnetCmdsAddCommandsIPv6(t *testing.T) {
 	}`, string(marshalled))
 }
 
-// Tests that createSubnetCmdsAddCommands includes the network4-subnet-add
+// Tests that createSubnetCmdsSubnetAddCommands includes the network4-subnet-add
 // command when the subnet belongs to a shared network.
-func TestCreateSubnetCmdsAddCommandsIPv4WithSharedNetwork(t *testing.T) {
+func TestCreateSubnetCmdsSubnetAddCommandsIPv4WithSharedNetwork(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookSubnetCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAlteringHookLibrarySubnetCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	// Act
-	cmds, err := createSubnetCmdsAddCommands(subnet.LocalSubnets[0], subnet, "mynet", lookup)
+	cmds, err := createSubnetCmdsSubnetAddCommands(subnet.LocalSubnets[0], subnet, "mynet", lookup)
 
 	// Assert
 	require.NoError(t, err)
@@ -238,7 +184,7 @@ func TestCreateSubnetCmdsAddCommandsIPv4WithSharedNetwork(t *testing.T) {
 // tag is configured (defaults to "all").
 func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
@@ -267,7 +213,7 @@ func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 // server tag.
 func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	subnet := newTestSubnet(daemon)
 
@@ -293,7 +239,7 @@ func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 
 // Tests creating a cb_cmds set command for an IPv6 subnet.
 func TestCreateCbCmdsSetCommandIPv6(t *testing.T) {
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv6, nil, hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv6, nil, keaconfig.SubnetAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
@@ -321,7 +267,7 @@ func TestCreateCbCmdsSetCommandIPv6(t *testing.T) {
 // belongs to a shared network.
 func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
@@ -349,7 +295,7 @@ func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 // subnet_cmds daemon.
 func TestCreateSubnetAddCommandsSubnetCmds(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, hookSubnetCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAlteringHookLibrarySubnetCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
@@ -375,7 +321,7 @@ func TestCreateSubnetAddCommandsSubnetCmds(t *testing.T) {
 // cb_cmds daemon.
 func TestCreateSubnetAddCommandsCbCmds(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), hookCbCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 

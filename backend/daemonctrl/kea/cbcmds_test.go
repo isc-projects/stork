@@ -12,17 +12,14 @@ import (
 // The shared network name property must be included in the serialized command
 // even if it is empty.
 func TestNewCommandRemoteSubnet4Set(t *testing.T) {
-	subnet := &keaconfig.RemoteSubnet4{
-		Subnet4: &keaconfig.Subnet4{
-			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
-				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-					ID:     1,
-					Subnet: "192.0.2.0/24",
-				},
+	subnet := keaconfig.CreateConfigBackendSubnet4(&keaconfig.Subnet4{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     1,
+				Subnet: "192.0.2.0/24",
 			},
 		},
-		SharedNetworkName: "",
-	}
+	}, "")
 	command := NewCommandRemoteSubnet4Set(subnet, []string{"all"}, daemonname.DHCPv4)
 	require.NotNil(t, command)
 	require.Len(t, command.Daemons, 1)
@@ -46,17 +43,14 @@ func TestNewCommandRemoteSubnet4Set(t *testing.T) {
 
 // Tests that remote-subnet4-set command serializes CB-specific fields correctly.
 func TestNewCommandRemoteSubnet4SetWithSharedNetwork(t *testing.T) {
-	subnet := &keaconfig.RemoteSubnet4{
-		Subnet4: &keaconfig.Subnet4{
-			Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
-				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-					ID:     2,
-					Subnet: "10.0.0.0/8",
-				},
+	subnet := keaconfig.CreateConfigBackendSubnet4(&keaconfig.Subnet4{
+		Subnet4KnownParameters: keaconfig.Subnet4KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     2,
+				Subnet: "10.0.0.0/8",
 			},
 		},
-		SharedNetworkName: "mynet",
-	}
+	}, "mynet")
 	command := NewCommandRemoteSubnet4Set(subnet, []string{"server"}, daemonname.DHCPv4)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
@@ -81,17 +75,14 @@ func TestNewCommandRemoteSubnet4SetWithSharedNetwork(t *testing.T) {
 // The shared network name property must be included in the serialized command
 // even if it is empty.
 func TestNewCommandRemoteSubnet6Set(t *testing.T) {
-	subnet := &keaconfig.RemoteSubnet6{
-		Subnet6: &keaconfig.Subnet6{
-			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
-				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-					ID:     3,
-					Subnet: "2001:db8:1::/64",
-				},
+	subnet := keaconfig.CreateConfigBackendSubnet6(&keaconfig.Subnet6{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     3,
+				Subnet: "2001:db8:1::/64",
 			},
 		},
-		SharedNetworkName: "",
-	}
+	}, "")
 	command := NewCommandRemoteSubnet6Set(subnet, []string{"all"}, daemonname.DHCPv6)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
@@ -114,17 +105,14 @@ func TestNewCommandRemoteSubnet6Set(t *testing.T) {
 
 // Tests that remote-subnet6-set command serializes CB-specific fields correctly.
 func TestNewCommandRemoteSubnet6SetWithSharedNetwork(t *testing.T) {
-	subnet := &keaconfig.RemoteSubnet6{
-		Subnet6: &keaconfig.Subnet6{
-			Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
-				MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
-					ID:     4,
-					Subnet: "2001:db8:2::/64",
-				},
+	subnet := keaconfig.CreateConfigBackendSubnet6(&keaconfig.Subnet6{
+		Subnet6KnownParameters: keaconfig.Subnet6KnownParameters{
+			MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+				ID:     4,
+				Subnet: "2001:db8:2::/64",
 			},
 		},
-		SharedNetworkName: "ipv6net",
-	}
+	}, "ipv6net")
 	command := NewCommandRemoteSubnet6Set(subnet, []string{"server"}, daemonname.DHCPv6)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()

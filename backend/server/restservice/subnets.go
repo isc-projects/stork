@@ -602,10 +602,8 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	clientClassesMap := make(map[string]bool)
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
-			// Filter the daemons with subnet_cmds or cb_cmds hook (mutually exclusive) library.
-			_, _, isSubnetCmdsLoaded := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds")
-			_, _, isCbCmdsLoaded := daemons[i].KeaDaemon.Config.GetHookLibrary("libdhcp_cb_cmds")
-			if isSubnetCmdsLoaded != isCbCmdsLoaded {
+			// Keep daemons that can alter subnets with either subnet_cmds or cb_cmds.
+			if library := daemons[i].KeaDaemon.Config.GetSubnetAlteringHookLibrary(); library != keaconfig.SubnetAlteringHookLibraryNone && library != keaconfig.SubnetAlteringHookLibraryAmbiguous {
 				respDaemons = append(respDaemons, r.keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
@@ -633,10 +631,10 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 		}
 	}
 
-	// If there are no daemons with subnet_cmds hooks library loaded there is no way
-	// to add new host reservation. In that case, we don't begin a transaction.
+	// If there are no daemons capable of altering subnets there is no way to
+	// proceed, so we don't begin a transaction.
 	if len(respDaemons) == 0 {
-		msg := "Unable to begin transaction because there are no Kea servers with subnet_cmds hooks library available"
+		msg := "Unable to begin transaction because there are no Kea servers with subnet_cmds or cb_cmds hook library (mutually exclusive) available"
 		log.Error(msg)
 		return nil, nil, nil, nil, nil, http.StatusBadRequest, msg
 	}

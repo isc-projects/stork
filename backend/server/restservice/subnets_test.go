@@ -1800,7 +1800,7 @@ func TestCreateSubnetBeginSubmitNoServers(t *testing.T) {
 	require.IsType(t, &dhcp.CreateSubnetBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.CreateSubnetBeginDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds hooks library available", *defaultRsp.Payload.Message)
+	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds or cb_cmds hook library (mutually exclusive) available", *defaultRsp.Payload.Message)
 }
 
 // Test that a daemon with both subnet_cmds and cb_cmds hooks loaded is excluded
