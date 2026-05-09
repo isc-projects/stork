@@ -60,7 +60,7 @@ func TestBuildConfigBackendKeyNoConfigDB(t *testing.T) {
 
 // Tests that target iterator calls a function only once for each unique config
 // backend database.
-func TestForEachConfigDatabaseTargetDeduplicatesCBCmds(t *testing.T) {
+func TestForEachUniqueConfigSourceDeduplicatesCBCmds(t *testing.T) {
 	// Arrange
 	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
 	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
@@ -77,7 +77,7 @@ func TestForEachConfigDatabaseTargetDeduplicatesCBCmds(t *testing.T) {
 	called := 0
 
 	// Act
-	err := forEachConfigDatabaseTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
 		require.Equal(t, []string{"server1"}, serverTags)
 		return nil
@@ -90,7 +90,7 @@ func TestForEachConfigDatabaseTargetDeduplicatesCBCmds(t *testing.T) {
 
 // Tests that the target iterator calls a function only once for two daemons
 // sharing the same config backend, even if they have different server tags.
-func TestForEachConfigDatabaseTargetCollectsDistinctServerTags(t *testing.T) {
+func TestForEachUniqueConfigSourceCollectsDistinctServerTags(t *testing.T) {
 	// Arrange
 	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
 	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
@@ -107,7 +107,7 @@ func TestForEachConfigDatabaseTargetCollectsDistinctServerTags(t *testing.T) {
 	called := 0
 
 	// Act
-	err := forEachConfigDatabaseTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
 		require.ElementsMatch(t, []string{"server1", "server2"}, serverTags)
 		return nil
@@ -120,7 +120,7 @@ func TestForEachConfigDatabaseTargetCollectsDistinctServerTags(t *testing.T) {
 
 // Tests that the target iterator processes all daemons with the subnet_cmds
 // hook.
-func TestForEachConfigDatabaseTargetProcessesSubnetCmds(t *testing.T) {
+func TestForEachUniqueConfigSourceProcessesSubnetCmds(t *testing.T) {
 	// Arrange
 	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibrarySubnetCmds)
 	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibrarySubnetCmds)
@@ -137,7 +137,7 @@ func TestForEachConfigDatabaseTargetProcessesSubnetCmds(t *testing.T) {
 	called := 0
 
 	// Act
-	err := forEachConfigDatabaseTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		called++
 		require.Nil(t, serverTags)
 		return nil
@@ -150,13 +150,13 @@ func TestForEachConfigDatabaseTargetProcessesSubnetCmds(t *testing.T) {
 
 // Tests that the target iterator silently skips local subnets whose daemon
 // or Kea configuration is nil.
-func TestForEachConfigDatabaseTargetSkipsNilConfig(t *testing.T) {
+func TestForEachUniqueConfigSourceSkipsNilConfig(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"))
 	subnet := newTestSubnet(daemon)
 
 	// Act
-	err := forEachConfigDatabaseTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		require.Fail(t, "it should not been called")
 		return nil
 	})
@@ -167,7 +167,7 @@ func TestForEachConfigDatabaseTargetSkipsNilConfig(t *testing.T) {
 
 // Tests that cb_cmds daemons sharing one config backend must use the same
 // local subnet ID.
-func TestForEachConfigDatabaseTargetRejectsInconsistentLocalSubnetID(t *testing.T) {
+func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetID(t *testing.T) {
 	// Arrange
 	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
 	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
@@ -182,7 +182,7 @@ func TestForEachConfigDatabaseTargetRejectsInconsistentLocalSubnetID(t *testing.
 	})
 
 	// Act
-	err := forEachConfigDatabaseTarget(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		return nil
 	})
 

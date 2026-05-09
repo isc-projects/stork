@@ -48,7 +48,7 @@ func buildConfigBackendKey(daemon *dbmodel.Daemon) (configBackendKey, error) {
 //
 // Local subnets whose daemon or Kea configuration is nil, or whose hook type
 // is unrecognized, are silently skipped.
-func forEachConfigDatabaseTarget(
+func forEachUniqueConfigSource(
 	localSubnets []*dbmodel.LocalSubnet,
 	fn func(ls *dbmodel.LocalSubnet, serverTags []string) error,
 ) error {
