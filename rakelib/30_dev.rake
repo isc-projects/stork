@@ -69,13 +69,18 @@ file CHROME_LINK => [NPX, NODE_MODULES, playwright_browsers_dir] do
     chrome_dir = Dir.glob(File.join(playwright_browsers_dir, "chromium-*")).max_by { |d| File.mtime(d) }
     chrome_path = nil
     if !chrome_dir.nil?
-        chrome_path = Dir.glob(File.join(chrome_dir,
+        chrome_paths_macos = Dir.glob(File.join(chrome_dir,
             "chrome-*", # e.g., chromium-1200
             "Google Chrome for Testing.app",
             "Contents",
             "*", # e.g., MacOS
             "Google Chrome for Testing"
-        )).min_by { |f| f.length } # Pick the shortest path
+        ))
+
+        chrome_paths_linux = Dir.glob(File.join(chrome_dir,
+            "chrome-*", # e.g., chromium-1200
+            "chrome"))
+        chrome_path = (chrome_paths_macos + chrome_paths_linux).min_by { |f| f.length } # Pick the shortest path
     end
 
     if chrome_path.nil?
