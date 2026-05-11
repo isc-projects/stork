@@ -118,7 +118,8 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 		ExplicitBind9ConfigPath:        settings.Bind9Path,
 		ExplicitPowerDNSConfigPath:     settings.PowerDNSPath,
 		KeaHTTPClientConfig:            keaHTTPClientConfig,
-		ExplicitXFRTrackingPath:        settings.XFRTrackingPath,
+		ExplicitXFRInTrackingPath:      settings.XFRInTrackingPath,
+		ExplicitXFROutTrackingPath:     settings.XFROutTrackingPath,
 		ExplicitXFRTrackingSystemdUnit: settings.XFRTrackingSystemdUnit,
 	})
 
@@ -357,7 +358,8 @@ type generalSettings struct {
 
 	// XFR tracking settings.
 	EnableXFRTracking      bool   `long:"enable-xfr-tracking" description:"Enable the agent to track zone transfers initiated by BIND 9." env:"STORK_AGENT_ENABLE_XFR_TRACKING"`
-	XFRTrackingPath        string `long:"xfr-tracking-path" description:"Specify the path to the BIND 9 log file where zone transfers are logged." env:"STORK_AGENT_XFR_TRACKING_PATH"`
+	XFRInTrackingPath      string `long:"xfr-in-tracking-path" description:"Specify the path to the BIND 9 log file where incoming zone transfers are logged." env:"STORK_AGENT_XFR_IN_TRACKING_PATH"`
+	XFROutTrackingPath     string `long:"xfr-out-tracking-path" description:"Specify the path to the BIND 9 log file where outgoing zone transfers are logged." env:"STORK_AGENT_XFR_OUT_TRACKING_PATH"`
 	XFRTrackingSystemdUnit string `long:"xfr-tracking-systemd-unit" description:"Specify the BIND 9 systemd unit name for which zone transfers are logged." env:"STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT"`
 }
 

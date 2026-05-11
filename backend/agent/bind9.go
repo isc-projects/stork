@@ -35,7 +35,8 @@ type Bind9Daemon struct {
 	pid                    int32       // PID of the named process
 	bind9Config            *bind9config.Config
 	rndcKeyConfig          *bind9config.Config
-	xfrTrackingPath        string
+	xfrInTrackingPath      string
+	xfrOutTrackingPath     string
 	xfrTrackingSystemdUnit string
 	xfrTracker             *xfrTracker
 }
@@ -59,10 +60,10 @@ func (b *Bind9Daemon) Bootstrap() error {
 		return err
 	}
 	switch {
-	case b.xfrTracker == nil || (b.xfrTrackingPath == "" && b.xfrTrackingSystemdUnit == ""):
+	case b.xfrTracker == nil || (b.xfrInTrackingPath == "" && b.xfrOutTrackingPath == "" && b.xfrTrackingSystemdUnit == ""):
 		return nil
-	case b.xfrTrackingPath != "":
-		return b.xfrTracker.trackFile(b.xfrTrackingPath)
+	case b.xfrInTrackingPath != "" || b.xfrOutTrackingPath != "":
+		return b.xfrTracker.trackFiles(b.xfrInTrackingPath, b.xfrOutTrackingPath)
 	case b.xfrTrackingSystemdUnit != "":
 		return b.xfrTracker.trackSystemdUnit(b.xfrTrackingSystemdUnit)
 	}
@@ -509,7 +510,8 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 
 	var (
 		xfrTracker             *xfrTracker
-		xfrTrackingPath        string
+		xfrInTrackingPath      string
+		xfrOutTrackingPath     string
 		xfrTrackingSystemdUnit string
 	)
 	if sm.settings.EnableXFRTracking {
@@ -518,7 +520,8 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 		// need to explicitly set the tracking path and systemd unit name. They should
 		// be only set when BIND 9 configuration is not clear about the location of the
 		// XFR-related logs.
-		xfrTrackingPath = sm.settings.ExplicitXFRTrackingPath
+		xfrInTrackingPath = sm.settings.ExplicitXFRInTrackingPath
+		xfrOutTrackingPath = sm.settings.ExplicitXFROutTrackingPath
 		xfrTrackingSystemdUnit = sm.settings.ExplicitXFRTrackingSystemdUnit
 		if sm.logTracker != nil {
 			xfrTracker = newXfrTracker(sm.logTracker)
@@ -538,7 +541,8 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 		pid:                    p.getPid(),
 		bind9Config:            bind9Config,
 		rndcKeyConfig:          rndcConfig,
-		xfrTrackingPath:        xfrTrackingPath,
+		xfrInTrackingPath:      xfrInTrackingPath,
+		xfrOutTrackingPath:     xfrOutTrackingPath,
 		xfrTrackingSystemdUnit: xfrTrackingSystemdUnit,
 		xfrTracker:             xfrTracker,
 	}

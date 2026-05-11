@@ -448,7 +448,8 @@ services:
       STORK_AGENT_HOST: agent-bind9
       STORK_AGENT_PORT: "8883"
       STORK_AGENT_ENABLE_XFR_TRACKING: "true"
-      STORK_AGENT_XFR_TRACKING_PATH: "/var/log/bind/transfers"
+      STORK_AGENT_XFR_IN_TRACKING_PATH: "/var/log/bind/transfers"
+      STORK_AGENT_XFR_OUT_TRACKING_PATH: "/var/log/bind/transfers"
     expose:
       - "8883"
       - "9100" # node_exporter for prometheus
@@ -488,7 +489,8 @@ services:
       STORK_AGENT_HOST: agent-bind9-2
       STORK_AGENT_PORT: "8882"
       STORK_AGENT_ENABLE_XFR_TRACKING: "true"
-      STORK_AGENT_XFR_TRACKING_PATH: "/var/log/bind/transfers"
+      STORK_AGENT_XFR_IN_TRACKING_PATH: "/var/log/bind/transfers"
+      STORK_AGENT_XFR_OUT_TRACKING_PATH: "/var/log/bind/transfers"
     expose:
       - "8882"
       - "9100" # node_exporter for prometheus

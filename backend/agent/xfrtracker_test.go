@@ -25,18 +25,20 @@ func TestNewXfrTracker(t *testing.T) {
 	xfrTracker := newXfrTracker(logTracker)
 	require.NotNil(t, xfrTracker)
 	require.Equal(t, logTracker, xfrTracker.logTracker)
-	require.Nil(t, xfrTracker.subscriber)
+	require.Empty(t, xfrTracker.subscribers)
 	require.Nil(t, xfrTracker.cancelFn)
 	require.Nil(t, xfrTracker.cancelCh)
 }
 
-// Test tracking the log file by the XFR tracker.
-func TestXfrTrackerTrackFile(t *testing.T) {
+// Test tracking the log files by the XFR tracker.
+func TestXfrTrackerTrackFiles(t *testing.T) {
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
 
-	sandbox.Write("test1.log", "This is a test 1 log\n")
-	sandbox.Write("test2.log", "This is a test 2 log\n")
+	sandbox.Write("xfr-in.1.log", "This is an incoming XFR request log 1\n")
+	sandbox.Write("xfr-out.1.log", "This is an outgoing XFR request log 1\n")
+	sandbox.Write("xfr-in.2.log", "This is an incoming XFR request log 2\n")
+	sandbox.Write("xfr-out.2.log", "This is an outgoing XFR request log 2\n")
 
 	// Create the log tracker using the default log tracker configuration (using unbuffered channel).
 	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{
@@ -50,34 +52,145 @@ func TestXfrTrackerTrackFile(t *testing.T) {
 	require.NotNil(t, xfrTracker)
 
 	// Track the test1.log file. It should create a new subscription.
-	err := xfrTracker.trackFile(filepath.Join(sandbox.BasePath, "test1.log"))
+	err := xfrTracker.trackFiles(filepath.Join(sandbox.BasePath, "xfr-in.1.log"), filepath.Join(sandbox.BasePath, "xfr-out.1.log"))
 	require.NoError(t, err)
-	require.NotNil(t, xfrTracker.subscriber)
+	require.Len(t, xfrTracker.subscribers, 2)
+	require.NotNil(t, xfrTracker.subscribers[0])
+	require.NotNil(t, xfrTracker.subscribers[1])
+	require.NotNil(t, xfrTracker.cancelFn)
+	require.NotNil(t, xfrTracker.cancelCh)
+
+	// Remember the subscriber instances. It will be used later to verify that
+	// another subscription is created.
+	firstSubscriber0 := xfrTracker.subscribers[0]
+	firstSubscriber1 := xfrTracker.subscribers[1]
+
+	// Track the test2.log file. It should close the previous subscription.
+	xfrTracker.trackFiles(filepath.Join(sandbox.BasePath, "xfr-in.2.log"), filepath.Join(sandbox.BasePath, "xfr-out.2.log"))
+	require.NoError(t, err)
+	require.Len(t, xfrTracker.subscribers, 2)
+	require.NotNil(t, xfrTracker.subscribers[0])
+	require.NotNil(t, xfrTracker.subscribers[1])
+	require.NotNil(t, xfrTracker.cancelFn)
+	require.NotNil(t, xfrTracker.cancelCh)
+
+	// Remember the new subscriber instances.
+	secondSubscriber0 := xfrTracker.subscribers[0]
+	secondSubscriber1 := xfrTracker.subscribers[1]
+
+	// Stop the tracker and ensure that the subscriptions are closed.
+	xfrTracker.stop()
+	require.Empty(t, xfrTracker.subscribers)
+	require.Nil(t, xfrTracker.cancelFn)
+	require.Nil(t, xfrTracker.cancelCh)
+
+	// Verify that the subscribers were different.
+	require.NotEqual(t, firstSubscriber0, secondSubscriber0)
+	require.NotEqual(t, firstSubscriber1, secondSubscriber1)
+}
+
+// Test tracking only the log file containing incoming XFR requests by the XFR tracker.
+func TestXfrTrackerTrackFilesXfrInOnly(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	sandbox.Write("xfr-in.1.log", "This is an incoming XFR request log 1\n")
+	sandbox.Write("xfr-in.2.log", "This is an incoming XFR request log 2\n")
+
+	// Create the log tracker using the default log tracker configuration (using unbuffered channel).
+	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{
+		textLogReaderConfig: textLogReaderConfig{
+			poll: true,
+		},
+	})
+
+	// Create the XFR tracker using the log tracker.
+	xfrTracker := newXfrTracker(logTracker)
+	require.NotNil(t, xfrTracker)
+
+	// Track the test1.log file. It should create a new subscription.
+	err := xfrTracker.trackFiles(filepath.Join(sandbox.BasePath, "xfr-in.1.log"), "")
+	require.NoError(t, err)
+	require.Len(t, xfrTracker.subscribers, 1)
+	require.NotNil(t, xfrTracker.subscribers[0])
 	require.NotNil(t, xfrTracker.cancelFn)
 	require.NotNil(t, xfrTracker.cancelCh)
 
 	// Remember the subscriber instance. It will be used later to verify that
 	// another subscription is created.
-	subscriber1 := xfrTracker.subscriber
+	firstSubscriber0 := xfrTracker.subscribers[0]
 
 	// Track the test2.log file. It should close the previous subscription.
-	xfrTracker.trackFile(filepath.Join(sandbox.BasePath, "test2.log"))
+	xfrTracker.trackFiles(filepath.Join(sandbox.BasePath, "xfr-in.2.log"), "")
 	require.NoError(t, err)
-	require.NotNil(t, xfrTracker.subscriber)
+	require.Len(t, xfrTracker.subscribers, 1)
+	require.NotNil(t, xfrTracker.subscribers[0])
 	require.NotNil(t, xfrTracker.cancelFn)
 	require.NotNil(t, xfrTracker.cancelCh)
 
 	// Remember the new subscriber instance.
-	subscriber2 := xfrTracker.subscriber
+	secondSubscriber0 := xfrTracker.subscribers[0]
 
-	// Stop the tracker and ensure that the subscription is closed.
+	// Stop the tracker and ensure that the subscriptions are closed.
 	xfrTracker.stop()
-	require.Nil(t, xfrTracker.subscriber)
+	require.Empty(t, xfrTracker.subscribers)
 	require.Nil(t, xfrTracker.cancelFn)
 	require.Nil(t, xfrTracker.cancelCh)
 
-	// Verify that the two subscribers were different.
-	require.NotEqual(t, subscriber1, subscriber2)
+	// Verify that the subscribers were different.
+	require.NotEqual(t, firstSubscriber0, secondSubscriber0)
+}
+
+// Test tracking only the log file containing outgoing XFR requests by the XFR tracker.
+func TestXfrTrackerTrackFilesXfrOutOnly(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	sandbox.Write("xfr-out.1.log", "This is an outgoing XFR request log 1\n")
+	sandbox.Write("xfr-out.2.log", "This is an outgoing XFR request log 2\n")
+
+	// Create the log tracker using the default log tracker configuration (using unbuffered channel).
+	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{
+		textLogReaderConfig: textLogReaderConfig{
+			poll: true,
+		},
+	})
+
+	// Create the XFR tracker using the log tracker.
+	xfrTracker := newXfrTracker(logTracker)
+	require.NotNil(t, xfrTracker)
+
+	// Track the test1.log file. It should create a new subscription.
+	err := xfrTracker.trackFiles("", filepath.Join(sandbox.BasePath, "xfr-out.1.log"))
+	require.NoError(t, err)
+	require.Len(t, xfrTracker.subscribers, 1)
+	require.NotNil(t, xfrTracker.subscribers[0])
+	require.NotNil(t, xfrTracker.cancelFn)
+	require.NotNil(t, xfrTracker.cancelCh)
+
+	// Remember the subscriber instance. It will be used later to verify that
+	// another subscription is created.
+	firstSubscriber0 := xfrTracker.subscribers[0]
+
+	// Track the test2.log file. It should close the previous subscription.
+	xfrTracker.trackFiles("", filepath.Join(sandbox.BasePath, "xfr-out.2.log"))
+	require.NoError(t, err)
+	require.Len(t, xfrTracker.subscribers, 1)
+	require.NotNil(t, xfrTracker.subscribers[0])
+	require.NotNil(t, xfrTracker.cancelFn)
+	require.NotNil(t, xfrTracker.cancelCh)
+
+	// Remember the new subscriber instance.
+	secondSubscriber0 := xfrTracker.subscribers[0]
+
+	// Stop the tracker and ensure that the subscriptions are closed.
+	xfrTracker.stop()
+	require.Empty(t, xfrTracker.subscribers)
+	require.Nil(t, xfrTracker.cancelFn)
+	require.Nil(t, xfrTracker.cancelCh)
+
+	// Verify that the subscribers were different.
+	require.NotEqual(t, firstSubscriber0, secondSubscriber0)
 }
 
 // Test tracking the systemd unit logs by the XFR tracker.
@@ -108,7 +221,8 @@ func TestXfrTrackerTrackSystemdUnit(t *testing.T) {
 		err := xfrTracker.trackSystemdUnit("named.service")
 		require.NoError(t, err)
 		// Ensure that the subscription is created.
-		require.NotNil(t, xfrTracker.subscriber)
+		require.Len(t, xfrTracker.subscribers, 1)
+		require.NotNil(t, xfrTracker.subscribers[0])
 		require.NotNil(t, xfrTracker.cancelFn)
 		require.NotNil(t, xfrTracker.cancelCh)
 
@@ -116,29 +230,30 @@ func TestXfrTrackerTrackSystemdUnit(t *testing.T) {
 
 		// Remember the subscriber instance. It will be used later to verify that
 		// another subscription is created.
-		subscriber1 := xfrTracker.subscriber
+		firstSubscriber0 := xfrTracker.subscribers[0]
 
 		// Create a different subscription. It should close the previous subscription.
 		err = xfrTracker.trackSystemdUnit("xfr.service")
 		require.NoError(t, err)
-		require.NotNil(t, xfrTracker.subscriber)
+		require.Len(t, xfrTracker.subscribers, 1)
+		require.NotNil(t, xfrTracker.subscribers[0])
 		require.NotNil(t, xfrTracker.cancelFn)
 		require.NotNil(t, xfrTracker.cancelCh)
 
 		synctest.Wait()
 
 		// Remember the new subscriber instance.
-		subscriber2 := xfrTracker.subscriber
+		secondSubscriber0 := xfrTracker.subscribers[0]
 
 		// Stop the tracker and ensure that the subscription is closed.
 		xfrTracker.stop()
-		require.Nil(t, xfrTracker.subscriber)
+		require.Empty(t, xfrTracker.subscribers)
 		require.Nil(t, xfrTracker.cancelFn)
 		require.Nil(t, xfrTracker.cancelCh)
 
 		synctest.Wait()
 
 		// Verify that the two subscribers were different.
-		require.NotEqual(t, subscriber1, subscriber2)
+		require.NotEqual(t, firstSubscriber0, secondSubscriber0)
 	})
 }

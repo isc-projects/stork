@@ -607,7 +607,8 @@ func TestDetectDaemonsWithXfrTracking(t *testing.T) {
 	defer daemon1.Cleanup()
 	// Make sure that the XFR tracker is created.
 	require.NotNil(t, daemon1.xfrTracker)
-	require.NotNil(t, daemon1.xfrTracker.subscriber)
+	require.Len(t, daemon1.xfrTracker.subscribers, 1)
+	require.NotNil(t, daemon1.xfrTracker.subscribers[0])
 
 	// Detect tha daemon again.
 	monitor.detectDaemons(t.Context())
@@ -619,7 +620,8 @@ func TestDetectDaemonsWithXfrTracking(t *testing.T) {
 	defer daemon2.Cleanup()
 	// Make sure that the XFR tracker is created again.
 	require.NotNil(t, daemon2.xfrTracker)
-	require.NotNil(t, daemon2.xfrTracker.subscriber)
+	require.Len(t, daemon2.xfrTracker.subscribers, 1)
+	require.NotNil(t, daemon2.xfrTracker.subscribers[0])
 
 	// Make sure that the re-detected daemon is the same and that the XFR
 	// tracker has not changed.

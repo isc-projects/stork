@@ -264,7 +264,8 @@ type MonitorSettings struct {
 	EnableXFRTracking              bool
 	ExplicitBind9ConfigPath        string
 	ExplicitPowerDNSConfigPath     string
-	ExplicitXFRTrackingPath        string
+	ExplicitXFRInTrackingPath      string
+	ExplicitXFROutTrackingPath     string
 	ExplicitXFRTrackingSystemdUnit string
 	KeaHTTPClientConfig            HTTPClientConfig
 }

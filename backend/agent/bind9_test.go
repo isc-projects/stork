@@ -158,7 +158,7 @@ func TestBind9DaemonIsSame(t *testing.T) {
 	})
 }
 
-// Test that the daemon is bootstrapped when XFR tracking in the log file is enabled.
+// Test that the daemon is bootstrapped when XFR tracking in the log files is enabled.
 func TestBind9BootstrapCleanupLogFileXfrTracking(t *testing.T) {
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
@@ -171,8 +171,9 @@ func TestBind9BootstrapCleanupLogFileXfrTracking(t *testing.T) {
 
 	// Create the daemon with the XFR tracker and configure it to track the log file.
 	daemon := &Bind9Daemon{
-		xfrTracker:      xfrTracker,
-		xfrTrackingPath: "test.log",
+		xfrTracker:         xfrTracker,
+		xfrInTrackingPath:  "test.log",
+		xfrOutTrackingPath: "test.log",
 	}
 
 	// Bootstrap the daemon.
@@ -180,14 +181,83 @@ func TestBind9BootstrapCleanupLogFileXfrTracking(t *testing.T) {
 	require.NoError(t, err)
 	defer daemon.Cleanup()
 
-	// Make sure that the subscription is created.
+	// Make sure that the subscriptions are created.
 	require.NotNil(t, daemon.xfrTracker)
-	require.NotNil(t, daemon.xfrTracker.subscriber)
+	require.Len(t, daemon.xfrTracker.subscribers, 1)
+	require.NotNil(t, daemon.xfrTracker.subscribers[0])
 
 	// Cleanup the daemon. It should stop the subscription.
 	daemon.Cleanup()
 	require.NotNil(t, daemon.xfrTracker)
-	require.Nil(t, daemon.xfrTracker.subscriber)
+	require.Empty(t, daemon.xfrTracker.subscribers)
+}
+
+// Test that the daemon is bootstrapped when incoming XFR tracking in the log file is enabled.
+func TestBind9BootstrapCleanupLogFileXfrInTracking(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	sandbox.Write("test.log", "This is a test log\n")
+
+	// Create the log and XFR tracker.
+	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{})
+	xfrTracker := newXfrTracker(logTracker)
+
+	// Create the daemon with the XFR tracker and configure it to track the log file.
+	daemon := &Bind9Daemon{
+		xfrTracker:         xfrTracker,
+		xfrInTrackingPath:  "test.log",
+		xfrOutTrackingPath: "",
+	}
+
+	// Bootstrap the daemon.
+	err := daemon.Bootstrap()
+	require.NoError(t, err)
+	defer daemon.Cleanup()
+
+	// Make sure that the subscriptions are created.
+	require.NotNil(t, daemon.xfrTracker)
+	require.Len(t, daemon.xfrTracker.subscribers, 1)
+	require.NotNil(t, daemon.xfrTracker.subscribers[0])
+
+	// Cleanup the daemon. It should stop the subscription.
+	daemon.Cleanup()
+	require.NotNil(t, daemon.xfrTracker)
+	require.Empty(t, daemon.xfrTracker.subscribers)
+}
+
+// Test that the daemon is bootstrapped when outgoing XFR tracking in the log file is enabled.
+func TestBind9BootstrapCleanupLogFileXfrOutTracking(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	sandbox.Write("test.log", "This is a test log\n")
+
+	// Create the log and XFR tracker.
+	logTracker := newLogTracker(storkutil.NewSystemCommandExecutor(), logTrackerConfig{})
+	xfrTracker := newXfrTracker(logTracker)
+
+	// Create the daemon with the XFR tracker and configure it to track the log file.
+	daemon := &Bind9Daemon{
+		xfrTracker:         xfrTracker,
+		xfrInTrackingPath:  "",
+		xfrOutTrackingPath: "test.log",
+	}
+
+	// Bootstrap the daemon.
+	err := daemon.Bootstrap()
+	require.NoError(t, err)
+	defer daemon.Cleanup()
+
+	// Make sure that the subscriptions are created.
+	require.NotNil(t, daemon.xfrTracker)
+	require.Len(t, daemon.xfrTracker.subscribers, 1)
+	require.NotNil(t, daemon.xfrTracker.subscribers[0])
+
+	// Cleanup the daemon. It should stop the subscription.
+	daemon.Cleanup()
+	require.NotNil(t, daemon.xfrTracker)
+	require.Empty(t, daemon.xfrTracker.subscribers)
 }
 
 // Test that the daemon is bootstrapped when XFR tracking in the systemd logs is enabled.
@@ -222,12 +292,13 @@ func TestBind9BootstrapCleanupSystemdXfrTracking(t *testing.T) {
 
 	// Make sure that the subscription is created.
 	require.NotNil(t, daemon.xfrTracker)
-	require.NotNil(t, daemon.xfrTracker.subscriber)
+	require.Len(t, daemon.xfrTracker.subscribers, 1)
+	require.NotNil(t, daemon.xfrTracker.subscribers[0])
 
 	// Cleanup the daemon. It should stop the subscription.
 	daemon.Cleanup()
 	require.NotNil(t, daemon.xfrTracker)
-	require.Nil(t, daemon.xfrTracker.subscriber)
+	require.Empty(t, daemon.xfrTracker.subscribers)
 }
 
 // Test that the daemon is bootstrapped when XFR tracking is not enabled.
@@ -249,7 +320,7 @@ func TestBind9BootstrapCleanupNoXfrTracking(t *testing.T) {
 
 	// Make sure that the subscription is created.
 	require.NotNil(t, daemon.xfrTracker)
-	require.Nil(t, daemon.xfrTracker.subscriber)
+	require.Empty(t, daemon.xfrTracker.subscribers)
 }
 
 // Test that the daemon is bootstrapped when the XFR tracker is nil.
