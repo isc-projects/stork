@@ -23,27 +23,27 @@ import (
 const passwordGenRandomLength = 24
 
 // The CLI flags for the db-create command.
-type DatabaseCreateCommand struct {
+type databaseCreateCommand struct {
 	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlagsWithMaintenance
 	Force            bool `long:"force" short:"f" description:"Recreate the database and the user if they exist" env:"STORK_TOOL_DB_FORCE"`
 }
 
 // The CLI flags for the db-init, db-up, db-down, db-reset, db-version commands.
-type DatabaseCommand struct {
+type databaseCommand struct {
 	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 }
 
 // The CLI flags for the db-up, db-down, and db-set-version commands.
-type DatabaseVersionCommand struct {
+type databaseVersionCommand struct {
 	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Version          string `long:"version" short:"t" description:"Target database schema version (optional)" env:"STORK_TOOL_DB_VERSION"`
 }
 
 // The CLI flags for the cert-import command.
-type CertificateImportCommand struct {
+type certificateImportCommand struct {
 	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Object           string `long:"object" short:"f" description:"The object to import; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
@@ -51,7 +51,7 @@ type CertificateImportCommand struct {
 }
 
 // The CLI flags for the cert-export command.
-type CertificateExportCommand struct {
+type certificateExportCommand struct {
 	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Object           string `long:"object" short:"f" description:"The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
@@ -59,20 +59,20 @@ type CertificateExportCommand struct {
 }
 
 // The CLI flags for the hook-inspect command.
-type HookInspectCommand struct {
+type hookInspectCommand struct {
 	cli.CLICommand
 	HookPath string `long:"hook-path" short:"p" description:"The path to the hook file or directory" env:"STORK_TOOL_HOOK_PATH"`
 }
 
 // The CLI flags for the deploy-login-page-welcome command.
-type LoginScreenWelcomeDeployCommand struct {
+type loginScreenWelcomeDeployCommand struct {
 	cli.CLICommand
 	File               string `long:"file" short:"i" description:"HTML source file with a custom welcome message" env:"STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE"`
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
 }
 
 // The CLI flags for the undeploy-login-page-welcome command.
-type LoginScreenWelcomeUndeployCommand struct {
+type loginScreenWelcomeUndeployCommand struct {
 	cli.CLICommand
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
 }
@@ -101,7 +101,7 @@ func getDBConn(flags dbops.DatabaseCLIFlags) *dbops.PgDB {
 // Execute db-create command. It prepares new database for the Stork
 // server. It also creates a user that can access this database using
 // a generated or user-specified password and the pgcrypto extension.
-func runDBCreate(command *DatabaseCreateCommand) {
+func runDBCreate(command *databaseCreateCommand) {
 	var err error
 
 	// Prepare logging fields.
@@ -215,7 +215,7 @@ func runDBMigrate(databaseSettings dbops.DatabaseCLIFlags, command, version stri
 }
 
 // Execute cert export command.
-func runCertExport(certificateCommand *CertificateExportCommand) error {
+func runCertExport(certificateCommand *certificateExportCommand) error {
 	db := getDBConn(certificateCommand.DatabaseSettings)
 	defer db.Close()
 
@@ -223,7 +223,7 @@ func runCertExport(certificateCommand *CertificateExportCommand) error {
 }
 
 // Execute cert import command.
-func runCertImport(certificateCommand *CertificateImportCommand) error {
+func runCertImport(certificateCommand *certificateImportCommand) error {
 	db := getDBConn(certificateCommand.DatabaseSettings)
 	defer db.Close()
 
@@ -253,7 +253,7 @@ func inspectHookFile(path string, library *hooksutil.LibraryManager, err error) 
 }
 
 // Execute inspect hook command.
-func runHookInspect(hookInspectCommand *HookInspectCommand) error {
+func runHookInspect(hookInspectCommand *hookInspectCommand) error {
 	hookPath := hookInspectCommand.HookPath
 	fileInfo, err := os.Stat(hookPath)
 	if err != nil {
@@ -279,7 +279,7 @@ func runHookInspect(hookInspectCommand *HookInspectCommand) error {
 }
 
 // Deploy specified static file view into assets/static-page-content.
-func runStaticViewDeploy(settings *LoginScreenWelcomeDeployCommand, outFilename string) (err error) {
+func runStaticViewDeploy(settings *loginScreenWelcomeDeployCommand, outFilename string) (err error) {
 	// Basic checks on the input file.
 	inFilename := settings.File
 	if _, err = os.Stat(inFilename); err != nil {
@@ -345,7 +345,7 @@ func runStaticViewDeploy(settings *LoginScreenWelcomeDeployCommand, outFilename 
 }
 
 // Undeploy specified static file view from assets/static-page-content.
-func runStaticViewUndeploy(settings *LoginScreenWelcomeUndeployCommand, filename string) error {
+func runStaticViewUndeploy(settings *loginScreenWelcomeUndeployCommand, filename string) error {
 	// Get the directory where our file is to be copied.
 	directory, err := getOrLocateStaticPageContentDir(settings.RestStaticFilesDir)
 	if err != nil {
@@ -429,7 +429,7 @@ func newApp() *cli.App {
 	// feature.
 
 	// Database creation commands.
-	databaseCreateCommand := &DatabaseCreateCommand{}
+	databaseCreateCommand := &databaseCreateCommand{}
 	app.RegisterCommand(
 		"db-create", "Create new Stork database", databaseCreateCommand,
 		func() {
@@ -443,7 +443,7 @@ func newApp() *cli.App {
 		databasePasswordGenCommand, runDBPasswordGen,
 	)
 
-	databaseInitCommand := &DatabaseCommand{}
+	databaseInitCommand := &databaseCommand{}
 	app.RegisterCommand(
 		"db-init", "Create schema versioning table in the database",
 		databaseInitCommand, func() {
@@ -451,7 +451,7 @@ func newApp() *cli.App {
 		},
 	)
 
-	databaseUpCommand := &DatabaseVersionCommand{}
+	databaseUpCommand := &databaseVersionCommand{}
 	app.RegisterCommand(
 		"db-up", "Run all available migrations or use -t to specify version",
 		databaseUpCommand, func() {
@@ -463,7 +463,7 @@ func newApp() *cli.App {
 		},
 	)
 
-	databaseDownCommand := &DatabaseVersionCommand{}
+	databaseDownCommand := &databaseVersionCommand{}
 	app.RegisterCommand(
 		"db-down", "Revert last migration or use -t to specify version to downgrade to",
 		databaseDownCommand, func() {
@@ -475,7 +475,7 @@ func newApp() *cli.App {
 		},
 	)
 
-	databaseResetCommand := &DatabaseCommand{}
+	databaseResetCommand := &databaseCommand{}
 	app.RegisterCommand(
 		"db-reset", "Reset the database to the initial state",
 		databaseResetCommand, func() {
@@ -483,15 +483,15 @@ func newApp() *cli.App {
 		},
 	)
 
-	databaseVersionCommand := &DatabaseCommand{}
+	dbVersionCommand := &databaseCommand{}
 	app.RegisterCommand(
 		"db-version", "Get the current database schema version",
-		databaseVersionCommand, func() {
-			runDBMigrate(databaseVersionCommand.DatabaseSettings, "version", "")
+		dbVersionCommand, func() {
+			runDBMigrate(dbVersionCommand.DatabaseSettings, "version", "")
 		},
 	)
 
-	databaseSetVersionCommand := &DatabaseVersionCommand{}
+	databaseSetVersionCommand := &databaseVersionCommand{}
 	app.RegisterCommand(
 		"db-set-version", "Set the database schema version",
 		databaseSetVersionCommand, func() {
@@ -504,7 +504,7 @@ func newApp() *cli.App {
 	)
 
 	// Certificate management commands.
-	certificateExportCommand := &CertificateExportCommand{}
+	certificateExportCommand := &certificateExportCommand{}
 	app.RegisterCommand(
 		"cert-export", "Export Stork Server keys, certificates, and tokens",
 		certificateExportCommand, func() {
@@ -515,7 +515,7 @@ func newApp() *cli.App {
 		},
 	)
 
-	certificateImportCommand := &CertificateImportCommand{}
+	certificateImportCommand := &certificateImportCommand{}
 	app.RegisterCommand(
 		"cert-import", "Import Stork Server keys, certificates, and tokens",
 		certificateImportCommand, func() {
@@ -527,7 +527,7 @@ func newApp() *cli.App {
 	)
 
 	// Hook inspection command.
-	hookInspectCommand := &HookInspectCommand{}
+	hookInspectCommand := &hookInspectCommand{}
 	app.RegisterCommand(
 		"hook-inspect", "Inspect the hook file or directory",
 		hookInspectCommand, func() {
@@ -539,7 +539,7 @@ func newApp() *cli.App {
 	)
 
 	// Static views deployment commands.
-	loginScreenWelcomeDeployCommand := &LoginScreenWelcomeDeployCommand{}
+	loginScreenWelcomeDeployCommand := &loginScreenWelcomeDeployCommand{}
 	app.RegisterCommand(
 		"deploy-login-page-welcome",
 		"Deploy custom welcome message on the login screen",
@@ -554,7 +554,7 @@ func newApp() *cli.App {
 		},
 	)
 
-	loginScreenWelcomeUndeployCommand := &LoginScreenWelcomeUndeployCommand{}
+	loginScreenWelcomeUndeployCommand := &loginScreenWelcomeUndeployCommand{}
 	app.RegisterCommand(
 		"undeploy-login-page-welcome",
 		"Undeploy custom welcome message on the login screen",
