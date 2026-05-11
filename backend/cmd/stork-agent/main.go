@@ -330,15 +330,8 @@ func runRegister(ctx context.Context, settings *registerSettings) {
 	}
 }
 
-// Read environment file settings. It's parsed before the main settings.
-type environmentFileSettings struct {
-	EnvFile    string `long:"env-file" description:"Environment file location; applicable only if the use-env-file is provided" default:"/etc/stork/agent.env"`
-	UseEnvFile bool   `long:"use-env-file" description:"Read the environment variables from the environment file"`
-}
-
 // General Stork Agent settings. They are used when no command is specified.
 type generalSettings struct {
-	environmentFileSettings
 	Version                             bool   `short:"v" long:"version" description:"Show software version"`
 	Host                                string `long:"host" description:"The IP or hostname to listen on for incoming Stork Server connections" default:"0.0.0.0" env:"STORK_AGENT_HOST"`
 	Port                                int    `long:"port" description:"The TCP port to listen on for incoming Stork Server connections" default:"8080" env:"STORK_AGENT_PORT"`
@@ -366,7 +359,6 @@ type generalSettings struct {
 
 // Register command settings.
 type registerSettings struct {
-	environmentFileSettings
 	// It is true if the register command was specified. Otherwise, it is false.
 	commandSpecified        bool
 	NonInteractive          bool   `short:"n" long:"non-interactive" description:"Do not prompt for missing arguments" env:"STORK_AGENT_NON_INTERACTIVE"`
@@ -468,11 +460,14 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 		storkutil.SetupLogging()
 	})
 
-	_, _, isHelp, err := appParser.Parse()
+	hookDirectorySettings, _, isHelp, err := appParser.Parse()
 	if err != nil {
 		err = errors.Wrap(err, "invalid CLI argument")
 		return nil, nil, false, err
+	} else if isHelp {
+		return nil, nil, true, nil
 	}
+	generalSettings.HookDirectory = hookDirectorySettings.HookDirectory
 
 	if registerSettings.commandSpecified {
 		generalSettings = nil
@@ -480,7 +475,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 		registerSettings = nil
 	}
 
-	return generalSettings, registerSettings, isHelp, nil
+	return generalSettings, registerSettings, false, nil
 }
 
 // Parses the command line arguments and runs the specific Stork Agent command.
