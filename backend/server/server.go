@@ -66,8 +66,7 @@ type StorkServer struct {
 // Parse the command line arguments into GO structures.
 // Returns the expected command to run and error.
 func (ss *StorkServer) ParseArgs() (command Command, err error) {
-	parser := NewCLIParser()
-	command, settings, err := parser.Parse()
+	command, settings, err := ParseCLIFlags()
 	if command == RunCommand {
 		ss.hooksSettings = settings.HooksSettings
 		ss.AgentsSettings = *settings.AgentsSettings
