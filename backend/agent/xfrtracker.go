@@ -48,7 +48,7 @@ func newXfrTracker(logTracker *logTracker) *xfrTracker {
 }
 
 // Tracks the log file or systemd logs using created subscriptions.
-func (t *xfrTracker) track() error {
+func (t *xfrTracker) track() {
 	// Create the cancellation context, so we can stop the goroutine that consumes
 	// the log lines.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -91,7 +91,6 @@ func (t *xfrTracker) track() error {
 	// stop the subscriptions in the stop() function.
 	t.cancelFn = cancel
 	t.cancelCh = cancelCh
-	return nil
 }
 
 // Tracks the log files specified as arguments. It is supported to track up to two log files.
@@ -116,7 +115,8 @@ func (t *xfrTracker) trackFiles(filename1, filename2 string) (err error) {
 		}
 		t.subscribers = append(t.subscribers, subscriber)
 	}
-	return t.track()
+	t.track()
+	return nil
 }
 
 // Tracks the logs of the systemd unit specified as an argument. The XFR tracker will read the
@@ -129,7 +129,8 @@ func (t *xfrTracker) trackSystemdUnit(unitName string) (err error) {
 		return err
 	}
 	t.subscribers = append(t.subscribers, subscriber)
-	return t.track()
+	t.track()
+	return nil
 }
 
 // Stops the XFR tracker. It stops the subscriptions, cancels the goroutine that
