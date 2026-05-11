@@ -23,57 +23,57 @@ import (
 const passwordGenRandomLength = 24
 
 // The CLI flags for the db-create command.
-type databaseCreateCommand struct {
-	cli.CLICommand
+type databaseCreateSettings struct {
+	cli.CommandSettings
 	DatabaseSettings dbops.DatabaseCLIFlagsWithMaintenance
 	Force            bool `long:"force" short:"f" description:"Recreate the database and the user if they exist" env:"STORK_TOOL_DB_FORCE"`
 }
 
 // The CLI flags for the db-init, db-up, db-down, db-reset, db-version commands.
-type databaseCommand struct {
-	cli.CLICommand
+type databaseSettings struct {
+	cli.CommandSettings
 	DatabaseSettings dbops.DatabaseCLIFlags
 }
 
 // The CLI flags for the db-up, db-down, and db-set-version commands.
-type databaseVersionCommand struct {
-	cli.CLICommand
+type databaseVersionSettings struct {
+	cli.CommandSettings
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Version          string `long:"version" short:"t" description:"Target database schema version (optional)" env:"STORK_TOOL_DB_VERSION"`
 }
 
 // The CLI flags for the cert-import command.
-type certificateImportCommand struct {
-	cli.CLICommand
+type certificateImportSettings struct {
+	cli.CommandSettings
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Object           string `long:"object" short:"f" description:"The object to import; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
 	File             string `long:"file" short:"i" description:"The file location from which the object should be imported" env:"STORK_TOOL_CERT_FILE"`
 }
 
 // The CLI flags for the cert-export command.
-type certificateExportCommand struct {
-	cli.CLICommand
+type certificateExportSettings struct {
+	cli.CommandSettings
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Object           string `long:"object" short:"f" description:"The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
 	File             string `long:"file" short:"o" description:"The file location where the object should be saved; if not provided, then object is printed to stdout" env:"STORK_TOOL_CERT_FILE"`
 }
 
 // The CLI flags for the hook-inspect command.
-type hookInspectCommand struct {
-	cli.CLICommand
+type hookInspectSettings struct {
+	cli.CommandSettings
 	HookPath string `long:"hook-path" short:"p" description:"The path to the hook file or directory" env:"STORK_TOOL_HOOK_PATH"`
 }
 
 // The CLI flags for the deploy-login-page-welcome command.
-type loginScreenWelcomeDeployCommand struct {
-	cli.CLICommand
+type loginScreenWelcomeDeploySettings struct {
+	cli.CommandSettings
 	File               string `long:"file" short:"i" description:"HTML source file with a custom welcome message" env:"STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE"`
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
 }
 
 // The CLI flags for the undeploy-login-page-welcome command.
-type loginScreenWelcomeUndeployCommand struct {
-	cli.CLICommand
+type loginScreenWelcomeUndeploySettings struct {
+	cli.CommandSettings
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
 }
 
@@ -101,7 +101,7 @@ func getDBConn(flags dbops.DatabaseCLIFlags) *dbops.PgDB {
 // Execute db-create command. It prepares new database for the Stork
 // server. It also creates a user that can access this database using
 // a generated or user-specified password and the pgcrypto extension.
-func runDBCreate(command *databaseCreateCommand) {
+func runDBCreate(command *databaseCreateSettings) {
 	var err error
 
 	// Prepare logging fields.
@@ -215,19 +215,19 @@ func runDBMigrate(databaseSettings dbops.DatabaseCLIFlags, command, version stri
 }
 
 // Execute cert export command.
-func runCertExport(certificateCommand *certificateExportCommand) error {
-	db := getDBConn(certificateCommand.DatabaseSettings)
+func runCertExport(certificateSettings *certificateExportSettings) error {
+	db := getDBConn(certificateSettings.DatabaseSettings)
 	defer db.Close()
 
-	return certs.ExportSecret(db, certificateCommand.Object, certificateCommand.File)
+	return certs.ExportSecret(db, certificateSettings.Object, certificateSettings.File)
 }
 
 // Execute cert import command.
-func runCertImport(certificateCommand *certificateImportCommand) error {
-	db := getDBConn(certificateCommand.DatabaseSettings)
+func runCertImport(certificateSettings *certificateImportSettings) error {
+	db := getDBConn(certificateSettings.DatabaseSettings)
 	defer db.Close()
 
-	return certs.ImportSecret(db, certificateCommand.Object, certificateCommand.File)
+	return certs.ImportSecret(db, certificateSettings.Object, certificateSettings.File)
 }
 
 // Inspect the hook file.
@@ -253,8 +253,8 @@ func inspectHookFile(path string, library *hooksutil.LibraryManager, err error) 
 }
 
 // Execute inspect hook command.
-func runHookInspect(hookInspectCommand *hookInspectCommand) error {
-	hookPath := hookInspectCommand.HookPath
+func runHookInspect(hookInspectSettings *hookInspectSettings) error {
+	hookPath := hookInspectSettings.HookPath
 	fileInfo, err := os.Stat(hookPath)
 	if err != nil {
 		return errors.Wrapf(err, "cannot stat the hook path: '%s'", hookPath)
@@ -279,7 +279,7 @@ func runHookInspect(hookInspectCommand *hookInspectCommand) error {
 }
 
 // Deploy specified static file view into assets/static-page-content.
-func runStaticViewDeploy(settings *loginScreenWelcomeDeployCommand, outFilename string) (err error) {
+func runStaticViewDeploy(settings *loginScreenWelcomeDeploySettings, outFilename string) (err error) {
 	// Basic checks on the input file.
 	inFilename := settings.File
 	if _, err = os.Stat(inFilename); err != nil {
@@ -345,7 +345,7 @@ func runStaticViewDeploy(settings *loginScreenWelcomeDeployCommand, outFilename 
 }
 
 // Undeploy specified static file view from assets/static-page-content.
-func runStaticViewUndeploy(settings *loginScreenWelcomeUndeployCommand, filename string) error {
+func runStaticViewUndeploy(settings *loginScreenWelcomeUndeploySettings, filename string) error {
 	// Get the directory where our file is to be copied.
 	directory, err := getOrLocateStaticPageContentDir(settings.RestStaticFilesDir)
 	if err != nil {
@@ -429,97 +429,97 @@ func newApp() *cli.App {
 	// feature.
 
 	// Database creation commands.
-	databaseCreateCommand := &databaseCreateCommand{}
+	databaseCreateSettings := &databaseCreateSettings{}
 	app.RegisterCommand(
-		"db-create", "Create new Stork database", databaseCreateCommand,
+		"db-create", "Create new Stork database", databaseCreateSettings,
 		func() {
-			runDBCreate(databaseCreateCommand)
+			runDBCreate(databaseCreateSettings)
 		},
 	)
 
-	databasePasswordGenCommand := &cli.CLICommand{}
+	databasePasswordGenSettings := &cli.CommandSettings{}
 	app.RegisterCommand(
 		"db-password-gen", "Generate random Stork database password",
-		databasePasswordGenCommand, runDBPasswordGen,
+		databasePasswordGenSettings, runDBPasswordGen,
 	)
 
-	databaseInitCommand := &databaseCommand{}
+	databaseInitSettings := &databaseSettings{}
 	app.RegisterCommand(
 		"db-init", "Create schema versioning table in the database",
-		databaseInitCommand, func() {
-			runDBMigrate(databaseInitCommand.DatabaseSettings, "init", "")
+		databaseInitSettings, func() {
+			runDBMigrate(databaseInitSettings.DatabaseSettings, "init", "")
 		},
 	)
 
-	databaseUpCommand := &databaseVersionCommand{}
+	databaseUpSettings := &databaseVersionSettings{}
 	app.RegisterCommand(
 		"db-up", "Run all available migrations or use -t to specify version",
-		databaseUpCommand, func() {
+		databaseUpSettings, func() {
 			runDBMigrate(
-				databaseUpCommand.DatabaseSettings,
+				databaseUpSettings.DatabaseSettings,
 				"up",
-				databaseUpCommand.Version,
+				databaseUpSettings.Version,
 			)
 		},
 	)
 
-	databaseDownCommand := &databaseVersionCommand{}
+	databaseDownSettings := &databaseVersionSettings{}
 	app.RegisterCommand(
 		"db-down", "Revert last migration or use -t to specify version to downgrade to",
-		databaseDownCommand, func() {
+		databaseDownSettings, func() {
 			runDBMigrate(
-				databaseDownCommand.DatabaseSettings,
+				databaseDownSettings.DatabaseSettings,
 				"down",
-				databaseDownCommand.Version,
+				databaseDownSettings.Version,
 			)
 		},
 	)
 
-	databaseResetCommand := &databaseCommand{}
+	databaseResetSettings := &databaseSettings{}
 	app.RegisterCommand(
 		"db-reset", "Reset the database to the initial state",
-		databaseResetCommand, func() {
-			runDBMigrate(databaseResetCommand.DatabaseSettings, "reset", "")
+		databaseResetSettings, func() {
+			runDBMigrate(databaseResetSettings.DatabaseSettings, "reset", "")
 		},
 	)
 
-	dbVersionCommand := &databaseCommand{}
+	dbVersionSettings := &databaseSettings{}
 	app.RegisterCommand(
 		"db-version", "Get the current database schema version",
-		dbVersionCommand, func() {
-			runDBMigrate(dbVersionCommand.DatabaseSettings, "version", "")
+		dbVersionSettings, func() {
+			runDBMigrate(dbVersionSettings.DatabaseSettings, "version", "")
 		},
 	)
 
-	databaseSetVersionCommand := &databaseVersionCommand{}
+	databaseSetVersionSettings := &databaseVersionSettings{}
 	app.RegisterCommand(
 		"db-set-version", "Set the database schema version",
-		databaseSetVersionCommand, func() {
+		databaseSetVersionSettings, func() {
 			runDBMigrate(
-				databaseSetVersionCommand.DatabaseSettings,
+				databaseSetVersionSettings.DatabaseSettings,
 				"set_version",
-				databaseSetVersionCommand.Version,
+				databaseSetVersionSettings.Version,
 			)
 		},
 	)
 
 	// Certificate management commands.
-	certificateExportCommand := &certificateExportCommand{}
+	certificateExportSettings := &certificateExportSettings{}
 	app.RegisterCommand(
 		"cert-export", "Export Stork Server keys, certificates, and tokens",
-		certificateExportCommand, func() {
-			err := runCertExport(certificateExportCommand)
+		certificateExportSettings, func() {
+			err := runCertExport(certificateExportSettings)
 			if err != nil {
 				log.WithError(err).Fatal("Failed to export the certificate")
 			}
 		},
 	)
 
-	certificateImportCommand := &certificateImportCommand{}
+	certificateImportSettings := &certificateImportSettings{}
 	app.RegisterCommand(
 		"cert-import", "Import Stork Server keys, certificates, and tokens",
-		certificateImportCommand, func() {
-			err := runCertImport(certificateImportCommand)
+		certificateImportSettings, func() {
+			err := runCertImport(certificateImportSettings)
 			if err != nil {
 				log.WithError(err).Fatal("Failed to import the certificate")
 			}
@@ -527,11 +527,11 @@ func newApp() *cli.App {
 	)
 
 	// Hook inspection command.
-	hookInspectCommand := &hookInspectCommand{}
+	hookInspectSettings := &hookInspectSettings{}
 	app.RegisterCommand(
 		"hook-inspect", "Inspect the hook file or directory",
-		hookInspectCommand, func() {
-			err := runHookInspect(hookInspectCommand)
+		hookInspectSettings, func() {
+			err := runHookInspect(hookInspectSettings)
 			if err != nil {
 				log.WithError(err).Fatal("Failed to inspect the hook")
 			}
@@ -539,13 +539,13 @@ func newApp() *cli.App {
 	)
 
 	// Static views deployment commands.
-	loginScreenWelcomeDeployCommand := &loginScreenWelcomeDeployCommand{}
+	loginScreenWelcomeDeploySettings := &loginScreenWelcomeDeploySettings{}
 	app.RegisterCommand(
 		"deploy-login-page-welcome",
 		"Deploy custom welcome message on the login screen",
-		loginScreenWelcomeDeployCommand, func() {
+		loginScreenWelcomeDeploySettings, func() {
 			err := runStaticViewDeploy(
-				loginScreenWelcomeDeployCommand, "login-screen-welcome.html",
+				loginScreenWelcomeDeploySettings, "login-screen-welcome.html",
 			)
 			if err != nil {
 				log.WithError(err).
@@ -554,13 +554,13 @@ func newApp() *cli.App {
 		},
 	)
 
-	loginScreenWelcomeUndeployCommand := &loginScreenWelcomeUndeployCommand{}
+	loginScreenWelcomeUndeploySettings := &loginScreenWelcomeUndeploySettings{}
 	app.RegisterCommand(
 		"undeploy-login-page-welcome",
 		"Undeploy custom welcome message on the login screen",
-		loginScreenWelcomeUndeployCommand, func() {
+		loginScreenWelcomeUndeploySettings, func() {
 			err := runStaticViewUndeploy(
-				loginScreenWelcomeUndeployCommand, "login-screen-welcome.html",
+				loginScreenWelcomeUndeploySettings, "login-screen-welcome.html",
 			)
 			if err != nil {
 				log.WithError(err).

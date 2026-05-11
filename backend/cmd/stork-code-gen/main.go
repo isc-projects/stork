@@ -10,8 +10,8 @@ import (
 	"isc.org/stork/codegen"
 )
 
-type stdOptionDefinitionsCommand struct {
-	cli.CLICommand
+type stdOptionDefinitionsSettings struct {
+	cli.CommandSettings
 	Input    string `short:"i" long:"input" description:"Path to the input file holding option definitions' specification." required:"true"`
 	Output   string `short:"o" long:"output" description:"Path to the output file or 'stdout' to print the generated code in the terminal." required:"true"`
 	Template string `short:"t" long:"template" description:"Path to the template file used to generate the output file. The generated code is embedded in the template file."`
@@ -19,7 +19,7 @@ type stdOptionDefinitionsCommand struct {
 
 // Generates the code defining standard option definitions to stdout or
 // to a file.
-func generateStdOptionDefs(settings *stdOptionDefinitionsCommand) error {
+func generateStdOptionDefs(settings *stdOptionDefinitionsSettings) error {
 	// Print the output to the stdout or to a file.
 	if settings.Output == "stdout" {
 		return codegen.GenerateToStdout(settings.Input, settings.Template)
@@ -36,7 +36,7 @@ func main() {
 	parser.Usage = "stork-code-gen [command] [options]"
 
 	app := cli.NewApp(parser)
-	stdOptionDefinitionsSettings := &stdOptionDefinitionsCommand{}
+	stdOptionDefinitionsSettings := &stdOptionDefinitionsSettings{}
 	app.RegisterCommand(
 		"std-option-defs",
 		"Generate standard option definitions from JSON spec.",

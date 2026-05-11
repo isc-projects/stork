@@ -23,23 +23,23 @@ type command interface {
 //
 // It may be also used to specify arguments of the command that accepts no
 // arguments.
-type CLICommand struct {
+type CommandSettings struct {
 	// It is true if the register command was specified. Otherwise, it is false.
 	commandSpecified bool
 }
 
 // Checks if the struct implement the library interface.
-var _ flags.Commander = (*CLICommand)(nil)
+var _ flags.Commander = (*CommandSettings)(nil)
 
 // Implements the tools/golang/gopath/pkg/mod/github.com/jessevdk/go-flags@v1.5.0/command.go Commander interface.
 // It is an only way to recognize which command was specified.
-func (s *CLICommand) Execute(_ []string) error {
+func (s *CommandSettings) Execute(_ []string) error {
 	s.commandSpecified = true
 	return nil
 }
 
 // Indicates if the command was specified.
-func (s *CLICommand) isSpecified() bool {
+func (s *CommandSettings) isSpecified() bool {
 	return s.commandSpecified
 }
 
