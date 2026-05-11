@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"fmt"
 )
 
 // The default number of days to look into the past for the XFR tracking
@@ -75,16 +74,16 @@ func (t *xfrTracker) track() error {
 			select {
 			case <-ctx.Done():
 				return
-			case logLine, ok := <-chan0:
+			case _, ok := <-chan0:
 				if !ok {
 					return
 				}
-				fmt.Println("Incoming XFR request:", logLine.text)
-			case logLine, ok := <-chan1:
+				// TODO: Process the XFR request from this channel.
+			case _, ok := <-chan1:
 				if !ok {
 					return
 				}
-				fmt.Println("Outgoing XFR request:", logLine.text)
+				// TODO: Process the XFR request from this channel.
 			}
 		}
 	}()
