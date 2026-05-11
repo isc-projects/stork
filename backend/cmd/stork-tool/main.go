@@ -8,14 +8,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
-	"strconv"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 
 	"isc.org/stork"
+	storkconfig "isc.org/stork/appcfg/stork"
 	"isc.org/stork/hooksutil"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
@@ -25,11 +24,105 @@ import (
 // Random hash size in the generated password.
 const passwordGenRandomLength = 24
 
+// It specifies a method that checks if the specific command was specified in
+// the CLI. It is used to create a mapping between the command objects and
+// the command handlers.
+type command interface {
+	isSpecified() bool
+}
+
+// The struct that must be embedded in all structures defining the command
+// settings. It allows to recognize which command was specified in the CLI.
+// It is related to how the go-flags library handles the subcommands.
+//
+// It may be also used to specify arguments of the command that accepts no
+// arguments.
+type cliCommand struct {
+	// It is true if the register command was specified. Otherwise, it is false.
+	commandSpecified bool
+}
+
+// Checks if the struct implement the library interface.
+var _ flags.Commander = (*cliCommand)(nil)
+
+// Implements the tools/golang/gopath/pkg/mod/github.com/jessevdk/go-flags@v1.5.0/command.go Commander interface.
+// It is an only way to recognize which command was specified.
+func (s *cliCommand) Execute(_ []string) error {
+	s.commandSpecified = true
+	return nil
+}
+
+// Indicates if the command was specified.
+func (s *cliCommand) isSpecified() bool {
+	return s.commandSpecified
+}
+
+// The CLI flags not related to any specific command.
+type GeneralCommand struct {
+	cliCommand
+	// If true, the version of the Stork tool is printed. It takes precedence
+	// over all other commands and arguments.
+	Version bool `short:"v" long:"version" description:"Show software version"`
+}
+
+// The CLI flags for the db-create command.
+type DatabaseCreateCommand struct {
+	cliCommand
+	DatabaseSettings dbops.DatabaseCLIFlagsWithMaintenance
+	Force            bool `long:"force" short:"f" description:"Recreate the database and the user if they exist" env:"STORK_TOOL_DB_FORCE"`
+}
+
+// The CLI flags for the db-init, db-up, db-down, db-reset, db-version commands.
+type DatabaseCommand struct {
+	cliCommand
+	DatabaseSettings dbops.DatabaseCLIFlags
+}
+
+// The CLI flags for the db-up, db-down, and db-set-version commands.
+type DatabaseVersionCommand struct {
+	cliCommand
+	DatabaseSettings dbops.DatabaseCLIFlags
+	Version          string `long:"version" short:"t" description:"Target database schema version (optional)" env:"STORK_TOOL_DB_VERSION"`
+}
+
+// The CLI flags for the cert-import command.
+type CertificateImportCommand struct {
+	cliCommand
+	DatabaseSettings dbops.DatabaseCLIFlags
+	Object           string `long:"object" short:"f" description:"The object to import; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
+	File             string `long:"file" short:"i" description:"The file location from which the object should be imported" env:"STORK_TOOL_CERT_FILE"`
+}
+
+// The CLI flags for the cert-export command.
+type CertificateExportCommand struct {
+	cliCommand
+	DatabaseSettings dbops.DatabaseCLIFlags
+	Object           string `long:"object" short:"f" description:"The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
+	File             string `long:"file" short:"o" description:"The file location where the object should be saved; if not provided, then object is printed to stdout" env:"STORK_TOOL_CERT_FILE"`
+}
+
+// The CLI flags for the hook-inspect command.
+type HookInspectCommand struct {
+	cliCommand
+	HookPath string `long:"hook-path" short:"p" description:"The path to the hook file or directory" env:"STORK_TOOL_HOOK_PATH"`
+}
+
+// The CLI flags for the deploy-login-page-welcome command.
+type LoginScreenWelcomeDeployCommand struct {
+	cliCommand
+	File               string `long:"file" short:"i" description:"HTML source file with a custom welcome message" env:"STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE"`
+	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
+}
+
+// The CLI flags for the undeploy-login-page-welcome command.
+type LoginScreenWelcomeUndeployCommand struct {
+	cliCommand
+	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
+}
+
 // Establish connection to a database with opts from command line.
 // Returns the database instance. It must be closed by caller.
-func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
-	flags := &dbops.DatabaseCLIFlags{}
-	flags.ReadFromCLI(rawFlags)
+func getDBConn(flags dbops.DatabaseCLIFlags) *dbops.PgDB {
 	settings, err := flags.ConvertToDatabaseSettings()
 	if err != nil {
 		log.WithError(err).Fatal("Invalid database settings")
@@ -51,21 +144,18 @@ func getDBConn(rawFlags *cli.Context) *dbops.PgDB {
 // Execute db-create command. It prepares new database for the Stork
 // server. It also creates a user that can access this database using
 // a generated or user-specified password and the pgcrypto extension.
-func runDBCreate(context *cli.Context) {
-	flags := &dbops.DatabaseCLIFlagsWithMaintenance{}
-	flags.ReadFromCLI(context)
-
+func runDBCreate(command *DatabaseCreateCommand) {
 	var err error
 
 	// Prepare logging fields.
 	logFields := log.Fields{
-		"database_name": flags.DBName,
-		"user":          flags.User,
+		"database_name": command.DatabaseSettings.DBName,
+		"user":          command.DatabaseSettings.User,
 	}
 
 	// Check if the password has been specified explicitly. Otherwise,
 	// generate the password.
-	password := flags.Password
+	password := command.DatabaseSettings.Password
 	if len(password) == 0 {
 		password, err = storkutil.Base64Random(passwordGenRandomLength)
 		if err != nil {
@@ -74,11 +164,11 @@ func runDBCreate(context *cli.Context) {
 		// Only log the password if it has been generated. Otherwise, the
 		// user should know the password.
 		logFields["password"] = password
-		flags.Password = password
+		command.DatabaseSettings.Password = password
 	}
 
 	// Connect to the postgres database using admin credentials.
-	settings, err := flags.ConvertToMaintenanceDatabaseSettings()
+	maintenanceSettings, err := command.DatabaseSettings.ConvertToMaintenanceDatabaseSettings()
 	if err != nil {
 		log.WithError(err).Fatal("Invalid database settings")
 	}
@@ -86,11 +176,11 @@ func runDBCreate(context *cli.Context) {
 	// Try to create the database and the user with access using
 	// specified password.
 	err = dbops.CreateDatabase(
-		*settings,
-		flags.DBName,
-		flags.User,
-		flags.Password,
-		context.Bool("force"),
+		*maintenanceSettings,
+		command.DatabaseSettings.DBName,
+		command.DatabaseSettings.User,
+		command.DatabaseSettings.Password,
+		command.Force,
 	)
 	if err != nil {
 		log.WithError(err).Fatal("Could not create the database and the user")
@@ -113,7 +203,7 @@ func runDBPasswordGen() {
 }
 
 // Execute DB migration command.
-func runDBMigrate(settings *cli.Context, command, version string) {
+func runDBMigrate(databaseSettings dbops.DatabaseCLIFlags, command, version string) {
 	// The up and down commands require special treatment. If the target version is specified
 	// it must be appended to the arguments we pass to the go-pg migrations.
 	var args []string
@@ -134,12 +224,12 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 		log.Infof("Requested setting version to %s", version)
 	}
 
-	traceSQL := settings.String("db-trace-queries")
+	traceSQL := databaseSettings.TraceSQL
 	if traceSQL != "" {
 		log.Infof("SQL queries tracing set to %s", traceSQL)
 	}
 
-	db := getDBConn(settings)
+	db := getDBConn(databaseSettings)
 
 	oldVersion, newVersion, err := dbops.Migrate(db, args...)
 	if err == nil && newVersion == 0 {
@@ -168,19 +258,19 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 }
 
 // Execute cert export command.
-func runCertExport(settings *cli.Context) error {
-	db := getDBConn(settings)
+func runCertExport(certificateCommand *CertificateExportCommand) error {
+	db := getDBConn(certificateCommand.DatabaseSettings)
 	defer db.Close()
 
-	return certs.ExportSecret(db, settings.String("object"), settings.String("file"))
+	return certs.ExportSecret(db, certificateCommand.Object, certificateCommand.File)
 }
 
 // Execute cert import command.
-func runCertImport(settings *cli.Context) error {
-	db := getDBConn(settings)
+func runCertImport(certificateCommand *CertificateImportCommand) error {
+	db := getDBConn(certificateCommand.DatabaseSettings)
 	defer db.Close()
 
-	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
+	return certs.ImportSecret(db, certificateCommand.Object, certificateCommand.File)
 }
 
 // Inspect the hook file.
@@ -206,8 +296,8 @@ func inspectHookFile(path string, library *hooksutil.LibraryManager, err error) 
 }
 
 // Execute inspect hook command.
-func runHookInspect(settings *cli.Context) error {
-	hookPath := settings.String("path")
+func runHookInspect(hookInspectCommand *HookInspectCommand) error {
+	hookPath := hookInspectCommand.HookPath
 	fileInfo, err := os.Stat(hookPath)
 	if err != nil {
 		return errors.Wrapf(err, "cannot stat the hook path: '%s'", hookPath)
@@ -232,9 +322,9 @@ func runHookInspect(settings *cli.Context) error {
 }
 
 // Deploy specified static file view into assets/static-page-content.
-func runStaticViewDeploy(settings *cli.Context, outFilename string) (err error) {
+func runStaticViewDeploy(settings *LoginScreenWelcomeDeployCommand, outFilename string) (err error) {
 	// Basic checks on the input file.
-	inFilename := settings.String("file")
+	inFilename := settings.File
 	if _, err = os.Stat(inFilename); err != nil {
 		switch {
 		case errors.Is(err, fs.ErrNotExist):
@@ -253,7 +343,7 @@ func runStaticViewDeploy(settings *cli.Context, outFilename string) (err error) 
 	}
 	// Get the directory where our file is to be copied.
 	var outDirectory string
-	outDirectory, err = getOrLocateStaticPageContentDir(settings)
+	outDirectory, err = getOrLocateStaticPageContentDir(settings.RestStaticFilesDir)
 	if err != nil {
 		return
 	}
@@ -298,9 +388,9 @@ func runStaticViewDeploy(settings *cli.Context, outFilename string) (err error) 
 }
 
 // Undeploy specified static file view from assets/static-page-content.
-func runStaticViewUndeploy(settings *cli.Context, filename string) error {
+func runStaticViewUndeploy(settings *LoginScreenWelcomeUndeployCommand, filename string) error {
 	// Get the directory where our file is to be copied.
-	directory, err := getOrLocateStaticPageContentDir(settings)
+	directory, err := getOrLocateStaticPageContentDir(settings.RestStaticFilesDir)
 	if err != nil {
 		return err
 	}
@@ -316,9 +406,9 @@ func runStaticViewUndeploy(settings *cli.Context, filename string) error {
 // the path to assets/static-page-content relative to this path. If the
 // path is not specified it tries to locate the static-page-content path
 // relative to the stork-tool binary name.
-func getOrLocateStaticPageContentDir(settings *cli.Context) (string, error) {
+func getOrLocateStaticPageContentDir(restStaticFilesDirectory string) (string, error) {
 	// Get the directory where our file is to be copied.
-	directory := settings.String("rest-static-files-dir")
+	directory := restStaticFilesDirectory
 	if directory == "" {
 		// The directory hasn't been specified. Let's try to locate that directory
 		// relative to the stork-tool binary location.
@@ -352,194 +442,50 @@ func getOrLocateStaticPageContentDir(settings *cli.Context) (string, error) {
 	return directory, nil
 }
 
-// Parse the general flag definitions into the objects compatible with the CLI library.
-func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Flag, error) {
-	var flags []cli.Flag
-	for _, definition := range flagDefinitions {
-		var flag cli.Flag
-
-		var aliases []string
-		if definition.Short != "" {
-			aliases = append(aliases, definition.Short)
-		}
-
-		var envVars []string
-		if definition.EnvironmentVariable != "" {
-			envVars = append(envVars, definition.EnvironmentVariable)
-		}
-
-		switch definition.Kind {
-		case reflect.Bool:
-			defaultBool := false
-			if definition.Default != "" {
-				var err error
-				defaultBool, err = strconv.ParseBool(definition.Default)
-				if err != nil {
-					return nil, errors.Wrapf(
-						err, "invalid default value ('%s') for boolean  "+
-							"parameter ('%s'), expected '1', 't', 'T', 'TRUE', "+
-							"'true', 'True', '0', 'f', 'F', 'FALSE', 'false', 'False'",
-						definition.Default, definition.Long,
-					)
-				}
-			}
-
-			flag = &cli.BoolFlag{
-				Name:    definition.Long,
-				Aliases: aliases,
-				Usage:   definition.Description,
-				EnvVars: envVars,
-				Value:   defaultBool,
-			}
-		case reflect.Int:
-			valueInt, err := strconv.ParseInt(definition.Default, 10, 0)
-			if err != nil {
-				return nil, errors.Wrapf(
-					err, "invalid default value ('%s') for integer parameter ('%s'), expected an integer number",
-					definition.Default, definition.Long,
-				)
-			}
-
-			flag = &cli.Int64Flag{
-				Name:    definition.Long,
-				Aliases: aliases,
-				Usage:   definition.Description,
-				EnvVars: envVars,
-				Value:   valueInt,
-			}
-		default:
-			flag = &cli.StringFlag{
-				Name:    definition.Long,
-				Aliases: aliases,
-				Usage:   definition.Description,
-				EnvVars: envVars,
-				Value:   definition.Default,
-			}
-		}
-
-		flags = append(flags, flag)
-	}
-
-	return flags, nil
+// Prints the Stork version.
+func showVersion() {
+	fmt.Println(stork.Version)
 }
 
-// Prepare urfave cli app with all flags and commands defined.
-func setupApp() *cli.App {
-	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Println(c.App.Version)
-	}
+// The type describing the command handler.
+// It is a function that takes no arguments and returns no value.
+// Maybe it should an error as a return value. Currently, it is not necessary
+// but it may be useful in the future refactorings for example to unify the
+// error handling in various commands.
+type action = func()
 
-	dbFlags, err := parseFlagDefinitions((*dbops.DatabaseCLIFlags)(nil).ConvertToCLIFlagDefinitions())
+// The main application structure.
+type app struct {
+	commandsToFunctions map[command]action
+	parser              *flags.Parser
+	generalCommand      *GeneralCommand
+}
+
+// Registers a command with the parser and associates it with the action.
+// It shouldn't be called outside of the newApp function.
+func (a *app) registerCommand(command, shortDescription string, data command, action action) {
+	_, err := a.parser.AddCommand(command, shortDescription, "", data)
 	if err != nil {
-		log.WithError(err).Fatal("Invalid database CLI flag definitions")
+		log.WithError(err).Fatal("Failed to add command")
+	}
+	a.commandsToFunctions[data] = action
+}
+
+// Prepare CLI app with all flags and commands defined.
+func newApp() *app {
+	generalCommand := &GeneralCommand{}
+	parser := flags.NewParser(generalCommand, flags.Default)
+
+	app := &app{
+		commandsToFunctions: make(map[command]action),
+		parser:              parser,
+		generalCommand:      generalCommand,
 	}
 
-	dbCreateFlags, err := parseFlagDefinitions((*dbops.DatabaseCLIFlagsWithMaintenance)(nil).ConvertToCLIFlagDefinitions())
-	if err != nil {
-		log.WithError(err).Fatal("Invalid create database CLI flag definitions")
-	}
-
-	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
-		Name:    "force",
-		Usage:   "Recreate the database and the user if they exist",
-		Aliases: []string{"f"},
-	})
-
-	var dbVerFlags []cli.Flag
-	dbVerFlags = append(dbVerFlags, dbFlags...)
-	dbVerFlags = append(dbVerFlags,
-		&cli.StringFlag{
-			Name:    "version",
-			Usage:   "Target database schema version (optional)",
-			Aliases: []string{"t"},
-			EnvVars: []string{"STORK_TOOL_DB_VERSION"},
-		})
-
-	var certExportFlags []cli.Flag
-	certExportFlags = append(certExportFlags, dbFlags...)
-	certExportFlags = append(certExportFlags,
-		&cli.StringFlag{
-			Name:     "object",
-			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'",
-			Required: true,
-			Aliases:  []string{"f"},
-			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
-		},
-		&cli.StringFlag{
-			Name:    "file",
-			Usage:   "The file location where the object should be saved; if not provided, then object is printed to stdout",
-			Aliases: []string{"o"},
-			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
-		})
-
-	var certImportFlags []cli.Flag
-	certImportFlags = append(certImportFlags, dbFlags...)
-	certImportFlags = append(certImportFlags,
-		&cli.StringFlag{
-			Name:     "object",
-			Usage:    "The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'",
-			Required: true,
-			Aliases:  []string{"f"},
-			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
-		},
-		&cli.StringFlag{
-			Name:    "file",
-			Usage:   "The file location from which the object will be read; if not provided, then the object is read from stdin",
-			Aliases: []string{"i"},
-			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
-		})
-
-	hookInspectFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:     "path",
-			Usage:    "The hook file or directory path",
-			Required: true,
-			Aliases:  []string{"p"},
-			EnvVars:  []string{"STORK_TOOL_HOOK_PATH"},
-		},
-	}
-
-	loginScreenWelcomeDeployFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:     "file",
-			Usage:    "HTML source file with a custom welcome message",
-			Required: true,
-			Aliases:  []string{"i"},
-			EnvVars:  []string{"STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE"},
-		},
-		&cli.StringFlag{
-			Name:    "rest-static-files-dir",
-			Usage:   "The directory with static files for the UI; if not provided the tool will try to use default locations",
-			Aliases: []string{"d"},
-			EnvVars: []string{"STORK_TOOL_REST_STATIC_FILES_DIR"},
-		},
-	}
-
-	loginScreenWelcomeUndeployFlags := []cli.Flag{
-		&cli.StringFlag{
-			Name:    "rest-static-files-dir",
-			Usage:   "The directory with static files for the UI; if not provided the tool will try to use default locations",
-			Aliases: []string{"d"},
-			EnvVars: []string{"STORK_TOOL_REST_STATIC_FILES_DIR"},
-		},
-	}
-
-	cli.HelpFlag = &cli.BoolFlag{
-		Name:    "help",
-		Aliases: []string{"h"},
-		Usage:   "Show help",
-	}
-
-	cli.VersionFlag = &cli.BoolFlag{
-		Name:    "version",
-		Aliases: []string{"v"},
-		Usage:   "Print the version",
-	}
-
-	app := &cli.App{
-		Name:  "Stork Tool",
-		Usage: "A tool for managing Stork Server.",
-		Description: `The tool operates in four areas:
+	parser.Name = "Stork Tool"
+	parser.SubcommandsOptional = true
+	parser.ShortDescription = "A tool for managing Stork Server."
+	parser.LongDescription = `The tool operates in four areas:
 
    - Certificate Management - it allows for exporting Stork Server keys, certificates,
      and tokens that are used to secure communication between the Stork Server
@@ -552,178 +498,195 @@ func setupApp() *cli.App {
      overwriting the db schema version and getting its current value;
 
    - Static Views Deployment - it allows for setting custom content in selected
-     Stork views (e.g., custom welcome message on the login page).`,
-		Version:  stork.Version,
-		HelpName: "stork-tool",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "",
-				Usage:   "Logging level can be specified using env variable only. Allowed values: are DEBUG, INFO, WARN, ERROR",
-				Value:   "INFO",
-				EnvVars: []string{"STORK_LOG_LEVEL"},
-			},
+     Stork views (e.g., custom welcome message on the login page).`
+
+	// Disclaimer: The previous version grouped the commands into separate
+	// sections. Unfortunately, the go-flags library does not support this
+	// feature.
+
+	// Database creation commands.
+	databaseCreateCommand := &DatabaseCreateCommand{}
+	app.registerCommand(
+		"db-create", "Create new Stork database", databaseCreateCommand,
+		func() {
+			runDBCreate(databaseCreateCommand)
 		},
-		Commands: []*cli.Command{
-			// DATABASE CREATION COMMANDS
-			{
-				Name:        "db-create",
-				Usage:       "Create new Stork database",
-				UsageText:   "stork-tool db-create [options for db creation] -f",
-				Description: ``,
-				Flags:       dbCreateFlags,
-				Category:    "Database Creation",
-				Action: func(c *cli.Context) error {
-					runDBCreate(c)
-					return nil
-				},
-			},
-			{
-				Name:        "db-password-gen",
-				Usage:       "Generate random Stork database password",
-				UsageText:   "stork-tool db-password-gen",
-				Description: ``,
-				Flags:       []cli.Flag{},
-				Category:    "Database Creation",
-				Action: func(c *cli.Context) error {
-					runDBPasswordGen()
-					return nil
-				},
-			},
-			// DATABASE MIGRATION COMMANDS
-			{
-				Name:        "db-init",
-				Usage:       "Create schema versioning table in the database",
-				UsageText:   "stork-tool db-init [options for db connection]",
-				Description: ``,
-				Flags:       dbFlags,
-				Category:    "Database Migration",
-				Action: func(c *cli.Context) error {
-					runDBMigrate(c, "init", "")
-					return nil
-				},
-			},
-			{
-				Name:        "db-up",
-				Usage:       "Run all available migrations or use -t to specify version",
-				UsageText:   "stork-tool db-up [options for db connection] [-t version]",
-				Description: ``,
-				Flags:       dbVerFlags,
-				Category:    "Database Migration",
-				Action: func(c *cli.Context) error {
-					runDBMigrate(c, "up", c.String("version"))
-					return nil
-				},
-			},
-			{
-				Name:        "db-down",
-				Usage:       "Revert last migration or use -t to specify version to downgrade to",
-				UsageText:   "stork-tool db-down [options for db connection] [-t version]",
-				Description: ``,
-				Flags:       dbVerFlags,
-				Category:    "Database Migration",
-				Action: func(c *cli.Context) error {
-					runDBMigrate(c, "down", c.String("version"))
-					return nil
-				},
-			},
-			{
-				Name:        "db-reset",
-				Usage:       "Revert all migrations",
-				UsageText:   "stork-tool db-reset [options for db connection]",
-				Description: ``,
-				Flags:       dbFlags,
-				Category:    "Database Migration",
-				Action: func(c *cli.Context) error {
-					runDBMigrate(c, "reset", "")
-					return nil
-				},
-			},
-			{
-				Name:        "db-version",
-				Usage:       "Print current migration version",
-				UsageText:   "stork-tool db-version [options for db connection]",
-				Description: ``,
-				Flags:       dbFlags,
-				Category:    "Database Migration",
-				Action: func(c *cli.Context) error {
-					runDBMigrate(c, "version", "")
-					return nil
-				},
-			},
-			{
-				Name:        "db-set-version",
-				Usage:       "Set database version without running migrations",
-				UsageText:   "stork-tool db-set-version [options for db connection] [-t version]",
-				Description: ``,
-				Flags:       dbVerFlags,
-				Category:    "Database Migration",
-				Action: func(c *cli.Context) error {
-					runDBMigrate(c, "set_version", c.String("version"))
-					return nil
-				},
-			},
-			// CERTIFICATE MANAGEMENT
-			{
-				Name:        "cert-export",
-				Usage:       "Export certificate or other secret data",
-				UsageText:   "stork-tool cert-export [options for db connection] [-f object] [-o filename]",
-				Description: ``,
-				Flags:       certExportFlags,
-				Category:    "Certificates Management",
-				Action:      runCertExport,
-			},
-			{
-				Name:        "cert-import",
-				Usage:       "Import certificate or other secret data",
-				UsageText:   "stork-tool cert-import [options for db connection] [-f object] [-i filename]",
-				Description: ``,
-				Flags:       certImportFlags,
-				Category:    "Certificates Management",
-				Action:      runCertImport,
-			},
-			{
-				Name:        "hook-inspect",
-				Usage:       "Prints details about hooks",
-				UsageText:   "stork-tool hook-inspect -p file-or-directory",
-				Description: "",
-				Flags:       hookInspectFlags,
-				Action:      runHookInspect,
-			},
-			// STATIC VIEWS DEPLOYMENT
-			{
-				Name:        "deploy-login-page-welcome",
-				Usage:       "Deploy custom welcome message on the login page",
-				UsageText:   "stork-tool deploy-login-page-welcome [-i filename] [-d directory]",
-				Description: ``,
-				Flags:       loginScreenWelcomeDeployFlags,
-				Category:    "Static Views Deployment",
-				Action: func(c *cli.Context) error {
-					return runStaticViewDeploy(c, "login-screen-welcome.html")
-				},
-			},
-			{
-				Name:        "undeploy-login-page-welcome",
-				Usage:       "Undeploy custom welcome message from the login page",
-				UsageText:   "stork-tool undeploy-login-page-welcome [-d directory]",
-				Description: ``,
-				Flags:       loginScreenWelcomeUndeployFlags,
-				Category:    "Static Views Deployment",
-				Action: func(c *cli.Context) error {
-					return runStaticViewUndeploy(c, "login-screen-welcome.html")
-				},
-			},
+	)
+
+	databasePasswordGenCommand := &cliCommand{}
+	app.registerCommand(
+		"db-password-gen", "Generate random Stork database password",
+		databasePasswordGenCommand, runDBPasswordGen,
+	)
+
+	databaseInitCommand := &DatabaseCommand{}
+	app.registerCommand(
+		"db-init", "Create schema versioning table in the database",
+		databaseInitCommand, func() {
+			runDBMigrate(databaseInitCommand.DatabaseSettings, "init", "")
 		},
-	}
+	)
+
+	databaseUpCommand := &DatabaseVersionCommand{}
+	app.registerCommand(
+		"db-up", "Run all available migrations or use -t to specify version",
+		databaseUpCommand, func() {
+			runDBMigrate(
+				databaseUpCommand.DatabaseSettings,
+				"up",
+				databaseUpCommand.Version,
+			)
+		},
+	)
+
+	databaseDownCommand := &DatabaseVersionCommand{}
+	app.registerCommand(
+		"db-down", "Revert last migration or use -t to specify version to downgrade to",
+		databaseDownCommand, func() {
+			runDBMigrate(
+				databaseDownCommand.DatabaseSettings,
+				"down",
+				databaseDownCommand.Version,
+			)
+		},
+	)
+
+	databaseResetCommand := &DatabaseCommand{}
+	app.registerCommand(
+		"db-reset", "Reset the database to the initial state",
+		databaseResetCommand, func() {
+			runDBMigrate(databaseResetCommand.DatabaseSettings, "reset", "")
+		},
+	)
+
+	databaseVersionCommand := &DatabaseCommand{}
+	app.registerCommand(
+		"db-version", "Get the current database schema version",
+		databaseVersionCommand, func() {
+			runDBMigrate(databaseVersionCommand.DatabaseSettings, "version", "")
+		},
+	)
+
+	databaseSetVersionCommand := &DatabaseVersionCommand{}
+	app.registerCommand(
+		"db-set-version", "Set the database schema version",
+		databaseSetVersionCommand, func() {
+			runDBMigrate(
+				databaseSetVersionCommand.DatabaseSettings,
+				"set_version",
+				databaseSetVersionCommand.Version,
+			)
+		},
+	)
+
+	// Certificate management commands.
+	certificateExportCommand := &CertificateExportCommand{}
+	app.registerCommand(
+		"cert-export", "Export Stork Server keys, certificates, and tokens",
+		certificateExportCommand, func() {
+			err := runCertExport(certificateExportCommand)
+			if err != nil {
+				log.WithError(err).Fatal("Failed to export the certificate")
+			}
+		},
+	)
+
+	certificateImportCommand := &CertificateImportCommand{}
+	app.registerCommand(
+		"cert-import", "Import Stork Server keys, certificates, and tokens",
+		certificateImportCommand, func() {
+			err := runCertImport(certificateImportCommand)
+			if err != nil {
+				log.WithError(err).Fatal("Failed to import the certificate")
+			}
+		},
+	)
+
+	// Hook inspection command.
+	hookInspectCommand := &HookInspectCommand{}
+	app.registerCommand(
+		"hook-inspect", "Inspect the hook file or directory",
+		hookInspectCommand, func() {
+			err := runHookInspect(hookInspectCommand)
+			if err != nil {
+				log.WithError(err).Fatal("Failed to inspect the hook")
+			}
+		},
+	)
+
+	// Static views deployment commands.
+	loginScreenWelcomeDeployCommand := &LoginScreenWelcomeDeployCommand{}
+	app.registerCommand(
+		"deploy-login-page-welcome",
+		"Deploy custom welcome message on the login screen",
+		loginScreenWelcomeDeployCommand, func() {
+			err := runStaticViewDeploy(
+				loginScreenWelcomeDeployCommand, "login-screen-welcome.html",
+			)
+			if err != nil {
+				log.WithError(err).
+					Fatal("Failed to deploy the custom welcome message")
+			}
+		},
+	)
+
+	loginScreenWelcomeUndeployCommand := &LoginScreenWelcomeUndeployCommand{}
+	app.registerCommand(
+		"undeploy-login-page-welcome",
+		"Undeploy custom welcome message on the login screen",
+		loginScreenWelcomeUndeployCommand, func() {
+			err := runStaticViewUndeploy(
+				loginScreenWelcomeUndeployCommand, "login-screen-welcome.html",
+			)
+			if err != nil {
+				log.WithError(err).
+					Fatal("Failed to undeploy the custom welcome message")
+			}
+		},
+	)
 
 	return app
 }
 
+// Starts the application with the provided arguments.
+func (a *app) run(args []string) error {
+	// Parse command line arguments.
+	appParser := storkconfig.NewCLIParser(a.parser, "tool", func() {
+		storkutil.SetupLogging()
+	})
+
+	_, _, isHelp, err := appParser.Parse(args)
+	if err != nil {
+		return err
+	}
+	if isHelp {
+		return nil
+	}
+
+	// Handle the version argument first.
+	if a.generalCommand.Version {
+		showVersion()
+		return nil
+	}
+
+	// Find the command that was specified.
+	for command, action := range a.commandsToFunctions {
+		if command.isSpecified() {
+			action()
+			return nil
+		}
+	}
+
+	return errors.New("no command specified")
+}
+
+// The main function of the Stork tool.
 func main() {
 	// Setup logging
 	storkutil.SetupLogging()
 
-	app := setupApp()
-	err := app.Run(os.Args)
+	app := newApp()
+	err := app.run(os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
 	}

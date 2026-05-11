@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -23,6 +24,12 @@ import (
 
 // Aux function checks if a list of expected strings is present in the string.
 func checkOutput(output string, exp []string, reason string) bool {
+	// The go-flags library wraps the output on certain width. We need to
+	// remove the dashes and newlines to make the search work because the
+	// os/exec Command function uses too narrow width.
+	pattern := regexp.MustCompile(`-\n\n\s+`)
+	output = pattern.ReplaceAllString(output, "")
+
 	for _, x := range exp {
 		if !strings.Contains(output, x) {
 			fmt.Printf("ERROR: Expected string \"%s\" not found in %s.\n", x, reason)
@@ -108,7 +115,11 @@ func TestDbOptsHelp(t *testing.T) {
 		require.NoError(t, err)
 
 		// Now check that all expected command-line switches are really there.
-		require.True(t, checkOutput(string(output), dbOpts, "stork-tool * -h output"))
+		require.True(t, checkOutput(
+			string(output),
+			dbOpts,
+			fmt.Sprintf("stork-tool %s -h output", cmd),
+		))
 	}
 }
 
@@ -126,6 +137,30 @@ func TestVersion(t *testing.T) {
 
 		// Check if it equals expected version.
 		require.Equal(t, ver, stork.Version)
+	}
+}
+
+// This test checks if stork-tool --version and -v report expected version.
+// It doesn't call the binary.
+func TestVersionStandalone(t *testing.T) {
+	// Arrange
+	app := newApp()
+
+	for _, opt := range []string{"-v", "--version"} {
+		t.Run(opt, func(t *testing.T) {
+			args := []string{opt}
+
+			// Act
+			var err error
+			stdout, _, captureErr := testutil.CaptureOutput(func() {
+				err = app.run(args)
+			})
+
+			// Assert
+			require.NoError(t, captureErr)
+			require.NoError(t, err)
+			require.Equal(t, stork.Version, strings.TrimSpace(string(stdout)))
+		})
 	}
 }
 

@@ -43,6 +43,8 @@ const (
 	HookProgramAgent = "Stork Agent"
 	// Identifier of the Stork Server program.
 	HookProgramServer = "Stork Server"
+	// Identifier of the Stork Tool program.
+	HookProgramTool = "Stork Tool"
 )
 
 // The current Stork version. Forwarded from the top Stork package.

@@ -148,7 +148,7 @@ func TestRegistrationParams(t *testing.T) {
 func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 	// Arrange
 	defer testutil.CreateOsArgsRestorePoint()()
-	defer testutil.CreateEnvironmentRestorePoint()()
+	defer testutil.ClearEnvironmentVariables()()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
 

@@ -186,15 +186,15 @@ func TestParseTimestampFilenameDoubleExtension(t *testing.T) {
 	require.EqualValues(t, ".bar.baz", extension)
 }
 
-// Test that the restore point clears the environment variables.
-func TestCreateEnvironmentRestorePoint(t *testing.T) {
+// Test that the restore point revers the environment variables.
+func TestClearEnvironmentVariables(t *testing.T) {
 	// Arrange
 	os.Unsetenv("STORK_TEST_KEY1")
 	os.Setenv("STORK_TEST_KEY2", "foo")
 	os.Setenv("STORK_TEST_KEY3", "bar")
 
 	// Act
-	restore := CreateEnvironmentRestorePoint()
+	restore := ClearEnvironmentVariables()
 	os.Setenv("STORK_TEST_KEY1", "baz")
 	os.Unsetenv("STORK_TEST_KEY2")
 	os.Setenv("STORK_TEST_KEY3", "boz")

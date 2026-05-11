@@ -40,12 +40,12 @@ type CLIParser struct {
 // Accepts the main parser. It should be configured with the application
 // settings.
 // The application name is used to construct the namespaces for the CLI flags
-// and environment variables. It should be either 'server' or 'agent'.
+// and environment variables. It should be either 'server', 'agent', 'tool'.
 // The callback is called when the environment file is loaded. Its purpose is
 // to allow reconfiguring the logging using the new environment variables as
 // soon as they are available.
 func NewCLIParser(parser *flags.Parser, app string, onLoadEnvironmentFileCallback func()) *CLIParser {
-	if app != "server" && app != "agent" {
+	if app != "server" && app != "agent" && app != "tool" {
 		// Programming error.
 		panic("invalid application name")
 	}
@@ -61,8 +61,10 @@ func NewCLIParser(parser *flags.Parser, app string, onLoadEnvironmentFileCallbac
 // At the end, it composes the CLI parser from all the flags and runs it.
 // Returns a hook directory settings, hook settings extracted from the hooks,
 // flag indication if the help was requested and an error if any.
-func (p *CLIParser) Parse() (*HookDirectorySettings, GroupedHookCLIFlags, bool, error) {
-	hookDirectorySettings, allHookFLags, err := p.bootstrap()
+// Accepts the command line arguments. The passed arguments should exclude
+// the application name (the first argument).
+func (p *CLIParser) Parse(args []string) (*HookDirectorySettings, GroupedHookCLIFlags, bool, error) {
+	hookDirectorySettings, allHookFLags, err := p.bootstrap(args)
 	if err != nil {
 		if isHelpRequest(err) {
 			return nil, nil, true, nil
@@ -70,7 +72,7 @@ func (p *CLIParser) Parse() (*HookDirectorySettings, GroupedHookCLIFlags, bool, 
 		return nil, nil, false, err
 	}
 
-	err = p.parse()
+	err = p.parse(args)
 	if err != nil {
 		if isHelpRequest(err) {
 			return nil, nil, true, nil
@@ -81,9 +83,9 @@ func (p *CLIParser) Parse() (*HookDirectorySettings, GroupedHookCLIFlags, bool, 
 }
 
 // Parse the CLI flags stored in the main parser.
-func (p *CLIParser) parse() (err error) {
+func (p *CLIParser) parse(args []string) (err error) {
 	// Do args parsing.
-	if _, err = p.parser.Parse(); err != nil {
+	if _, err = p.parser.ParseArgs(args); err != nil {
 		err = errors.Wrap(err, "cannot parse the CLI flags")
 		return err
 	}
@@ -95,11 +97,11 @@ func (p *CLIParser) parse() (err error) {
 // is provided, the content is loaded.
 // Next, it parses the hooks location and extracts their CLI flags.
 // The hook flags are then merged with the core flags.
-func (p *CLIParser) bootstrap() (*HookDirectorySettings, GroupedHookCLIFlags, error) {
+func (p *CLIParser) bootstrap(args []string) (*HookDirectorySettings, GroupedHookCLIFlags, error) {
 	// Environment variables.
 	envFileSettings := &environmentFileSettings{}
 	envParser := p.createSubParser(envFileSettings)
-	if _, err := envParser.Parse(); err != nil {
+	if _, err := envParser.ParseArgs(args); err != nil {
 		return nil, nil, err
 	}
 	err := p.loadEnvironmentFile(envFileSettings)
@@ -110,7 +112,7 @@ func (p *CLIParser) bootstrap() (*HookDirectorySettings, GroupedHookCLIFlags, er
 	// Process the hook directory location.
 	hookDirectorySettings := &HookDirectorySettings{}
 	hookParser := p.createSubParser(hookDirectorySettings)
-	if _, err := hookParser.Parse(); err != nil {
+	if _, err := hookParser.ParseArgs(args); err != nil {
 		return nil, nil, err
 	}
 
@@ -217,6 +219,7 @@ func (p *CLIParser) createSubParser(settings any) *flags.Parser {
 
 	p.substitutePlaceholders(parser)
 
+	parser.Name = p.parser.Name
 	parser.ShortDescription = p.parser.ShortDescription
 	parser.LongDescription = p.parser.LongDescription
 	return parser
@@ -287,13 +290,7 @@ func (p *CLIParser) verifyEnvironmentFile(envFileSettings *environmentFileSettin
 		return err
 	}
 
-	// Collect all known environment variables.
-	knownEnvironmentVariables := make(map[string]bool)
-	for _, group := range p.parser.Groups() {
-		for _, option := range group.Options() {
-			knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
-		}
-	}
+	knownEnvironmentVariables := collectKnownEnvironmentVariables(p.parser.Command)
 
 	// Check if all environment variables are known.
 	for key := range entries {
@@ -312,12 +309,7 @@ func (p *CLIParser) verifyEnvironmentFile(envFileSettings *environmentFileSettin
 // unknown Stork-specific environment variables.
 func (p *CLIParser) verifySystemEnvironmentVariables() {
 	// Collect all known environment variables.
-	knownEnvironmentVariables := make(map[string]bool)
-	for _, group := range p.parser.Groups() {
-		for _, option := range group.Options() {
-			knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
-		}
-	}
+	knownEnvironmentVariables := collectKnownEnvironmentVariables(p.parser.Command)
 
 	// Contains the prefixes of the Stork-specific environment variables.
 	// Stork environment variables starts with the 'STORK' part and then
@@ -394,9 +386,17 @@ func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySett
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.
 		hookWalker := hooksutil.NewHookWalker()
-		program := hooks.HookProgramServer
-		if p.application == "agent" {
+		var program string
+		switch p.application {
+		case "server":
+			program = hooks.HookProgramServer
+		case "agent":
 			program = hooks.HookProgramAgent
+		case "tool":
+			program = hooks.HookProgramTool
+		default:
+			// Programming error.
+			return nil, errors.Errorf("unknown application name: %s", p.application)
 		}
 
 		allCLIFlags, err = hookWalker.CollectCLIFlags(
@@ -463,4 +463,32 @@ func getHookNamespaces(application string, hookName string) (flagNamespace, envN
 	)
 	envNamespace = strings.ToUpper(envNamespace)
 	return
+}
+
+// Collects all known environment variables from a parser. Returns a set of
+// the full environment variable names.
+func collectKnownEnvironmentVariables(parser *flags.Command) map[string]bool {
+	knownEnvironmentVariables := make(map[string]bool)
+
+	// The options of the main group of the top-level parser.
+	for _, option := range parser.Group.Options() {
+		knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
+	}
+
+	// The groups of the top-level parser.
+	for _, group := range parser.Groups() {
+		for _, option := range group.Options() {
+			knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
+		}
+	}
+
+	// The subcommands of the top-level parser.
+	for _, subcommand := range parser.Commands() {
+		subcommandEnvironmentVariables := collectKnownEnvironmentVariables(subcommand)
+		for key := range subcommandEnvironmentVariables {
+			knownEnvironmentVariables[key] = true
+		}
+	}
+
+	return knownEnvironmentVariables
 }

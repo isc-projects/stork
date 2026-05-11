@@ -69,7 +69,7 @@ func TestSetFieldsBasedOnTags(t *testing.T) {
 // variables correctly.
 func TestReadFromEnvironment(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	type mock struct {
@@ -100,7 +100,7 @@ func TestReadFromEnvironment(t *testing.T) {
 // Test that the flags are read from the environment variables properly.
 func TestReadDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	os.Setenv("STORK_DATABASE_NAME", "dbname")
@@ -133,7 +133,7 @@ func TestReadDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 // Test that the maintenance flags are read from the environment variables properly.
 func TestReadMaintenanceDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	os.Setenv("STORK_DATABASE_MAINTENANCE_NAME", "maintenance-dbname")

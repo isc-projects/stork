@@ -443,8 +443,8 @@ func TestLoggingLevel(t *testing.T) {
 		{env: "-", lv: log.InfoLevel},
 	}
 
-	// Let's remember state of the environment and revert to it after test.
-	restore := testutil.CreateEnvironmentRestorePoint()
+	// Let's clear the environment and revert to it after test.
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	for _, test := range testCases {
@@ -466,7 +466,7 @@ func TestLoggingLevel(t *testing.T) {
 // The stack trace should not be multiline.
 func TestLoggingErrorStackTrace(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	SetupLogging()

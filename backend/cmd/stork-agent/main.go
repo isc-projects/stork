@@ -460,7 +460,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 		storkutil.SetupLogging()
 	})
 
-	hookDirectorySettings, _, isHelp, err := appParser.Parse()
+	hookDirectorySettings, _, isHelp, err := appParser.Parse(os.Args[1:])
 	if err != nil {
 		err = errors.Wrap(err, "invalid CLI argument")
 		return nil, nil, false, err

@@ -28,7 +28,7 @@ func TestNewCLIParser(t *testing.T) {
 // and parsed by the CLI parser.
 func TestEnvironmentFileIsLoaded(t *testing.T) {
 	// Arrange
-	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	restorePoint := testutil.ClearEnvironmentVariables()
 	defer restorePoint()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
@@ -39,9 +39,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 		STORK_REST_HOST=baz
 	`)
 
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
+	args := []string{
 		"--use-env-file",
 		"--env-file", envPath,
 	}
@@ -58,7 +56,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	parser := NewCLIParser(flagParser, "server", func() {})
 
 	// Act
-	hookDirSettings, hookFlags, isHelp, err := parser.Parse()
+	hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
 
 	// Assert
 	require.NoError(t, err)
@@ -73,7 +71,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 // Test that the error is returned if the environment file is invalid.
 func TestEnvironmentFileIsInvalid(t *testing.T) {
 	// Arrange
-	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	restorePoint := testutil.ClearEnvironmentVariables()
 	defer restorePoint()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
@@ -82,9 +80,7 @@ func TestEnvironmentFileIsInvalid(t *testing.T) {
 		wrong entry
 	`)
 
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
+	args := []string{
 		"--use-env-file",
 		"--env-file", envPath,
 	}
@@ -94,7 +90,7 @@ func TestEnvironmentFileIsInvalid(t *testing.T) {
 	parser := NewCLIParser(flagParser, "server", func() {})
 
 	// Act
-	hookDirSettings, hookSettings, isHelp, err := parser.Parse()
+	hookDirSettings, hookSettings, isHelp, err := parser.Parse(args)
 
 	// Assert
 	require.Error(t, err)
@@ -108,7 +104,7 @@ func TestEnvironmentFileIsInvalid(t *testing.T) {
 func TestParseArgsFromMultipleSources(t *testing.T) {
 	// Arrange
 	// Environment variables - the lowest priority.
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	os.Setenv("STORK_DATABASE_HOST", "database-host-envvar")
@@ -125,8 +121,7 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 	environmentFile.WriteString("STORK_REST_TLS_CERTIFICATE=certificate-envfile\n")
 
 	// CLI arguments - the highest priority.
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
+	args := []string{
 		"--rest-tls-certificate", "certificate-cli",
 		"--use-env-file",
 		"--env-file", environmentFile.Name(),
@@ -142,7 +137,7 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 	// Act
-	hookDirSettings, hookSettings, isHelp, err := parser.Parse()
+	hookDirSettings, hookSettings, isHelp, err := parser.Parse(args)
 
 	// Assert
 	require.NoError(t, err)
@@ -152,14 +147,13 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 	require.Equal(t, "/usr/lib/stork-server/hooks", hookDirSettings.HookDirectory)
 	require.EqualValues(t, "database-host-envvar", data.DBHost)
 	require.EqualValues(t, "rest-host-envfile", data.RESTHost)
-	require.EqualValues(t, "certificate-envfile", data.TLSCert)
+	require.EqualValues(t, "certificate-cli", data.TLSCert)
 }
 
 // Test that the parser throws an error if the arguments are wrong.
 func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	// Arrange
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{"stork-server", "--foo-bar-baz"}
+	args := []string{"--foo-bar-baz"}
 
 	type settings struct {
 		DBHost string `long:"db-host" description:"The host name, IP address or socket where database is available" env:"STORK_DATABASE_HOST" default:""`
@@ -169,7 +163,7 @@ func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 
 	// Act
-	hookDirSettings, hookSettings, isHelp, err := parser.Parse()
+	hookDirSettings, hookSettings, isHelp, err := parser.Parse(args)
 
 	// Assert
 	require.Error(t, err)
@@ -239,7 +233,6 @@ func TestCollectHookCLIFlagsForNonDirectoryPath(t *testing.T) {
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
 	path, _ := sandbox.Join("file.ext")
-	defer testutil.CreateOsArgsRestorePoint()()
 
 	type settings struct{}
 	data := &settings{}
@@ -247,8 +240,8 @@ func TestCollectHookCLIFlagsForNonDirectoryPath(t *testing.T) {
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 
 	// Act
-	os.Args = []string{"stork-server", "--hook-directory", path}
-	hookDirSettings, hookFlags, isHelp, err := parser.Parse()
+	args := []string{"--hook-directory", path}
+	hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
 
 	// Assert
 	require.ErrorContains(t, err, "hook directory path is not pointing to a directory")
@@ -279,12 +272,11 @@ func TestCollectHookCLIFlagsForMissingDirectory(t *testing.T) {
 // Test that the hook settings are properly parsed from environment variables.
 func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 	os.Setenv("STORK_SERVER_HOOK_BAZ_FOO_BAR", "fooBar")
 
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{"program-name"}
+	args := []string{}
 
 	type hookSettings struct {
 		FooBar string `long:"foo-bar" env:"FOO_BAR"`
@@ -299,7 +291,7 @@ func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
 
 	// Act
 	mergeErr := parser.mergeHookFlags(hookFlags)
-	parseErr := parser.parse()
+	parseErr := parser.parse(args)
 
 	// Assert
 	require.NoError(t, mergeErr)
@@ -314,10 +306,7 @@ func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
 func TestParseHookSettingsFromCLI(t *testing.T) {
 	// Arrange
 	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
-		"--baz.foo-bar", "fooBar",
-	}
+	args := []string{"--baz.foo-bar", "fooBar"}
 
 	type hookSettings struct {
 		FooBar string `long:"foo-bar" env:"FOO_BAR"`
@@ -332,7 +321,7 @@ func TestParseHookSettingsFromCLI(t *testing.T) {
 
 	// Act
 	mergeErr := parser.mergeHookFlags(hookFlags)
-	parseErr := parser.parse()
+	parseErr := parser.parse(args)
 
 	// Assert
 	require.NoError(t, mergeErr)
@@ -374,11 +363,7 @@ func TestPaseHookSettingsDuplicatedNamespace(t *testing.T) {
 // Test that the help is properly printed and it includes the hook settings.
 func TestParseHelp(t *testing.T) {
 	// Arrange
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
-		"--help",
-	}
+	args := []string{"--help"}
 
 	type hookSettings struct {
 		FooBar string `long:"foo-bar" description:"Lorem ipsum" env:"FOO_BAR"`
@@ -393,14 +378,17 @@ func TestParseHelp(t *testing.T) {
 	}
 	data := &settings{}
 
-	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
+	coreParser := flags.NewParser(data, flags.Default)
+	coreParser.Name = "program-name"
+
+	parser := NewCLIParser(coreParser, "server", func() {})
 	_ = parser.mergeHookFlags(hookFlags)
 
 	// Act
 	var isHelp bool
 	var err error
 	stdout, stderr, captureErr := testutil.CaptureOutput(func() {
-		_, _, isHelp, err = parser.Parse()
+		_, _, isHelp, err = parser.Parse(args)
 	})
 
 	// Assert
@@ -441,7 +429,7 @@ Help Options:
 // logged and ignored.
 func TestVerifyEnvironmentFile(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	sandbox := testutil.NewSandbox()
@@ -482,11 +470,67 @@ FOOBAR=foobar
 	require.Contains(t, string(stdout), "Unknown environment variable: 'FOOBAR'")
 }
 
+// Test that the unknown environment variables from the environment file are
+// logged and ignored even if the parser has subcommands.
+func TestVerifyEnvironmentFileForParserWithSubcommands(t *testing.T) {
+	// Arrange
+	restore := testutil.ClearEnvironmentVariables()
+	defer restore()
+
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	envPath, _ := sandbox.Write("file.env", `
+STORK_SERVER_TLS_CERT=tlsCert
+STORK_DATABASE_HOST=databaseHost
+STORK_SERVER_UNKNOWN=unknown
+FOOBAR=foobar
+`)
+
+	type settings struct {
+		TLSCert string `long:"tls-cert" env:"STORK_SERVER_TLS_CERT" description:"The path to the TLS certificate"`
+	}
+
+	type subcommandSettings struct {
+		DBHost string `long:"db-host" env:"STORK_DATABASE_HOST" description:"The host name, IP address or socket where database is available"`
+	}
+
+	data := &settings{}
+	subcommandData := &subcommandSettings{}
+
+	coreParser := flags.NewParser(data, flags.Default)
+	coreParser.AddCommand("subcommand", "Subcommand", "", subcommandData)
+
+	parser := NewCLIParser(coreParser, "server", func() {})
+
+	// Act
+	var err error
+	stdout, _, captureErr := testutil.CaptureOutput(func() {
+		err = parser.verifyEnvironmentFile(&environmentFileSettings{
+			EnvFile:    envPath,
+			UseEnvFile: true,
+		})
+	})
+
+	// Assert
+	require.NoError(t, err)
+	require.NoError(t, captureErr)
+
+	expectedLog := fmt.Sprintf(
+		`Unknown environment variable: 'STORK_SERVER_UNKNOWN' in the environment file: '%s'`,
+		envPath,
+	)
+	require.Contains(t, string(stdout), expectedLog)
+	require.NotContains(t, string(stdout), "TLS_CERT")
+	require.NotContains(t, string(stdout), "DATABASE_HOST")
+	require.Contains(t, string(stdout), "Unknown environment variable: 'FOOBAR'")
+}
+
 // Test that the unknown system-wide environment variables are logged and
 // ignored.
 func TestVerifySystemEnvironmentVariables(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	type settings struct {
@@ -526,7 +570,7 @@ func TestVerifySystemEnvironmentVariables(t *testing.T) {
 // the shell don't raise a warning.
 func TestVerifySystemEnvironmentVariablesFromAnotherApplication(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	type settings struct {
@@ -551,7 +595,7 @@ func TestVerifySystemEnvironmentVariablesFromAnotherApplication(t *testing.T) {
 // Test that the callback is called when the environment file is loaded.
 func TestOnEnvironmentFileLoadedCallbackIsCalled(t *testing.T) {
 	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	sandbox := testutil.NewSandbox()
@@ -582,7 +626,7 @@ func TestOnEnvironmentFileLoadedCallbackIsCalled(t *testing.T) {
 // Test the callback is called when the environment file is loaded exactly once.
 func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 	// Arrange
-	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	restorePoint := testutil.ClearEnvironmentVariables()
 	defer restorePoint()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
@@ -594,8 +638,7 @@ func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 	`)
 
 	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
+	args := []string{
 		"--use-env-file",
 		"--env-file", envPath,
 	}
@@ -612,7 +655,7 @@ func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 	parser := NewCLIParser(flagParser, "server", func() {})
 
 	// Act
-	hookDirSettings, hookFlags, isHelp, err := parser.Parse()
+	hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
 
 	// Assert
 	require.NoError(t, err)

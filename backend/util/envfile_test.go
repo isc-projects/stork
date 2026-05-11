@@ -257,7 +257,7 @@ func TestNewProcessEnvironmentVariableSetter(t *testing.T) {
 // Test that the process setter sets the key-value pair properly.
 func TestProcessEnvironmentVariableSetterAcceptsValidPair(t *testing.T) {
 	// Arrange
-	t.Cleanup(testutil.CreateEnvironmentRestorePoint())
+	t.Cleanup(testutil.ClearEnvironmentVariables())
 	setter := NewProcessEnvironmentVariableSetter()
 
 	// Act
@@ -272,7 +272,7 @@ func TestProcessEnvironmentVariableSetterAcceptsValidPair(t *testing.T) {
 // Test that process setter returns an error on invalid key-value pair.
 func TestProcessEnvironmentVariableSetterRejectInvalidPair(t *testing.T) {
 	// Arrange
-	t.Cleanup(testutil.CreateEnvironmentRestorePoint())
+	t.Cleanup(testutil.ClearEnvironmentVariables())
 	setter := NewProcessEnvironmentVariableSetter()
 
 	// Act

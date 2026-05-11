@@ -12,7 +12,7 @@ import (
 // and parsed by the CLI parser.
 func TestEnvironmentFileIsLoaded(t *testing.T) {
 	// Arrange
-	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	restorePoint := testutil.ClearEnvironmentVariables()
 	defer restorePoint()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
@@ -46,7 +46,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 // Test that the error is returned if the environment file is invalid.
 func TestEnvironmentFileIsInvalid(t *testing.T) {
 	// Arrange
-	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	restorePoint := testutil.ClearEnvironmentVariables()
 	defer restorePoint()
 	sandbox := testutil.NewSandbox()
 	defer sandbox.Close()
@@ -76,7 +76,7 @@ func TestEnvironmentFileIsInvalid(t *testing.T) {
 func TestParseArgsFromMultipleSources(t *testing.T) {
 	// Arrange
 	// Environment variables - the lowest priority.
-	restore := testutil.CreateEnvironmentRestorePoint()
+	restore := testutil.ClearEnvironmentVariables()
 	defer restore()
 
 	os.Setenv("STORK_DATABASE_HOST", "database-host-envvar")

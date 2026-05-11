@@ -80,40 +80,20 @@ func ParseTimestampFilename(filename string) (prefix string, timestamp time.Time
 	return
 }
 
-// Allows reverting the changes in the environment variables to a previous
-// state. It remembers the current environment variables and returns a function
+// Clears the environment variables and allows reverting the original state.
+// It remembers the current environment variables and returns a function
 // that must be called to restore these values.
-func CreateEnvironmentRestorePoint() func() {
+func ClearEnvironmentVariables() func() {
 	originalEnv := os.Environ()
 
+	os.Clearenv()
+
 	return func() {
-		originalEnvDict := make(map[string]string, len(originalEnv))
+		os.Clearenv()
+
 		for _, pair := range originalEnv {
 			key, value, _ := strings.Cut(pair, "=")
-			originalEnvDict[key] = value
-		}
-
-		actualEnv := os.Environ()
-		actualKeys := make(map[string]bool, len(actualEnv))
-		for _, actualPair := range actualEnv {
-			actualKey, actualValue, _ := strings.Cut(actualPair, "=")
-			actualKeys[actualKey] = true
-			originalValue, exist := originalEnvDict[actualKey]
-
-			if !exist {
-				// Environment variable was added.
-				os.Unsetenv(actualKey)
-			} else if actualValue != originalValue {
-				// Environment variable was changed.
-				os.Setenv(actualKey, originalValue)
-			}
-		}
-
-		for originalKey, originalValue := range originalEnvDict {
-			if _, exist := actualKeys[originalKey]; !exist {
-				// Environment variable was removed.
-				os.Setenv(originalKey, originalValue)
-			}
+			os.Setenv(key, value)
 		}
 	}
 }

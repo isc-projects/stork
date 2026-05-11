@@ -1,6 +1,8 @@
 package server
 
 import (
+	"os"
+
 	flags "github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	storkconfig "isc.org/stork/appcfg/stork"
@@ -112,7 +114,7 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 		storkutil.SetupLogging()
 	})
 
-	hookDirSettings, hookFlags, isHelp, err := appParser.Parse()
+	hookDirSettings, hookFlags, isHelp, err := appParser.Parse(os.Args[1:])
 	if err != nil {
 		return NoneCommand, nil, err
 	}
