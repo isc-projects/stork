@@ -114,6 +114,20 @@ Prometheus BIND 9 Exporter flags:
 ``--prometheus-bind9-exporter-port=``
    Specifies the port on which the Stork agent exports BIND 9 statistics to Prometheus. The default is 9119. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]``
 
+Zone Transfer Tracking flags (only for BIND 9):
+
+``--enable-xfr-tracking``
+   Enables the zone transfer tracking. The default is false. ``[$STORK_AGENT_ENABLE_XFR_TRACKING]``
+
+``--xfr-in-tracking-path=``
+   Specifies the path to the log file containing incoming zone transfer requests. The default is empty. ``[$STORK_AGENT_XFR_IN_TRACKING_PATH]``
+
+``--xfr-out-tracking-path=``
+   Specifies the path to the log file containing outgoing zone transfer requests. The default is empty. ``[$STORK_AGENT_XFR_OUT_TRACKING_PATH]``
+
+``--xfr-tracking-systemd-unit=``
+   Specifies the systemd unit name containing the zone transfer logs. The default is empty. ``[$STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT]``
+
 Stork logs at INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
 
