@@ -1,7 +1,7 @@
 package agent
 
 import (
-	bufio "bufio"
+	"bufio"
 	"path/filepath"
 	"strings"
 	"testing"

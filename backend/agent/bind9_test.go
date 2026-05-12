@@ -1,7 +1,7 @@
 package agent
 
 import (
-	bufio "bufio"
+	"bufio"
 	"context"
 	"fmt"
 	"os"

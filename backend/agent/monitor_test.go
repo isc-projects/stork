@@ -1,7 +1,7 @@
 package agent
 
 import (
-	bufio "bufio"
+	"bufio"
 	"bytes"
 	"fmt"
 	"path"
