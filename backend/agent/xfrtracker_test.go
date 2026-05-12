@@ -211,7 +211,7 @@ func TestXfrTrackerTrackSystemdUnit(t *testing.T) {
 		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "xfr.service", "--since", "1 days ago").Return(output, nil)
 		executor.EXPECT().LookPath(gomock.Any()).AnyTimes().Return("", nil)
 
-		// Crete the log tracker using the mock command executor and the
+		// Create the log tracker using the mock command executor and the
 		// default log tracker configuration (using unbuffered channel).
 		logTracker := newLogTracker(executor, logTrackerConfig{})
 		xfrTracker := newXfrTracker(logTracker)
