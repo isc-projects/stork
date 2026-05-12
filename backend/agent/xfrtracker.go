@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -120,7 +119,7 @@ func (t *xfrTracker) trackFiles(filename1, filename2 string) (err error) {
 		t.subscribers = append(t.subscribers, subscriber)
 	}
 	t.track()
-	log.WithFields(logrus.Fields{
+	log.WithFields(log.Fields{
 		"filenames": strings.Join(filenames, ", "),
 	}).Info("DNS zone transfer tracking successfully started using log file(s)")
 	return nil
@@ -137,7 +136,7 @@ func (t *xfrTracker) trackSystemdUnit(unitName string) (err error) {
 	}
 	t.subscribers = append(t.subscribers, subscriber)
 	t.track()
-	log.WithFields(logrus.Fields{
+	log.WithFields(log.Fields{
 		"unit": unitName,
 	}).Info("DNS zone transfer tracking successfully started using systemd unit")
 	return nil
