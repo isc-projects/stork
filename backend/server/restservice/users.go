@@ -12,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/hooks/server/authenticationcallouts"
-	"isc.org/stork/server/authdata"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
@@ -83,71 +82,6 @@ func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbm
 	return user, err
 }
 
-func (r *RestAPI) AuthenticateExternalUser(ctx context.Context, externalUser *authdata.User, methodID string) (*dbmodel.SystemUser, error) {
-	if externalUser == nil {
-		return nil, errors.New("cannot authenticate nil user")
-	}
-
-	groupIDMapping := map[authdata.UserGroupID]int64{
-		authdata.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
-		authdata.UserGroupIDAdmin:      dbmodel.AdminGroupID,
-		authdata.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
-	}
-
-	var groups []*dbmodel.SystemGroup
-	for _, g := range externalUser.Groups {
-		systemGroupID, ok := groupIDMapping[g]
-		if !ok {
-			log.Warningf("Unknown group returned from external authenticator: %d", g)
-			continue
-		}
-
-		groups = append(groups, &dbmodel.SystemGroup{
-			ID: systemGroupID,
-		})
-	}
-
-	systemUser := &dbmodel.SystemUser{
-		Login:                  externalUser.Login,
-		Email:                  externalUser.Email,
-		Lastname:               externalUser.Lastname,
-		Name:                   externalUser.Name,
-		Groups:                 groups,
-		AuthenticationMethodID: methodID,
-		ExternalID:             externalUser.ID,
-		ChangePassword:         false,
-	}
-
-	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
-	if conflict {
-		conflictErr := err
-		var dbUser *dbmodel.SystemUser
-		dbUser, err = dbmodel.GetUserByExternalID(
-			r.DB,
-			methodID,
-			externalUser.ID,
-		)
-		if err != nil {
-			return nil, errors.Errorf("cannot fetch the internal user profile")
-		}
-		if dbUser == nil {
-			// Corner case: CreateUser returned conflict but no user with externalUser.ID was found in DB.
-			// There is another user in DB with conflicting data.
-			return nil, errors.WithMessage(conflictErr, "error creating internal user profile for external authentication")
-		}
-
-		systemUser.ID = dbUser.ID
-
-		if externalUser.Groups == nil {
-			// The groups are not managed by the hook.
-			systemUser.Groups = dbUser.Groups
-		}
-
-		_, err = dbmodel.UpdateUser(r.DB, systemUser)
-	}
-	return systemUser, err
-}
-
 // The external authentication flow handled by the hooks.
 func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
 	calloutUser, err := r.HookManager.Authenticate(
@@ -162,7 +96,7 @@ func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSes
 		return nil, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
-	systemUser, err := r.AuthenticateExternalUser(ctx, calloutUser, *params.Credentials.AuthenticationMethodID)
+	systemUser, err := dbmodel.AddOrUpdateExternalUser(r.DB, calloutUser, *params.Credentials.AuthenticationMethodID)
 	return systemUser, err
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -404,4 +405,102 @@ func (user *SystemUser) InGroup(group *SystemGroup) bool {
 		}
 	}
 	return false
+}
+
+// Creates or updates existing system user which was authenticated via
+// external authenticator (LDAP, OIDC, etc.) inside transaction.
+// Returns created or updated system user along with the list of groups
+// the user belongs to. In case of any error, nil user and the error are returned.
+func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, methodID string) (*SystemUser, error) {
+	groupIDMapping := map[authdata.UserGroupID]int64{
+		authdata.UserGroupIDSuperAdmin: SuperAdminGroupID,
+		authdata.UserGroupIDAdmin:      AdminGroupID,
+		authdata.UserGroupIDReadOnly:   ReadOnlyGroupID,
+	}
+
+	var externalGroups []*SystemGroup
+	for _, g := range externalUser.Groups {
+		systemGroupID, ok := groupIDMapping[g]
+		if !ok {
+			continue
+		}
+
+		externalGroups = append(externalGroups, &SystemGroup{
+			ID: systemGroupID,
+		})
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to add or update external user with ID %s", externalUser.ID)
+		return nil, err
+	}
+	defer dbops.RollbackOnError(tx, &err)
+
+	systemUser := &SystemUser{
+		Login:                  externalUser.Login,
+		Email:                  externalUser.Email,
+		Lastname:               externalUser.Lastname,
+		Name:                   externalUser.Name,
+		AuthenticationMethodID: methodID,
+		ExternalID:             externalUser.ID,
+		ChangePassword:         false,
+	}
+	_, err = db.Model(systemUser).OnConflict("(auth_method, external_id) DO UPDATE").
+		Set("login = ?", externalUser.Login).
+		Set("email = ?", externalUser.Email).
+		Set("name = ?", externalUser.Name).
+		Set("lastname = ?", externalUser.Lastname).
+		Set("change_password = ?", false).Insert()
+	if err != nil {
+		var pgError pg.Error
+		if errors.As(err, &pgError) {
+			conflict := pgError.IntegrityViolation()
+			if conflict {
+				err = pkgerrors.Wrapf(err, "conflicting data in the database for external user with login %s and email %s", externalUser.Login, externalUser.Email)
+			}
+		}
+		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update external user with ID %s", externalUser.ID)
+		return nil, err
+	}
+
+	if externalUser.ExternallyManagedGroups {
+		// External authenticator is managing group associations for the user,
+		// so they should be recreated at every authentication.
+		// Delete existing associations of the user with groups.
+		_, err = db.Model(&SystemUserToGroup{}).Where("user_id = ?", systemUser.ID).Delete()
+		if err == nil {
+			// Recreate the groups based on the new groups list.
+			systemUser.Groups = externalGroups
+			err = createUserGroups(db, systemUser)
+		}
+	} else {
+		// User is authenticated externally and group associations for the user
+		// may be managed by any Stork super-admin.
+		// Check existing associations in the database.
+		var associations []SystemUserToGroup
+		err = db.Model(&associations).Column("group_id").Where("user_id = ?", systemUser.ID).Select()
+		if err == nil {
+			if len(associations) > 0 {
+				// Associations to groups already exist in DB for the user, so assign those dbGroups to returned system user.
+				var dbGroups []*SystemGroup
+				for _, g := range associations {
+					dbGroups = append(dbGroups, &SystemGroup{
+						ID: g.GroupID,
+					})
+				}
+				systemUser.Groups = dbGroups
+			} else {
+				// There is no association yet, so the user was just created. Insert group associations.
+				systemUser.Groups = externalGroups
+				err = createUserGroups(db, systemUser)
+			}
+		}
+	}
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update group associations for external user with ID %s", externalUser.ID)
+		return nil, err
+	}
+	err = tx.Commit()
+	return systemUser, err
 }

@@ -22,5 +22,6 @@ type User struct {
 	Name     string
 	// It must contain internal Stork group IDs. It means that the external authenticator should
 	// map the authentication API identifiers.
-	Groups []UserGroupID
+	Groups                  []UserGroupID
+	ExternallyManagedGroups bool // If external authenticator wants to manage user groups, this should be set to true.
 }
