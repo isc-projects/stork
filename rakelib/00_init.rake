@@ -598,7 +598,7 @@ any_system = true
 
 ### Define package versions
 # Golang-related
-go_ver = '1.25.9'
+go_ver = '1.25.10'
 gocover_cobertura_ver = 'v1.4.0'
 tparse_ver = 'v0.18.0'
 go_junit_report_ver = 'v2.1.0'
