@@ -352,7 +352,7 @@ func TestTextFileLogReaderFollowBeforeFileExists(t *testing.T) {
 	require.Eventually(t, func() bool {
 		mutex.RLock()
 		defer mutex.RUnlock()
-		return len(capturedLines) > 0
+		return len(capturedLines) > 1
 	}, 10*time.Second, 100*time.Millisecond)
 
 	// Ensure that the goroutine has read the file.
