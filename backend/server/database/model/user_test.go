@@ -7,6 +7,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
@@ -793,4 +794,170 @@ func TestDeleteUserInGroup(t *testing.T) {
 	err = DeleteUser(db, user)
 	require.Error(t, err)
 	require.ErrorIs(t, pkgerrors.Cause(err), ErrNotExists)
+}
+
+// Test that the user is successfully added by AddOrUpdateExternalUser.
+func TestAddOrUpdateExternalUserAddsUser(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	externalUser := &authdata.User{
+		ID:       "external_id",
+		Login:    "jan_external",
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly, 99}, // 99 is non-existing group ID in test, should be ignored.
+	}
+
+	// Act
+	systemUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, systemUser)
+	require.Equal(t, externalUser.ID, systemUser.ExternalID)
+	require.Equal(t, externalUser.Login, systemUser.Login)
+	require.Equal(t, externalUser.Email, systemUser.Email)
+	require.Equal(t, externalUser.Name, systemUser.Name)
+	require.Equal(t, externalUser.Lastname, systemUser.Lastname)
+	require.NotNil(t, systemUser.Groups)
+	require.Len(t, systemUser.Groups, 1)
+	require.Equal(t, ReadOnlyGroupID, systemUser.Groups[0].ID)
+	require.Equal(t, "ext_method", systemUser.AuthenticationMethodID)
+	require.Greater(t, systemUser.ID, int64(0))
+	require.False(t, systemUser.ChangePassword)
+
+	// Add another very similar user, but with different authentication method.
+	systemUser2, err := AddOrUpdateExternalUser(db, externalUser, "other_method")
+
+	require.NoError(t, err)
+	require.NotNil(t, systemUser2)
+	require.Equal(t, externalUser.ID, systemUser2.ExternalID)
+	require.Equal(t, externalUser.Login, systemUser2.Login)
+	require.Equal(t, externalUser.Email, systemUser2.Email)
+	require.Equal(t, externalUser.Name, systemUser2.Name)
+	require.Equal(t, externalUser.Lastname, systemUser2.Lastname)
+	require.NotNil(t, systemUser2.Groups)
+	require.Len(t, systemUser2.Groups, 1)
+	require.Equal(t, ReadOnlyGroupID, systemUser2.Groups[0].ID)
+	require.Equal(t, "other_method", systemUser2.AuthenticationMethodID)
+	require.Greater(t, systemUser2.ID, systemUser.ID)
+	require.False(t, systemUser2.ChangePassword)
+}
+
+// Test that the user is successfully updated by AddOrUpdateExternalUser.
+func TestAddOrUpdateExternalUserUpdatesUser(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	externalUser := &authdata.User{
+		ID:       "external_id",
+		Login:    "jan_external",
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	// Act
+	createdUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, createdUser)
+	// Add another very similar user, but with different authentication method.
+	createdUser2, err := AddOrUpdateExternalUser(db, externalUser, "other_method")
+	require.NoError(t, err)
+	require.NotNil(t, createdUser2)
+	// Update external user data.
+	externalUser.Login = "jan_new"
+	externalUser.Email = "jan_new@example.org"
+	externalUser.Name = "Janek"
+	externalUser.Lastname = "Kowalsky"
+	externalUser.Groups = []authdata.UserGroupID{authdata.UserGroupIDAdmin} // Update with changed groups, but this should be ignored and groups should remain untouched.
+	updatedUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, updatedUser)
+	require.Equal(t, createdUser.ID, updatedUser.ID)
+	require.Equal(t, externalUser.ID, updatedUser.ExternalID)
+	require.Equal(t, externalUser.Login, updatedUser.Login)
+	require.Equal(t, externalUser.Email, updatedUser.Email)
+	require.Equal(t, externalUser.Name, updatedUser.Name)
+	require.Equal(t, externalUser.Lastname, updatedUser.Lastname)
+	require.NotNil(t, updatedUser.Groups)
+	require.Len(t, updatedUser.Groups, 1)
+	require.Equal(t, ReadOnlyGroupID, updatedUser.Groups[0].ID) // Because groups are managed internally for the user, groups association should not change.
+	require.Equal(t, "ext_method", updatedUser.AuthenticationMethodID)
+	require.Greater(t, updatedUser.ID, int64(0))
+	require.Greater(t, createdUser2.ID, updatedUser.ID)
+	require.NotEqual(t, createdUser2.Login, updatedUser.Login)
+	require.NotEqual(t, createdUser2.Email, updatedUser.Email)
+}
+
+// Test that AddOrUpdateExternalUser follows external group mapping changes.
+func TestAddOrUpdateExternalUserFollowsGroupMappingChanges(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	externalUser := &authdata.User{
+		ID:                      "external_id",
+		Login:                   "jan_external",
+		Email:                   "jan@example.org",
+		Lastname:                "Kowalski",
+		Name:                    "Jan",
+		ExternallyManagedGroups: true,
+	}
+
+	// Act
+	createdUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, createdUser)
+	require.Nil(t, createdUser.Groups)
+
+	// User was assigned externally to group which was mapped to Stork Admin group.
+	externalUser.Groups = []authdata.UserGroupID{authdata.UserGroupIDAdmin}
+
+	updatedUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+
+	require.NoError(t, err)
+	require.NotNil(t, updatedUser)
+	require.Equal(t, createdUser.ID, updatedUser.ID)
+	require.NotNil(t, updatedUser.Groups)
+	require.Len(t, updatedUser.Groups, 1)
+	require.Equal(t, AdminGroupID, updatedUser.Groups[0].ID)
+
+	// User's group assignment was revoked externally.
+	externalUser.Groups = nil
+
+	updatedUser, err = AddOrUpdateExternalUser(db, externalUser, "ext_method")
+
+	require.NoError(t, err)
+	require.NotNil(t, updatedUser)
+	require.Equal(t, createdUser.ID, updatedUser.ID)
+	require.Nil(t, updatedUser.Groups)
+
+	// External group management was disabled.
+	externalUser.ExternallyManagedGroups = false
+	externalUser.Groups = []authdata.UserGroupID{authdata.UserGroupIDReadOnly}
+
+	// Stork super-admin changed user group internally.
+	updatedUser.Groups = []*SystemGroup{
+		{ID: AdminGroupID},
+	}
+	err = createUserGroups(db, updatedUser)
+	require.NoError(t, err)
+
+	updatedUser, err = AddOrUpdateExternalUser(db, externalUser, "ext_method")
+
+	require.NoError(t, err)
+	require.NotNil(t, updatedUser)
+	require.NotNil(t, updatedUser.Groups)
+	require.Len(t, updatedUser.Groups, 1)
+	require.Equal(t, AdminGroupID, updatedUser.Groups[0].ID) // Internally assigned group should be applied.
 }
