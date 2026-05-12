@@ -961,3 +961,35 @@ func TestAddOrUpdateExternalUserFollowsGroupMappingChanges(t *testing.T) {
 	require.Len(t, updatedUser.Groups, 1)
 	require.Equal(t, AdminGroupID, updatedUser.Groups[0].ID) // Internally assigned group should be applied.
 }
+
+// Test that the user is not added by AddOrUpdateExternalUser when DB integrity violation occurs.
+func TestAddOrUpdateExternalUserFails(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	externalUser := &authdata.User{
+		ID:       "external_id",
+		Login:    "jan_external",
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly, 99}, // 99 is non-existing group ID in test, should be ignored.
+	}
+
+	// Act
+	systemUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser)
+	_, err = db.Model((*SystemUser)(nil)).Exec(`
+		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, email)
+	`)
+	require.NoError(t, err)
+	externalUser2 := externalUser
+	externalUser2.ID = "other_id"
+	systemUser2, err := AddOrUpdateExternalUser(db, externalUser2, "ext_method")
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, systemUser2)
+}
