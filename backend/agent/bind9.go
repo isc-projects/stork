@@ -202,13 +202,14 @@ func parseNamedDefaultPath(output []byte) string {
 
 // Holds the parsed components of a named process command line.
 type namedCommandLine struct {
-	binaryPath string
-	chrootDir  string
-	configPath string
+	binaryPath     string
+	chrootDir      string
+	configPath     string
+	defaultLogFile string
 }
 
 // Parses the command line arguments of a named process to extract the binary
-// path, chroot directory (-t flag), and config path (-c flag).
+// path, chroot directory (-t flag), config path (-c flag), and default log file (-L flag).
 //
 // It scans the arguments for the named binary by comparing
 // filepath.Base(arg) == "named". Only arguments before the first
@@ -263,6 +264,15 @@ func parseNamedCommandLine(args []string) *namedCommandLine {
 				value = flags[i]
 			}
 			result.configPath = filepath.Clean(value)
+		case "-L":
+			if !ok {
+				if i+1 >= len(flags) {
+					continue
+				}
+				i++
+				value = flags[i]
+			}
+			result.defaultLogFile = filepath.Clean(value)
 		}
 	}
 
@@ -288,19 +298,19 @@ func parseNamedCommandLine(args []string) *namedCommandLine {
 // Step 3: Try to parse output of the named -V command.
 // Step 4: Try to find named.conf in the default locations.
 //
-// It returns a path to the directory with named binaries and structure
-// containing the information about the detected files, the chroot directory.
-func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, *detectedDaemonFiles, error) {
+// It returns a path to the directory with named binaries, the default log file path,
+// and structure containing the information about the detected files, the chroot directory.
+func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, string, *detectedDaemonFiles, error) {
 	// We can't proceed without the command line.
 	args, err := p.getCmdlineSlice()
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	// The command line must contain named.
 	parsedCommandLine := parseNamedCommandLine(args)
 	if parsedCommandLine == nil {
-		return "", nil, errors.Errorf("failed to find named in cmdline: %s", strings.Join(args, " "))
+		return "", "", nil, errors.Errorf("failed to find named in cmdline: %s", strings.Join(args, " "))
 	}
 
 	cwd, err := p.getCwd()
@@ -362,7 +372,7 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, *detected
 		log.Debugf("Looking for BIND 9 config file in output of `named -V`.")
 		out, err := sm.commander.Output(binaryPath, "-V")
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "failed to run '%s -V'", binaryPath)
+			return "", "", nil, errors.Wrapf(err, "failed to run '%s -V'", binaryPath)
 		}
 		bind9ConfPath = parseNamedDefaultPath(out)
 	}
@@ -382,28 +392,28 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, *detected
 		}
 	}
 	if bind9ConfPath == "" {
-		return "", nil, errors.Errorf("BIND 9 config file not found")
+		return "", "", nil, errors.Errorf("BIND 9 config file not found")
 	}
 
 	// Create a structure to store the detected files.
 	detectedFiles := newDetectedDaemonFiles(chrootDir)
 	if err := detectedFiles.addFile(detectedFileTypeConfig, bind9ConfPath, sm.commander); err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	// The rndc key file is optional.
 	rndcKeyPath := filepath.Join(filepath.Dir(bind9ConfPath), RndcKeyFile)
 	if sm.commander.IsFileExist(filepath.Join(chrootDir, rndcKeyPath)) {
 		if err := detectedFiles.addFile(detectedFileTypeRndcKey, rndcKeyPath, sm.commander); err != nil {
-			return "", nil, err
+			return "", "", nil, err
 		}
 	}
-	return binaryDir, detectedFiles, nil
+	return binaryDir, parsedCommandLine.defaultLogFile, detectedFiles, nil
 }
 
 // Parses the BIND 9 config and rndc key files. It extracts the RNDC and statistics
 // channel connection parameters.
-func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir string, files *detectedDaemonFiles) (*Bind9Daemon, error) {
+func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir string, defaultLogFile string, files *detectedDaemonFiles) (*Bind9Daemon, error) {
 	configPath := files.getFirstFilePathByType(detectedFileTypeConfig)
 	rndcKeyPath := files.getFirstFilePathByType(detectedFileTypeRndcKey)
 	chrootDir := files.chrootDir
@@ -508,6 +518,7 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 		return nil, errors.Wrapf(err, "failed to determine BIND 9 rndc details")
 	}
 
+	// XFR tracking is optional.
 	var (
 		xfrTracker             *xfrTracker
 		xfrInTrackingPath      string
@@ -515,14 +526,21 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 		xfrTrackingSystemdUnit string
 	)
 	if sm.settings.EnableXFRTracking {
-		// TODO: to set the tracking path and systemd unit name we should take into
-		// account the BIND 9 logging configuration. In this case there will be no
-		// need to explicitly set the tracking path and systemd unit name. They should
-		// be only set when BIND 9 configuration is not clear about the location of the
-		// XFR-related logs.
+		// Explicitly set tracking paths override the paths detected from the BIND 9 config.
 		xfrInTrackingPath = sm.settings.ExplicitXFRInTrackingPath
 		xfrOutTrackingPath = sm.settings.ExplicitXFROutTrackingPath
+		// Systemd unit name can be explicitly set.
 		xfrTrackingSystemdUnit = sm.settings.ExplicitXFRTrackingSystemdUnit
+		// If the tracking locations are not explicitly set, try to detect them from the BIND 9 config.
+		if xfrTrackingSystemdUnit == "" && (xfrInTrackingPath == "" || xfrOutTrackingPath == "") {
+			logging := bind9Config.GetLogging()
+			if xfrInTrackingPath == "" {
+				xfrInTrackingPath = sm.getXFRTrackingPathFromConfig(p, chrootDir, defaultLogFile, logging, "xfer-in")
+			}
+			if xfrOutTrackingPath == "" {
+				xfrOutTrackingPath = sm.getXFRTrackingPathFromConfig(p, chrootDir, defaultLogFile, logging, "xfer-out")
+			}
+		}
 		if sm.logTracker != nil {
 			xfrTracker = newXfrTracker(sm.logTracker)
 		}
@@ -553,7 +571,7 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 // Detects the BIND 9 process, parses its configuration and returns its
 // instance with all its access points.
 func (sm *monitor) detectBind9Daemon(p supportedProcess) (Daemon, error) {
-	namedBinaryDir, detectedFiles, err := sm.detectBind9ConfigPaths(p)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := sm.detectBind9ConfigPaths(p)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to detect BIND 9 config path")
 		return nil, err
@@ -580,12 +598,52 @@ func (sm *monitor) detectBind9Daemon(p supportedProcess) (Daemon, error) {
 	log.Debug("BIND 9 config files have changed, parsing updated config files")
 
 	// Parse the updated config files.
-	daemon, err := sm.configureBind9Daemon(p, namedBinaryDir, detectedFiles)
+	daemon, err := sm.configureBind9Daemon(p, namedBinaryDir, defaultLogFile, detectedFiles)
 	if err != nil {
 		err = errors.WithMessage(err, "failed to configure BIND 9 daemon")
 		return nil, err
 	}
 	return daemon, nil
+}
+
+// Extracts the log file path from the logging statement for the given logging
+// category.
+func (sm *monitor) getXFRTrackingPathFromConfig(p supportedProcess, chrootDir string, defaultLogFile string, logging *bind9config.Logging, category string) string {
+	// In some cases the log file path may be relative. Let's resolve it against
+	// the current working directory.
+	cwd, err := p.getCwd()
+	if err != nil {
+		log.WithError(err).Warnf("failed to get current working directory of BIND 9 process to resolve log file path for %s", category)
+		return ""
+	}
+
+	if !filepath.IsAbs(defaultLogFile) {
+		defaultLogFile = filepath.Join(cwd, defaultLogFile)
+	}
+
+	var filename string
+	channels := logging.GetChannelsForCategoryWithDefaultFile(category, defaultLogFile)
+	for _, channel := range channels {
+		// We currently only support file channels for XFR tracking.
+		if channel.IsFile() {
+			filename = channel.GetFileName()
+			break
+		}
+	}
+	if filename == "" {
+		// Log file not found for the given category.
+		return ""
+	}
+	if !filepath.IsAbs(filename) {
+		filename = filepath.Join(cwd, filename)
+		return filename
+	}
+	// The file path was absolute. We don't know whether or not it is inside the chroot
+	// directory. If it is not, we need to join it with the chroot directory.
+	if chrootDir != "" && !strings.HasPrefix(filename, chrootDir) {
+		filename = filepath.Join(chrootDir, filename)
+	}
+	return filename
 }
 
 // Send a command to named using rndc client.

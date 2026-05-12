@@ -653,20 +653,22 @@ func TestParseNamedCommandLine(t *testing.T) {
 	}{
 		{
 			name: "absolute path with flags",
-			args: []string{"/usr/sbin/named", "-c", "/etc/bind/named.conf", "-t", "/var/named/chroot"},
+			args: []string{"/usr/sbin/named", "-c", "/etc/bind/named.conf", "-t", "/var/named/chroot", "-L", "/var/log/bind9/named.log"},
 			expected: &namedCommandLine{
-				binaryPath: "/usr/sbin/named",
-				chrootDir:  "/var/named/chroot",
-				configPath: "/etc/bind/named.conf",
+				binaryPath:     "/usr/sbin/named",
+				chrootDir:      "/var/named/chroot",
+				configPath:     "/etc/bind/named.conf",
+				defaultLogFile: "/var/log/bind9/named.log",
 			},
 		},
 		{
 			name: "absolute path with flags with equal signs",
-			args: []string{"/usr/sbin/named", "-c=/etc/bind/named.conf", "-t=/var/named/chroot"},
+			args: []string{"/usr/sbin/named", "-c=/etc/bind/named.conf", "-t=/var/named/chroot", "-L=/var/log/bind9/named.log"},
 			expected: &namedCommandLine{
-				binaryPath: "/usr/sbin/named",
-				chrootDir:  "/var/named/chroot",
-				configPath: "/etc/bind/named.conf",
+				binaryPath:     "/usr/sbin/named",
+				chrootDir:      "/var/named/chroot",
+				configPath:     "/etc/bind/named.conf",
+				defaultLogFile: "/var/log/bind9/named.log",
 			},
 		},
 		{
@@ -793,8 +795,9 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 
@@ -830,8 +833,9 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -868,10 +872,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInPath(t *testing.T) {
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 
@@ -908,10 +913,11 @@ func TestDetectBind9ChrootStep1ProcessCmdLineNamedInPath(t *testing.T) {
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
@@ -946,10 +952,11 @@ func TestDetectBind9Step1ProcessCmdLinePathWithSpaces(t *testing.T) {
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
@@ -983,10 +990,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPath(t *testing.T) {
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
@@ -1021,10 +1029,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInChrootPath(t *testing.T) {
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
@@ -1059,10 +1068,11 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPathWithExtraFlags(t *testin
 	process.EXPECT().getCwd().Return("", nil)
 
 	// Act
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 	// Assert
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, config1Path, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
@@ -1101,8 +1111,9 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -1145,8 +1156,9 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -1188,8 +1200,9 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "BIND 9 config file not found")
+	require.Empty(t, defaultLogFile)
 	require.Nil(t, detectedFiles)
 	require.Empty(t, namedBinaryDir)
 }
@@ -1224,8 +1237,9 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -1269,8 +1283,9 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
+	require.Empty(t, defaultLogFile)
 	require.NotNil(t, detectedFiles)
 	require.Len(t, detectedFiles.files, 1)
 	require.Equal(t, varPath, detectedFiles.getFirstFilePathByType(detectedFileTypeConfig))
@@ -1315,10 +1330,11 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 			process.EXPECT().getCwd().Return("", nil)
-			namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+			namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
 			require.NoError(t, err)
+			require.Empty(t, defaultLogFile)
 			require.NotNil(t, detectedFiles)
 			require.Len(t, detectedFiles.files, 1)
 			path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -1365,10 +1381,11 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 			process.EXPECT().getCwd().Return("", nil)
-			namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+			namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
 			require.NoError(t, err)
+			require.Empty(t, defaultLogFile)
 			require.NotNil(t, detectedFiles)
 			require.Len(t, detectedFiles.files, 1)
 			path := detectedFiles.getFirstFilePathByType(detectedFileTypeConfig)
@@ -1411,8 +1428,9 @@ func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
 	monitor.commander = newTestCommandExecutor().
 		addCheckConfOutput(configPath, config)
 
-	namedBinaryDir, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
+	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "file not found")
+	require.Empty(t, defaultLogFile)
 	require.Nil(t, detectedFiles)
 	require.Empty(t, namedBinaryDir)
 }
@@ -1465,7 +1483,7 @@ func TestConfigureBind9DaemonBothConfigRndcKey(t *testing.T) {
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1524,7 +1542,7 @@ func TestConfigureBind9DaemonConfigOnly(t *testing.T) {
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1609,7 +1627,7 @@ func TestConfigureBind9DaemonIncludedFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// Parse and expand the configuration files.
-	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1662,7 +1680,7 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, files)
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
 	require.NoError(t, err)
 	require.NotNil(t, daemon)
 	require.Equal(t, daemonname.Bind9, daemon.GetName())
@@ -1682,6 +1700,309 @@ func TestConfigureBind9DaemonNoStatistics(t *testing.T) {
 	require.EqualValues(t, 1234, daemon.pid)
 	require.NotNil(t, daemon.bind9Config)
 	require.Nil(t, daemon.rndcKeyConfig)
+}
+
+// Test that the XFR tracking paths are extracted from the BIND 9 config file
+// or overridden from the settings.
+func TestConfigureBind9DaemonXFRTrackingAbsoluteFilePaths(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		logging {
+			category "xfer-in" {
+				xfer-in;
+			};
+			category "xfer-out" {
+				xfer-out;
+			};
+			channel "xfer-in" {
+				file "/var/log/bind9/xfer-in.log";
+			};
+			channel "xfer-out" {
+				file "/var/log/bind9/xfer-out.log";
+			};
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	monitor := newMonitor(MonitorSettings{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
+	monitor.settings.EnableXFRTracking = true
+
+	t.Run("extract from config", func(t *testing.T) {
+		// Now run the detection as usual.
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		process := NewMockSupportedProcess(ctrl)
+		process.EXPECT().getPid().Return(int32(1234))
+		process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+
+		files := newDetectedDaemonFiles("")
+		err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
+		require.NoError(t, err)
+
+		daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
+		require.NoError(t, err)
+		require.NotNil(t, daemon)
+
+		require.NotNil(t, daemon.xfrTracker)
+		require.Equal(t, "/var/log/bind9/xfer-in.log", daemon.xfrInTrackingPath)
+		require.Equal(t, "/var/log/bind9/xfer-out.log", daemon.xfrOutTrackingPath)
+	})
+
+	t.Run("override from settings", func(t *testing.T) {
+		monitor.settings.ExplicitXFRInTrackingPath = "/var/log/bind9/explicit/xfer-in.log"
+		monitor.settings.ExplicitXFROutTrackingPath = "/var/log/bind9/explicit/xfer-out.log"
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		process := NewMockSupportedProcess(ctrl)
+		process.EXPECT().getPid().Return(int32(1234))
+		process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+
+		files := newDetectedDaemonFiles("")
+		err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
+		require.NoError(t, err)
+
+		daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
+		require.NoError(t, err)
+		require.NotNil(t, daemon)
+
+		require.NotNil(t, daemon.xfrTracker)
+		require.Equal(t, "/var/log/bind9/explicit/xfer-in.log", daemon.xfrInTrackingPath)
+		require.Equal(t, "/var/log/bind9/explicit/xfer-out.log", daemon.xfrOutTrackingPath)
+	})
+}
+
+// Test that the XFR tracking paths are extracted from the BIND 9 config file
+// when the chroot directory is specified.
+func TestConfigureBind9DaemonXFRTrackingAbsoluteFilePathsChroot(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "chroot", "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		logging {
+			category "xfer-in" {
+				xfer-in;
+			};
+			category "xfer-out" {
+				xfer-out;
+			};
+			channel "xfer-in" {
+				file "/var/log/bind9/xfer-in.log";
+			};
+			channel "xfer-out" {
+				file "/var/log/bind9/xfer-out.log";
+			};
+		};
+	`
+	_, err := sandbox.Write("chroot/named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	monitor := newMonitor(MonitorSettings{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
+	monitor.settings.EnableXFRTracking = true
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+	process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+
+	files := newDetectedDaemonFiles(filepath.Join(sandbox.BasePath, "chroot"))
+	err = files.addFile(detectedFileTypeConfig, "named.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	require.NotNil(t, daemon.xfrTracker)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "chroot", "/var/log/bind9/xfer-in.log"), daemon.xfrInTrackingPath)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "chroot", "/var/log/bind9/xfer-out.log"), daemon.xfrOutTrackingPath)
+}
+
+// Test that the XFR tracking paths are extracted from the BIND 9 config file
+// when the log file path is relative.
+func TestConfigureBind9DaemonXFRTrackingRelativeFilePaths(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		logging {
+			category "xfer-in" {
+				xfer-in;
+			};
+			category "xfer-out" {
+				xfer-out;
+			};
+			channel "xfer-in" {
+				file "xfer-in.log";
+			};
+			channel "xfer-out" {
+				file "xfer-out.log";
+			};
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	monitor := newMonitor(MonitorSettings{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
+	monitor.settings.EnableXFRTracking = true
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+	process.EXPECT().getCwd().AnyTimes().Return("/usr/lib/bind", nil)
+
+	files := newDetectedDaemonFiles("")
+	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	require.NotNil(t, daemon.xfrTracker)
+	require.Equal(t, "/usr/lib/bind/xfer-in.log", daemon.xfrInTrackingPath)
+	require.Equal(t, "/usr/lib/bind/xfer-out.log", daemon.xfrOutTrackingPath)
+}
+
+// Test that the XFR tracking paths are extracted from the BIND 9 config file
+// when the default log file path is specified using the -L option.
+func TestConfigureBind9DaemonXFRTrackingDefaultLogFile(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	monitor := newMonitor(MonitorSettings{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
+	monitor.settings.EnableXFRTracking = true
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+	process.EXPECT().getCwd().AnyTimes().Return("", nil)
+
+	files := newDetectedDaemonFiles("")
+	err = files.addFile(detectedFileTypeConfig, configPath, monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "/var/log/bind9/named.log", files)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	require.NotNil(t, daemon.xfrTracker)
+	require.Equal(t, "/var/log/bind9/named.log", daemon.xfrInTrackingPath)
+	require.Equal(t, "/var/log/bind9/named.log", daemon.xfrOutTrackingPath)
+}
+
+// Test that the XFR tracking paths are extracted from the BIND 9 config file
+// when the default log file path is specified using the -L option and the chroot
+// directory is specified.
+func TestConfigureBind9DaemonXFRTrackingDefaultLogFileChroot(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "chroot", "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+	`
+	_, err := sandbox.Write("chroot/named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	monitor := newMonitor(MonitorSettings{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
+	monitor.settings.EnableXFRTracking = true
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+	process.EXPECT().getCwd().AnyTimes().Return("", nil)
+
+	files := newDetectedDaemonFiles(filepath.Join(sandbox.BasePath, "chroot"))
+	err = files.addFile(detectedFileTypeConfig, "named.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "/var/log/bind9/named.log", files)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	require.NotNil(t, daemon.xfrTracker)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "chroot", "/var/log/bind9/named.log"), daemon.xfrInTrackingPath)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "chroot", "/var/log/bind9/named.log"), daemon.xfrOutTrackingPath)
 }
 
 // Check that an error is returned when parsing the BIND 9 config file fails.
@@ -1704,7 +2025,7 @@ func TestConfigureBind9DaemonParseError(t *testing.T) {
 	err := files.addFile(detectedFileTypeConfig, "/etc/bind/named.conf", monitor.commander)
 	require.NoError(t, err)
 
-	daemon, err := monitor.configureBind9Daemon(process, "", files)
+	daemon, err := monitor.configureBind9Daemon(process, "", "", files)
 	require.Error(t, err)
 	require.Nil(t, daemon)
 	require.ErrorContains(t, err, "failed to parse BIND 9 config file")
