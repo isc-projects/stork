@@ -90,7 +90,7 @@ stages:
 
 # template with alpine image
 .image_alpine: &image_alpine
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:14
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:15
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
