@@ -358,9 +358,9 @@ type generalSettings struct {
 
 	// XFR tracking settings.
 	EnableXFRTracking      bool   `long:"enable-xfr-tracking" description:"Enable the agent to track zone transfers initiated by BIND 9." env:"STORK_AGENT_ENABLE_XFR_TRACKING"`
-	XFRInTrackingPath      string `long:"xfr-in-tracking-path" description:"Specify the path to the BIND 9 log file where incoming zone transfers are logged." env:"STORK_AGENT_XFR_IN_TRACKING_PATH"`
-	XFROutTrackingPath     string `long:"xfr-out-tracking-path" description:"Specify the path to the BIND 9 log file where outgoing zone transfers are logged." env:"STORK_AGENT_XFR_OUT_TRACKING_PATH"`
-	XFRTrackingSystemdUnit string `long:"xfr-tracking-systemd-unit" description:"Specify the BIND 9 systemd unit name for which zone transfers are logged." env:"STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT"`
+	XFRInTrackingPath      string `long:"xfr-in-tracking-path" description:"Specify the path to the BIND 9 log file where incoming zone transfers are logged. This option is mutually exclusive with the xfr-tracking-systemd-unit option. If both are specified, the xfr-in-tracking-path option takes precedence." env:"STORK_AGENT_XFR_IN_TRACKING_PATH"`
+	XFROutTrackingPath     string `long:"xfr-out-tracking-path" description:"Specify the path to the BIND 9 log file where outgoing zone transfers are logged. This option is mutually exclusive with the xfr-tracking-systemd-unit option. If both are specified, the xfr-out-tracking-path option takes precedence." env:"STORK_AGENT_XFR_OUT_TRACKING_PATH"`
+	XFRTrackingSystemdUnit string `long:"xfr-tracking-systemd-unit" description:"Specify the BIND 9 systemd unit name for which zone transfers are logged. This option is mutually exclusive with the xfr-in-tracking-path and xfr-out-tracking-path options which take precedence over this option." env:"STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT"`
 }
 
 // Register command settings.

@@ -117,16 +117,16 @@ Prometheus BIND 9 Exporter flags:
 Zone Transfer Tracking flags (only for BIND 9):
 
 ``--enable-xfr-tracking``
-   Enables the zone transfer tracking. The default is false. ``[$STORK_AGENT_ENABLE_XFR_TRACKING]``
+   Enables the agent to track zone transfers initiated by BIND 9. The default is false. ``[$STORK_AGENT_ENABLE_XFR_TRACKING]``
 
 ``--xfr-in-tracking-path=``
-   Specifies the path to the log file containing incoming zone transfer requests. The default is empty. ``[$STORK_AGENT_XFR_IN_TRACKING_PATH]``
+   Specifies the path to the log file containing incoming zone transfer requests. This option is mutually exclusive with the ``xfr-tracking-systemd-unit`` option. If both are specified, the ``xfr-in-tracking-path`` option takes precedence. The default is empty in which case incoming zone transfer requests are not tracked in the log files. ``[$STORK_AGENT_XFR_IN_TRACKING_PATH]``
 
 ``--xfr-out-tracking-path=``
-   Specifies the path to the log file containing outgoing zone transfer requests. The default is empty. ``[$STORK_AGENT_XFR_OUT_TRACKING_PATH]``
+   Specifies the path to the log file containing outgoing zone transfer requests.  This option is mutually exclusive with the ``xfr-tracking-systemd-unit`` option. If both are specified, the ``xfr-out-tracking-path`` option takes precedence. The default is empty in which case outgoing zone transfer requests are not tracked in the log files. ``[$STORK_AGENT_XFR_OUT_TRACKING_PATH]``
 
 ``--xfr-tracking-systemd-unit=``
-   Specifies the systemd unit name containing the zone transfer logs. The default is empty. ``[$STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT]``
+   Specifies the systemd unit name for which zone transfers are logged. This option is mutually exclusive with the ``xfr-in-tracking-path`` and ``xfr-out-tracking-path`` options which take precedence over this option. The default is empty in which case zone transfer requests in ``systemd`` logs are not tracked. ``[$STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT]``
 
 Stork logs at INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
