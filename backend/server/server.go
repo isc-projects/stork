@@ -42,7 +42,7 @@ type StorkServer struct {
 
 	GeneralSettings GeneralSettings
 
-	OIDCSettings    *oidc.Settings
+	OIDCSettings *oidc.Settings
 
 	Pullers *daemons.Pullers
 

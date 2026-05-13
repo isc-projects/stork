@@ -21,6 +21,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 		STORK_DATABASE_HOST=foo
 		STORK_SERVER_HOOK_DIRECTORY=bar
 		STORK_REST_HOST=baz
+		STORK_OIDC_ISSUER_URL=https://idp.example.org/
 	`)
 
 	defer testutil.CreateOsArgsRestorePoint()()
@@ -41,6 +42,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	require.Equal(t, "foo", settings.DatabaseSettings.Host)
 	require.Equal(t, "bar", settings.HookDirectory)
 	require.Equal(t, "baz", settings.RestAPISettings.Host)
+	require.Equal(t, "https://idp.example.org/", settings.OIDCSettings.IssuerURL)
 }
 
 // Test that the error is returned if the environment file is invalid.

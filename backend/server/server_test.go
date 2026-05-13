@@ -132,6 +132,7 @@ func TestNewStorkServer(t *testing.T) {
 		"--rest-static-files-dir", "staticdir",
 		"--initial-puller-interval", "54",
 		"--hook-directory", "hookdir",
+		"--oidc-issuer-url", "https://idp.example.org",
 	)
 
 	// Act
@@ -166,6 +167,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
 	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
 	require.EqualValues(t, "hookdir", ss.HookDirectory)
+	require.EqualValues(t, "https://idp.example.org", ss.OIDCSettings.IssuerURL)
 }
 
 // Test that the Stork Server is constructed if no arguments are provided.
