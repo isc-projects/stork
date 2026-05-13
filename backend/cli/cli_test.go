@@ -296,9 +296,6 @@ func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
 	// Assert
 	require.NoError(t, mergeErr)
 	require.NoError(t, parseErr)
-
-	// ToDO: Fix this test
-	// require.Contains(t, settings.HooksSettings, "baz")
 	require.Equal(t, "fooBar", hookFlags["baz"].(*hookSettings).FooBar)
 }
 
@@ -325,8 +322,6 @@ func TestParseHookSettingsFromCLI(t *testing.T) {
 	// Assert
 	require.NoError(t, mergeErr)
 	require.NoError(t, parseErr)
-	// TODO: Fix this test
-	// require.Contains(t, settings.HooksSettings, "baz")
 	require.Equal(t, "fooBar", hookFlags["baz"].(*hookSettings).FooBar)
 }
 
