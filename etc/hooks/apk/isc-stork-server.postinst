@@ -11,4 +11,8 @@ adduser -h "${home_dir}" -D -S -H -g "Stork Server User" -G stork-server stork-s
 # the stork-server user so that LDAP hook icons can be written there.
 auth_methods_dir=/usr/share/stork/www/assets/authentication-methods
 mkdir -p "${auth_methods_dir}"
+# This call seems to be ineffective on Alpine. The permissions are set properly,
+# but they are reset somehow after the script runs. It seems it isn't nfpm's
+# fault, I haven't found any code that would reset the permissions. Maybe it's
+# something in apk itself, but I haven't found any information about it.
 chown stork-server "${auth_methods_dir}"
