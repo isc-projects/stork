@@ -9,6 +9,7 @@ import (
 	"isc.org/stork/hooks"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork/server/oidc"
 	"isc.org/stork/server/restservice"
 	storkutil "isc.org/stork/util"
 )
@@ -56,6 +57,7 @@ type Settings struct {
 	HooksSettings    map[string]hooks.HookSettings
 	DatabaseSettings *dbops.DatabaseSettings
 	HookDirectory    string
+	OIDCSettings     *oidc.Settings
 }
 
 // Constructs a new settings instance.
@@ -68,6 +70,7 @@ func newSettings() *Settings {
 		AgentsSettings:   &agentcomm.AgentsSettings{},
 		HooksSettings:    make(map[string]hooks.HookSettings),
 		DatabaseSettings: &dbops.DatabaseSettings{},
+		OIDCSettings:     &oidc.Settings{},
 	}
 }
 
@@ -100,6 +103,13 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 	if err != nil {
 		err = errors.Wrap(err, "cannot add the ReST group")
 		return
+	}
+
+	// Process OIDC specific args.
+	_, err = parser.AddGroup("OIDC Authentication Server Flags", "", settings.OIDCSettings)
+	if err != nil {
+		err = errors.Wrap(err, "cannot add the OIDC group")
+		return nil, err
 	}
 
 	// Process agent comm specific args.

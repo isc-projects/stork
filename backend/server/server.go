@@ -25,6 +25,7 @@ import (
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
+	"isc.org/stork/server/oidc"
 	"isc.org/stork/server/restservice"
 )
 
@@ -40,6 +41,8 @@ type StorkServer struct {
 	RestAPI         *restservice.RestAPI
 
 	GeneralSettings GeneralSettings
+
+	OIDCSettings    *oidc.Settings
 
 	Pullers *daemons.Pullers
 
@@ -75,6 +78,7 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 		ss.GeneralSettings = *settings.GeneralSettings
 		ss.RestAPISettings = *settings.RestAPISettings
 		ss.HookDirectory = settings.HookDirectory
+		ss.OIDCSettings = settings.OIDCSettings
 	}
 	return command, err
 }
