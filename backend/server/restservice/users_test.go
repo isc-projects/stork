@@ -2032,6 +2032,112 @@ func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 	require.Equal(t, "common@example.org", okRsp3.Payload.Email)
 }
 
+// Test that the external users' change of group mapping done externally
+// is applied when session is created.
+func TestCreateSessionOfExternalUserRoleChanges(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	user := &dbmodel.SystemUser{
+		Login:    "baz",
+		Email:    "common@example.org",
+		Lastname: "baz",
+		Name:     "baz",
+	}
+	password := "pass"
+	con, err := dbmodel.CreateUserWithPassword(db, user, password)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	authenticationMethodID := "external"
+	metadataMock := NewMockAuthenticationMetadata(ctrl)
+	metadataMock.EXPECT().
+		GetID().
+		Return(authenticationMethodID).
+		Times(2)
+
+	mock := NewMockAuthenticationCalloutCarrier(ctrl)
+	gomock.InOrder(
+		// First log-in.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("foo")), gomock.Any()).
+			Return(&authdata.User{
+				ID:                      "external-id",
+				Login:                   "foo",
+				Email:                   "common@example.org",
+				Lastname:                "foo",
+				Name:                    "foo",
+				Groups:                  []authdata.UserGroupID{authdata.UserGroupIDAdmin},
+				ExternallyManagedGroups: true,
+			}, nil),
+		// Second log-in with updated data. Groups assignment was revoked.
+		mock.EXPECT().
+			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("foo")), gomock.Any()).
+			Return(&authdata.User{
+				ID:                      "external-id",
+				Login:                   "foo",
+				Email:                   "common@example.org",
+				Lastname:                "foo",
+				Name:                    "foo",
+				ExternallyManagedGroups: true,
+			}, nil),
+	)
+	mock.EXPECT().
+		GetMetadata().
+		Return(metadataMock).
+		Times(2)
+
+	hookManager := hookmanager.NewHookManager()
+	hookManager.RegisterCalloutCarrier(mock)
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	ctx, _ := rapi.SessionManager.Load(t.Context(), "")
+
+	// Act
+	rsp1 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("foo"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	})
+	rsp2 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier:             storkutil.Ptr("foo"),
+			Secret:                 storkutil.Ptr("secret"),
+			AuthenticationMethodID: &authenticationMethodID,
+		},
+	})
+	rsp3 := rapi.CreateSession(ctx, users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier: storkutil.Ptr("baz"),
+			Secret:     &password,
+		},
+	})
+
+	// Assert
+	require.IsType(t, &users.CreateSessionOK{}, rsp1)
+	require.IsType(t, &users.CreateSessionOK{}, rsp2)
+	require.IsType(t, &users.CreateSessionOK{}, rsp3)
+	okRsp1 := rsp1.(*users.CreateSessionOK)
+	okRsp2 := rsp2.(*users.CreateSessionOK)
+	okRsp3 := rsp3.(*users.CreateSessionOK)
+	require.Equal(t, *okRsp1.Payload.ID, *okRsp2.Payload.ID)
+	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp3.Payload.ID)
+	require.NotEqual(t, *okRsp2.Payload.ID, *okRsp3.Payload.ID)
+	require.Equal(t, "foo", okRsp1.Payload.Name)
+	require.Equal(t, "foo", okRsp2.Payload.Name)
+	require.Equal(t, "baz", okRsp3.Payload.Name)
+	require.NotNil(t, okRsp1.Payload.Groups)
+	require.Len(t, okRsp1.Payload.Groups, 1)
+	require.Equal(t, dbmodel.AdminGroupID, okRsp1.Payload.Groups[0])
+	require.Empty(t, okRsp2.Payload.Groups)
+}
+
 // Test that the internal authentication method is always returned.
 func TestGetAuthenticationMethodsInternal(t *testing.T) {
 	// Arrange
