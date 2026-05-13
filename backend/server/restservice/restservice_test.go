@@ -17,6 +17,7 @@ import (
 	daemonstest "isc.org/stork/server/daemons/test"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/hookmanager"
+	"isc.org/stork/server/oidc"
 	storktest "isc.org/stork/server/test"
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 	"isc.org/stork/testutil"
@@ -49,9 +50,10 @@ func TestNewRestAPI(t *testing.T) {
 		Agents: agents,
 	})
 	endpointControl := NewEndpointControl()
+	oidcControl := oidc.NewController(oidc.Settings{}, db)
 
 	// Specify all supported structures.
-	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector, configManager, endpointControl)
+	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector, configManager, endpointControl, oidcControl)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 	require.Equal(t, api.Settings, settings)
@@ -63,9 +65,10 @@ func TestNewRestAPI(t *testing.T) {
 	require.Equal(t, api.MetricsCollector, collector)
 	require.Equal(t, api.ConfigManager, configManager)
 	require.Equal(t, api.EndpointControl, endpointControl)
+	require.Equal(t, oidcControl, api.OIDCControl)
 
 	// Reverse their order.
-	api, err = NewRestAPI(endpointControl, configManager, collector, dispatcher, pullers, eventcenter, agents, db, dbs, settings)
+	api, err = NewRestAPI(oidcControl, endpointControl, configManager, collector, dispatcher, pullers, eventcenter, agents, db, dbs, settings)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 	require.Equal(t, api.Settings, settings)
@@ -77,6 +80,7 @@ func TestNewRestAPI(t *testing.T) {
 	require.Equal(t, api.MetricsCollector, collector)
 	require.Equal(t, api.ConfigManager, configManager)
 	require.Equal(t, api.EndpointControl, endpointControl)
+	require.Equal(t, oidcControl, api.OIDCControl)
 
 	// Specify one structure and one interface.
 	api, err = NewRestAPI(dbs, dispatcher)
