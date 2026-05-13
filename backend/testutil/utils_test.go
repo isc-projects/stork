@@ -186,7 +186,7 @@ func TestParseTimestampFilenameDoubleExtension(t *testing.T) {
 	require.EqualValues(t, ".bar.baz", extension)
 }
 
-// Test that the restore point revers the environment variables.
+// Test that the restore point reverts the environment variables.
 func TestClearEnvironmentVariables(t *testing.T) {
 	// Arrange
 	os.Unsetenv("STORK_TEST_KEY1")
