@@ -22,11 +22,6 @@ type Controller struct {
 // and a pointer to Stork server database, which is used to insert
 // and update authenticated users.
 func NewController(settings Settings, db *dbops.PgDB) *Controller {
-	if settings.IssuerURL == "" {
-		return &Controller{
-			configured: false,
-		}
-	}
 	return &Controller{
 		settings: settings,
 		db:       db,
@@ -38,7 +33,7 @@ func NewController(settings Settings, db *dbops.PgDB) *Controller {
 // manager to create sessions for authenticated users.
 func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.SessionMgr) {
 	if ctl.settings.IssuerURL == "" {
-		ctl.configured = false
+		// Mandatory setting is missing. Controller will remain not configured.
 		return
 	}
 	ctl.dbSessionManager = dbSessionManager
