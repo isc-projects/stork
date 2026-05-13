@@ -644,7 +644,10 @@ func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 
 	flagParser := flags.NewParser(data, flags.Default)
 
-	parser := NewCLIParser(flagParser, "server", func() {})
+	callCount := 0
+	parser := NewCLIParser(flagParser, "server", func() {
+		callCount++
+	})
 
 	// Act
 	hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
@@ -653,6 +656,7 @@ func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, isHelp)
 	require.Empty(t, hookFlags)
+	require.Equal(t, 1, callCount)
 
 	require.Equal(t, "foo", data.DBHost)
 	require.Equal(t, "bar", hookDirSettings.HookDirectory)
