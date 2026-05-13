@@ -16,7 +16,7 @@ type GroupMapping struct {
 
 // The main OIDC settings structure.
 type Settings struct {
-	IssuerURL            string                `long:"oidc-issuer-url" description:"The OID Provider Issuer URL used for OIDC discovery process." env:"STORK_OIDC_ISSUER_URL" default:""`
+	IssuerURL            string                `long:"oidc-issuer-url" description:"Mandatory. The OID Provider Issuer URL used for OIDC discovery process." env:"STORK_OIDC_ISSUER_URL" default:""`
 	ClientID             string                `long:"oidc-client-id" description:"Mandatory. Client ID registered at the OID Provider." env:"STORK_OIDC_CLIENT_ID" default:""`
 	ClientSecret         string                `long:"oidc-client-secret" description:"Optional. Client secret provided by the OID Provider. Optional, because only some Providers require this in the OIDC process." env:"STORK_OIDC_CLIENT_SECRET" default:""`
 	IdentityProviderName string                `long:"oidc-provider-name" description:"Optional. The OID Provider name that will be displayed on a Login page. Leave blank to display generic OAuth/OIDC name." env:"STORK_OIDC_PROVIDER_NAME" default:""`

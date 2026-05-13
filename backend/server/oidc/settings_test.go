@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test that CommaSeparatedStrings are correctly unmarshaled.
 func TestUnmarshalFlag(t *testing.T) {
 	// Arrange
 	var flags CommaSeparatedStrings
