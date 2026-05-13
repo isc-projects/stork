@@ -517,3 +517,54 @@ func NullifyEmptyString(s *string) *string {
 	}
 	return nil
 }
+
+// Splits a string by comma. Supports escaping commas with a backslash.
+func SplitByComma(value string) (result []string) {
+	var (
+		backslash bool
+		current   []rune
+	)
+	for _, c := range value {
+		switch c {
+		case '\\':
+			if !backslash {
+				// The backslash has not been seen yet. Count it.
+				backslash = true
+			} else {
+				// The backslash has been already seen. Add a single backslash
+				// to the current string.
+				current = append(current, c)
+			}
+		case ',':
+			if backslash {
+				// Escaped comma. Add it to the current string.
+				current = append(current, c)
+				backslash = false
+			} else {
+				// Unescaped comma. Split on it.
+				if token := strings.TrimSpace(string(current)); token != "" {
+					result = append(result, token)
+				}
+				current = []rune{}
+			}
+		default:
+			if backslash {
+				current = append(current, '\\')
+				backslash = false
+			}
+
+			// Neither backslash nor comma. Add the character to the current
+			// string.
+			current = append(current, c)
+		}
+	}
+
+	if backslash {
+		current = append(current, '\\')
+	}
+
+	if token := strings.TrimSpace(string(current)); token != "" {
+		result = append(result, token)
+	}
+	return
+}
