@@ -664,3 +664,38 @@ func TestParseBoolFlag(t *testing.T) {
 		require.False(t, value)
 	})
 }
+
+// Test that strings are correctly split by a comma. It must honor the
+// backslash escaping and not split the comma in such cases.
+func TestSplitByComma(t *testing.T) {
+	cases := []string{
+		"1,2,3",
+		"1, 2, 3",
+		"1\\,2,3",
+		"1\\\\,2,3",
+		"1\\\\\\,2,3",
+		"EST5EDT4\\,M3.2.0/02:00\\,M11.1.0/02:00",
+		"1,2\\",
+		"",
+		"\\",
+		"1\\t,2",
+	}
+
+	expected := [][]string{
+		{"1", "2", "3"},
+		{"1", "2", "3"},
+		{"1,2", "3"},
+		{"1\\,2", "3"},
+		{"1\\\\,2", "3"},
+		{"EST5EDT4,M3.2.0/02:00,M11.1.0/02:00"},
+		{"1", "2\\"},
+		{},
+		{"\\"},
+		{"1\\t", "2"},
+	}
+
+	for i, c := range cases {
+		vals := SplitByComma(c)
+		require.EqualValues(t, expected[i], vals)
+	}
+}

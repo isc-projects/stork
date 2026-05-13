@@ -519,11 +519,12 @@ func NullifyEmptyString(s *string) *string {
 }
 
 // Splits a string by comma. Supports escaping commas with a backslash.
-func SplitByComma(value string) (result []string) {
+func SplitByComma(value string) []string {
 	var (
 		backslash bool
 		current   []rune
 	)
+	result := []string{}
 	for _, c := range value {
 		switch c {
 		case '\\':
@@ -566,5 +567,5 @@ func SplitByComma(value string) (result []string) {
 	if token := strings.TrimSpace(string(current)); token != "" {
 		result = append(result, token)
 	}
-	return
+	return result
 }

@@ -30,6 +30,6 @@ type Settings struct {
 // Implementation of go-flags Unmarshaler interface. Unmarshals a comma-separated values in a string into a slice of strings.
 // Supports backslash comma escaping.
 func (flags *CommaSeparatedStrings) UnmarshalFlag(value string) error {
-	*flags = storkutil.SplitByComma(value)
+	*flags = append(*flags, storkutil.SplitByComma(value)...)
 	return nil
 }
