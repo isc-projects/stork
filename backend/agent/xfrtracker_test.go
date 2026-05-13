@@ -331,8 +331,7 @@ func TestXfrTrackerParseTimeUnknownFormat(t *testing.T) {
 
 // Test parsing the incoming transfer started message.
 func TestXfrTrackerParseIncomingTransferStarted(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.071 zone bind9.example.org/IN: Transfer started.")
+	xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.071 zone bind9.example.org/IN: Transfer started.")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusStarted, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -379,8 +378,7 @@ func TestXfrTrackerParseIncomingTransferStartedMalformed(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			xfrTracker := newXfrTracker(nil)
-			xfrState := xfrTracker.parse(test.logLine)
+			xfrState := parseTransferLogLine(test.logLine)
 			require.Nil(t, xfrState)
 		})
 	}
@@ -388,8 +386,7 @@ func TestXfrTrackerParseIncomingTransferStartedMalformed(t *testing.T) {
 
 // Test parsing the incoming transfer connected message.
 func TestXfrTrackerParseIncomingTransferConnected(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.115 0x7ffff943c000: transfer of 'bind9.example.org/IN' from 192.5.5.241#53: connected using 192.5.5.241#53")
+	xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.115 0x7ffff943c000: transfer of 'bind9.example.org/IN' from 192.5.5.241#53: connected using 192.5.5.241#53")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusConnected, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -409,8 +406,7 @@ func TestXfrTrackerParseIncomingTransferConnected(t *testing.T) {
 
 // Test parsing the incoming transfer status success message.
 func TestXfrTrackerParseIncomingTransferStatusSuccess(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.147 0x7ffffb63b000: transfer of 'drop.rpz.example.com/IN' from 172.24.0.53#53: Transfer status: success")
+	xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.147 0x7ffffb63b000: transfer of 'drop.rpz.example.com/IN' from 172.24.0.53#53: Transfer status: success")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusMessage, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -430,8 +426,7 @@ func TestXfrTrackerParseIncomingTransferStatusSuccess(t *testing.T) {
 
 // Test parsing the incoming transfer completed message.
 func TestXfrTrackerParseIncomingTransferCompleted(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.147 0x7ffffb63b000: transfer of 'bind9.example.org/IN' from 172.24.0.53#53: Transfer completed: 1 messages, 5 records, 294 bytes, 0.014 secs (21000 bytes/sec) (serial 201702121)")
+	xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.147 0x7ffffb63b000: transfer of 'bind9.example.org/IN' from 172.24.0.53#53: Transfer completed: 1 messages, 5 records, 294 bytes, 0.014 secs (21000 bytes/sec) (serial 201702121)")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusCompleted, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -451,8 +446,7 @@ func TestXfrTrackerParseIncomingTransferCompleted(t *testing.T) {
 
 // Test parsing the incoming transfer started message containing a view name.
 func TestXfrTrackerParseIncomingTransferStartedView(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("zone drop.rpz.example.com/IN/trusted: Transfer started.")
+	xfrState := parseTransferLogLine("zone drop.rpz.example.com/IN/trusted: Transfer started.")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusStarted, xfrState.status)
 	require.Equal(t, "trusted", xfrState.viewName)
@@ -472,8 +466,7 @@ func TestXfrTrackerParseIncomingTransferStartedView(t *testing.T) {
 
 // Test parsing the incoming transfer connected message containing a view name.
 func TestXfrTrackerParseIncomingTransferConnectedView(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("0x7ffff7c3b000: transfer of 'drop.rpz.example.com/IN/trusted' from 172.24.0.53#53: connected using 172.24.0.53#53 TSIG trusted-key")
+	xfrState := parseTransferLogLine("0x7ffff7c3b000: transfer of 'drop.rpz.example.com/IN/trusted' from 172.24.0.53#53: connected using 172.24.0.53#53 TSIG trusted-key")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusConnected, xfrState.status)
 	require.Equal(t, "trusted", xfrState.viewName)
@@ -493,8 +486,7 @@ func TestXfrTrackerParseIncomingTransferConnectedView(t *testing.T) {
 
 // Test parsing the outgoing AXFR transfer started message.
 func TestXfrTrackerParseOutgoingTransferStarted(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.138 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR started: TSIG trusted-key (serial 201702121)")
+	xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.138 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR started: TSIG trusted-key (serial 201702121)")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusStarted, xfrState.status)
 	require.Equal(t, "trusted", xfrState.viewName)
@@ -514,8 +506,7 @@ func TestXfrTrackerParseOutgoingTransferStarted(t *testing.T) {
 
 // Test parsing the outgoing AXFR transfer completed message.
 func TestXfrTrackerParseOutgoingTransferCompleted(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.141 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR ended: 1 messages, 5 records, 294 bytes, 0.004 secs (73500 bytes/sec) (serial 201702121)")
+	xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.141 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR ended: 1 messages, 5 records, 294 bytes, 0.004 secs (73500 bytes/sec) (serial 201702121)")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusCompleted, xfrState.status)
 	require.Equal(t, "trusted", xfrState.viewName)
@@ -535,8 +526,7 @@ func TestXfrTrackerParseOutgoingTransferCompleted(t *testing.T) {
 
 // Test parsing the setting up zone transfer failed message.
 func TestXfrTrackerParseSettingUpZoneTransferFailed(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': setting up zone transfer: failed")
+	xfrState := parseTransferLogLine("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': setting up zone transfer: failed")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusMessage, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -556,8 +546,7 @@ func TestXfrTrackerParseSettingUpZoneTransferFailed(t *testing.T) {
 
 // Test parsing the setting up zone transfer aborted message.
 func TestXfrTrackerParseSettingUpZoneTransferAborted(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': aborted")
+	xfrState := parseTransferLogLine("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': aborted")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusMessage, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -577,8 +566,7 @@ func TestXfrTrackerParseSettingUpZoneTransferAborted(t *testing.T) {
 
 // Test parsing the systemd log line containing the AXFR started message.
 func TestXfrTrackerParseSystemdLogs(t *testing.T) {
-	xfrTracker := newXfrTracker(nil)
-	xfrState := xfrTracker.parse("2026-04-21T20:38:52+02:00 lightning named[1411]: client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': AXFR started")
+	xfrState := parseTransferLogLine("2026-04-21T20:38:52+02:00 lightning named[1411]: client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': AXFR started")
 	require.NotNil(t, xfrState)
 	require.Equal(t, xfrStatusStarted, xfrState.status)
 	require.Empty(t, xfrState.viewName)
@@ -806,16 +794,14 @@ func FuzzXfrTrackerParse(f *testing.F) {
 		f.Add(tc)
 	}
 	f.Fuzz(func(t *testing.T, logLine string) {
-		xfrTracker := newXfrTracker(nil)
-		require.NotPanics(t, func() { xfrTracker.parse(logLine) })
+		require.NotPanics(t, func() { parseTransferLogLine(logLine) })
 	})
 }
 
 // Benchmark the XFR tracker parse function.
 func BenchmarkXfrTrackerParse(b *testing.B) {
-	xfrTracker := newXfrTracker(nil)
 	for i := 0; i < b.N; i++ {
-		xfrState := xfrTracker.parse("23-Feb-2026 10:41:27.141 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR ended: 1 messages, 5 records, 294 bytes, 0.004 secs (73500 bytes/sec) (serial 201702121)")
+		xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.141 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR ended: 1 messages, 5 records, 294 bytes, 0.004 secs (73500 bytes/sec) (serial 201702121)")
 		require.NotNil(b, xfrState)
 	}
 }

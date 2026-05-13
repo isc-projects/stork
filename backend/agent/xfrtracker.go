@@ -21,25 +21,41 @@ const (
 	defaultXfrTrackingMaxStates    = 1000
 )
 
+// The zone transfer status type.
 type xfrStatus int
 
 const (
+	// This is a default status indicating that the parsed log message was unrecognized
+	// and could not be used to determine the actual zone transfer status. Messages with
+	// this status are discarded.
 	xfrStatusUnknown xfrStatus = iota
+	// The zone transfer has started.
 	xfrStatusStarted
+	// The incoming zone transfer has started on the secondary server, and the last
+	// log message indicated that the secondary server successfully connected to the
+	// primary server.
 	xfrStatusConnected
+	// The zone transfer has completed.
 	xfrStatusCompleted
+	// The last received log message neither marks the beginning nor the end of the zone
+	// transfer. It is typically a message received during the zone transfer indicating
+	// some kind of problem.
 	xfrStatusMessage
 )
 
+// A time format used in the parsed log messages.
 type xfrTimeFormat int
 
 const (
+	// The time format is in the RFC3339 format (e.g., 2026-02-23T10:41:27.071Z).
 	xfrTimeFormatRFC3339 xfrTimeFormat = iota
+	// The time format is in the BIND 9 format (e.g., 23-Feb-2026 10:41:27.071).
 	xfrTimeFormatBind9
+	// The time format is unknown/unrecognized.
 	xfrTimeFormatUnknown
 )
 
-// Zone transfer tracker uses the underlying log tracker to subscribe to the
+// Zone transfer tracker uses the underlying log trackers to subscribe to the
 // logs containing messages marking the beginning and end of the zone transfers
 // initiated by BIND.
 //
@@ -47,13 +63,23 @@ const (
 // many subscriptions to various logs. The XFR tracker is associated with a BIND 9
 // daemon instance and it establishes a single subscription over the log tracker.
 //
-// The XFR is not safe for concurrent use. It is intended to be used by the BIND 9
-// daemon detection routines. These routines are executed sequentially.
+// The tracker uses the LRU (least recently used) cache to track the started zone
+// transfers. The cache limits the number of tracked zone transfers to a default
+// value. The most recently accessed zone transfer entry is moved to the end of the
+// list. The oldest entries are removed if the length of the list exceeds the maximum
+// allowed number. The LRU cache includes a slice (to order the zone transfers by from
+// least recently accessed) and a map (for fast lookup by the zone transfer state key).
+// Completed transfers are moved to a separate list.
 //
-// TODO: Current implementation is a stub. It subscribes to the log events, but does
-// not process them. The XFR tracker is going to be extended to capture and collect
-// the zone transfer logs. The logs will be converted to the zone transfer events,
-// stored here, and will have proper indexes, so they can be retrieved over gRPC.
+// In order to start tracking the zone transfers, run the trackFiles() or trackSystemdUnit()
+// functions, depending on the log locations. In order to stop tracking the zone transfers,
+// run the stop() function. Additional calls to the trackFiles() or trackSystemdUnit()
+// will restart the tracking. Note that calling these functions is not concurrent safe.
+// The tracker instance belongs to the BIND 9 daemon and should be started after the daemon
+// after the daemon is detected. It should ensure that the calls to start/stop tracking
+// are serialized.
+//
+// Getting the ongoing and completed zone transfers is safe for concurrent use.
 type xfrTracker struct {
 	// The log tracker instance used to create the subscriptions.
 	logTracker *logTracker
@@ -66,14 +92,25 @@ type xfrTracker struct {
 	cancelFn context.CancelFunc
 	// The channel used to wait for the cancellation of the goroutine that consumes the
 	// log lines.
-	cancelCh      chan struct{}
-	startedList   list.List
-	startedMap    map[xfrStateKey]*list.Element
+	cancelCh chan struct{}
+	// The list of started zone transfers.
+	startedList list.List
+	// The map of started zone transfers indexed by the state key.
+	startedMap map[xfrStateKey]*list.Element
+	// The list of completed zone transfers.
 	completedList list.List
-	maxStates     int
-	mutex         sync.RWMutex
+	// The maximum number of zone transfers to track.
+	maxStates int
+	// The mutex to protect the tracker state from concurrent access.
+	mutex sync.RWMutex
 }
 
+// The zone transfer state. An instance of this structure is returned for
+// each parsed log message pertaining to a zone transfer. The state includes
+// the data extracted from the log message such as the zone name, view name,
+// client address (for outgoing zone transfers) and server address (for incoming
+// zone transfers). It also includes suitable timestamps and zone transfer
+// statistics.
 type xfrState struct {
 	viewName       string
 	zoneName       string
@@ -91,6 +128,8 @@ type xfrState struct {
 	message        string
 }
 
+// The key used to index the started zone transfers in the LRU cache.
+// The client is optional - it is empty for incoming zone transfers.
 type xfrStateKey struct {
 	viewName string
 	zoneName string
@@ -106,52 +145,6 @@ func newXfrTracker(logTracker *logTracker) *xfrTracker {
 		startedMap: make(map[xfrStateKey]*list.Element),
 		maxStates:  defaultXfrTrackingMaxStates,
 	}
-}
-
-// Tracks the log file or systemd logs using created subscriptions.
-func (t *xfrTracker) track() {
-	// Create the cancellation context, so we can stop the goroutine that consumes
-	// the log lines.
-	ctx, cancel := context.WithCancel(context.Background())
-	// Create the cancellation channel that will be waited after stopping the goroutine.
-	cancelCh := make(chan struct{})
-	// Get the channels from the subscriptions. It is ok if some channels are nil.
-	// Reading from nil channel is supported in go. It will block never returning
-	// a value.
-	var chan0, chan1 chan logReaderLine
-	for _, subscriber := range t.subscribers {
-		if subscriber != nil {
-			switch {
-			case chan0 == nil:
-				chan0 = subscriber.dataChan
-			case chan1 == nil:
-				chan1 = subscriber.dataChan
-			}
-		}
-	}
-	go func() {
-		defer close(cancelCh)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case line, ok := <-chan0:
-				if !ok {
-					return
-				}
-				t.feed(line.text)
-			case line, ok := <-chan1:
-				if !ok {
-					return
-				}
-				t.feed(line.text)
-			}
-		}
-	}()
-	// Remember the cancellation function and the channel, so we can use them to
-	// stop the subscriptions in the stop() function.
-	t.cancelFn = cancel
-	t.cancelCh = cancelCh
 }
 
 // Tracks the log files specified as arguments. It is supported to track up to two log files.
@@ -220,6 +213,154 @@ func (t *xfrTracker) stop() {
 	t.subscribers = nil
 }
 
+// Tracks the log file or systemd logs using created subscriptions.
+func (t *xfrTracker) track() {
+	// Create the cancellation context, so we can stop the goroutine that consumes
+	// the log lines.
+	ctx, cancel := context.WithCancel(context.Background())
+	// Create the cancellation channel that will be waited after stopping the goroutine.
+	cancelCh := make(chan struct{})
+	// Get the channels from the subscriptions. It is ok if some channels are nil.
+	// Reading from nil channel is supported in go. It will block never returning
+	// a value.
+	var chan0, chan1 chan logReaderLine
+	for _, subscriber := range t.subscribers {
+		if subscriber != nil {
+			switch {
+			case chan0 == nil:
+				chan0 = subscriber.dataChan
+			case chan1 == nil:
+				chan1 = subscriber.dataChan
+			}
+		}
+	}
+	go func() {
+		defer close(cancelCh)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case line, ok := <-chan0:
+				if !ok {
+					return
+				}
+				t.feed(line.text)
+			case line, ok := <-chan1:
+				if !ok {
+					return
+				}
+				t.feed(line.text)
+			}
+		}
+	}()
+	// Remember the cancellation function and the channel, so we can use them to
+	// stop the subscriptions in the stop() function.
+	t.cancelFn = cancel
+	t.cancelCh = cancelCh
+}
+
+// Feeds the log line to the XFR tracker. It parses the log line and updates
+// the zone transfer state. It is safe for concurrent use.
+func (t *xfrTracker) feed(logLine string) {
+	newState := parseTransferLogLine(logLine)
+	if newState == nil {
+		// The log line was not related to a zone transfer or we did not
+		// consider it useful.
+		return
+	}
+	key := xfrStateKey{
+		viewName: newState.viewName,
+		zoneName: newState.zoneName,
+		client:   newState.client,
+	}
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	// Check if the zone transfer state already exists.
+	var currState *xfrState
+	element, ok := t.startedMap[key]
+	if ok && element != nil {
+		st, ok := element.Value.(*xfrState)
+		if !ok {
+			return
+		}
+		currState = st
+	}
+
+	switch newState.status {
+	case xfrStatusStarted, xfrStatusMessage, xfrStatusConnected:
+		if currState != nil {
+			// It exists, so let's replace it with a new one.
+			element.Value = newState
+			// Move the element to the back of the list to keep the most recent one
+			// at the end.
+			t.startedList.MoveToBack(element)
+			if !currState.startTime.IsZero() && newState.status != xfrStatusStarted {
+				// Preserve the original start time.
+				newState.startTime = currState.startTime
+			}
+			break
+		}
+		// The state does not exist. Let's add it to the container.
+		element := t.startedList.PushBack(newState)
+		t.startedMap[key] = element
+
+		// Ensure that the number of started transfers does not exceed the maximum
+		// allowed number. If it does, remove the oldest one.
+		if t.startedList.Len() > t.maxStates {
+			// Remove the oldest one from the front of the list.
+			if element := t.startedList.Remove(t.startedList.Front()); element != nil {
+				if state, ok := element.(*xfrState); ok {
+					key := xfrStateKey{
+						viewName: state.viewName,
+						zoneName: state.zoneName,
+						client:   state.client,
+					}
+					// Remove the element from the map.
+					delete(t.startedMap, key)
+				}
+			}
+		}
+	default:
+		if currState != nil {
+			// It exists, so let's remove it from the started container.
+			t.startedList.Remove(element)
+			delete(t.startedMap, key)
+			newState.startTime = currState.startTime
+		}
+		// Add the state to the completed container.
+		t.completedList.PushBack(newState)
+		// Ensure that the number of completed transfers does not exceed the maximum
+		// allowed number. If it does, remove the oldest one.
+		if t.completedList.Len() > t.maxStates {
+			t.completedList.Remove(t.completedList.Front())
+		}
+	}
+}
+
+// Returns the list of ongoing or stuck zone transfers. It is safe for concurrent use.
+func (t *xfrTracker) getNotCompleted() []xfrState {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+	states := make([]xfrState, 0, t.startedList.Len())
+	for element := t.startedList.Front(); element != nil; element = element.Next() {
+		states = append(states, *element.Value.(*xfrState))
+	}
+	return states
+}
+
+// Returns the list of completed zone transfers. It is safe for concurrent use.
+func (t *xfrTracker) getCompleted() []xfrState {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+	states := make([]xfrState, 0, t.completedList.Len())
+	for element := t.completedList.Front(); element != nil; element = element.Next() {
+		states = append(states, *element.Value.(*xfrState))
+	}
+	return states
+}
+
 // Parses the time at the position of the iterator. It recognizes both RFC3339 and
 // BIND 9 time formats. In case of a different time format, it returns the
 // xfrTimeFormatUnknown.
@@ -283,7 +424,7 @@ func sanitizeToken(token string) string {
 }
 
 // Parses the single log line and returns the corresponding state.
-func (t *xfrTracker) parse(logLine string) *xfrState {
+func parseTransferLogLine(logLine string) *xfrState {
 	// Limit the length of the log line to 1024 characters to avoid
 	// parsing excessively long log lines.
 	runes := []rune(logLine)
@@ -618,106 +759,4 @@ func parseSecs(secs string, s *xfrState) (err error) {
 	}
 	s.duration = time.Duration(duration * float64(time.Second))
 	return
-}
-
-// Feeds the log line to the XFR tracker. It parses the log line and updates
-// the zone transfer state. It is safe for concurrent use.
-func (t *xfrTracker) feed(logLine string) {
-	newState := t.parse(logLine)
-	if newState == nil {
-		// The log line was not related to a zone transfer or we did not
-		// consider it useful.
-		return
-	}
-	key := xfrStateKey{
-		viewName: newState.viewName,
-		zoneName: newState.zoneName,
-		client:   newState.client,
-	}
-
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	// Check if the zone transfer state already exists.
-	var currState *xfrState
-	element, ok := t.startedMap[key]
-	if ok && element != nil {
-		st, ok := element.Value.(*xfrState)
-		if !ok {
-			return
-		}
-		currState = st
-	}
-
-	switch newState.status {
-	case xfrStatusStarted, xfrStatusMessage, xfrStatusConnected:
-		if currState != nil {
-			// It exists, so let's replace it with a new one.
-			element.Value = newState
-			// Move the element to the back of the list to keep the most recent one
-			// at the end.
-			t.startedList.MoveToBack(element)
-			if !currState.startTime.IsZero() && newState.status != xfrStatusStarted {
-				// Preserve the original start time.
-				newState.startTime = currState.startTime
-			}
-			break
-		}
-		// The state does not exist. Let's add it to the container.
-		element := t.startedList.PushBack(newState)
-		t.startedMap[key] = element
-
-		// Ensure that the number of started transfers does not exceed the maximum
-		// allowed number. If it does, remove the oldest one.
-		if t.startedList.Len() > t.maxStates {
-			// Remove the oldest one from the front of the list.
-			if element := t.startedList.Remove(t.startedList.Front()); element != nil {
-				if state, ok := element.(*xfrState); ok {
-					key := xfrStateKey{
-						viewName: state.viewName,
-						zoneName: state.zoneName,
-						client:   state.client,
-					}
-					// Remove the element from the map.
-					delete(t.startedMap, key)
-				}
-			}
-		}
-	default:
-		if currState != nil {
-			// It exists, so let's remove it from the started container.
-			t.startedList.Remove(element)
-			delete(t.startedMap, key)
-			newState.startTime = currState.startTime
-		}
-		// Add the state to the completed container.
-		t.completedList.PushBack(newState)
-		// Ensure that the number of completed transfers does not exceed the maximum
-		// allowed number. If it does, remove the oldest one.
-		if t.completedList.Len() > t.maxStates {
-			t.completedList.Remove(t.completedList.Front())
-		}
-	}
-}
-
-// Returns the list of ongoing or stuck zone transfers. It is safe for concurrent use.
-func (t *xfrTracker) getNotCompleted() []*xfrState {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
-	states := make([]*xfrState, 0, t.startedList.Len())
-	for element := t.startedList.Front(); element != nil; element = element.Next() {
-		states = append(states, element.Value.(*xfrState))
-	}
-	return states
-}
-
-// Returns the list of completed zone transfers. It is safe for concurrent use.
-func (t *xfrTracker) getCompleted() []*xfrState {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
-	states := make([]*xfrState, 0, t.completedList.Len())
-	for element := t.completedList.Front(); element != nil; element = element.Next() {
-		states = append(states, element.Value.(*xfrState))
-	}
-	return states
 }
