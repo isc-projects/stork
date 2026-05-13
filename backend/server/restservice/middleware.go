@@ -408,6 +408,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, 
 	handler = agentInstallerMiddleware(handler, serverAddress, staticFilesDir)
 	handler = sseMiddleware(handler, eventCenter)
 	handler = metricsMiddleware(handler, r.MetricsCollector)
+	handler = r.OIDCControl.Middleware(handler)
 	handler = trimBaseURLMiddleware(handler, serverAddress.Path)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = securityHeadersMiddleware(handler)

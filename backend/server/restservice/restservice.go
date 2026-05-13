@@ -41,6 +41,7 @@ import (
 	"isc.org/stork/server/gen/restapi/operations"
 	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
+	"isc.org/stork/server/oidc"
 	storkutil "isc.org/stork/util"
 )
 
@@ -85,6 +86,7 @@ type RestAPI struct {
 	DNSManager                 dnsop.Manager
 	DaemonLocker               config.DaemonLocker
 	MigrationService           configmigrator.MigrationManager
+	OIDCControl                *oidc.Controller
 
 	Agents agentcomm.ConnectedAgents
 
@@ -219,6 +221,10 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 		if argType.AssignableTo(reflect.TypeOf((*EndpointControl)(nil))) {
 			api.EndpointControl = arg.(*EndpointControl)
+			continue
+		}
+		if argType.AssignableTo(reflect.TypeOf((*oidc.Controller)(nil))) {
+			api.OIDCControl = arg.(*oidc.Controller)
 			continue
 		}
 		return nil, pkgerrors.Errorf("unknown argument type %s specified for NewRestAPI", argType.Elem().Name())
@@ -541,6 +547,7 @@ func (r *RestAPI) Serve() (err error) {
 	if r.TLS {
 		serverAddress.Scheme = "https"
 	}
+	r.OIDCControl.Configure(serverAddress, r.SessionManager)
 	httpServer.Handler = r.GlobalMiddleware(r.handler, serverAddress, s.StaticFilesDir, r.EventCenter, int64(r.Settings.MaxBodySize))
 
 	if r.TLS {

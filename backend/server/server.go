@@ -249,6 +249,9 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		return err
 	}
 
+	// Create OIDC Controller.
+	oidcControl := oidc.NewController(*ss.OIDCSettings, ss.DB)
+
 	// Config migration service manages list of pending migrations.
 	migrationService := configmigrator.NewMigrationManager()
 
@@ -257,7 +260,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
 		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl,
-		ss.DNSManager, migrationService, ss.DaemonLocker)
+		ss.DNSManager, migrationService, ss.DaemonLocker, oidcControl)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
