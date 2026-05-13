@@ -93,6 +93,16 @@ func (p *CLIParser) parse(args []string) (err error) {
 	return nil
 }
 
+// Check if the application supports hooks.
+func (p *CLIParser) areHooksSupported() bool {
+	switch p.application {
+	case applicationServer, applicationAgent:
+		return true
+	default:
+		return false
+	}
+}
+
 // It parses the settings related to an environment file and if the file
 // is provided, the content is loaded.
 // Next, it parses the hooks location and extracts their CLI flags.
@@ -112,7 +122,7 @@ func (p *CLIParser) bootstrap(args []string) (*HookDirectorySettings, GroupedHoo
 	// Process the hook directory location.
 	var hookDirectorySettings *HookDirectorySettings
 	var allHookCLIFlags GroupedHookCLIFlags
-	if p.application == applicationServer || p.application == applicationAgent {
+	if p.areHooksSupported() {
 		hookDirectorySettings = &HookDirectorySettings{}
 		hookParser := p.createSubParser(hookDirectorySettings)
 		if _, err := hookParser.ParseArgs(args); err != nil {
