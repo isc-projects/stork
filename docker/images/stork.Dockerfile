@@ -124,6 +124,10 @@ COPY backend/go.mod ./
 COPY backend/go.sum ./
 COPY backend/version.go ./
 COPY backend/codegen ./codegen
+COPY backend/cli ./cli
+COPY backend/util ./util
+COPY backend/hooks ./hooks
+COPY backend/hooksutil ./hooksutil
 COPY backend/cmd/stork-code-gen ./cmd/stork-code-gen
 WORKDIR /app/webui
 COPY --from=nodemodules-prepare /app/webui .
