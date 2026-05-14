@@ -30,7 +30,7 @@ type Controller struct {
 
 // Structure to cache all required information for OIDC authentication in a session.
 // The data must be cached when Authentication Request is sent to OpenID Provider.
-// The cache is required when response is sent to the redirection URI.
+// The cache is read when response is sent back to the redirection URI.
 // It is used to verify the nonce, PKCE and to retrieve the return URL for
 // the OIDC authentication.
 type AuthSession struct {
@@ -61,7 +61,7 @@ func NewController(settings Settings, db *dbops.PgDB) *Controller {
 }
 
 // Configures the controller. It should be called only once at server startup.
-// It requires server URL used to construct OIDC redirection URI and the session
+// It requires server URL to construct OIDC redirection URI and the session
 // manager to create sessions for authenticated users.
 func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.SessionMgr) {
 	if ctl.settings.IssuerURL == "" {
@@ -103,7 +103,7 @@ func (ctl *Controller) cleanupSessions(ctx context.Context) {
 	sessionMap := ctl.getAuthSessionMap(ctx)
 	now := time.Now()
 	for k, v := range sessionMap {
-		// We should not keep the session alive forever.
+		// We should not keep the session alive too long.
 		// OIDC authentication process is expected to be finalized within minutes.
 		// If AuthResponse comes later than 15 minutes after the AuthRequest,
 		// such authentication will fail, because there is no longer a session
@@ -156,7 +156,7 @@ func generatePKCE() (codeVerifier string, codeChallenge string, err error) {
 // Returns bool stating whether user belongs to MandatoryAllowGroup
 // and a slice of configured groups user belongs to.
 // Takes a slice of strings returned from OpenID Provider token endpoint
-// representing groups that user belongs to and based on OIDC settings
+// representing groups that user belongs to in OP and based on OIDC settings
 // checks association to configured groups.
 func (ctl *Controller) getMappedGroups(groups *[]string) (allowed bool, mappedGroups []authdata.UserGroupID) {
 	allowed = false
