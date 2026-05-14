@@ -28,10 +28,8 @@ or Kea services. The Stork server typically connects to the Stork agent and uses
 monitor services remotely, but can also act as a stand-alone statistics exporter to
 Prometheus.
 
-Arguments
-~~~~~~~~~
-
-
+Startup Arguments
+~~~~~~~~~~~~~~~~~
 
 The Stork agent's behavior can be controlled with command-line switches and/or
 environment variables. The environment variables can be set before running
@@ -81,7 +79,10 @@ where applicable)
 ``-h|--help``
    Returns the list of available parameters.
 
-Stork server flags:
+Communication with the Stork Server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following flags control the communication between the Stork agent and the Stork server.
 
 ``--server-url=``
    Specifies the URL of the Stork server receiving the registration request. Optional; can be skipped to suppress automatic registration. ``[$STORK_AGENT_SERVER_URL]``
@@ -95,7 +96,10 @@ Stork server flags:
 ``--skip-tls-cert-verification=``
    Indicates that TLS certificate verification should be skipped when the Stork agent makes HTTP calls over TLS. The default is ``false``. ``[$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]``
 
-Prometheus Kea Exporter flags:
+Prometheus Kea Exporter
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The following flags control the Prometheus Kea exporter functionality.
 
 ``--prometheus-kea-exporter-address=``
    Specifies the IP address or hostname on which the Stork agent exports Kea statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]``
@@ -106,7 +110,10 @@ Prometheus Kea Exporter flags:
 ``--prometheus-kea-exporter-per-subnet-stats=``
    Enables or disables collecting per-subnet stats from Kea. The default is true. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]``
 
-Prometheus BIND 9 Exporter flags:
+Prometheus BIND 9 Exporter
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following flags control the Prometheus BIND 9 exporter functionality.
 
 ``--prometheus-bind9-exporter-address=``
    Specifies the IP address or hostname on which the Stork agent exports BIND 9 statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]``
@@ -114,7 +121,30 @@ Prometheus BIND 9 Exporter flags:
 ``--prometheus-bind9-exporter-port=``
    Specifies the port on which the Stork agent exports BIND 9 statistics to Prometheus. The default is 9119. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]``
 
-Zone Transfer Tracking flags (only for BIND 9):
+Zone Transfer Tracking (only for BIND 9)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following flags control the zone transfer tracking functionality. It is disabled by default.
+When enabled (using the ``--enable-xfr-tracking`` flag), the agent will read and follow the log files
+or systemd logs deemed to contain the zone transfer events. Stork agent cannot track zone transfers
+if they are only logged to the syslog.
+
+If the zone transfer tracking is enabled, and no other flags listed below are specified, the agent
+will try to determine the locations of the appropriate log files from the BIND 9 logging configuration.
+It will look for the log files containing the logs of the ``xfer-in`` and ``xfer-out`` categories.
+
+In some cases, the administrator may wish to explicitly specify the log files locations. Specifically,
+when BIND 9 daemon runs in foreground and redirects output to an arbitrary file. In such cases,
+the administrator can use the ``--xfr-in-tracking-path`` and ``--xfr-out-tracking-path`` flags to
+specify the locations of the log files containing the incoming and outgoing zone transfer requests
+respectively. These flags override the locations detected from the BIND 9 logging configuration.
+
+In order to track zone transfers in the systemd logs, the administrator must specify the
+``--xfr-tracking-systemd-unit``. This flag is mutually exclusive with the ``--xfr-in-tracking-path``
+and ``--xfr-out-tracking-path`` options. If any of the latter is specified, the ``--xfr-tracking-systemd-unit``
+is ignored.
+
+The following flags control the zone transfer tracking functionality.
 
 ``--enable-xfr-tracking``
    Enables the agent to track zone transfers initiated by BIND 9. The default is false. ``[$STORK_AGENT_ENABLE_XFR_TRACKING]``
@@ -127,6 +157,9 @@ Zone Transfer Tracking flags (only for BIND 9):
 
 ``--xfr-tracking-systemd-unit=``
    Specifies the systemd unit name for which zone transfers are logged. This option is mutually exclusive with the ``xfr-in-tracking-path`` and ``xfr-out-tracking-path`` options which take precedence over this option. The default is empty in which case zone transfer requests in ``systemd`` logs are not tracked. ``[$STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT]``
+
+Logging
+~~~~~~~
 
 Stork logs at INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
