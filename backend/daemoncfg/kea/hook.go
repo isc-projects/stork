@@ -78,8 +78,7 @@ func (hl HookLibraries) GetHookLibrary(name string) (path string, params map[str
 	return
 }
 
-// Returns the hook library type that can alter subnets. If both cb_cmds and
-// subnet_cmds are configured, cb_cmds takes precedence.
+// Returns the hook library type that can alter subnets.
 func (hl HookLibraries) GetSubnetAndSharedNetworkAlteringHookLibrary() SubnetAndSharedNetworkAlteringHookLibrary {
 	_, _, hasCBHook := hl.GetHookLibrary("libdhcp_cb_cmds")
 	_, _, hasSubnetHook := hl.GetHookLibrary("libdhcp_subnet_cmds")
