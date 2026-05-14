@@ -109,7 +109,7 @@ func TestGetLegalLogHookLibrary(t *testing.T) {
 	require.Equal(t, "/tmp/path", params.Path)
 }
 
-// Tests that the missing subnet-altering hook library is correctly detected.
+// Tests that the missing subnet-altering hook library is correctly reported.
 func TestGetSubnetAlteringHookLibraryNone(t *testing.T) {
 	hooks := HookLibraries{{Library: "libdhcp_lease_cmds"}}
 

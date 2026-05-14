@@ -123,7 +123,8 @@ func createSubnetAddCommands(
 }
 
 // Creates commands to make subnet changes persistent. This is needed for
-// subnet_cmds daemons. For cb_cmds daemons no additional commands are created.
+// daemons with subnet_cmds hooks. For daemons running cb_cmds no additional
+// commands are created.
 func createSubnetSaveCommands(daemon *dbmodel.Daemon) ([]ConfigCommand, error) {
 	hook := daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary()
 
