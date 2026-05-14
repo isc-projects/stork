@@ -12,6 +12,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
 )
@@ -149,5 +150,41 @@ func generatePKCE() (codeVerifier string, codeChallenge string, err error) {
 	}
 	hash := sha256.Sum256([]byte(codeVerifier))
 	codeChallenge = base64.RawURLEncoding.EncodeToString(hash[:])
+	return
+}
+
+// Returns bool stating whether user belongs to MandatoryAllowGroup
+// and a slice of configured groups user belongs to.
+// Takes a slice of strings returned from OpenID Provider token endpoint
+// representing groups that user belongs to and based on OIDC settings
+// checks association to configured groups.
+func (ctl *Controller) getMappedGroups(groups *[]string) (allowed bool, mappedGroups []authdata.UserGroupID) {
+	allowed = false
+	mappedGroups = []authdata.UserGroupID{}
+	if ctl.settings.MandatoryAllowGroup != "" || ctl.settings.EnableGroupMapping {
+		for _, g := range *groups {
+			if g == ctl.settings.MandatoryAllowGroup {
+				allowed = true
+			}
+			for _, configuredGroup := range ctl.settings.GroupMapping.ReadOnly {
+				if configuredGroup == g {
+					mappedGroups = append(mappedGroups, authdata.UserGroupIDReadOnly)
+					break
+				}
+			}
+			for _, configuredGroup := range ctl.settings.GroupMapping.Admin {
+				if configuredGroup == g {
+					mappedGroups = append(mappedGroups, authdata.UserGroupIDAdmin)
+					break
+				}
+			}
+			for _, configuredGroup := range ctl.settings.GroupMapping.SuperAdmin {
+				if configuredGroup == g {
+					mappedGroups = append(mappedGroups, authdata.UserGroupIDSuperAdmin)
+					break
+				}
+			}
+		}
+	}
 	return
 }
