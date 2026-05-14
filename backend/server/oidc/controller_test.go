@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -165,4 +166,49 @@ func TestSessionStorage(t *testing.T) {
 	sessionMap3 := controller.getAuthSessionMap(ctx)
 	require.NotNil(t, sessionMap3)
 	require.Empty(t, sessionMap3)
+}
+
+// Test if generateRandBytes works fine.
+func TestGenerateRandBytes(t *testing.T) {
+	// Arrange & Act
+	testBytes, err := generateRandBytes(32)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, testBytes)
+	require.Len(t, testBytes, 32)
+}
+
+// Test if generateRandBase64Str works fine.
+func TestGenerateRandBase64Str(t *testing.T) {
+	// Arrange & Act
+	testString, err := generateRandBase64Str()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, testString)
+	require.NotEmpty(t, testString)
+	decoded, err := base64.RawURLEncoding.DecodeString(testString)
+	require.NoError(t, err)
+	require.NotNil(t, decoded)
+	require.NotEmpty(t, decoded)
+	require.Len(t, decoded, 32)
+}
+
+// Test if generatePKCE works fine.
+func TestGeneratePKCE(t *testing.T) {
+	// Arrange & Act
+	codeVerifier, codeChallenge, err := generatePKCE()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, codeVerifier)
+	require.NotNil(t, codeChallenge)
+	require.NotEmpty(t, codeVerifier)
+	require.NotEmpty(t, codeChallenge)
+	decoded, err := base64.RawURLEncoding.DecodeString(codeVerifier)
+	require.NoError(t, err)
+	require.NotNil(t, decoded)
+	require.NotEmpty(t, decoded)
+	require.Len(t, decoded, 32)
 }
