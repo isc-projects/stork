@@ -42,20 +42,26 @@ contents:
 - src: dist/server/etc/stork/versions.json
   dst: /etc/stork/versions.json
   type: config
+- dst: /usr/share/stork/www/assets/authentication-methods
+  type: dir
+  file_info:
+    owner: stork-server
 
 overrides:
   deb:
     scripts:
+      preinstall:  etc/hooks/deb/isc-stork-server.preinst
       postinstall: etc/hooks/deb/isc-stork-server.postinst
       preremove:   etc/hooks/deb/isc-stork-server.prerm
       postremove:  etc/hooks/deb/isc-stork-server.postrm
   rpm:
     scripts:
+      preinstall:  etc/hooks/rpm/isc-stork-server.preinst
       postinstall: etc/hooks/rpm/isc-stork-server.postinst
       preremove:   etc/hooks/rpm/isc-stork-server.prerm
       postremove:  etc/hooks/rpm/isc-stork-server.postrm
   apk:
     scripts:
-      postinstall: etc/hooks/apk/isc-stork-server.postinst
+      preinstall:  etc/hooks/apk/isc-stork-server.preinst
       preremove:   etc/hooks/apk/isc-stork-server.prerm
       postremove:  etc/hooks/apk/isc-stork-server.postrm
