@@ -1,9 +1,14 @@
 package oidc
 
 import (
+	"context"
+	"encoding/gob"
 	"net/http"
 	"net/url"
+	"time"
 
+	"github.com/alexedwards/scs/v2"
+	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
 )
@@ -12,19 +17,38 @@ import (
 // It provides a middleware which handles HTTP requests related
 // to OIDC authentication flow.
 type Controller struct {
-	settings         Settings
-	configured       bool
-	db               *dbops.PgDB
-	dbSessionManager *dbsession.SessionMgr
+	settings           Settings
+	configured         bool
+	db                 *dbops.PgDB
+	dbSessionManager   *dbsession.SessionMgr
+	authSessionManager *scs.SessionManager
+}
+
+// Structure to cache all required information for OIDC authentication in a session.
+// The data must be cached when Authentication Request is sent to OpenID Provider.
+// The cache is required when response is sent to the redirection URI.
+// It is used to verify the nonce, PKCE and to retrieve the return URL for
+// the OIDC authentication.
+type AuthSession struct {
+	CodeVerifier string
+	Nonce        string
+	ReturnURL    string
+	CreatedAt    time.Time
 }
 
 // Constructs OIDC controller instance. It requires the settings
 // and a pointer to Stork server database, which is used to insert
 // and update authenticated users.
 func NewController(settings Settings, db *dbops.PgDB) *Controller {
+	// Prepare in-memory session manager used only for storing OIDC auth data in sessions.
+	gob.Register(map[string]AuthSession{})
+	inMemorySessionMgr := scs.New()
+	inMemorySessionMgr.Lifetime = 20 * time.Minute
+	inMemorySessionMgr.Cookie.Name = "auth_session"
 	return &Controller{
-		settings: settings,
-		db:       db,
+		settings:           settings,
+		db:                 db,
+		authSessionManager: inMemorySessionMgr,
 	}
 }
 
@@ -49,4 +73,37 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 		return next
 	}
 	return ctl.dbSessionManager.SessionMiddleware(next)
+}
+
+// Helper method reading cache from in-memory session storage.
+func (ctl *Controller) getAuthSessionMap(ctx context.Context) map[string]AuthSession {
+	m := ctl.authSessionManager.Get(ctx, "auth_sessions")
+	if m == nil {
+		return make(map[string]AuthSession)
+	}
+	return m.(map[string]AuthSession)
+}
+
+// Helper method writing cache to in-memory session storage.
+func (ctl *Controller) putAuthSessionMap(ctx context.Context, m map[string]AuthSession) {
+	ctl.authSessionManager.Put(ctx, "auth_sessions", m)
+}
+
+// Helper method doing cleanup in in-memory session storage.
+// Stale sessions are removed from the session storage.
+func (ctl *Controller) cleanupSessions(ctx context.Context) {
+	sessionMap := ctl.getAuthSessionMap(ctx)
+	now := time.Now()
+	for k, v := range sessionMap {
+		// We should not keep the session alive forever.
+		// OIDC authentication process is expected to be finalized within minutes.
+		// If AuthResponse comes later than 15 minutes after the AuthRequest,
+		// such authentication will fail, because there is no longer a session
+		// to verify nonce or PKCE.
+		if now.Sub(v.CreatedAt) > 15*time.Minute {
+			log.Debugf("OIDC in-memory session store found stale session created at %v to be removed", v.CreatedAt)
+			delete(sessionMap, k)
+		}
+	}
+	ctl.putAuthSessionMap(ctx, sessionMap)
 }
