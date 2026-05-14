@@ -1,5 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-pw user del stork-server || /bin/true
