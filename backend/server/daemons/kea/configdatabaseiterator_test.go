@@ -1,6 +1,7 @@
 package kea
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -187,44 +188,51 @@ func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetID(t *testing.T)
 	})
 
 	// Assert
-	require.ErrorContains(t, err, "inconsistent local subnets")
+	require.ErrorContains(t, err, "have inconsistent Local subnet ID")
 }
 
 // Tests that cb_cmds daemons sharing one config backend must use consistent
-// local subnet data.
+// local subnet data. If not, an error describing the first inconsistent field
+// is returned.
 func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetData(t *testing.T) {
 	testCases := []struct {
-		name      string
-		configure func(ls *dbmodel.LocalSubnet)
+		configure         func(ls *dbmodel.LocalSubnet)
+		inconsistentField string
 	}{
 		{
-			name: "inconsistent Kea parameters",
 			configure: func(ls *dbmodel.LocalSubnet) {
 				ls.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("iterative")}
 			},
+			inconsistentField: "Kea parameters",
 		},
 		{
-			name: "inconsistent prefix pools",
 			configure: func(ls *dbmodel.LocalSubnet) {
 				ls.PrefixPools = []dbmodel.PrefixPool{{Prefix: "2001:db8:2::/64", DelegatedLen: 80}}
 			},
+			inconsistentField: "Prefix pools",
 		},
 		{
-			name: "inconsistent address pools",
 			configure: func(ls *dbmodel.LocalSubnet) {
 				ls.AddressPools = []dbmodel.AddressPool{{LowerBound: "192.0.2.11", UpperBound: "192.0.2.20"}}
 			},
+			inconsistentField: "Address pools",
 		},
 		{
-			name: "inconsistent user context",
 			configure: func(ls *dbmodel.LocalSubnet) {
 				ls.UserContext = map[string]any{"site": "dc2"}
 			},
+			inconsistentField: "User context",
+		},
+		{
+			configure: func(ls *dbmodel.LocalSubnet) {
+				ls.LocalSubnetID = 24
+			},
+			inconsistentField: "Local subnet ID",
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("inconsistent %s", tc.inconsistentField), func(t *testing.T) {
 			// Arrange
 			daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
 			daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
@@ -256,7 +264,60 @@ func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetData(t *testing.
 			})
 
 			// Assert
-			require.ErrorContains(t, err, "inconsistent local subnets")
+			require.ErrorContains(t, err, fmt.Sprintf("have inconsistent %s", tc.inconsistentField))
 		})
 	}
+}
+
+// Test that cb_cmds daemons sharing one config backend with consistent local
+// subnet data do not cause an error to be returned by the target iterator.
+func TestForEachUniqueConfigSourceAcceptsConsistentLocalSubnetData(t *testing.T) {
+	// Arrange
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon2.ID = 2
+
+	subnet := newTestSubnet(daemon1)
+	reference := subnet.LocalSubnets[0]
+	reference.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
+	reference.PrefixPools = []dbmodel.PrefixPool{{
+		Prefix:       "2001:db8:1::/64",
+		DelegatedLen: 80,
+		KeaParameters: &keaconfig.PoolParameters{
+			PoolID: 1,
+		},
+	}}
+	reference.AddressPools = []dbmodel.AddressPool{
+		{LowerBound: "192.0.2.10", UpperBound: "192.0.2.20"},
+		{LowerBound: "2001:db8::10", UpperBound: "2001:db8::20"},
+	}
+	reference.UserContext = map[string]any{"site": "dc1"}
+
+	subnet.LocalSubnets = append(subnet.LocalSubnets, &dbmodel.LocalSubnet{
+		DaemonID:      daemon2.ID,
+		Daemon:        daemon2,
+		LocalSubnetID: reference.LocalSubnetID,
+		SubnetID:      subnet.ID,
+		KeaParameters: &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")},
+		PrefixPools: []dbmodel.PrefixPool{{
+			Prefix:       "2001:db8:1::/64",
+			DelegatedLen: 80,
+			KeaParameters: &keaconfig.PoolParameters{
+				PoolID: 1,
+			},
+		}},
+		AddressPools: []dbmodel.AddressPool{
+			{LowerBound: "192.0.2.10", UpperBound: "192.0.2.20"},
+			{LowerBound: "2001:db8::10", UpperBound: "2001:db8::20"},
+		},
+		UserContext: map[string]any{"site": "dc1"},
+	})
+
+	// Act
+	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+		return nil
+	})
+
+	// Assert
+	require.NoError(t, err)
 }

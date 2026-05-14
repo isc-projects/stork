@@ -2,12 +2,12 @@ package kea
 
 import (
 	"maps"
+	"reflect"
 	"slices"
 
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 // Uniquely identifies a cb_cmds config-backend target. Two daemons that share
@@ -53,34 +53,52 @@ func forEachUniqueConfigSource(
 	fn func(ls *dbmodel.LocalSubnet, serverTags []string) error,
 ) error {
 	configBackendGroups := map[configBackendKey][]*dbmodel.Daemon{}
-	localSubnetHashByConfigBackend := map[configBackendKey]string{}
+	localSubnetReferenceIdxByConfigBackend := map[configBackendKey]int{}
 	seen := map[configBackendKey]struct{}{}
 
 	// Group daemons by config backend for cb_cmds.
-	for _, ls := range localSubnets {
+	for i, ls := range localSubnets {
 		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary()
 		if hook != keaconfig.SubnetAlteringHookLibraryCBCmds {
 			continue
 		}
 		key, err := buildConfigBackendKey(ls.Daemon)
 		if err == nil {
-			localSubnetHash := storkutil.Fnv128(
-				ls.LocalSubnetID,
-				ls.KeaParameters,
-				ls.Hash,
-				ls.PrefixPools,
-				ls.AddressPools,
-				ls.UserContext,
-			)
-			if existing, found := localSubnetHashByConfigBackend[key]; found && existing != localSubnetHash {
-				return errors.Errorf(
-					"daemons sharing config backend %s@%s:%d have inconsistent local subnets",
-					key.DBName,
-					key.DBHost,
-					key.DBPort,
-				)
+			referenceIdx, found := localSubnetReferenceIdxByConfigBackend[key]
+			if !found {
+				localSubnetReferenceIdxByConfigBackend[key] = i
+			} else {
+				// If another local subnet has already been associated with
+				// this config backend, check that they are consistent.
+				reference := localSubnets[referenceIdx]
+
+				var inconsistentField string
+				switch {
+				case reference.LocalSubnetID != ls.LocalSubnetID:
+					inconsistentField = "Local subnet ID"
+				case !reflect.DeepEqual(reference.KeaParameters, ls.KeaParameters):
+					inconsistentField = "Kea parameters"
+				case reference.Hash != ls.Hash:
+					inconsistentField = "DHCP options"
+				case !reflect.DeepEqual(reference.PrefixPools, ls.PrefixPools):
+					inconsistentField = "Prefix pools"
+				case !reflect.DeepEqual(reference.AddressPools, ls.AddressPools):
+					inconsistentField = "Address pools"
+				case !reflect.DeepEqual(reference.UserContext, ls.UserContext):
+					inconsistentField = "User context"
+				}
+
+				if inconsistentField != "" {
+					return errors.Errorf(
+						"daemons sharing config backend %s@%s:%d have inconsistent %s",
+						key.DBName,
+						key.DBHost,
+						key.DBPort,
+						inconsistentField,
+					)
+				}
 			}
-			localSubnetHashByConfigBackend[key] = localSubnetHash
+
 			configBackendGroups[key] = append(configBackendGroups[key], ls.Daemon)
 		}
 	}
