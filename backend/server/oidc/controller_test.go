@@ -1,10 +1,12 @@
 package oidc
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	dbsession "isc.org/stork/server/database/session"
@@ -23,6 +25,7 @@ func TestNewController(t *testing.T) {
 	// Assert
 	require.NotNil(t, controller)
 	require.False(t, controller.configured)
+	require.NotNil(t, controller.authSessionManager)
 }
 
 // Test if OIDC controller internal configured flag is not set if mandatory setting is missing.
@@ -108,4 +111,58 @@ func TestMiddlewareIsNotTransparent(t *testing.T) {
 	require.Greater(t, len(resp.Header), 1) // There should be also session cookie from session manager.
 	require.Contains(t, resp.Header, "Hello")
 	require.Contains(t, resp.Header.Get("Hello"), "world")
+}
+
+// Test if OIDC in-memory session storage can be read and written to.
+func TestSessionStorage(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	controller := NewController(Settings{IssuerURL: "https://test.idp.org"}, db)
+	require.NotNil(t, controller)
+	var ctx context.Context
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx = r.Context()
+	})
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	handler := controller.Middleware(nextHandler)
+	req := httptest.NewRequest("GET", "http://localhost/", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.NotNil(t, controller)
+	require.NotNil(t, controller.authSessionManager)
+	authSession := AuthSession{
+		CodeVerifier: "codeVerifier",
+		Nonce:        "nonce",
+		ReturnURL:    "/",
+		CreatedAt:    time.Now().Add(-16 * time.Minute),
+	}
+	state := "state"
+
+	// Act
+	sessionMap := controller.getAuthSessionMap(ctx)
+
+	// Assert
+	require.NotNil(t, sessionMap)
+	require.Empty(t, sessionMap)
+	sessionMap[state] = authSession
+
+	controller.putAuthSessionMap(ctx, sessionMap)
+
+	sessionMap2 := controller.getAuthSessionMap(ctx)
+	require.NotNil(t, sessionMap2)
+	require.NotEmpty(t, sessionMap2)
+	authSession2 := sessionMap2[state]
+	require.Equal(t, authSession, authSession2)
+
+	// Check if the cleanup works fine.
+	controller.cleanupSessions(ctx)
+
+	sessionMap3 := controller.getAuthSessionMap(ctx)
+	require.NotNil(t, sessionMap3)
+	require.Empty(t, sessionMap3)
 }

@@ -45,6 +45,10 @@ func NewController(settings Settings, db *dbops.PgDB) *Controller {
 	inMemorySessionMgr := scs.New()
 	inMemorySessionMgr.Lifetime = 20 * time.Minute
 	inMemorySessionMgr.Cookie.Name = "auth_session"
+	inMemorySessionMgr.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+		// Use logrus instead of the standard logger.
+		log.WithError(err).Error("an error occurred in the OIDC session manager")
+	}
 	return &Controller{
 		settings:           settings,
 		db:                 db,
