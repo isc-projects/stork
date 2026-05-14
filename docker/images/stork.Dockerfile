@@ -7,6 +7,9 @@ ARG KEA_VERSION=3.1.7-isc20260320211159
 # Indicates if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
+# Indicates if the subscriber packages should be installed.
+# Valid values: "subscriber" or empty.
+ARG KEA_SUBSCRIBER=""
 # Indicates what Kea packages should be installed.
 ARG KEA_PRIOR_2_3_0="false"
 ARG KEA_PRIOR_2_7_5="false"
@@ -256,6 +259,9 @@ ARG KEA_REPO
 ARG KEA_VERSION
 ARG KEA_PRIOR_2_3_0
 ARG KEA_PRIOR_2_7_5
+ARG KEA_PRIOR_2_7_7
+ARG KEA_PREMIUM
+ARG KEA_SUBSCRIBER
 RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && if [ ${KEA_PRIOR_2_3_0} == "true" ]; then \
@@ -299,52 +305,41 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                         isc-kea-pgsql=${KEA_VERSION} \
                         ;\
         fi \
+        # Kea premium hooks.
+        && if [ "${KEA_PREMIUM}" == "premium" ] && [ "${KEA_PRIOR_2_7_7}" == "true" ]; then \
+                # Execute only if the premium is enabled and Kea version is below 2.7.7.
+                apt-get update && apt-get install \
+                        --no-install-recommends \
+                        -y \
+                        isc-kea-premium-host-cmds=${KEA_VERSION} \
+                        isc-kea-premium-subnet-cmds=${KEA_VERSION} \
+                        isc-kea-premium-forensic-log=${KEA_VERSION} \
+                        isc-kea-premium-host-cache=${KEA_VERSION} \
+                        isc-kea-premium-radius=${KEA_VERSION} \
+                        isc-kea-premium-cb-cmds=${KEA_VERSION} \
+                && apt-get clean \
+                && rm -rf /var/lib/apt/lists/* \
+                && mkdir -p /var/run/kea/ \
+                ;\
+        fi \
+        # Kea subscriber hooks.
+        && if [ "${KEA_SUBSCRIBER}" == "subscriber" ]; then \
+                apt-get update && apt-get install \
+                        --no-install-recommends \
+                        -y \
+                        isc-kea-subscriber-cb-cmds=${KEA_VERSION} \
+                && apt-get clean \
+                && rm -rf /var/lib/apt/lists/* \
+                && mkdir -p /var/run/kea/ \
+                ;\
+        fi \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
         # Puts empty credentials file to allow mount it as volume.
         && mkdir -p /etc/stork/
 
-# Install premium packages. The KEA_REPO variable must
-# be set to the private repository and include an access token.
-# Docker ignores this section if the KEA_PREMIUM is empty - thanks
-# to this, the image builds correctly when the token is unknown.
-FROM kea-base AS keapremium-base
-ARG KEA_PREMIUM
-ARG KEA_VERSION
-ARG KEA_PRIOR_2_7_7
-RUN if [ "${KEA_PREMIUM}" == "premium" ] && [ "${KEA_PRIOR_2_7_7}" == "true" ]; then \
-        # Execute only if the premium is enabled and Kea version is below 2.7.7.
-        apt-get update && apt-get install \
-                --no-install-recommends \
-                -y \
-                isc-kea-premium-host-cmds=${KEA_VERSION} \
-                isc-kea-premium-subnet-cmds=${KEA_VERSION} \
-                isc-kea-premium-forensic-log=${KEA_VERSION} \
-                isc-kea-premium-host-cache=${KEA_VERSION} \
-                isc-kea-premium-radius=${KEA_VERSION} \
-                isc-kea-premium-cb-cmds=${KEA_VERSION} \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && mkdir -p /var/run/kea/ \
-        ;\
-    elif [ "${KEA_PREMIUM}" == "premium" ]; then \
-        # Execute only if the premium is enabled and Kea version is 2.7.7 or above.
-        apt-get update && apt-get install \
-                --no-install-recommends \
-                -y \
-                isc-kea-subscriber-cb-cmds=${KEA_VERSION} \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && mkdir -p /var/run/kea/ \
-        ;\
-    fi
-
-
-# Use the "kea-base" or "keapremium-base" image as a base image
-# for this stage.
-# hadolint ignore=DL3006
-FROM kea${KEA_PREMIUM}-base AS kea
+FROM kea-base AS kea
 # Install agent
 COPY --from=agent-builder /app/dist/agent /
 # Database

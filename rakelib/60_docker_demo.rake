@@ -16,9 +16,9 @@ namespace :demo do
     # Services - list of service names; if empty then all services are used
     # Detach - run services in the detached mode
     # Environment variables:
-    #     - CS_REPO_ACCESS_TOKEN - Cloudsmith repository access token to pull
-    #       the Kea Premium image from the private registry; optional, if not
-    #.      set then the premium containers are unavailable
+    #     - CS_REPO_ACCESS_TOKEN - Cloudsmith repository access token to install
+    #       the Kea Subscriber hooks from the private registry; optional, if not
+    #.      set then the subscriber containers are unavailable
     def get_docker_opts(server_mode, cache, detach, services)
         opts = [
             "--project-directory", ".",
@@ -26,7 +26,7 @@ namespace :demo do
         ]
 
         if !ENV["CS_REPO_ACCESS_TOKEN"].nil? && !ENV["CS_REPO_ACCESS_TOKEN"].empty?
-            opts.append "-f", "docker/docker-compose.premium.yaml"
+            opts.append "-f", "docker/docker-compose.subscriber.yaml"
         end
 
         cache_opts = []
@@ -156,11 +156,11 @@ namespace :demo do
         end
 
         desc 'Build and run containers with Stork Agent and Kea with the
-        premium hook loaded.
+        subscriber hook loaded.
         The CS_REPO_ACCESS_TOKEN environment variable must be set to run the
         containers.'
-        task :kea_premium => [DOCKER_COMPOSE] do
-            docker_up_services("agent-kea-premium-1", "agent-kea-premium-2")
+        task :kea_subscriber => [DOCKER_COMPOSE] do
+            docker_up_services("agent-kea-subscriber-1", "agent-kea-subscriber-2")
         end
 
         desc 'Build and run container with Stork Agent and BIND 9

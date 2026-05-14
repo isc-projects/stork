@@ -606,5 +606,3 @@ namespace :systemtestui do
         end
     end
 end
-
-

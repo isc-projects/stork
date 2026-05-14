@@ -4,7 +4,7 @@ set -eu
 kea-shell --service dhcp4 remote-server4-set << 'EOF'
 "servers": [
     {
-        "server-tag": "agent-kea-premium-2",
+        "server-tag": "agent-kea-subscriber-2",
         "description": "A DHCP server for testing purposes."
     }
 ]
@@ -19,5 +19,5 @@ kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
         "pools": [ { "pool": "192.0.21.100-192.0.21.200" } ]
     }
 ],
-"server-tags": [ "agent-kea-premium-2" ]
+"server-tags": [ "agent-kea-subscriber-2" ]
 EOF
