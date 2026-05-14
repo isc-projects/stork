@@ -1911,6 +1911,67 @@ func TestConfigureBind9DaemonXFRTrackingRelativeFilePaths(t *testing.T) {
 }
 
 // Test that the XFR tracking paths are extracted from the BIND 9 config file
+// when the chroot directory is specified and the log file path is relative.
+func TestConfigureBind9DaemonXFRTrackingRelativeFilePathsChroot(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	// Create config file.
+	configPath := path.Join(sandbox.BasePath, "chroot", "named.conf")
+	config := `
+		key "foo" {
+			algorithm "hmac-sha256";
+			secret "abcd";
+		};
+		controls {
+			inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; };
+		};
+		logging {
+			category "xfer-in" {
+				xfer-in;
+			};
+			category "xfer-out" {
+				xfer-out;
+			};
+			channel "xfer-in" {
+				file "../logs/xfer-in.log";
+			};
+			channel "xfer-out" {
+				file "../logs/xfer-out.log";
+			};
+		};
+	`
+	_, err := sandbox.Write("chroot/named.conf", config)
+	require.NoError(t, err)
+
+	// Check BIND 9 daemon detection.
+	monitor := newMonitor(MonitorSettings{})
+	monitor.commander = newTestCommandExecutor().
+		addCheckConfOutput(configPath, config).
+		addFileInfo(configPath, &testFileInfo{})
+	monitor.settings.EnableXFRTracking = true
+
+	// Now run the detection as usual.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getPid().Return(int32(1234))
+	process.EXPECT().getCwd().AnyTimes().Return(filepath.Join(sandbox.BasePath, "chroot", "bin"), nil)
+
+	files := newDetectedDaemonFiles(filepath.Join(sandbox.BasePath, "chroot"))
+	err = files.addFile(detectedFileTypeConfig, "named.conf", monitor.commander)
+	require.NoError(t, err)
+
+	daemon, err := monitor.configureBind9Daemon(process, sandbox.BasePath, "", files)
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	require.NotNil(t, daemon.xfrTracker)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "chroot", "logs/xfer-in.log"), daemon.xfrInTrackingPath)
+	require.Equal(t, filepath.Join(sandbox.BasePath, "chroot", "logs/xfer-out.log"), daemon.xfrOutTrackingPath)
+}
+
+// Test that the XFR tracking paths are extracted from the BIND 9 config file
 // when the default log file path is specified using the -L option.
 func TestConfigureBind9DaemonXFRTrackingDefaultLogFile(t *testing.T) {
 	sandbox := testutil.NewSandbox()
