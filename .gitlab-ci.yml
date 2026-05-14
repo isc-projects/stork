@@ -839,7 +839,6 @@ system_test:
   #    fallback_keys:
   #      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
   before_script:
-    - ip -6 route del default
     - rake prepare:systemtest
   variables:
     BIND9_VERSION: latest-stable
