@@ -3,6 +3,7 @@
 set -eu
 
 after_install () {
+    true;
 }
 
 after_upgrade () {
