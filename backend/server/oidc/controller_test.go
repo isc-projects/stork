@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/server/authdata"
 	dbsession "isc.org/stork/server/database/session"
 	dbtest "isc.org/stork/server/database/test"
 )
@@ -211,4 +212,119 @@ func TestGeneratePKCE(t *testing.T) {
 	require.NotNil(t, decoded)
 	require.NotEmpty(t, decoded)
 	require.Len(t, decoded, 32)
+}
+
+// Test if getMappedGroups works fine.
+func TestGetMappedGroups(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	settings := Settings{
+		IssuerURL:           "https://test.idp.org",
+		MandatoryAllowGroup: "stork-access",
+	}
+	controller := NewController(settings, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	require.True(t, controller.configured)
+	receivedGroups := []string{
+		"stork-access", "router-admins",
+	}
+
+	// Act
+	allowed, mappedGroups := controller.getMappedGroups(&receivedGroups)
+
+	// Assert
+	require.True(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.Empty(t, mappedGroups)
+
+	receivedGroups = []string{
+		"router-admins", "kea-admins",
+	}
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.Empty(t, mappedGroups)
+
+	settings = Settings{
+		IssuerURL:           "https://test.idp.org",
+		MandatoryAllowGroup: "",
+	}
+	controller.settings = settings
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.Empty(t, mappedGroups)
+
+	settings = Settings{
+		IssuerURL:           "https://test.idp.org",
+		MandatoryAllowGroup: "",
+		EnableGroupMapping:  true,
+	}
+	controller.settings = settings
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.Empty(t, mappedGroups)
+
+	settings = Settings{
+		IssuerURL:           "https://test.idp.org",
+		MandatoryAllowGroup: "",
+		EnableGroupMapping:  true,
+		GroupMapping: GroupMapping{
+			SuperAdmin: CommaSeparatedStrings{"stork-super-admins-1", "stork-super-admins-2"},
+			Admin:      CommaSeparatedStrings{"stork-admins-1", "stork-admins-2"},
+			ReadOnly:   CommaSeparatedStrings{"stork-ro-1", "stork-ro-2"},
+		},
+	}
+	controller.settings = settings
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.Empty(t, mappedGroups)
+
+	receivedGroups = []string{
+		"stork-super-admins-1", "stork-admins-1", "stork-ro-1",
+	}
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.NotEmpty(t, mappedGroups)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+
+	receivedGroups = []string{
+		"stork-super-admins-2", "stork-admins-2", "stork-ro-2",
+	}
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.NotEmpty(t, mappedGroups)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+
+	controller.settings.MandatoryAllowGroup = "super-heroes"
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.False(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.NotEmpty(t, mappedGroups)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+
+	receivedGroups = []string{
+		"stork-super-admins-2", "stork-admins-2", "stork-ro-2", "super-heroes",
+	}
+	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+	require.True(t, allowed)
+	require.NotNil(t, mappedGroups)
+	require.NotEmpty(t, mappedGroups)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
 }
