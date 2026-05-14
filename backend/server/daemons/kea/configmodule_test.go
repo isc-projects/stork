@@ -3908,8 +3908,8 @@ func TestApplySubnetAddToConfigBackend(t *testing.T) {
 
 	// Both daemons use cb_cmds with the same server tag and config database.
 	// Only one remote-subnet4-set should be sent.
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAlteringHookLibraryCBCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon1, daemon2)
 
 	ctx, err := module.ApplySubnetAdd(ctx, subnet)

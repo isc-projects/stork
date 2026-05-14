@@ -110,12 +110,12 @@ func createSubnetAddCommands(
 	serverTags []string,
 	lookup keaconfig.DHCPOptionDefinitionLookup,
 ) ([]ConfigCommand, error) {
-	hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary()
+	hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 
 	switch hook {
-	case keaconfig.SubnetAlteringHookLibrarySubnetCmds:
+	case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
 		return createSubnetCmdsSubnetAddCommands(localSubnet, subnet, sharedNetworkName, lookup)
-	case keaconfig.SubnetAlteringHookLibraryCBCmds:
+	case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds:
 		return createCBCmdsSubnetAddCommands(localSubnet, subnet, sharedNetworkName, serverTags, lookup)
 	default:
 		return nil, pkgerrors.Errorf("cannot determine hook library for altering subnets")
@@ -126,14 +126,14 @@ func createSubnetAddCommands(
 // daemons with subnet_cmds hooks. For daemons running cb_cmds no additional
 // commands are created.
 func createSubnetSaveCommands(daemon *dbmodel.Daemon) ([]ConfigCommand, error) {
-	hook := daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary()
+	hook := daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 
-	if hook == keaconfig.SubnetAlteringHookLibraryCBCmds {
+	if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds {
 		// No additional command is needed to save the subnet in the config
 		// backend database.
 		return []ConfigCommand{}, nil
 	}
-	if hook == keaconfig.SubnetAlteringHookLibraryNone || hook == keaconfig.SubnetAlteringHookLibraryAmbiguous {
+	if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone || hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryBoth {
 		return nil, pkgerrors.Errorf("cannot determine hook library for altering subnets")
 	}
 

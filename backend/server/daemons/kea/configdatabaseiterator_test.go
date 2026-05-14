@@ -14,7 +14,7 @@ import (
 // Tests that config backend key fields are extracted correctly.
 func TestBuildConfigBackendKeyNoServerTag(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 
 	// Act
 	id, err := buildConfigBackendKey(daemon)
@@ -29,7 +29,7 @@ func TestBuildConfigBackendKeyNoServerTag(t *testing.T) {
 // Tests that the server tag is included in the config backend ID.
 func TestBuildConfigBackendIDWithServerTag(t *testing.T) {
 	// Arrange
-	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 
 	// Act
 	id, err := buildConfigBackendKey(daemon)
@@ -63,8 +63,8 @@ func TestBuildConfigBackendKeyNoConfigDB(t *testing.T) {
 // backend database.
 func TestForEachUniqueConfigSourceDeduplicatesCBCmds(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -93,8 +93,8 @@ func TestForEachUniqueConfigSourceDeduplicatesCBCmds(t *testing.T) {
 // sharing the same config backend, even if they have different server tags.
 func TestForEachUniqueConfigSourceCollectsDistinctServerTags(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -123,8 +123,8 @@ func TestForEachUniqueConfigSourceCollectsDistinctServerTags(t *testing.T) {
 // hook.
 func TestForEachUniqueConfigSourceProcessesSubnetCmds(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibrarySubnetCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibrarySubnetCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -170,8 +170,8 @@ func TestForEachUniqueConfigSourceSkipsNilConfig(t *testing.T) {
 // local subnet ID.
 func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetID(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)
@@ -234,8 +234,8 @@ func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetData(t *testing.
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("inconsistent %s", tc.inconsistentField), func(t *testing.T) {
 			// Arrange
-			daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
-			daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+			daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+			daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 			daemon2.ID = 2
 
 			subnet := newTestSubnet(daemon1)
@@ -273,8 +273,8 @@ func TestForEachUniqueConfigSourceRejectsInconsistentLocalSubnetData(t *testing.
 // subnet data do not cause an error to be returned by the target iterator.
 func TestForEachUniqueConfigSourceAcceptsConsistentLocalSubnetData(t *testing.T) {
 	// Arrange
-	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAlteringHookLibraryCBCmds)
-	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAlteringHookLibraryCBCmds)
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server2"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	daemon2.ID = 2
 
 	subnet := newTestSubnet(daemon1)

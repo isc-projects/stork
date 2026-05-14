@@ -1092,7 +1092,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	lookup := module.manager.GetDHCPOptionDefinitionLookup()
 	// Validate that every daemon has at least one supported hook library.
 	for _, ls := range subnet.LocalSubnets {
-		if hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary(); hook == keaconfig.SubnetAlteringHookLibraryNone {
+		if hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary(); hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone {
 			return ctx, errors.New("daemon lacks a supported hook library")
 		}
 	}
@@ -1194,7 +1194,7 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 		if ls.Daemon.KeaDaemon.Config == nil {
 			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
 		}
-		if hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary(); hook == keaconfig.SubnetAlteringHookLibraryNone {
+		if hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary(); hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone {
 			return ctx, errors.WithStack(config.NewNoSubnetCmdsHookError())
 		}
 		daemonIDs = append(daemonIDs, ls.DaemonID)

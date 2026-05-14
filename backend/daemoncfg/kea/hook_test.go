@@ -110,49 +110,49 @@ func TestGetLegalLogHookLibrary(t *testing.T) {
 }
 
 // Tests that the missing subnet-altering hook library is correctly reported.
-func TestGetSubnetAlteringHookLibraryNone(t *testing.T) {
+func TestGetSubnetAndSharedNetworkAlteringHookLibraryNone(t *testing.T) {
 	hooks := HookLibraries{{Library: "libdhcp_lease_cmds"}}
 
-	require.Equal(t, SubnetAlteringHookLibraryNone, hooks.GetSubnetAlteringHookLibrary())
+	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibraryNone, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
 }
 
 // Tests that the subnet_cmds hook library is correctly detected.
-func TestGetSubnetAlteringHookLibrarySubnetCmds(t *testing.T) {
+func TestGetSubnetAndSharedNetworkAlteringHookLibrarySubnetCmds(t *testing.T) {
 	hooks := HookLibraries{{Library: "libdhcp_subnet_cmds"}}
 
-	require.Equal(t, SubnetAlteringHookLibrarySubnetCmds, hooks.GetSubnetAlteringHookLibrary())
+	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
 }
 
 // Tests that the cb_cmds hook library is correctly detected.
-func TestGetSubnetAlteringHookLibraryCBCmds(t *testing.T) {
+func TestGetSubnetAndSharedNetworkAlteringHookLibraryCBCmds(t *testing.T) {
 	hooks := HookLibraries{{Library: "libdhcp_cb_cmds"}}
 
-	require.Equal(t, SubnetAlteringHookLibraryCBCmds, hooks.GetSubnetAlteringHookLibrary())
+	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibraryCBCmds, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
 }
 
 // Tests that the case when both subnet_cmds and cb_cmds hook libraries are
 // configured is correctly detected as ambiguous.
-func TestGetSubnetAlteringHookLibraryAmbiguous(t *testing.T) {
+func TestGetSubnetAndSharedNetworkAlteringHookLibraryBoth(t *testing.T) {
 	hooks := HookLibraries{
 		{Library: "libdhcp_subnet_cmds"},
 		{Library: "libdhcp_cb_cmds"},
 	}
 
-	require.Equal(t, SubnetAlteringHookLibraryAmbiguous, hooks.GetSubnetAlteringHookLibrary())
+	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibraryBoth, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
 }
 
 // Tests that the hook for altering subnets is correctly identified based on
 // the configuration.
-func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
+func TestConfigGetSubnetAndSharedNetworkAlteringHookLibrary(t *testing.T) {
 	testCases := []struct {
 		name     string
 		config   string
-		expected SubnetAlteringHookLibrary
+		expected SubnetAndSharedNetworkAlteringHookLibrary
 	}{
 		{
 			name:     "no daemon config",
 			config:   `{}`,
-			expected: SubnetAlteringHookLibraryNone,
+			expected: SubnetAndSharedNetworkAlteringHookLibraryNone,
 		},
 		{
 			name: "no subnet-altering hook",
@@ -163,7 +163,7 @@ func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
 					]
 				}
 			}`,
-			expected: SubnetAlteringHookLibraryNone,
+			expected: SubnetAndSharedNetworkAlteringHookLibraryNone,
 		},
 		{
 			name: "subnet_cmds hook",
@@ -174,7 +174,7 @@ func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
 					]
 				}
 			}`,
-			expected: SubnetAlteringHookLibrarySubnetCmds,
+			expected: SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds,
 		},
 		{
 			name: "cb_cmds hook",
@@ -185,7 +185,7 @@ func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
 					]
 				}
 			}`,
-			expected: SubnetAlteringHookLibraryCBCmds,
+			expected: SubnetAndSharedNetworkAlteringHookLibraryCBCmds,
 		},
 		{
 			name: "both hooks",
@@ -197,7 +197,7 @@ func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
 					]
 				}
 			}`,
-			expected: SubnetAlteringHookLibraryAmbiguous,
+			expected: SubnetAndSharedNetworkAlteringHookLibraryBoth,
 		},
 	}
 
@@ -205,7 +205,7 @@ func TestConfigGetSubnetAlteringHookLibrary(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg, err := NewConfig([]byte(tc.config))
 			require.NoError(t, err)
-			require.Equal(t, tc.expected, cfg.GetSubnetAlteringHookLibrary())
+			require.Equal(t, tc.expected, cfg.GetSubnetAndSharedNetworkAlteringHookLibrary())
 		})
 	}
 }

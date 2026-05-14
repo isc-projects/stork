@@ -603,7 +603,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Keep daemons that can alter subnets with either subnet_cmds or cb_cmds.
-			if library := daemons[i].KeaDaemon.Config.GetSubnetAlteringHookLibrary(); library != keaconfig.SubnetAlteringHookLibraryNone && library != keaconfig.SubnetAlteringHookLibraryAmbiguous {
+			if library := daemons[i].KeaDaemon.Config.GetSubnetAndSharedNetworkAlteringHookLibrary(); library != keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone && library != keaconfig.SubnetAndSharedNetworkAlteringHookLibraryBoth {
 				respDaemons = append(respDaemons, r.keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()

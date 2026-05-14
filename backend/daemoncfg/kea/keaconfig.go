@@ -419,11 +419,11 @@ func (c *Config) GetHookLibrary(name string) (path string, params map[string]any
 
 // Returns the hook library type used to alter subnets. If both cb_cmds and
 // subnet_cmds are configured, cb_cmds takes precedence.
-func (c *Config) GetSubnetAlteringHookLibrary() SubnetAlteringHookLibrary {
+func (c *Config) GetSubnetAndSharedNetworkAlteringHookLibrary() SubnetAndSharedNetworkAlteringHookLibrary {
 	if accessor := c.getCommonConfigAccessor(); accessor != nil {
-		return accessor.GetHookLibraries().GetSubnetAlteringHookLibrary()
+		return accessor.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 	}
-	return SubnetAlteringHookLibraryNone
+	return SubnetAndSharedNetworkAlteringHookLibraryNone
 }
 
 // Returns configured loggers.

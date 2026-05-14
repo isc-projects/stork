@@ -58,8 +58,8 @@ func forEachUniqueConfigSource(
 
 	// Group daemons by config backend for cb_cmds.
 	for i, ls := range localSubnets {
-		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary()
-		if hook != keaconfig.SubnetAlteringHookLibraryCBCmds {
+		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
+		if hook != keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds {
 			continue
 		}
 		key, err := buildConfigBackendKey(ls.Daemon)
@@ -106,12 +106,12 @@ func forEachUniqueConfigSource(
 	// Call fn for each unique target. For cb_cmds, only the first daemon per
 	// config backend is considered a target.
 	for _, ls := range localSubnets {
-		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAlteringHookLibrary()
+		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 		var serverTags []string
-		if hook == keaconfig.SubnetAlteringHookLibraryNone || hook == keaconfig.SubnetAlteringHookLibraryAmbiguous {
+		if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone || hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryBoth {
 			continue
 		}
-		if hook == keaconfig.SubnetAlteringHookLibraryCBCmds {
+		if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds {
 			// Skip if the config backend for this daemon has already been
 			// processed.
 			// Otherwise, collect server tags for all daemons sharing the same

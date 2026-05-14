@@ -16,18 +16,18 @@ type HookLibrary struct {
 }
 
 // Represents the hook library type that can alter subnets.
-type SubnetAlteringHookLibrary int
+type SubnetAndSharedNetworkAlteringHookLibrary int
 
 const (
 	// Indicates that no supported hook library is loaded.
-	SubnetAlteringHookLibraryNone SubnetAlteringHookLibrary = iota
+	SubnetAndSharedNetworkAlteringHookLibraryNone SubnetAndSharedNetworkAlteringHookLibrary = iota
 	// Indicates that the subnet_cmds and cb_cmds hook libraries are loaded
 	// both.
-	SubnetAlteringHookLibraryAmbiguous
+	SubnetAndSharedNetworkAlteringHookLibraryBoth
 	// Indicates that the subnet_cmds hook library is loaded.
-	SubnetAlteringHookLibrarySubnetCmds
+	SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds
 	// Indicates that the cb_cmds hook library is loaded.
-	SubnetAlteringHookLibraryCBCmds
+	SubnetAndSharedNetworkAlteringHookLibraryCBCmds
 )
 
 // A generic function parsing the hook library configuration into a custom
@@ -80,19 +80,19 @@ func (hl HookLibraries) GetHookLibrary(name string) (path string, params map[str
 
 // Returns the hook library type that can alter subnets. If both cb_cmds and
 // subnet_cmds are configured, cb_cmds takes precedence.
-func (hl HookLibraries) GetSubnetAlteringHookLibrary() SubnetAlteringHookLibrary {
+func (hl HookLibraries) GetSubnetAndSharedNetworkAlteringHookLibrary() SubnetAndSharedNetworkAlteringHookLibrary {
 	_, _, hasCBHook := hl.GetHookLibrary("libdhcp_cb_cmds")
 	_, _, hasSubnetHook := hl.GetHookLibrary("libdhcp_subnet_cmds")
 
 	switch {
 	case hasCBHook && hasSubnetHook:
-		return SubnetAlteringHookLibraryAmbiguous
+		return SubnetAndSharedNetworkAlteringHookLibraryBoth
 	case hasCBHook:
-		return SubnetAlteringHookLibraryCBCmds
+		return SubnetAndSharedNetworkAlteringHookLibraryCBCmds
 	case hasSubnetHook:
-		return SubnetAlteringHookLibrarySubnetCmds
+		return SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds
 	default:
-		return SubnetAlteringHookLibraryNone
+		return SubnetAndSharedNetworkAlteringHookLibraryNone
 	}
 }
 
