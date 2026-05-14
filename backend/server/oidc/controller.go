@@ -2,6 +2,9 @@ package oidc
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/gob"
 	"net/http"
 	"net/url"
@@ -110,4 +113,41 @@ func (ctl *Controller) cleanupSessions(ctx context.Context) {
 		}
 	}
 	ctl.putAuthSessionMap(ctx, sessionMap)
+}
+
+// Generates and returns n-long slice of random bytes. In case of io.ReadFull error,
+// it returns nil and an error.
+func generateRandBytes(n int) (bytes []byte, err error) {
+	bytes = make([]byte, n)
+	_, err = rand.Read(bytes)
+	if err != nil {
+		bytes = nil
+		return
+	}
+	return
+}
+
+// Generates and returns base64-encoded 32 random bytes as string.
+// In case of io.ReadFull error, it returns empty string and an error.
+func generateRandBase64Str() (result string, err error) {
+	bytes, err := generateRandBytes(32)
+	if err != nil {
+		return
+	}
+	result = base64.RawURLEncoding.EncodeToString(bytes)
+	return
+}
+
+// Generates and returns Proof Key for Code Exchange (PKCE) random codeVerifier
+// and codeChallenge as strings.
+// In case of io.ReadFull error, it returns empty strings and an error.
+func generatePKCE() (codeVerifier string, codeChallenge string, err error) {
+	codeVerifier, err = generateRandBase64Str()
+	if err != nil {
+		codeVerifier = ""
+		return
+	}
+	hash := sha256.Sum256([]byte(codeVerifier))
+	codeChallenge = base64.RawURLEncoding.EncodeToString(hash[:])
+	return
 }
