@@ -142,6 +142,18 @@ namespace :push do
         )
     end
 
+    desc 'Prepare CI-purpose image based on Ubuntu docker image.
+        TAG - number used as the image tag or "latest" keyword - required
+        CACHE - allow using cached image layers - default: true
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
+    task :compose_ubuntu do
+        Rake::Task["push:build_and_push"].invoke(
+            "docker/images/ci/pkgs-compose-ubuntu.Dockerfile",
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-compose-ubuntu",
+            false
+        )
+    end
+
     desc 'Prepare CI-purpose image with the CloudSmith tools.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
