@@ -981,6 +981,7 @@ func TestAddOrUpdateExternalUserFails(t *testing.T) {
 	systemUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
 	require.NoError(t, err)
 	require.NotNil(t, systemUser)
+	// Create a unique index on the system_user table, to be able to force DB integrity violation error.
 	_, err = db.Model((*SystemUser)(nil)).Exec(`
 		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, email)
 	`)
