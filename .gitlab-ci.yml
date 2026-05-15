@@ -831,7 +831,7 @@ system_test:
   rules:
     - if: *is_push_to_master_or_tag
     - *rule_manual_allow_failure
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose-ubuntu:1
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose-ubuntu:16
   #  cache:
   #    key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
   #    paths:

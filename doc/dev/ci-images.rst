@@ -145,6 +145,16 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 
+**Tag: 16**
+
+    - ``pkgs-compose-ubuntu``:
+
+        Introduced in the #2438 ticket. Changes Alpine based image to Ubuntu based to allow using Playwright in 
+        CI pipeline.
+
+        - Base: ``cruizba/ubuntu-dind:noble-28.5.2`` (Ubuntu)
+        - Added Python 3.12, OpenJDK 17, Rake 13, NodeJS 18.19, NPM 9, Protoc 3.21.
+
 **Tag: 15**
 
     - ``pkgs-alpine``:
