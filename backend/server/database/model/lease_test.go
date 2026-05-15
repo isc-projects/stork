@@ -342,7 +342,7 @@ func TestGetLeasesByPageFilteredBySubnet(t *testing.T) {
 	filters := LeasesByPageFilters{
 		SubnetID: &subnets[1].ID,
 	}
-	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAny)
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
 
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
