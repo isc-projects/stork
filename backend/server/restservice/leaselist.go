@@ -60,33 +60,38 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 		nil
 }
 
+// convertSortFieldToColumnName converts the friendly REST API field names
+// to the underlying database column names. If the sortField is unrecognized,
+// it defaults to [dbmodel.GetLeasesByPageSortColumnNameNone].
+func convertSortFieldToColumnName(sortField string) dbmodel.GetLeasesByPageSortColumnName {
+	switch models.LeaseListSortField(sortField) {
+	case models.LeaseListSortFieldSubnetPrefix:
+		return dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix
+	case models.LeaseListSortFieldHwAddress:
+		return dbmodel.GetLeasesByPageSortColumnNameHwAddress
+	case models.LeaseListSortFieldIPAddress:
+		return dbmodel.GetLeasesByPageSortColumnNameIPAddress
+	case models.LeaseListSortFieldHostname:
+		return dbmodel.GetLeasesByPageSortColumnNameHostname
+	case models.LeaseListSortFieldClientID:
+		return dbmodel.GetLeasesByPageSortColumnNameClientID
+	case models.LeaseListSortFieldDuid:
+		return dbmodel.GetLeasesByPageSortColumnNameDuid
+	case models.LeaseListSortFieldCltt:
+		return dbmodel.GetLeasesByPageSortColumnNameCltt
+	case models.LeaseListSortFieldValidLifetime:
+		return dbmodel.GetLeasesByPageSortColumnNameValidLifetime
+	case models.LeaseListSortFieldPrefixLength:
+		return dbmodel.GetLeasesByPageSortColumnNamePrefixLength
+	default:
+		return dbmodel.GetLeasesByPageSortColumnNameNone
+	}
+}
+
 // Fetches leases from the database and converts to the data formats
 // used in the REST API.
 func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFilters, sortField string, sortDir dbmodel.SortDirEnum) (*models.Leases, error) {
-	// Convert friendly API field names to database column names.
-	var dbSortCol dbmodel.GetLeasesByPageSortColumnName
-	switch models.LeaseListSortField(sortField) {
-	case models.LeaseListSortFieldSubnetPrefix:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix
-	case models.LeaseListSortFieldHwAddress:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameHwAddress
-	case models.LeaseListSortFieldIPAddress:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameIPAddress
-	case models.LeaseListSortFieldHostname:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameHostname
-	case models.LeaseListSortFieldClientID:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameClientID
-	case models.LeaseListSortFieldDuid:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameDuid
-	case models.LeaseListSortFieldCltt:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameCltt
-	case models.LeaseListSortFieldValidLifetime:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameValidLifetime
-	case models.LeaseListSortFieldPrefixLength:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNamePrefixLength
-	default:
-		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameNone
-	}
+	dbSortCol := convertSortFieldToColumnName(sortField)
 	// Get the leases from the database.
 	dbLeases, total, err := dbmodel.GetLeasesByPage(r.DB, offset, limit, filters, dbSortCol, sortDir)
 	if err != nil {
