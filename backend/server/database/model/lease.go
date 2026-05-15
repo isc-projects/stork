@@ -114,7 +114,8 @@ const (
 )
 
 // Fetches a collection of leases from the database.
-// Returns an ordered subset of hosts and the total number of hosts, or an error.
+// Returns an ordered subset of leases and the total number of leases, or an
+// error.
 //
 // The offset and limit specify the beginning of the page and the maximum number
 // of leases to show per page.

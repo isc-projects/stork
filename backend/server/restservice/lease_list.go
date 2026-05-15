@@ -87,7 +87,7 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 	default:
 		dbSortCol = dbmodel.GetLeasesByPageSortColumnNameNone
 	}
-	// Get the hosts from the database.
+	// Get the leases from the database.
 	dbLeases, total, err := dbmodel.GetLeasesByPage(r.DB, offset, limit, filters, dbSortCol, sortDir)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 		Items: make([]*models.Lease, 0, total),
 	}
 
-	// Convert hosts fetched from the database to REST.
+	// Convert leases fetched from the database to REST.
 	for i := range dbLeases {
 		lease, err := convertLeaseToRestAPI(&dbLeases[i])
 		if err != nil {
@@ -160,7 +160,7 @@ func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListPara
 	}
 	leases, err := r.getLeases(start, limit, filters, sortField, sortDir)
 	if err != nil {
-		msg := "Problem fetching hosts from the database"
+		msg := "Problem fetching leases from the database"
 		log.WithError(err).Error(msg)
 		rsp := dhcp.NewGetLeaseListDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
