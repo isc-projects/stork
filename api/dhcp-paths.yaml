@@ -67,7 +67,7 @@
         - name: text
           in: query
           description: >-
-            Limit returned list of leases to the ones containing the given text.
+            Limit returned list of leases to the ones containing the given text in the IP address, HW Address, DUID, Client ID, or hostname fields.
           type: string
         - $ref: '#/parameters/leaseListSortField'
         - $ref: '#/parameters/sortDir'
