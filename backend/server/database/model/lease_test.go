@@ -98,6 +98,10 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 	return daemons, subnets
 }
 
+// testHelperAddMockLeases is a testing helper function which adds a few example
+// leases to the database.  The example leases are in the subnet "192.0.2.0/24",
+// and this function expects the first subnet provided in subnets must also have
+// the prefix "192.0.2.0/24".
 func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, subnets []*Subnet) []*Lease {
 	leases := []*Lease{
 		// Valid IPv4 lease.
@@ -295,6 +299,8 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 	require.ErrorContains(t, err, "problem inserting lease")
 }
 
+// Verify that [GetLeasesByPage] operates correctly and returns no errors when
+// no filters are specified.
 func TestGetLeasesByPageNoFilter(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -326,6 +332,7 @@ func TestGetLeasesByPageNoFilter(t *testing.T) {
 	require.EqualValues(t, 9999, returned[0].CLTT)
 }
 
+// Verify that [GetLeasesByPage] correctly filters the list of leases by subnet.
 func TestGetLeasesByPageFilteredBySubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

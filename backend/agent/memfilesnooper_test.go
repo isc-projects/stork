@@ -423,6 +423,8 @@ func TestRowSourceEnsureWatchingWithChange(t *testing.T) {
 	require.Equal(t, expected5, actualAfter[1])
 }
 
+// Verify that RowSource properly rejects situations where its preconditions
+// (assumptions about system state) are invalid.
 func TestRowSourcePreconditions(t *testing.T) {
 	t.Run("Calling .Stop() on a RowSource that isn't running should not error out", func(t *testing.T) {
 		rowsource, err := NewRowSource("testdata/small-leases4.csv")
@@ -648,6 +650,8 @@ func TestParseRowAsLease4(t *testing.T) {
 	}
 }
 
+// Verify that ParseRowAsLease6 parses rows which are valid IPv6 leases and
+// rejects rows which are not.
 func TestParseRowAsLease6(t *testing.T) {
 	// Arrange
 	testCases := []struct {

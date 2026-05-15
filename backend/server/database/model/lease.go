@@ -84,19 +84,33 @@ type LeasesByPageFilters struct {
 	FilterText    *string
 }
 
+// GetLeasesByPageSortColumnName provides type checking guarantees to ensure
+// that only valid database columns are used as sorting keys in
+// [GetLeasesByPage].
 type GetLeasesByPageSortColumnName = string
 
 const (
-	GetLeasesByPageSortColumnNameSubnetPrefix  = "subnet.prefix"
-	GetLeasesByPageSortColumnNameHwAddress     = "hw_address"
-	GetLeasesByPageSortColumnNameIPAddress     = "ip_address"
-	GetLeasesByPageSortColumnNameHostname      = "hostname"
-	GetLeasesByPageSortColumnNameClientID      = "client_id"
-	GetLeasesByPageSortColumnNameDuid          = "duid"
-	GetLeasesByPageSortColumnNameCltt          = "cltt"
+	// The column name for the subnet prefix.
+	GetLeasesByPageSortColumnNameSubnetPrefix = "subnet.prefix"
+	// The column name for the hardware address (MAC address).
+	GetLeasesByPageSortColumnNameHwAddress = "hw_address"
+	// The column name for the IP address.
+	GetLeasesByPageSortColumnNameIPAddress = "ip_address"
+	// The column name for the hostname.
+	GetLeasesByPageSortColumnNameHostname = "hostname"
+	// The column name for the Client ID.
+	GetLeasesByPageSortColumnNameClientID = "client_id"
+	// The column name for the DUID (Device Unique IDentifier).
+	GetLeasesByPageSortColumnNameDuid = "duid"
+	// The column name for the Client Last Transaction Time (CLTT).
+	GetLeasesByPageSortColumnNameCltt = "cltt"
+	// The column name for the valid lifetime.
 	GetLeasesByPageSortColumnNameValidLifetime = "valid_lifetime"
-	GetLeasesByPageSortColumnNamePrefixLength  = "prefix_length"
-	GetLeasesByPageSortColumnNameNone          = ""
+	// The column name for the IPv6 delegated prefix length.
+	GetLeasesByPageSortColumnNamePrefixLength = "prefix_length"
+	// The "none" column name, which indicates that the default sort
+	// column should be used (lease ID).
+	GetLeasesByPageSortColumnNameNone = ""
 )
 
 // Fetches a collection of leases from the database.

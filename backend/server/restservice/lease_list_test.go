@@ -16,37 +16,45 @@ import (
 	storktest "isc.org/stork/server/test/dbmodel"
 )
 
+// Verify that [convertLeaseToRestAPI] returns an error when called with
+// a nil [dbmodel.Lease].
 func TestConvertLeaseFromRestAPIWithNilLease(t *testing.T) {
-	result, err := convertLeaseFromRestAPI(nil)
+	result, err := convertLeaseToRestAPI(nil)
 
 	require.Nil(t, result)
 	require.ErrorContains(t, err, "nil")
 }
 
+// Verify that [convertLeaseToRestAPI] returns en error when called with
+// a [dbmodel.Lease] which has a CLTT larger than will fit in a (signed) int64.
 func TestConvertLeaseFromRestAPIWithCLTTTooBig(t *testing.T) {
 	lease := dbmodel.Lease{
 		Lease: keadata.Lease{
 			CLTT: math.MaxInt64 + 1,
 		},
 	}
-	result, err := convertLeaseFromRestAPI(&lease)
+	result, err := convertLeaseToRestAPI(&lease)
 
 	require.Nil(t, result)
 	require.ErrorContains(t, err, "CLTT")
 }
 
+// Verify that [convertLeaseToRestAPI] returns an error when called with
+// a [dbmodel.Lease] which has a nil [dbmodel.Daemon].
 func TestConvertLeaseFromRestAPIWithNilDaemon(t *testing.T) {
 	lease := dbmodel.Lease{
 		Lease: keadata.Lease{
 			CLTT: math.MaxInt64 - 1,
 		},
 	}
-	result, err := convertLeaseFromRestAPI(&lease)
+	result, err := convertLeaseToRestAPI(&lease)
 
 	require.Nil(t, result)
 	require.ErrorContains(t, err, "Daemon")
 }
 
+// Verify that [convertLeaseToRestAPI] returns an error when called with
+// a [dbmodel.Lease] which has a nil [dbmodel.Subnet].
 func TestConvertLeaseFromRestAPIWithNilSubnet(t *testing.T) {
 	lease := dbmodel.Lease{
 		Daemon: &dbmodel.Daemon{
@@ -57,12 +65,14 @@ func TestConvertLeaseFromRestAPIWithNilSubnet(t *testing.T) {
 			CLTT: math.MaxInt64 - 1,
 		},
 	}
-	result, err := convertLeaseFromRestAPI(&lease)
+	result, err := convertLeaseToRestAPI(&lease)
 
 	require.Nil(t, result)
 	require.ErrorContains(t, err, "Subnet")
 }
 
+// Verify that [convertLeaseToRestAPI] correctly converts a [dbmodel.Lease]
+// to a [dhcp.Lease] when provided with complete and valid input.
 func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 	lease := dbmodel.Lease{
 		DaemonID: 1,
@@ -84,13 +94,16 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 			Prefix: "fe80::/64",
 		},
 	}
-	result, err := convertLeaseFromRestAPI(&lease)
+	result, err := convertLeaseToRestAPI(&lease)
 
 	require.Nil(t, err)
 	require.NotNil(t, result)
 	require.EqualValues(t, lease.CLTT, *result.Cltt)
 }
 
+// testHelperMakeUser is a test helper function which adds a user to the
+// database with a given username and password, and ensures that the operation
+// succeeded.
 func testHelperMakeUser(t *testing.T, db *dbops.PgDB, user *dbmodel.SystemUser, password string) {
 	t.Helper()
 	con, err := dbmodel.CreateUserWithPassword(db, user, password)
@@ -98,6 +111,11 @@ func testHelperMakeUser(t *testing.T, db *dbops.PgDB, user *dbmodel.SystemUser, 
 	require.False(t, con)
 }
 
+// Verify that [GetLeaseList] enforces user authentication properly:
+// - Logged-out users cannot see leases.
+// - Read only users cannot see leases.
+// - Admin users can see leases.
+// - Super Admin users can see leases.
 func TestGetLeaseListUserAuth(t *testing.T) {
 	roUser := &dbmodel.SystemUser{
 		Email:    "san.zhang@example.com",
@@ -206,8 +224,4 @@ func TestGetLeaseListUserAuth(t *testing.T) {
 		rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
 		require.IsType(t, &dhcp.GetLeaseListOK{}, rsp)
 	})
-}
-
-func TestGetLeaseList(t *testing.T) {
-	require.Nil(t, nil)
 }

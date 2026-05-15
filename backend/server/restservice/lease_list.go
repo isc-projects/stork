@@ -14,7 +14,11 @@ import (
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
 
-func convertLeaseFromRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
+// convertLeaseToRestAPI converts a [dbmodel.Lease] (the database
+// representation) into a [models.Lease] (the REST API representation). It can
+// fail when the input is nil, when the input's CLTT is larger than an int64 can
+// hold, and when the [dbmodel.Daemon] or [dbmodel.Subnet] are nil.
+func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 	if dbLease == nil {
 		return nil, errors.New("cannot convert a nil dbmodel.Lease to a models.Lease")
 	}
@@ -96,7 +100,7 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 
 	// Convert hosts fetched from the database to REST.
 	for i := range dbLeases {
-		lease, err := convertLeaseFromRestAPI(&dbLeases[i])
+		lease, err := convertLeaseToRestAPI(&dbLeases[i])
 		if err != nil {
 			continue
 		}
@@ -106,6 +110,9 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 	return leasesResponse, nil
 }
 
+// GetLeaseList retreives a list of [dbmodel.Lease] from the database, converts
+// them all to [model.Lease], and supports several filtering and sorting
+// options.  It implements the /api/dhcp/lease-list endpoint.
 func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListParams) middleware.Responder {
 	_, user := r.SessionManager.Logged(ctx)
 	if user == nil {
