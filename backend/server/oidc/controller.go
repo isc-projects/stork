@@ -44,19 +44,9 @@ type AuthSession struct {
 // and a pointer to Stork server database, which is used to insert
 // and update authenticated users.
 func NewController(settings Settings, db *dbops.PgDB) *Controller {
-	// Prepare in-memory session manager used only for storing OIDC auth data in sessions.
-	gob.Register(map[string]AuthSession{})
-	inMemorySessionMgr := scs.New()
-	inMemorySessionMgr.Lifetime = 20 * time.Minute
-	inMemorySessionMgr.Cookie.Name = "auth_session"
-	inMemorySessionMgr.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-		// Use logrus instead of the standard logger.
-		log.WithError(err).Error("an error occurred in the OIDC session manager")
-	}
 	return &Controller{
-		settings:           settings,
-		db:                 db,
-		authSessionManager: inMemorySessionMgr,
+		settings: settings,
+		db:       db,
 	}
 }
 
@@ -66,9 +56,24 @@ func NewController(settings Settings, db *dbops.PgDB) *Controller {
 func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.SessionMgr) {
 	if ctl.settings.IssuerURL == "" {
 		// Mandatory setting is missing. Controller will remain not configured.
+		log.Debug("OIDC authentication disabled")
+		return
+	}
+	if ctl.settings.ClientID == "" {
+		log.Error("OIDC authentication can't be used due to missing oidc-client-id setting")
 		return
 	}
 	ctl.dbSessionManager = dbSessionManager
+	// Prepare in-memory session manager used only for storing OIDC auth data in sessions.
+	gob.Register(map[string]AuthSession{})
+	inMemorySessionMgr := scs.New()
+	inMemorySessionMgr.Lifetime = 20 * time.Minute
+	inMemorySessionMgr.Cookie.Name = "auth_session"
+	inMemorySessionMgr.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+		// Use logrus instead of the standard logger.
+		log.WithError(err).Error("an error occurred in the OIDC session manager")
+	}
+	ctl.authSessionManager = inMemorySessionMgr
 	ctl.configured = true
 }
 
@@ -85,6 +90,10 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 
 // Helper method reading cache from in-memory session storage.
 func (ctl *Controller) getAuthSessionMap(ctx context.Context) map[string]AuthSession {
+	if !ctl.configured {
+		// In case OIDC was not configured, there is no session context.
+		return nil
+	}
 	m := ctl.authSessionManager.Get(ctx, "auth_sessions")
 	if m == nil {
 		return make(map[string]AuthSession)

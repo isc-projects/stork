@@ -27,7 +27,6 @@ func TestNewController(t *testing.T) {
 	// Assert
 	require.NotNil(t, controller)
 	require.False(t, controller.configured)
-	require.NotNil(t, controller.authSessionManager)
 }
 
 // Test if OIDC controller internal configured flag is not set if mandatory setting is missing.
@@ -43,6 +42,9 @@ func TestConfigureSettingMissing(t *testing.T) {
 
 	// Assert
 	require.False(t, controller.configured)
+	controller.settings.IssuerURL = "https://test.idp.org"
+	controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
+	require.False(t, controller.configured) // ClientID is also mandatory setting.
 }
 
 // Test if OIDC controller internal configured flag is set.
@@ -50,7 +52,7 @@ func TestConfigure(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	controller := NewController(Settings{IssuerURL: "https://test.idp.org"}, db)
+	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
 
 	// Act
@@ -58,6 +60,7 @@ func TestConfigure(t *testing.T) {
 
 	// Assert
 	require.True(t, controller.configured)
+	require.NotNil(t, controller.authSessionManager)
 }
 
 // Test if OIDC middleware is transparent if OIDC was not configured.
@@ -91,7 +94,7 @@ func TestMiddlewareIsNotTransparent(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	controller := NewController(Settings{IssuerURL: "https://test.idp.org"}, db)
+	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Hello", "world")
@@ -120,7 +123,7 @@ func TestSessionStorage(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	controller := NewController(Settings{IssuerURL: "https://test.idp.org"}, db)
+	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
 	var ctx context.Context
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -167,6 +170,22 @@ func TestSessionStorage(t *testing.T) {
 	sessionMap3 := controller.getAuthSessionMap(ctx)
 	require.NotNil(t, sessionMap3)
 	require.Empty(t, sessionMap3)
+}
+
+// Test if in case of not configured controller and no existing session context
+// getAuthSessionMap does not panic and returns nil.
+func TestGetAuthSessionMapReturnsNil(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	controller := NewController(Settings{IssuerURL: "https://test.idp.org"}, db)
+	require.NotNil(t, controller)
+
+	// Act
+	sessionMap := controller.getAuthSessionMap(context.TODO())
+
+	// Assert
+	require.Nil(t, sessionMap)
 }
 
 // Test if generateRandBytes works fine.
@@ -222,6 +241,7 @@ func TestGetMappedGroups(t *testing.T) {
 	settings := Settings{
 		IssuerURL:           "https://test.idp.org",
 		MandatoryAllowGroup: "stork-access",
+		ClientID:            "clientID",
 	}
 	controller := NewController(settings, db)
 	require.NotNil(t, controller)
