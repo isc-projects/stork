@@ -263,12 +263,6 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 						response.Lease.SubnetID,
 					))
 				}
-				log.WithFields(log.Fields{
-					"daemonID":      daemon.ID,
-					"localSubnetID": response.Lease.SubnetID,
-					"storkSubnetID": *subnetID,
-					"lease":         response.Lease,
-				}).Info("found subnet for lease record")
 				modelLease := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, *subnetID)
 				if modelLease == nil {
 					return errors.New("unable to convert lease from gRPC format to model format; data is missing or invalid")
