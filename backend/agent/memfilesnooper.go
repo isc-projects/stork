@@ -404,7 +404,7 @@ func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
 // the agent. This tool must always collect *lease updates*, not just the
 // current state of the leases.
 type MemfileSnooper interface {
-	Start()
+	Start() error
 	Stop()
 	EnsureWatching(path string) error
 	GetSnapshot() []*keadata.Lease
@@ -545,9 +545,9 @@ func (ms *RealMemfileSnooper) appendLease(lease *keadata.Lease) {
 
 // Begin collecting leases. The MemfileSnooper takes care of starting the
 // RowSource; the caller does not need to do that too.
-func (ms *RealMemfileSnooper) Start() {
+func (ms *RealMemfileSnooper) Start() error {
 	if ms.running {
-		return
+		return errors.New("This snooper is already running.")
 	}
 	channel := ms.rs.Start()
 	go func() {
@@ -573,4 +573,5 @@ func (ms *RealMemfileSnooper) Start() {
 		}
 	}()
 	ms.running = true
+	return nil
 }

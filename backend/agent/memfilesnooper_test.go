@@ -960,7 +960,8 @@ func TestMemfileSnooperCollectsLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	memfileSnooper.Start()
+	err = memfileSnooper.Start()
+	require.NoError(t, err)
 	wg.Wait()
 	memfileSnooper.Stop()
 
@@ -1008,7 +1009,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Act
-		memfileSnooper.Start()
+		err = memfileSnooper.Start()
+		require.NoError(t, err)
 		wg.Wait()
 		memfileSnooper.Stop()
 
@@ -1037,7 +1039,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Act
-		memfileSnooper.Start()
+		err = memfileSnooper.Start()
+		require.NoError(t, err)
 		wg.Wait()
 		// Don't call stop; it will block forever trying to send to the channel.
 
@@ -1080,12 +1083,11 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
 		require.NoError(t, err)
 
-		memfileSnooper.Start()
+		err = memfileSnooper.Start()
 		defer memfileSnooper.Stop()
-		grCount := runtime.NumGoroutine()
-		memfileSnooper.Start()
-		grCount2 := runtime.NumGoroutine()
-		require.Equal(t, grCount, grCount2, "the number of goroutines running changed after calling .Start() a second time")
+		require.NoError(t, err)
+		err = memfileSnooper.Start()
+		require.ErrorContains(t, err, "already running")
 	})
 	t.Run("needs lease compacting to fit in limit", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -1103,7 +1105,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Act
-		memfileSnooper.Start()
+		err = memfileSnooper.Start()
+		require.NoError(t, err)
 		wg.Wait()
 		memfileSnooper.Stop()
 
@@ -1129,7 +1132,8 @@ func TestMemfileSnooperErrorConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Act
-		memfileSnooper.Start()
+		err = memfileSnooper.Start()
+		require.NoError(t, err)
 		wg.Wait()
 		memfileSnooper.Stop()
 
@@ -1214,7 +1218,8 @@ func TestMemfileSnooperGetSnapshotDeduplicates(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	memfileSnooper.Start()
+	err = memfileSnooper.Start()
+	require.NoError(t, err)
 	wg.Wait()
 	memfileSnooper.Stop()
 

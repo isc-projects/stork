@@ -665,7 +665,10 @@ func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconf
 			if err != nil {
 				return err
 			}
-			d.snooper.Start()
+			err = d.snooper.Start()
+			if err != nil {
+				return err
+			}
 		} else {
 			// The agent should be watching a leasefile, and it is, but it should make sure
 			// it is looking at the correct one.
