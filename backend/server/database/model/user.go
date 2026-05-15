@@ -502,5 +502,9 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 		return nil, err
 	}
 	err = tx.Commit()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "unable to commit transaction while trying to add or update external user with ID %s", externalUser.ID)
+		return nil, err
+	}
 	return systemUser, err
 }
