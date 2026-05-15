@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
-import { DHCPService, Lease, LeaseListSortField } from '../backend'
+import { DHCPService, Lease, LeaseListSortField, Leases } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router, RouterLink } from '@angular/router'
 import { MenuItem, MessageService, PrimeTemplate, TableState, FilterMetadata } from 'primeng/api'
@@ -97,7 +97,7 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
      * Loads leases from the database into the component.
      *
      * @param event Event object containing an index if the first row, maximum
-     * number of rows to be returned and a text for hosts filtering. If it is
+     * number of rows to be returned and a text for lease filtering. If it is
      * not specified, the current values are used when available.
      */
     loadData(event: TableLazyLoadEvent) {
@@ -117,11 +117,11 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
                 ...convertSortingFields<LeaseListSortField>(event)
             )
         )
-            .then((data) => {
-                this.leases = data.items ?? []
+            .then((data: Leases) => {
+                this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
             })
-            .catch((err) => {
+            .catch((err: any) => {
                 const msg = getErrorMessage(err)
                 this.messageService.add({
                     severity: 'error',
@@ -133,28 +133,6 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
             .finally(() => {
                 this.dataLoading = false
             })
-    }
-
-    /**
-     * Holds local hosts of all currently displayed leases grouped by daemon ID.
-     * It is indexed by host ID.
-     */
-    localHostsGroupedByDaemon: Record<number, Lease[][]>
-
-    /**
-     * Returns all currently displayed host reservations.
-     */
-    get leases(): Lease[] {
-        return this.dataCollection
-    }
-
-    /**
-     * Sets hosts reservations to be displayed.
-     * Groups the local hosts by daemon ID and stores the result in
-     * @this.localHostsGroupedByDaemon.
-     */
-    set leases(leases: Lease[]) {
-        this.dataCollection = leases
     }
 
     /**
@@ -179,11 +157,11 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
-                    map((f) => ({ ...f, value: f.value === '' ? null : f.value })), // replace empty string filter value with null
+                    map((f: { value: string }) => ({ ...f, value: f.value === '' ? null : f.value })), // replace empty string filter value with null
                     debounceTime(300),
                     distinctUntilChanged()
                 )
-                .subscribe((f) => {
+                .subscribe((f: { filterConstraint: { value: any }; value: any }) => {
                     // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
                     // so it's value must be set according to UI columnFilter value.
                     f.filterConstraint.value = f.value

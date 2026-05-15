@@ -12,7 +12,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
-describe('HostsPageComponent', () => {
+describe('LeasesListsPageComponent', () => {
     let component: LeasesListPageComponent
     let fixture: ComponentFixture<LeasesListPageComponent>
 
@@ -26,17 +26,7 @@ describe('HostsPageComponent', () => {
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
                 provideNoopAnimations(),
-                provideRouter([
-                    {
-                        path: 'dhcp/hosts',
-                        pathMatch: 'full',
-                        redirectTo: 'dhcp/hosts/all',
-                    },
-                    {
-                        path: 'dhcp/hosts/:id',
-                        component: LeasesListPageComponent,
-                    },
-                ]),
+                provideRouter([]),
                 {
                     provide: ServicesService,
                     useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },

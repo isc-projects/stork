@@ -26,13 +26,7 @@ describe('LeasesListTableComponent', () => {
                 provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([
-                    {
-                        path: 'dhcp/leases-list',
-                        pathMatch: 'full',
-                        redirectTo: 'dhcp/hosts/all',
-                    },
-                ]),
+                provideRouter([]),
                 {
                     provide: ServicesService,
                     useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
