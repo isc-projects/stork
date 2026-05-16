@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -111,8 +112,26 @@ func (u Utilization) AppendValue(b []byte, quote int) ([]byte, error) {
 		b = append(b, '\'')
 	}
 
-	s := strconv.FormatFloat(float64(u)*1000., 'f', 0, 64)
-	b = append(b, []byte(s)...)
+	// Utilization is usually in the range 0-1. It can be slightly above 1 in
+	// some special cases (e.g., when out-of-pool reservations are specified in
+	// pools).
+	// However, in some extreme cases (e.g., when the daemons are duplicated)
+	// the utilization can be much higher than 1. In such cases, we don't want
+	// to interrupt statistics update with an error because it turned out to
+	// be confused for the end-users. Instead, we clip the value to the column
+	// limits and let the users to investigate the root cause of such high
+	// utilization.
+	utilizationFloat := float64(u) * 1000.
+	var utilizationString string
+	if utilizationFloat >= math.MaxInt16 {
+		utilizationString = strconv.FormatInt(math.MaxInt16, 10)
+	} else if utilizationFloat <= math.MinInt16 {
+		utilizationString = strconv.FormatInt(math.MinInt16, 10)
+	} else {
+		utilizationString = strconv.FormatFloat(utilizationFloat, 'f', 0, 64)
+	}
+
+	b = append(b, []byte(utilizationString)...)
 
 	if quote == 1 {
 		b = append(b, '\'')
