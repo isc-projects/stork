@@ -64,5 +64,4 @@ func TestUtilizationExceedsBounds(t *testing.T) {
 	require.NoError(t, belowSerializeErr)
 	require.Equal(t, []byte(strconv.FormatInt(math.MaxInt16, 10)), aboveSerialized)
 	require.Equal(t, []byte(strconv.FormatInt(math.MinInt16, 10)), belowSerialized)
-
 }

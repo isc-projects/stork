@@ -123,11 +123,12 @@ func (u Utilization) AppendValue(b []byte, quote int) ([]byte, error) {
 	// utilization.
 	utilizationFloat := float64(u) * 1000.
 	var utilizationString string
-	if utilizationFloat >= math.MaxInt16 {
+	switch {
+	case utilizationFloat >= math.MaxInt16:
 		utilizationString = strconv.FormatInt(math.MaxInt16, 10)
-	} else if utilizationFloat <= math.MinInt16 {
+	case utilizationFloat <= math.MinInt16:
 		utilizationString = strconv.FormatInt(math.MinInt16, 10)
-	} else {
+	default:
 		utilizationString = strconv.FormatFloat(utilizationFloat, 'f', 0, 64)
 	}
 
