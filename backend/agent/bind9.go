@@ -533,12 +533,11 @@ func (sm *monitor) configureBind9Daemon(p supportedProcess, binaryNamedDir strin
 		xfrTrackingSystemdUnit = sm.settings.ExplicitXFRTrackingSystemdUnit
 		// If the tracking locations are not explicitly set, try to detect them from the BIND 9 config.
 		if xfrTrackingSystemdUnit == "" && (xfrInTrackingPath == "" || xfrOutTrackingPath == "") {
-			logging := bind9Config.GetLogging()
 			if xfrInTrackingPath == "" {
-				xfrInTrackingPath = sm.getXFRTrackingPathFromConfig(p, chrootDir, defaultLogFile, logging, "xfer-in")
+				xfrInTrackingPath = sm.getXFRTrackingPathFromConfig(p, chrootDir, defaultLogFile, bind9Config, "xfer-in")
 			}
 			if xfrOutTrackingPath == "" {
-				xfrOutTrackingPath = sm.getXFRTrackingPathFromConfig(p, chrootDir, defaultLogFile, logging, "xfer-out")
+				xfrOutTrackingPath = sm.getXFRTrackingPathFromConfig(p, chrootDir, defaultLogFile, bind9Config, "xfer-out")
 			}
 		}
 		if sm.logTracker != nil {
@@ -607,22 +606,33 @@ func (sm *monitor) detectBind9Daemon(p supportedProcess) (Daemon, error) {
 }
 
 // Extracts the log file path from the logging statement for the given logging
-// category.
-func (sm *monitor) getXFRTrackingPathFromConfig(p supportedProcess, chrootDir string, defaultLogFile string, logging *bind9config.Logging, category string) string {
-	// In some cases the log file path may be relative. Let's resolve it against
-	// the current working directory.
-	cwd, err := p.getCwd()
-	if err != nil {
-		log.WithError(err).Warnf("failed to get current working directory of BIND 9 process to resolve log file path for %s", category)
-		return ""
+// category. If the log files in the configuration are relative, this function
+// converts them to absolute paths using the "directory" option. If this option
+// is not set and chroot is not set, the current working directory of the
+// specified process is prepended. If chroot is set, the chroot directory is
+// prepended to the absolute paths (either those directly specified in the
+// config or those constructed using the "directory" option). The default log
+// file is used when the desired logging category uses default logging settings.
+// The logging category is the name of the logging category for which the function
+// should determine the log file path (e.g., xfer-in, xfer-out, etc.).
+func (sm *monitor) getXFRTrackingPathFromConfig(process supportedProcess, chrootDir, defaultLogFile string, config *bind9config.Config, loggingCategory string) string {
+	var cwd string
+	if chrootDir == "" {
+		// Only get the current working directory if chroot is not set.
+		// When using chroot, getting the current working directory is most
+		// likely going to fail due to insufficient permissions. Also, if the
+		// current working directory appears to be outside of the chroot,
+		// there is no way to build reliable path to the log file that is
+		// trapped inside the chroot.
+		var err error
+		cwd, err = process.getCwd()
+		if err != nil {
+			log.WithError(err).Warn("Cannot get named process current working directory")
+		}
 	}
-
-	if !filepath.IsAbs(defaultLogFile) {
-		defaultLogFile = filepath.Join(cwd, defaultLogFile)
-	}
-
+	// Extract the log file name for the desired category.
 	var filename string
-	channels := logging.GetChannelsForCategoryWithDefaultFile(category, defaultLogFile)
+	channels := config.GetLogging().GetChannelsForCategoryWithDefaultFile(loggingCategory, defaultLogFile)
 	for _, channel := range channels {
 		// We currently only support file channels for XFR tracking.
 		if channel.IsFile() {
@@ -635,15 +645,34 @@ func (sm *monitor) getXFRTrackingPathFromConfig(p supportedProcess, chrootDir st
 		return ""
 	}
 	if !filepath.IsAbs(filename) {
-		filename = filepath.Join(cwd, filename)
-		return filename
+		// If the log file name is relative, we need to determine the absolute path.
+		var directory string
+		if options := config.GetOptions(); options != nil {
+			if options.GetDirectory() != nil {
+				// The directory option contains the absolute path to be prepended
+				// to the relative paths.
+				directory = options.GetDirectory().Path
+			}
+			switch {
+			case directory != "" && filepath.IsAbs(directory):
+				// Make the absolute path using the directory option.
+				filename = filepath.Join(directory, filename)
+			case cwd != "":
+				// The directory option is not set, let's use the current
+				// working directory.
+				filename = filepath.Join(cwd, filename)
+			}
+		}
 	}
-	// The file path was absolute. We don't know whether or not it is inside the chroot
-	// directory. If it is not, we need to join it with the chroot directory.
-	if chrootDir != "" && !strings.HasPrefix(filename, chrootDir) {
+	if chrootDir != "" {
+		// The path is in chroot directory.
 		filename = filepath.Join(chrootDir, filename)
 	}
-	return filename
+	if !filepath.IsAbs(filename) {
+		// The resulting path must be absolute. If it is not, we can't use it.
+		return ""
+	}
+	return filepath.Clean(filename)
 }
 
 // Send a command to named using rndc client.

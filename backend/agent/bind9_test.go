@@ -2298,3 +2298,187 @@ func TestBind9DaemonStopZoneInventoryNil(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+// Test that the log file location can be determined correctly, taking into
+// account for the current working directory, chroot directory, default log file,
+// directory option, and the log file name.
+func TestGetXFRTrackingPathFromConfig(t *testing.T) {
+	type testCase struct {
+		name           string
+		cwd            string
+		directory      string
+		chrootDir      string
+		defaultLogFile string
+		categoryPath   string
+		category       string
+		expectedPath   string
+	}
+	tests := []testCase{
+		{
+			name:           "relative path to cwd",
+			cwd:            "/usr/lib/bind",
+			chrootDir:      "",
+			defaultLogFile: "",
+			categoryPath:   "./xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/usr/lib/bind/xfer-in.log",
+		},
+		{
+			name:           "absolute path",
+			cwd:            "/usr/lib/bind",
+			chrootDir:      "",
+			defaultLogFile: "",
+			categoryPath:   "/var/log/bind9/./xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/var/log/bind9/xfer-in.log",
+		},
+		{
+			name:           "absolute path in chroot",
+			cwd:            "",
+			chrootDir:      "/chroot",
+			defaultLogFile: "",
+			categoryPath:   "/logs//xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/chroot/logs/xfer-in.log",
+		},
+		{
+			name:           "absolute path in chroot containing chroot",
+			cwd:            "",
+			chrootDir:      "/chroot",
+			defaultLogFile: "",
+			categoryPath:   "/chroot/./logs/xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/chroot/chroot/logs/xfer-in.log",
+		},
+		{
+			name:           "relative path in chroot",
+			cwd:            "",
+			chrootDir:      "/chroot",
+			defaultLogFile: "",
+			categoryPath:   "logs//xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/chroot/logs/xfer-in.log",
+		},
+		{
+			name:           "default file without chroot",
+			cwd:            "/usr/lib/bind",
+			chrootDir:      "",
+			defaultLogFile: "/var/log/bind9/named.log",
+			categoryPath:   "/chroot/logs/xfer-in.log",
+			category:       "xfer-out",
+			expectedPath:   "/var/log/bind9/named.log",
+		},
+		{
+			name:           "default file with chroot",
+			cwd:            "",
+			chrootDir:      "/chroot",
+			defaultLogFile: "/var/log/bind9/named.log",
+			categoryPath:   "/chroot/logs/xfer-in.log",
+			category:       "xfer-out",
+			expectedPath:   "/chroot/var/log/bind9/named.log",
+		},
+		{
+			name:           "default debug file in current working directory",
+			cwd:            "/usr/lib/bind",
+			chrootDir:      "",
+			defaultLogFile: "",
+			categoryPath:   "named.run",
+			category:       "default_debug",
+			expectedPath:   "/usr/lib/bind/named.run",
+		},
+		{
+			name:           "default directory in options",
+			cwd:            "/usr/lib/bind",
+			directory:      "/var/lib/bind",
+			chrootDir:      "",
+			defaultLogFile: "",
+			categoryPath:   "named/logs/xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/var/lib/bind/named/logs/xfer-in.log",
+		},
+		{
+			name:           "default directory in options with chroot",
+			cwd:            "",
+			directory:      "/var/lib/bind",
+			chrootDir:      "/chroot",
+			defaultLogFile: "",
+			categoryPath:   "named/./logs/xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/chroot/var/lib/bind/named/logs/xfer-in.log",
+		},
+		{
+			name:           "relative cwd and no chroot",
+			cwd:            "var",
+			chrootDir:      "",
+			defaultLogFile: "",
+			categoryPath:   "named.log",
+			category:       "xfer-in",
+			expectedPath:   "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			process := NewMockSupportedProcess(ctrl)
+
+			if test.cwd != "" {
+				process.EXPECT().getCwd().Return(test.cwd, nil)
+			}
+
+			sm := newMonitor(MonitorSettings{})
+			logging := &bind9config.Logging{
+				Clauses: []*bind9config.LoggingClause{
+					{
+						Channel: &bind9config.Channel{
+							Name: bind9config.String{
+								Unquoted: storkutil.Ptr("xfer-in"),
+							},
+							Clauses: []*bind9config.ChannelClause{
+								{
+									File: &bind9config.File{
+										Name: &bind9config.String{
+											Quoted: storkutil.Ptr(test.categoryPath),
+										},
+									},
+								},
+							},
+						},
+						Category: &bind9config.Category{
+							Name: bind9config.String{
+								Unquoted: storkutil.Ptr("xfer-in"),
+							},
+							Channels: []bind9config.String{
+								{
+									Unquoted: storkutil.Ptr("xfer-in"),
+								},
+							},
+						},
+					},
+				},
+			}
+			options := &bind9config.Options{}
+			if test.directory != "" {
+				options.Clauses = []*bind9config.OptionClause{
+					{
+						Directory: &bind9config.Directory{
+							Path: test.directory,
+						},
+					},
+				}
+			}
+			config := &bind9config.Config{
+				Statements: []*bind9config.Statement{
+					{
+						Logging: logging,
+					},
+					{
+						Options: options,
+					},
+				},
+			}
+			path := sm.getXFRTrackingPathFromConfig(process, test.chrootDir, test.defaultLogFile, config, test.category)
+			require.Equal(t, test.expectedPath, path)
+		})
+	}
+}
