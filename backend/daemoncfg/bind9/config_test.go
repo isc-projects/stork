@@ -1327,3 +1327,39 @@ func TestConfigGetLoggingNone(t *testing.T) {
 	require.NotNil(t, cfg)
 	require.Nil(t, cfg.GetLogging())
 }
+
+// Test that the directory clause can be retrieved from the options statement.
+func TestConfigGetDirectory(t *testing.T) {
+	config := `
+		options {
+			directory "/var/lib/bind";
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.GetDirectory())
+	require.Equal(t, "/var/lib/bind", cfg.GetDirectory().Path)
+}
+
+// Test that nil is returned when the directory clause is not found in the options statement.
+func TestConfigGetDirectoryNoDirectoryClause(t *testing.T) {
+	config := `
+		options {
+			listen-on { 127.0.0.1; };
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Nil(t, cfg.GetDirectory())
+}
+
+// Test that nil is returned when there is no options statement.
+func TestConfigGetDirectoryNoOptionsStatement(t *testing.T) {
+	config := ``
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Nil(t, cfg.GetDirectory())
+}

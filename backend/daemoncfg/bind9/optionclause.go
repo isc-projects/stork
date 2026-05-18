@@ -10,6 +10,9 @@ type OptionClause struct {
 	NoParse *NoParse `parser:"@@"`
 	// The allow-transfer clause restricting who can perform AXFR.
 	AllowTransfer *AllowTransfer `parser:"| 'allow-transfer' @@"`
+	// The directory clause specifying absolute path prepended to all
+	// relative paths in the configuration.
+	Directory *Directory `parser:"| 'directory' @@"`
 	// The listen-on or listen-on-v6 clause specifying the addresses the
 	// server listens on the DNS requests.
 	ListenOn *ListenOn `parser:"| @@"`

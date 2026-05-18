@@ -85,7 +85,7 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 
 	statement, _ = next()
 	require.NotNil(t, statement.Options)
-	require.Len(t, statement.Options.Clauses, 10)
+	require.Len(t, statement.Options.Clauses, 11)
 	require.NotNil(t, statement.Options.Clauses[0].Option)
 	require.Equal(t, "allow-query", statement.Options.Clauses[0].Option.Identifier)
 	require.NotNil(t, statement.Options.Clauses[1].AllowTransfer)
@@ -131,6 +131,8 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 	require.NotNil(t, statement.Options.Clauses[9].Option.Contents)
 	require.Len(t, statement.Options.Clauses[9].Option.Suboptions, 1)
 	require.NotNil(t, statement.Options.Clauses[9].Option.Suboptions[0].Contents)
+	require.NotNil(t, statement.Options.Clauses[10].Directory)
+	require.Equal(t, "/var/lib/bind", statement.Options.Clauses[10].Directory.Path)
 
 	statement, _ = next()
 	require.NotNil(t, statement.View)

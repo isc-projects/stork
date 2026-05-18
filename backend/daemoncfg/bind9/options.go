@@ -4,6 +4,33 @@ import "sync"
 
 var _ formattedElement = (*Options)(nil)
 
+// cachedOption implements a simple get-and-cache mechanism for options.
+// When the option is accessed for the first time, it is cached. If the option
+// doesn't exist the nil value is cached. In both cases, subsequent calls to
+// get the value will return the cached value or cached nil.
+type cachedOption[T any] struct {
+	// Once is used to ensure that the option is looked up in the option clauses
+	// only once.
+	once sync.Once
+	// Value is the cached value of the option or nil if the option doesn't exist.
+	value *T
+}
+
+// Retrieves the value of the option from the option clauses, and caches the value
+// or nil if the option doesn't exist. The selectorFn must be implemented for each
+// cached option type. It must check if the given clause holds the desired option
+// and return it.
+func (c *cachedOption[T]) get(clauses []*OptionClause, selectorFn func(clause *OptionClause) *T) *T {
+	c.once.Do(func() {
+		for _, clause := range clauses {
+			if value := selectorFn(clause); value != nil {
+				c.value = value
+			}
+		}
+	})
+	return c.value
+}
+
 // Options is the statement used to define global options.
 // This section has the following format:
 //
@@ -13,10 +40,10 @@ var _ formattedElement = (*Options)(nil)
 //
 // See: https://bind9.readthedocs.io/en/latest/reference.html#options-block-grammar.
 type Options struct {
-	// Cache the response-policy only once.
-	responsePolicyOnce sync.Once
-	// The response-policy clause cache for better access performance.
-	responsePolicy *ResponsePolicy
+	// Cached directory option.
+	directoryOption cachedOption[Directory]
+	// Cached response-policy option.
+	responsePolicyOption cachedOption[ResponsePolicy]
 	// The list of clauses (e.g., allow-transfer, listen-on, response-policy etc.).
 	Clauses []*OptionClause `parser:"'{' ( @@ ';'* )* '}'"`
 }
@@ -68,23 +95,25 @@ func (o *Options) GetListenOnSet() *ListenOnClauses {
 	return &listenOnSet
 }
 
+// Gets the directory clause from options or nil if it is not found. The result
+// of calling this function is cached.
+func (o *Options) GetDirectory() *Directory {
+	return o.directoryOption.get(o.Clauses, func(clause *OptionClause) *Directory {
+		if clause.Directory != nil {
+			return clause.Directory
+		}
+		return nil
+	})
+}
+
 // Gets the response-policy clause from options or nil if it is not found. The result
 // of calling this function is cached because it can be accessed frequently (for each zone
 // returned to the server).
 func (o *Options) GetResponsePolicy() *ResponsePolicy {
-	o.responsePolicyOnce.Do(func() {
-		// Return the cached response-policy clause if it was already accessed.
-		if o.responsePolicy != nil {
-			return
+	return o.responsePolicyOption.get(o.Clauses, func(clause *OptionClause) *ResponsePolicy {
+		if clause.ResponsePolicy != nil {
+			return clause.ResponsePolicy
 		}
-		for _, clause := range o.Clauses {
-			if clause.ResponsePolicy != nil {
-				// Cache the response-policy clause for better access performance
-				// in the future.
-				o.responsePolicy = clause.ResponsePolicy
-				return
-			}
-		}
+		return nil
 	})
-	return o.responsePolicy
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"github.com/pkg/errors"
 	storkutil "isc.org/stork/util"
@@ -24,6 +25,10 @@ type Config struct {
 	sourcePath string
 	// The absolute path of the chroot directory. Empty string means no chroot.
 	chrootDir string
+	// The cached options statement.
+	options *Options
+	// Once is used to ensure that the options statement is looked up only once.
+	optionsOnce sync.Once
 	// The configuration contains a list of Statements separated by semicolons.
 	Statements []*Statement `parser:"( @@ ';'* )*"`
 }
@@ -86,14 +91,18 @@ func (c *Config) GetStatisticsChannels() *StatisticsChannels {
 	return nil
 }
 
-// Returns the options statement or nil if it is not found.
+// Returns the options statement or nil if it is not found. The result is cached
+// for better access performance.
 func (c *Config) GetOptions() *Options {
-	for _, statement := range c.Statements {
-		if statement.Options != nil {
-			return statement.Options
+	c.optionsOnce.Do(func() {
+		for _, statement := range c.Statements {
+			if statement.Options != nil {
+				c.options = statement.Options
+				return
+			}
 		}
-	}
-	return nil
+	})
+	return c.options
 }
 
 // Returns the view with the given name or nil if the view is not found.
@@ -599,6 +608,14 @@ func (c *Config) GetLogging() *Logging {
 		if statement.Logging != nil {
 			return statement.Logging
 		}
+	}
+	return nil
+}
+
+// Returns the directory clause from the options statement or nil if it is not found.
+func (c *Config) GetDirectory() *Directory {
+	if options := c.GetOptions(); options != nil {
+		return options.GetDirectory()
 	}
 	return nil
 }

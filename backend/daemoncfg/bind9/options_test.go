@@ -106,6 +106,39 @@ func TestOptionsGetResponsePolicy(t *testing.T) {
 	require.Len(t, responsePolicy.Zones, 1)
 }
 
+// Test getting the directory clause from options.
+func TestOptionsGetDirectory(t *testing.T) {
+	options := &Options{
+		Clauses: []*OptionClause{
+			{Directory: &Directory{Path: "/var/lib/bind"}},
+		},
+	}
+	directory := options.GetDirectory()
+	require.NotNil(t, directory)
+	require.Equal(t, "/var/lib/bind", directory.Path)
+
+	// Reset option clauses. This should not affect the cached value.
+	options.Clauses = []*OptionClause{}
+	directory = options.GetDirectory()
+	require.NotNil(t, directory)
+	require.Equal(t, "/var/lib/bind", directory.Path)
+}
+
+// Test getting the directory clause from options when it does not exist.
+func TestOptionsGetDirectoryNone(t *testing.T) {
+	options := &Options{
+		Clauses: []*OptionClause{
+			{
+				ListenOn: &ListenOn{
+					Port: storkutil.Ptr(int64(53)),
+				},
+			},
+		},
+	}
+	directory := options.GetDirectory()
+	require.Nil(t, directory)
+}
+
 // Test that serializing an options statement with nil values does not panic.
 func TestOptionsFormatNilValues(t *testing.T) {
 	options := &Options{}
