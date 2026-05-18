@@ -85,7 +85,7 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 		// In case OIDC was not configured, make the middleware transparent.
 		return next
 	}
-	return ctl.dbSessionManager.SessionMiddleware(next)
+	return ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
 }
 
 // Helper method reading cache from in-memory session storage.
