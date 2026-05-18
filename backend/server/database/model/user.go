@@ -457,7 +457,7 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 		if errors.As(err, &pgError) {
 			conflict := pgError.IntegrityViolation()
 			if conflict {
-				err = pkgerrors.Wrapf(err, "conflicting data in the database for external user with login %s and email %s", externalUser.Login, externalUser.Email)
+				err = pkgerrors.WithMessagef(err, "conflicting data in the database for external user with login %s and email %s", externalUser.Login, externalUser.Email)
 			}
 		}
 		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update external user with ID %s", externalUser.ID)
