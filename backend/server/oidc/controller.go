@@ -8,9 +8,11 @@ import (
 	"encoding/gob"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
@@ -40,6 +42,12 @@ type AuthSession struct {
 	CreatedAt    time.Time
 }
 
+// Constant values to be used by in-memory session manager.
+const (
+	authSessionKey     = "auth_sessions"
+	authSessionTimeout = 15 * time.Minute
+)
+
 // Constructs OIDC controller instance. It requires the settings
 // and a pointer to Stork server database, which is used to insert
 // and update authenticated users.
@@ -65,9 +73,10 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 	}
 	ctl.dbSessionManager = dbSessionManager
 	// Prepare in-memory session manager used only for storing OIDC auth data in sessions.
+	// SCS uses gob encoding to store session data. To store custom type, it must be registered with gob.Register().
 	gob.Register(map[string]AuthSession{})
 	inMemorySessionMgr := scs.New()
-	inMemorySessionMgr.Lifetime = 20 * time.Minute
+	inMemorySessionMgr.Lifetime = authSessionTimeout
 	inMemorySessionMgr.Cookie.Name = "auth_session"
 	inMemorySessionMgr.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 		// Use logrus instead of the standard logger.
@@ -94,7 +103,7 @@ func (ctl *Controller) getAuthSessionMap(ctx context.Context) map[string]AuthSes
 		// In case OIDC was not configured, there is no session context.
 		return nil
 	}
-	m := ctl.authSessionManager.Get(ctx, "auth_sessions")
+	m := ctl.authSessionManager.Get(ctx, authSessionKey)
 	if m == nil {
 		return make(map[string]AuthSession)
 	}
@@ -103,7 +112,7 @@ func (ctl *Controller) getAuthSessionMap(ctx context.Context) map[string]AuthSes
 
 // Helper method writing cache to in-memory session storage.
 func (ctl *Controller) putAuthSessionMap(ctx context.Context, m map[string]AuthSession) {
-	ctl.authSessionManager.Put(ctx, "auth_sessions", m)
+	ctl.authSessionManager.Put(ctx, authSessionKey, m)
 }
 
 // Helper method doing cleanup in in-memory session storage.
@@ -117,7 +126,7 @@ func (ctl *Controller) cleanupSessions(ctx context.Context) {
 		// If AuthResponse comes later than 15 minutes after the AuthRequest,
 		// such authentication will fail, because there is no longer a session
 		// to verify nonce or PKCE.
-		if now.Sub(v.CreatedAt) > 15*time.Minute {
+		if now.Sub(v.CreatedAt) > authSessionTimeout {
 			log.Debugf("OIDC in-memory session store found stale session created at %v to be removed", v.CreatedAt)
 			delete(sessionMap, k)
 		}
@@ -125,23 +134,13 @@ func (ctl *Controller) cleanupSessions(ctx context.Context) {
 	ctl.putAuthSessionMap(ctx, sessionMap)
 }
 
-// Generates and returns n-long slice of random bytes. In case of io.ReadFull error,
-// it returns nil and an error.
-func generateRandBytes(n int) (bytes []byte, err error) {
-	bytes = make([]byte, n)
-	_, err = rand.Read(bytes)
-	if err != nil {
-		bytes = nil
-		return
-	}
-	return
-}
-
 // Generates and returns base64-encoded 32 random bytes as string.
 // In case of io.ReadFull error, it returns empty string and an error.
 func generateRandBase64Str() (result string, err error) {
-	bytes, err := generateRandBytes(32)
+	bytes := make([]byte, 32)
+	_, err = rand.Read(bytes)
 	if err != nil {
+		err = errors.Wrapf(err, "error while generating slice of random bytes")
 		return
 	}
 	result = base64.RawURLEncoding.EncodeToString(bytes)
@@ -154,7 +153,6 @@ func generateRandBase64Str() (result string, err error) {
 func generatePKCE() (codeVerifier string, codeChallenge string, err error) {
 	codeVerifier, err = generateRandBase64Str()
 	if err != nil {
-		codeVerifier = ""
 		return
 	}
 	hash := sha256.Sum256([]byte(codeVerifier))
@@ -175,23 +173,14 @@ func (ctl *Controller) getMappedGroups(groups *[]string) (allowed bool, mappedGr
 			if g == ctl.settings.MandatoryAllowGroup {
 				allowed = true
 			}
-			for _, configuredGroup := range ctl.settings.GroupMapping.ReadOnly {
-				if configuredGroup == g {
-					mappedGroups = append(mappedGroups, authdata.UserGroupIDReadOnly)
-					break
-				}
+			if slices.Contains(ctl.settings.GroupMapping.ReadOnly, g) {
+				mappedGroups = append(mappedGroups, authdata.UserGroupIDReadOnly)
 			}
-			for _, configuredGroup := range ctl.settings.GroupMapping.Admin {
-				if configuredGroup == g {
-					mappedGroups = append(mappedGroups, authdata.UserGroupIDAdmin)
-					break
-				}
+			if slices.Contains(ctl.settings.GroupMapping.Admin, g) {
+				mappedGroups = append(mappedGroups, authdata.UserGroupIDAdmin)
 			}
-			for _, configuredGroup := range ctl.settings.GroupMapping.SuperAdmin {
-				if configuredGroup == g {
-					mappedGroups = append(mappedGroups, authdata.UserGroupIDSuperAdmin)
-					break
-				}
+			if slices.Contains(ctl.settings.GroupMapping.SuperAdmin, g) {
+				mappedGroups = append(mappedGroups, authdata.UserGroupIDSuperAdmin)
 			}
 		}
 	}

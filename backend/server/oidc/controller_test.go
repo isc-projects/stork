@@ -188,17 +188,6 @@ func TestGetAuthSessionMapReturnsNil(t *testing.T) {
 	require.Nil(t, sessionMap)
 }
 
-// Test if generateRandBytes works fine.
-func TestGenerateRandBytes(t *testing.T) {
-	// Arrange & Act
-	testBytes, err := generateRandBytes(32)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, testBytes)
-	require.Len(t, testBytes, 32)
-}
-
 // Test if generateRandBase64Str works fine.
 func TestGenerateRandBase64Str(t *testing.T) {
 	// Arrange & Act
@@ -252,99 +241,117 @@ func TestGetMappedGroups(t *testing.T) {
 	receivedGroups := []string{
 		"stork-access", "router-admins",
 	}
+	var allowed bool
+	var mappedGroups []authdata.UserGroupID
 
-	// Act
-	allowed, mappedGroups := controller.getMappedGroups(&receivedGroups)
+	// Act & Assert
+	t.Run("mandatory allow group configured and group mapping not configured - belongs to allow group", func(t *testing.T) {
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.True(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.Empty(t, mappedGroups)
+	})
 
-	// Assert
-	require.True(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.Empty(t, mappedGroups)
+	t.Run("mandatory allow group configured and group mapping not configured - not belongs to allow group", func(t *testing.T) {
+		receivedGroups = []string{
+			"router-admins", "kea-admins",
+		}
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.Empty(t, mappedGroups)
+	})
 
-	receivedGroups = []string{
-		"router-admins", "kea-admins",
-	}
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.Empty(t, mappedGroups)
+	t.Run("mandatory allow group not configured and group mapping not configured", func(t *testing.T) {
+		settings = Settings{
+			IssuerURL:           "https://test.idp.org",
+			MandatoryAllowGroup: "",
+		}
+		controller.settings = settings
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.Empty(t, mappedGroups)
+	})
 
-	settings = Settings{
-		IssuerURL:           "https://test.idp.org",
-		MandatoryAllowGroup: "",
-	}
-	controller.settings = settings
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.Empty(t, mappedGroups)
+	t.Run("mandatory allow group not configured and group mapping configured - not belongs to any default group", func(t *testing.T) {
+		settings = Settings{
+			IssuerURL:           "https://test.idp.org",
+			MandatoryAllowGroup: "",
+			EnableGroupMapping:  true,
+		}
+		controller.settings = settings
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.Empty(t, mappedGroups)
+	})
 
-	settings = Settings{
-		IssuerURL:           "https://test.idp.org",
-		MandatoryAllowGroup: "",
-		EnableGroupMapping:  true,
-	}
-	controller.settings = settings
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.Empty(t, mappedGroups)
+	t.Run("mandatory allow group not configured and group mapping configured - not belongs to any group", func(t *testing.T) {
+		settings = Settings{
+			IssuerURL:           "https://test.idp.org",
+			MandatoryAllowGroup: "",
+			EnableGroupMapping:  true,
+			GroupMapping: GroupMapping{
+				SuperAdmin: CommaSeparatedStrings{"stork-super-admins-1", "stork-super-admins-2"},
+				Admin:      CommaSeparatedStrings{"stork-admins-1", "stork-admins-2"},
+				ReadOnly:   CommaSeparatedStrings{"stork-ro-1", "stork-ro-2"},
+			},
+		}
+		controller.settings = settings
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.Empty(t, mappedGroups)
+	})
 
-	settings = Settings{
-		IssuerURL:           "https://test.idp.org",
-		MandatoryAllowGroup: "",
-		EnableGroupMapping:  true,
-		GroupMapping: GroupMapping{
-			SuperAdmin: CommaSeparatedStrings{"stork-super-admins-1", "stork-super-admins-2"},
-			Admin:      CommaSeparatedStrings{"stork-admins-1", "stork-admins-2"},
-			ReadOnly:   CommaSeparatedStrings{"stork-ro-1", "stork-ro-2"},
-		},
-	}
-	controller.settings = settings
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.Empty(t, mappedGroups)
+	t.Run("mandatory allow group not configured and group mapping configured - belongs to all groups 1", func(t *testing.T) {
+		receivedGroups = []string{
+			"stork-super-admins-1", "stork-admins-1", "stork-ro-1",
+		}
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.NotEmpty(t, mappedGroups)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	})
 
-	receivedGroups = []string{
-		"stork-super-admins-1", "stork-admins-1", "stork-ro-1",
-	}
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.NotEmpty(t, mappedGroups)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	t.Run("mandatory allow group not configured and group mapping configured - belongs to all groups 2", func(t *testing.T) {
+		receivedGroups = []string{
+			"stork-super-admins-2", "stork-admins-2", "stork-ro-2",
+		}
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.NotEmpty(t, mappedGroups)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	})
 
-	receivedGroups = []string{
-		"stork-super-admins-2", "stork-admins-2", "stork-ro-2",
-	}
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.NotEmpty(t, mappedGroups)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	t.Run("mandatory allow group configured and group mapping configured - belongs to all groups but does not belong to allow group", func(t *testing.T) {
+		controller.settings.MandatoryAllowGroup = "super-heroes"
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.False(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.NotEmpty(t, mappedGroups)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	})
 
-	controller.settings.MandatoryAllowGroup = "super-heroes"
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.False(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.NotEmpty(t, mappedGroups)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
-
-	receivedGroups = []string{
-		"stork-super-admins-2", "stork-admins-2", "stork-ro-2", "super-heroes",
-	}
-	allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
-	require.True(t, allowed)
-	require.NotNil(t, mappedGroups)
-	require.NotEmpty(t, mappedGroups)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
-	require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	t.Run("mandatory allow group configured and group mapping configured - belongs to all groups and belongs to allow group", func(t *testing.T) {
+		receivedGroups = []string{
+			"stork-super-admins-2", "stork-admins-2", "stork-ro-2", "super-heroes",
+		}
+		allowed, mappedGroups = controller.getMappedGroups(&receivedGroups)
+		require.True(t, allowed)
+		require.NotNil(t, mappedGroups)
+		require.NotEmpty(t, mappedGroups)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDSuperAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
+		require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
+	})
 }
