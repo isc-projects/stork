@@ -109,7 +109,7 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 	_, err = parser.AddGroup("OIDC Authentication Server Flags", "", settings.OIDCSettings)
 	if err != nil {
 		err = errors.Wrap(err, "cannot add the OIDC group")
-		return nil, err
+		return
 	}
 
 	// Process agent comm specific args.
