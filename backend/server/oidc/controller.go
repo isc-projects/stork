@@ -130,7 +130,8 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 
 // Provides middleware handling all OIDC-related HTTP requests.
 // It should be chained with other server's middlewares.
-// If OIDC is not configured by end user, it is transparent.
+// If OIDC is not configured by end user or the HTTP request is not related to OIDC,
+// it is transparent.
 func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 	if !ctl.configured {
 		// In case OIDC was not configured, make the middleware transparent.
@@ -143,7 +144,24 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
-	return ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(handler))
+	// Use special helper wrapper to prevent from setting session or auth_session cookie
+	// for requests other than related to OIDC.
+	return ctl.wrapOIDCSession()(handler)
+}
+
+// Helper method which chains the HTTP handler with SCS session manager middlewares
+// only if the request URL path matches any of OIDC-related endpoints.
+func (ctl *Controller) wrapOIDCSession() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		sessionHandler := ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, loginURLPath) {
+				sessionHandler.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // Helper method reading cache from in-memory session storage.
