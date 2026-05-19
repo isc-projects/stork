@@ -2,6 +2,8 @@ package oidc
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
@@ -9,11 +11,36 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/coreos/go-oidc/v3/oidc/oidctest"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/authdata"
 	dbsession "isc.org/stork/server/database/session"
 	dbtest "isc.org/stork/server/database/test"
 )
+
+// Helper function preparing test OIDC server which allows to test OIDC discovery.
+// It returns server URL as string which should be used as OIDC issuer URL,
+// test server teardown function and an error if such occurred while generating
+// RSA key.
+func prepareTestOIDCServer() (string, func(), error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return "", nil, err
+	}
+	s := &oidctest.Server{
+		PublicKeys: []oidctest.PublicKey{
+			{
+				PublicKey: priv.Public(),
+				KeyID:     "clientID",
+				Algorithm: oidc.RS256,
+			},
+		},
+	}
+	srv := httptest.NewServer(s)
+	s.SetIssuer(srv.URL)
+	return srv.URL, srv.Close, nil
+}
 
 // Test if OIDC controller can be created.
 func TestNewController(t *testing.T) {
@@ -52,7 +79,10 @@ func TestConfigure(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID"}, db)
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
 
 	// Act
@@ -94,7 +124,10 @@ func TestMiddlewareIsNotTransparent(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID"}, db)
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Hello", "world")
@@ -123,7 +156,10 @@ func TestSessionStorage(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID"}, db)
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
 	var ctx context.Context
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -227,8 +263,11 @@ func TestGetMappedGroups(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
 	settings := Settings{
-		IssuerURL:           "https://test.idp.org",
+		IssuerURL:           issuerURL,
 		MandatoryAllowGroup: "stork-access",
 		ClientID:            "clientID",
 	}
