@@ -14,11 +14,12 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// The default number of days to look into the past for the XFR tracking
-// when the tracker starts analyzing the systemd logs.
 const (
+	// The default number of days to look into the past for the XFR tracking
+	// when the tracker starts analyzing the systemd logs.
 	defaultXfrTrackingSinceDaysAgo = 1
-	defaultXfrTrackingMaxStates    = 1000
+	// The default maximum number of zone transfers to track.
+	defaultXfrTrackingMaxStates = 1000
 )
 
 // The zone transfer status type.
