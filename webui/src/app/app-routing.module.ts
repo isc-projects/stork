@@ -42,6 +42,10 @@ const routes: Routes = [
         component: LoginScreenComponent,
     },
     {
+        path: 'login/auth-err',
+        component: LoginScreenComponent,
+    },
+    {
         path: 'logout',
         component: LoginScreenComponent,
     },

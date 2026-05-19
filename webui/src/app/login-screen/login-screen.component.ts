@@ -15,6 +15,7 @@ import { InputText } from 'primeng/inputtext'
 import { Password } from 'primeng/password'
 import { Button } from 'primeng/button'
 import { Message } from 'primeng/message'
+import { MessageService } from 'primeng/api'
 
 /**
  * A component presenting a Stork log in screen.
@@ -100,6 +101,12 @@ export class LoginScreenComponent implements OnInit {
     }
 
     /**
+     * Service used for displaying errors in authentication process.
+     * @private
+     */
+    private messageService = inject(MessageService)
+
+    /**
      * Fetches the version and authentication methods, and initializes the
      * login form.
      *
@@ -108,6 +115,19 @@ export class LoginScreenComponent implements OnInit {
     ngOnInit() {
         if (this.router.url === '/logout') {
             this.signOut()
+            return
+        }
+
+        // External authenticator (e.g. OIDC) may redirect user to this path
+        // when an error occurs during authentication process.
+        if (this.router.url === '/login/auth-err') {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Authentication error',
+                life: 10000,
+                detail: 'Error during authentication process. Please contact Stork admin.',
+            })
+            this.router.navigate(['/login'])
         }
 
         // Set the return URL.
