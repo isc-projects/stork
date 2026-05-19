@@ -673,12 +673,7 @@ func parseFrom(iterator *storkutil.PeekingIterator[string], s *xfrState) bool {
 	var server string
 	if token, ok := iterator.Next(); ok {
 		// The server address is followed by the port number (e.g., 192.5.5.241#53).
-		split := strings.Split(token, "#")
-		// There must be two parts: the server address and the port number.
-		if len(split) > 1 {
-			// The first part is the server address.
-			server = split[0]
-		}
+		server, _, _ = strings.Cut(token, "#")
 	}
 	if server != "" && s.server == "" {
 		// Only override the server address if it is not already set.
