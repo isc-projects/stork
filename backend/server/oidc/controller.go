@@ -8,7 +8,9 @@ import (
 	"encoding/gob"
 	"net/http"
 	"net/url"
+	"path"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -52,6 +54,7 @@ const (
 	authSessionTimeout = 15 * time.Minute
 	callbackURLPath    = "/oidc/callback"
 	loginURLPath       = "/oidc/login"
+	authErrorURLPath   = "/login/auth-err"
 )
 
 // Constructs OIDC controller instance. It requires the settings
@@ -133,7 +136,14 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 		// In case OIDC was not configured, make the middleware transparent.
 		return next
 	}
-	return ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, loginURLPath) {
+			ctl.loginHandler(w, r)
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
+	return ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(handler))
 }
 
 // Helper method reading cache from in-memory session storage.
@@ -224,4 +234,76 @@ func (ctl *Controller) getMappedGroups(groups *[]string) (allowed bool, mappedGr
 		}
 	}
 	return
+}
+
+// Handles OIDC login endpoint which initiates OIDC authentication process.
+// It prepares the authentication request, stores necessary data in session
+// and redirects user-agent to authentication URL, where user will proceed
+// with authentication.
+func (ctl *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	state, err := generateRandBase64Str()
+	if err != nil {
+		log.WithError(err).Errorf("error while generating OIDC random state")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	nonce, err := generateRandBase64Str()
+	if err != nil {
+		log.WithError(err).Errorf("error while generating OIDC random nonce")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	codeVerifier, codeChallenge, err := generatePKCE()
+	if err != nil {
+		log.WithError(err).Errorf("error while generating OIDC random PKCE")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+
+	authSession := AuthSession{
+		CodeVerifier: codeVerifier,
+		Nonce:        nonce,
+		ReturnURL:    sanitizeReturnURL(r.URL.Query().Get("returnUrl")),
+		CreatedAt:    time.Now(),
+	}
+	sessionMap := ctl.getAuthSessionMap(ctx)
+	sessionMap[state] = authSession
+	ctl.putAuthSessionMap(ctx, sessionMap)
+
+	authURL := ctl.oauth2Config.AuthCodeURL(
+		state,
+		oidc.Nonce(nonce),
+		oauth2.SetAuthURLParam("code_challenge", codeChallenge),
+		oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+	)
+
+	ctl.cleanupSessions(ctx)
+
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
+// Sanitizes returnURL query parameter value. If any suspicious syntax is detected,
+// it logs an error and returns home "/" path as string. If correct value was given,
+// sanitized URL is returned as string.
+func sanitizeReturnURL(returnURL string) string {
+	const home = "/"
+	returnURL = strings.TrimSpace(returnURL)
+	returnURL = strings.ReplaceAll(returnURL, "\n", "")
+	returnURL = strings.ReplaceAll(returnURL, "\r", "")
+	parsed, err := url.Parse(returnURL)
+	if err != nil {
+		log.WithError(err).Errorf("error while sanitizing return URL")
+		return home
+	}
+	if parsed.IsAbs() || strings.HasPrefix(returnURL, "//") {
+		log.Error("error while sanitizing return URL - wrong format")
+		return home
+	}
+	sanitizedPath := path.Clean(home + parsed.Path)
+	if parsed.RawQuery != "" {
+		return sanitizedPath + "?" + parsed.RawQuery
+	}
+	return sanitizedPath
 }
