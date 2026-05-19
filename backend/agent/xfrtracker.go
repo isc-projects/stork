@@ -694,10 +694,10 @@ func parseClient(iterator *storkutil.PeekingIterator[string], s *xfrState) {
 		return
 	}
 	// The second token is the client address.
-	split := strings.Split(token, "#")
-	if len(split) > 0 {
+	split, _, ok := strings.Cut(token, "#")
+	if ok {
 		// The first part is the client address.
-		s.client = split[0]
+		s.client = split
 	}
 }
 
