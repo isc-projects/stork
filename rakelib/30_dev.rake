@@ -571,55 +571,57 @@ namespace :unittest do
                 sh GO, "tool", "pprof", "-http=:", code_path, profile_path
             end
         end
+    end
+end
 
-        desc 'Run backend fuzzing unit tests
-            SCOPE - Scope (package) of the tests. It may omit the `isc.org/stork` prefix. - required
-            TEST - Test name pattern to run - default: . (dot means all tests)
-            FUZZ_TIME - Fuzzing time - default: 30s
-            VERBOSE - Print results for successful cases - default: false'
-        task :fuzz => [GO, "gen:backend:mocks"] + go_codebase do
+namespace :fuzz do
+    desc 'Run backend fuzzing unit tests
+    SCOPE - Scope (package) of the tests. It may omit the `isc.org/stork` prefix. - required
+    TEST - Test name pattern to run - default: . (dot means all tests)
+    FUZZ_TIME - Fuzzing time - default: 30s
+    VERBOSE - Print results for successful cases - default: false'
+    task :backend => [GO, "gen:backend:mocks"] + go_codebase do
 
-            # Scope is mandatory for the fuzzing tests. It must be set to a single
-            # package, as fuzzing multiple packages at once is not supported.
-            if ENV["SCOPE"].nil?
-                puts "Scope argument is required. It must be set to the "+
-                    "package name of the test(s). It may omit the "+
-                    "`isc.org/stork` prefix."
-                puts "Example: rake unittest:backend:fuzz SCOPE=agent or "+
-                        "rake unittest:backend:fuzz SCOPE=isc.org/stork/agent"
-                fail "Environment variable SCOPE must be specified"
-            end
-            scope = ENV["SCOPE"]
-            if !scope.start_with? "isc.org/stork/"
-                scope = "isc.org/stork/#{scope}"
-            end
+        # Scope is mandatory for the fuzzing tests. It must be set to a single
+        # package, as fuzzing multiple packages at once is not supported.
+        if ENV["SCOPE"].nil?
+            puts "Scope argument is required. It must be set to the "+
+                "package name of the test(s). It may omit the "+
+                "`isc.org/stork` prefix."
+            puts "Example: rake fuzz:backend:fuzz SCOPE=agent or "+
+                    "rake fuzz:backend SCOPE=isc.org/stork/agent"
+            fail "Environment variable SCOPE must be specified"
+        end
+        scope = ENV["SCOPE"]
+        if !scope.start_with? "isc.org/stork/"
+            scope = "isc.org/stork/#{scope}"
+        end
 
-            # Test is required. It allows for choosing a specific test to run.
-            # If not specified, all tests are run (equivalent to ".").
-            test = ENV["TEST"] || "."
-            # Fuzzing duration.
-            fuzztime = ENV["FUZZ_TIME"] || "30s"
-            # Verbose mode.
-            verbose = ENV["VERBOSE"] || "false"
+        # Test is required. It allows for choosing a specific test to run.
+        # If not specified, all tests are run (equivalent to ".").
+        test = ENV["TEST"] || "."
+        # Fuzzing duration.
+        fuzztime = ENV["FUZZ_TIME"] || "30s"
+        # Verbose mode.
+        verbose = ENV["VERBOSE"] || "false"
 
-            opts = ["-fuzz", test, "-fuzztime", fuzztime]
+        opts = ["-fuzz", test, "-fuzztime", fuzztime]
 
-            if verbose == "true"
-                opts += ["-v"]
-            end
+        if verbose == "true"
+            opts += ["-v"]
+        end
 
-            tparse_otps = []
-            if ENV["CI"] == "true"
-                tparse_otps.append("-nocolor")
-            end
+        tparse_otps = []
+        if ENV["CI"] == "true"
+            tparse_otps.append("-nocolor")
+        end
 
-            Dir.chdir('backend') do
-                checked_pipeline(
-                    [GO, "test", "-run", "^$", "-json", *opts, "-race", scope],
-                    [GO_JUNIT_REPORT, "-iocopy", "-out", "./junit.xml"],
-                    [TPARSE, "-progress", *tparse_otps]
-                )
-            end
+        Dir.chdir('backend') do
+            checked_pipeline(
+                [GO, "fuzz", "-run", "^$", "-json", *opts, "-race", scope],
+                [GO_JUNIT_REPORT, "-iocopy", "-out", "./junit.xml"],
+                [TPARSE, "-progress", *tparse_otps]
+            )
         end
     end
 end
