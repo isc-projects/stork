@@ -82,15 +82,16 @@ func TestConfigure(t *testing.T) {
 	issuerURL, srvTeardown, err := prepareTestOIDCServer()
 	require.NoError(t, err)
 	defer srvTeardown()
-	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", ClientSecret: "client-secret"}, db)
 	require.NotNil(t, controller)
 
 	// Act
-	controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
+	controller.Configure(url.URL{Scheme: "http", Host: "[::]:8080"}, &dbsession.SessionMgr{})
 
 	// Assert
 	require.True(t, controller.configured)
 	require.NotNil(t, controller.authSessionManager)
+	require.Equal(t, "client-secret", controller.oauth2Config.ClientSecret)
 }
 
 // Test if OIDC middleware is transparent if OIDC was not configured.
@@ -119,8 +120,9 @@ func TestMiddlewareIsTransparent(t *testing.T) {
 	require.Contains(t, resp.Header.Get("Hello"), "world")
 }
 
-// Test if OIDC middleware is not transparent if OIDC was configured.
-func TestMiddlewareIsNotTransparent(t *testing.T) {
+// Test if OIDC middleware is transparent if OIDC was configured
+// but the request URL path does not match any known OIDC-related endpoints.
+func TestMiddlewareIsTransparent2(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -138,7 +140,7 @@ func TestMiddlewareIsNotTransparent(t *testing.T) {
 	// Act
 	controller.Configure(url.URL{Scheme: "https"}, testSM)
 	handler := controller.Middleware(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost/", nil)
+	req := httptest.NewRequest("GET", "http://localhost/", nil) // This URL path does not match OIDC login or callback path.
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -146,7 +148,7 @@ func TestMiddlewareIsNotTransparent(t *testing.T) {
 
 	// Assert
 	require.True(t, controller.configured)
-	require.Greater(t, len(resp.Header), 1) // There should be also session cookie from session manager.
+	require.Len(t, resp.Header, 1) // No other headers added by Session middleware means that OIDC middleware is transparent.
 	require.Contains(t, resp.Header, "Hello")
 	require.Contains(t, resp.Header.Get("Hello"), "world")
 }
@@ -169,6 +171,8 @@ func TestSessionStorage(t *testing.T) {
 	require.NoError(t, err)
 	controller.Configure(url.URL{Scheme: "https"}, testSM)
 	handler := controller.Middleware(nextHandler)
+	// Additionally force adding session manager context. It shouldn't be added for non-OIDC related URL paths.
+	handler = controller.dbSessionManager.SessionMiddleware(controller.authSessionManager.LoadAndSave(handler))
 	req := httptest.NewRequest("GET", "http://localhost/", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -393,4 +397,41 @@ func TestGetMappedGroups(t *testing.T) {
 		require.Contains(t, mappedGroups, authdata.UserGroupIDAdmin)
 		require.Contains(t, mappedGroups, authdata.UserGroupIDReadOnly)
 	})
+}
+
+// Test if OIDC middleware is not transparent if OIDC was configured
+// and the request URL path matches OIDC login endpoint.
+func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Hello", "world")
+	})
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+
+	// Act
+	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	handler := controller.Middleware(nextHandler)
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+
+	// Assert
+	require.True(t, controller.configured)
+	require.Greater(t, len(resp.Header), 2)
+	// Check auth_session cookie.
+	require.Contains(t, resp.Header, "Set-Cookie")
+	require.Contains(t, resp.Header.Get("Set-Cookie"), "auth_session")
+	// Check redirect Location header. It should have the client_id value in the redirection URL.
+	require.Contains(t, resp.Header, "Location")
+	require.Contains(t, resp.Header.Get("Location"), "clientID")
 }
