@@ -425,6 +425,36 @@ This section describes the solutions for some common issues with the Stork serve
 :Solution:    Change the hook directory path.
 :Explanation: A file was found instead of a directory under the given hook directory path.
 
+---------------
+
+:Issue:       The Stork server displays invalid utilization on the subnet or shared
+              network page. The value is negative or significantly exceeds 100%.
+:Solution:    Check the Daemons list and the Machines list against the duplicated
+              daemons. If the same daemons are detected twice, remove an instance
+              that communicates through Kea CA. If there are no duplicates, verify
+              whether some Kea servers that are not an HA pair don't use the same
+              address or PD pools.
+:Explanation: In Stork 2.3.2 we introduced support for Direct Kea API. Since then,
+              Stork can communicate directly with Kea DHCP servers, without the Kea
+              Control Agent. Due to technical reasons, Stork cannot match the
+              daemons detected via the Kea CA with those detected via the Direct
+              Kea API. It caused the same Kea server to be represented twice in the
+              Stork database. It significantly disrupts statistical calculations,
+              especially when some servers are configured as an HA pair or a
+              Hub-and-Spoke. As a result, the statistics may be unreliable, and
+              utilization may be negative or above 100%. In such a case, the
+              administrator should examine the Daemon list and remove the duplicates
+              detected via Kea CA. It can be recognized by checking the daemon's
+              access point list—the instance to delete points to the address and
+              port of the Kea CA control channel.
+              Unreliable or duplicated statistics can also be observed if some
+              separate daemons that are not configured as an HA pair share or
+              overlap their address or PD pools. In such a situation, the
+              administrator should reconfigure their Kea servers to separate
+              address or PD pools. Stork detects such misconfiguration and
+              presents recommendations as a Config Review Report on the daemon
+              page.
+
 
 High Virtual Memory Usage
 =========================
