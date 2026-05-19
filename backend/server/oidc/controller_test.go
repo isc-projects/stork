@@ -435,3 +435,33 @@ func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
 	require.Contains(t, resp.Header, "Location")
 	require.Contains(t, resp.Header.Get("Location"), "clientID")
 }
+
+// Test if sanitizeReturnURL works fine.
+func TestSanitizeReturnURL(t *testing.T) {
+	// Arrange & Act & Assert
+	u := ""
+	t.Run("trim spaces", func(t *testing.T) {
+		u = sanitizeReturnURL("  test  ")
+		require.EqualValues(t, "/test", u)
+	})
+
+	t.Run("replace CR and LF chars", func(t *testing.T) {
+		u = sanitizeReturnURL("  te\n\rst  ")
+		require.EqualValues(t, "/test", u)
+	})
+
+	t.Run("sanitize absolute URL", func(t *testing.T) {
+		u = sanitizeReturnURL("https://example.org")
+		require.EqualValues(t, "/", u)
+	})
+
+	t.Run("sanitize protocol-relative URL", func(t *testing.T) {
+		u = sanitizeReturnURL("//example.org")
+		require.EqualValues(t, "/", u)
+	})
+
+	t.Run("URL path with query param", func(t *testing.T) {
+		u = sanitizeReturnURL("dns/zones/all?daemonId=17")
+		require.EqualValues(t, "/dns/zones/all?daemonId=17", u)
+	})
+}
