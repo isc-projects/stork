@@ -799,6 +799,10 @@ func FuzzXfrTrackerParse(f *testing.F) {
 }
 
 // Benchmark the XFR tracker parse function.
+// During the XFR tracker implementation, the benchmark returned the following results
+// on the MacBook pro with Apple M3 chip, 36GB RAM:
+//
+// BenchmarkXfrTrackerParse-12    72302    16684 ns/op    2288 B/op   12 allocs/op.
 func BenchmarkXfrTrackerParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		xfrState := parseTransferLogLine("23-Feb-2026 10:41:27.141 client @0x7ffffaa28c00 172.24.0.54#34961/key trusted-key (drop.rpz.example.com): view trusted: transfer of 'drop.rpz.example.com/IN': AXFR ended: 1 messages, 5 records, 294 bytes, 0.004 secs (73500 bytes/sec) (serial 201702121)")
