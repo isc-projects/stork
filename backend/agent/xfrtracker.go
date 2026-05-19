@@ -737,6 +737,8 @@ func parseMessagesRecordsBytes(prevToken, token string, s *xfrState) (err error)
 		s.recordsCount = v
 	case "bytes":
 		s.bytesCount = v
+	default:
+		return errors.Errorf("unexpected token: '%s'", token)
 	}
 	return
 }
