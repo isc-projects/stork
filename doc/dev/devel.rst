@@ -924,6 +924,26 @@ system test type:
     $ rake -T systemtest
 
 
+Fuzzing Tests
+=============
+
+Stork leverages the `Go fuzzing framework <https://go.dev/doc/security/fuzz/>`_ to
+fuzz test the backend code.
+
+Fuzz tests can be run for one package at the time. In order to run the fuzz tests
+for the ``isc.org/stork/agent`` package use the following command:
+
+.. code-block:: console
+
+    $ rake fuzz:backend SCOPE=agent
+
+It will run the fuzz tests for the default test duration of 30 seconds. To change the
+duration use the ``FUZZ_TIME`` environment variable. For example:
+
+.. code-block:: console
+
+    $ rake fuzz:backend SCOPE=agent FUZZ_TIME=1200s
+
 .. _docker_containers_for_development:
 
 Docker Containers for Development
