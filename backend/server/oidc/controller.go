@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
@@ -28,6 +30,8 @@ type Controller struct {
 	db                 *dbops.PgDB
 	dbSessionManager   *dbsession.SessionMgr
 	authSessionManager *scs.SessionManager
+	oauth2Config       oauth2.Config
+	tokenVerifier      *oidc.IDTokenVerifier
 }
 
 // Structure to cache all required information for OIDC authentication in a session.
@@ -42,10 +46,12 @@ type AuthSession struct {
 	CreatedAt    time.Time
 }
 
-// Constant values to be used by in-memory session manager.
+// Constant values to be used by in-memory session manager and the middleware.
 const (
 	authSessionKey     = "auth_sessions"
 	authSessionTimeout = 15 * time.Minute
+	callbackURLPath    = "/oidc/callback"
+	loginURLPath       = "/oidc/login"
 )
 
 // Constructs OIDC controller instance. It requires the settings
@@ -83,6 +89,39 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		log.WithError(err).Error("an error occurred in the OIDC session manager")
 	}
 	ctl.authSessionManager = inMemorySessionMgr
+	// Try to communicate with OpenID Provider and perform OIDC discovery to get information about OP endpoints.
+	ctx := context.Background()
+	op, err := oidc.NewProvider(ctx, ctl.settings.IssuerURL)
+	if err != nil {
+		log.WithError(err).Errorf("OIDC discovery failed")
+		return
+	}
+	tokenVerifier := op.Verifier(&oidc.Config{
+		ClientID: ctl.settings.ClientID,
+	})
+	ctl.tokenVerifier = tokenVerifier
+	// Prepare OAuth2 config.
+	redirectURL := serverURL.JoinPath(callbackURLPath)
+	if redirectURL.Hostname() == "::" {
+		port := redirectURL.Port()
+		redirectURL.Host = "localhost:" + port
+	}
+	log.Warnf("In order to make your OIDC authentication work, you must register the redirect URL at your OpenID Provider. The URL: %s", redirectURL.String())
+	scopes := []string{
+		oidc.ScopeOpenID,
+	}
+	scopes = append(scopes, ctl.settings.Scopes...)
+	oauth2Config := oauth2.Config{
+		ClientID:    ctl.settings.ClientID,
+		RedirectURL: redirectURL.String(),
+		Endpoint:    op.Endpoint(),
+		Scopes:      scopes,
+	}
+	if ctl.settings.ClientSecret != "" {
+		oauth2Config.ClientSecret = ctl.settings.ClientSecret
+	}
+	ctl.oauth2Config = oauth2Config
+
 	ctl.configured = true
 }
 
