@@ -76,8 +76,7 @@ const (
 // run the stop() function. Additional calls to the trackFiles() or trackSystemdUnit()
 // will restart the tracking. Note that calling these functions is not concurrent safe.
 // The tracker instance belongs to the BIND 9 daemon and should be started after the daemon
-// after the daemon is detected. It should ensure that the calls to start/stop tracking
-// are serialized.
+// is detected. It should ensure that the calls to start/stop tracking are serialized.
 //
 // Getting the ongoing and completed zone transfers is safe for concurrent use.
 type xfrTracker struct {
