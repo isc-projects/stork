@@ -4,14 +4,17 @@ import (
 	"context"
 	"math"
 	"testing"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	keadata "isc.org/stork/daemondata/kea"
+	keaconfig "isc.org/stork/daemoncfg/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
@@ -99,6 +102,103 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, result)
 	require.EqualValues(t, lease.CLTT, *result.Cltt)
+}
+
+// Verify that [convertSortFieldToColumnName] converts all of the supported sort
+// fields into the correct column names.
+func TestConvertSortFieldToColumnNameHandlesAllCases(t *testing.T) {
+	testCases := []struct{
+		description string
+		sortField string
+		expectedColName dbmodel.GetLeasesByPageSortColumnName
+	}{
+		{
+			description: "Subnet Prefix",
+			sortField: string(models.LeaseListSortFieldSubnetPrefix),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix,
+		},
+		{
+			description: "HW Address",
+			sortField: string(models.LeaseListSortFieldHwAddress),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameHwAddress,
+		},
+		{
+			description: "IP Address",
+			sortField: string(models.LeaseListSortFieldIPAddress),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameIPAddress,
+		},
+		{
+			description: "Hostname",
+			sortField: string(models.LeaseListSortFieldHostname),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameHostname,
+		},
+		{
+			description: "Client ID",
+			sortField: string(models.LeaseListSortFieldClientID),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameClientID,
+		},
+		{
+			description: "DUID",
+			sortField: string(models.LeaseListSortFieldDuid),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameDuid,
+		},
+		{
+			description: "CLTT",
+			sortField: string(models.LeaseListSortFieldCltt),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameCltt,
+		},
+		{
+			description: "Valid Lifetime",
+			sortField: string(models.LeaseListSortFieldValidLifetime),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameValidLifetime,
+		},
+		{
+			description: "PrefixLength",
+			sortField: string(models.LeaseListSortFieldPrefixLength),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNamePrefixLength,
+		},
+		{
+			description: "Unknown field",
+			sortField: "potato",
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameNone,
+		},
+		{
+			description: "Empty string",
+			sortField: "",
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameNone,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			result := convertSortFieldToColumnName(tc.sortField)
+			require.Equal(t, tc.expectedColName, result)
+		})
+	}
+}
+
+// Verify that [getLeases] propagates errors from [GetLeasesByPage] to its caller.
+func TestGetLeasesPropagatesErrorFromGetLeasesByPage(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+			ctx := context.Background()
+		fec := &storktest.FakeEventCenter{}
+		rapi, err := NewRestAPI(dbSettings, db, fec)
+		require.NoError(t, err)
+
+		ctx, err = rapi.SessionManager.Load(ctx, "")
+		require.NoError(t, err)
+	
+	// Act
+	filters := dbmodel.LeasesByPageFilters{}
+	db.Close()
+	leases, err := rapi.getLeases(0, 10, filters, "", dbmodel.SortDirAsc)
+
+	// Assert
+	require.Nil(t, leases)
+	require.ErrorContains(t, err, "database is closed")
 }
 
 // testHelperMakeUser is a test helper function which adds a user to the
@@ -224,4 +324,197 @@ func TestGetLeaseListUserAuth(t *testing.T) {
 		rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
 		require.IsType(t, &dhcp.GetLeaseListOK{}, rsp)
 	})
+}
+
+// Verify that [GetLeaseList] propagates an error from [getLeases].
+func TestGetLeaseListPropagatesErrorFromGetLeases(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(dbSettings, db, fec)
+	require.NoError(t, err)
+
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	superAdminUser := &dbmodel.SystemUser{
+		Email:    "erika.mustermann@example.com",
+		Lastname: "Mustermann",
+		Name:     "Erika",
+		Groups: []*dbmodel.SystemGroup{
+			{ID: dbmodel.SuperAdminGroupID},
+		},
+	}
+	testHelperMakeUser(t, db, superAdminUser, "pass2")
+
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
+	require.NoError(t, err)
+
+	getLeaseListParams := dhcp.GetLeaseListParams{}
+	db.Close()
+	rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
+	require.IsType(t, &dhcp.GetLeaseListDefault{}, rsp)
+}
+
+// helperSetUpLeases sets up two leases (and the associated supporting data) for the
+// following test.
+func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel.Machine) {
+	machine := &dbmodel.Machine{
+		Address: "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	accessPoint := []*dbmodel.AccessPoint{
+		{
+			Type: dbmodel.AccessPointControl,
+			Address: "cool.example.org",
+			Port: int64(1234),
+			Key: "",
+		},
+	}
+
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoint)
+	configStr := `{
+		"Dhcp6": {
+			"subnet6": [
+				{ "id": 123, "subnet": "2001:db8:1::/64" }
+			]
+		}
+	}`
+	config, err := keaconfig.NewConfig([]byte(configStr))
+	require.NoError(t, err)
+	daemon.KeaDaemon.Config = &dbmodel.KeaConfig{
+		Config: config,
+	}
+	daemon.KeaDaemon.Config.DHCPv6Config.LeaseDatabase = &keaconfig.Database{
+		Type: "memfile",
+	}
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	subnet := &dbmodel.Subnet{
+		Prefix: "2001:db8:1::/64",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+			DaemonID: daemon.ID,
+			LocalSubnetID: 123,
+			AddressPools: []dbmodel.AddressPool{
+				{
+					LowerBound: "2001:db8:1::1",
+					UpperBound: "2001:db8:1::ffff",
+				},
+			},
+			},
+		},
+	}
+	err = dbmodel.AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	leases := []*dbmodel.Lease{
+		{
+			DaemonID: daemon.ID,
+			SubnetID: subnet.ID,
+			Lease: keadata.Lease{
+				Family: 6,
+				DUID: "00:01:02:03:04:05:06:07",
+				IPAddress: "2001:db8:1::404",
+				CLTT: 10002,
+				Hostname: "client.example",
+				State: keadata.LeaseStateDefault,
+				ValidLifetime: 3600,
+				LocalSubnetID: 123,
+			},
+		},
+		{
+			DaemonID: daemon.ID,
+			SubnetID: subnet.ID,
+			Lease: keadata.Lease{
+				Family: 6,
+				DUID: "01:02:03:04:05:06:07:08",
+				IPAddress: "2001:db8:1::408",
+				CLTT: 10002,
+				Hostname: "client.example",
+				State: keadata.LeaseStateDefault,
+				ValidLifetime: 3600,
+				LocalSubnetID: 123,
+			},
+		},
+	}
+
+	for _, lease := range leases {
+		err := dbmodel.AddLease(db, lease)
+		require.NoError(t, err)
+		require.NotZero(t, lease.ID)
+	}
+
+	return leases, machine
+}
+
+// Verify that [GetLeaseList] handles a request with every parameter set.
+func TestGetLeaseListHandlesParams(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	leases, machine := helperSetUpLeases(t, db)
+	ctx := context.Background()
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(dbSettings, db, fec)
+	require.NoError(t, err)
+
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	superAdminUser := &dbmodel.SystemUser{
+		Email:    "erika.mustermann@example.com",
+		Lastname: "Mustermann",
+		Name:     "Erika",
+		Groups: []*dbmodel.SystemGroup{
+			{ID: dbmodel.SuperAdminGroupID},
+		},
+	}
+	testHelperMakeUser(t, db, superAdminUser, "pass2")
+
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
+	require.NoError(t, err)
+
+	start := int64(0)
+	limit := int64(3)
+	sortField := string(models.LeaseListSortFieldIPAddress)
+	sortDir := string(dbmodel.SortDirDesc)
+	daemonID := leases[0].DaemonID
+	machineID := machine.ID
+	subnetID := leases[0].SubnetID
+	localSubnetID := int64(leases[0].LocalSubnetID)
+	filterText := "client.example"
+
+	// Act
+	getLeaseListParams := dhcp.GetLeaseListParams{
+		Start: &start,
+		Limit: &limit,
+		SortField: &sortField,
+		SortDir: &sortDir,
+		DaemonID: &daemonID,
+		MachineID: &machineID,
+		SubnetID: &subnetID,
+		LocalSubnetID: &localSubnetID,
+		Text: &filterText,
+	}
+	rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
+
+	// Assert
+	require.IsType(t, &dhcp.GetLeaseListOK{}, rsp)
+	require.NotNil(t, rsp)
+	okRsp := rsp.(*dhcp.GetLeaseListOK)
+	require.NotNil(t, okRsp.Payload)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.NotNil(t, okRsp.Payload.Items)
+	require.Len(t, okRsp.Payload.Items, 2)
+	require.NotNil(t, okRsp.Payload.Items[0].IPAddress)
+	require.Equal(t, leases[1].IPAddress, *okRsp.Payload.Items[0].IPAddress)
+	require.NotNil(t, okRsp.Payload.Items[1].IPAddress)
+	require.Equal(t, leases[0].IPAddress, *okRsp.Payload.Items[1].IPAddress)
 }

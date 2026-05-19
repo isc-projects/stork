@@ -17,11 +17,15 @@ import (
 )
 
 // Adds daemons to be used with subnet tests.
+// This function creates two machines with two daemons each, one DHCPv4 and one DHCPv6.
+// Each daemon has one subnet. The DHCPv4 daemon leases from 192.0.2.0/24. The DHCPv6
+// daemon leases from 2001:db8:1::0/64. The local subnet ID for each v4 daemon is 7.
+// The local subnet ID for each v6 daemon is 6.
 func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subnets []*Subnet) {
-	// Add two machines with daemons.
+	// Add two machines with two daemons each.
 	for i := range 2 {
 		m := &Machine{
-			ID:        0,
+			ID:        int64(9 + i),
 			Address:   "localhost",
 			AgentPort: int64(8080 + i),
 		}
@@ -52,7 +56,8 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 			Prefix: "192.0.2.0/24",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: daemon4.ID,
+					DaemonID:      daemon4.ID,
+					LocalSubnetID: 7,
 					AddressPools: []AddressPool{
 						{
 							LowerBound: "192.0.2.1",
@@ -81,7 +86,8 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 			Prefix: "2001:db8:1::/64",
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: daemon6.ID,
+					DaemonID:      daemon6.ID,
+					LocalSubnetID: 6,
 					AddressPools: []AddressPool{
 						{
 							LowerBound: "2001:db8:1::1",
@@ -99,12 +105,14 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 }
 
 // testHelperAddMockLeases is a testing helper function which adds a few example
-// leases to the database.  The example leases are in the subnet "192.0.2.0/24",
-// and this function expects the first subnet provided in subnets must also have
-// the prefix "192.0.2.0/24".
+// leases to the database.  The example leases are in the subnets "192.0.2.0/24" and
+// "2001:db8:1::0/64", and this function expects the first subnet provided in
+// subnets to also have one of those prefixes.
 func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, subnets []*Subnet) []*Lease {
+	// The tests rely on the indexes of these leases remaining the same. Please only add
+	// new leases at the end of the list.
 	leases := []*Lease{
-		// Valid IPv4 lease.
+		// 0. Valid IPv4 lease.
 		{
 			DaemonID: daemons[0].ID,
 			SubnetID: subnets[0].ID,
@@ -118,7 +126,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 				LocalSubnetID: 7,
 			},
 		},
-		// Expired IPv4 lease.
+		// 1. Expired IPv4 lease.
 		{
 			DaemonID: daemons[0].ID,
 			SubnetID: subnets[0].ID,
@@ -132,7 +140,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 				LocalSubnetID: 7,
 			},
 		},
-		// Valid IPv6 lease.
+		// 2. Valid IPv6 lease.
 		{
 			DaemonID: daemons[1].ID,
 			SubnetID: subnets[1].ID,
@@ -146,7 +154,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 				LocalSubnetID: 6,
 			},
 		},
-		// Registered IPv6 lease.
+		// 3. Registered IPv6 lease.
 		{
 			DaemonID: daemons[1].ID,
 			SubnetID: subnets[1].ID,
@@ -155,6 +163,35 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 				DUID:          "01:01:01:01:01:01:01:02",
 				IPAddress:     "2001:db8:1::402",
 				CLTT:          10002,
+				State:         keadata.LeaseStateRegistered,
+				ValidLifetime: 3600,
+				LocalSubnetID: 6,
+			},
+		},
+		// 4. Valid IPv6 lease with Client ID.
+		{
+			DaemonID: daemons[1].ID,
+			SubnetID: subnets[1].ID,
+			Lease: keadata.Lease{
+				Family:        6,
+				ClientID:      "01:01:01:01:01:01:01:03",
+				IPAddress:     "2001:db8:1::404",
+				CLTT:          10002,
+				State:         keadata.LeaseStateDefault,
+				ValidLifetime: 3600,
+				LocalSubnetID: 6,
+			},
+		},
+		// 5. Valid IPv6 lease with hostname.
+		{
+			DaemonID: daemons[1].ID,
+			SubnetID: subnets[1].ID,
+			Lease: keadata.Lease{
+				Family:        6,
+				DUID:          "01:01:01:01:01:01:01:04",
+				IPAddress:     "2001:db8:1::408",
+				CLTT:          10002,
+				Hostname:      "client.example",
 				State:         keadata.LeaseStateDefault,
 				ValidLifetime: 3600,
 				LocalSubnetID: 6,
@@ -262,6 +299,15 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 	require.NotNil(t, returned.Subnet)
 }
 
+// Confirm that [AddLease] correctly rejects any requests to insert a `nil` lease.
+func TestAddLeaseRejectsNilLease(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	err := AddLease(db, nil)
+	require.ErrorContains(t, err, "nil lease")
+}
+
 // Confirm that the return values from GetLeaseByID are as expected when there
 // is no lease matching the provided ID.
 func TestGetLeaseReturnsNoErrorForNonexistentLease(t *testing.T) {
@@ -297,6 +343,19 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 	}
 	err := AddLease(db, lease)
 	require.ErrorContains(t, err, "problem inserting lease")
+}
+
+// Confirm that [GetLeaseByID] returns an error when there is a database issue *other*
+// than "there is no lease with that ID".
+func TestGetLeaseByIDDatabaseError(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	err := db.Close()
+	require.NoError(t, err)
+
+	lease, err := GetLeaseByID(db, 1)
+	require.Nil(t, lease)
+	require.ErrorContains(t, err, "database is closed")
 }
 
 // Verify that [GetLeasesByPage] operates correctly and returns no errors when
@@ -345,12 +404,166 @@ func TestGetLeasesByPageFilteredBySubnet(t *testing.T) {
 	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
 
 	require.NoError(t, err)
-	require.EqualValues(t, 2, total)
-	require.Len(t, returned, 2)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
 	require.NotNil(t, returned[0])
 	require.Equal(t, leases[2].ID, returned[0].ID)
 	require.NotNil(t, returned[1])
 	require.Equal(t, leases[3].ID, returned[1].ID)
+}
+
+// Verify that [GetLeasesByPage] correctly filters the leases by Kea subnet ID.
+func TestGetLeasesByPageFilteredByLocalSubnetID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	leases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	filters := LeasesByPageFilters{
+		LocalSubnetID: &subnets[1].LocalSubnets[0].LocalSubnetID,
+	}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.NotNil(t, returned[0])
+	require.Equal(t, leases[2].ID, returned[0].ID)
+	require.NotNil(t, returned[1])
+	require.Equal(t, leases[3].ID, returned[1].ID)
+}
+
+// Verify that [GetLeasesByPage] correctly filters the list of leases by daemon.
+func TestGetLeasesByPageFilteredByDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	leases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	filters := LeasesByPageFilters{
+		DaemonID: &daemons[1].ID,
+	}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.NotNil(t, returned[0])
+	require.Equal(t, leases[2].ID, returned[0].ID)
+	require.NotNil(t, returned[1])
+	require.Equal(t, leases[3].ID, returned[1].ID)
+}
+
+// Verify that [GetLeasesByPage] correctly filters the list of leases by machine.
+func TestGetLeasesByPageFilteredByMachine(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	leases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	filters := LeasesByPageFilters{
+		MachineID: &daemons[0].Machine.ID,
+	}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 6, total)
+	require.Len(t, returned, 6)
+	require.NotNil(t, returned[0])
+	require.Equal(t, leases[0].ID, returned[0].ID)
+	require.NotNil(t, returned[1])
+	require.Equal(t, leases[1].ID, returned[1].ID)
+	require.NotNil(t, returned[1])
+	require.Equal(t, leases[2].ID, returned[2].ID)
+	require.NotNil(t, returned[1])
+	require.Equal(t, leases[3].ID, returned[3].ID)
+}
+
+// Verify that [GetLeasesByPage] correctly filters the list of leases by text.
+func TestGetLeasesByPageFilteredByText(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	leases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	testCases := []struct {
+		description string
+		filterText  string
+		expectedID  int64
+	}{
+		{
+			description: "filter by IP address",
+			filterText:  "192.0.2.9",
+			expectedID:  leases[0].ID,
+		},
+		// TODO: this one fails
+		{
+			description: "filter by DUID",
+			filterText:  "01:01:01:01:01:01:01:01",
+			expectedID:  leases[2].ID,
+		},
+		{
+			description: "filter by MAC address",
+			filterText:  "00:00:00:00:00:01",
+			expectedID:  leases[0].ID,
+		},
+		// TODO: this one fails
+		{
+			description: "filter by Client ID",
+			filterText:  "01:01:01:01:01:01:01:03",
+			expectedID:  leases[4].ID,
+		},
+		{
+			description: "filter by hostname",
+			filterText:  "client.example",
+			expectedID:  leases[5].ID,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			filters := LeasesByPageFilters{
+				FilterText: &tc.filterText,
+			}
+			returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+			require.NoError(t, err)
+			require.EqualValues(t, 1, total)
+			require.Len(t, returned, 1)
+			require.NotNil(t, returned[0])
+			require.Equal(t, tc.expectedID, returned[0].ID)
+		})
+	}
+}
+
+// Verify that [GetLeasesByPage] returns ([], 0, nil) when there are no rows.
+func TestGetLeasesByPageReturns0WhenNoRows(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	filters := LeasesByPageFilters{}
+
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 0, total)
+	require.NotNil(t, returned)
+	require.Len(t, returned, 0)
+}
+
+// Verify that [GetLeasesByPage] propagates an error when the DB has some issue other
+// than [pg.ErrNoRows].
+func TestGetLeasesByPageWhenDBHasError(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	db.Close()
+	filters := LeasesByPageFilters{}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+	require.ErrorContains(t, err, "database is closed")
+	require.EqualValues(t, 0, total)
+	require.Nil(t, returned)
 }
 
 // Verify that the conversion from the gRPC API structure to this one copies all

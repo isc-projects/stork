@@ -133,7 +133,7 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 	q = q.DistinctOn(distinctOnFields)
 
 	if filters.MachineID != nil && *filters.MachineID != 0 {
-		q = q.Join("JOIN daemon").JoinOn("lease.daemon_id = daemon.id")
+		// q = q.Join("JOIN daemon").JoinOn("lease.daemon_id = daemon.id")
 		q = q.Where("daemon.machine_id = ?", *filters.MachineID)
 	}
 
@@ -177,6 +177,7 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 			return nil, 0, nil
 		}
 		err = pkgerrors.Wrapf(err, "problem getting leases by page")
+		return nil, 0, err
 	}
 	return leases, int64(total), err
 }
