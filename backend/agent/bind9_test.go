@@ -1934,10 +1934,10 @@ func TestConfigureBind9DaemonXFRTrackingRelativeFilePathsChroot(t *testing.T) {
 				xfer-out;
 			};
 			channel "xfer-in" {
-				file "../logs/xfer-in.log";
+				file "logs/xfer-in.log";
 			};
 			channel "xfer-out" {
-				file "../logs/xfer-out.log";
+				file "logs/xfer-out.log";
 			};
 		};
 	`
