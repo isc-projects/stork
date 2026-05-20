@@ -109,7 +109,7 @@ export class UserFormComponent implements OnInit {
 
             this.formGroup = this._formBuilder.group(
                 {
-                    userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                    userLogin: ['', [Validators.maxLength(this.maxInputLen)]],
                     userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
                     userFirst: ['', Validators.maxLength(this.maxInputLen)],
                     userLast: ['', Validators.maxLength(this.maxInputLen)],
@@ -123,9 +123,13 @@ export class UserFormComponent implements OnInit {
                 }
             )
 
-            // The authentication hooks may not support returning profile details
-            // as email, first and last names, or groups.
+            // The external authentication may not support returning profile details
+            // as login, email, first and last names, or groups.
             if (this.isInternalUser()) {
+                this.formGroup.setControl(
+                    'userLogin',
+                    new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
+                )
                 this.formGroup.setControl(
                     'userFirst',
                     new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
