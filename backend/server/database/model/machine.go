@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	dbops "isc.org/stork/server/database"
 )
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
@@ -28,6 +29,7 @@ type MachineState struct {
 	VirtualizationSystem string
 	VirtualizationRole   string
 	HostID               string
+	IPAddressesHash      string
 }
 
 // Represents a machine held in machine table in the database.
@@ -80,8 +82,8 @@ func AddMachine(db pg.DBI, machine *Machine) error {
 }
 
 // Update a machine in database.
-func UpdateMachine(db *pg.DB, machine *Machine) error {
-	result, err := db.Model(machine).WherePK().ExcludeColumn("created_at").Update()
+func UpdateMachine(dbi dbops.DBI, machine *Machine) error {
+	result, err := dbi.Model(machine).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating machine %+v", machine)
 	} else if result.RowsAffected() <= 0 {
