@@ -6,7 +6,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 import { By } from '@angular/platform-browser'
-import { provideRouter } from '@angular/router'
+import { provideRouter, Router } from '@angular/router'
 import { AuthService } from '../auth.service'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -15,6 +15,8 @@ describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
     let fixture: ComponentFixture<LoginScreenComponent>
     let authServiceStub: Partial<AuthService>
+    let router: Router
+    let msgSrv: MessageService
 
     beforeEach(waitForAsync(() => {
         authServiceStub = {
@@ -55,6 +57,8 @@ describe('LoginScreenComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(LoginScreenComponent)
         component = fixture.componentInstance
+        router = fixture.debugElement.injector.get(Router)
+        msgSrv = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
 
@@ -157,4 +161,17 @@ describe('LoginScreenComponent', () => {
         // Check if AuthService login() was called with expected values.
         expect(loginSpy).toHaveBeenCalledOnceWith('ldapId', 'login', 'passwd', '/')
     }))
+
+    it('should display toast with auth error information', () => {
+        spyOnProperty(router, 'url').and.returnValue('/login/auth-err')
+        spyOn(msgSrv, 'add')
+        component.ngOnInit()
+        expect(msgSrv.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Authentication error',
+                detail: 'Error during authentication process. Please contact Stork admin.',
+            })
+        )
+    })
 })

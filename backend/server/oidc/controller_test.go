@@ -434,6 +434,7 @@ func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
 	// Check redirect Location header. It should have the client_id value in the redirection URL.
 	require.Contains(t, resp.Header, "Location")
 	require.Contains(t, resp.Header.Get("Location"), "clientID")
+	require.NotContains(t, resp.Header, "Hello")
 }
 
 // Test if sanitizeReturnURL works fine.
