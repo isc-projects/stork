@@ -145,9 +145,12 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 		return next
 	}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, loginURLPath) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, loginURLPath):
 			ctl.loginHandler(w, r)
-		} else {
+		case strings.HasPrefix(r.URL.Path, callbackURLPath):
+			ctl.callbackHandler(w, r)
+		default:
 			next.ServeHTTP(w, r)
 		}
 	})
@@ -159,12 +162,15 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 // Helper middleware which chains the HTTP handler with SCS session manager middlewares
 // only if the request URL path matches any of OIDC-related endpoints.
 func (ctl *Controller) wrapOIDCSession(next http.Handler) http.Handler {
+    oidcEndpoints := []string{loginURLPath, callbackURLPath}
 	sessionHandler := ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, loginURLPath) {
-			sessionHandler.ServeHTTP(w, r)
-			return
-		}
+		for _, e := range oidcEndpoints {
+            if strings.HasPrefix(r.URL.Path, e) {
+                sessionHandler.ServeHTTP(w, r)
+                return
+            }
+        }
 		next.ServeHTTP(w, r)
 	})
 }
