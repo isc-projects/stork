@@ -114,6 +114,7 @@ type State struct {
 	LastVisitedAt        time.Time
 	Error                string
 	Daemons              []*Daemon
+	IPAddresses          []string
 }
 
 // An interface to the response from gRPC including a command status.
@@ -458,6 +459,7 @@ func (agents *connectedAgentsImpl) GetState(ctx context.Context, machine dbmodel
 		LastVisitedAt:        storkutil.UTCNow(),
 		Error:                grpcState.Error,
 		Daemons:              daemons,
+		IPAddresses:          grpcState.IpAddresses,
 	}
 
 	return &state, nil

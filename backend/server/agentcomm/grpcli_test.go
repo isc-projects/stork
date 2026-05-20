@@ -187,6 +187,7 @@ func TestGetState(t *testing.T) {
 				}},
 			},
 		},
+		IpAddresses: []string{"1.1.1.1", "2.2.2.2"},
 	}
 	mockAgentClient.EXPECT().
 		GetState(gomock.Any(), gomock.Any(), newGZIPMatcher()).
@@ -219,6 +220,10 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, "1.2.3.5", state.Daemons[1].AccessPoints[0].Address)
 	require.EqualValues(t, 4321, state.Daemons[1].AccessPoints[0].Port)
 	require.Equal(t, protocoltype.RNDC, state.Daemons[1].AccessPoints[0].Protocol)
+
+	require.Len(t, state.IPAddresses, 2)
+	require.Equal(t, "1.1.1.1", state.IPAddresses[0])
+	require.Equal(t, "2.2.2.2", state.IPAddresses[1])
 
 	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
