@@ -21,6 +21,7 @@ import (
 	"golang.org/x/oauth2"
 	"isc.org/stork/server/authdata"
 	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
 	dbsession "isc.org/stork/server/database/session"
 )
 
@@ -51,11 +52,12 @@ type AuthSession struct {
 
 // Constant values to be used by in-memory session manager and the middleware.
 const (
-	authSessionKey     = "auth_sessions"
-	authSessionTimeout = 15 * time.Minute
-	callbackURLPath    = "/oidc/callback"
-	loginURLPath       = "/oidc/login"
-	authErrorURLPath   = "/login/auth-err"
+	authSessionKey      = "auth_sessions"
+	authSessionTimeout  = 15 * time.Minute
+	callbackURLPath     = "/oidc/callback"
+	loginURLPath        = "/oidc/login"
+	authErrorURLPath    = "/login/auth-err"
+	authRejectedURLPath = "/login/unauthorized"
 )
 
 // Constructs OIDC controller instance. It requires the settings
@@ -261,6 +263,8 @@ func (ctl *Controller) getMappedGroups(groups *[]string) (allowed bool, mappedGr
 // It prepares the authentication request, stores necessary data in session
 // and redirects user-agent to authentication URL, where user will proceed
 // with authentication.
+// In case of any error, user-agent is redirected back to login page where simple
+// error feedback should be displayed.
 func (ctl *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -333,4 +337,157 @@ func sanitizeReturnURL(returnURL string) string {
 		return sanitizedPath + "?" + parsed.RawQuery
 	}
 	return sanitizedPath
+}
+
+// Handles OIDC callback endpoint which interprets redirection from OpenID Provider
+// after user successfully authenticates at the OP and authorizes Stork as a
+// Relying Party. It verifies the response, extracts required parameters and
+// sends a request to OP token endpoint. It verifies the token response and
+// extracts the claims. If the user is allowed to log in to Stork,
+// DB system user entry is created or updated and a session is created
+// for authenticated user. User-agent is redirected to returnURL and
+// user will be able to use Stork UI.
+// In case of any error, user-agent is redirected back to login page where simple
+// error feedback should be displayed.
+func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ctl.cleanupSessions(ctx)
+
+	// Get cached data for received state.
+	state := r.URL.Query().Get("state")
+	sessionMap := ctl.getAuthSessionMap(ctx)
+	authSession, ok := sessionMap[state]
+	if !ok {
+		log.Warn("OIDC callback endpoint received invalid or expired state")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	delete(sessionMap, state)
+	ctl.putAuthSessionMap(ctx, sessionMap)
+	codeVerifier := authSession.CodeVerifier
+	expectedNonce := authSession.Nonce
+
+	// Do the exchange with token endpoint and verify the response.
+	code := r.URL.Query().Get("code")
+	token, err := ctl.oauth2Config.Exchange(ctx, code, oauth2.SetAuthURLParam("code_verifier", codeVerifier))
+	if err != nil {
+		log.WithError(err).Errorf("error while exchanging OIDC token")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	idTokenJWT, ok := token.Extra("id_token").(string)
+	if !ok {
+		log.Errorf("error while extracting id_token from OIDC token response")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	idToken, err := ctl.tokenVerifier.Verify(ctx, idTokenJWT)
+	if err != nil {
+		log.WithError(err).Errorf("error while verifying OIDC token response")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+
+	if idToken.Nonce != expectedNonce {
+		log.Errorf("error while verifying OIDC token response - invalid nonce")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+
+	// Extract the claims.
+	var claims struct {
+		Sub        string `json:"sub"`
+		Email      string `json:"email"`
+		GivenName  string `json:"given_name"`
+		FamilyName string `json:"family_name"`
+		Name       string `json:"name"`
+		Groups     []string
+	}
+	err = idToken.Claims(&claims)
+	if err != nil {
+		log.WithError(err).Errorf("error while extracting OIDC claims")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	// Extract groups claim depending on configured setting.
+	if ctl.settings.GroupsClaim != "" {
+		var rawClaims map[string]interface{}
+		err = idToken.Claims(&rawClaims)
+		if err != nil {
+			log.WithError(err).Errorf("error while extracting OIDC claims")
+			http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+			return
+		}
+		// Do custom unmarshaling of the groups claim, because we can't be sure
+		// how the claim is formatted on the OpenID Provider side.
+		// We should have the groups extracted as slice of strings.
+		if val, ok := rawClaims[ctl.settings.GroupsClaim]; ok {
+			var groups []string
+			switch claim := val.(type) {
+			case []interface{}:
+				for _, g := range claim {
+					if s, ok := g.(string); ok {
+						groups = append(groups, s)
+					}
+				}
+			case []string:
+				groups = claim
+			case string:
+				groups = []string{claim}
+			}
+			claims.Groups = groups
+		}
+	}
+
+	// Check the group mapping.
+	belongsToAllowGroup, mappedGroups := ctl.getMappedGroups(&claims.Groups)
+	if ctl.settings.MandatoryAllowGroup != "" && !belongsToAllowGroup {
+		log.Warnf("authentication rejected for OIDC user ID %s - user does not belong to group that is mandatory for access (%s)", claims.Sub, ctl.settings.MandatoryAllowGroup)
+		http.Redirect(w, r, authRejectedURLPath, http.StatusFound)
+		return
+	}
+
+	// At this point OIDC authentication to Stork is considered successful.
+	// Construct user metadata, insert that to DB and create a session.
+	name := claims.GivenName
+	if name == "" {
+		name = claims.Name
+	}
+	lastname := claims.FamilyName
+	if lastname == "" {
+		lastname = claims.Name
+	}
+	outputUser := authdata.User{
+		ID:       claims.Sub,
+		Email:    claims.Email,
+		Lastname: lastname,
+		Name:     name,
+		Groups:   []authdata.UserGroupID{},
+	}
+	if ctl.settings.EnableGroupMapping {
+		outputUser.Groups = mappedGroups
+		outputUser.ExternallyManagedGroups = true
+		if len(outputUser.Groups) == 0 {
+			log.Warnf("OIDC user ID %s belongs to no group used for group mapping. User will be logged in but will not be able to use Stork.", claims.Sub)
+		}
+	} else {
+		// In case group mapping is not configured, assign external user to Read-only group.
+		outputUser.Groups = []authdata.UserGroupID{
+			authdata.UserGroupIDReadOnly,
+		}
+	}
+	systemUser, err := dbmodel.AddOrUpdateExternalUser(ctl.db, &outputUser, "oidc")
+	if err != nil || systemUser == nil {
+		log.WithError(err).Errorf("error creating or updating system user in DB for authenticated OIDC user ID %s", claims.Sub)
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+	err = ctl.dbSessionManager.LoginHandler(ctx, systemUser)
+	if err != nil {
+		log.WithError(err).Errorf("error creating session for authenticated OIDC user ID %s", claims.Sub)
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+
+	http.Redirect(w, r, authSession.ReturnURL, http.StatusFound)
 }
