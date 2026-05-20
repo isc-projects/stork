@@ -21,6 +21,7 @@ import (
 )
 
 //go:generate mockgen -package=daemons -destination=dispatchermock_test.go isc.org/stork/server/configreview Dispatcher
+//go:generate mockgen -package=daemons -destination=connectedagentsmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
 
 // Check creating and shutting down StatePuller.
 func TestStatsPullerBasic(t *testing.T) {
@@ -141,6 +142,7 @@ func TestStatePullerPullData(t *testing.T) {
 				}},
 			},
 		},
+		IPAddresses: []string{"1.1.1.1", "2.2.2.2"},
 	}
 
 	// prepare fake event center
@@ -228,6 +230,118 @@ func TestStatePullerPullData(t *testing.T) {
 	require.Len(t, keaDaemons[1].AccessPoints, 1)
 	require.EqualValues(t, keaDaemons[1].AccessPoints[0].Address, "203.0.113.123")
 	require.True(t, keaDaemons[1].Active)
+
+	// Make sure that the IP addresses are present in the database.
+	ipAddresses, err := dbmodel.GetMachineIPAddresses(db)
+	require.NoError(t, err)
+	require.Len(t, ipAddresses, 2)
+	require.Equal(t, "1.1.1.1", ipAddresses[0].IPAddress)
+	require.Equal(t, "2.2.2.2", ipAddresses[1].IPAddress)
+}
+
+// Test that the IP addresses are correctly updated in the database when the
+// agent returns different lists of IP addresses.
+func TestStatePullerPullDataIPAddressesOverride(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Mock responses from the agents. First two calls return the same list of IP addresses,
+	// the third call returns a different list of IP addresses.
+	mock := NewMockConnectedAgents(ctrl)
+	mock.EXPECT().GetState(gomock.Any(), gomock.Any()).Return(&agentcomm.State{
+		AgentVersion: "2.4.0",
+		IPAddresses:  []string{"1.1.1.1", "2.2.2.2"},
+	}, nil)
+	mock.EXPECT().GetState(gomock.Any(), gomock.Any()).Return(&agentcomm.State{
+		AgentVersion: "2.4.0",
+		IPAddresses:  []string{"1.1.1.1", "2.2.2.2"},
+	}, nil)
+	mock.EXPECT().GetState(gomock.Any(), gomock.Any()).Return(&agentcomm.State{
+		AgentVersion: "2.4.0",
+		IPAddresses:  []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"},
+	}, nil)
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		ID:         0,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	// This setting is required by the puller.
+	setting := dbmodel.Setting{
+		Name:    "state_puller_interval",
+		ValType: dbmodel.SettingValTypeInt,
+		Value:   "60",
+	}
+	_, err = db.Model(&setting).Insert()
+	require.NoError(t, err)
+
+	sp, err := NewStatePuller(db, mock, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+	defer sp.Shutdown()
+
+	// Trigger the puller to fetch and update the IP addresses.
+	err = sp.pullData()
+	require.NoError(t, err)
+
+	// Make sure that the IP addresses are present in the database.
+	ipAddresses, err := dbmodel.GetMachineIPAddresses(db)
+	require.NoError(t, err)
+	require.Len(t, ipAddresses, 2)
+	require.Equal(t, "1.1.1.1", ipAddresses[0].IPAddress)
+	require.Equal(t, "2.2.2.2", ipAddresses[1].IPAddress)
+
+	// Make sure that the IP addresses hash is present in the database.
+	machine, err := dbmodel.GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+	require.NotNil(t, machine)
+	hash1 := machine.State.IPAddressesHash
+	require.NotEmpty(t, hash1)
+
+	err = sp.pullData()
+	require.NoError(t, err)
+
+	// The IP addresses should not change.
+	ipAddresses, err = dbmodel.GetMachineIPAddresses(db)
+	require.NoError(t, err)
+	require.Len(t, ipAddresses, 2)
+	require.Equal(t, "1.1.1.1", ipAddresses[0].IPAddress)
+	require.Equal(t, "2.2.2.2", ipAddresses[1].IPAddress)
+
+	// The hash should not change.
+	machine, err = dbmodel.GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+	require.NotNil(t, machine)
+	hash2 := machine.State.IPAddressesHash
+	require.NotEmpty(t, hash2)
+	require.Equal(t, hash1, hash2)
+
+	err = sp.pullData()
+	require.NoError(t, err)
+
+	// The IP addresses should change.
+	ipAddresses, err = dbmodel.GetMachineIPAddresses(db)
+	require.NoError(t, err)
+	require.Len(t, ipAddresses, 3)
+	require.Equal(t, "1.1.1.1", ipAddresses[0].IPAddress)
+	require.Equal(t, "2.2.2.2", ipAddresses[1].IPAddress)
+	require.Equal(t, "3.3.3.3", ipAddresses[2].IPAddress)
+
+	// The hash should change.
+	machine, err = dbmodel.GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+	require.NotNil(t, machine)
+	hash3 := machine.State.IPAddressesHash
+	require.NotEmpty(t, hash3)
+	require.NotEqual(t, hash1, hash3)
 }
 
 // Check if puller correctly pulls data from an agent that can communicate only

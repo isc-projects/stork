@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/singleflight"
@@ -106,7 +107,7 @@ func (puller *StatePuller) UpdateMachineAndDaemonsState(ctx context.Context, mac
 }
 
 // Store updated machine fields in to database.
-func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
+func updateMachineFields(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
 	// update state fields in machine
 	dbMachine.State.AgentVersion = m.AgentVersion
 	dbMachine.State.Cpus = m.Cpus
@@ -126,11 +127,26 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.State.HostID = m.HostID
 	dbMachine.LastVisitedAt = m.LastVisitedAt
 	dbMachine.Error = m.Error
-	err := dbmodel.UpdateMachine(db, dbMachine)
-	if err != nil {
-		return errors.Wrapf(err, "problem updating machine %+v", dbMachine)
-	}
-	return nil
+
+	currentIPAddressesHash := dbMachine.State.IPAddressesHash
+	newIPAddressesHash := storkutil.Fnv128(m.IPAddresses)
+	dbMachine.State.IPAddressesHash = newIPAddressesHash
+
+	err := db.RunInTransaction(ctx, func(tx *pg.Tx) error {
+		err := dbmodel.UpdateMachine(tx, dbMachine)
+		if err != nil {
+			return errors.Wrapf(err, "problem updating machine %+v", dbMachine)
+		}
+
+		if currentIPAddressesHash != newIPAddressesHash {
+			err = dbmodel.UpsertMachineIPAddresses(tx, dbMachine.ID, m.IPAddresses...)
+			if err != nil {
+				return errors.Wrapf(err, "problem upserting machine IP addresses for machine %+v", dbMachine)
+			}
+		}
+		return nil
+	})
+	return errors.Wrapf(err, "problem updating machine %+v", dbMachine)
 }
 
 // It is an index key for comparing daemons. The daemons are considered equal
@@ -338,7 +354,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, machineID
 	isStorkAgentChanged := false
 
 	// store machine's state in db
-	err = updateMachineFields(db, dbMachine, state)
+	err = updateMachineFields(ctx, db, dbMachine, state)
 	if err != nil {
 		return nil, err
 	}
