@@ -503,3 +503,19 @@ func TestIsIPAddress(t *testing.T) {
 	require.False(t, IsIPAddress("192.0.2.1/24"))
 	require.False(t, IsIPAddress("2001:db8:1::1/64"))
 }
+
+// Test the function returning the list of IP addresses on the host.
+// It expects that the list contains only unique IP addresses.
+func TestGetHostIPAddresses(t *testing.T) {
+	ips, err := GetHostIPAddresses()
+	require.NoError(t, err)
+	uniqueIPs := make(map[string]struct{})
+	for _, ip := range ips {
+		require.True(t, IsIPAddress(ip))
+		uniqueIPs[ip] = struct{}{}
+	}
+	// The number of unique IP addresses must be the same as the
+	// total number of IP addresses. It effectively tests that the
+	// list contains only unique IP addresses.
+	require.Equal(t, len(uniqueIPs), len(ips))
+}

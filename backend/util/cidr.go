@@ -3,8 +3,10 @@ package storkutil
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"math/big"
 	"net"
+	"slices"
 	"strings"
 
 	cidr "github.com/apparentlymart/go-cidr/cidr"
@@ -280,4 +282,21 @@ func FormatCIDRNotation(ip string, mask int) string {
 // Convenience function checking if the string is an IP address.
 func IsIPAddress(ipAddress string) bool {
 	return net.ParseIP(ipAddress) != nil
+}
+
+// Convenience function returning the list of IP addresses on the
+// host as strings.
+func GetHostIPAddresses() ([]string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get IP addresses from network interfaces")
+	}
+	// Collect unique IP addresses.
+	uniqueAddrs := make(map[string]struct{})
+	for _, addr := range addrs {
+		// Remove the prefix length from the IP address.
+		ip, _, _ := strings.Cut(addr.String(), "/")
+		uniqueAddrs[ip] = struct{}{}
+	}
+	return slices.Collect(maps.Keys(uniqueAddrs)), nil
 }
