@@ -373,6 +373,15 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	codeVerifier := authSession.CodeVerifier
 	expectedNonce := authSession.Nonce
 
+	hasError := r.URL.Query().Has("error")
+	if hasError {
+		errCode := r.URL.Query().Get("error")
+		errDescription := r.URL.Query().Get("error_description")
+		log.Errorf("OIDC authentication error response received - error code (%s) error description (%s)", errCode, errDescription)
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
+
 	// Do the exchange with token endpoint and verify the response.
 	code := r.URL.Query().Get("code")
 	token, err := ctl.oauth2Config.Exchange(ctx, code, oauth2.SetAuthURLParam("code_verifier", codeVerifier))
