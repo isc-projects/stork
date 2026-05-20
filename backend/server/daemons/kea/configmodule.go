@@ -1245,141 +1245,102 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		sharedNetworkNameAfterUpdate = subnet.SharedNetwork.Name
 	}
 
-	var commands []ConfigCommand
-	// Update the subnet instances.
+	lookup := module.manager.GetDHCPOptionDefinitionLookup()
+
+	// Build helper indexes for association diffs between current and existing
+	// subnet copies.
+	existingAssociationByDaemonID := make(map[int64]struct{})
+	for _, ls := range existingSubnet.LocalSubnets {
+		if ls.Daemon == nil {
+			return ctx, errors.Errorf("existing subnet %s is associated with nil daemon", existingSubnet.Prefix)
+		}
+		if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
+			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
+		}
+		existingAssociationByDaemonID[ls.DaemonID] = struct{}{}
+	}
+	currentAssociationByDaemonID := make(map[int64]*dbmodel.LocalSubnet)
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
 			return ctx, errors.Errorf("applied subnet %s is associated with nil daemon", subnet.Prefix)
 		}
-		// Check if this is a new association.
-		existingAssociation := false
-		for _, exls := range existingSubnet.LocalSubnets {
-			if exls.DaemonID == ls.DaemonID {
-				existingAssociation = true
-				break
-			}
+		if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
+			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
 		}
-		// Convert the updated subnet information to Kea subnet.
-		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		command := ConfigCommand{}
-		switch subnet.GetFamily() {
-		case 4:
-			// Create subnet4-add or subnet4-update depending on whether it is a new
-			// subnet or an updated subnet.
-			subnet4, err := keaconfig.CreateSubnet4(ls.DaemonID, lookup, subnet)
-			if err != nil {
-				return ctx, err
-			}
-			if existingAssociation {
-				command.Command = keactrl.NewCommandSubnet4Update(subnet4, ls.Daemon.Name)
-			} else {
-				command.Command = keactrl.NewCommandSubnet4Add(subnet4, ls.Daemon.Name)
-			}
-			command.Daemon = ls.Daemon
-			commands = append(commands, command)
-
-			// If the association of the subnet with the shared network hasn't changed we
-			// move on to the next local subnet.
-			if sharedNetworkNameBeforeUpdate == sharedNetworkNameAfterUpdate {
-				continue
-			}
-
-			// If the subnet association with a shared network existed, we need to remove
-			// this association first.
-			if sharedNetworkNameBeforeUpdate != "" {
-				command.Command = keactrl.NewCommandNetwork4SubnetDel(sharedNetworkNameBeforeUpdate, ls.LocalSubnetID, ls.Daemon.Name)
-				commands = append(commands, command)
-			}
-
-			// If the subnet is associated with a new shared network, add this association
-			// in Kea.
-			if sharedNetworkNameAfterUpdate != "" {
-				command.Command = keactrl.NewCommandNetwork4SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
-				commands = append(commands, command)
-			}
-		default:
-			// Create subnet6-add or subnet6-update depending on whether it is a new
-			// subnet or an updated subnet.
-			subnet6, err := keaconfig.CreateSubnet6(ls.DaemonID, lookup, subnet)
-			if err != nil {
-				return ctx, err
-			}
-			if existingAssociation {
-				command.Command = keactrl.NewCommandSubnet6Update(subnet6, ls.Daemon.Name)
-			} else {
-				command.Command = keactrl.NewCommandSubnet6Add(subnet6, ls.Daemon.Name)
-			}
-			command.Daemon = ls.Daemon
-			commands = append(commands, command)
-
-			if sharedNetworkNameBeforeUpdate == sharedNetworkNameAfterUpdate {
-				continue
-			}
-
-			// If the subnet association with a shared network existed, we need to remove
-			// this association first.
-			if sharedNetworkNameBeforeUpdate != "" {
-				command.Command = keactrl.NewCommandNetwork6SubnetDel(sharedNetworkNameBeforeUpdate, ls.LocalSubnetID, ls.Daemon.Name)
-				commands = append(commands, command)
-			}
-
-			// If the subnet is associated with a new shared network, add this association
-			// in Kea.
-			if sharedNetworkNameAfterUpdate != "" {
-				command.Command = keactrl.NewCommandNetwork6SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
-				commands = append(commands, command)
-			}
-		}
-	}
-	// Identify the daemons which no longer exist in the updated subnet.
-	// Remove the subnet from these daemons.
-	var removedLocalSubnets []*dbmodel.LocalSubnet
-	for i, exls := range existingSubnet.LocalSubnets {
-		removedLocalSubnet := existingSubnet.LocalSubnets[i]
-		for _, ls := range subnet.LocalSubnets {
-			if exls.DaemonID == ls.DaemonID {
-				// Daemon still exists. Do not remove.
-				removedLocalSubnet = nil
-				break
-			}
-		}
-		if removedLocalSubnet != nil {
-			if sharedNetworkNameBeforeUpdate != "" {
-				// If the deleted subnet belongs to a shared network we first need to remove
-				// this subnet from a shared network. This is a limitation of Kea 2.6.0.
-				commands = append(commands, ConfigCommand{
-					Command: keactrl.NewCommandNetworkSubnetDel(subnet.GetFamily(), sharedNetworkNameBeforeUpdate, removedLocalSubnet.LocalSubnetID, removedLocalSubnet.Daemon.Name),
-					Daemon:  removedLocalSubnet.Daemon,
-				})
-			}
-			// Delete the subnet.
-			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandSubnetDel(subnet.GetFamily(), &keaconfig.SubnetCmdsDeletedSubnet{ID: removedLocalSubnet.LocalSubnetID}, removedLocalSubnet.Daemon.Name),
-				Daemon:  removedLocalSubnet.Daemon,
-			})
-			removedLocalSubnets = append(removedLocalSubnets, removedLocalSubnet)
-		}
+		currentAssociationByDaemonID[ls.DaemonID] = ls
 	}
 
-	// Create the commands to write the updated configuration to files. The subnet
-	// changes won't persist across the servers' restarts otherwise.
-	for _, ls := range append(subnet.LocalSubnets, removedLocalSubnets...) {
-		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
-		})
-		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
-		// subnet_cmds hook library. Therefore, for these versions we send the config-reload
-		// command to force the statistics update. There is no lighter command to force the
-		// statistics update unfortunately.
-		version := storkutil.ParseSemanticVersionOrLatest(ls.Daemon.Version)
-		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
-			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandBase(keactrl.ConfigReload, ls.Daemon.Name),
-				Daemon:  ls.Daemon,
-			})
+	// Create commands to update the subnet in the Kea configuration or config
+	// backend database and assign the subnet to a shared network, if
+	// necessary.
+	// The commands manage the association between the subnet and the daemons
+	// For the daemons backed by the subnet_cmds hook library, it is done only
+	// partially - the daemons are assigned to subnets but they are not
+	// unassigned.
+	var updateCommands []ConfigCommand
+	alteredDaemons := make(map[int64]*dbmodel.Daemon)
+	if err = forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+		_, existingAssociation := existingAssociationByDaemonID[ls.DaemonID]
+		cmds, err := createSubnetUpdateCommands(
+			ls,
+			subnet,
+			sharedNetworkNameBeforeUpdate,
+			sharedNetworkNameAfterUpdate,
+			existingAssociation,
+			serverTags,
+			lookup,
+		)
+		if err != nil {
+			return err
 		}
+		updateCommands = append(updateCommands, cmds...)
+		alteredDaemons[ls.DaemonID] = ls.Daemon
+		return nil
+	}); err != nil {
+		return ctx, err
 	}
+
+	// Create commands to remove the subnet from the daemons which are no
+	// longer associated with the subnet. It is done only for the daemons
+	// backed by the subnet_cmds hook library because for the daemons backed by
+	// the cb_cmds hook the associations are fully managed by the
+	// remote-subnetX-set command.
+	var removeCommands []ConfigCommand
+	for _, localSubnet := range existingSubnet.LocalSubnets {
+		hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
+		if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds {
+			continue
+		}
+
+		if _, found := currentAssociationByDaemonID[localSubnet.DaemonID]; found {
+			continue
+		}
+
+		var cmds []ConfigCommand
+		cmds, err = createSubnetDeleteCommands(localSubnet, subnet.GetFamily(), sharedNetworkNameBeforeUpdate)
+		if err != nil {
+			return ctx, err
+		}
+		removeCommands = append(removeCommands, cmds...)
+		alteredDaemons[localSubnet.DaemonID] = localSubnet.Daemon
+	}
+
+	// Generate commands to save the subnet configuration if applicable.
+	var saveCommands []ConfigCommand
+	for _, daemon := range alteredDaemons {
+		cmds, err := createSubnetSaveCommands(daemon)
+		if err != nil {
+			return ctx, err
+		}
+		saveCommands = append(saveCommands, cmds...)
+	}
+
+	// Merge commands into a single slice. The commands to save changes must
+	// be last.
+	commands := make([]ConfigCommand, 0, len(updateCommands)+len(removeCommands)+len(saveCommands))
+	commands = append(commands, updateCommands...)
+	commands = append(commands, removeCommands...)
+	commands = append(commands, saveCommands...)
 
 	// Store the data in the existing recipe.
 	recipe.SubnetAfterUpdate = subnet
