@@ -344,3 +344,107 @@ func TestCreateSubnetAddCommandsCbCmds(t *testing.T) {
 		}
 	}`, string(marshalled))
 }
+
+// Tests that createSubnetUpdateCommands returns subnet4-update and shared
+// network association commands for subnet_cmds daemons.
+func TestCreateSubnetUpdateCommandsSubnetCmds(t *testing.T) {
+	// Arrange
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	subnet := newTestSubnet(daemon)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	// Act
+	cmds, err := createSubnetUpdateCommands(
+		subnet.LocalSubnets[0],
+		subnet,
+		"old-net",
+		"new-net",
+		true,
+		nil,
+		lookup,
+	)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, cmds, 3)
+
+	marshalled0, err := cmds[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "subnet4-update",
+		"service": ["dhcp4"],
+		"arguments": {"subnet4": [{"id": 42, "subnet": "192.0.2.0/24"}]}
+	}`, string(marshalled0))
+
+	marshalled1, err := cmds[1].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "network4-subnet-del",
+		"service": ["dhcp4"],
+		"arguments": {"name": "old-net", "id": 42}
+	}`, string(marshalled1))
+
+	marshalled2, err := cmds[2].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "network4-subnet-add",
+		"service": ["dhcp4"],
+		"arguments": {"name": "new-net", "id": 42}
+	}`, string(marshalled2))
+}
+
+// Tests that createSubnetUpdateCommands returns remote-subnet4-set for
+// cb_cmds daemons.
+func TestCreateSubnetUpdateCommandsCbCmds(t *testing.T) {
+	// Arrange
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	subnet := newTestSubnet(daemon)
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	// Act
+	cmds, err := createSubnetUpdateCommands(
+		subnet.LocalSubnets[0],
+		subnet,
+		"",
+		"",
+		true,
+		[]string{"server"},
+		lookup,
+	)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, cmds, 1)
+	marshalled, err := cmds[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-set",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"server-tags": ["server"]
+		}
+	}`, string(marshalled))
+}
+
+// Tests that createSubnetDeleteCommands returns a remote-subnet4-del-by-id
+// command for cb_cmds daemons.
+func TestCreateSubnetDeleteCommandsCbCmds(t *testing.T) {
+	// Arrange
+	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	subnet := newTestSubnet(daemon)
+
+	// Act
+	cmds, err := createSubnetDeleteCommands(subnet.LocalSubnets[0], 4, "")
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, cmds, 1)
+	marshalled, err := cmds[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-del-by-id",
+		"service": ["dhcp4"],
+		"arguments": {"subnets": [{"id": 42}]}
+	}`, string(marshalled))
+}

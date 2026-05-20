@@ -132,3 +132,41 @@ func TestNewCommandRemoteSubnet6SetWithSharedNetwork(t *testing.T) {
 		}
 	}`, string(marshalled))
 }
+
+// Tests that remote-subnet4-del-by-id command is constructed correctly.
+func TestNewCommandRemoteSubnet4DelByID(t *testing.T) {
+	command := NewCommandRemoteSubnet4DelByID(7, daemonname.DHCPv4)
+	require.NotNil(t, command)
+	marshalled, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-del-by-id",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [
+				{
+					"id": 7
+				}
+			]
+		}
+	}`, string(marshalled))
+}
+
+// Tests that remote-subnet6-del-by-id command is constructed correctly.
+func TestNewCommandRemoteSubnet6DelByID(t *testing.T) {
+	command := NewCommandRemoteSubnet6DelByID(9, daemonname.DHCPv6)
+	require.NotNil(t, command)
+	marshalled, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet6-del-by-id",
+		"service": ["dhcp6"],
+		"arguments": {
+			"subnets": [
+				{
+					"id": 9
+				}
+			]
+		}
+	}`, string(marshalled))
+}

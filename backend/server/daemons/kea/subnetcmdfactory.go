@@ -101,6 +101,227 @@ func createCBCmdsSubnetAddCommands(
 	}
 }
 
+// Creates commands to update a subnet via the subnet_cmds hook library.
+// Returns subnet4-update/subnet6-update for existing associations and
+// subnet4-add/subnet6-add for new associations. If the shared-network
+// association changed, it also emits network4-subnet-del/network6-subnet-del
+// and network4-subnet-add/network6-subnet-add commands as needed.
+func createSubnetCmdsSubnetUpdateCommands(
+	localSubnet *dbmodel.LocalSubnet,
+	subnet *dbmodel.Subnet,
+	sharedNetworkNameBeforeUpdate string,
+	sharedNetworkNameAfterUpdate string,
+	existingAssociation bool,
+	lookup keaconfig.DHCPOptionDefinitionLookup,
+) ([]ConfigCommand, error) {
+	var commands []ConfigCommand
+	switch subnet.GetFamily() {
+	case 4:
+		subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
+		if err != nil {
+			return nil, err
+		}
+		if existingAssociation {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandSubnet4Update(subnet4, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			})
+		} else {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandSubnet4Add(subnet4, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			})
+		}
+		if sharedNetworkNameBeforeUpdate != sharedNetworkNameAfterUpdate {
+			if sharedNetworkNameBeforeUpdate != "" {
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetwork4SubnetDel(
+						sharedNetworkNameBeforeUpdate,
+						localSubnet.LocalSubnetID,
+						localSubnet.Daemon.Name,
+					),
+					Daemon: localSubnet.Daemon,
+				})
+			}
+			if sharedNetworkNameAfterUpdate != "" {
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetwork4SubnetAdd(
+						sharedNetworkNameAfterUpdate,
+						localSubnet.LocalSubnetID,
+						localSubnet.Daemon.Name,
+					),
+					Daemon: localSubnet.Daemon,
+				})
+			}
+		}
+	default:
+		subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
+		if err != nil {
+			return nil, err
+		}
+		if existingAssociation {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandSubnet6Update(subnet6, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			})
+		} else {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandSubnet6Add(subnet6, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			})
+		}
+		if sharedNetworkNameBeforeUpdate != sharedNetworkNameAfterUpdate {
+			if sharedNetworkNameBeforeUpdate != "" {
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetwork6SubnetDel(
+						sharedNetworkNameBeforeUpdate,
+						localSubnet.LocalSubnetID,
+						localSubnet.Daemon.Name,
+					),
+					Daemon: localSubnet.Daemon,
+				})
+			}
+			if sharedNetworkNameAfterUpdate != "" {
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetwork6SubnetAdd(
+						sharedNetworkNameAfterUpdate,
+						localSubnet.LocalSubnetID,
+						localSubnet.Daemon.Name,
+					),
+					Daemon: localSubnet.Daemon,
+				})
+			}
+		}
+	}
+	return commands, nil
+}
+
+// Creates commands to update a subnet via the cb_cmds hook library.
+// Returns a remote-subnet4-set or remote-subnet6-set command.
+func createCBCmdsSubnetUpdateCommands(
+	localSubnet *dbmodel.LocalSubnet,
+	subnet *dbmodel.Subnet,
+	sharedNetworkNameAfterUpdate string,
+	serverTags []string,
+	lookup keaconfig.DHCPOptionDefinitionLookup,
+) ([]ConfigCommand, error) {
+	switch subnet.GetFamily() {
+	case 4:
+		subnet4, err := keaconfig.CreateSubnet4(localSubnet.DaemonID, lookup, subnet)
+		if err != nil {
+			return nil, err
+		}
+		return []ConfigCommand{{
+			Command: keactrl.NewCommandRemoteSubnet4Set(
+				keaconfig.CreateConfigBackendSubnet4(subnet4, sharedNetworkNameAfterUpdate),
+				serverTags,
+				localSubnet.Daemon.Name,
+			),
+			Daemon: localSubnet.Daemon,
+		}}, nil
+	default:
+		subnet6, err := keaconfig.CreateSubnet6(localSubnet.DaemonID, lookup, subnet)
+		if err != nil {
+			return nil, err
+		}
+		return []ConfigCommand{{
+			Command: keactrl.NewCommandRemoteSubnet6Set(
+				keaconfig.CreateConfigBackendSubnet6(subnet6, sharedNetworkNameAfterUpdate),
+				serverTags,
+				localSubnet.Daemon.Name,
+			),
+			Daemon: localSubnet.Daemon,
+		}}, nil
+	}
+}
+
+// Creates all commands required to update a subnet for a given local subnet's
+// daemon. The hook type is derived from the daemon's configuration.
+func createSubnetUpdateCommands(
+	localSubnet *dbmodel.LocalSubnet,
+	subnet *dbmodel.Subnet,
+	sharedNetworkNameBeforeUpdate string,
+	sharedNetworkNameAfterUpdate string,
+	existingAssociation bool,
+	serverTags []string,
+	lookup keaconfig.DHCPOptionDefinitionLookup,
+) ([]ConfigCommand, error) {
+	hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
+
+	switch hook {
+	case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
+		return createSubnetCmdsSubnetUpdateCommands(
+			localSubnet,
+			subnet,
+			sharedNetworkNameBeforeUpdate,
+			sharedNetworkNameAfterUpdate,
+			existingAssociation,
+			lookup,
+		)
+	case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds:
+		return createCBCmdsSubnetUpdateCommands(
+			localSubnet,
+			subnet,
+			sharedNetworkNameAfterUpdate,
+			serverTags,
+			lookup,
+		)
+	default:
+		return nil, pkgerrors.Errorf("cannot determine hook library for altering subnets")
+	}
+}
+
+// Creates all commands required to remove a subnet for a given daemon. The
+// hook type is derived from the daemon's configuration.
+func createSubnetDeleteCommands(
+	localSubnet *dbmodel.LocalSubnet,
+	family int,
+	sharedNetworkNameBeforeUpdate string,
+) ([]ConfigCommand, error) {
+	hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
+
+	var commands []ConfigCommand
+	switch hook {
+	case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
+		if sharedNetworkNameBeforeUpdate != "" {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandNetworkSubnetDel(
+					family,
+					sharedNetworkNameBeforeUpdate,
+					localSubnet.LocalSubnetID,
+					localSubnet.Daemon.Name,
+				),
+				Daemon: localSubnet.Daemon,
+			})
+		}
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommandSubnetDel(
+				family,
+				&keaconfig.SubnetCmdsDeletedSubnet{ID: localSubnet.LocalSubnetID},
+				localSubnet.Daemon.Name,
+			),
+			Daemon: localSubnet.Daemon,
+		})
+		return commands, nil
+	case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds:
+		switch family {
+		case 4:
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandRemoteSubnet4DelByID(localSubnet.LocalSubnetID, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			})
+		default:
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandRemoteSubnet6DelByID(localSubnet.LocalSubnetID, localSubnet.Daemon.Name),
+				Daemon:  localSubnet.Daemon,
+			})
+		}
+		return commands, nil
+	default:
+		return nil, pkgerrors.Errorf("cannot determine hook library for altering subnets")
+	}
+}
+
 // Creates all commands required to add a subnet for a given local subnet's
 // daemon. The hook type is derived from the daemon's configuration.
 func createSubnetAddCommands(

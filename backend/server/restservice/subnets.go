@@ -877,8 +877,8 @@ func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubne
 			})
 			return rsp
 		case errors.As(err, &hooksNotConfigured):
-			// Lack of the libdhcp_subnet_cmds hook.
-			msg := "Unable to update subnet configuration because some daemons lack libdhcp_subnet_cmds hook library"
+			// Lack of supported subnet-altering hooks.
+			msg := "Unable to update subnet configuration because some daemons lack libdhcp_subnet_cmds or libdhcp_cb_cmds hook library"
 			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateSubnetBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
