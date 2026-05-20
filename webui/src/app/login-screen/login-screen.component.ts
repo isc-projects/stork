@@ -128,6 +128,7 @@ export class LoginScreenComponent implements OnInit {
                 detail: 'Error during authentication process. Please contact Stork admin.',
             })
             this.router.navigate(['/login'])
+            return
         }
 
         // Set the return URL.

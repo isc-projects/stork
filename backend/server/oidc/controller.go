@@ -109,7 +109,7 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		port := redirectURL.Port()
 		redirectURL.Host = "localhost:" + port
 	}
-	log.Warnf("In order to make your OIDC authentication work, you must register the redirect URL at your OpenID Provider. The URL: %s", redirectURL.String())
+	log.Infof("In order to make your OIDC authentication work, you must register the redirect URL at your OpenID Provider. The URL: %s", redirectURL.String())
 	scopes := []string{
 		oidc.ScopeOpenID,
 	}
