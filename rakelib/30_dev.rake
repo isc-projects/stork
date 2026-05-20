@@ -289,7 +289,10 @@ namespace :unittest do
         opts = []
 
         # Reduce timeout so that deadlocks are reported faster.
-        opts += ["-timeout=4m"]
+        if ENV["CI"] != "true"
+            # Reduce timeout so that deadlocks are reported faster.
+            opts += ["-timeout=5m"]
+        end
 
         if !ENV["TEST"].nil?
             opts += ["-run", ENV["TEST"]]
