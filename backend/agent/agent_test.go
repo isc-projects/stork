@@ -295,6 +295,12 @@ func TestGetState(t *testing.T) {
 	require.NoError(t, err)
 	// Deprecated parameter. Always false.
 	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck,deprecated
+
+	// Make sure that the IP addresses are returned correctly.
+	ips, err := storkutil.GetHostIPAddresses()
+	require.NoError(t, err)
+	require.ElementsMatch(t, ips, rsp.IpAddresses)
+	require.True(t, slices.IsSorted(rsp.IpAddresses))
 }
 
 // Check if GetState works even if the daemon has multiple access points of

@@ -268,6 +268,13 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		})
 	}
 
+	var errText string
+	ipAddresses, err := storkutil.GetHostIPAddresses()
+	if err != nil {
+		errText = err.Error()
+	}
+	slices.Sort(ipAddresses)
+
 	state := agentapi.GetStateRsp{
 		AgentVersion:         stork.Version,
 		Daemons:              daemons,
@@ -286,11 +293,12 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		VirtualizationSystem: hostInfo.VirtualizationSystem,
 		VirtualizationRole:   hostInfo.VirtualizationRole,
 		HostID:               hostInfo.HostID,
-		Error:                "",
+		Error:                errText,
 		// This field is not used by the agent. It is here to keep the
 		// API backward compatibility. The Stork Server should not rely
 		// on this field.
 		AgentUsesHTTPCredentials: false,
+		IpAddresses:              ipAddresses,
 	}
 
 	return &state, nil
