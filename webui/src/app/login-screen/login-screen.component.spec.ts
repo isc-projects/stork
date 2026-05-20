@@ -174,4 +174,16 @@ describe('LoginScreenComponent', () => {
             })
         )
     })
+
+    it('should display toast with user unauthorized information', () => {
+        spyOnProperty(router, 'url').and.returnValue('/login/unauthorized')
+        spyOn(msgSrv, 'add')
+        component.ngOnInit()
+        expect(msgSrv.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'User unauthorized',
+            })
+        )
+    })
 })

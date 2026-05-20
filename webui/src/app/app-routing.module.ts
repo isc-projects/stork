@@ -46,6 +46,10 @@ const routes: Routes = [
         component: LoginScreenComponent,
     },
     {
+        path: 'login/unauthorized',
+        component: LoginScreenComponent,
+    },
+    {
         path: 'logout',
         component: LoginScreenComponent,
     },

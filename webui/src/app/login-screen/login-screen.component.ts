@@ -131,6 +131,19 @@ export class LoginScreenComponent implements OnInit {
             return
         }
 
+        // External authenticator (e.g. OIDC) may redirect user to this path
+        // when user authenticated successfully but has no sufficient privilege/role/group assigned
+        // to access Stork.
+        if (this.router.url === '/login/unauthorized') {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'User unauthorized',
+                life: 10000,
+            })
+            this.router.navigate(['/login'])
+            return
+        }
+
         // Set the return URL.
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/'
 
