@@ -323,7 +323,7 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                 ;\
         fi \
         # Kea subscriber hooks.
-        && if [ "${KEA_SUBSCRIBER}" == "subscriber" ]; then \
+        && if [ "${KEA_SUBSCRIBER}" == "subscriber" ] && [ "${KEA_PRIOR_2_7_7}" == "false" ]; then \
                 apt-get update && apt-get install \
                         --no-install-recommends \
                         -y \
