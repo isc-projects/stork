@@ -113,7 +113,7 @@ func addMachineDaemonsAndSubnets(t *testing.T, db *pg.DB) []*Daemon {
 		err := AddSubnet(db, &subnet)
 		require.NoError(t, err)
 		require.NotZero(t, subnet.ID)
-		err = AddLocalSubnets(db, &subnet)
+		err = SetLocalSubnets(db, &subnet)
 		require.NoError(t, err)
 
 		subnets[i] = subnet
@@ -2517,7 +2517,7 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	}
 	err := AddSubnet(db, subnetIPv4)
 	require.NoError(t, err)
-	err = AddLocalSubnets(db, subnetIPv4)
+	err = SetLocalSubnets(db, subnetIPv4)
 	require.NoError(t, err)
 
 	host := &Host{
@@ -2605,7 +2605,7 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	}
 	err = AddSubnet(db, subnetIPv6)
 	require.NoError(t, err)
-	err = AddLocalSubnets(db, subnetIPv6)
+	err = SetLocalSubnets(db, subnetIPv6)
 	require.NoError(t, err)
 
 	host = &Host{

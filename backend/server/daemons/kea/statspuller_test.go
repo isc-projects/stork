@@ -1222,7 +1222,7 @@ func TestProcessDaemonResponsesForResponseWithBigNumbers(t *testing.T) {
 		}
 		err := dbmodel.AddSubnet(db, subnet)
 		require.NoError(t, err)
-		err = dbmodel.AddLocalSubnets(db, subnet)
+		err = dbmodel.SetLocalSubnets(db, subnet)
 		require.NoError(t, err)
 		for _, ls := range subnet.LocalSubnets {
 			for _, pool := range ls.AddressPools {

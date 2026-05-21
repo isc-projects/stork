@@ -1155,7 +1155,7 @@ func TestDeleteDaemonsFromSharedNetwork(t *testing.T) {
 		err = AddLocalSharedNetworks(db, network)
 		require.NoError(t, err)
 
-		err = AddLocalSubnets(db, &network.Subnets[0])
+		err = SetLocalSubnets(db, &network.Subnets[0])
 		require.NoError(t, err)
 
 		networks = append(networks, network)

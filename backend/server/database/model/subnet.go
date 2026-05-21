@@ -503,8 +503,10 @@ func AddSubnet(dbi dbops.DBI, subnet *Subnet) error {
 }
 
 // Iterates over the LocalSubnet instances of a Subnet and inserts them or
-// updates in the database.
-func AddLocalSubnets(dbi dbops.DBI, subnet *Subnet) error {
+// updates in the database. It removes associations that no longer belong to
+// the subnet.
+func SetLocalSubnets(dbi dbops.DBI, subnet *Subnet) error {
+	existingLocalSubnetIDs := []int64{}
 	for i := range subnet.LocalSubnets {
 		subnet.LocalSubnets[i].SubnetID = subnet.ID
 		q := dbi.Model(subnet.LocalSubnets[i]).
@@ -523,7 +525,20 @@ func AddLocalSubnets(dbi dbops.DBI, subnet *Subnet) error {
 		if err != nil {
 			return err
 		}
+		existingLocalSubnetIDs = append(existingLocalSubnetIDs, subnet.LocalSubnets[i].ID)
 	}
+
+	// Remove associations that no longer belong to the subnet.
+	if len(existingLocalSubnetIDs) > 0 {
+		_, err := dbi.Model(&LocalSubnet{}).
+			Where("subnet_id = ?", subnet.ID).
+			Where("id NOT IN (?)", pg.In(existingLocalSubnetIDs)).
+			Delete()
+		if err != nil {
+			return pkgerrors.Wrapf(err, "problem removing old local subnets for subnet %s", subnet.Prefix)
+		}
+	}
+
 	return nil
 }
 
@@ -1002,7 +1017,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 				return nil, err
 			}
 		}
-		err = AddLocalSubnets(tx, subnet)
+		err = SetLocalSubnets(tx, subnet)
 		if err != nil {
 			return nil, err
 		}

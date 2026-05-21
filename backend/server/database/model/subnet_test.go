@@ -93,7 +93,7 @@ func TestAddSubnetWithAddressPools(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, subnet)
+	err = SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 
 	// Get the subnet from the database.
@@ -155,7 +155,7 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, subnet)
+	err = SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 
 	// Get the subnet from the database/
@@ -237,7 +237,7 @@ func TestGetSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, subnet)
+	err = SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 
 	returned, err := GetSubnet(db, subnet.ID)
@@ -713,7 +713,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 
-		err = AddLocalSubnets(db, &subnets[i])
+		err = SetLocalSubnets(db, &subnets[i])
 		require.NoError(t, err)
 	}
 
@@ -954,7 +954,7 @@ func TestGetSubnetsByPageSorting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 
-		err = AddLocalSubnets(db, &subnets[i])
+		err = SetLocalSubnets(db, &subnets[i])
 		require.NoError(t, err)
 	}
 
@@ -1268,15 +1268,20 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creates new daemon. Its configuration doesn't matter in this test.
-	daemon := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
-		{
-			Type:    AccessPointControl,
-			Address: "localhost",
-			Port:    8000,
-		},
-	})
-	// Add the daemon to the database.
-	err = AddDaemon(db, daemon)
+	daemon1 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{{
+		Type:    AccessPointControl,
+		Address: "localhost",
+		Port:    8000,
+	}})
+	daemon2 := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{{
+		Type:    AccessPointControl,
+		Address: "localhost",
+		Port:    8000,
+	}})
+	// Add the daemons to the database.
+	err = AddDaemon(db, daemon1)
+	require.NoError(t, err)
+	err = AddDaemon(db, daemon2)
 	require.NoError(t, err)
 
 	// Create a shared network and subnet.
@@ -1297,7 +1302,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 							},
 							LocalHosts: []LocalHost{
 								{
-									DaemonID:   daemon.ID,
+									DaemonID:   daemon1.ID,
 									DataSource: HostDataSourceConfig,
 									IPReservations: []IPReservation{
 										{
@@ -1310,7 +1315,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					},
 					LocalSubnets: []*LocalSubnet{
 						{
-							DaemonID:      daemon.ID,
+							DaemonID:      daemon1.ID,
 							LocalSubnetID: 13,
 							UserContext: map[string]any{
 								"subnet-name": "foo",
@@ -1321,7 +1326,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSharedNetworks: []*LocalSharedNetwork{
 				{
-					DaemonID: daemon.ID,
+					DaemonID: daemon1.ID,
 					DHCPOptionSet: DHCPOptionSet{
 						Hash: "xyz",
 					},
@@ -1342,7 +1347,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 					},
 					LocalHosts: []LocalHost{
 						{
-							DaemonID:   daemon.ID,
+							DaemonID:   daemon1.ID,
 							DataSource: HostDataSourceConfig,
 							IPReservations: []IPReservation{
 								{
@@ -1355,7 +1360,11 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			},
 			LocalSubnets: []*LocalSubnet{
 				{
-					DaemonID: daemon.ID,
+					DaemonID: daemon1.ID,
+					SubnetID: 14,
+				},
+				{
+					DaemonID: daemon2.ID,
 					SubnetID: 14,
 				},
 			},
@@ -1375,7 +1384,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.Equal(t, "192.0.2.0/24", returnedSubnets[0].Prefix)
 	require.NotNil(t, returnedSubnets[0].LocalSubnets[0].UserContext)
 
-	require.Len(t, returnedSubnets[1].LocalSubnets, 1)
+	require.Len(t, returnedSubnets[1].LocalSubnets, 2)
 	require.Equal(t, "192.0.3.0/24", returnedSubnets[1].Prefix)
 	require.Nil(t, returnedSubnets[1].LocalSubnets[0].UserContext)
 
@@ -1389,13 +1398,13 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
-	require.EqualValues(t, daemon.ID, returnedHosts[0].LocalHosts[0].DaemonID)
+	require.EqualValues(t, daemon1.ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	returnedHosts, err = GetHostsBySubnetID(db, returnedSubnets[1].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
-	require.EqualValues(t, daemon.ID, returnedHosts[0].LocalHosts[0].DaemonID)
+	require.EqualValues(t, daemon1.ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	// Make sure we can commit the networks again without an error.
 	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets)
@@ -1746,7 +1755,7 @@ func TestUpdateSubnet(t *testing.T) {
 	createdAt := subnet.CreatedAt
 	require.NotZero(t, createdAt)
 
-	err = AddLocalSubnets(db, subnet)
+	err = SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 
 	// Act
@@ -1778,7 +1787,7 @@ func TestUpdateSubnet(t *testing.T) {
 
 	err = updateSubnet(db, subnet)
 	require.NoError(t, err)
-	err = AddLocalSubnets(db, subnet)
+	err = SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 
 	// Assert
@@ -1826,7 +1835,7 @@ func TestDeleteSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, subnet)
+	err = SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 
 	// Try to delete non-existing subnet. It should fail.
@@ -1889,9 +1898,9 @@ func TestAddAndClearSubnetPools(t *testing.T) {
 	}
 
 	_ = AddSubnet(db, subnetFoo)
-	_ = AddLocalSubnets(db, subnetFoo)
+	_ = SetLocalSubnets(db, subnetFoo)
 	_ = AddSubnet(db, subnetBar)
-	_ = AddLocalSubnets(db, subnetBar)
+	_ = SetLocalSubnets(db, subnetBar)
 
 	// Act
 	subnetFoo.LocalSubnets[0].AddressPools[2].UpperBound = "3001:3::42"
@@ -2326,7 +2335,7 @@ func TestGetMaxLocalSubnetID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 
-		err = AddLocalSubnets(db, &subnets[i])
+		err = SetLocalSubnets(db, &subnets[i])
 		require.NoError(t, err)
 	}
 
@@ -2366,7 +2375,7 @@ func TestGetMaxLocalSubnetIDNullValues(t *testing.T) {
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 
-		err = AddLocalSubnets(db, &subnets[i])
+		err = SetLocalSubnets(db, &subnets[i])
 		require.NoError(t, err)
 	}
 

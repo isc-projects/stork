@@ -84,7 +84,7 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, &subnet)
+	err = SetLocalSubnets(db, &subnet)
 	require.NoError(t, err)
 
 	pool := AddressPool{
@@ -136,7 +136,7 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, &subnet)
+	err = SetLocalSubnets(db, &subnet)
 	require.NoError(t, err)
 
 	pool := PrefixPool{
@@ -305,7 +305,7 @@ func TestAddressPoolUpdateStats(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, &subnet)
+	err = SetLocalSubnets(db, &subnet)
 	require.NoError(t, err)
 
 	pool := AddressPool{
@@ -356,7 +356,7 @@ func TestPrefixPoolUpdateStats(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
-	err = AddLocalSubnets(db, &subnet)
+	err = SetLocalSubnets(db, &subnet)
 	require.NoError(t, err)
 
 	pdPool := PrefixPool{
