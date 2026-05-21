@@ -5063,6 +5063,9 @@ func TestCommitSubnetUpdate(t *testing.T) {
 					}
 				}
 			}`, serverTag)
+		default:
+			require.FailNow(t, "unsupported hook library")
+			return nil
 		}
 		err = server.Configure(config)
 		require.NoError(t, err)
