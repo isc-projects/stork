@@ -1,0 +1,10 @@
+25-May-2026 10:01:01.000 zone isc.example.org/IN Transfer started.
+25-May-2026 10:02:00.000 zone good.example.org/IN Transfer started.
+25-May-2026 10:03:00.000 zone bad.example.org/IN Transfer started.
+25-May-2026 10:04:00.000 0x7ffff8e41000: transfer of 'isc.example.org/IN' from 1.1.1.1#53: Transfer completed: 123 messages, 1024 records, 100000 bytes, 1.5 secs (750000 bytes/sec) (serial 20260525)
+25-May-2026 10:05:00.000 zone max.example.org/IN Transfer started.
+25-May-2026 10:06:00.000 0x7ffff8e41000: transfer of 'max.example.org/IN' from 1.1.1.1#53: Transfer completed: 123 messages, 1024 records, 100000 bytes, 1.5 secs (750000 bytes/sec) (serial 20260525)
+25-May-2026 10:07:00.000 zone bad.example.org/IN: refresh: unexpected rcode (REFUSED) from primary 1.1.1.1#53 (source 0.0.0.0#0)
+25-May-2026 10:08:00.000 0x7ffff8e41000: transfer of good.example.org/IN' from 1.1.1.1#53: Transfer completed: 123 messages, 1024 records, 100000 bytes, 1.5 secs (750000 bytes/sec) (serial 20260525)
+25-May-2026 10:09:00.000 zone good.example.org/IN Transfer started.
+25-May-2026 10:10:00.000 zone isc.example.org/IN Transfer started.

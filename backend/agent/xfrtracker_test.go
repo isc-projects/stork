@@ -2,9 +2,11 @@ package agent
 
 import (
 	"bufio"
+	"context"
 	_ "embed"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"testing/synctest"
@@ -16,8 +18,14 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-//go:embed testdata/xfr-mixed-logs.txt
-var xfrMixedLogs string
+var (
+	//go:embed testdata/xfr-mixed-logs.txt
+	xfrMixedLogs string
+	//go:embed testdata/xfr-only-logs.txt
+	xfrOnlyLogs string
+	//go:embed testdata/xfr-only-logs2.txt
+	xfrOnlyLogs2 string
+)
 
 // Test instantiating the XFR tracker.
 func TestNewXfrTracker(t *testing.T) {
@@ -652,6 +660,132 @@ func TestXfrTrackerFeed(t *testing.T) {
 	require.Equal(t, completed[3].duration, 52*time.Millisecond)
 	require.EqualValues(t, completed[3].serial, 2026041600)
 	require.Equal(t, completed[3].message, "AXFR ended: 79 messages, 24872 records, 1320233 bytes, 0.052 secs (25389096 bytes/sec) (serial 2026041600)")
+}
+
+// Test that existing completed and ongoing zone transfers can be returned, and the
+// subsequent zone transfers can be followed over the channel.
+func TestXfrTrackerFollow(t *testing.T) {
+	// Create the zone tracker with no log tracker. We will be
+	// feeding the zone tracker on our own.
+	xfrTracker := newXfrTracker(nil)
+	// Get the first package of logs and push them to the tracker.
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+	// Create a context to cancel the follow session.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Get the existing zone transfers and request following.
+	completed, ongoing, followChan := xfrTracker.follow(ctx)
+	require.Len(t, slices.Collect(completed), 3)
+	require.Len(t, slices.Collect(ongoing), 3)
+	require.NotNil(t, followChan)
+
+	// Collect the zone transfers from the channel. There is no need to
+	// protect it with the mutex because we don't read while the session
+	// is active.
+	followedStates := make([]xfrState, 0)
+
+	// We will be waiting on this channel to ensure the goroutine has ended.
+	closeChan := make(chan struct{})
+	go func() {
+		defer close(closeChan)
+		for {
+			select {
+			case state := <-followChan:
+				followedStates = append(followedStates, state)
+			case <-ctx.Done():
+				// Use the same context we're using for following to stop this goroutine.
+				return
+			}
+		}
+	}()
+
+	// Push the second chunk of logs to the tracker. They should be sent over the channel.
+	xfrOnlyLogs2 := strings.Split(xfrOnlyLogs2, "\n")
+	for _, logLine := range xfrOnlyLogs2 {
+		xfrTracker.feed(logLine)
+	}
+	// For the blocking channel all zone transfers should have been received.
+	// We can safely cancel the context and wait for the goroutine to end.
+	cancel()
+	<-closeChan
+
+	// Verify that we have received all the zone transfers over the channel.
+	require.Len(t, followedStates, 5)
+	require.Equal(t, followedStates[0].zoneName, "good.example.org")
+	require.Equal(t, followedStates[0].status, xfrStatusCompleted)
+	require.Equal(t, followedStates[1].zoneName, "isc.example.org")
+	require.Equal(t, followedStates[1].status, xfrStatusCompleted)
+	require.Equal(t, followedStates[2].zoneName, "bad.example.org")
+	require.Equal(t, followedStates[2].status, xfrStatusStarted)
+	require.Equal(t, followedStates[3].zoneName, "max.example.org")
+	require.Equal(t, followedStates[3].status, xfrStatusStarted)
+	require.Equal(t, followedStates[4].zoneName, "max.example.org")
+	require.Equal(t, followedStates[4].status, xfrStatusCompleted)
+}
+
+// Test that when the follow session is restarted, the new channel is returned.
+func TestXfrTrackerFollowReconnect(t *testing.T) {
+	// Create the zone tracker with no log tracker. We will be
+	// feeding the zone tracker on our own.
+	xfrTracker := newXfrTracker(nil)
+	// Get the first package of logs and push them to the tracker.
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+	// Create a context to cancel the follow session.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Get the existing zone transfers and request following.
+	completed, ongoing, followChan := xfrTracker.follow(ctx)
+	require.Len(t, slices.Collect(completed), 3)
+	require.Len(t, slices.Collect(ongoing), 3)
+	require.NotNil(t, followChan)
+
+	// Collect the zone transfers from the channel.
+	ctx2, cancel2 := context.WithCancel(context.Background())
+	defer cancel2()
+
+	closeChan := make(chan struct{})
+	go func() {
+		defer close(closeChan)
+		for {
+			select {
+			case <-followChan:
+			case <-ctx2.Done():
+				return
+			}
+		}
+	}()
+
+	// Push the second chunk of logs to the tracker. They should be sent over the channel.
+	xfrOnlyLogs2 := strings.Split(xfrOnlyLogs2, "\n")
+	for _, logLine := range xfrOnlyLogs2 {
+		xfrTracker.feed(logLine)
+	}
+
+	// Call the function again. It should interrupt the active session, and return the
+	// new values.
+	completed, ongoing, followChan2 := xfrTracker.follow(ctx)
+	require.Len(t, slices.Collect(completed), 6)
+	require.Len(t, slices.Collect(ongoing), 1)
+	require.NotNil(t, followChan2)
+	require.NotEqual(t, followChan, followChan2)
+
+	// Make sure that the goroutine has ended.
+	cancel2()
+	<-closeChan
+
+	// Cancel the session. It should release the resources.
+	xfrTracker.cancelFollow()
+	require.Nil(t, xfrTracker.followChan)
+	require.Nil(t, xfrTracker.followCtx)
+	require.Nil(t, xfrTracker.followCancelFn)
 }
 
 // Test feeding the XFR tracker with started and connected log lines.

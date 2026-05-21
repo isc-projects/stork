@@ -3,6 +3,7 @@ package agent
 import (
 	"container/list"
 	"context"
+	"iter"
 	"slices"
 	"strconv"
 	"strings"
@@ -92,7 +93,10 @@ type xfrTracker struct {
 	cancelFn context.CancelFunc
 	// The channel used to wait for the cancellation of the goroutine that consumes the
 	// log lines.
-	cancelCh chan struct{}
+	cancelCh       chan struct{}
+	followChan     chan xfrState
+	followCtx      context.Context
+	followCancelFn context.CancelFunc
 	// The list of started zone transfers.
 	startedList list.List
 	// The map of started zone transfers indexed by the state key.
@@ -196,6 +200,8 @@ func (t *xfrTracker) trackSystemdUnit(unitName string) (err error) {
 // Stops the XFR tracker. It stops the subscriptions, cancels the goroutine that
 // consumes the log lines, and releases the resources.
 func (t *xfrTracker) stop() {
+	// Stop following the zone transfers.
+	t.cancelFollow()
 	// Stop the subscriptions.
 	if t.cancelFn != nil {
 		t.cancelFn()
@@ -275,7 +281,6 @@ func (t *xfrTracker) feed(logLine string) {
 	}
 
 	t.mutex.Lock()
-	defer t.mutex.Unlock()
 
 	// Check if the zone transfer state already exists.
 	var currState *xfrState
@@ -283,6 +288,7 @@ func (t *xfrTracker) feed(logLine string) {
 	if ok && element != nil {
 		st, ok := element.Value.(*xfrState)
 		if !ok {
+			t.mutex.Unlock()
 			return
 		}
 		currState = st
@@ -337,14 +343,36 @@ func (t *xfrTracker) feed(logLine string) {
 			t.completedList.Remove(t.completedList.Front())
 		}
 	}
+	t.mutex.Unlock()
+
+	t.mutex.Lock()
+	if t.followChan != nil && t.followCtx != nil {
+		select {
+		case t.followChan <- *newState:
+		case <-t.followCtx.Done():
+		}
+	}
+	t.mutex.Unlock()
+}
+
+func (t *xfrTracker) getNotCompletedUnsafe() []xfrState {
+	states := make([]xfrState, 0, t.startedList.Len())
+	for element := t.startedList.Front(); element != nil; element = element.Next() {
+		states = append(states, *element.Value.(*xfrState))
+	}
+	return states
 }
 
 // Returns the list of ongoing or stuck zone transfers. It is safe for concurrent use.
 func (t *xfrTracker) getNotCompleted() []xfrState {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
-	states := make([]xfrState, 0, t.startedList.Len())
-	for element := t.startedList.Front(); element != nil; element = element.Next() {
+	return t.getNotCompletedUnsafe()
+}
+
+func (t *xfrTracker) getCompletedUnsafe() []xfrState {
+	states := make([]xfrState, 0, t.completedList.Len())
+	for element := t.completedList.Front(); element != nil; element = element.Next() {
 		states = append(states, *element.Value.(*xfrState))
 	}
 	return states
@@ -354,11 +382,75 @@ func (t *xfrTracker) getNotCompleted() []xfrState {
 func (t *xfrTracker) getCompleted() []xfrState {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
-	states := make([]xfrState, 0, t.completedList.Len())
-	for element := t.completedList.Front(); element != nil; element = element.Next() {
-		states = append(states, *element.Value.(*xfrState))
+	return t.getCompletedUnsafe()
+}
+
+// Returns the collection of completed and ongoing zone transfers as well as the
+// channel to receive live updates about future zone transfers. The output from this
+// function is meant to be consumed by the gRPC API handler returning the stream of
+// zone transfers to the server. There may be only one caller receiving the updates
+// over the channel. If the function is called again while the updates are being consumed,
+// the channel is closed and the new channel is returned. In order to stop receiving the
+// updates, the caller should cancel the context passed as an argument.
+func (t *xfrTracker) follow(ctx context.Context) (completed iter.Seq[xfrState], ongoing iter.Seq[xfrState], followChan <-chan xfrState) {
+	t.mutex.Lock()
+	if t.followChan != nil {
+		// We are already following the zone transfers. Let's cancel the
+		// existing session, so it can be restarted.
+		t.cancelFollowUnsafe()
 	}
-	return states
+	// Create a new channel to receive the live updates about future zone transfers.
+	ch := make(chan xfrState)
+	t.followChan = ch
+	followChan = ch
+
+	// Wrap the context with another cancel context, so we can stop the goroutine
+	// in cancelFollowUnsafe(), if needed.
+	t.followCtx, t.followCancelFn = context.WithCancel(ctx)
+	followCtx := t.followCtx
+
+	// Get the list of ongoing and completed zone transfers before the lock is released.
+	ongoing = slices.Values(t.getNotCompletedUnsafe())
+	completed = slices.Values(t.getCompletedUnsafe())
+	t.mutex.Unlock()
+
+	// Start the goutine to cancel the session if the context is cancelled.
+	go func() {
+		<-followCtx.Done()
+		t.mutex.Lock()
+		defer t.mutex.Unlock()
+		if t.followChan == followChan {
+			// We're here when the caller cancelled the context (e.g., gRPC stream is closed).
+			// Let's close the channel and release the resources.
+			t.cancelFollowUnsafe()
+		}
+	}()
+
+	return
+}
+
+// Cancels the zone transfer following session. It is not safe for concurrent use
+// and should be called under the mutex.
+func (t *xfrTracker) cancelFollowUnsafe() {
+	if t.followCancelFn != nil {
+		// Make sure that the child context is cancelled.
+		t.followCancelFn()
+	}
+	if t.followChan != nil {
+		// Close the channel to signal the caller that the session is cancelled.
+		close(t.followChan)
+	}
+	// Release the resources.
+	t.followChan = nil
+	t.followCtx = nil
+	t.followCancelFn = nil
+}
+
+// Cancels the zone transfer following session. It is safe for concurrent use.
+func (t *xfrTracker) cancelFollow() {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	t.cancelFollowUnsafe()
 }
 
 // Parses the time at the position of the iterator. It recognizes both RFC3339 and
