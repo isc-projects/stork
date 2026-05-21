@@ -4602,7 +4602,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 
 // Tests that applying subnet update for cb_cmds daemons keeps the subnet in
 // the config backend even if it clears a server-tag association.
-func TestApplySubnetUpdateToConfigBackendWithRemovedSubnet(t *testing.T) {
+func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
 		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
 	})
