@@ -53,8 +53,8 @@ func (hm *HookManager) Unauthenticate(ctx context.Context, authenticationMethodI
 }
 
 // Callout to obtain the metadata of the authentication method provided by a hook.
-func (hm *HookManager) GetAuthenticationMetadata() []authenticationcallouts.AuthenticationMetadata {
-	return hooksutil.CallSequential(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) authenticationcallouts.AuthenticationMetadata {
+func (hm *HookManager) GetAuthenticationMetadata() []authdata.AuthenticationMetadata {
+	return hooksutil.CallSequential(hm.GetExecutor(), func(carrier authenticationcallouts.AuthenticationCallouts) authdata.AuthenticationMetadata {
 		return carrier.GetMetadata()
 	})
 }

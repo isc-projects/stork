@@ -29,7 +29,7 @@ type authenticationCalloutCarrier interface { //nolint:unused
 	hooks.CalloutCarrier
 }
 
-//go:generate mockgen -package=restservice -destination=authenticationcalloutsmock_test.go -source=../../hooks/server/authenticationcallouts/authenticationcallouts.go isc.org/server/hookmanager AuthenticationMetadata
+//go:generate mockgen -package=restservice -destination=authenticationcalloutsmock_test.go -source=../authdata/authdata.go isc.org/server/hookmanager AuthenticationMetadata
 //go:generate mockgen -package=restservice -destination=authenticationcalloutcarriermock_test.go -source=restservice_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier
 
 // Tests instantiating RestAPI.

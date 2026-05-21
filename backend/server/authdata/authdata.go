@@ -1,5 +1,7 @@
 package authdata
 
+import "io"
+
 // User group ID enum.
 type UserGroupID int
 
@@ -24,4 +26,20 @@ type User struct {
 	// map the authentication API identifiers.
 	Groups                  []UserGroupID
 	ExternallyManagedGroups bool // If external authenticator wants to manage user groups, this should be set to true.
+}
+
+// The metadata of the authentication method is used to display a selector on
+// the login page. All external authentication methods (LDAP, OIDC, etc.)
+// should implement this interface.
+type AuthenticationMetadata interface {
+	// Returns unique, fixed ID of the authentication method.
+	GetID() string
+	// Returns a name of the authentication method.
+	GetName() string
+	// Returns a description of the authentication method.
+	GetDescription() string
+	// Returns an icon of the authentication method in the PNG format.
+	// The resource should be open only on demand. Caller is responsible for
+	// closing the reader.
+	GetIcon() (io.ReadCloser, error)
 }

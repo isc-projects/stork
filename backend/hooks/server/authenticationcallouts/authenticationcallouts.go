@@ -2,31 +2,15 @@ package authenticationcallouts
 
 import (
 	"context"
-	"io"
 	"net/http"
 
 	"isc.org/stork/server/authdata"
 )
 
-// The metadata of the authentication method is used to display a selector on
-// the login page.
-type AuthenticationMetadata interface {
-	// Returns unique, fixed ID of the authentication method.
-	GetID() string
-	// Returns a name of the authentication method.
-	GetName() string
-	// Returns a description of the authentication method.
-	GetDescription() string
-	// Returns an icon of the authentication method in the PNG format.
-	// The resource should be open only on demand. Caller is responsible for
-	// closing the reader.
-	GetIcon() (io.ReadCloser, error)
-}
-
 // The metadata of the authentication method that uses the data from the login
-// form. Currently, we expect that all methods implement this interface.
-// The non-form flow (e.g.: OpenID Connect, Basic Auth, Bearer Token, JWT) are
-// not supported.
+// form. Currently, we expect that LDAP method implements this interface.
+// The non-form flow (e.g.: OpenID Connect, Basic Auth, Bearer Token, JWT) should
+// not implement it.
 type AuthenticationMetadataForm interface {
 	// Returns a label for the identifier field in the login form on UI.
 	GetIdentifierFormLabel() string
@@ -48,8 +32,5 @@ type AuthenticationCallouts interface {
 	// on the UI. The metadata object should also implement the interface
 	// specific to the flow of providing credentials
 	// (e.g.: "AuthenticationMetadataForm" - for form-based).
-	// Note: Other flows are unsupported but expected in the future as
-	// redirecting to external authentication provider, Single Sign On, Basic
-	// Auth, Token-based authentication, or Multi-Factor authentication
-	GetMetadata() AuthenticationMetadata
+	GetMetadata() authdata.AuthenticationMetadata
 }
