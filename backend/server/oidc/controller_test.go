@@ -479,3 +479,99 @@ func TestSanitizeReturnURL(t *testing.T) {
 		require.EqualValues(t, "/", u)
 	})
 }
+
+// Test if OIDC middleware is not transparent if OIDC was configured
+// and the request URL path matches OIDC callback endpoint.
+func TestMiddlewareHandlesCallbackEndpoint(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := controller.Middleware(nextHandler)
+
+	// Act
+	req := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state=state", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp.StatusCode)
+	require.Greater(t, len(resp.Header), 2)
+	// Check auth_session cookie.
+	require.Contains(t, resp.Header, "Set-Cookie")
+	require.Contains(t, resp.Header.Get("Set-Cookie"), "auth_session")
+	// Check redirect Location header. It should have the login URL path in the redirection URL.
+	require.Contains(t, resp.Header, "Location")
+	require.Contains(t, resp.Header.Get("Location"), "/login")
+}
+
+// Helper function populating cookies from HTTP response to new HTTP request.
+// Used to keep session between httptest Requests.
+func populateCookies(from *http.Response, to *http.Request) {
+	for _, c := range from.Cookies() {
+		to.AddCookie(c)
+	}
+}
+
+// Test that callback handler handles error in the redirection URL.
+func TestCallbackEndpointHandlesError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := controller.Middleware(nextHandler)
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state+"&error=123&error_description=testError", nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	handler.ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp2.Header, "Location")
+	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
+}
