@@ -4508,6 +4508,13 @@ func TestApplySubnetUpdate(t *testing.T) {
 	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
 	require.Len(t, commands, 9)
+	expectedCommandCounts := map[keactrl.CommandName]int{
+		keactrl.Subnet4Update: 2,
+		keactrl.Subnet4Add:    1,
+		keactrl.Subnet4Del:    1,
+		keactrl.ConfigWrite:   4,
+		keactrl.ConfigReload:  1,
+	}
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
@@ -4515,8 +4522,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
 
-		switch {
-		case i < 2:
+		switch command.Command {
+		case keactrl.Subnet4Update:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-update",
@@ -4536,7 +4543,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case i == 2:
+		case keactrl.Subnet4Add:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-add",
@@ -4556,7 +4563,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case i == 3:
+		case keactrl.Subnet4Del:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-del",
@@ -4566,7 +4573,7 @@ func TestApplySubnetUpdate(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case i == 6:
+		case keactrl.ConfigReload:
 			require.JSONEq(t,
 				`{
 					"command": "config-reload",
@@ -4583,6 +4590,13 @@ func TestApplySubnetUpdate(t *testing.T) {
 		}
 		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
+
+		expectedCommandCounts[command.Command]--
+	}
+
+	// Verify that the expected number of each command type is present.
+	for command, count := range expectedCommandCounts {
+		require.Zero(t, count, "command '%s' was not called expected number of times", command)
 	}
 }
 
@@ -4689,8 +4703,9 @@ func TestApplySubnetUpdateToConfigBackendWithRemovedSubnet(t *testing.T) {
 	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
 }
 
-// Test committing updated subnet, i.e. actually sending control commands to Kea.
-func TestCommitSubnetUpdate(t *testing.T) {
+// Test committing updated subnet, i.e. actually sending control commands to Kea
+// with the subnet_cmds hook loaded.
+func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -4827,6 +4842,459 @@ func TestCommitSubnetUpdate(t *testing.T) {
 				string(marshalled))
 		}
 	}
+
+	// Make sure that the subnet has been updated in the database.
+	updatedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedSubnet)
+	require.Equal(t, "foo", updatedSubnet.ClientClass)
+	require.Len(t, updatedSubnet.LocalSubnets, 2)
+	require.NotNil(t, updatedSubnet.LocalSubnets[0].KeaParameters)
+	require.NotNil(t, updatedSubnet.LocalSubnets[0].KeaParameters.Allocator)
+	require.Equal(t, "random", *updatedSubnet.LocalSubnets[0].KeaParameters.Allocator)
+	require.NotNil(t, updatedSubnet.LocalSubnets[1].KeaParameters)
+	require.NotNil(t, updatedSubnet.LocalSubnets[1].KeaParameters.Allocator)
+	require.Equal(t, "random", *updatedSubnet.LocalSubnets[1].KeaParameters.Allocator)
+}
+
+// Test committing updated subnet, i.e. actually sending control commands to
+// many Kea servers with various hook loaded.
+// In this test, we have three daemons with subnet_cmds hook and three daemons
+// with cb_cmds hook managing the same subnet.
+// We update the subnet, assign it to new daemons and unassign it from some of
+// the old daemons.
+func TestCommitSubnetUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	var daemonIdx int64 = 1
+	createDaemon := func(hook keaconfig.SubnetAndSharedNetworkAlteringHookLibrary) *dbmodel.Daemon {
+		server, err := dbmodeltest.NewKeaDHCPv4Server(db)
+		require.NoError(t, err)
+		serverTag := fmt.Sprintf("tag-%d", daemonIdx)
+		daemonIdx++
+		var config string
+		switch hook {
+		case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
+			config = fmt.Sprintf(`{
+				"Dhcp4": {
+					"server-tag": "%s",
+					"hooks-libraries": [
+						{
+							"library": "libdhcp_subnet_cmds.so"
+						}
+					]
+				}
+			}`, serverTag)
+		case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds:
+			config = fmt.Sprintf(`{
+				"Dhcp4": {
+					"server-tag": "%s",
+					"hooks-libraries": [
+						{
+							"library": "libdhcp_cb_cmds.so"
+						}
+					],
+					"config-control": {
+						"config-databases": [
+							{
+								"name": "keatest",
+								"host": "localhost",
+								"port": 3306,
+								"type": "mysql"
+							}
+						]
+					}
+				}
+			}`, serverTag)
+		}
+		err = server.Configure(config)
+		require.NoError(t, err)
+		daemon, err := server.GetDaemon()
+		require.NoError(t, err)
+		return daemon
+	}
+
+	daemonSubnetCmds1 := createDaemon(keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemonSubnetCmds2 := createDaemon(keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemonSubnetCmds2.Version = "2.5.0"
+	require.NoError(t, dbmodel.UpdateDaemon(db, daemonSubnetCmds2))
+	daemonSubnetCmds3 := createDaemon(keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemonCBCmds1 := createDaemon(keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemonCBCmds2 := createDaemon(keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+	daemonCBCmds3 := createDaemon(keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
+
+	sharedNetwork := &dbmodel.SharedNetwork{
+		Name:   "foo",
+		Family: 4,
+	}
+	err := dbmodel.AddSharedNetwork(db, sharedNetwork)
+	require.NoError(t, err)
+
+	subnet := &dbmodel.Subnet{
+		Prefix:          "192.0.2.0/24",
+		SharedNetworkID: sharedNetwork.ID,
+	}
+	err = dbmodel.AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	require.NoError(t, dbmodel.AddDaemonToSubnet(db, subnet, daemonSubnetCmds1))
+	require.NoError(t, dbmodel.AddDaemonToSubnet(db, subnet, daemonSubnetCmds2))
+	require.NoError(t, dbmodel.AddDaemonToSubnet(db, subnet, daemonCBCmds1))
+	require.NoError(t, dbmodel.AddDaemonToSubnet(db, subnet, daemonCBCmds2))
+
+	subnet, err = dbmodel.GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.Len(t, subnet.LocalSubnets, 4)
+
+	daemonIDs := []int64{
+		daemonSubnetCmds1.ID,
+		daemonSubnetCmds2.ID,
+		daemonSubnetCmds3.ID,
+		daemonCBCmds1.ID,
+		daemonCBCmds2.ID,
+		daemonCBCmds3.ID,
+	}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemonIDs...)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: subnet,
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Copy the subnet and modify it. The modifications should be applied in
+	// the database upon commit.
+	modifiedSubnet := *subnet
+	modifiedSubnet.LocalSubnets = []*dbmodel.LocalSubnet{
+		{
+			DaemonID: daemonSubnetCmds2.ID,
+			SubnetID: subnet.ID,
+			KeaParameters: &keaconfig.SubnetParameters{
+				Allocator: storkutil.Ptr("random"),
+			},
+		},
+		{
+			DaemonID: daemonSubnetCmds3.ID,
+			SubnetID: subnet.ID,
+			KeaParameters: &keaconfig.SubnetParameters{
+				Allocator: storkutil.Ptr("random"),
+			},
+		},
+		{
+			DaemonID: daemonCBCmds2.ID,
+			SubnetID: subnet.ID,
+			KeaParameters: &keaconfig.SubnetParameters{
+				Allocator: storkutil.Ptr("random"),
+			},
+		},
+		{
+			DaemonID: daemonCBCmds3.ID,
+			SubnetID: subnet.ID,
+			KeaParameters: &keaconfig.SubnetParameters{
+				Allocator: storkutil.Ptr("random"),
+			},
+		},
+	}
+	err = modifiedSubnet.PopulateDaemons(db)
+	require.NoError(t, err)
+	modifiedSubnet.CreatedAt = time.Time{}
+	modifiedSubnet.ClientClass = "foo"
+
+	ctx, err = module.ApplySubnetUpdate(ctx, &modifiedSubnet)
+	require.NoError(t, err)
+
+	// Committing the subnet should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	// For daemons with subnet_cmds hook:
+	// - 1 subnet4-update for daemonSubnetCmds2
+	// - 1 subnet4-add for daemonSubnetCmds3
+	// - 1 subnet4-del for daemonSubnetCmds1
+	// - 1 network4-subnet-del for daemonSubnetCmds1
+	// - 3 config-write
+	// - 1 config-reload
+	// For daemons with cb_cmds hook:
+	// - 1 remote-subnet4-set for daemonCBCmds2
+	// Total: 9 commands.
+	require.Len(t, agents.RecordedCommands, 9)
+	require.Len(t, agents.RecordedURLs, 9)
+	expectedCommandCounts := map[keactrl.CommandName]int{
+		keactrl.Subnet4Update:     1,
+		keactrl.Subnet4Add:        1,
+		keactrl.Subnet4Del:        1,
+		keactrl.Network4SubnetDel: 1,
+		keactrl.RemoteSubnet4Set:  1,
+		keactrl.ConfigWrite:       3,
+		keactrl.ConfigReload:      1,
+	}
+
+	// Validate the sent command and URL.
+	for _, command := range agents.RecordedCommands {
+		marshalled, err := command.Marshal()
+		require.NoError(t, err)
+		expectedCommandCounts[command.GetCommand()]--
+
+		switch command.GetCommand() {
+		case keactrl.Subnet4Update:
+			require.JSONEq(t, `{
+				"command": "subnet4-update",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"subnet4": [
+						{
+							"id": 0,
+							"subnet": "192.0.2.0/24",
+							"allocator": "random"
+						}
+					]
+				}
+			}`, string(marshalled))
+		case keactrl.Subnet4Add:
+			require.JSONEq(t, `{
+				"command": "subnet4-add",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"subnet4": [
+						{
+							"id": 0,
+							"subnet": "192.0.2.0/24",
+							"allocator": "random"
+						}
+					]
+				}
+			}`, string(marshalled))
+		case keactrl.RemoteSubnet4Set:
+			marshalledStr := string(marshalled)
+			// The daemon order is not deterministic.
+			marshalledStr = strings.ReplaceAll(marshalledStr, "tag-6,tag-5", "tag-5,tag-6")
+
+			require.JSONEq(t, `{
+				"command": "remote-subnet4-set",
+					"service": [ "dhcp4" ],
+				"arguments": {
+					"server-tags": [ "tag-5", "tag-6" ],
+					"subnets": [
+						{
+							"allocator": "random",
+							"id": 0,
+							"shared-network-name": "foo",
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			}`,
+				marshalledStr)
+		case keactrl.Network4SubnetDel:
+			require.JSONEq(t, `{
+				"command": "network4-subnet-del",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"name": "foo",
+					"id": 0
+				}
+			}`, string(marshalled))
+		case keactrl.Subnet4Del:
+			require.JSONEq(t, `{
+				"command": "subnet4-del",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"id": 0
+				}
+			}`, string(marshalled))
+		case keactrl.ConfigWrite:
+			require.JSONEq(t, `{
+				"command": "config-write",
+				"service": [ "dhcp4" ]
+			}`, string(marshalled))
+		case keactrl.ConfigReload:
+			require.JSONEq(t, `{
+				"command": "config-reload",
+				"service": [ "dhcp4" ]
+			}`, string(marshalled))
+		default:
+			require.FailNow(t, "unexpected number of commands")
+		}
+	}
+
+	for commandName, count := range expectedCommandCounts {
+		require.Zero(t, count, "unexpected number of %s commands", commandName)
+	}
+
+	// Make sure that the subnet has been updated in the database.
+	updatedSubnet, err := dbmodel.GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedSubnet)
+	require.Equal(t, "foo", updatedSubnet.ClientClass)
+	require.Len(t, updatedSubnet.LocalSubnets, 4)
+
+	seenDaemonIDs := map[int64]struct{}{}
+	for _, localSubnet := range updatedSubnet.LocalSubnets {
+		require.NotNil(t, localSubnet.KeaParameters)
+		require.NotNil(t, localSubnet.KeaParameters.Allocator)
+		require.Equal(t, "random", *localSubnet.KeaParameters.Allocator)
+		seenDaemonIDs[localSubnet.DaemonID] = struct{}{}
+	}
+	require.Contains(t, seenDaemonIDs, daemonSubnetCmds2.ID)
+	require.Contains(t, seenDaemonIDs, daemonSubnetCmds3.ID)
+	require.Contains(t, seenDaemonIDs, daemonCBCmds2.ID)
+	require.Contains(t, seenDaemonIDs, daemonCBCmds3.ID)
+}
+
+// Test committing updated subnet, i.e. actually sending control commands to Kea
+// with the cb_cmds hook loaded.
+func TestCommitSubnetUpdateCBCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_cb_cmds.so"
+				}
+			],
+			"config-control": {
+				"config-databases": [
+					{
+						"name": "keatest",
+						"host": "localhost",
+						"port": 3306,
+						"type": "mysql"
+					}
+				]
+			}
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	daemon1, err := server1.GetDaemon()
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	daemon2, err := server2.GetDaemon()
+	require.NoError(t, err)
+
+	err = CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
+	require.NoError(t, err)
+
+	daemons, err := dbmodel.GetAllDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	daemonIDs := []int64{daemons[0].ID, daemons[1].ID}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemonIDs...)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: &subnets[0],
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Copy the subnet and modify it. The modifications should be applied in
+	// the database upon commit.
+	modifiedSubnet := subnets[0]
+	err = modifiedSubnet.PopulateDaemons(db)
+	require.NoError(t, err)
+	modifiedSubnet.CreatedAt = time.Time{}
+	modifiedSubnet.ClientClass = "foo"
+	modifiedSubnet.LocalSubnets[0].KeaParameters.Allocator = storkutil.Ptr("random")
+	modifiedSubnet.LocalSubnets[1].KeaParameters.Allocator = storkutil.Ptr("random")
+
+	ctx, err = module.ApplySubnetUpdate(ctx, &modifiedSubnet)
+	require.NoError(t, err)
+
+	// Committing the subnet should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedURLs, 1)
+	require.Len(t, agents.RecordedCommands, 1)
+
+	// Validate the sent command and URL.
+	command := agents.RecordedCommands[0]
+	marshalled, err := command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t,
+		`{
+			"command": "remote-subnet4-set",
+			"service": [
+				"dhcp4"
+			],
+			"arguments": {
+				"server-tags": [
+					"all"
+				],
+				"subnets": [
+					{
+						"allocator": "random",
+						"id": 1,
+						"shared-network-name": "foo",
+						"subnet": "192.0.2.0/24"
+					}
+				]
+			}
+		}`,
+		string(marshalled))
 
 	// Make sure that the subnet has been updated in the database.
 	updatedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
