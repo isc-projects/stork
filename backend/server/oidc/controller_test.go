@@ -17,6 +17,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc/oidctest"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/authdata"
+	dbmodel "isc.org/stork/server/database/model"
 	dbsession "isc.org/stork/server/database/session"
 	dbtest "isc.org/stork/server/database/test"
 )
@@ -51,7 +52,8 @@ func prepareTestOIDCServer() (string, func(), error) {
 				"exp": ` + time.Now().Add(time.Hour).Format("1136239445") + `,
 				"email": "foo@example.org",
 				"email_verified": true,
-				"nonce": "test-nonce"
+				"nonce": "test-nonce",
+				"groups": ["stork-users", "stork-super-admins"]
 			}`
 			token := oidctest.SignIDToken(priv, "test-key", oidc.RS256, rawClaims)
 			resp := map[string]any{
@@ -772,4 +774,189 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
+}
+
+// Test that callback handler handles user not allowed to access Stork.
+func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", GroupsClaim: "groups", MandatoryAllowGroup: "foo"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := nonceModifier(controller.Middleware(nextHandler), controller, "test-nonce")
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp2.Header, "Location")
+	require.Contains(t, resp2.Header.Get("Location"), "/login/unauthorized")
+}
+
+// Test that callback handler authorizes a user.
+func TestCallbackEndpointAuthorizesUser(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	settings := Settings{
+		IssuerURL:           issuerURL,
+		ClientID:            "clientID",
+		GroupsClaim:         "groups",
+		MandatoryAllowGroup: "stork-users",
+		EnableGroupMapping:  true,
+		GroupMapping: GroupMapping{
+			SuperAdmin: CommaSeparatedStrings{"stork-super-admins"},
+		},
+	}
+	controller := NewController(settings, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := nonceModifier(controller.Middleware(nextHandler), controller, "test-nonce")
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to home "/" path.
+	require.Contains(t, resp2.Header, "Location")
+	require.EqualValues(t, resp2.Header.Get("Location"), "/")
+	// Check if user was created in DB.
+	dbUser, err := dbmodel.GetUserByExternalID(db, "oidc", "foo")
+	require.NoError(t, err)
+	require.NotNil(t, dbUser)
+	dbUser, err = dbmodel.GetUserByID(db, dbUser.ID)
+	require.NoError(t, err)
+	require.NotNil(t, dbUser)
+	require.EqualValues(t, "foo@example.org", dbUser.Email)
+	require.NotNil(t, dbUser.Groups)
+	require.Len(t, dbUser.Groups, 1)
+	require.Equal(t, dbmodel.SuperAdminGroupID, dbUser.Groups[0].ID)
+}
+
+// Test that callback handler authorizes a user with group mapping disabled.
+func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	settings := Settings{
+		IssuerURL:           issuerURL,
+		ClientID:            "clientID",
+		GroupsClaim:         "groups",
+		MandatoryAllowGroup: "stork-users",
+	}
+	controller := NewController(settings, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := nonceModifier(controller.Middleware(nextHandler), controller, "test-nonce")
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to home "/" path.
+	require.Contains(t, resp2.Header, "Location")
+	require.EqualValues(t, resp2.Header.Get("Location"), "/")
+	// Check if user was created in DB.
+	dbUser, err := dbmodel.GetUserByExternalID(db, "oidc", "foo")
+	require.NoError(t, err)
+	require.NotNil(t, dbUser)
+	dbUser, err = dbmodel.GetUserByID(db, dbUser.ID)
+	require.NoError(t, err)
+	require.NotNil(t, dbUser)
+	require.EqualValues(t, "foo@example.org", dbUser.Email)
+	require.NotNil(t, dbUser.Groups)
+	require.Len(t, dbUser.Groups, 1)
+	require.Equal(t, dbmodel.ReadOnlyGroupID, dbUser.Groups[0].ID)
 }
