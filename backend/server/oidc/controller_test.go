@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,7 +21,8 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
-// Helper function preparing test OIDC server which allows to test OIDC discovery.
+// Helper function preparing test OIDC server which allows to test OIDC discovery
+// and token exchange.
 // It returns server URL as string which should be used as OIDC issuer URL,
 // test server teardown function and an error if such occurred while generating
 // RSA key.
@@ -33,14 +35,42 @@ func prepareTestOIDCServer() (string, func(), error) {
 		PublicKeys: []oidctest.PublicKey{
 			{
 				PublicKey: priv.Public(),
-				KeyID:     "clientID",
+				KeyID:     "test-key",
 				Algorithm: oidc.RS256,
 			},
 		},
 	}
-	srv := httptest.NewServer(s)
-	s.SetIssuer(srv.URL)
-	return srv.URL, srv.Close, nil
+	var serverURL string
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/token":
+			rawClaims := `{
+				"iss": "` + serverURL + `",
+				"aud": "clientID",
+				"sub": "foo",
+				"exp": ` + time.Now().Add(time.Hour).Format("1136239445") + `,
+				"email": "foo@example.org",
+				"email_verified": true,
+				"nonce": "test-nonce"
+			}`
+			token := oidctest.SignIDToken(priv, "test-key", oidc.RS256, rawClaims)
+			resp := map[string]any{
+				"access_token": "fake-access-token",
+				"token_type":   "Bearer",
+				"expires_in":   3600,
+				"id_token":     token,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+			return
+		default:
+			s.ServeHTTP(w, r)
+		}
+	})
+	srv := httptest.NewServer(handler)
+	serverURL = srv.URL
+	s.SetIssuer(serverURL)
+	return serverURL, srv.Close, nil
 }
 
 // Test if OIDC controller can be created.
@@ -566,6 +596,174 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp2.Header, "Location")
+	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
+}
+
+// Helper middleware modifying stored nonces in auth session manager.
+// Useful for testing OIDC callback handler.
+func nonceModifier(h http.Handler, c *Controller, nonce string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		m := c.getAuthSessionMap(r.Context())
+		if m != nil {
+			for k, v := range m {
+				v.Nonce = nonce
+				m[k] = v
+			}
+			c.putAuthSessionMap(r.Context(), m)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+// Test that callback handler handles token exchange error.
+func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	// Modify token endpoint so that token exchange should fail.
+	controller.oauth2Config.Endpoint.TokenURL = "http://localhost/dummyFooBar"
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := controller.Middleware(nextHandler)
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	handler.ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp2.Header, "Location")
+	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
+}
+
+// Test that callback handler handles token response verification error.
+func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	// Construct controller with wrong ClientID that doesn't match with the one in fake OpenID Provider server.
+	// This should cause token response verification error.
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "wrongClientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := controller.Middleware(nextHandler)
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	handler.ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, 302, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp2.Header, "Location")
+	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
+}
+
+// Test that callback handler handles invalid nonce error.
+func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := prepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	// Use invalid nonce.
+	handler := nonceModifier(controller.Middleware(nextHandler), controller, "invalid-nonce")
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, 302, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
 	resp2 := w2.Result()
 	resp2.Body.Close()
 
