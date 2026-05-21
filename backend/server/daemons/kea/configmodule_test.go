@@ -2940,6 +2940,11 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 						}
 					]
 				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
 			]
 		}
 	}`
@@ -3203,6 +3208,11 @@ func TestCommitScheduledSharedNetworkUpdate(t *testing.T) {
 							"subnet": "2001:db8:1::/64"
 						}
 					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
 				}
 			]
 		}
@@ -4347,6 +4357,8 @@ func TestBeginSubnetUpdate(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
 
 	ctx, err := module.BeginSubnetUpdate(context.Background(), subnets[0].ID)
 	require.NoError(t, err)
@@ -4370,24 +4382,27 @@ func TestBeginSubnetUpdate(t *testing.T) {
 
 // Test second stage of a subnet update.
 func TestApplySubnetUpdate(t *testing.T) {
+	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemon1.ID = 1
+	daemon2 := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemon2.ID = 2
+	daemon2.Version = "2.5.0"
+	daemon3 := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemon3.ID = 3
+	daemon3.Version = "2.6.0"
+	daemon4 := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds)
+	daemon4.ID = 4
+	daemon4.Version = "2.6.0"
+
 	// Create dummy subnet to be stored in the context. We will later check if
-	// it is preserved after applying host update.
+	// it is preserved after applying subnet update.
 	subnet := &dbmodel.Subnet{
 		ID:     1,
 		Prefix: "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				DaemonID: 1,
-				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
-					AccessPoints: []*dbmodel.AccessPoint{
-						{
-							Type:    dbmodel.AccessPointControl,
-							Address: "192.0.2.1",
-							Port:    1234,
-						},
-					},
-				},
+				DaemonID: daemon1.ID,
+				Daemon:   daemon1,
 				AddressPools: []dbmodel.AddressPool{
 					{
 						LowerBound: "192.0.2.10",
@@ -4396,18 +4411,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 				},
 			},
 			{
-				DaemonID: 2,
-				Daemon: &dbmodel.Daemon{
-					Name:    "dhcp4",
-					Version: "2.5.0",
-					AccessPoints: []*dbmodel.AccessPoint{
-						{
-							Type:    dbmodel.AccessPointControl,
-							Address: "192.0.2.2",
-							Port:    2345,
-						},
-					},
-				},
+				DaemonID: daemon2.ID,
+				Daemon:   daemon2,
 				AddressPools: []dbmodel.AddressPool{
 					{
 						LowerBound: "192.0.2.10",
@@ -4416,18 +4421,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 				},
 			},
 			{
-				DaemonID: 3,
-				Daemon: &dbmodel.Daemon{
-					Name:    "dhcp4",
-					Version: "2.6.0",
-					AccessPoints: []*dbmodel.AccessPoint{
-						{
-							Type:    dbmodel.AccessPointControl,
-							Address: "192.0.2.2",
-							Port:    2345,
-						},
-					},
-				},
+				DaemonID: daemon3.ID,
+				Daemon:   daemon3,
 				AddressPools: []dbmodel.AddressPool{
 					{
 						LowerBound: "192.0.2.10",
@@ -4463,17 +4458,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 		Prefix: "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				DaemonID: 1,
-				Daemon: &dbmodel.Daemon{
-					Name: "dhcp4",
-					AccessPoints: []*dbmodel.AccessPoint{
-						{
-							Type:    dbmodel.AccessPointControl,
-							Address: "192.0.2.1",
-							Port:    1234,
-						},
-					},
-				},
+				DaemonID: daemon1.ID,
+				Daemon:   daemon1,
 				AddressPools: []dbmodel.AddressPool{
 					{
 						LowerBound: "192.0.2.100",
@@ -4482,18 +4468,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 				},
 			},
 			{
-				DaemonID: 2,
-				Daemon: &dbmodel.Daemon{
-					Name:    "dhcp4",
-					Version: "2.5.0",
-					AccessPoints: []*dbmodel.AccessPoint{
-						{
-							Type:    dbmodel.AccessPointControl,
-							Address: "192.0.2.2",
-							Port:    2345,
-						},
-					},
-				},
+				DaemonID: daemon2.ID,
+				Daemon:   daemon2,
 				AddressPools: []dbmodel.AddressPool{
 					{
 						LowerBound: "192.0.2.100",
@@ -4502,18 +4478,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 				},
 			},
 			{
-				DaemonID: 4,
-				Daemon: &dbmodel.Daemon{
-					Name:    "dhcp4",
-					Version: "2.6.0",
-					AccessPoints: []*dbmodel.AccessPoint{
-						{
-							Type:    dbmodel.AccessPointControl,
-							Address: "192.0.2.2",
-							Port:    2345,
-						},
-					},
-				},
+				DaemonID: daemon4.ID,
+				Daemon:   daemon4,
 				AddressPools: []dbmodel.AddressPool{
 					{
 						LowerBound: "192.0.2.100",
@@ -4620,6 +4586,109 @@ func TestApplySubnetUpdate(t *testing.T) {
 	}
 }
 
+// Tests that applying subnet update for cb_cmds daemons keeps the subnet in
+// the removed config backend and clears its server-tag association instead of
+// deleting the subnet from the backend.
+func TestApplySubnetUpdateToConfigBackendWithRemovedSubnet(t *testing.T) {
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	newCBDaemon := func(id int64, serverTag string, dbName string, host string, port int64) *dbmodel.Daemon {
+		serverConfig := fmt.Sprintf(`{
+			"Dhcp4": {
+				"server-tag": %q,
+				"hooks-libraries": [{"library": "libdhcp_cb_cmds.so"}],
+				"config-control": {
+					"config-databases": [{"name": %q, "host": %q, "port": %d, "type": "mysql"}]
+				}
+			}
+		}`, serverTag, dbName, host, port)
+		config, err := keaconfig.NewConfig([]byte(serverConfig))
+		require.NoError(t, err)
+
+		return &dbmodel.Daemon{
+			ID:   id,
+			Name: daemonname.DHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				ServerTag: storkutil.Ptr(serverTag),
+				Config:    &dbmodel.KeaConfig{Config: config},
+			},
+		}
+	}
+
+	daemon1 := newCBDaemon(1, "tag-a", "keatest-a", "localhost", 3306)
+	daemon2 := newCBDaemon(2, "tag-b", "keatest-b", "otherhost", 3316)
+
+	key1, err := buildConfigBackendKey(daemon1)
+	require.NoError(t, err)
+	key2, err := buildConfigBackendKey(daemon2)
+	require.NoError(t, err)
+	require.NotEqual(t, key1, key2)
+
+	existingSubnet := &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID:      daemon1.ID,
+				Daemon:        daemon1,
+				LocalSubnetID: 42,
+			},
+			{
+				DaemonID:      daemon2.ID,
+				Daemon:        daemon2,
+				LocalSubnetID: 42,
+			},
+		},
+	}
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemon1.ID, daemon2.ID)
+	recipe := ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: existingSubnet,
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	updatedSubnet := &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID:      daemon1.ID,
+				Daemon:        daemon1,
+				LocalSubnetID: 42,
+			},
+		},
+	}
+
+	ctx, err = module.ApplySubnetUpdate(ctx, updatedSubnet)
+	require.NoError(t, err)
+
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, stateReturned.Updates, 1)
+	commands := stateReturned.Updates[0].Recipe.Commands
+	require.Len(t, commands, 1)
+
+	marshalled, err := commands[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-set",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"server-tags": ["tag-a"]
+		}
+	}`, string(marshalled))
+	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
+}
+
 // Test committing updated subnet, i.e. actually sending control commands to Kea.
 func TestCommitSubnetUpdate(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -4646,6 +4715,11 @@ func TestCommitSubnetUpdate(t *testing.T) {
 							"subnet": "192.0.2.0/24"
 						}
 					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
 				}
 			]
 		}
@@ -4699,6 +4773,8 @@ func TestCommitSubnetUpdate(t *testing.T) {
 	// Copy the subnet and modify it. The modifications should be applied in
 	// the database upon commit.
 	modifiedSubnet := subnets[0]
+	err = modifiedSubnet.PopulateDaemons(db)
+	require.NoError(t, err)
 	modifiedSubnet.CreatedAt = time.Time{}
 	modifiedSubnet.ClientClass = "foo"
 	modifiedSubnet.LocalSubnets[0].KeaParameters.Allocator = storkutil.Ptr("random")
@@ -4803,6 +4879,11 @@ func TestCommitScheduledSubnetUpdate(t *testing.T) {
 						}
 					]
 				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
 			]
 		}
 	}`
@@ -4858,6 +4939,8 @@ func TestCommitScheduledSubnetUpdate(t *testing.T) {
 	// Copy the subnet and modify it. The modifications should be applied in
 	// the database upon commit.
 	modifiedSubnet := subnets[0]
+	err = modifiedSubnet.PopulateDaemons(db)
+	require.NoError(t, err)
 	modifiedSubnet.CreatedAt = time.Time{}
 	modifiedSubnet.ClientClass = "foo"
 	modifiedSubnet.LocalSubnets[0].KeaParameters.Allocator = storkutil.Ptr("random")
@@ -4959,6 +5042,11 @@ func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
 						}
 					]
 				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds.so"
+				}
 			]
 		}
 	}`
@@ -4986,6 +5074,8 @@ func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
 
 	daemonIDs := []int64{daemons[0].ID}
 	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
