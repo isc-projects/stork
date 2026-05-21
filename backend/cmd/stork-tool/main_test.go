@@ -125,6 +125,12 @@ func TestDbOptsHelp(t *testing.T) {
 
 // This test checks if stork-tool --version and -v report expected version.
 func TestVersion(t *testing.T) {
+	// #2482: clear the environment variables so that when we run
+	// `rake unittest:backend_db`, the `STORK_DATABASE_IN_DOCKER` environment variable
+	// doesn't make it into the test environment and cause the executable to warn about
+	// an unknown `STORK_` environment variable.
+	restore := testutil.ClearEnvironmentVariables()
+	defer restore()
 	// Let's repeat the test twice for -v and then for --version
 	for _, opt := range []string{"-v", "--version"} {
 		// Run the agent with specific switch.
@@ -136,13 +142,19 @@ func TestVersion(t *testing.T) {
 		ver := strings.TrimSpace(string(output))
 
 		// Check if it equals expected version.
-		require.Equal(t, ver, stork.Version)
+		require.Equal(t, stork.Version, ver)
 	}
 }
 
 // This test checks if stork-tool --version and -v report expected version.
 // It doesn't call the binary.
 func TestVersionStandalone(t *testing.T) {
+	// #2482: clear the environment variables so that when we run
+	// `rake unittest:backend_db`, the `STORK_DATABASE_IN_DOCKER` environment variable
+	// doesn't make it into the test environment and cause the executable to warn about
+	// an unknown `STORK_` environment variable.
+	restore := testutil.ClearEnvironmentVariables()
+	defer restore()
 	// Arrange
 	app := newApp()
 
