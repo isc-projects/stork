@@ -2781,7 +2781,7 @@ func TestReceiveKeaLeasesNoAccessPoint(t *testing.T) {
 func TestReceiveKeaLeasesConnectionError(t *testing.T) {
 	daemon := &dbmodel.Daemon{
 		Machine: &dbmodel.Machine{
-			Address: "127.0.0.1",
+			Address:   "127.0.0.1",
 			AgentPort: 8080,
 		},
 		AccessPoints: []*dbmodel.AccessPoint{

@@ -144,6 +144,7 @@ func TestInitializeSettingsWithInterval(t *testing.T) {
 	hostsInterval, err5 := GetSettingInt(db, "kea_hosts_puller_interval")
 	stateInterval, err6 := GetSettingInt(db, "state_puller_interval")
 	haStatusInterval, err7 := GetSettingInt(db, "kea_status_puller_interval")
+	leasesPullerInterval, err8 := GetSettingInt(db, "kea_leases_puller_interval")
 
 	// Assert
 	require.NoError(t, err1)
@@ -153,12 +154,14 @@ func TestInitializeSettingsWithInterval(t *testing.T) {
 	require.NoError(t, err5)
 	require.NoError(t, err6)
 	require.NoError(t, err7)
+	require.NoError(t, err8)
 
 	require.EqualValues(t, 42, bind9Interval)
 	require.EqualValues(t, 42, keaStatsInterval)
 	require.EqualValues(t, 42, hostsInterval)
 	require.EqualValues(t, 42, stateInterval)
 	require.EqualValues(t, 42, haStatusInterval)
+	require.EqualValues(t, 42, leasesPullerInterval)
 }
 
 // Check getting and setting settings.

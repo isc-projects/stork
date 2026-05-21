@@ -2,14 +2,14 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
-	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	keadata "isc.org/stork/daemondata/kea"
 	keaconfig "isc.org/stork/daemoncfg/kea"
+	keadata "isc.org/stork/daemondata/kea"
 	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -107,64 +107,64 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 // Verify that [convertSortFieldToColumnName] converts all of the supported sort
 // fields into the correct column names.
 func TestConvertSortFieldToColumnNameHandlesAllCases(t *testing.T) {
-	testCases := []struct{
-		description string
-		sortField string
+	testCases := []struct {
+		description     string
+		sortField       string
 		expectedColName dbmodel.GetLeasesByPageSortColumnName
 	}{
 		{
-			description: "Subnet Prefix",
-			sortField: string(models.LeaseListSortFieldSubnetPrefix),
+			description:     "Subnet Prefix",
+			sortField:       string(models.LeaseListSortFieldSubnetPrefix),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix,
 		},
 		{
-			description: "HW Address",
-			sortField: string(models.LeaseListSortFieldHwAddress),
+			description:     "HW Address",
+			sortField:       string(models.LeaseListSortFieldHwAddress),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameHwAddress,
 		},
 		{
-			description: "IP Address",
-			sortField: string(models.LeaseListSortFieldIPAddress),
+			description:     "IP Address",
+			sortField:       string(models.LeaseListSortFieldIPAddress),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameIPAddress,
 		},
 		{
-			description: "Hostname",
-			sortField: string(models.LeaseListSortFieldHostname),
+			description:     "Hostname",
+			sortField:       string(models.LeaseListSortFieldHostname),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameHostname,
 		},
 		{
-			description: "Client ID",
-			sortField: string(models.LeaseListSortFieldClientID),
+			description:     "Client ID",
+			sortField:       string(models.LeaseListSortFieldClientID),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameClientID,
 		},
 		{
-			description: "DUID",
-			sortField: string(models.LeaseListSortFieldDuid),
+			description:     "DUID",
+			sortField:       string(models.LeaseListSortFieldDuid),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameDuid,
 		},
 		{
-			description: "CLTT",
-			sortField: string(models.LeaseListSortFieldCltt),
+			description:     "CLTT",
+			sortField:       string(models.LeaseListSortFieldCltt),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameCltt,
 		},
 		{
-			description: "Valid Lifetime",
-			sortField: string(models.LeaseListSortFieldValidLifetime),
+			description:     "Valid Lifetime",
+			sortField:       string(models.LeaseListSortFieldValidLifetime),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameValidLifetime,
 		},
 		{
-			description: "PrefixLength",
-			sortField: string(models.LeaseListSortFieldPrefixLength),
+			description:     "PrefixLength",
+			sortField:       string(models.LeaseListSortFieldPrefixLength),
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNamePrefixLength,
 		},
 		{
-			description: "Unknown field",
-			sortField: "potato",
+			description:     "Unknown field",
+			sortField:       "potato",
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameNone,
 		},
 		{
-			description: "Empty string",
-			sortField: "",
+			description:     "Empty string",
+			sortField:       "",
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameNone,
 		},
 	}
@@ -183,14 +183,14 @@ func TestGetLeasesPropagatesErrorFromGetLeasesByPage(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-			ctx := context.Background()
-		fec := &storktest.FakeEventCenter{}
-		rapi, err := NewRestAPI(dbSettings, db, fec)
-		require.NoError(t, err)
+	ctx := context.Background()
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(dbSettings, db, fec)
+	require.NoError(t, err)
 
-		ctx, err = rapi.SessionManager.Load(ctx, "")
-		require.NoError(t, err)
-	
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
 	// Act
 	filters := dbmodel.LeasesByPageFilters{}
 	db.Close()
@@ -362,7 +362,7 @@ func TestGetLeaseListPropagatesErrorFromGetLeases(t *testing.T) {
 // following test.
 func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel.Machine) {
 	machine := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := dbmodel.AddMachine(db, machine)
@@ -370,10 +370,10 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 
 	accessPoint := []*dbmodel.AccessPoint{
 		{
-			Type: dbmodel.AccessPointControl,
+			Type:    dbmodel.AccessPointControl,
 			Address: "cool.example.org",
-			Port: int64(1234),
-			Key: "",
+			Port:    int64(1234),
+			Key:     "",
 		},
 	}
 
@@ -400,14 +400,14 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 		Prefix: "2001:db8:1::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-			DaemonID: daemon.ID,
-			LocalSubnetID: 123,
-			AddressPools: []dbmodel.AddressPool{
-				{
-					LowerBound: "2001:db8:1::1",
-					UpperBound: "2001:db8:1::ffff",
+				DaemonID:      daemon.ID,
+				LocalSubnetID: 123,
+				AddressPools: []dbmodel.AddressPool{
+					{
+						LowerBound: "2001:db8:1::1",
+						UpperBound: "2001:db8:1::ffff",
+					},
 				},
-			},
 			},
 		},
 	}
@@ -419,12 +419,12 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 			DaemonID: daemon.ID,
 			SubnetID: subnet.ID,
 			Lease: keadata.Lease{
-				Family: 6,
-				DUID: "00:01:02:03:04:05:06:07",
-				IPAddress: "2001:db8:1::404",
-				CLTT: 10002,
-				Hostname: "client.example",
-				State: keadata.LeaseStateDefault,
+				Family:        6,
+				DUID:          "00:01:02:03:04:05:06:07",
+				IPAddress:     "2001:db8:1::404",
+				CLTT:          10002,
+				Hostname:      "client.example",
+				State:         keadata.LeaseStateDefault,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,
 			},
@@ -433,12 +433,12 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 			DaemonID: daemon.ID,
 			SubnetID: subnet.ID,
 			Lease: keadata.Lease{
-				Family: 6,
-				DUID: "01:02:03:04:05:06:07:08",
-				IPAddress: "2001:db8:1::408",
-				CLTT: 10002,
-				Hostname: "client.example",
-				State: keadata.LeaseStateDefault,
+				Family:        6,
+				DUID:          "01:02:03:04:05:06:07:08",
+				IPAddress:     "2001:db8:1::408",
+				CLTT:          10002,
+				Hostname:      "client.example",
+				State:         keadata.LeaseStateDefault,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,
 			},
@@ -493,15 +493,15 @@ func TestGetLeaseListHandlesParams(t *testing.T) {
 
 	// Act
 	getLeaseListParams := dhcp.GetLeaseListParams{
-		Start: &start,
-		Limit: &limit,
-		SortField: &sortField,
-		SortDir: &sortDir,
-		DaemonID: &daemonID,
-		MachineID: &machineID,
-		SubnetID: &subnetID,
+		Start:         &start,
+		Limit:         &limit,
+		SortField:     &sortField,
+		SortDir:       &sortDir,
+		DaemonID:      &daemonID,
+		MachineID:     &machineID,
+		SubnetID:      &subnetID,
 		LocalSubnetID: &localSubnetID,
-		Text: &filterText,
+		Text:          &filterText,
 	}
 	rsp := rapi.GetLeaseList(ctx, getLeaseListParams)
 

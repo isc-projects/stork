@@ -50,6 +50,7 @@ func TestSettings(t *testing.T) {
 			KeaHostsPullerInterval:       3,
 			KeaStatsPullerInterval:       4,
 			KeaStatusPullerInterval:      5,
+			KeaLeasesPullerInterval:      6,
 			GrafanaURL:                   "http://foo:3000",
 			GrafanaDhcp4DashboardID:      "dhcp4",
 			GrafanaDhcp6DashboardID:      "dhcp6",
@@ -71,6 +72,7 @@ func TestSettings(t *testing.T) {
 	require.EqualValues(t, 3, okRsp.Payload.KeaHostsPullerInterval)
 	require.EqualValues(t, 4, okRsp.Payload.KeaStatsPullerInterval)
 	require.EqualValues(t, 5, okRsp.Payload.KeaStatusPullerInterval)
+	require.EqualValues(t, 6, okRsp.Payload.KeaLeasesPullerInterval)
 
 	require.EqualValues(t, "http://foo:3000", okRsp.Payload.GrafanaURL)
 	require.EqualValues(t, "dhcp4", okRsp.Payload.GrafanaDhcp4DashboardID)
