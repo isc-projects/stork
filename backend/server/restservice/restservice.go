@@ -547,7 +547,13 @@ func (r *RestAPI) Serve() (err error) {
 	if r.TLS {
 		serverAddress.Scheme = "https"
 	}
-	r.OIDCControl.Configure(serverAddress, r.SessionManager)
+	err = r.OIDCControl.Configure(serverAddress, r.SessionManager)
+	if err != nil {
+		// It is not a critical error. Leave server running.
+		log.
+			WithError(err).
+			Error("cannot enable OIDC authentication")
+	}
 	httpServer.Handler = r.GlobalMiddleware(r.handler, serverAddress, s.StaticFilesDir, r.EventCenter, int64(r.Settings.MaxBodySize))
 
 	if r.TLS {

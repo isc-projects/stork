@@ -70,15 +70,15 @@ func NewController(settings Settings, db *dbops.PgDB) *Controller {
 // Configures the controller. It should be called only once at server startup.
 // It requires server URL to construct OIDC redirection URI and the session
 // manager to create sessions for authenticated users.
-func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.SessionMgr) {
+// If configuration was not successful, returns an error.
+func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.SessionMgr) error {
 	if ctl.settings.IssuerURL == "" {
 		// Mandatory setting is missing. Controller will remain not configured.
 		log.Debug("OIDC authentication disabled")
-		return
+		return nil
 	}
 	if ctl.settings.ClientID == "" {
-		log.Error("OIDC authentication can't be used due to missing oidc-client-id setting")
-		return
+		return errors.New("missing mandatory oidc-client-id setting")
 	}
 	ctl.dbSessionManager = dbSessionManager
 	// Prepare in-memory session manager used only for storing OIDC auth data in sessions.
@@ -96,8 +96,7 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 	ctx := context.Background()
 	op, err := oidc.NewProvider(ctx, ctl.settings.IssuerURL)
 	if err != nil {
-		log.WithError(err).Errorf("OIDC discovery failed")
-		return
+		return errors.Wrapf(err, "OIDC discovery failed using issuer %s", ctl.settings.IssuerURL)
 	}
 	tokenVerifier := op.Verifier(&oidc.Config{
 		ClientID: ctl.settings.ClientID,
@@ -126,6 +125,7 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 	ctl.oauth2Config = oauth2Config
 
 	ctl.configured = true
+	return nil
 }
 
 // Provides middleware handling all OIDC-related HTTP requests.

@@ -65,12 +65,14 @@ func TestConfigureSettingMissing(t *testing.T) {
 	require.NotNil(t, controller)
 
 	// Act
-	controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
+	err := controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
 
 	// Assert
+	require.NoError(t, err)
 	require.False(t, controller.configured)
 	controller.settings.IssuerURL = "https://test.idp.org"
-	controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
+	err = controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
+	require.Error(t, err)
 	require.False(t, controller.configured) // ClientID is also mandatory setting.
 }
 
@@ -86,9 +88,10 @@ func TestConfigure(t *testing.T) {
 	require.NotNil(t, controller)
 
 	// Act
-	controller.Configure(url.URL{Scheme: "http", Host: "[::]:8080"}, &dbsession.SessionMgr{})
+	err = controller.Configure(url.URL{Scheme: "http", Host: "[::]:8080"}, &dbsession.SessionMgr{})
 
 	// Assert
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 	require.NotNil(t, controller.authSessionManager)
 	require.Equal(t, "client-secret", controller.oauth2Config.ClientSecret)
@@ -138,7 +141,8 @@ func TestMiddlewareIsTransparent2(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
+	require.NoError(t, err)
 	handler := controller.Middleware(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/", nil) // This URL path does not match OIDC login or callback path.
 	w := httptest.NewRecorder()
@@ -169,7 +173,8 @@ func TestSessionStorage(t *testing.T) {
 	})
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
+	require.NoError(t, err)
 	handler := controller.Middleware(nextHandler)
 	// Additionally force adding session manager context. It shouldn't be added for non-OIDC related URL paths.
 	handler = controller.dbSessionManager.SessionMiddleware(controller.authSessionManager.LoadAndSave(handler))
@@ -279,7 +284,8 @@ func TestGetMappedGroups(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 	receivedGroups := []string{
 		"stork-access", "router-admins",
@@ -417,7 +423,8 @@ func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	controller.Configure(url.URL{Scheme: "https"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
+	require.NoError(t, err)
 	handler := controller.Middleware(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
