@@ -150,22 +150,20 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 	})
 	// Use special helper wrapper to prevent from setting session or auth_session cookie
 	// for requests other than related to OIDC.
-	return ctl.wrapOIDCSession()(handler)
+	return ctl.wrapOIDCSession(handler)
 }
 
-// Helper method which chains the HTTP handler with SCS session manager middlewares
+// Helper middleware which chains the HTTP handler with SCS session manager middlewares
 // only if the request URL path matches any of OIDC-related endpoints.
-func (ctl *Controller) wrapOIDCSession() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		sessionHandler := ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasPrefix(r.URL.Path, loginURLPath) {
-				sessionHandler.ServeHTTP(w, r)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
+func (ctl *Controller) wrapOIDCSession(next http.Handler) http.Handler {
+	sessionHandler := ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, loginURLPath) {
+			sessionHandler.ServeHTTP(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // Helper method reading cache from in-memory session storage.
