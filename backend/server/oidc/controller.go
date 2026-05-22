@@ -314,11 +314,11 @@ func sanitizeReturnURL(returnURL string) string {
 	returnURL = strings.ReplaceAll(returnURL, "\r", "")
 	parsed, err := url.Parse(returnURL)
 	if err != nil {
-		log.WithError(err).Errorf("error while sanitizing return URL")
+		log.WithError(err).Warningf("error while sanitizing return URL")
 		return home
 	}
 	if parsed.IsAbs() || strings.HasPrefix(returnURL, "//") {
-		log.Error("error while sanitizing return URL - wrong format")
+		log.Warn("error while sanitizing return URL - wrong format")
 		return home
 	}
 	sanitizedPath := path.Clean(home + parsed.Path)
