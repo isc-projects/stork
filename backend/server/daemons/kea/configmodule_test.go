@@ -5570,7 +5570,7 @@ func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
 }
 
 // Test second stage of deleting an IPv4 subnet.
-func TestApplySubnet4Delete(t *testing.T) {
+func TestApplySubnet4DeleteSubnetCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -5636,6 +5636,8 @@ func TestApplySubnet4Delete(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
 
 	var daemonIDs []int64
 	for _, ls := range subnets[0].LocalSubnets {
@@ -5769,6 +5771,8 @@ func TestApplySubnet6Delete(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
 
 	var daemonIDs []int64
 	for _, ls := range subnets[0].LocalSubnets {
@@ -5835,8 +5839,353 @@ func TestApplySubnet6Delete(t *testing.T) {
 	}
 }
 
-// Test committing subnet deletion, i.e. actually sending control commands to Kea.
+// Tests applying subnet delete for cb_cmds daemons. Two daemons sharing the
+// same config backend should produce one remote-subnet4-del-by-prefix command.
+func TestApplySubnetDeleteConfigBackend(t *testing.T) {
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	newCBDaemon := func(id int64, serverTag string) *dbmodel.Daemon {
+		serverConfig := fmt.Sprintf(`{
+			"Dhcp4": {
+				"server-tag": "%s",
+				"hooks-libraries": [{"library": "libdhcp_cb_cmds.so"}],
+				"config-control": {
+					"config-databases": [{
+						"name": "keatest",
+						"host": "localhost",
+						"port": 3306,
+						"type": "mysql"
+					}]
+				}
+			}
+		}`, serverTag)
+		config, err := keaconfig.NewConfig([]byte(serverConfig))
+		require.NoError(t, err)
+
+		return &dbmodel.Daemon{
+			ID:   id,
+			Name: daemonname.DHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				ServerTag: storkutil.Ptr(serverTag),
+				Config:    &dbmodel.KeaConfig{Config: config},
+			},
+		}
+	}
+
+	daemon1 := newCBDaemon(1, "tag-a")
+	daemon2 := newCBDaemon(2, "tag-b")
+
+	subnet := &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID:      daemon1.ID,
+				Daemon:        daemon1,
+				LocalSubnetID: 42,
+			},
+			{
+				DaemonID:      daemon2.ID,
+				Daemon:        daemon2,
+				LocalSubnetID: 42,
+			},
+		},
+	}
+
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, []int64{daemon1.ID, daemon2.ID})
+	ctx, err := module.ApplySubnetDelete(ctx, subnet)
+	require.NoError(t, err)
+
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, state.Updates, 1)
+	require.Equal(t, dbmodel.ConfigOperationKeaSubnetDelete, state.Updates[0].Operation)
+
+	commands := state.Updates[0].Recipe.Commands
+	require.Len(t, commands, 1)
+
+	marshalled, err := commands[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-del-by-prefix",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"subnet": "192.0.2.0/24"}]
+		}
+	}`, string(marshalled))
+	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
+}
+
+// Tests committing subnet delete for cb_cmds daemons. Two daemons sharing the
+// same config backend should produce one remote-subnet4-del-by-prefix command.
+func TestCommitSubnetDeleteConfigBackend(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [{
+				"name": "foo",
+				"subnet4": [
+					{
+						"id": 1,
+						"subnet": "192.0.2.0/24"
+					}
+				]
+			}],
+			"hooks-libraries": [{ "library": "libdhcp_cb_cmds.so" }],
+			"config-control": {
+				"config-databases": [
+					{
+						"name": "keatest",
+						"host": "localhost",
+						"port": 3306,
+						"type": "mysql"
+					}
+				]
+			}
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	daemon1, err := server1.GetDaemon()
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	daemon2, err := server2.GetDaemon()
+	require.NoError(t, err)
+
+	err = CommitDaemonsIntoDB(db,
+		[]*dbmodel.Daemon{daemon1, daemon2},
+		&storktest.FakeEventCenter{},
+		[]DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}},
+		dbmodel.NewDHCPOptionDefinitionLookup(),
+	)
+	require.NoError(t, err)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
+
+	var daemonIDs []int64
+	for _, ls := range subnets[0].LocalSubnets {
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	ctx, err = module.ApplySubnetDelete(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	require.Len(t, agents.RecordedURLs, 1)
+	require.Len(t, agents.RecordedCommands, 1)
+
+	marshalled, err := agents.RecordedCommands[0].Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-del-by-prefix",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"subnet": "192.0.2.0/24"}]
+		}
+	}`, string(marshalled))
+
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedSubnet)
+}
+
+// Tests committing subnet delete belonging to daemons with various hooks. One
+// daemon uses subnet_cmds and one daemon uses cb_cmds.
 func TestCommitSubnetDelete(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	subnetCmdsServerConfig := `{
+		"Dhcp4": {
+			"hooks-libraries": [{"library": "libdhcp_subnet_cmds.so"}]
+		}
+	}`
+
+	cbCmdsServerConfig := `{
+		"Dhcp4": {
+			"hooks-libraries": [{"library": "libdhcp_cb_cmds.so"}],
+			"config-control": {
+				"config-databases": [{
+					"name": "keatest",
+					"host": "localhost",
+					"port": 3306,
+					"type": "mysql"
+				}]
+			}
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(subnetCmdsServerConfig)
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(cbCmdsServerConfig)
+	require.NoError(t, err)
+
+	sharedNetwork := &dbmodel.SharedNetwork{
+		Name:   "foo",
+		Family: 4,
+		Subnets: []dbmodel.Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				LocalSubnets: []*dbmodel.LocalSubnet{
+					{
+						DaemonID: server1.DaemonID,
+					},
+					{
+						DaemonID: server2.DaemonID,
+					},
+				},
+			},
+		},
+	}
+	err = dbmodel.AddSharedNetwork(db, sharedNetwork)
+	require.NoError(t, err)
+	err = dbmodel.SetLocalSubnets(db, &sharedNetwork.Subnets[0])
+	require.NoError(t, err)
+
+	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
+
+	var daemonIDs []int64
+	for _, ls := range subnets[0].LocalSubnets {
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	ctx, err = module.ApplySubnetDelete(ctx, &subnets[0])
+	require.NoError(t, err)
+
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	require.Len(t, agents.RecordedURLs, 4)
+	require.Len(t, agents.RecordedCommands, 4)
+
+	urlCounts := make(map[string]int)
+	for _, url := range agents.RecordedURLs {
+		urlCounts[url]++
+	}
+	require.Len(t, urlCounts, 2)
+
+	var hasSingleCommandURL, hasTripleCommandURL bool
+	for _, count := range urlCounts {
+		hasSingleCommandURL = hasSingleCommandURL || count == 1
+		hasTripleCommandURL = hasTripleCommandURL || count == 3
+	}
+	require.True(t, hasSingleCommandURL)
+	require.True(t, hasTripleCommandURL)
+
+	expectedCommands := map[keactrl.CommandName]int{
+		"network4-subnet-del":          1,
+		"subnet4-del":                  1,
+		"remote-subnet4-del-by-prefix": 1,
+		"config-write":                 1,
+	}
+	for _, command := range agents.RecordedCommands {
+		marshalled, err := command.Marshal()
+		require.NoError(t, err)
+		commandName := command.GetCommand()
+
+		switch commandName {
+		case "network4-subnet-del":
+			require.JSONEq(t, `{
+				"command": "network4-subnet-del",
+				"service": ["dhcp4"],
+				"arguments": {
+					"id": 0,
+					"name": "foo"
+				}
+			}`, string(marshalled))
+		case "subnet4-del":
+			require.JSONEq(t, `{
+				"command": "subnet4-del",
+				"service": ["dhcp4"],
+				"arguments": {
+					"id": 0
+				}
+			}`, string(marshalled))
+		case "remote-subnet4-del-by-prefix":
+			require.JSONEq(t, `{
+				"command": "remote-subnet4-del-by-prefix",
+				"service": ["dhcp4"],
+				"arguments": {
+					"subnets": [{"subnet": "192.0.2.0/24"}]
+				}
+			}`, string(marshalled))
+		case "config-write":
+			require.JSONEq(t, `{
+				"command": "config-write",
+				"service": ["dhcp4"]
+			}`, string(marshalled))
+		default:
+			require.Fail(t, "unexpected command")
+			continue
+		}
+
+		expectedCommands[commandName]--
+	}
+
+	for commandName, count := range expectedCommands {
+		require.Zero(t, count, "unexpected number of commands for command %s", commandName)
+	}
+
+	returnedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedSubnet)
+}
+
+// Test committing subnet deletion, i.e. actually sending control commands to Kea.
+func TestCommitSubnetDeleteSubnetCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -5902,6 +6251,8 @@ func TestCommitSubnetDelete(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
+	err = subnets[0].PopulateDaemons(db)
+	require.NoError(t, err)
 
 	var daemonIDs []int64
 	for _, ls := range subnets[0].LocalSubnets {

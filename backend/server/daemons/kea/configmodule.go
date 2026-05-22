@@ -1388,38 +1388,53 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 	if len(subnet.LocalSubnets) == 0 {
 		return ctx, errors.Errorf("deleted subnet %d is not associated with any daemon", subnet.ID)
 	}
-	var commands []ConfigCommand
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
 			return ctx, errors.Errorf("deleted subnet %d is associated with nil daemon", subnet.ID)
 		}
-		// Convert the host information to Kea reservation.
-		deletedSubnet, err := keaconfig.CreateSubnetCmdsDeletedSubnet(ls.DaemonID, subnet)
+		if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
+			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
+		}
+	}
+
+	var sharedNetworkNameBeforeUpdate string
+	if subnet.SharedNetwork != nil {
+		sharedNetworkNameBeforeUpdate = subnet.SharedNetwork.Name
+	}
+
+	// Create commands to remove the subnet from all affected daemons.
+	// For daemons backed by subnet_cmds, commands are emitted per daemon.
+	// For daemons backed by cb_cmds, commands are emitted once per unique
+	// config backend.
+	var deleteCommands, saveCommands []ConfigCommand
+	if err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, _ []string) error {
+		cmds, err := createSubnetDeleteCommands(
+			ls,
+			subnet.GetPrefix(),
+			sharedNetworkNameBeforeUpdate,
+		)
 		if err != nil {
-			return ctx, err
+			return err
 		}
-		// If the deleted subnet belongs to a shared network we first need to remove
-		// this subnet from a shared network. This is a Kea limitation described in
-		// https://gitlab.isc.org/isc-projects/kea/-/issues/3455.
-		if subnet.SharedNetwork != nil && subnet.SharedNetwork.Name != "" {
-			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandNetworkSubnetDel(subnet.GetFamily(), subnet.SharedNetwork.Name, ls.LocalSubnetID, ls.Daemon.Name),
-				Daemon:  ls.Daemon,
-			})
+		deleteCommands = append(deleteCommands, cmds...)
+
+		cmds, err = createSubnetSaveCommands(ls.Daemon)
+		if err != nil {
+			return err
 		}
-		// Delete the subnet.
-		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommandSubnetDel(subnet.GetFamily(), deletedSubnet, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
-		})
+		saveCommands = append(saveCommands, cmds...)
+
+		return nil
+	}); err != nil {
+		return ctx, err
 	}
-	// Persist the configuration changes.
-	for _, ls := range subnet.LocalSubnets {
-		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
-			Daemon:  ls.Daemon,
-		})
-	}
+
+	// Merge commands into a single slice. The commands to save changes must
+	// be last.
+	commands := make([]ConfigCommand, 0, len(deleteCommands)+len(saveCommands))
+	commands = append(commands, deleteCommands...)
+	commands = append(commands, saveCommands...)
+
 	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
 	// Create transaction state.
 	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetDelete, daemonIDs...)
