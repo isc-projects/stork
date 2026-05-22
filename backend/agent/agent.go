@@ -272,8 +272,9 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	ipAddresses, err := storkutil.GetHostIPAddresses()
 	if err != nil {
 		errText = err.Error()
-	}
-	slices.Sort(ipAddresses)
+	} else {
+		slices.Sort(ipAddresses)
+    }
 
 	state := agentapi.GetStateRsp{
 		AgentVersion:         stork.Version,
