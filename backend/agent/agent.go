@@ -274,7 +274,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		errText = err.Error()
 	} else {
 		slices.Sort(ipAddresses)
-    }
+	}
 
 	state := agentapi.GetStateRsp{
 		AgentVersion:         stork.Version,
@@ -299,7 +299,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		// API backward compatibility. The Stork Server should not rely
 		// on this field.
 		AgentUsesHTTPCredentials: false,
-		IpAddresses:              ipAddresses,
+		MachineIPAddresses:       ipAddresses,
 	}
 
 	return &state, nil

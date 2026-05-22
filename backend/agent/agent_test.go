@@ -299,8 +299,8 @@ func TestGetState(t *testing.T) {
 	// Make sure that the IP addresses are returned correctly.
 	ips, err := storkutil.GetHostIPAddresses()
 	require.NoError(t, err)
-	require.ElementsMatch(t, ips, rsp.IpAddresses)
-	require.True(t, slices.IsSorted(rsp.IpAddresses))
+	require.ElementsMatch(t, ips, rsp.MachineIPAddresses)
+	require.True(t, slices.IsSorted(rsp.MachineIPAddresses))
 }
 
 // Check if GetState works even if the daemon has multiple access points of

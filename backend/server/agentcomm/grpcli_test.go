@@ -187,7 +187,7 @@ func TestGetState(t *testing.T) {
 				}},
 			},
 		},
-		IpAddresses: []string{"1.1.1.1", "2.2.2.2"},
+		MachineIPAddresses: []string{"1.1.1.1", "2.2.2.2"},
 	}
 	mockAgentClient.EXPECT().
 		GetState(gomock.Any(), gomock.Any(), newGZIPMatcher()).

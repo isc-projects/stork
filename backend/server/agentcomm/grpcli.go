@@ -459,7 +459,7 @@ func (agents *connectedAgentsImpl) GetState(ctx context.Context, machine dbmodel
 		LastVisitedAt:        storkutil.UTCNow(),
 		Error:                grpcState.Error,
 		Daemons:              daemons,
-		IPAddresses:          grpcState.IpAddresses,
+		IPAddresses:          grpcState.MachineIPAddresses,
 	}
 
 	return &state, nil
