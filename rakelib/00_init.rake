@@ -638,13 +638,11 @@ when "macos"
     case ARCH
     when "amd64"
         protoc_suffix = "osx-x86_64"
-        node_suffix = "darwin-x64"
         golangcilint_suffix = "darwin-amd64"
         goswagger_suffix = "darwin_amd64"
         shellcheck_suffix = "darwin.x86_64"
     when "arm64"
         protoc_suffix = "osx-aarch_64"
-        node_suffix = "darwin-arm64"
         golangcilint_suffix = "darwin-arm64"
         goswagger_suffix = "darwin_arm64"
         shellcheck_suffix = "darwin.aarch64"
@@ -656,13 +654,11 @@ when "linux"
     case ARCH
     when "amd64"
         protoc_suffix = "linux-x86_64"
-        node_suffix = "linux-x64"
         golangcilint_suffix = "linux-amd64"
         goswagger_suffix = "linux_amd64"
         shellcheck_suffix = "linux.x86_64"
     when "arm64"
         protoc_suffix = "linux-aarch_64"
-        node_suffix = "linux-arm64"
         golangcilint_suffix = "linux-arm64"
         goswagger_suffix = "linux_arm64"
         shellcheck_suffix = "linux.aarch64"
@@ -841,44 +837,41 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, BUNDLE] do
 end
 add_hash_guard(DANGER, danger_gemfile)
 
-node = File.join(node_bin_dir, "node")
-file node => [TAR, WGET, node_dir] do
-    Dir.chdir(node_dir) do
-        FileUtils.rm_rf(FileList["*"])
-        fetch_file "https://nodejs.org/dist/v#{node_ver}/node-v#{node_ver}-#{node_suffix}.tar.xz", "node.tar.xz"
-        sh TAR, "-Jxf", "node.tar.xz", "--strip-components=1"
-        sh "rm", "node.tar.xz"
+node_path = which("node")
+if !node_path.nil?
+    output = `#{node_path} --version 2>/dev/null`.strip
+    m = output.match(/^v(\d+\.\d+(?:\.\d+)?)/)
+    if m.nil?
+        puts "WARNING: Could not parse Node.js version from: '#{output}'"
+    else
+        installed = Gem::Version.new(m[1])
+        required  = Gem::Version.new(node_min_ver)
+        if installed < required
+            puts "WARNING: Node.js #{installed} found, but #{required} or later is recommended."
+            puts "WARNING: The build may fail. Install a newer Node.js to silence this."
+        end
     end
-    sh "touch", "-c", node
-    sh node, "--version"
 end
-node = require_manual_install_on(node, libc_musl_system, freebsd_system, openbsd_system)
-add_version_guard(node, node_ver)
+NODE = require_manual_install_on("node", any_system)
 
-npm = File.join(node_bin_dir, "npm")
-file npm => [node] do
-    ci_opts = []
-    if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress", "--cache", File.expand_path(NODE_CACHE)]
+npm_path = which("npm")
+if !npm_path.nil?
+    output = `#{npm_path} --version 2>/dev/null`.strip
+    m = output.match(/^(\d+\.\d+(?:\.\d+)?)/)
+    if m.nil?
+        puts "WARNING: Could not parse npm version from: '#{output}'"
+    else
+        installed = Gem::Version.new(m[1])
+        required  = Gem::Version.new(npm_min_ver)
+        if installed < required
+            puts "WARNING: npm #{installed} found, but #{required} or later is recommended."
+            puts "WARNING: The build may fail. Install a newer npm to silence this."
+        end
     end
-
-    # NPM is initially installed with NodeJS.
-    sh npm, "install",
-            "-g",
-            *ci_opts,
-            "npm@#{npm_ver}"
-    sh "touch", "-c", npm
-    sh npm, "--version"
 end
-NPM = require_manual_install_on(npm, libc_musl_system, freebsd_system, openbsd_system)
-add_version_guard(NPM, npm_ver)
+NPM = require_manual_install_on("npm", any_system)
 
-npx = File.join(node_bin_dir, "npx")
-file npx => [NPM] do
-    sh npx, "--version"
-    sh "touch", "-c", npx
-end
-NPX = require_manual_install_on(npx, libc_musl_system, freebsd_system, openbsd_system)
+NPX = require_manual_install_on("npx", any_system)
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do
