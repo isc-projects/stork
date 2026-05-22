@@ -598,7 +598,10 @@ any_system = true
 
 ### Define package versions
 # Golang-related
-go_ver = '1.26.5'
+# Minimum version of Golang that has a realistic chance of compiling the code.
+# It is recommended to use the latest version, as older go versions might have
+# vulnerabilities or other issues.
+go_min_ver = '1.26.5'
 gocover_cobertura_ver = 'v1.5.0'
 tparse_ver = 'v0.18.0'
 go_junit_report_ver = 'v2.1.0'
@@ -634,14 +637,12 @@ case OS
 when "macos"
     case ARCH
     when "amd64"
-        go_suffix = "darwin-amd64"
         protoc_suffix = "osx-x86_64"
         node_suffix = "darwin-x64"
         golangcilint_suffix = "darwin-amd64"
         goswagger_suffix = "darwin_amd64"
         shellcheck_suffix = "darwin.x86_64"
     when "arm64"
-        go_suffix = "darwin-arm64"
         protoc_suffix = "osx-aarch_64"
         node_suffix = "darwin-arm64"
         golangcilint_suffix = "darwin-arm64"
@@ -654,14 +655,12 @@ when "macos"
 when "linux"
     case ARCH
     when "amd64"
-        go_suffix = "linux-amd64"
         protoc_suffix = "linux-x86_64"
         node_suffix = "linux-x64"
         golangcilint_suffix = "linux-amd64"
         goswagger_suffix = "linux_amd64"
         shellcheck_suffix = "linux.x86_64"
     when "arm64"
-        go_suffix = "linux-arm64"
         protoc_suffix = "linux-aarch_64"
         node_suffix = "linux-arm64"
         golangcilint_suffix = "linux-arm64"
@@ -671,7 +670,6 @@ when "linux"
 when "FreeBSD"
     case ARCH
     when "amd64"
-         go_suffix = "freebsd-amd64"
          golangcilint_suffix = "freebsd-amd64"
     when "arm64"
         golangcilint_suffix = "freebsd-armv7"
@@ -722,6 +720,7 @@ directory ruby_tools_bin_bundle_dir
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 gobin = File.join(go_tools_dir, "go", "bin")
+directory gobin
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
 pip_cache_dir = File.join(python_tools_dir, "pip_cache")
@@ -905,19 +904,22 @@ file OPENAPI_GENERATOR => [WGET, tools_dir] do
 end
 add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
-go = File.join(gobin, "go")
-file go => [WGET, go_tools_dir] do
-    Dir.chdir(go_tools_dir) do
-        FileUtils.rm_rf("go")
-        fetch_file "https://dl.google.com/go/go#{go_ver}.#{go_suffix}.tar.gz", "go.tar.gz"
-        sh "tar", "-zxf", "go.tar.gz"
-        sh "rm", "go.tar.gz"
+go_path = which("go")
+if !go_path.nil?
+    output = `#{go_path} version 2>/dev/null`.strip
+    m = output.match(/go version go(\d+\.\d+(?:\.\d+)?)/)
+    if m.nil?
+        puts "WARNING: Could not parse Go version from: '#{output}'"
+    else
+        installed = Gem::Version.new(m[1])
+        required  = Gem::Version.new(go_min_ver)
+        if installed < required
+            puts "WARNING: Go #{installed} found, but Go #{required} or later is recommended."
+            puts "WARNING: The build may fail. Install a newer Go toolchain to silence this."
+        end
     end
-    sh "touch", "-c", go
-    sh go, "version"
 end
-GO = require_manual_install_on(go, openbsd_system, freebsd_arm64_system)
-add_version_guard(GO, go_ver)
+GO = require_manual_install_on("go", any_system)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
 file GOSWAGGER => [WGET, GO, TAR, go_tools_dir] do
