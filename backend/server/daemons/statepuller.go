@@ -146,7 +146,7 @@ func updateMachineFields(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel
 		}
 		return nil
 	})
-	return errors.Wrapf(err, "problem updating machine %+v", dbMachine)
+	return errors.Wrapf(err, "problem updating machine with ID %d", dbMachine.ID)
 }
 
 // It is an index key for comparing daemons. The daemons are considered equal
