@@ -135,13 +135,13 @@ func updateMachineFields(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel
 	err := db.RunInTransaction(ctx, func(tx *pg.Tx) error {
 		err := dbmodel.UpdateMachine(tx, dbMachine)
 		if err != nil {
-			return errors.Wrapf(err, "problem updating machine %+v", dbMachine)
+			return errors.Wrapf(err, "problem updating machine with ID %d", dbMachine.ID)
 		}
 
 		if currentIPAddressesHash != newIPAddressesHash {
 			err = dbmodel.UpsertMachineIPAddresses(tx, dbMachine.ID, m.IPAddresses...)
 			if err != nil {
-				return errors.Wrapf(err, "problem upserting machine IP addresses for machine %+v", dbMachine)
+				return errors.Wrapf(err, "problem upserting machine IP addresses for machine with ID %d", dbMachine.ID)
 			}
 		}
 		return nil
