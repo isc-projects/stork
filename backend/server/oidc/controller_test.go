@@ -468,7 +468,8 @@ func TestMiddlewareHandlesCallbackEndpoint(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -514,7 +515,8 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -579,7 +581,8 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	// Modify token endpoint so that token exchange should fail.
 	controller.oauth2Config.Endpoint.TokenURL = "http://localhost/dummyFooBar"
 	require.True(t, controller.configured)
@@ -632,7 +635,8 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -681,7 +685,8 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -731,7 +736,8 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -790,7 +796,8 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -856,7 +863,8 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
-	controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
 	require.True(t, controller.configured)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

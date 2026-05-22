@@ -162,15 +162,15 @@ func (ctl *Controller) Middleware(next http.Handler) http.Handler {
 // Helper middleware which chains the HTTP handler with SCS session manager middlewares
 // only if the request URL path matches any of OIDC-related endpoints.
 func (ctl *Controller) wrapOIDCSession(next http.Handler) http.Handler {
-    oidcEndpoints := []string{loginURLPath, callbackURLPath}
+	oidcEndpoints := []string{loginURLPath, callbackURLPath}
 	sessionHandler := ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, e := range oidcEndpoints {
-            if strings.HasPrefix(r.URL.Path, e) {
-                sessionHandler.ServeHTTP(w, r)
-                return
-            }
-        }
+			if strings.HasPrefix(r.URL.Path, e) {
+				sessionHandler.ServeHTTP(w, r)
+				return
+			}
+		}
 		next.ServeHTTP(w, r)
 	})
 }
