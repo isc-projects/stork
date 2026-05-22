@@ -658,6 +658,10 @@ func (sm *monitor) getXFRTrackingPathFromConfig(process supportedProcess, chroot
 		case directory != "" && filepath.IsAbs(directory):
 			// Make the absolute path using the directory option.
 			filename = filepath.Join(directory, filename)
+		case cwd != "" && directory != "" && !filepath.IsAbs(directory):
+			// The directory is relative but we have current working directory.
+			// We can try to use cwd to resolve the relative path.
+			filename = filepath.Join(cwd, directory, filename)
 		case cwd != "":
 			// The directory option is not set, let's use the current
 			// working directory.

@@ -2397,6 +2397,16 @@ func TestGetXFRTrackingPathFromConfig(t *testing.T) {
 			expectedPath:   "/var/lib/bind/named/logs/xfer-in.log",
 		},
 		{
+			name:           "relative default directory in options",
+			cwd:            "/var/lib",
+			directory:      "bind",
+			chrootDir:      "",
+			defaultLogFile: "",
+			categoryPath:   "named/logs/xfer-in.log",
+			category:       "xfer-in",
+			expectedPath:   "/var/lib/bind/named/logs/xfer-in.log",
+		},
+		{
 			name:           "default directory in options with chroot",
 			cwd:            "",
 			directory:      "/var/lib/bind",
