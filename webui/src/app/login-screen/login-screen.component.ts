@@ -138,7 +138,7 @@ export class LoginScreenComponent implements OnInit {
             this.messageService.add({
                 severity: 'error',
                 summary: 'User unauthorized',
-                life: 10000,
+                sticky: true,
             })
             this.router.navigate(['/login'])
             return
