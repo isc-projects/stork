@@ -1,6 +1,8 @@
 package kea
 
 import (
+	"strings"
+
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/daemoncfg/kea"
 	keactrl "isc.org/stork/daemonctrl/kea"
@@ -275,10 +277,14 @@ func createSubnetUpdateCommands(
 // hook type is derived from the daemon's configuration.
 func createSubnetDeleteCommands(
 	localSubnet *dbmodel.LocalSubnet,
-	family int,
+	subnetPrefix string,
 	sharedNetworkNameBeforeUpdate string,
 ) ([]ConfigCommand, error) {
 	hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
+	family := 4
+	if strings.Contains(subnetPrefix, ":") {
+		family = 6
+	}
 
 	var commands []ConfigCommand
 	switch hook {
@@ -307,12 +313,12 @@ func createSubnetDeleteCommands(
 		switch family {
 		case 4:
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandRemoteSubnet4DelByID(localSubnet.LocalSubnetID, localSubnet.Daemon.Name),
+				Command: keactrl.NewCommandRemoteSubnet4DelByPrefix(subnetPrefix, localSubnet.Daemon.Name),
 				Daemon:  localSubnet.Daemon,
 			})
 		default:
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandRemoteSubnet6DelByID(localSubnet.LocalSubnetID, localSubnet.Daemon.Name),
+				Command: keactrl.NewCommandRemoteSubnet6DelByPrefix(subnetPrefix, localSubnet.Daemon.Name),
 				Daemon:  localSubnet.Daemon,
 			})
 		}

@@ -133,38 +133,38 @@ func TestNewCommandRemoteSubnet6SetWithSharedNetwork(t *testing.T) {
 	}`, string(marshalled))
 }
 
-// Tests that remote-subnet4-del-by-id command is constructed correctly.
-func TestNewCommandRemoteSubnet4DelByID(t *testing.T) {
-	command := NewCommandRemoteSubnet4DelByID(7, daemonname.DHCPv4)
+// Tests that remote-subnet4-del-by-prefix command is constructed correctly.
+func TestNewCommandRemoteSubnet4DelByPrefix(t *testing.T) {
+	command := NewCommandRemoteSubnet4DelByPrefix("192.0.2.0/24", daemonname.DHCPv4)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
-		"command": "remote-subnet4-del-by-id",
+		"command": "remote-subnet4-del-by-prefix",
 		"service": ["dhcp4"],
 		"arguments": {
 			"subnets": [
 				{
-					"id": 7
+					"subnet": "192.0.2.0/24"
 				}
 			]
 		}
 	}`, string(marshalled))
 }
 
-// Tests that remote-subnet6-del-by-id command is constructed correctly.
-func TestNewCommandRemoteSubnet6DelByID(t *testing.T) {
-	command := NewCommandRemoteSubnet6DelByID(9, daemonname.DHCPv6)
+// Tests that remote-subnet6-del-by-prefix command is constructed correctly.
+func TestNewCommandRemoteSubnet6DelByPrefix(t *testing.T) {
+	command := NewCommandRemoteSubnet6DelByPrefix("2001:db8:1::/64", daemonname.DHCPv6)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
-		"command": "remote-subnet6-del-by-id",
+		"command": "remote-subnet6-del-by-prefix",
 		"service": ["dhcp6"],
 		"arguments": {
 			"subnets": [
 				{
-					"id": 9
+					"subnet": "2001:db8:1::/64"
 				}
 			]
 		}
