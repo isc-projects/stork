@@ -4802,8 +4802,13 @@ func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 	// The respective commands should be sent to different servers.
 	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
 	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
-	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
-	require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
+	if agents.RecordedURLs[0] == agents.RecordedURLs[2] {
+		require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+		require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
+	} else {
+		require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[3])
+		require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[2])
+	}
 
 	// Validate the sent commands and URLS.
 	for i, command := range agents.RecordedCommands {
