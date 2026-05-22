@@ -124,7 +124,7 @@ export class LoginScreenComponent implements OnInit {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Authentication error',
-                life: 10000,
+                sticky: true,
                 detail: 'Error during authentication process. Please contact Stork admin.',
             })
             this.router.navigate(['/login'])
