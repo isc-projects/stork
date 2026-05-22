@@ -29,7 +29,7 @@ func TestNewController(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, controller)
-	require.False(t, controller.configured)
+	require.False(t, controller.IsConfigured())
 }
 
 // Test if OIDC controller internal configured flag is not set if mandatory setting is missing.
@@ -45,11 +45,11 @@ func TestConfigureSettingMissing(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.False(t, controller.configured)
+	require.False(t, controller.IsConfigured())
 	controller.settings.IssuerURL = "https://test.idp.org"
 	err = controller.Configure(url.URL{Scheme: "https"}, &dbsession.SessionMgr{})
 	require.Error(t, err)
-	require.False(t, controller.configured) // ClientID is also mandatory setting.
+	require.False(t, controller.IsConfigured()) // ClientID is also mandatory setting.
 }
 
 // Test if OIDC controller internal configured flag is set.
@@ -68,7 +68,7 @@ func TestConfigure(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 	require.NotNil(t, controller.authSessionManager)
 	require.Equal(t, "client-secret", controller.oauth2Config.ClientSecret)
 }
@@ -93,7 +93,7 @@ func TestMiddlewareIsTransparent(t *testing.T) {
 	resp.Body.Close()
 
 	// Assert
-	require.False(t, controller.configured)
+	require.False(t, controller.IsConfigured())
 	require.Len(t, resp.Header, 1) // No other headers added by Session middleware means that OIDC middleware is transparent.
 	require.Contains(t, resp.Header, "Hello")
 	require.Contains(t, resp.Header.Get("Hello"), "world")
@@ -127,7 +127,7 @@ func TestMiddlewareIsTransparent2(t *testing.T) {
 	resp.Body.Close()
 
 	// Assert
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 	require.Len(t, resp.Header, 1) // No other headers added by Session middleware means that OIDC middleware is transparent.
 	require.Contains(t, resp.Header, "Hello")
 	require.Contains(t, resp.Header.Get("Hello"), "world")
@@ -262,7 +262,7 @@ func TestGetMappedGroups(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 	receivedGroups := []string{
 		"stork-access", "router-admins",
 	}
@@ -409,7 +409,7 @@ func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
 	resp.Body.Close()
 
 	// Assert
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 	require.Greater(t, len(resp.Header), 2)
 	// Check auth_session cookie.
 	require.Contains(t, resp.Header, "Set-Cookie")
@@ -470,7 +470,7 @@ func TestMiddlewareHandlesCallbackEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -517,7 +517,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -585,7 +585,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	require.NoError(t, err)
 	// Modify token endpoint so that token exchange should fail.
 	controller.oauth2Config.Endpoint.TokenURL = "http://localhost/dummyFooBar"
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -637,7 +637,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -687,7 +687,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -738,7 +738,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -798,7 +798,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -865,7 +865,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
-	require.True(t, controller.configured)
+	require.True(t, controller.IsConfigured())
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// empty handler
@@ -1065,4 +1065,26 @@ func TestCallbackEndpointHandlesEmptyCode(t *testing.T) {
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
+}
+
+// Tests if GetMetadata works fine.
+func TestGetMetadata(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	controller := NewController(Settings{IssuerURL: "https://test.idp.org", ClientID: "clientID", IdentityProviderName: "custom ID provider"}, db)
+	require.NotNil(t, controller)
+
+	// Act
+	meta := controller.GetMetadata()
+
+	// Assert
+	require.NotNil(t, meta)
+	require.EqualValues(t, "oidc", meta.GetID())
+	require.NotEmpty(t, meta.GetName())
+	require.NotEmpty(t, meta.GetDescription())
+	require.Contains(t, meta.GetName(), "custom ID provider")
+	require.Contains(t, meta.GetDescription(), "custom ID provider")
+	_, err := meta.GetIcon()
+	require.Error(t, err) // We don't expect to have icon returned by OIDC.
 }

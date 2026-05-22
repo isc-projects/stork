@@ -36,6 +36,7 @@ type Controller struct {
 	authSessionManager *scs.SessionManager
 	oauth2Config       oauth2.Config
 	tokenVerifier      *oidc.IDTokenVerifier
+	metadata           Metadata
 }
 
 // Structure to cache all required information for OIDC authentication in a session.
@@ -67,6 +68,7 @@ func NewController(settings Settings, db *dbops.PgDB) *Controller {
 	return &Controller{
 		settings: settings,
 		db:       db,
+		metadata: Metadata{settings: settings},
 	}
 }
 
@@ -512,7 +514,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 			authdata.UserGroupIDReadOnly,
 		}
 	}
-	systemUser, err := dbmodel.AddOrUpdateExternalUser(ctl.db, &outputUser, "oidc")
+	systemUser, err := dbmodel.AddOrUpdateExternalUser(ctl.db, &outputUser, ctl.metadata.GetID())
 	if err != nil || systemUser == nil {
 		log.WithError(err).Errorf("Error creating or updating system user in DB for authenticated OIDC user ID %s", claims.Sub)
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
@@ -526,4 +528,14 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, authSession.ReturnURL, http.StatusFound)
+}
+
+// Returns bool flag whether controller is configured or not.
+func (ctl *Controller) IsConfigured() bool {
+	return ctl.configured
+}
+
+// Returns metadata about OIDC authentication method.
+func (ctl *Controller) GetMetadata() authdata.AuthenticationMetadata {
+	return &ctl.metadata
 }

@@ -792,6 +792,16 @@ func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.Get
 		FormLabelSecret:     "Password",
 	})
 
+	if r.OIDCControl.IsConfigured() {
+		meta := r.OIDCControl.GetMetadata()
+		method := &models.AuthenticationMethod{
+			ID:          meta.GetID(),
+			Description: meta.GetDescription(),
+			Name:        meta.GetName(),
+		}
+		methods = append(methods, method)
+	}
+
 	return users.NewGetAuthenticationMethodsOK().WithPayload(&models.AuthenticationMethods{
 		Items: methods,
 		Total: int64(len(methods)),

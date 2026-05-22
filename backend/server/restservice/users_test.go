@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -20,6 +21,8 @@ import (
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
 	"isc.org/stork/server/hookmanager"
+	"isc.org/stork/server/oidc"
+	oidctest "isc.org/stork/server/oidc/test"
 	storkutil "isc.org/stork/util"
 )
 
@@ -2153,8 +2156,42 @@ func TestGetAuthenticationMethodsInternal(t *testing.T) {
 	require.IsType(t, &users.GetAuthenticationMethodsOK{}, response)
 	responseOk := response.(*users.GetAuthenticationMethodsOK)
 	require.EqualValues(t, 1, responseOk.Payload.Total)
-	require.Len(t, responseOk.Payload.Items, 1)
+	require.Len(t, responseOk.Payload.Items, 1) // OIDC was not configured, so it is not included here.
 	require.EqualValues(t, "internal", responseOk.Payload.Items[0].ID)
+}
+
+// Test that the OIDC authentication method is returned only when configured.
+func TestGetAuthenticationMethodsOIDC(t *testing.T) {
+	// Arrange
+	dbSettings := &dbops.DatabaseSettings{}
+	ctx := t.Context()
+	hookManager := hookmanager.NewHookManager()
+	rapi, _ := NewRestAPI(dbSettings, hookManager)
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	oidcSettings := oidc.Settings{
+		IssuerURL: issuerURL,
+		ClientID:  "clientID",
+	}
+	oidcController := oidc.NewController(oidcSettings, rapi.DB)
+	require.NotNil(t, oidcController)
+	rapi.OIDCControl = oidcController
+	serverURL, err := url.Parse("http://localhost")
+	require.NoError(t, err)
+	oidcController.Configure(*serverURL, rapi.SessionManager)
+	require.True(t, oidcController.IsConfigured())
+
+	// Act
+	response := rapi.GetAuthenticationMethods(ctx, users.GetAuthenticationMethodsParams{})
+
+	// Assert
+	require.IsType(t, &users.GetAuthenticationMethodsOK{}, response)
+	responseOk := response.(*users.GetAuthenticationMethodsOK)
+	require.EqualValues(t, 2, responseOk.Payload.Total)
+	require.Len(t, responseOk.Payload.Items, 2)
+	require.EqualValues(t, "internal", responseOk.Payload.Items[0].ID)
+	require.EqualValues(t, "oidc", responseOk.Payload.Items[1].ID)
 }
 
 // Test that the authentication methods from hooks are included in the response.
