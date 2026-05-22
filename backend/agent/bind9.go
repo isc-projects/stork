@@ -642,6 +642,8 @@ func (sm *monitor) getXFRTrackingPathFromConfig(process supportedProcess, chroot
 	}
 	if filename == "" {
 		// Log file not found for the given category.
+		log.WithField("loggingCategory", loggingCategory).
+			Infof("Unable to track zone transfers because no log file is configured for the logging category")
 		return ""
 	}
 	if !filepath.IsAbs(filename) {
@@ -674,6 +676,10 @@ func (sm *monitor) getXFRTrackingPathFromConfig(process supportedProcess, chroot
 	}
 	if !filepath.IsAbs(filename) {
 		// The resulting path must be absolute. If it is not, we can't use it.
+		log.WithFields(log.Fields{
+			"loggingCategory": loggingCategory,
+			"filename":        filename,
+		}).Infof("Unable to track zone transfers because the specified log file path is relative and the absolute path cannot be determined")
 		return ""
 	}
 	return filepath.Clean(filename)
