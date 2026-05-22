@@ -108,7 +108,11 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		port := redirectURL.Port()
 		redirectURL.Host = "localhost:" + port
 	}
-	log.Infof("In order to make your OIDC authentication work, you must register the redirect URL at your OpenID Provider. The URL: %s", redirectURL.String())
+	logFields := log.Fields{
+		"redirectURL":     redirectURL.String(),
+		"OpenID Provider": ctl.settings.IssuerURL,
+	}
+	log.WithFields(logFields).Info("In order to allow authentication at OpenID Provider for Stork users, the redirect URL must first be registered at OpenID Provider.")
 	scopes := []string{
 		oidc.ScopeOpenID,
 	}
