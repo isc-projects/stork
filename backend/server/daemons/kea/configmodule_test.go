@@ -3849,15 +3849,21 @@ func TestApplySubnetAdd(t *testing.T) {
 	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
 	require.Len(t, commands, 5)
+	expectedCommandCounts := map[keactrl.CommandName]int{
+		"subnet4-add":   2,
+		"config-write":  2,
+		"config-reload": 1,
+	}
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
 		command := commands[i].Command
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
+		expectedCommandCounts[command.Command]--
 
-		switch i {
-		case 0, 1:
+		switch command.Command {
+		case keactrl.Subnet4Add:
 			require.JSONEq(t,
 				`{
 					"command": "subnet4-add",
@@ -3877,14 +3883,14 @@ func TestApplySubnetAdd(t *testing.T) {
 					}
 				}`,
 				string(marshalled))
-		case 2, 3:
+		case keactrl.ConfigWrite:
 			require.JSONEq(t,
 				`{
 					"command": "config-write",
 					"service": [ "dhcp4" ]
 				}`,
 				string(marshalled))
-		case 4:
+		case keactrl.ConfigReload:
 			require.JSONEq(t,
 				`{
 					"command": "config-reload",
@@ -3896,6 +3902,10 @@ func TestApplySubnetAdd(t *testing.T) {
 		}
 		// Verify they are associated with appropriate daemons.
 		require.NotNil(t, commands[i].Daemon)
+	}
+
+	for _, count := range expectedCommandCounts {
+		require.Zero(t, count)
 	}
 }
 
