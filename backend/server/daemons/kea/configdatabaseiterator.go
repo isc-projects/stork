@@ -52,7 +52,7 @@ func buildConfigBackendKey(daemon *dbmodel.Daemon) (configBackendKey, error) {
 // source (it always has a one item for subnet_cmds daemons, and may have
 // multiple for cb_cmds daemons).
 //
-// It is guaranteed that the local subnets passed to fn have at least one
+// It is guaranteed that the local subnets passed to fn has at least one
 // item.
 //
 // Local subnets whose daemon or Kea configuration is nil, or whose hook type
@@ -67,8 +67,6 @@ func forEachUniqueConfigSource(
 	for _, ls := range localSubnets {
 		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 		switch hook {
-		case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone, keaconfig.SubnetAndSharedNetworkAlteringHookLibraryBoth:
-			continue
 		case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
 			// For non-cb_cmds daemons, the config source is the daemon config,
 			// they are not grouped.
@@ -90,6 +88,8 @@ func forEachUniqueConfigSource(
 				backendLocalSubnets = []*dbmodel.LocalSubnet{}
 			}
 			localSubnetsByBackend[key] = append(backendLocalSubnets, ls)
+		default:
+			continue
 		}
 	}
 

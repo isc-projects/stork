@@ -290,6 +290,9 @@ func createSubnetDeleteCommands(
 	switch hook {
 	case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
 		if sharedNetworkNameBeforeUpdate != "" {
+			// If the deleted subnet belongs to a shared network we first need to remove
+			// this subnet from a shared network. This is a Kea limitation described in
+			// https://gitlab.isc.org/isc-projects/kea/-/issues/3455.
 			commands = append(commands, ConfigCommand{
 				Command: keactrl.NewCommandNetworkSubnetDel(
 					family,
