@@ -310,8 +310,7 @@ func (ctl *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 func sanitizeReturnURL(returnURL string) string {
 	const home = "/"
 	returnURL = strings.TrimSpace(returnURL)
-	returnURL = strings.ReplaceAll(returnURL, "\n", "")
-	returnURL = strings.ReplaceAll(returnURL, "\r", "")
+	returnURL = strings.NewReplacer("\n", "", "\r", "").Replace(returnURL)
 	parsed, err := url.Parse(returnURL)
 	if err != nil {
 		log.WithError(err).Warn("error while sanitizing return URL")
