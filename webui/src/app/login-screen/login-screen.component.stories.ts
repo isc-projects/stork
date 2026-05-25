@@ -64,6 +64,12 @@ export default {
                             id: 'passwordless',
                             name: 'Passwordless',
                         },
+                        {
+                            description:
+                                'OAuth2/OIDC authentication. You will get redirected to OpenID Provider to authenticate and authorize your access to Stork.',
+                            id: 'oidc',
+                            name: 'Log in with OpenID Connect',
+                        },
                     ],
                 } as AuthenticationMethods,
             },
