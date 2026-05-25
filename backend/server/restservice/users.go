@@ -792,7 +792,7 @@ func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.Get
 		FormLabelSecret:     "Password",
 	})
 
-	if r.OIDCControl.IsConfigured() {
+	if r.OIDCControl != nil && r.OIDCControl.IsConfigured() {
 		meta := r.OIDCControl.GetMetadata()
 		method := &models.AuthenticationMethod{
 			ID:          meta.GetID(),
