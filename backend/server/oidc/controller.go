@@ -386,25 +386,25 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	token, err := ctl.oauth2Config.Exchange(ctx, code, oauth2.SetAuthURLParam("code_verifier", codeVerifier))
 	if err != nil {
-		log.WithError(err).Errorf("error while exchanging OIDC token")
+		log.WithError(err).Error("error while exchanging OIDC token")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	idTokenJWT, ok := token.Extra("id_token").(string)
 	if !ok {
-		log.Errorf("error while extracting id_token from OIDC token response")
+		log.Error("error while extracting id_token from OIDC token response")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	idToken, err := ctl.tokenVerifier.Verify(ctx, idTokenJWT)
 	if err != nil {
-		log.WithError(err).Errorf("error while verifying OIDC token response")
+		log.WithError(err).Error("error while verifying OIDC token response")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 
 	if idToken.Nonce != expectedNonce {
-		log.Errorf("error while verifying OIDC token response - invalid nonce")
+		log.Error("error while verifying OIDC token response - invalid nonce")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -420,7 +420,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = idToken.Claims(&claims)
 	if err != nil {
-		log.WithError(err).Errorf("error while extracting OIDC claims")
+		log.WithError(err).Error("error while extracting OIDC claims")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -429,7 +429,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 		var rawClaims map[string]interface{}
 		err = idToken.Claims(&rawClaims)
 		if err != nil {
-			log.WithError(err).Errorf("error while extracting OIDC claims")
+			log.WithError(err).Error("error while extracting OIDC claims")
 			http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 			return
 		}
