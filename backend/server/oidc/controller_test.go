@@ -1087,4 +1087,8 @@ func TestGetMetadata(t *testing.T) {
 	require.Contains(t, meta.GetDescription(), "custom ID provider")
 	_, err := meta.GetIcon()
 	require.Error(t, err) // We don't expect to have icon returned by OIDC.
+	controller.settings.IdentityProviderName = "OpenID Connect"
+	controller.metadata = Metadata{settings: controller.settings}
+	meta = controller.GetMetadata()
+	require.Contains(t, meta.GetDescription(), "OpenID Provider")
 }
