@@ -4821,11 +4821,17 @@ func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 	}
 
 	// Validate the sent commands and URLS.
-	for i, command := range agents.RecordedCommands {
+	expectedCommandCounts := map[keactrl.CommandName]int{
+		keactrl.Subnet4Update: 2,
+		keactrl.ConfigWrite:   2,
+	}
+
+	for _, command := range agents.RecordedCommands {
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
-		switch {
-		case i < 2:
+		expectedCommandCounts[command.GetCommand()]--
+		switch command.GetCommand() {
+		case keactrl.Subnet4Update:
 			require.JSONEq(t,
 				`{
 				"command": "subnet4-update",
@@ -4841,14 +4847,20 @@ func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 				}
 			}`,
 				string(marshalled))
-		default:
+		case keactrl.ConfigWrite:
 			require.JSONEq(t,
 				`{
 						"command": "config-write",
 						"service": [ "dhcp4" ]
 					}`,
 				string(marshalled))
+		default:
+			require.Fail(t, "Unexpected command")
 		}
+	}
+
+	for _, count := range expectedCommandCounts {
+		require.Zero(t, count)
 	}
 
 	// Make sure that the subnet has been updated in the database.
