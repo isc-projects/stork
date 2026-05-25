@@ -36,6 +36,12 @@ describe('LoginScreenComponent', () => {
                         formLabelIdentifier: 'ldapLabelId',
                         formLabelSecret: 'ldapLabelSecret',
                     },
+                    {
+                        description:
+                            'OAuth2/OIDC authentication. You will get redirected to OpenID Provider to authenticate and authorize your access to Stork.',
+                        id: 'oidc',
+                        name: 'Log in with OpenID Connect',
+                    },
                 ] as AuthenticationMethod[]),
             login: () => ({
                 id: 1,
@@ -60,6 +66,7 @@ describe('LoginScreenComponent', () => {
         router = fixture.debugElement.injector.get(Router)
         msgSrv = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
+        localStorage.clear()
     })
 
     it('should create', () => {
@@ -96,7 +103,7 @@ describe('LoginScreenComponent', () => {
 
         // Check if data was received from AuthService getAuthenticationMethods().
         expect(component.authenticationMethods).toBeTruthy()
-        expect(component.authenticationMethods.length).toEqual(2)
+        expect(component.authenticationMethods.length).toEqual(3)
 
         // There should be a dropdown visible.
         const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-select'))
@@ -108,9 +115,10 @@ describe('LoginScreenComponent', () => {
         // Dropdown should display two methods.
         const listItems = dropdown.queryAll(By.css('.p-select-list li'))
         expect(listItems).toBeTruthy()
-        expect(listItems.length).toEqual(2)
+        expect(listItems.length).toEqual(3)
         expect(listItems[0].nativeElement.innerText).toContain('local')
         expect(listItems[1].nativeElement.innerText).toContain('ldap')
+        expect(listItems[2].nativeElement.innerText).toContain('OpenID Connect')
     }))
 
     it('should try to sign-in user with selected authentication method', fakeAsync(() => {
@@ -131,9 +139,10 @@ describe('LoginScreenComponent', () => {
         // Let's pick ldap method.
         const listItems = dropdown.queryAll(By.css('li'))
         expect(listItems).toBeTruthy()
-        expect(listItems.length).toEqual(2)
+        expect(listItems.length).toEqual(3)
         expect(listItems[0].nativeElement.innerText).toContain('local')
         expect(listItems[1].nativeElement.innerText).toContain('ldap')
+        expect(listItems[2].nativeElement.innerText).toContain('OpenID Connect')
 
         listItems[1].nativeElement.click()
         tick()
