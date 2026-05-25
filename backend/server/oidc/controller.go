@@ -109,10 +109,10 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		redirectURL.Host = "localhost:" + port
 	}
 	logFields := log.Fields{
-		"redirectURL":     redirectURL.String(),
-		"OpenID Provider": ctl.settings.IssuerURL,
+		"redirectURL":    redirectURL.String(),
+		"openIDProvider": ctl.settings.IssuerURL,
 	}
-	log.WithFields(logFields).Info("In order to allow authentication at OpenID Provider for Stork users, the redirect URL must first be registered at OpenID Provider.")
+	log.WithFields(logFields).Info("Authentication using OpenID Connect is now enabled in Stork, and users will be authenticated by OpenID Provider if the redirectURL has been registered in this provider.")
 	scopes := []string{
 		oidc.ScopeOpenID,
 	}
@@ -314,7 +314,7 @@ func sanitizeReturnURL(returnURL string) string {
 	returnURL = strings.ReplaceAll(returnURL, "\r", "")
 	parsed, err := url.Parse(returnURL)
 	if err != nil {
-		log.WithError(err).Warningf("error while sanitizing return URL")
+		log.WithError(err).Warn("error while sanitizing return URL")
 		return home
 	}
 	if parsed.IsAbs() || strings.HasPrefix(returnURL, "//") {
