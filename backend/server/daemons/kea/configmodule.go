@@ -1100,7 +1100,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	// per-daemon commands; cb_cmds daemons are deduplicated by a config
 	// backend database.
 	var addCommands, saveCommands []ConfigCommand
-	if err = forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	if err = forEachUniqueConsistentConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		// Generate commands to add the subnet to the Kea configuration or config
 		// backend database and assign the subnet to a shared network, if necessary.
 		cmds, err := createSubnetAddCommands(ls, subnet, sharedNetworkNameAfterUpdate, serverTags, lookup)
@@ -1286,7 +1286,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	// unassigned.
 	var updateCommands []ConfigCommand
 	alteredDaemons := make(map[int64]*dbmodel.Daemon)
-	if err = forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
+	if err = forEachUniqueConsistentConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, serverTags []string) error {
 		_, existingAssociation := existingAssociationByDaemonID[ls.DaemonID]
 		cmds, err := createSubnetUpdateCommands(
 			ls,
@@ -1407,9 +1407,10 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 	// For daemons backed by cb_cmds, commands are emitted once per unique
 	// config backend.
 	var deleteCommands, saveCommands []ConfigCommand
-	if err := forEachUniqueConfigSource(subnet.LocalSubnets, func(ls *dbmodel.LocalSubnet, _ []string) error {
+	if err := forEachUniqueConfigSource(subnet.LocalSubnets, func(localSubnets []*dbmodel.LocalSubnet) error {
+		target := localSubnets[0]
 		cmds, err := createSubnetDeleteCommands(
-			ls,
+			target,
 			subnet.GetPrefix(),
 			sharedNetworkNameBeforeUpdate,
 		)
@@ -1418,7 +1419,7 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 		}
 		deleteCommands = append(deleteCommands, cmds...)
 
-		cmds, err = createSubnetSaveCommands(ls.Daemon)
+		cmds, err = createSubnetSaveCommands(target.Daemon)
 		if err != nil {
 			return err
 		}

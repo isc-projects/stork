@@ -5938,6 +5938,7 @@ func TestCommitSubnetDeleteConfigBackend(t *testing.T) {
 
 	serverConfig := `{
 		"Dhcp4": {
+			"cache-max-age": %d,
 			"shared-networks": [{
 				"name": "foo",
 				"subnet4": [
@@ -5963,7 +5964,7 @@ func TestCommitSubnetDeleteConfigBackend(t *testing.T) {
 
 	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
-	err = server1.Configure(serverConfig)
+	err = server1.Configure(fmt.Sprintf(serverConfig, 3600))
 	require.NoError(t, err)
 
 	daemon1, err := server1.GetDaemon()
@@ -5971,7 +5972,9 @@ func TestCommitSubnetDeleteConfigBackend(t *testing.T) {
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
-	err = server2.Configure(serverConfig)
+	// The daemons have inconsistent cache-max-age values and they share the
+	// same config backend. They should be properly deleted.
+	err = server2.Configure(fmt.Sprintf(serverConfig, 7200))
 	require.NoError(t, err)
 
 	daemon2, err := server2.GetDaemon()
