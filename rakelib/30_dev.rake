@@ -424,6 +424,7 @@ namespace :unittest do
                     'backend/server/agentcomm/test',
                     'backend/server/database/test',
                     'backend/server/database/model/test',
+                    'backend/server/oidc/test',
                     'backend/testutil',
 
                     # Skip hook boilerplate,
