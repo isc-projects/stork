@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -471,5 +472,10 @@ func TestSanitizeReturnURL(t *testing.T) {
 	t.Run("URL path with query param", func(t *testing.T) {
 		u = sanitizeReturnURL("dns/zones/all?daemonId=17")
 		require.EqualValues(t, "/dns/zones/all?daemonId=17", u)
+	})
+
+	t.Run("sanitize protocol-relative very long URL", func(t *testing.T) {
+		u = sanitizeReturnURL("//example.org" + strings.Repeat("g", 300))
+		require.EqualValues(t, "/", u)
 	})
 }

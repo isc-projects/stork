@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -265,19 +266,19 @@ func (ctl *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	state, err := generateRandBase64Str()
 	if err != nil {
-		log.WithError(err).Errorf("error while generating OIDC random state")
+		log.WithError(err).Errorf("Error while generating OIDC random state")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	nonce, err := generateRandBase64Str()
 	if err != nil {
-		log.WithError(err).Errorf("error while generating OIDC random nonce")
+		log.WithError(err).Errorf("Error while generating OIDC random nonce")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	codeVerifier, codeChallenge, err := generatePKCE()
 	if err != nil {
-		log.WithError(err).Errorf("error while generating OIDC random PKCE")
+		log.WithError(err).Errorf("Error while generating OIDC random PKCE")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -312,12 +313,19 @@ func sanitizeReturnURL(returnURL string) string {
 	returnURL = strings.TrimSpace(returnURL)
 	returnURL = strings.NewReplacer("\n", "", "\r", "").Replace(returnURL)
 	parsed, err := url.Parse(returnURL)
+	safeReturnURL := ""
+	if (utf8.RuneCountInString(returnURL)) <= 255 {
+		safeReturnURL = returnURL
+	} else {
+		r := []rune(returnURL)
+		safeReturnURL = string(r[:255]) + "..."
+	}
 	if err != nil {
-		log.WithError(err).Warn("error while sanitizing return URL")
+		log.WithField("returnURL", safeReturnURL).WithError(err).Warn("Error while sanitizing returnURL")
 		return home
 	}
 	if parsed.IsAbs() || strings.HasPrefix(returnURL, "//") {
-		log.Warn("error while sanitizing return URL - wrong format")
+		log.WithField("returnURL", safeReturnURL).Warn("Error while sanitizing returnURL - wrong format")
 		return home
 	}
 	sanitizedPath := path.Clean(home + parsed.Path)
