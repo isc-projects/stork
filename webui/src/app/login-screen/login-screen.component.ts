@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core'
+import { Component, OnInit, inject, signal } from '@angular/core'
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
 
@@ -10,10 +10,10 @@ import { lastValueFrom } from 'rxjs'
 import { NgIf } from '@angular/common'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { FloatLabel } from 'primeng/floatlabel'
-import { Select } from 'primeng/select'
+import { Select, SelectChangeEvent } from 'primeng/select'
 import { InputText } from 'primeng/inputtext'
 import { Password } from 'primeng/password'
-import { Button } from 'primeng/button'
+import { ButtonModule } from 'primeng/button'
 import { Message } from 'primeng/message'
 import { MessageService } from 'primeng/api'
 
@@ -45,7 +45,7 @@ import { MessageService } from 'primeng/api'
         Select,
         InputText,
         Password,
-        Button,
+        ButtonModule,
         Message,
     ],
 })
@@ -105,6 +105,13 @@ export class LoginScreenComponent implements OnInit {
      * @private
      */
     private messageService = inject(MessageService)
+
+    /**
+     * A key used to store selected authentication method in local storage of
+     * user's browser.
+     * @private
+     */
+    private readonly selectedAuthMethodKey = 'selected-auth-method'
 
     /**
      * Fetches the version and authentication methods, and initializes the
@@ -181,6 +188,14 @@ export class LoginScreenComponent implements OnInit {
         lastValueFrom(this.auth.getAuthenticationMethods()).then((methods) => {
             this.authenticationMethods = methods
             this.authenticationMethod = methods[0]
+            if (methods.length > 1) {
+                const storedMethod = localStorage.getItem(this.selectedAuthMethodKey) || 'local'
+                const index = methods.findIndex((m) => m.id === storedMethod)
+                if (index > -1) {
+                    this.authenticationMethod = methods[index]
+                    this.updateNonFormLabel(this.authenticationMethod)
+                }
+            }
             this.loginForm.controls.authenticationMethod.setValue(this.authenticationMethod)
         })
     }
@@ -231,6 +246,47 @@ export class LoginScreenComponent implements OnInit {
     keyUp(event) {
         if (event.key === 'Enter') {
             this.signIn()
+        }
+    }
+
+    /**
+     * Signal keeping true if selected authentication method is a non-form, e.g., OpenID Connect
+     * (no password, no login forms should be displayed); false otherwise.
+     */
+    nonFormAuth = signal<boolean>(false)
+
+    /**
+     * Signal keeping last read non-form authentication method label that is used on the "Log in with..." button.
+     */
+    nonFormButtonLabel = signal<string>('')
+
+    /**
+     * Callback called whenever authentication method is changed in the Select form element.
+     * @param event select change event
+     * @protected
+     */
+    protected authMethodChange(event: SelectChangeEvent) {
+        const authMethod = event.value as AuthenticationMethod
+        const id = (authMethod.id ?? '') as string
+        this.updateNonFormLabel(authMethod)
+        localStorage.setItem(this.selectedAuthMethodKey, id)
+    }
+
+    /**
+     * It updates nonFormAuth boolean signal value depending on whether given
+     * authentication method is a non-form or not. If it is, updates also the
+     * button label.
+     * @param authMethod currently selected authentication method
+     * @private
+     */
+    private updateNonFormLabel(authMethod: AuthenticationMethod) {
+        const id = (authMethod.id ?? '') as string
+        // For now, we only support OpenID Connect as a non-form authentication.
+        // In the future, we may support more such methods. This method ID matching
+        // logic will have to be extended.
+        this.nonFormAuth.set(id === 'oidc')
+        if (this.nonFormAuth()) {
+            this.nonFormButtonLabel.set(authMethod.name)
         }
     }
 }
