@@ -41,6 +41,9 @@ service Agent {
 
   // Retrieves a snapshot of all current DHCP leases from the agent.
   rpc ReceiveKeaLeases(ReceiveKeaLeasesReq) returns (stream ReceiveKeaLeasesRsp) {}
+
+  // Retrieves the zone transfers from the agent with optional watch for new transfers.
+  rpc ReceiveZoneTransfers(ReceiveZoneTransfersReq) returns (stream ReceiveZoneTransfersRsp) {}
 }
 
 
@@ -412,4 +415,41 @@ message Lease {
   uint32 prefixLen = 10;
   // The Client ID of the lessee (if used).
   string clientID = 11;
+}
+
+// Request to retrieve the zone transfers from the agent with optional
+//watch for new transfers.
+message ReceiveZoneTransfersReq {
+  string controlAddress = 1;
+  int64 controlPort = 2;
+  bool follow = 3;
+}
+
+// Response containing the zone transfer.
+message ReceiveZoneTransfersRsp {
+  ZoneTransfer zoneTransfer = 1;
+}
+
+// A single zone transfer state.
+message ZoneTransfer {
+  enum XfrStatus {
+    UNKNOWN = 0;
+    STARTED = 1;
+    CONNECTED = 2;
+    COMPLETED = 3;
+    MESSAGE = 4;
+  }
+  string viewName = 1;
+  string zoneName = 2;
+  int64 serial = 3;
+  string client = 4;
+  string server = 5;
+  int64 messagesCount = 6;
+  int64 recordsCount = 7;
+  int64 bytesCount = 8;
+  int64 duration = 9;
+  XfrStatus status = 10;
+  int64 startTime = 11;
+  int64 completionTime = 12;
+  string message = 13;
 }
