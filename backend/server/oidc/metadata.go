@@ -15,7 +15,12 @@ type Metadata struct {
 
 // GetDescription implements [authdata.AuthenticationMetadata].
 func (m *Metadata) GetDescription() string {
-	return fmt.Sprintf("OAuth2/OIDC authentication. You will get redirected to %s to authenticate and authorize your access to Stork.", m.settings.IdentityProviderName)
+	provider := m.settings.IdentityProviderName
+	if provider == "OpenID Connect" {
+	    // In case of default setting, use more appropriate provider name.
+		provider = "OpenID Provider"
+	}
+	return fmt.Sprintf("OAuth2/OIDC authentication. You will get redirected to %s to authenticate and authorize your access to Stork.", provider)
 }
 
 // GetID implements [authdata.AuthenticationMetadata].
