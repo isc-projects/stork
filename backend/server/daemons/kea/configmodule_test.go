@@ -4809,28 +4809,18 @@ func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 	require.Len(t, agents.RecordedURLs, 4)
 	require.Len(t, agents.RecordedCommands, 4)
 
-	// The respective commands should be sent to different servers.
-	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
-	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
-	if agents.RecordedURLs[0] == agents.RecordedURLs[2] {
-		require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
-		require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
-	} else {
-		require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[3])
-		require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[2])
-	}
-
 	// Validate the sent commands and URLS.
-	expectedCommandCounts := map[keactrl.CommandName]int{
-		keactrl.Subnet4Update: 2,
-		keactrl.ConfigWrite:   2,
+	commandURLs := map[keactrl.CommandName][]string{
+		keactrl.Subnet4Update: {},
+		keactrl.ConfigWrite:   {},
 	}
 
-	for _, command := range agents.RecordedCommands {
+	for i, command := range agents.RecordedCommands {
 		marshalled, err := command.Marshal()
 		require.NoError(t, err)
-		expectedCommandCounts[command.GetCommand()]--
-		switch command.GetCommand() {
+		commandName := command.GetCommand()
+		commandURLs[commandName] = append(commandURLs[commandName], agents.RecordedURLs[i])
+		switch commandName {
 		case keactrl.Subnet4Update:
 			require.JSONEq(t,
 				`{
@@ -4859,9 +4849,12 @@ func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 		}
 	}
 
-	for _, count := range expectedCommandCounts {
-		require.Zero(t, count)
+	// The respective commands should be sent to different servers.
+	for _, urls := range commandURLs {
+		require.Len(t, urls, 2)
+		require.NotEqual(t, urls[0], urls[1])
 	}
+	require.Equal(t, commandURLs[keactrl.Subnet4Update], commandURLs[keactrl.ConfigWrite])
 
 	// Make sure that the subnet has been updated in the database.
 	updatedSubnet, err := dbmodel.GetSubnet(db, subnets[0].ID)
