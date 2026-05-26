@@ -911,3 +911,69 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	require.Len(t, dbUser.Groups, 1)
 	require.Equal(t, dbmodel.ReadOnlyGroupID, dbUser.Groups[0].ID)
 }
+
+// Test if extractGroupsFromClaim works fine.
+func TestExtractGroupsFromClaim(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	settings := Settings{
+		IssuerURL:           issuerURL,
+		ClientID:            "clientID",
+		GroupsClaim:         "groups",
+		MandatoryAllowGroup: "stork-users",
+	}
+	controller := NewController(settings, db)
+	require.NotNil(t, controller)
+
+	// Act & Assert
+	m := make(map[string]interface{})
+	t.Run("empty claims", func(t *testing.T) {
+		res := controller.extractGroupsFromClaim(m)
+		require.Empty(t, res)
+	})
+
+	m["sub"] = "foo"
+
+	t.Run("no groups", func(t *testing.T) {
+		res := controller.extractGroupsFromClaim(m)
+		require.Empty(t, res)
+	})
+
+	t.Run("slice of strings", func(t *testing.T) {
+		m["groups"] = []string{"a", "b", "c"}
+		res := controller.extractGroupsFromClaim(m)
+		require.NotEmpty(t, res)
+		require.Len(t, res, 3)
+		require.Contains(t, res, "a")
+		require.Contains(t, res, "b")
+		require.Contains(t, res, "c")
+	})
+
+	t.Run("one string", func(t *testing.T) {
+		m["groups"] = "groupA"
+		res := controller.extractGroupsFromClaim(m)
+		require.NotEmpty(t, res)
+		require.Len(t, res, 1)
+		require.Contains(t, res, "groupA")
+	})
+
+	t.Run("slice of interfaces", func(t *testing.T) {
+		var groupA, groupB, groupC interface{}
+		groupA = "groupA"
+		groupB = "groupB"
+		groupC = "groupC"
+		var groups []interface{}
+		groups = append(groups, groupA, groupB, groupC)
+		m["groups"] = groups
+		res := controller.extractGroupsFromClaim(m)
+		require.NotEmpty(t, res)
+		require.Len(t, res, 3)
+		require.Contains(t, res, "groupA")
+		require.Contains(t, res, "groupB")
+		require.Contains(t, res, "groupC")
+	})
+}

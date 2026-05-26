@@ -343,6 +343,29 @@ func sanitizeReturnURL(returnURL string) string {
 	return sanitizedPath
 }
 
+// Extracts groups claim from raw claims and returns the groups as slice of strings.
+func (ctl *Controller) extractGroupsFromClaim(rawClaims map[string]interface{}) []string {
+	// Do custom unmarshaling of the groups claim, because we can't be sure
+	// how the claim is formatted on the OpenID Provider side.
+	// We should have the groups extracted as slice of strings.
+	var groups []string
+	if val, ok := rawClaims[ctl.settings.GroupsClaim]; ok {
+		switch claim := val.(type) {
+		case []interface{}:
+			for _, g := range claim {
+				if s, ok := g.(string); ok {
+					groups = append(groups, s)
+				}
+			}
+		case []string:
+			groups = claim
+		case string:
+			groups = []string{claim}
+		}
+	}
+	return groups
+}
+
 // Handles OIDC callback endpoint which interprets redirection from OpenID Provider
 // after user successfully authenticates at the OP and authorizes Stork as a
 // Relying Party. It verifies the response, extracts required parameters and
@@ -431,25 +454,8 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 			return
 		}
-		// Do custom unmarshaling of the groups claim, because we can't be sure
-		// how the claim is formatted on the OpenID Provider side.
-		// We should have the groups extracted as slice of strings.
-		if val, ok := rawClaims[ctl.settings.GroupsClaim]; ok {
-			var groups []string
-			switch claim := val.(type) {
-			case []interface{}:
-				for _, g := range claim {
-					if s, ok := g.(string); ok {
-						groups = append(groups, s)
-					}
-				}
-			case []string:
-				groups = claim
-			case string:
-				groups = []string{claim}
-			}
-			claims.Groups = groups
-		}
+		groups := ctl.extractGroupsFromClaim(rawClaims)
+		claims.Groups = groups
 	}
 	log.Debugf("Claims received during OIDC authentication %+v", claims)
 
