@@ -1,6 +1,7 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { LeasesListTableComponent } from './leases-list-table.component'
+import { LeasesListPageComponent } from '../leases-list-page/leases-list-page.component'
 import { Router, provideRouter } from '@angular/router'
 import { ConfirmationService, MessageService, FilterMetadata } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
@@ -15,18 +16,30 @@ describe('LeasesListTableComponent', () => {
     let component: LeasesListTableComponent
     let fixture: ComponentFixture<LeasesListTableComponent>
     let dhcpService: DHCPService
+    let messageService: MessageService
     let getLeaseListSpy: jasmine.Spy
     let router: Router
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             providers: [
+                DHCPService,
                 MessageService,
                 ConfirmationService,
                 provideNoopAnimations(),
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([]),
+                provideRouter([
+                    {
+                        path: 'dhcp/lease-list',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/lease-list/all',
+                    },
+                    {
+                        path: 'dhcp/lease-list/:id',
+                        component: LeasesListPageComponent,
+                    },
+                ]),
                 {
                     provide: ServicesService,
                     useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
@@ -36,13 +49,14 @@ describe('LeasesListTableComponent', () => {
 
         dhcpService = TestBed.inject(DHCPService)
         router = TestBed.inject(Router)
-        getLeaseListSpy = spyOn(dhcpService, 'getLeaseList')
         spyOn(router, 'navigate')
     }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LeasesListTableComponent)
         component = fixture.componentInstance
+        getLeaseListSpy = spyOn(dhcpService, 'getLeaseList')
+        messageService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
         // Do not save table state between tests, because that makes tests unstable.
         spyOn(component.table, 'saveState').and.callFake(() => {})
@@ -57,6 +71,7 @@ describe('LeasesListTableComponent', () => {
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
         expect(inputNumbers.length).toEqual(3)
+        getLeaseListSpy.and.callThrough()
 
         // Act
         component.table.clear()
@@ -99,7 +114,7 @@ describe('LeasesListTableComponent', () => {
     }))
 
     it('should be filtered by subnetId', fakeAsync(() => {
-      component.dataCollection = [
+        component.dataCollection = [
             {
                 id: 1,
                 daemonId: 8,
@@ -157,6 +172,81 @@ describe('LeasesListTableComponent', () => {
                 daemonId: null,
                 subnetId: null,
                 localSubnetId: 10,
+                text: null,
+            },
+        })
+    }))
+
+    it('should display errors using the MessageService', fakeAsync(() => {
+        component.dataCollection = [
+            {
+                id: 1,
+                daemonId: 8,
+                daemonLabel: 'DHCPv4',
+                cltt: 11,
+                ipAddress: '10.168.1.67',
+                state: 1,
+                subnetId: 27,
+                validLifetime: 3600,
+            },
+        ]
+        fixture.detectChanges()
+
+        getLeaseListSpy.and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: 401, statusText: 'unauthorized' }))
+        )
+        spyOn(messageService, 'add')
+
+        // This is what the refresh button does.
+        component.loadData(component.table.createLazyLoadMetadata())
+        tick(300)
+        fixture.detectChanges()
+
+        expect(messageService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Cannot get leases list',
+                detail: 'Error getting leases list: unauthorized',
+            })
+        )
+    }))
+    it('should be filtered by machineId', fakeAsync(() => {
+        component.dataCollection = [
+            {
+                id: 1,
+                daemonId: 8,
+                daemonLabel: 'DHCPv4',
+                cltt: 11,
+                ipAddress: '10.168.1.67',
+                state: 1,
+                subnetId: 9,
+                validLifetime: 3600,
+            },
+            {
+                id: 2,
+                daemonId: 10,
+                daemonLabel: 'DHCPv4',
+                cltt: 11,
+                ipAddress: '10.168.2.67',
+                state: 0,
+                subnetId: 10,
+                validLifetime: 3600,
+            },
+        ]
+        fixture.detectChanges()
+
+        getLeaseListSpy.and.callThrough()
+
+        component.filterTable(100, <FilterMetadata>component.table.filters['machineId'])
+        tick(300)
+        fixture.detectChanges()
+
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: {
+                machineId: 100,
+                daemonId: null,
+                subnetId: null,
+                localSubnetId: null,
                 text: null,
             },
         })

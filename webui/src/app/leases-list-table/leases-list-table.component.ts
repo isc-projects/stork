@@ -120,6 +120,7 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
             .then((data: Leases) => {
                 this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
+                console.log('received data:', data)
             })
             .catch((err: any) => {
                 const msg = getErrorMessage(err)
@@ -129,6 +130,7 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
                     detail: 'Error getting leases list: ' + msg,
                     life: 10000,
                 })
+                console.log('WILLIAM received error:', err)
             })
             .finally(() => {
                 this.dataLoading = false
@@ -186,10 +188,10 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
-     *
-     * @param value
-     * @param filterConstraint
-     * @param debounceMode
+     * Apply the provited filter constraints to the table and redisplay the data.
+     * @param value The filter value that was changed.
+     * @param filterConstraint New filter constraints to change what data is shown.
+     * @param debounceMode True to debounce quickly repeated requests, false to run each request as soon as it is made.
      */
     filterTable(value: any, filterConstraint: FilterMetadata, debounceMode = true): void {
         if (debounceMode) {

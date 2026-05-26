@@ -19,9 +19,22 @@
 >
     <ng-template #caption>
         <app-table-caption [tableElement]="leasesListTable" tableKey="leases-list-table" [wideHelpTip]="true">
-            <ng-template #helptip>
+          <ng-template #helptip>
+						<p>
+                    Leases in the table below can be filtered by an explicitly selected field using text input filters. The
+                    currently supported fields for explicit filtering are:
+                </p>
+                <ul>
+                    <li>Machine ID - the ID of the machine used by Stork.</li>
+                    <li>
+                        Daemon - pick a daemon from the dropdown list or type to search the daemon by machine's
+                        hostname, address, daemon ID, or daemon name.
+                    </li>
+                    <li>Subnet ID - the subnet ID used by Stork.</li>
+                    <li>Local Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
+                </ul>
                 <p>
-                    Leases in the table below can be filtered by entering text in the search box; the table shows all
+                    Leases can also be filtered by entering text in the search box; the table shows all
                     leases matching the filter text. The currently supported fields for filtering are:
                 </p>
                 <ul>
@@ -41,19 +54,7 @@
                     192.0.2.0/24 subnet can found by entering
                     <b>192.0.2</b> as the filter text.
                 </p>
-                <p>
-                    In addition, leases can be filtered by an explicitly selected field using text input filters. The
-                    currently supported fields for explicit filtering are:
-                </p>
-                <ul>
-                    <li>Machine ID - the ID of the machine used by Stork.</li>
-                    <li>
-                        Daemon - pick a daemon from the dropdown list or type to search the daemon by machine's
-                        hostname, address, daemon ID, or daemon name.
-                    </li>
-                    <li>Subnet ID - the subnet ID used by Stork.</li>
-                    <li>Local Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
-                </ul>
+                
                 <p>
                     Leases can be filtered by multiple fields. Currently, all provided filtering conditions are joined
                     using a logical AND.

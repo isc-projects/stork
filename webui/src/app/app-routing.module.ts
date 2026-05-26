@@ -95,12 +95,12 @@ const routes: Routes = [
         data: { key: 'leases' },
     },
     {
-      path: 'dhcp/leases-list',
-			pathMatch: 'full',
-			redirectTo: 'dhcp/leases-list/all',
-		},
-	{
-		path: 'dhcp/leases-list/:id',
+        path: 'dhcp/leases-list',
+        pathMatch: 'full',
+        redirectTo: 'dhcp/leases-list/all',
+    },
+    {
+        path: 'dhcp/leases-list/:id',
         component: LeasesListPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'leases-list' },
