@@ -183,7 +183,7 @@ func TestGetLeasesPropagatesErrorFromGetLeasesByPage(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, fec)
 	require.NoError(t, err)
 
-	ctx, err = rapi.SessionManager.Load(ctx, "")
+	_, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
 
 	// Act
