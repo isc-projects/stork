@@ -165,9 +165,7 @@ func (ctl *Controller) wrapOIDCSession(next http.Handler) http.Handler {
 	sessionHandler := ctl.dbSessionManager.SessionMiddleware(ctl.authSessionManager.LoadAndSave(next))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case strings.HasPrefix(r.URL.Path, loginURLPath):
-			sessionHandler.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, callbackURLPath):
+		case strings.HasPrefix(r.URL.Path, loginURLPath), strings.HasPrefix(r.URL.Path, callbackURLPath):
 			sessionHandler.ServeHTTP(w, r)
 		default:
 			next.ServeHTTP(w, r)
