@@ -40,14 +40,14 @@ export default {
                     items: [
                         {
                             description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                            formLabelIdentifier: 'Login/Email',
+                            formLabelIdentifier: 'Username/Email',
                             formLabelSecret: 'Password',
                             id: 'internal',
                             name: 'Internal',
                         },
                         {
                             description: 'Fusce faucibus mauris purus, in mattis tellus pellentesque sed.',
-                            formLabelIdentifier: 'Login',
+                            formLabelIdentifier: 'Username',
                             formLabelSecret: 'Password',
                             id: 'ldap',
                             name: 'LDAP',
@@ -128,7 +128,7 @@ export const SingleMethod: Story = {
                     items: [
                         {
                             description: 'LDAP',
-                            formLabelIdentifier: 'Login',
+                            formLabelIdentifier: 'Username',
                             formLabelSecret: 'Password',
                             id: 'ldap',
                             name: 'LDAP',
@@ -176,14 +176,14 @@ export const TestAuthMethodIsStoredInLocalStorage: Story = {
                     items: [
                         {
                             description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                            formLabelIdentifier: 'Login/Email',
+                            formLabelIdentifier: 'Username/Email',
                             formLabelSecret: 'Password',
                             id: 'internal',
                             name: 'Internal',
                         },
                         {
                             description: 'Fusce faucibus mauris purus, in mattis tellus pellentesque sed.',
-                            formLabelIdentifier: 'Login',
+                            formLabelIdentifier: 'Username',
                             formLabelSecret: 'Password',
                             id: 'ldap',
                             name: 'LDAP',
@@ -227,8 +227,8 @@ export const TestAuthMethodIsStoredInLocalStorage: Story = {
         await expect(stored).toEqual('oidc')
 
         await expect(combobox).toHaveTextContent('Log in with OpenID Connect')
-        await expect(canvas.queryByLabelText('Login')).toBeNull()
-        await expect(canvas.queryByLabelText('Login/Email')).toBeNull()
+        await expect(canvas.queryByLabelText('Username')).toBeNull()
+        await expect(canvas.queryByLabelText('Username/Email')).toBeNull()
         await expect(canvas.queryByLabelText('Password')).toBeNull()
         const btn = await canvas.findByRole('link', { name: 'Log in with OpenID Connect' })
         await expect(btn).not.toBeFalsy()
@@ -255,14 +255,14 @@ export const TestAuthMethodIsReadFromLocalStorage: Story = {
                     items: [
                         {
                             description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                            formLabelIdentifier: 'Login/Email',
+                            formLabelIdentifier: 'Username/Email',
                             formLabelSecret: 'Password',
                             id: 'internal',
                             name: 'Internal',
                         },
                         {
                             description: 'Fusce faucibus mauris purus, in mattis tellus pellentesque sed.',
-                            formLabelIdentifier: 'Login',
+                            formLabelIdentifier: 'Username',
                             formLabelSecret: 'Password',
                             id: 'ldap',
                             name: 'LDAP',

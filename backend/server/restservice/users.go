@@ -788,7 +788,7 @@ func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.Get
 		ID:                  "internal",
 		Name:                "Internal",
 		Description:         "Internal Stork authentication based on credentials from the internal database",
-		FormLabelIdentifier: "Email/Login",
+		FormLabelIdentifier: "Username/Email",
 		FormLabelSecret:     "Password",
 	})
 

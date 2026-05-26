@@ -236,7 +236,7 @@ def test_change_admin_password_then_revert(page):
     lp.logout("admin")
 
     # 5) Try login with MAIN_PASS to confirm it fails
-    page.get_by_role("textbox", name="Email/Login").fill(ADMIN_USER)
+    page.get_by_role("textbox", name="Username/Email").fill(ADMIN_USER)
     page.locator("input[type='password']").fill(MAIN_PASS)
     page.get_by_role("button", name="Sign In").click()
     expect(page.get_by_text("Invalid login or password", exact=True)).to_be_visible(
@@ -263,7 +263,7 @@ def test_change_admin_password_then_revert(page):
 
     # 8) Logout and verify login with MAIN_PASS works again
     lp.logout("admin")
-    page.get_by_role("textbox", name="Email/Login").fill(ADMIN_USER)
+    page.get_by_role("textbox", name="Username/Email").fill(ADMIN_USER)
     page.locator("input[type='password']").fill(MAIN_PASS)
     page.get_by_role("button", name="Sign In").click()
     lp.await_dashboard()
