@@ -446,9 +446,17 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 		ExternalID:             externalUser.ID,
 		ChangePassword:         false,
 	}
+	login := (*string)(nil)
+	email := (*string)(nil)
+	if len(externalUser.Login) > 0 {
+		login = &externalUser.Login
+	}
+	if len(externalUser.Email) > 0 {
+		email = &externalUser.Email
+	}
 	_, err = db.Model(systemUser).OnConflict("(auth_method, external_id) DO UPDATE").
-		Set("login = ?", externalUser.Login).
-		Set("email = ?", externalUser.Email).
+		Set("login = ?", login).
+		Set("email = ?", email).
 		Set("name = ?", externalUser.Name).
 		Set("lastname = ?", externalUser.Lastname).
 		Set("change_password = ?", false).Insert()
