@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net"
 	"runtime"
 	"slices"
@@ -992,6 +993,116 @@ func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server
 		})
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func receiveZoneTransfer(server grpc.ServerStreamingServer[agentapi.ReceiveZoneTransfersRsp], state xfrState) error {
+	select {
+	case <-server.Context().Done():
+		return server.Context().Err()
+	default:
+		err := server.Send(&agentapi.ReceiveZoneTransfersRsp{
+			ZoneTransfer: &agentapi.ZoneTransfer{
+				ViewName:      state.viewName,
+				ZoneName:      state.zoneName,
+				Serial:        state.serial,
+				Client:        state.client,
+				Server:        state.server,
+				MessagesCount: state.messagesCount,
+				RecordsCount:  state.recordsCount,
+				BytesCount:    state.bytesCount,
+				Duration:      int64(state.duration),
+				Status:        agentapi.ZoneTransfer_XfrStatus(state.status),
+			},
+		})
+		if err != nil {
+			return status.Error(codes.Aborted, err.Error())
+		}
+	}
+	return nil
+}
+
+// Generate a streaming response returning recorded zone transfers for a specified
+// daemon. Optionally, the persistent connection can be maintained to receive live
+// zone transfer updates as they appear in the XFR tracker (req.Follow set to true).
+// A new request with req.Follow set to true will cancel the current persistent
+// session and start a new one. The request with req.Follow set to false does not
+// cancel the current session. It merely streams the current completed and ongoing
+// zone transfers and returns. Use the req.Follow parameter to switch between the
+// reactive server mode (notify the Stork server about new zone transfers), and the
+// proactive mode - when the Stork server is using pullers. This function returns
+// InvalidArgument status code if the daemon is not a BIND 9 daemon. It returns
+// FailedPrecondition status code if the XFR tracker is nil for the given BIND 9
+// daemon. It returns Aborted status code if the send operation fails. The persistent
+// session is stopped when the context associated with the server is cancelled.
+func (sa *StorkAgent) ReceiveZoneTransfers(req *agentapi.ReceiveZoneTransfersReq, server grpc.ServerStreamingServer[agentapi.ReceiveZoneTransfersRsp]) error {
+	daemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, req.ControlAddress, req.ControlPort)
+	if daemon == nil {
+		return status.New(codes.NotFound, fmt.Sprintf("DNS daemon not found at %s:%d", req.ControlAddress, req.ControlPort)).Err()
+	}
+
+	bind9Daemon, ok := daemon.(*Bind9Daemon)
+	if !ok {
+		// This is rather an exceptional case, so we don't necessarily need to
+		// include the detailed error message.
+		return status.New(
+			codes.InvalidArgument,
+			fmt.Sprintf("attempted to receive DNS zones from an unsupported daemon: %s", daemon.GetName()),
+		).Err()
+	}
+	if bind9Daemon.xfrTracker == nil {
+		return status.New(codes.FailedPrecondition,
+			fmt.Sprintf("BIND 9 zone transfer is disabled for daemon %s", daemon.GetName())).Err()
+	}
+	var (
+		completed  iter.Seq[xfrState]
+		ongoing    iter.Seq[xfrState]
+		followChan <-chan xfrState
+	)
+	if req.Follow {
+		// Caller request that we return currently recorded zone transfers, and keep
+		// the stream open to receive new zone transfers as they appear.
+		completed, ongoing, followChan = bind9Daemon.xfrTracker.follow(server.Context())
+	} else {
+		// Caller request that we return currently recorded zone transfers, and close
+		// the stream after returning the transfers.
+		completed = slices.Values(bind9Daemon.xfrTracker.getCompleted())
+		ongoing = slices.Values(bind9Daemon.xfrTracker.getNotCompleted())
+	}
+	// Return the currently recorded zone transfers.
+	for _, group := range []iter.Seq[xfrState]{completed, ongoing} {
+		for state := range group {
+			err := receiveZoneTransfer(server, state)
+			if err != nil {
+				if !errors.Is(err, context.Canceled) {
+					return err
+				}
+				// If the context is cancelled, we can exit the loop.
+				return nil
+			}
+		}
+	}
+	if req.Follow {
+		// Listen for new zone transfers and send them back when they appear.
+		for {
+			select {
+			case <-server.Context().Done():
+				return nil
+			case state, ok := <-followChan:
+				if !ok {
+					return nil
+				}
+				err := receiveZoneTransfer(server, state)
+				if err != nil {
+					if !errors.Is(err, context.Canceled) {
+						return err
+					}
+					// If the context is cancelled, we can exit the loop.
+					return nil
+				}
+			}
 		}
 	}
 	return nil

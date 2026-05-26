@@ -16,6 +16,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/miekg/dns"
@@ -3214,4 +3215,615 @@ func TestReceiveKeaLeasesSnapshotFnReturnsError(t *testing.T) {
 		ControlPort:    ap.Port,
 	}, sss)
 	require.ErrorContains(t, errNilSnooper, "unable to get lease snapshot")
+}
+
+// Test that a request to receive zone transfers over gRPC can be cancelled.
+func TestReceiveZoneTransfersCancelContext(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Prepare the XFR tracker and feed it with the initial logs.
+	xfrTracker := newXfrTracker(nil)
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+
+	// Add a BIND9 daemon with the XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: xfrTracker,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// Create a mock for the streaming server.
+		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+		// Create a mock specific cancellation context.
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+		// Collect the responses.
+		responses := make([]*agentapi.ReceiveZoneTransfersRsp, 0)
+		mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveZoneTransfersRsp) error {
+			responses = append(responses, rsp)
+			return nil
+		})
+
+		// This channel will be used to ensure that the request has ended as a result
+		// of the cancellation.
+		doneChan := make(chan struct{})
+		go func() {
+			defer close(doneChan)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         true,
+			}, mock)
+			require.NoError(t, err)
+		}()
+		synctest.Wait()
+
+		// Make sure that the number of transfers received is correct.
+		require.Len(t, responses, 6)
+
+		// Feed the tracker with the second batch of logs.
+		xfrOnlyLogs2 := strings.Split(xfrOnlyLogs2, "\n")
+		for _, logLine := range xfrOnlyLogs2 {
+			xfrTracker.feed(logLine)
+		}
+
+		// Wait until all transfers have been sent and the agent is blocked
+		// on finding next transfers in the logs.
+		synctest.Wait()
+
+		// Make sure that the number of transfers received is correct.
+		require.Len(t, responses, 11)
+
+		// Cancel the request and wait for the gRPC request to end.
+		cancel()
+		<-doneChan
+	})
+}
+
+// Test that the subsequent request to receive zone transfers over gRPC cancels
+// and interrupts the previous request.
+func TestReceiveZoneTransfersCancelReconnect(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Prepare the XFR tracker and feed it with the initial logs.
+	xfrTracker := newXfrTracker(nil)
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+
+	// Add a BIND9 daemon with the XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: xfrTracker,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// Create two mocks. One will be associated with the first request, and the other with
+		// the second request. They differ by collecting the responses into separate slices
+		// and they use different cancellation contexts.
+		var mocks []*MockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp]
+		responses := make([][]*agentapi.ReceiveZoneTransfersRsp, 2)
+		cancels := make([]context.CancelFunc, 2)
+		for i := 0; i < 2; i++ {
+			mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+			// Create mock specific cancellation context.
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			cancels[i] = cancel
+			mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+			// Collect the responses into the mock specific slice.
+			mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveZoneTransfersRsp) error {
+				responses[i] = append(responses[i], rsp)
+				return nil
+			})
+
+			mocks = append(mocks, mock)
+		}
+
+		// This channel will be used to ensure that the request has ended as a result
+		// of the second request starting.
+		doneChan1 := make(chan struct{})
+		go func() {
+			// Close the channel to indicate that the request has ended.
+			defer close(doneChan1)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         true,
+			}, mocks[0])
+			require.NoError(t, err)
+		}()
+		// Wait until all transfers have been sent and the agent is blocked
+		// on finding next transfers in the logs.
+		synctest.Wait()
+
+		// Make sure that the number of transfers received is correct.
+		require.Len(t, responses[0], 6)
+
+		// Feed the tracker with the second batch of logs.
+		xfrOnlyLogs2 := strings.Split(xfrOnlyLogs2, "\n")
+		for _, logLine := range xfrOnlyLogs2 {
+			xfrTracker.feed(logLine)
+		}
+		// Wait until all transfers have been sent and the agent is blocked
+		// on finding next transfers in the logs.
+		synctest.Wait()
+
+		require.Len(t, responses[0], 11)
+
+		doneChan2 := make(chan struct{})
+		go func() {
+			defer close(doneChan2)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         true,
+			}, mocks[1])
+			require.NoError(t, err)
+		}()
+		synctest.Wait()
+
+		// Make sure that the first request has ended as a result of the second
+		// request starting.
+		<-doneChan1
+
+		// Cancel the second request and wait for it to end.
+		cancels[1]()
+		<-doneChan2
+
+		// Make sure that the correct number of responses have been received.
+		require.Len(t, responses[1], 7)
+	})
+}
+
+// Test that the zone transfers are received while there is another request
+// set to follow the live updates. The second request should not interrupt
+// the first request.
+func TestReceiveZoneTransfersWhileFollowing(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Prepare the XFR tracker and feed it with the initial logs.
+	xfrTracker := newXfrTracker(nil)
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+
+	// Add a BIND9 daemon with the XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: xfrTracker,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// Create two mocks. One will be associated with the first request, and the other with
+		// the second request. They differ by collecting the responses into separate slices
+		// and they use different cancellation contexts.
+		var mocks []*MockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp]
+		responses := make([][]*agentapi.ReceiveZoneTransfersRsp, 2)
+		cancels := make([]context.CancelFunc, 2)
+		for i := 0; i < 2; i++ {
+			mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+			// Create mock specific cancellation context.
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			cancels[i] = cancel
+			mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+			// Collect the responses into the mock specific slice.
+			mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveZoneTransfersRsp) error {
+				responses[i] = append(responses[i], rsp)
+				return nil
+			})
+
+			mocks = append(mocks, mock)
+		}
+
+		// This channel will be used to ensure that the request has ended when cancelled.
+		doneChan1 := make(chan struct{})
+		go func() {
+			// Close the channel to indicate that the request has ended.
+			defer close(doneChan1)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         true,
+			}, mocks[0])
+			require.NoError(t, err)
+		}()
+		// Wait until all transfers have been sent and the agent is blocked
+		// on finding next transfers in the logs.
+		synctest.Wait()
+
+		// Make sure that the number of transfers received is correct.
+		require.Len(t, responses[0], 6)
+
+		doneChan2 := make(chan struct{})
+		go func() {
+			defer close(doneChan2)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         false,
+			}, mocks[1])
+			require.NoError(t, err)
+		}()
+		synctest.Wait()
+
+		// Make sure that the second request has ended because it was not
+		// following the live updates.
+		<-doneChan2
+
+		// Feed the tracker with the second batch of logs.
+		xfrOnlyLogs2 := strings.Split(xfrOnlyLogs2, "\n")
+		for _, logLine := range xfrOnlyLogs2 {
+			xfrTracker.feed(logLine)
+		}
+		// Wait until all transfers have been sent and the agent is blocked
+		// on finding next transfers in the logs.
+		synctest.Wait()
+
+		// The responses should be sent in response to the first request.
+		require.Len(t, responses[0], 11)
+
+		cancels[0]()
+
+		// Make sure that the first request has ended as a result of the cancellation.
+		<-doneChan1
+	})
+}
+
+// Test that a request to receive zone transfers without following the live
+// updates works as expected.
+func TestReceiveZoneTransfersNoFollow(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Prepare the XFR tracker and feed it with the initial logs.
+	xfrTracker := newXfrTracker(nil)
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+
+	// Add a BIND9 daemon with the XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: xfrTracker,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// Create a mock for the streaming server.
+		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+		// Create a mock specific cancellation context.
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+		// Collect the responses.
+		responses := make([]*agentapi.ReceiveZoneTransfersRsp, 0)
+		mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveZoneTransfersRsp) error {
+			responses = append(responses, rsp)
+			return nil
+		})
+
+		// This channel will be used to ensure that the request has ended.
+		doneChan := make(chan struct{})
+		go func() {
+			defer close(doneChan)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         false,
+			}, mock)
+			require.NoError(t, err)
+		}()
+		synctest.Wait()
+
+		// Make sure that the number of transfers received is correct.
+		require.Len(t, responses, 6)
+
+		// Feed the tracker with the second batch of logs. These feeds should
+		// not be recorded because the request is not following the live updates.
+		xfrOnlyLogs2 := strings.Split(xfrOnlyLogs2, "\n")
+		for _, logLine := range xfrOnlyLogs2 {
+			xfrTracker.feed(logLine)
+		}
+
+		// Ensure a stable state.
+		synctest.Wait()
+
+		// Make sure that the number of transfers received hasn't changed.
+		require.Len(t, responses, 6)
+
+		// Make sure that the request has ended.
+		<-doneChan
+	})
+}
+
+// Test that InvalidArgument status code is returned when the daemon from which the
+// zone transfers are received is not a BIND 9 daemon.
+func TestReceiveZoneTransfersUnsupportedDaemon(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add non-BIND 9 daemon.
+	var daemons []Daemon
+	daemons = append(daemons, &keaDaemon{
+		daemon: daemon{
+			Name: daemonname.DHCPv4,
+			AccessPoints: []AccessPoint{{
+				Type:    AccessPointControl,
+				Address: "127.0.0.1",
+				Port:    1234,
+				Key:     "key",
+			}},
+		},
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	// Receive zone transfers from the non-BIND 9 daemon.
+	err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		Follow:         false,
+	}, nil)
+
+	// Make sure that the correct status code was returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.InvalidArgument, st.Code())
+	require.Equal(t, "attempted to receive DNS zones from an unsupported daemon: dhcp4", st.Message())
+}
+
+func TestReceiveZoneTransfersDisabledXfrTracker(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 daemon with the nil XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: nil,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	// Receive zone transfers from the BIND9 daemon with the nil XFR tracker.
+	err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		Follow:         false,
+	}, nil)
+
+	// Make sure that the correct status code was returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.FailedPrecondition, st.Code())
+	require.Equal(t, fmt.Sprintf("BIND 9 zone transfer is disabled for daemon %s", daemonname.Bind9), st.Message())
+}
+
+// Test that the error is returned when the send operation fails while
+// following the live updates.
+func TestReceiveZoneTransfersSendErrorWhileFollowing(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Prepare the XFR tracker.
+	xfrTracker := newXfrTracker(nil)
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+
+	// Add a BIND9 daemon with the XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: xfrTracker,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+		// Simulate the send operation failing.
+		mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveZoneTransfersRsp) error {
+			return errors.New("test error")
+		})
+
+		// This channel will be used to ensure that the request has ended.
+		doneChan := make(chan struct{})
+		go func() {
+			defer close(doneChan)
+			err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "127.0.0.1",
+				ControlPort:    1234,
+				Follow:         true,
+			}, mock)
+			require.Error(t, err)
+
+			// Make sure that the correct status code was returned.
+			st := status.Convert(err)
+			require.Equal(t, codes.Aborted, st.Code())
+			require.Equal(t, "test error", st.Message())
+		}()
+		synctest.Wait()
+
+		// Feed the tracker causing it to attempt to send the data to the client.
+		// It should fail due to the test error returned by the mock.
+		xfrTracker.feed(xfrOnlyLogs[0])
+
+		// Make sure that the request has ended.
+		<-doneChan
+	})
+}
+
+// Test that the error is returned when the send operation fails while
+// returning initial batch of zone transfers.
+func TestReceiveZoneTransfersSendErrorNoFollow(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Prepare the XFR tracker and feed it with the initial logs.
+	xfrTracker := newXfrTracker(nil)
+	xfrOnlyLogs := strings.Split(xfrOnlyLogs, "\n")
+	for _, logLine := range xfrOnlyLogs {
+		xfrTracker.feed(logLine)
+	}
+
+	// Add a BIND9 daemon with the XFR tracker.
+	var daemons []Daemon
+	daemons = append(daemons, &Bind9Daemon{
+		dnsDaemonImpl: dnsDaemonImpl{
+			daemon: daemon{
+				Name: daemonname.Bind9,
+				AccessPoints: []AccessPoint{{
+					Type:     AccessPointControl,
+					Address:  "127.0.0.1",
+					Port:     1234,
+					Key:      "key",
+					Protocol: protocoltype.RNDC,
+				}},
+			},
+		},
+		xfrTracker: xfrTracker,
+	})
+	fdm, _ := sa.Monitor.(*FakeMonitor)
+	fdm.Daemons = daemons
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	mock.EXPECT().Context().AnyTimes().Return(ctx)
+
+	// Simulate the send operation failing.
+	mock.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(rsp *agentapi.ReceiveZoneTransfersRsp) error {
+		return errors.New("test error")
+	})
+
+	// Attempt to receive the zone transfers triggering the failing send operation.
+	err := sa.ReceiveZoneTransfers(&agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		Follow:         false,
+	}, mock)
+	require.Error(t, err)
+
+	// Make sure that the correct status code was returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.Aborted, st.Code())
+	require.Equal(t, "test error", st.Message())
 }
