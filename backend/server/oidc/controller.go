@@ -453,6 +453,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 			claims.Groups = groups
 		}
 	}
+	log.Debugf("Claims received during OIDC authentication %+v", claims)
 
 	// Check the group mapping.
 	belongsToAllowGroup, mappedGroups := ctl.getMappedGroups(&claims.Groups)
