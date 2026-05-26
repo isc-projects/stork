@@ -371,20 +371,36 @@ message ReceiveKeaLeasesRsp {
   Lease lease = 1;
 }
 
+// A Kea lease.  Valid leases must have both an IP and one of (hwAddress, duid,
+// clientID).
 message Lease {
+	// Which IP/DHCP version the lease is for.
   enum IPAddrFamily {
     V_UNKNOWN = 0;
+		// IPv4.
     V4 = 4;
+		// IPv6.
     V6 = 6;
   }
   IPAddrFamily family = 1;
+	// The IP address that was leased out.
   string ipAddress = 2;
+	// The hardware address of the lessee (if used).
   string hwAddress = 3;
+	// The Device Unique IDentifier of the lessee (if used).
   string duid = 4;
+	// The Unix timestamp (seconds) at which the lease will expire.
   uint64 expire = 5;
+	// The Unix timestamp (seconds) of the last interaction with the client.
   uint64 cltt = 6;
+	// The duration in seconds for which the lease is valid. CLTT+validLifetime=expire.
   uint64 validLifetime = 7;
+	// The local/Kea subnet ID in which the lease was allocated.
   uint32 subnetID = 8;
+	// The state of the lease (Kea enum, values 0-4).
   uint32 state = 9;
+	// If the lease includes an IPv6 delegated prefix, the length of the prefix.
   uint32 prefixLen = 10;
+	// The Client ID of the lessee (if used).
+	string clientID = 11;
 }

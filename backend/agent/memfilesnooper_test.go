@@ -654,6 +654,7 @@ func TestParseRowAsLease4(t *testing.T) {
 // rejects rows which are not.
 func TestParseRowAsLease6(t *testing.T) {
 	// Arrange
+	exampleDUID := "01:00:00:00:00:00"
 	testCases := []struct {
 		desc        string
 		row         []string
@@ -734,7 +735,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			&keadata.Lease{
 				Family:        storkutil.IPv6,
 				IPAddress:     "51a4:14ec:1::",
-				DUID:          "01:00:00:00:00:00",
+				DUID:          keadata.NewColonSeparatedHexStr(&exampleDUID),
 				CLTT:          1761669049,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,

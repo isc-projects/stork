@@ -537,7 +537,7 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 
 	require.EqualValues(t, daemon.ID, lease.DaemonID)
 	require.NotNil(t, lease.Daemon)
-	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID.String)
 	require.EqualValues(t, 12345678, lease.CLTT)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
@@ -585,7 +585,7 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 	require.EqualValues(t, daemon.ID, lease.DaemonID)
 	require.NotNil(t, lease.Daemon)
 	require.EqualValues(t, 12345678, lease.CLTT)
-	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID.String)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
 	require.Equal(t, "myhost.example.com.", lease.Hostname)
@@ -635,7 +635,7 @@ func TestGetLease6ByPrefix(t *testing.T) {
 	require.EqualValues(t, daemon.ID, lease.DaemonID)
 	require.NotNil(t, lease.Daemon)
 	require.EqualValues(t, 12345678, lease.CLTT)
-	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID.String)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
 	require.Empty(t, lease.Hostname)
@@ -758,7 +758,7 @@ func TestGetLeases4(t *testing.T) {
 			lease := leases[0]
 			require.EqualValues(t, daemon.ID, lease.DaemonID)
 			require.NotNil(t, lease.Daemon)
-			require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+			require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID.String)
 			require.EqualValues(t, 12345678, lease.CLTT)
 			require.False(t, lease.FqdnFwd)
 			require.True(t, lease.FqdnRev)
@@ -821,7 +821,7 @@ func TestGetLeases6(t *testing.T) {
 			require.EqualValues(t, daemon.ID, lease.DaemonID)
 			require.NotNil(t, lease.Daemon)
 			require.EqualValues(t, 12345678, lease.CLTT)
-			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
+			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID.String)
 			require.False(t, lease.FqdnFwd)
 			require.True(t, lease.FqdnRev)
 			require.Equal(t, "myhost.example.com.", lease.Hostname)
@@ -839,7 +839,7 @@ func TestGetLeases6(t *testing.T) {
 			require.EqualValues(t, daemon.ID, lease.DaemonID)
 			require.NotNil(t, lease.Daemon)
 			require.EqualValues(t, 12345678, lease.CLTT)
-			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
+			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID.String)
 			require.False(t, lease.FqdnFwd)
 			require.True(t, lease.FqdnRev)
 			require.Empty(t, lease.Hostname)
@@ -939,7 +939,7 @@ func TestGetLeasesByPropertiesSecondError(t *testing.T) {
 	lease := leases[0]
 	require.EqualValues(t, daemon.ID, lease.DaemonID)
 	require.NotNil(t, lease.Daemon)
-	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID.String)
 	require.EqualValues(t, 12345678, lease.CLTT)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
@@ -977,7 +977,7 @@ func TestGetLeases4InvalidJSON(t *testing.T) {
 
 	require.EqualValues(t, daemon.ID, lease.DaemonID)
 	require.NotNil(t, lease.Daemon)
-	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID.String)
 	require.EqualValues(t, 12345678, lease.CLTT)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
@@ -1016,7 +1016,7 @@ func TestGetLease6InvalidJSON(t *testing.T) {
 	require.EqualValues(t, daemon.ID, lease.DaemonID)
 	require.NotNil(t, lease.Daemon)
 	require.EqualValues(t, 12345678, lease.CLTT)
-	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID.String)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
 	require.Equal(t, "myhost.example.com.", lease.Hostname)
@@ -1989,6 +1989,8 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	}
 
 	// None of the leases matches the host reservation.
+	clientID02 := "02020202"
+	duid43 := "4343434343434343"
 	leases := []dbmodel.Lease{
 		{
 			Lease: keadata.Lease{
@@ -1997,12 +1999,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: "02020202",
+				ClientID: keadata.NewColonSeparatedHexStr(&clientID02),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: "4343434343434343",
+				DUID: keadata.NewColonSeparatedHexStr(&duid43),
 			},
 		},
 	}
@@ -2021,12 +2023,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: "02020202",
+				ClientID: keadata.NewColonSeparatedHexStr(&clientID02),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: "4343434343434343",
+				DUID: keadata.NewColonSeparatedHexStr(&duid43),
 			},
 		},
 	}
@@ -2036,6 +2038,7 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	require.Contains(t, conflicts, leases[2].ID)
 
 	// Second lease matches the host reservation.
+	clientID01 := "01010101"
 	leases = []dbmodel.Lease{
 		{
 			Lease: keadata.Lease{
@@ -2044,12 +2047,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: "01010101",
+				ClientID: keadata.NewColonSeparatedHexStr(&clientID01),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: "4343434343434343",
+				DUID: keadata.NewColonSeparatedHexStr(&duid43),
 			},
 		},
 	}
@@ -2059,6 +2062,7 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	require.Contains(t, conflicts, leases[2].ID)
 
 	// Third lease matches the host reservation.
+	duid42 := "4242424242424242"
 	leases = []dbmodel.Lease{
 		{
 			Lease: keadata.Lease{
@@ -2067,12 +2071,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: "02020202",
+				ClientID: keadata.NewColonSeparatedHexStr(&clientID02),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: "4242424242424242",
+				DUID: keadata.NewColonSeparatedHexStr(&duid42),
 			},
 		},
 	}
@@ -2086,22 +2090,22 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		{
 			Lease: keadata.Lease{
 				HWAddress: "09:09:09:09:09:09",
-				ClientID:  "02020202",
-				DUID:      "4242424242424242",
+				ClientID:  keadata.NewColonSeparatedHexStr(&clientID02),
+				DUID:      keadata.NewColonSeparatedHexStr(&duid42),
 			},
 		},
 		{
 			Lease: keadata.Lease{
 				HWAddress: "09:09:09:09:09:09",
-				ClientID:  "01010101",
-				DUID:      "4343434343434343",
+				ClientID:  keadata.NewColonSeparatedHexStr(&clientID01),
+				DUID:      keadata.NewColonSeparatedHexStr(&duid43),
 			},
 		},
 		{
 			Lease: keadata.Lease{
 				HWAddress: "09:09:09:09:09:09",
-				ClientID:  "02020202",
-				DUID:      "4242424242424242",
+				ClientID:  keadata.NewColonSeparatedHexStr(&clientID02),
+				DUID:      keadata.NewColonSeparatedHexStr(&duid42),
 			},
 		},
 	}

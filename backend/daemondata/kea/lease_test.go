@@ -14,6 +14,7 @@ func TestNewLease4(t *testing.T) {
 	lease := NewLease4(
 		"127.0.0.1",
 		"00:00:00:00:00:00",
+		"",
 		1,
 		2,
 		3,
@@ -22,9 +23,9 @@ func TestNewLease4(t *testing.T) {
 
 	// Assert
 	require.Equal(t, storkutil.IPv4, lease.Family)
-	require.Equal(t, "", lease.ClientID)
+	require.Nil(t, lease.ClientID)
 	require.Equal(t, uint64(1), lease.CLTT)
-	require.Equal(t, "", lease.DUID)
+	require.Nil(t, lease.DUID)
 	require.Equal(t, "", lease.Hostname)
 	require.Equal(t, "00:00:00:00:00:00", lease.HWAddress)
 	require.Equal(t, uint8(0), lease.PrefixLength)
@@ -47,9 +48,9 @@ func TestNewLease6(t *testing.T) {
 
 	// Assert
 	require.Equal(t, storkutil.IPv6, lease.Family)
-	require.Equal(t, "", lease.ClientID)
+	require.Nil(t, lease.ClientID)
 	require.Equal(t, uint64(6), lease.CLTT)
-	require.Equal(t, "00:00:00:00:00:00:00:00", lease.DUID)
+	require.Equal(t, "00:00:00:00:00:00:00:00", lease.DUID.String)
 	require.Equal(t, "", lease.Hostname)
 	require.Equal(t, "", lease.HWAddress)
 	require.Equal(t, uint8(64), lease.PrefixLength)
@@ -60,10 +61,11 @@ func TestNewLease6(t *testing.T) {
 
 func TestToGRPC(t *testing.T) {
 	// Arrange
+	duid := "00:01:02:03:04:05:06:07"
 	input := Lease{
 		Family:        storkutil.IPv6,
 		IPAddress:     "fe80::7",
-		DUID:          "00:01:02:03:04:05:06:07",
+		DUID:          NewColonSeparatedHexStr(&duid),
 		CLTT:          100,
 		ValidLifetime: 3600,
 		LocalSubnetID: 9,
@@ -77,7 +79,7 @@ func TestToGRPC(t *testing.T) {
 	// Assert
 	require.Equal(t, agentapi.Lease_IPAddrFamily(storkutil.IPv6), result.Family)
 	require.Equal(t, input.IPAddress, result.IpAddress)
-	require.Equal(t, input.DUID, result.Duid)
+	require.Equal(t, input.DUID.String, result.Duid)
 	require.Equal(t, uint64(input.ValidLifetime), result.ValidLifetime)
 	require.Equal(t, input.LocalSubnetID, result.SubnetID)
 	require.Equal(t, uint32(input.State), result.State)

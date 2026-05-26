@@ -90,8 +90,6 @@ type LeasesByPageFilters struct {
 type GetLeasesByPageSortColumnName = string
 
 const (
-	// The column name for the subnet prefix.
-	GetLeasesByPageSortColumnNameSubnetPrefix = "subnet.prefix"
 	// The column name for the hardware address (MAC address).
 	GetLeasesByPageSortColumnNameHwAddress = "hw_address"
 	// The column name for the IP address.
@@ -206,7 +204,8 @@ func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 			Family:        ipv,
 			IPAddress:     grpc.IpAddress,
 			HWAddress:     grpc.HwAddress,
-			DUID:          grpc.Duid,
+			DUID:          keadata.NewColonSeparatedHexStr(&grpc.Duid),
+			ClientID:      keadata.NewColonSeparatedHexStr(&grpc.ClientID),
 			CLTT:          grpc.Cltt,
 			ValidLifetime: uint32(grpc.ValidLifetime),
 			LocalSubnetID: grpc.SubnetID,

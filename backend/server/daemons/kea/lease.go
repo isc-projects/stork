@@ -526,11 +526,11 @@ func findHostLeaseConflicts(host *dbmodel.Host, leases []dbmodel.Lease) (conflic
 			hostIDType string
 		}{
 			{
-				leaseID:    lease.ClientID,
+				leaseID:    lease.ClientID.ToString(),
 				hostIDType: "client-id",
 			},
 			{
-				leaseID:    lease.DUID,
+				leaseID:    lease.DUID.ToString(),
 				hostIDType: "duid",
 			},
 			{

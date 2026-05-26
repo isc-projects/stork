@@ -21,6 +21,7 @@ const (
 	// IPv4 Lease Memfile Column Indices below.
 	v4IPAddr        = 0
 	v4HWAddr        = 1
+	v4ClientID      = 2
 	v4ValidLifetime = 3
 	v4Expire        = 4
 	v4Subnet        = 5
@@ -62,6 +63,7 @@ func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 	lease := keadata.NewLease4(
 		record[v4IPAddr],
 		record[v4HWAddr],
+		record[v4ClientID],
 		cltt,
 		lifetime,
 		subnet,
@@ -450,7 +452,7 @@ func (ms *RealMemfileSnooper) getSnapshotLockless() []*keadata.Lease {
 		}
 	case daemonname.DHCPv6:
 		getIdentifier = func(lease *keadata.Lease) string {
-			return lease.DUID
+			return lease.DUID.String
 		}
 	default:
 		// This should be impossible because the constructor function returns an error if you set a daemonname other than the two above, but let's do something approximately correct rather than calling panic().

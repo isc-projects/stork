@@ -36,11 +36,11 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 	state := int64(dbLease.State)
 	validLifetime := int64(dbLease.ValidLifetime)
 	return &models.Lease{
-			ClientID:          dbLease.ClientID,
+			ClientID:          dbLease.ClientID.ToString(),
 			Cltt:              &cltt,
 			DaemonID:          &dbLease.DaemonID,
 			DaemonLabel:       &daemonLabel,
-			Duid:              dbLease.DUID,
+			Duid:              dbLease.DUID.ToString(),
 			FqdnFwd:           dbLease.FqdnFwd,
 			FqdnRev:           dbLease.FqdnRev,
 			Hostname:          dbLease.Hostname,
@@ -65,8 +65,6 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 // it defaults to [dbmodel.GetLeasesByPageSortColumnNameNone].
 func convertSortFieldToColumnName(sortField string) dbmodel.GetLeasesByPageSortColumnName {
 	switch models.LeaseListSortField(sortField) {
-	case models.LeaseListSortFieldSubnetPrefix:
-		return dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix
 	case models.LeaseListSortFieldHwAddress:
 		return dbmodel.GetLeasesByPageSortColumnNameHwAddress
 	case models.LeaseListSortFieldIPAddress:

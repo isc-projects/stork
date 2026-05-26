@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-pg/pg/v10"
+	log "github.com/sirupsen/logrus"
 	require "github.com/stretchr/testify/require"
 	agentapi "isc.org/stork/api"
 	keaconfig "isc.org/stork/daemoncfg/kea"
@@ -111,6 +112,10 @@ func addTestLeaseDaemons(t *testing.T, db *dbops.PgDB) (daemons []*Daemon, subne
 func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, subnets []*Subnet) []*Lease {
 	// The tests rely on the indexes of these leases remaining the same. Please only add
 	// new leases at the end of the list.
+	duid01 := "01:01:01:01:01:01:01:01"
+	duid0102 := "01:01:01:01:01:01:01:02"
+	duid0103 := "01:01:01:01:01:01:01:03"
+	duid0104 := "01:01:01:01:01:01:01:04"
 	leases := []*Lease{
 		// 0. Valid IPv4 lease.
 		{
@@ -146,7 +151,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          "01:01:01:01:01:01:01:01",
+				DUID:          keadata.NewColonSeparatedHexStr(&duid01),
 				IPAddress:     "2001:db8:1::4",
 				CLTT:          10001,
 				State:         keadata.LeaseStateDefault,
@@ -160,7 +165,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          "01:01:01:01:01:01:01:02",
+				DUID:          keadata.NewColonSeparatedHexStr(&duid0102),
 				IPAddress:     "2001:db8:1::402",
 				CLTT:          10002,
 				State:         keadata.LeaseStateRegistered,
@@ -174,7 +179,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				ClientID:      "01:01:01:01:01:01:01:03",
+				ClientID:      keadata.NewColonSeparatedHexStr(&duid0103),
 				IPAddress:     "2001:db8:1::404",
 				CLTT:          10002,
 				State:         keadata.LeaseStateDefault,
@@ -188,7 +193,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          "01:01:01:01:01:01:01:04",
+				DUID:          keadata.NewColonSeparatedHexStr(&duid0104),
 				IPAddress:     "2001:db8:1::408",
 				CLTT:          10002,
 				Hostname:      "client.example",
@@ -203,6 +208,16 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 		require.NoError(t, err)
 		require.NotZero(t, lease.ID)
 	}
+	var leaseCheck []struct {
+		HexDUID     string
+		HexClientID string
+	}
+	err := db.Model((*Lease)(nil)).
+		ColumnExpr("encode(duid, 'hex') as hex_DUID").
+		ColumnExpr("encode(client_id, 'hex') as hex_client_ID").
+		Select(&leaseCheck)
+	require.NoError(t, err)
+	log.WithField("leaseCheck", leaseCheck).Info("leases from DB, as hex")
 	return leases
 }
 
@@ -259,12 +274,13 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 	daemons, subnets := addTestLeaseDaemons(t, db)
 
 	// Add a lease in subnet 2 (2001:db8:1::0).
+	duid := "0000000000112233445566ff"
 	lease := &Lease{
 		DaemonID: daemons[1].ID,
 		SubnetID: subnets[1].ID,
 		Lease: keadata.Lease{
 			Family:        6,
-			DUID:          "0000000000112233445566ff",
+			DUID:          keadata.NewColonSeparatedHexStr(&duid),
 			IPAddress:     "2001:db8:1::67",
 			CLTT:          9999,
 			State:         keadata.LeaseStateExpiredReclaimed,
@@ -601,6 +617,8 @@ func TestFromGRPC(t *testing.T) {
 			ValidLifetime: 900,
 			LocalSubnetID: v4.SubnetID,
 			State:         1,
+			ClientID:      keadata.NewColonSeparatedHexStrZero(),
+			DUID:          keadata.NewColonSeparatedHexStrZero(),
 		},
 		DaemonID: 99,
 		SubnetID: 1,
@@ -608,7 +626,8 @@ func TestFromGRPC(t *testing.T) {
 	expectedv6 := Lease{
 		Lease: keadata.Lease{
 			Family:        storkutil.IPv6,
-			DUID:          v6.Duid,
+			DUID:          keadata.NewColonSeparatedHexStr(&v6.Duid),
+			ClientID:      keadata.NewColonSeparatedHexStrZero(),
 			IPAddress:     v6.IpAddress,
 			CLTT:          v6.Cltt,
 			ValidLifetime: 901,

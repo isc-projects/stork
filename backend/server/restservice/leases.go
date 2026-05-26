@@ -87,14 +87,15 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		// Handle a special case when returned DUID is equal to 00. Kea returns such DUID
 		// in declined DHCPv6 leases. We treat is as empty DUID.
 		duid := ""
-		if len(l.DUID) > 0 && l.DUID != "00" {
-			duid = l.DUID
+		modelDUID := l.DUID.ToString()
+		if len(modelDUID) > 0 && modelDUID != "00" {
+			duid = modelDUID
 		}
 		lease := models.Lease{
 			ID:                &l.ID,
 			DaemonID:          &l.DaemonID,
 			DaemonLabel:       &daemonLabel,
-			ClientID:          l.ClientID,
+			ClientID:          l.ClientID.ToString(),
 			Cltt:              &cltt,
 			Duid:              duid,
 			FqdnFwd:           l.FqdnFwd,

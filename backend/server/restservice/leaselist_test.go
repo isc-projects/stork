@@ -2,7 +2,6 @@ package restservice
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"testing"
 
@@ -77,6 +76,7 @@ func TestConvertLeaseFromRestAPIWithNilSubnet(t *testing.T) {
 // Verify that [convertLeaseToRestAPI] correctly converts a [dbmodel.Lease]
 // to a [dhcp.Lease] when provided with complete and valid input.
 func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
+	duid := "00:00:00:00:00:00:00:00:01:01"
 	lease := dbmodel.Lease{
 		DaemonID: 1,
 		SubnetID: 9,
@@ -89,7 +89,7 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 			CLTT:          1776459817,
 			IPAddress:     "fe80::9",
 			PrefixLength:  128,
-			DUID:          "00:00:00:00:00:00:00:00:01:01",
+			DUID:          keadata.NewColonSeparatedHexStr(&duid),
 			ValidLifetime: 3600,
 		},
 		Subnet: &dbmodel.Subnet{
@@ -112,11 +112,6 @@ func TestConvertSortFieldToColumnNameHandlesAllCases(t *testing.T) {
 		sortField       string
 		expectedColName dbmodel.GetLeasesByPageSortColumnName
 	}{
-		{
-			description:     "Subnet Prefix",
-			sortField:       string(models.LeaseListSortFieldSubnetPrefix),
-			expectedColName: dbmodel.GetLeasesByPageSortColumnNameSubnetPrefix,
-		},
 		{
 			description:     "HW Address",
 			sortField:       string(models.LeaseListSortFieldHwAddress),
@@ -414,13 +409,15 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 	err = dbmodel.AddSubnet(db, subnet)
 	require.NoError(t, err)
 
+	duid0through7 := "00:01:02:03:04:05:06:07"
+	duid1through8 := "01:02:03:04:05:06:07:08"
 	leases := []*dbmodel.Lease{
 		{
 			DaemonID: daemon.ID,
 			SubnetID: subnet.ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          "00:01:02:03:04:05:06:07",
+				DUID:          keadata.NewColonSeparatedHexStr(&duid0through7),
 				IPAddress:     "2001:db8:1::404",
 				CLTT:          10002,
 				Hostname:      "client.example",
@@ -434,7 +431,7 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 			SubnetID: subnet.ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          "01:02:03:04:05:06:07:08",
+				DUID:          keadata.NewColonSeparatedHexStr(&duid1through8),
 				IPAddress:     "2001:db8:1::408",
 				CLTT:          10002,
 				Hostname:      "client.example",
