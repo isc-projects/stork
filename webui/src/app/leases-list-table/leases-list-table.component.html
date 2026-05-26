@@ -146,7 +146,7 @@
                                     [ngModel]="value"
                                     class="max-w-8rem"
                                 ></p-inputNumber>
-                                <label for="local-subnet-id">Local Subnet ID</label>
+                                <label for="local-subnet-id">Kea Subnet ID</label>
                             </p-floatlabel>
                             <p-button
                                 icon="pi pi-filter-slash"
@@ -235,7 +235,7 @@
     </ng-template>
     <ng-template #emptymessage>
         <tr>
-            <td colspan="6">
+            <td colspan="8">
                 No leases found.
                 @if (tableHasFilter(leasesListTable)) {
                     Clear filters and try again.

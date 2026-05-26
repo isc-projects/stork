@@ -99,7 +99,7 @@ describe('LeasesListTableComponent', () => {
     }))
 
     it('should be filtered by subnetId', fakeAsync(() => {
-        component.leases = [
+      component.dataCollection = [
             {
                 id: 1,
                 daemonId: 8,
@@ -131,7 +131,7 @@ describe('LeasesListTableComponent', () => {
     }))
 
     it('should be filtered by localSubnetId', fakeAsync(() => {
-        component.leases = [
+        component.dataCollection = [
             {
                 id: 1,
                 daemonId: 8,
