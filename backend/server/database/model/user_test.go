@@ -994,3 +994,163 @@ func TestAddOrUpdateExternalUserFails(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, systemUser2)
 }
+
+// Test that the external user without login is added and updated by AddOrUpdateExternalUser
+// when unique index is in use for system user login.
+func TestAddOrUpdateExternalUserWithoutLoginWhenUniqueConstraintApplied(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	externalUser := &authdata.User{
+		ID:       "external_id",
+		Email:    "jan@example.org", // Login is missing.
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	externalUser2 := &authdata.User{
+		ID:       "other_external_id",
+		Email:    "other@example.org", // Login is missing.
+		Lastname: "Bar",
+		Name:     "Foo",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	externalUser3 := &authdata.User{
+		ID:       "some_external_id",
+		Login:    "some_login",
+		Email:    "some_login@example.org",
+		Lastname: "Baz",
+		Name:     "Fooz",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	externalUser4 := &authdata.User{
+		ID:       "some_external_id",
+		Email:    "some_login@example.org", // Login is missing.
+		Lastname: "Baz",
+		Name:     "Fooz",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	// Create a unique index on the system_user table, to be able to check if DB integrity violation error does not occur.
+	_, err := db.Model((*SystemUser)(nil)).Exec(`
+		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, login)
+	`)
+	require.NoError(t, err)
+
+	// Act + Assert
+	// 1st call, user is created.
+	systemUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser)
+
+	// 2nd call, user is updated.
+	systemUser2, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser2)
+
+	// 1st call, user is created.
+	systemUser3, err := AddOrUpdateExternalUser(db, externalUser2, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser3)
+
+	// 2nd call, user is updated.
+	systemUser4, err := AddOrUpdateExternalUser(db, externalUser2, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser4)
+
+	// 1st call, user is created.
+	systemUser5, err := AddOrUpdateExternalUser(db, externalUser3, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser5)
+
+	// 2nd call, user is updated.
+	systemUser6, err := AddOrUpdateExternalUser(db, externalUser4, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser6)
+	require.EqualValues(t, systemUser5.ID, systemUser6.ID)
+	require.Empty(t, systemUser6.Login)
+}
+
+// Test that the external user without email is added and updated by AddOrUpdateExternalUser
+// when unique index is in use for system user email.
+func TestAddOrUpdateExternalUserWithoutEmailWhenUniqueConstraintApplied(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	externalUser := &authdata.User{
+		ID:       "external_id",
+		Login:    "jan", // Email is missing.
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	externalUser2 := &authdata.User{
+		ID:       "other_external_id",
+		Login:    "foo", // Email is missing.
+		Lastname: "Bar",
+		Name:     "Foo",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	externalUser3 := &authdata.User{
+		ID:       "some_external_id",
+		Login:    "some_login",
+		Email:    "some_login@example.org",
+		Lastname: "Baz",
+		Name:     "Fooz",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	externalUser4 := &authdata.User{
+		ID:       "some_external_id",
+		Login:    "some_login", // Email is missing.
+		Lastname: "Baz",
+		Name:     "Fooz",
+		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
+	}
+
+	// Create a unique index on the system_user table, to be able to check if DB integrity violation error does not occur.
+	_, err := db.Model((*SystemUser)(nil)).Exec(`
+		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, email)
+	`)
+	require.NoError(t, err)
+
+	// Act + Assert
+	// 1st call, user is created.
+	systemUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser)
+
+	// 2nd call, user is updated.
+	systemUser2, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser2)
+
+	// 1st call, user is created.
+	systemUser3, err := AddOrUpdateExternalUser(db, externalUser2, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser3)
+
+	// 2nd call, user is updated.
+	systemUser4, err := AddOrUpdateExternalUser(db, externalUser2, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser4)
+
+	// 1st call, user is created.
+	systemUser5, err := AddOrUpdateExternalUser(db, externalUser3, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser5)
+
+	// 2nd call, user is updated.
+	systemUser6, err := AddOrUpdateExternalUser(db, externalUser4, "ext_method")
+	require.NoError(t, err)
+	require.NotNil(t, systemUser6)
+	require.EqualValues(t, systemUser5.ID, systemUser6.ID)
+	require.Empty(t, systemUser6.Email)
+}
