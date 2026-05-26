@@ -2910,6 +2910,8 @@ func TestReceiveKeaLeasesReceivesLeases(t *testing.T) {
 				require.NotNil(t, req)
 				require.NotNil(t, req.MinCLTT)
 				require.Equal(t, uint64(0), *req.MinCLTT)
+				require.Equal(t, "localhost", req.ControlAddress)
+				require.EqualValues(t, 8000, req.ControlPort)
 				return mockStreamingClient, nil
 			},
 		)

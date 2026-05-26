@@ -571,9 +571,8 @@ func TestGetLeasesByPageReturns0WhenNoRows(t *testing.T) {
 // than [pg.ErrNoRows].
 func TestGetLeasesByPageWhenDBHasError(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
+	teardown()
 
-	db.Close()
 	filters := LeasesByPageFilters{}
 	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
 
