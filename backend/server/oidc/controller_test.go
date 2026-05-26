@@ -732,7 +732,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
 	require.NoError(t, err)
 	defer srvTeardown()
-	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", GroupsClaim: "groups", MandatoryAllowGroup: "foo"}, db)
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", GroupsClaim: "groups", MandatoryAllowGroup: "bar"}, db)
 	require.NotNil(t, controller)
 	testSM, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)

@@ -218,7 +218,7 @@ func generateRandBase64Str() (result string, err error) {
 	bytes := make([]byte, 32)
 	_, err = rand.Read(bytes)
 	if err != nil {
-		err = errors.Wrapf(err, "error while generating slice of random bytes")
+		err = errors.Wrap(err, "error while generating slice of random bytes")
 		return
 	}
 	result = base64.RawURLEncoding.EncodeToString(bytes)
@@ -276,19 +276,19 @@ func (ctl *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	state, err := generateRandBase64Str()
 	if err != nil {
-		log.WithError(err).Errorf("Error while generating OIDC random state")
+		log.WithError(err).Error("Error while generating OIDC random state")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	nonce, err := generateRandBase64Str()
 	if err != nil {
-		log.WithError(err).Errorf("Error while generating OIDC random nonce")
+		log.WithError(err).Error("Error while generating OIDC random nonce")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	codeVerifier, codeChallenge, err := generatePKCE()
 	if err != nil {
-		log.WithError(err).Errorf("Error while generating OIDC random PKCE")
+		log.WithError(err).Error("Error while generating OIDC random PKCE")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -386,25 +386,25 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	token, err := ctl.oauth2Config.Exchange(ctx, code, oauth2.SetAuthURLParam("code_verifier", codeVerifier))
 	if err != nil {
-		log.WithError(err).Error("error while exchanging OIDC token")
+		log.WithError(err).Error("Error while exchanging OIDC token")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	idTokenJWT, ok := token.Extra("id_token").(string)
 	if !ok {
-		log.Error("error while extracting id_token from OIDC token response")
+		log.Error("Error while extracting id_token from OIDC token response")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	idToken, err := ctl.tokenVerifier.Verify(ctx, idTokenJWT)
 	if err != nil {
-		log.WithError(err).Error("error while verifying OIDC token response")
+		log.WithError(err).Error("Error while verifying OIDC token response")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 
 	if idToken.Nonce != expectedNonce {
-		log.Error("error while verifying OIDC token response - invalid nonce")
+		log.Error("Error while verifying OIDC token response - invalid nonce")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -420,7 +420,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = idToken.Claims(&claims)
 	if err != nil {
-		log.WithError(err).Error("error while extracting OIDC claims")
+		log.WithError(err).Error("Error while extracting OIDC claims")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -429,7 +429,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 		var rawClaims map[string]interface{}
 		err = idToken.Claims(&rawClaims)
 		if err != nil {
-			log.WithError(err).Error("error while extracting OIDC claims")
+			log.WithError(err).Error("Error while extracting OIDC claims")
 			http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 			return
 		}
@@ -457,7 +457,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Check the group mapping.
 	belongsToAllowGroup, mappedGroups := ctl.getMappedGroups(&claims.Groups)
 	if ctl.settings.MandatoryAllowGroup != "" && !belongsToAllowGroup {
-		log.Warnf("authentication rejected for OIDC user ID %s - user does not belong to group that is mandatory for access (%s)", claims.Sub, ctl.settings.MandatoryAllowGroup)
+		log.Warnf("Authentication rejected for OIDC user ID %s - user does not belong to group that is mandatory for access (%s)", claims.Sub, ctl.settings.MandatoryAllowGroup)
 		http.Redirect(w, r, authRejectedURLPath, http.StatusFound)
 		return
 	}
@@ -493,13 +493,13 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	systemUser, err := dbmodel.AddOrUpdateExternalUser(ctl.db, &outputUser, "oidc")
 	if err != nil || systemUser == nil {
-		log.WithError(err).Errorf("error creating or updating system user in DB for authenticated OIDC user ID %s", claims.Sub)
+		log.WithError(err).Errorf("Error creating or updating system user in DB for authenticated OIDC user ID %s", claims.Sub)
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
 	err = ctl.dbSessionManager.LoginHandler(ctx, systemUser)
 	if err != nil {
-		log.WithError(err).Errorf("error creating session for authenticated OIDC user ID %s", claims.Sub)
+		log.WithError(err).Errorf("Error creating session for authenticated OIDC user ID %s", claims.Sub)
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
