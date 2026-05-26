@@ -261,6 +261,12 @@ export class LoginScreenComponent implements OnInit {
     nonFormButtonLabel = signal<string>('')
 
     /**
+     * Signal keeping true if the non-form "Log in with..." button was clicked.
+     * This is to disable the button after it was clicked only once.
+     */
+    nonFormAuthSubmitted = signal<boolean>(false)
+
+    /**
      * Callback called whenever authentication method is changed in the Select form element.
      * @param event select change event
      * @protected
