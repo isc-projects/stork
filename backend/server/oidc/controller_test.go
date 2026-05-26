@@ -485,7 +485,7 @@ func TestMiddlewareHandlesCallbackEndpoint(t *testing.T) {
 	resp.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Greater(t, len(resp.Header), 2)
 	// Check auth_session cookie.
 	require.Contains(t, resp.Header, "Set-Cookie")
@@ -531,7 +531,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -547,7 +547,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
@@ -599,7 +599,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -615,7 +615,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
@@ -651,7 +651,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -667,7 +667,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
@@ -702,7 +702,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -718,7 +718,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
@@ -752,7 +752,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -768,7 +768,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
 	require.Contains(t, resp2.Header, "Location")
 	require.Contains(t, resp2.Header.Get("Location"), "/login/unauthorized")
@@ -812,7 +812,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -828,7 +828,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to home "/" path.
 	require.Contains(t, resp2.Header, "Location")
 	require.EqualValues(t, resp2.Header.Get("Location"), "/")
@@ -879,7 +879,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.Equal(t, 302, resp.StatusCode)
+	require.Equal(t, http.StatusFound, resp.StatusCode)
 	require.Contains(t, resp.Header, "Location")
 	redirectURL := resp.Header.Get("Location")
 	parsedURL, err := url.Parse(redirectURL)
@@ -895,7 +895,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	resp2.Body.Close()
 
 	// Assert
-	require.Equal(t, 302, resp2.StatusCode)
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to home "/" path.
 	require.Contains(t, resp2.Header, "Location")
 	require.EqualValues(t, resp2.Header.Get("Location"), "/")
