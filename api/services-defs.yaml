@@ -240,6 +240,12 @@
         type: string
       host:
         type: string
+      user:
+        type: string
+      port:
+        type: integer
+      tlsClientCertConfigured:
+        type: boolean
       dataTypes:
         type: array
         items:

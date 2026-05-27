@@ -31,12 +31,21 @@ type Databases struct {
 // A structure representing the database connection parameters. It is common
 // for all supported backend types.
 type Database struct {
-	Path    string `json:"path"`
-	Type    string `json:"type"`
-	Name    string `json:"name"`
-	Host    string `json:"host"`
-	Port    int    `json:"port,omitempty"`
-	Persist *bool  `json:"persist,omitempty"`
+	Path        string `json:"path"`
+	Type        string `json:"type"`
+	Name        string `json:"name"`
+	Host        string `json:"host"`
+	Port        int    `json:"port,omitempty"`
+	User        string `json:"user"`
+	TrustAnchor string `json:"trust-anchor"`
+	CertFile    string `json:"cert-file"`
+	KeyFile     string `json:"key-file"`
+	Persist     *bool  `json:"persist,omitempty"`
+}
+
+// Indicates whether a full TLS client certificate setup is configured.
+func (d Database) IsTLSClientCertConfigured() bool {
+	return len(d.TrustAnchor) > 0 && len(d.CertFile) > 0 && len(d.KeyFile) > 0
 }
 
 // Parses database connection configuration setting the default

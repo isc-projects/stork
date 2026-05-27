@@ -346,7 +346,8 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	mockAgents.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	fd := &storktest.FakeDispatcher{}
 	fc := &storktest.FakeEventCenter{}
-	statePuller, err := daemons.NewStatePuller(db, mockAgents,
+	statePuller, err := daemons.NewStatePuller(
+		db, mockAgents,
 		fc, fd,
 		dbmodel.NewDHCPOptionDefinitionLookup(),
 	)
@@ -2941,13 +2942,20 @@ func TestGetKeaStorages(t *testing.T) {
             "hosts-database": {
                 "type": "mysql",
                 "name": "kea-hosts-mysql",
-                "host": "mysql.example.org"
+				"host": "mysql.example.org",
+				"user": "hosts-user",
+				"port": 3306
             },
             "config-control": {
                 "config-databases": [
                     {
                         "type": "mysql",
-                        "name": "kea-config-mysql"
+						"name": "kea-config-mysql",
+						"user": "config-user",
+						"port": 3307,
+						"trust-anchor": "/etc/kea/certs/ca.pem",
+						"cert-file": "/etc/kea/certs/client-cert.pem",
+						"key-file": "/etc/kea/certs/client-key.pem"
                     }
                 ]
             },
@@ -2984,10 +2992,75 @@ func TestGetKeaStorages(t *testing.T) {
 		if d.Database == "kea-hosts-mysql" {
 			require.Equal(t, "mysql", d.BackendType)
 			require.Equal(t, "mysql.example.org", d.Host)
+			require.Equal(t, "hosts-user", d.User)
+			require.EqualValues(t, 3306, d.Port)
+			require.False(t, d.TLSClientCertConfigured)
 		} else {
 			require.Equal(t, "mysql", d.BackendType)
 			require.Equal(t, "kea-config-mysql", d.Database)
 			require.Equal(t, "localhost", d.Host)
+			require.Equal(t, "config-user", d.User)
+			require.EqualValues(t, 3307, d.Port)
+			require.True(t, d.TLSClientCertConfigured)
+		}
+	}
+}
+
+// This test verifies that database entries with different users or ports are
+// not merged into one storage entry.
+func TestGetKeaStoragesDistinctConnections(t *testing.T) {
+	configString := `{
+		"Dhcp4": {
+			"lease-database": {
+				"type": "mysql",
+				"name": "kea-shared",
+				"host": "mysql.example.org",
+				"user": "stork",
+				"port": 3306
+			},
+			"hosts-databases": [
+				{
+					"type": "mysql",
+					"name": "kea-shared",
+					"host": "mysql.example.org",
+					"user": "stork",
+					"port": 3306
+				},
+				{
+					"type": "mysql",
+					"name": "kea-shared",
+					"host": "mysql.example.org",
+					"user": "stork",
+					"port": 3307
+				},
+				{
+					"type": "mysql",
+					"name": "kea-shared",
+					"host": "mysql.example.org",
+					"user": "stork-ro",
+					"port": 3306
+				}
+			]
+		}
+	}`
+	keaConfig, err := keaconfig.NewConfig([]byte(configString))
+	require.NoError(t, err)
+	require.NotNil(t, keaConfig)
+
+	files, databases := getKeaStorages(keaConfig)
+	require.Empty(t, files)
+	require.Len(t, databases, 3)
+
+	for _, d := range databases {
+		require.Equal(t, "mysql", d.BackendType)
+		require.Equal(t, "kea-shared", d.Database)
+		require.Equal(t, "mysql.example.org", d.Host)
+		require.False(t, d.TLSClientCertConfigured)
+
+		if d.Port == 3306 && d.User == "stork" {
+			require.ElementsMatch(t, d.DataTypes, []string{"Leases", "Host Reservations"})
+		} else {
+			require.ElementsMatch(t, d.DataTypes, []string{"Host Reservations"})
 		}
 	}
 }

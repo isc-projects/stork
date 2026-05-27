@@ -1058,15 +1058,26 @@ func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachine
 // existing database configurations formatted to be sent over the REST API.
 // This function is called by the getKeaStorages function.
 func mergeKeaDatabase(keaDatabase *keaconfig.Database, dataType string, existingDatabases *map[string]*models.KeaDaemonDatabase) {
-	id := fmt.Sprintf("%s:%s@%s", keaDatabase.Type, keaDatabase.Name, keaDatabase.Host)
+	id := fmt.Sprintf(
+		"%s:%s@%s:%d:%s:%t",
+		keaDatabase.Type,
+		keaDatabase.Name,
+		keaDatabase.Host,
+		keaDatabase.Port,
+		keaDatabase.User,
+		keaDatabase.IsTLSClientCertConfigured(),
+	)
 	if existingDatabase, ok := (*existingDatabases)[id]; ok {
 		existingDatabase.DataTypes = append(existingDatabase.DataTypes, dataType)
 	} else {
 		newDatabase := &models.KeaDaemonDatabase{
-			BackendType: keaDatabase.Type,
-			Database:    keaDatabase.Name,
-			Host:        keaDatabase.Host,
-			DataTypes:   []string{dataType},
+			BackendType:             keaDatabase.Type,
+			Database:                keaDatabase.Name,
+			Host:                    keaDatabase.Host,
+			User:                    keaDatabase.User,
+			Port:                    int64(keaDatabase.Port),
+			TLSClientCertConfigured: keaDatabase.IsTLSClientCertConfigured(),
+			DataTypes:               []string{dataType},
 		}
 		(*existingDatabases)[id] = newDatabase
 	}

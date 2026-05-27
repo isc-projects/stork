@@ -553,12 +553,19 @@ func TestGetAllDatabases(t *testing.T) {
 	configDatabases := `"config-databases": [
         {
             "type": "mysql",
-            "name": "kea-hosts-mysql"
+			"name": "kea-config-mysql",
+			"user": "stork",
+			"port": 3306,
+			"trust-anchor": "/etc/kea/certs/ca.pem",
+			"cert-file": "/etc/kea/certs/client-cert.pem",
+			"key-file": "/etc/kea/certs/client-key.pem"
         },
         {
             "type": "postgresql",
-            "name": "kea-hosts-pgsql",
-            "host": "localhost"
+			"name": "kea-config-pgsql",
+			"host": "localhost",
+			"user": "kea",
+			"port": 5432
         }
     ]`
 	legalConfig := `{
@@ -673,13 +680,22 @@ func TestGetAllDatabases(t *testing.T) {
 
 		require.Empty(t, databases.Config[0].Path)
 		require.Equal(t, "mysql", databases.Config[0].Type)
-		require.Equal(t, "kea-hosts-mysql", databases.Config[0].Name)
+		require.Equal(t, "kea-config-mysql", databases.Config[0].Name)
 		require.Equal(t, "localhost", databases.Config[0].Host)
+		require.Equal(t, "stork", databases.Config[0].User)
+		require.EqualValues(t, 3306, databases.Config[0].Port)
+		require.Equal(t, "/etc/kea/certs/ca.pem", databases.Config[0].TrustAnchor)
+		require.Equal(t, "/etc/kea/certs/client-cert.pem", databases.Config[0].CertFile)
+		require.Equal(t, "/etc/kea/certs/client-key.pem", databases.Config[0].KeyFile)
+		require.True(t, databases.Config[0].IsTLSClientCertConfigured())
 
 		require.Empty(t, databases.Config[1].Path)
 		require.Equal(t, "postgresql", databases.Config[1].Type)
-		require.Equal(t, "kea-hosts-pgsql", databases.Config[1].Name)
+		require.Equal(t, "kea-config-pgsql", databases.Config[1].Name)
 		require.Equal(t, "localhost", databases.Config[1].Host)
+		require.Equal(t, "kea", databases.Config[1].User)
+		require.EqualValues(t, 5432, databases.Config[1].Port)
+		require.False(t, databases.Config[1].IsTLSClientCertConfigured())
 	})
 
 	// legal logging hook
@@ -2085,7 +2101,7 @@ func TestMergeIntoNilConfig(t *testing.T) {
 func TestMergeIntoNilConfigBranch(t *testing.T) {
 	dest := make(RawConfig)
 	dest["foo"] = make(RawConfig)
-	source := (RawConfig)(nil)
+	source := RawConfig(nil)
 	require.NotPanics(t, func() {
 		_ = merge(source, dest)
 	})

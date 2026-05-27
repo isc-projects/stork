@@ -376,7 +376,13 @@
             "config-databases": [
                 {
                     "name": "config",
-                    "type": "mysql"
+                    "type": "mysql",
+                    "host": "localhost",
+                    "user": "stork",
+                    "port": 3306,
+                    "trust-anchor": "/etc/kea/certs/ca.pem",
+                    "cert-file": "/etc/kea/certs/client-cert.pem",
+                    "key-file": "/etc/kea/certs/client-key.pem"
                 }
             ],
             "config-fetch-wait-time": 30
