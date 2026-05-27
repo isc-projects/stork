@@ -53,6 +53,7 @@ func NewLease4(ip, hwAddress, clientID string, cltt uint64, validLifetime, subne
 		ValidLifetime: validLifetime,
 		LocalSubnetID: subnetID,
 		State:         state,
+		ClientID:      NewColonSepHexStr(&clientID),
 	}
 }
 
@@ -78,12 +79,12 @@ func (lease *Lease) ToGRPC() agentapi.Lease {
 		Family:        agentapi.Lease_IPAddrFamily(lease.Family),
 		IpAddress:     lease.IPAddress,
 		HwAddress:     lease.HWAddress,
-		Duid:          lease.DUID.ToString(),
+		Duid:          lease.DUID.String(),
 		Cltt:          lease.CLTT,
 		ValidLifetime: uint64(lease.ValidLifetime),
 		SubnetID:      lease.LocalSubnetID,
 		State:         uint32(lease.State),
 		PrefixLen:     uint32(lease.PrefixLength),
-		ClientID:      lease.ClientID.ToString(),
+		ClientID:      lease.ClientID.String(),
 	}
 }

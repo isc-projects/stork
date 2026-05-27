@@ -18,10 +18,10 @@ func TestConstructCSHR(t *testing.T) {
 	zeroCSHR := NewColonSepHexStrZero()
 
 	// Assert
-	require.EqualValues(t, exampleStr, exampleCSHR.String)
+	require.EqualValues(t, exampleStr, exampleCSHR.str)
 	require.Nil(t, nilCSHR)
 	empty := ""
-	require.EqualValues(t, empty, zeroCSHR.String)
+	require.EqualValues(t, empty, zeroCSHR.str)
 }
 
 // TestCSHRAppendValue verifies that [AppendValue] correctly converts the conventional
@@ -67,14 +67,14 @@ func TestCSHRAppendValue(t *testing.T) {
 	}
 }
 
-// TestCSHRToString verifies that [ToString] returns the inner string as expected, or
+// TestCSHRString verifies that [String] returns the inner string as expected, or
 // returns "" if the receiver is nil.
-func TestCSHRToString(t *testing.T) {
+func TestCSHRString(t *testing.T) {
 	hexstr := "01:23:45:67:89:ab:cd:ef"
 	example := NewColonSepHexStr(&hexstr)
 	var isNil *ColonSepHexStr
-	require.EqualValues(t, hexstr, example.ToString())
-	require.EqualValues(t, "", isNil.ToString())
+	require.EqualValues(t, hexstr, example.String())
+	require.EqualValues(t, "", isNil.String())
 }
 
 // TestCSHRScanValue verifies that [ScanValue] reads PostgreSQL's serialized format
@@ -126,7 +126,7 @@ func TestCSHRScanValue(t *testing.T) {
 				require.ErrorContains(t, err, tc.expectedErrContains)
 			} else {
 				require.NoError(t, err)
-				require.EqualValues(t, tc.expectedResult, cshr.String)
+				require.EqualValues(t, tc.expectedResult, cshr.str)
 			}
 		})
 	}
@@ -142,7 +142,7 @@ func TestCSHRUnmarshalJSON(t *testing.T) {
 	err := actual.UnmarshalJSON(input)
 
 	require.NoError(t, err)
-	require.EqualValues(t, expected, actual.String)
+	require.EqualValues(t, expected, actual.str)
 }
 
 // TestCSHRMarshalJSON verifies that [MarshalJSON] writes a [ColonSepHexStr] as

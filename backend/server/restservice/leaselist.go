@@ -36,11 +36,11 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 	state := int64(dbLease.State)
 	validLifetime := int64(dbLease.ValidLifetime)
 	return &models.Lease{
-			ClientID:          dbLease.ClientID.ToString(),
+			ClientID:          dbLease.ClientID.String(),
 			Cltt:              &cltt,
 			DaemonID:          &dbLease.DaemonID,
 			DaemonLabel:       &daemonLabel,
-			Duid:              dbLease.DUID.ToString(),
+			Duid:              dbLease.DUID.String(),
 			FqdnFwd:           dbLease.FqdnFwd,
 			FqdnRev:           dbLease.FqdnRev,
 			Hostname:          dbLease.Hostname,

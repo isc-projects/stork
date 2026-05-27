@@ -452,7 +452,7 @@ func (ms *RealMemfileSnooper) getSnapshotLockless() []*keadata.Lease {
 		}
 	case daemonname.DHCPv6:
 		getIdentifier = func(lease *keadata.Lease) string {
-			return lease.DUID.String
+			return lease.DUID.String()
 		}
 	default:
 		// This should be impossible because the constructor function returns an error if you set a daemonname other than the two above, but let's do something approximately correct rather than calling panic().

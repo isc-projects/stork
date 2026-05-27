@@ -487,7 +487,7 @@ func TestParseRowAsLease4(t *testing.T) {
 			[]string{
 				"192.110.111.2",
 				"03:00:00:00:00:00",
-				"01:03:00:00:00:00:00",
+				"",
 				"3600",
 				"1761257849",
 				"123",
@@ -503,6 +503,7 @@ func TestParseRowAsLease4(t *testing.T) {
 				Family:        storkutil.IPv4,
 				IPAddress:     "192.110.111.2",
 				HWAddress:     "03:00:00:00:00:00",
+				ClientID:      keadata.NewColonSepHexStrZero(),
 				CLTT:          1761254249,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,

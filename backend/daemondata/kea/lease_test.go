@@ -21,17 +21,30 @@ func TestNewLease4(t *testing.T) {
 		3,
 	)
 
+	leaseWithClientID := NewLease4(
+		"127.0.0.2",
+		"",
+		"01:01:01:01:01:01:01:01",
+		1,
+		2,
+		3,
+		3,
+	)
+
 	// Assert
 	require.Equal(t, storkutil.IPv4, lease.Family)
-	require.Nil(t, lease.ClientID)
 	require.Equal(t, uint64(1), lease.CLTT)
 	require.Nil(t, lease.DUID)
 	require.Equal(t, "", lease.Hostname)
 	require.Equal(t, "00:00:00:00:00:00", lease.HWAddress)
+	require.Equal(t, "", lease.ClientID.String())
 	require.Equal(t, uint8(0), lease.PrefixLength)
 	require.Equal(t, 3, lease.State)
 	require.Equal(t, uint32(3), lease.LocalSubnetID)
 	require.Equal(t, uint32(2), lease.ValidLifetime)
+
+	require.Equal(t, "", leaseWithClientID.HWAddress)
+	require.Equal(t, "01:01:01:01:01:01:01:01", leaseWithClientID.ClientID.String())
 }
 
 func TestNewLease6(t *testing.T) {
@@ -50,7 +63,7 @@ func TestNewLease6(t *testing.T) {
 	require.Equal(t, storkutil.IPv6, lease.Family)
 	require.Nil(t, lease.ClientID)
 	require.Equal(t, uint64(6), lease.CLTT)
-	require.Equal(t, "00:00:00:00:00:00:00:00", lease.DUID.String)
+	require.Equal(t, "00:00:00:00:00:00:00:00", lease.DUID.String())
 	require.Equal(t, "", lease.Hostname)
 	require.Equal(t, "", lease.HWAddress)
 	require.Equal(t, uint8(64), lease.PrefixLength)
@@ -79,7 +92,7 @@ func TestToGRPC(t *testing.T) {
 	// Assert
 	require.Equal(t, agentapi.Lease_IPAddrFamily(storkutil.IPv6), result.Family)
 	require.Equal(t, input.IPAddress, result.IpAddress)
-	require.Equal(t, input.DUID.String, result.Duid)
+	require.Equal(t, input.DUID.String(), result.Duid)
 	require.Equal(t, uint64(input.ValidLifetime), result.ValidLifetime)
 	require.Equal(t, input.LocalSubnetID, result.SubnetID)
 	require.Equal(t, uint32(input.State), result.State)
