@@ -10,27 +10,27 @@ import (
 // Custom support for colon-separated hexadecimal-encoded byte strings in Go-PG.
 // This stores DUIDs or Client IDs in the canonical `01:02:03` format, but inserts
 // them into the database in a format supported by `bytea` columns.
-type ColonSeparatedHexStr struct {
+type ColonSepHexStr struct {
 	String string
 }
 
 // newColonSeparatedHexStr wraps an existing string into a [colonSeparatedHexStr]
 // without performing any validation.
-func NewColonSeparatedHexStr(val *string) *ColonSeparatedHexStr {
+func NewColonSepHexStr(val *string) *ColonSepHexStr {
 	if val == nil {
 		return nil
 	}
-	return &ColonSeparatedHexStr{String: *val}
+	return &ColonSepHexStr{String: *val}
 }
 
-func NewColonSeparatedHexStrZero() *ColonSeparatedHexStr {
+func NewColonSepHexStrZero() *ColonSepHexStr {
 	empty := ""
-	return NewColonSeparatedHexStr(&empty)
+	return NewColonSepHexStr(&empty)
 }
 
-// ToString returns the string inside the [ColonSeparatedHexStr], or the empty string
+// ToString returns the string inside the [ColonSepHexStr], or the empty string
 // if provided with a nil receiver.
-func (s *ColonSeparatedHexStr) ToString() string {
+func (s *ColonSepHexStr) ToString() string {
 	if s == nil {
 		return ""
 	}
@@ -39,11 +39,11 @@ func (s *ColonSeparatedHexStr) ToString() string {
 
 // Define a variable of the structure type so that the compiler warns about
 // noncompliance with the *serializer* interface.
-var _ types.ValueAppender = (*ColonSeparatedHexStr)(nil)
+var _ types.ValueAppender = (*ColonSepHexStr)(nil)
 
 // AppendValue writes the value from the receiver into a byte array in the
 // '\x00112233' format expected by PostgreSQL.
-func (s *ColonSeparatedHexStr) AppendValue(b []byte, quote int) ([]byte, error) {
+func (s *ColonSepHexStr) AppendValue(b []byte, quote int) ([]byte, error) {
 	if quote == 1 {
 		b = append(b, '\'')
 	}
@@ -58,7 +58,7 @@ func (s *ColonSeparatedHexStr) AppendValue(b []byte, quote int) ([]byte, error) 
 
 // Define a variable of the structure type so that the compiler warns about
 // noncompliance with the *serializer* interface.
-var _ types.ValueScanner = (*ColonSeparatedHexStr)(nil)
+var _ types.ValueScanner = (*ColonSepHexStr)(nil)
 
 // Add colons to a hex string between every pair of digits.
 func addColons(input string) string {
@@ -74,7 +74,7 @@ func addColons(input string) string {
 
 // ScanValue reads the value out of the [types.Reader], converts it to the correct
 // format, and stores it in the receiver.
-func (s *ColonSeparatedHexStr) ScanValue(rd types.Reader, n int) error {
+func (s *ColonSepHexStr) ScanValue(rd types.Reader, n int) error {
 	if n <= 0 {
 		s.String = ""
 		return nil
@@ -92,10 +92,10 @@ func (s *ColonSeparatedHexStr) ScanValue(rd types.Reader, n int) error {
 
 // Define a variable of the structure type so that the compiler warns about
 // noncompliance with [json.Unmarshaler].
-var _ json.Unmarshaler = (*ColonSeparatedHexStr)(nil)
+var _ json.Unmarshaler = (*ColonSepHexStr)(nil)
 
-// UnmarshalJSON adds a [ColonSeparatedHexStr] wrapper around a plain string value.
-func (s *ColonSeparatedHexStr) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON adds a [ColonSepHexStr] wrapper around a plain string value.
+func (s *ColonSepHexStr) UnmarshalJSON(b []byte) error {
 	var deserialized string
 	if err := json.Unmarshal(b, &deserialized); err != nil {
 		return err
@@ -107,9 +107,9 @@ func (s *ColonSeparatedHexStr) UnmarshalJSON(b []byte) error {
 
 // Define a variable of the structure type so that the compiler warns about
 // noncompliance with [json.Marshaler].
-var _ json.Marshaler = (*ColonSeparatedHexStr)(nil)
+var _ json.Marshaler = (*ColonSepHexStr)(nil)
 
-// MarshalJSON serializes a [ColonSeparatedHexStr] as a plain string.
-func (s *ColonSeparatedHexStr) MarshalJSON() ([]byte, error) {
+// MarshalJSON serializes a [ColonSepHexStr] as a plain string.
+func (s *ColonSepHexStr) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String)
 }

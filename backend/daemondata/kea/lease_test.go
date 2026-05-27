@@ -65,7 +65,7 @@ func TestToGRPC(t *testing.T) {
 	input := Lease{
 		Family:        storkutil.IPv6,
 		IPAddress:     "fe80::7",
-		DUID:          NewColonSeparatedHexStr(&duid),
+		DUID:          NewColonSepHexStr(&duid),
 		CLTT:          100,
 		ValidLifetime: 3600,
 		LocalSubnetID: 9,

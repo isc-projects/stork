@@ -3024,11 +3024,7 @@ func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name dae
 		daemon: daemon{
 			Name: name,
 			AccessPoints: []AccessPoint{
-				{
-					Address: "127.0.0.1",
-					Port:    port,
-					Type:    AccessPointControl,
-				},
+				{Address: "127.0.0.1", Port: port, Type: AccessPointControl},
 			},
 		},
 		snooper: snooper,
@@ -3175,11 +3171,7 @@ func TestReceiveKeaLeasesSnapshotFnReturnsError(t *testing.T) {
 		daemon: daemon{
 			Name: daemonname.DHCPv4,
 			AccessPoints: []AccessPoint{
-				{
-					Address: "127.0.0.1",
-					Port:    8080,
-					Type:    AccessPointControl,
-				},
+				{Address: "127.0.0.1", Port: 8080, Type: AccessPointControl},
 			},
 		},
 		snooper: nil,

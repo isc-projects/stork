@@ -151,7 +151,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          keadata.NewColonSeparatedHexStr(&duid01),
+				DUID:          keadata.NewColonSepHexStr(&duid01),
 				IPAddress:     "2001:db8:1::4",
 				CLTT:          10001,
 				State:         keadata.LeaseStateDefault,
@@ -165,7 +165,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          keadata.NewColonSeparatedHexStr(&duid0102),
+				DUID:          keadata.NewColonSepHexStr(&duid0102),
 				IPAddress:     "2001:db8:1::402",
 				CLTT:          10002,
 				State:         keadata.LeaseStateRegistered,
@@ -179,7 +179,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				ClientID:      keadata.NewColonSeparatedHexStr(&duid0103),
+				ClientID:      keadata.NewColonSepHexStr(&duid0103),
 				IPAddress:     "2001:db8:1::404",
 				CLTT:          10002,
 				State:         keadata.LeaseStateDefault,
@@ -193,7 +193,7 @@ func testHelperAddMockLeases(t *testing.T, db *dbops.PgDB, daemons []*Daemon, su
 			SubnetID: subnets[1].ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          keadata.NewColonSeparatedHexStr(&duid0104),
+				DUID:          keadata.NewColonSepHexStr(&duid0104),
 				IPAddress:     "2001:db8:1::408",
 				CLTT:          10002,
 				Hostname:      "client.example",
@@ -280,7 +280,7 @@ func TestAddLeaseWorksInTransaction(t *testing.T) {
 		SubnetID: subnets[1].ID,
 		Lease: keadata.Lease{
 			Family:        6,
-			DUID:          keadata.NewColonSeparatedHexStr(&duid),
+			DUID:          keadata.NewColonSepHexStr(&duid),
 			IPAddress:     "2001:db8:1::67",
 			CLTT:          9999,
 			State:         keadata.LeaseStateExpiredReclaimed,
@@ -503,41 +503,19 @@ func TestGetLeasesByPageFilteredByText(t *testing.T) {
 	leases := testHelperAddMockLeases(t, db, daemons, subnets)
 
 	testCases := []struct {
-		description string
-		filterText  string
-		expectedID  int64
+		desc       string
+		filterText string
+		expectedID int64
 	}{
-		{
-			description: "filter by IP address",
-			filterText:  "192.0.2.9",
-			expectedID:  leases[0].ID,
-		},
-		// TODO: this one fails
-		{
-			description: "filter by DUID",
-			filterText:  "01:01:01:01:01:01:01:01",
-			expectedID:  leases[2].ID,
-		},
-		{
-			description: "filter by MAC address",
-			filterText:  "00:00:00:00:00:01",
-			expectedID:  leases[0].ID,
-		},
-		// TODO: this one fails
-		{
-			description: "filter by Client ID",
-			filterText:  "01:01:01:01:01:01:01:03",
-			expectedID:  leases[4].ID,
-		},
-		{
-			description: "filter by hostname",
-			filterText:  "client.example",
-			expectedID:  leases[5].ID,
-		},
+		{desc: "IP", filterText: "192.0.2.9", expectedID: leases[0].ID},
+		{desc: "DUID", filterText: "01:01:01:01:01:01:01:01", expectedID: leases[2].ID},
+		{desc: "MAC", filterText: "00:00:00:00:00:01", expectedID: leases[0].ID},
+		{desc: "Client ID", filterText: "01:01:01:01:01:01:01:03", expectedID: leases[4].ID},
+		{desc: "Hostname", filterText: "client.example", expectedID: leases[5].ID},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.description, func(t *testing.T) {
+		t.Run(tc.desc, func(t *testing.T) {
 			filters := LeasesByPageFilters{
 				FilterText: &tc.filterText,
 			}
@@ -616,8 +594,8 @@ func TestFromGRPC(t *testing.T) {
 			ValidLifetime: 900,
 			LocalSubnetID: v4.SubnetID,
 			State:         1,
-			ClientID:      keadata.NewColonSeparatedHexStrZero(),
-			DUID:          keadata.NewColonSeparatedHexStrZero(),
+			ClientID:      keadata.NewColonSepHexStrZero(),
+			DUID:          keadata.NewColonSepHexStrZero(),
 		},
 		DaemonID: 99,
 		SubnetID: 1,
@@ -625,8 +603,8 @@ func TestFromGRPC(t *testing.T) {
 	expectedv6 := Lease{
 		Lease: keadata.Lease{
 			Family:        storkutil.IPv6,
-			DUID:          keadata.NewColonSeparatedHexStr(&v6.Duid),
-			ClientID:      keadata.NewColonSeparatedHexStrZero(),
+			DUID:          keadata.NewColonSepHexStr(&v6.Duid),
+			ClientID:      keadata.NewColonSepHexStrZero(),
 			IPAddress:     v6.IpAddress,
 			CLTT:          v6.Cltt,
 			ValidLifetime: 901,

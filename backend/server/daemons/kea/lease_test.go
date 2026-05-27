@@ -1999,12 +1999,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: keadata.NewColonSeparatedHexStr(&clientID02),
+				ClientID: keadata.NewColonSepHexStr(&clientID02),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: keadata.NewColonSeparatedHexStr(&duid43),
+				DUID: keadata.NewColonSepHexStr(&duid43),
 			},
 		},
 	}
@@ -2023,12 +2023,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: keadata.NewColonSeparatedHexStr(&clientID02),
+				ClientID: keadata.NewColonSepHexStr(&clientID02),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: keadata.NewColonSeparatedHexStr(&duid43),
+				DUID: keadata.NewColonSepHexStr(&duid43),
 			},
 		},
 	}
@@ -2047,12 +2047,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: keadata.NewColonSeparatedHexStr(&clientID01),
+				ClientID: keadata.NewColonSepHexStr(&clientID01),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: keadata.NewColonSeparatedHexStr(&duid43),
+				DUID: keadata.NewColonSepHexStr(&duid43),
 			},
 		},
 	}
@@ -2071,12 +2071,12 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		},
 		{
 			Lease: keadata.Lease{
-				ClientID: keadata.NewColonSeparatedHexStr(&clientID02),
+				ClientID: keadata.NewColonSepHexStr(&clientID02),
 			},
 		},
 		{
 			Lease: keadata.Lease{
-				DUID: keadata.NewColonSeparatedHexStr(&duid42),
+				DUID: keadata.NewColonSepHexStr(&duid42),
 			},
 		},
 	}
@@ -2090,22 +2090,22 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 		{
 			Lease: keadata.Lease{
 				HWAddress: "09:09:09:09:09:09",
-				ClientID:  keadata.NewColonSeparatedHexStr(&clientID02),
-				DUID:      keadata.NewColonSeparatedHexStr(&duid42),
+				ClientID:  keadata.NewColonSepHexStr(&clientID02),
+				DUID:      keadata.NewColonSepHexStr(&duid42),
 			},
 		},
 		{
 			Lease: keadata.Lease{
 				HWAddress: "09:09:09:09:09:09",
-				ClientID:  keadata.NewColonSeparatedHexStr(&clientID01),
-				DUID:      keadata.NewColonSeparatedHexStr(&duid43),
+				ClientID:  keadata.NewColonSepHexStr(&clientID01),
+				DUID:      keadata.NewColonSepHexStr(&duid43),
 			},
 		},
 		{
 			Lease: keadata.Lease{
 				HWAddress: "09:09:09:09:09:09",
-				ClientID:  keadata.NewColonSeparatedHexStr(&clientID02),
-				DUID:      keadata.NewColonSeparatedHexStr(&duid42),
+				ClientID:  keadata.NewColonSepHexStr(&clientID02),
+				DUID:      keadata.NewColonSepHexStr(&duid42),
 			},
 		},
 	}

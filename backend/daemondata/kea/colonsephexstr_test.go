@@ -8,14 +8,14 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
-// TestConstructCSHR verifies that [NewColonSeparatedHexStr] properly constructs a new
-// [ColonSeparatedHexStr].
+// TestConstructCSHR verifies that [NewColonSepHexStr] properly constructs a new
+// [ColonSepHexStr].
 func TestConstructCSHR(t *testing.T) {
 	// Act
 	exampleStr := "01:02:03"
-	exampleCSHR := NewColonSeparatedHexStr(&exampleStr)
-	nilCSHR := NewColonSeparatedHexStr(nil)
-	zeroCSHR := NewColonSeparatedHexStrZero()
+	exampleCSHR := NewColonSepHexStr(&exampleStr)
+	nilCSHR := NewColonSepHexStr(nil)
+	zeroCSHR := NewColonSepHexStrZero()
 
 	// Assert
 	require.EqualValues(t, exampleStr, exampleCSHR.String)
@@ -57,7 +57,7 @@ func TestCSHRAppendValue(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
-			cshr := NewColonSeparatedHexStr(&tc.input)
+			cshr := NewColonSepHexStr(&tc.input)
 
 			bytes, err := cshr.AppendValue([]byte{}, tc.withQuotes)
 
@@ -71,8 +71,8 @@ func TestCSHRAppendValue(t *testing.T) {
 // returns "" if the receiver is nil.
 func TestCSHRToString(t *testing.T) {
 	hexstr := "01:23:45:67:89:ab:cd:ef"
-	example := NewColonSeparatedHexStr(&hexstr)
-	var isNil *ColonSeparatedHexStr
+	example := NewColonSepHexStr(&hexstr)
+	var isNil *ColonSepHexStr
 	require.EqualValues(t, hexstr, example.ToString())
 	require.EqualValues(t, "", isNil.ToString())
 }
@@ -118,7 +118,7 @@ func TestCSHRScanValue(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 			reader := storktest.NewPoolReaderMock(tc.input, tc.inputErr)
-			cshr := NewColonSeparatedHexStrZero()
+			cshr := NewColonSepHexStrZero()
 
 			err := cshr.ScanValue(reader, len(tc.input))
 
@@ -133,9 +133,9 @@ func TestCSHRScanValue(t *testing.T) {
 }
 
 // TestCSHRUnmarshalJSON verifies that [UnmarshalJSON] reads a plain JSON string into
-// a [ColonSeparatedHexStr].
+// a [ColonSepHexStr].
 func TestCSHRUnmarshalJSON(t *testing.T) {
-	actual := NewColonSeparatedHexStrZero()
+	actual := NewColonSepHexStrZero()
 	expected := "aa:bb:cc:dd"
 	input := []byte("\"aa:bb:cc:dd\"")
 
@@ -145,11 +145,11 @@ func TestCSHRUnmarshalJSON(t *testing.T) {
 	require.EqualValues(t, expected, actual.String)
 }
 
-// TestCSHRMarshalJSON verifies that [MarshalJSON] writes a [ColonSeparatedHexStr] as
+// TestCSHRMarshalJSON verifies that [MarshalJSON] writes a [ColonSepHexStr] as
 // a plain JSON string (rather than an object).
 func TestCSHRMarshalJSON(t *testing.T) {
 	inputStr := "00:11:22:33"
-	input := NewColonSeparatedHexStr(&inputStr)
+	input := NewColonSepHexStr(&inputStr)
 	expected := []byte("\"00:11:22:33\"")
 
 	actual, err := input.MarshalJSON()

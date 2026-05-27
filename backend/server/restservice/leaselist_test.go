@@ -89,7 +89,7 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 			CLTT:          1776459817,
 			IPAddress:     "fe80::9",
 			PrefixLength:  128,
-			DUID:          keadata.NewColonSeparatedHexStr(&duid),
+			DUID:          keadata.NewColonSepHexStr(&duid),
 			ValidLifetime: 3600,
 		},
 		Subnet: &dbmodel.Subnet{
@@ -206,6 +206,18 @@ func testHelperMakeUser(t *testing.T, db *dbops.PgDB, user *dbmodel.SystemUser, 
 	require.False(t, con)
 }
 
+// exampleSuperAdmin returns an example Super Admin user for the tests.
+func exampleSuperAdmin() *dbmodel.SystemUser {
+	return &dbmodel.SystemUser{
+		Email:    "erika.mustermann@example.com",
+		Lastname: "Mustermann",
+		Name:     "Erika",
+		Groups: []*dbmodel.SystemGroup{
+			{ID: dbmodel.SuperAdminGroupID},
+		},
+	}
+}
+
 // Verify that [GetLeaseList] enforces user authentication properly:
 // - Logged-out users cannot see leases.
 // - Read only users cannot see leases.
@@ -228,14 +240,7 @@ func TestGetLeaseListUserAuth(t *testing.T) {
 			{ID: dbmodel.AdminGroupID},
 		},
 	}
-	superAdminUser := &dbmodel.SystemUser{
-		Email:    "erika.mustermann@example.com",
-		Lastname: "Mustermann",
-		Name:     "Erika",
-		Groups: []*dbmodel.SystemGroup{
-			{ID: dbmodel.SuperAdminGroupID},
-		},
-	}
+	superAdminUser := exampleSuperAdmin()
 	t.Run("deny logged-out user", func(t *testing.T) {
 		db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 		defer teardown()
@@ -334,14 +339,7 @@ func TestGetLeaseListPropagatesErrorFromGetLeases(t *testing.T) {
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
 
-	superAdminUser := &dbmodel.SystemUser{
-		Email:    "erika.mustermann@example.com",
-		Lastname: "Mustermann",
-		Name:     "Erika",
-		Groups: []*dbmodel.SystemGroup{
-			{ID: dbmodel.SuperAdminGroupID},
-		},
-	}
+	superAdminUser := exampleSuperAdmin()
 	testHelperMakeUser(t, db, superAdminUser, "pass2")
 
 	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
@@ -417,7 +415,7 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 			SubnetID: subnet.ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          keadata.NewColonSeparatedHexStr(&duid0through7),
+				DUID:          keadata.NewColonSepHexStr(&duid0through7),
 				IPAddress:     "2001:db8:1::404",
 				CLTT:          10002,
 				Hostname:      "client.example",
@@ -431,7 +429,7 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 			SubnetID: subnet.ID,
 			Lease: keadata.Lease{
 				Family:        6,
-				DUID:          keadata.NewColonSeparatedHexStr(&duid1through8),
+				DUID:          keadata.NewColonSepHexStr(&duid1through8),
 				IPAddress:     "2001:db8:1::408",
 				CLTT:          10002,
 				Hostname:      "client.example",
@@ -465,14 +463,7 @@ func TestGetLeaseListHandlesParams(t *testing.T) {
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
 
-	superAdminUser := &dbmodel.SystemUser{
-		Email:    "erika.mustermann@example.com",
-		Lastname: "Mustermann",
-		Name:     "Erika",
-		Groups: []*dbmodel.SystemGroup{
-			{ID: dbmodel.SuperAdminGroupID},
-		},
-	}
+	superAdminUser := exampleSuperAdmin()
 	testHelperMakeUser(t, db, superAdminUser, "pass2")
 
 	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)

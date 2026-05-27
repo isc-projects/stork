@@ -23,23 +23,23 @@ const (
 
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
-	Family            storkutil.IPType      `json:"-"`
-	ClientID          *ColonSeparatedHexStr `json:"client-id,omitempty"`
-	Hostname          string                `json:"hostname,omitempty"`
-	HWAddress         string                `json:"hw-address,omitempty"`
-	DUID              *ColonSeparatedHexStr `json:"duid,omitempty"`
-	IPAddress         string                `json:"ip-address,omitempty"`
-	Type              string                `json:"type,omitempty"`
-	CLTT              uint64                `json:"cltt,omitempty"`
-	State             int                   `json:"state,omitempty" pg:",use_zero"`
-	UserContext       map[string]any        `json:"user-context,omitempty"`
-	ValidLifetime     uint32                `json:"valid-lft,omitempty"`
-	IAID              uint32                `json:"iaid,omitempty"`
-	PreferredLifetime uint32                `json:"preferred-lft,omitempty"`
-	LocalSubnetID     uint32                `json:"subnet-id,omitempty"`
-	FqdnFwd           bool                  `json:"fqdn-fwd,omitempty"`
-	FqdnRev           bool                  `json:"fqdn-rev,omitempty"`
-	PrefixLength      uint8                 `json:"prefix-len,omitempty"`
+	Family            storkutil.IPType `json:"-"`
+	ClientID          *ColonSepHexStr  `json:"client-id,omitempty"`
+	Hostname          string           `json:"hostname,omitempty"`
+	HWAddress         string           `json:"hw-address,omitempty"`
+	DUID              *ColonSepHexStr  `json:"duid,omitempty"`
+	IPAddress         string           `json:"ip-address,omitempty"`
+	Type              string           `json:"type,omitempty"`
+	CLTT              uint64           `json:"cltt,omitempty"`
+	State             int              `json:"state,omitempty" pg:",use_zero"`
+	UserContext       map[string]any   `json:"user-context,omitempty"`
+	ValidLifetime     uint32           `json:"valid-lft,omitempty"`
+	IAID              uint32           `json:"iaid,omitempty"`
+	PreferredLifetime uint32           `json:"preferred-lft,omitempty"`
+	LocalSubnetID     uint32           `json:"subnet-id,omitempty"`
+	FqdnFwd           bool             `json:"fqdn-fwd,omitempty"`
+	FqdnRev           bool             `json:"fqdn-rev,omitempty"`
+	PrefixLength      uint8            `json:"prefix-len,omitempty"`
 }
 
 // Create a new Lease, filling in all the fields which are appropriate for a
@@ -62,7 +62,7 @@ func NewLease6(ip, duid string, cltt uint64, validLifetime, subnetID uint32, sta
 	return Lease{
 		Family:        storkutil.IPv6,
 		IPAddress:     ip,
-		DUID:          NewColonSeparatedHexStr(&duid),
+		DUID:          NewColonSepHexStr(&duid),
 		CLTT:          cltt,
 		ValidLifetime: validLifetime,
 		LocalSubnetID: subnetID,
@@ -74,24 +74,16 @@ func NewLease6(ip, duid string, cltt uint64, validLifetime, subnetID uint32, sta
 // Convert the Lease into the Lease Protobuf structure returned by the agent's
 // gRPC API.
 func (lease *Lease) ToGRPC() agentapi.Lease {
-	duid := ""
-	if lease.DUID != nil {
-		duid = lease.DUID.String
-	}
-	clientID := ""
-	if lease.ClientID != nil {
-		clientID = lease.ClientID.String
-	}
 	return agentapi.Lease{
 		Family:        agentapi.Lease_IPAddrFamily(lease.Family),
 		IpAddress:     lease.IPAddress,
 		HwAddress:     lease.HWAddress,
-		Duid:          duid,
+		Duid:          lease.DUID.ToString(),
 		Cltt:          lease.CLTT,
 		ValidLifetime: uint64(lease.ValidLifetime),
 		SubnetID:      lease.LocalSubnetID,
 		State:         uint32(lease.State),
 		PrefixLen:     uint32(lease.PrefixLength),
-		ClientID:      clientID,
+		ClientID:      lease.ClientID.ToString(),
 	}
 }

@@ -735,7 +735,7 @@ func TestParseRowAsLease6(t *testing.T) {
 			&keadata.Lease{
 				Family:        storkutil.IPv6,
 				IPAddress:     "51a4:14ec:1::",
-				DUID:          keadata.NewColonSeparatedHexStr(&exampleDUID),
+				DUID:          keadata.NewColonSepHexStr(&exampleDUID),
 				CLTT:          1761669049,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,
