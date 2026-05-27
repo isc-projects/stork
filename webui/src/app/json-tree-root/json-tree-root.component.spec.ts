@@ -57,7 +57,6 @@ describe('JsonTreeRootComponent', () => {
 
         fixture = TestBed.createComponent(JsonTreeRootComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -70,7 +69,7 @@ describe('JsonTreeRootComponent', () => {
 
     it('admin should not show the secrets', async () => {
         authService.logout()
-        authService.login('boz', 'foo', 'bar', 'baz')
+        authService.login('boz', 'foo', 'bar', '/')
         component.ngOnInit()
         await fixture.whenStable()
 
@@ -106,7 +105,7 @@ describe('JsonTreeRootComponent', () => {
 
     it('should initialize the inner component with correct defaults', async () => {
         authService.logout()
-        authService.login('boz', 'foo', 'bar', 'baz')
+        authService.login('boz', 'foo', 'bar', '/')
         component.ngOnInit()
         await fixture.whenStable()
         fixture.detectChanges()
