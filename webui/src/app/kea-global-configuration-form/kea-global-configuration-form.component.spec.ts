@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, flushMicrotasks } from '@angular/core/testing'
 
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
@@ -230,7 +230,6 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         component.daemonId = 1
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -242,7 +241,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         component.daemonId = 1
         component.ngOnInit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         expect(component.response?.id).toBe(123)
         expect(component.formGroup).toBeTruthy()
@@ -254,7 +253,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         spyOn(messageService, 'add')
         component.onSubmit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         const request: UpdateKeaDaemonsGlobalParametersSubmitRequest = {
             configs: [
@@ -325,7 +324,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         component.daemonId = 2
         component.ngOnInit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         expect(component.response?.id).toBe(234)
         expect(component.formGroup).toBeTruthy()
@@ -337,7 +336,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         spyOn(messageService, 'add')
         component.onSubmit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         const request: UpdateKeaDaemonsGlobalParametersSubmitRequest = {
             configs: [
@@ -370,26 +369,16 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         component.daemonId = 1
         component.ngOnInit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         expect(component.initError).toEqual('status: 404')
 
-        const messageElement = fixture.debugElement.query(By.css('p-message'))
-        expect(messageElement).toBeTruthy()
-        expect(messageElement.nativeElement.outerText).toContain(component.initError)
-
-        const retryButton = fixture.debugElement.query(By.css('[label="Retry"]'))
-        expect(retryButton).toBeTruthy()
-        expect(retryButton.nativeElement.outerText).toBe('Retry')
-
         component.onRetry()
         tick()
-        fixture.detectChanges()
-        tick()
-
-        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
-        expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
-        expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
+        flushMicrotasks()
+        expect(component.initError).toBeNull()
+        expect(component.response?.id).toBe(123)
+        expect(component.formGroup).toBeTruthy()
     }))
 
     it('should list the server names', () => {

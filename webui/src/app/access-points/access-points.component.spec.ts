@@ -38,7 +38,7 @@ describe('AccessPointsComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(AccessPointsComponent)
         component = fixture.componentInstance
-        component.daemon = { accessPoints: [] }
+        fixture.componentRef.setInput('daemon', { accessPoints: [] })
         fixture.detectChanges()
     })
 
@@ -47,7 +47,7 @@ describe('AccessPointsComponent', () => {
     })
 
     it('should display control access point', () => {
-        component.daemon = {
+        fixture.componentRef.setInput('daemon', {
             machineId: 1,
             machineLabel: '192.0.2.1:8080',
             accessPoints: [
@@ -58,7 +58,7 @@ describe('AccessPointsComponent', () => {
                     protocol: 'https',
                 },
             ],
-        }
+        } as any)
         fixture.detectChanges()
 
         const content = (fixture.nativeElement as HTMLElement).innerText
@@ -72,7 +72,7 @@ describe('AccessPointsComponent', () => {
     })
 
     it('should display statistics access point', () => {
-        component.daemon = {
+        fixture.componentRef.setInput('daemon', {
             machineId: 1,
             machineLabel: '192.0.2.1:8080',
             accessPoints: [
@@ -83,7 +83,7 @@ describe('AccessPointsComponent', () => {
                     protocol: 'http',
                 },
             ],
-        }
+        } as any)
         fixture.detectChanges()
 
         const content = (fixture.nativeElement as HTMLElement).innerText
@@ -97,7 +97,7 @@ describe('AccessPointsComponent', () => {
     })
 
     it('should display multiple access points', () => {
-        component.daemon = {
+        fixture.componentRef.setInput('daemon', {
             machineId: 1,
             machineLabel: '192.0.2.1:8080',
             accessPoints: [
@@ -114,7 +114,7 @@ describe('AccessPointsComponent', () => {
                     protocol: 'http',
                 },
             ],
-        }
+        } as any)
         fixture.detectChanges()
 
         const content = (fixture.nativeElement as HTMLElement).innerText
@@ -147,7 +147,8 @@ describe('AccessPointsComponent', () => {
     })
 
     it('should hide keys for non-BIND9 daemon', () => {
-        component.daemon = { name: 'dhcp4' } as AnyDaemon
+        fixture.componentRef.setInput('daemon', { name: 'dhcp4' } as AnyDaemon)
+        fixture.detectChanges()
         expect(fixture.debugElement.query(By.directive(AccessPointKeyComponent))).toBeFalsy()
     })
 

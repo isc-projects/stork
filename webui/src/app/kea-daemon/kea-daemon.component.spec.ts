@@ -168,8 +168,7 @@ describe('KeaDaemonComponent', () => {
     })
 
     it('should not display data storage when files and backends are blank', () => {
-        component.daemon().files = []
-        component.daemon().backends = []
+        fixture.componentRef.setInput('daemon', { ...component.daemon(), files: [], backends: [] })
         fixture.detectChanges()
         const dataStorage = fixture.debugElement.query(By.css('#data-storage-div'))
         expect(dataStorage).toBeNull()
@@ -230,12 +229,15 @@ describe('KeaDaemonComponent', () => {
     })
 
     it('should display hook libraries', () => {
-        component.daemon().hooks = [
+        fixture.componentRef.setInput('daemon', {
+            ...component.daemon(),
+            hooks: [
             '/libdhcp_cb_cmds.so',
             '/lib/libdhcp_custom.so',
             '/usr/lib/libdhcp_fake.so',
             '/usr/local/lib/libdhcp_lease_cmds.so',
-        ]
+            ],
+        })
         fixture.detectChanges()
 
         // Check legend.

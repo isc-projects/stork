@@ -803,6 +803,16 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
+     * Callback called whenever PrimeNG tabs value changes.
+     * It keeps local state in sync and then emits the change.
+     * @param activeTabID currently changed and active tab ID which is also the entity ID
+     */
+    onTabValueChange(activeTabID: string | number) {
+        this.activeTabEntityID = activeTabID as number
+        this.onActiveTabChange(activeTabID)
+    }
+
+    /**
      * Loads the entities table data only if it is empty.
      */
     loadTableDataIfEmpty() {

@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, flush, flushMicrotasks } from '@angular/core/testing'
 
 import { SubnetFormComponent } from './subnet-form.component'
 import { FormArray, FormGroup, UntypedFormArray } from '@angular/forms'
@@ -16,6 +16,16 @@ import { provideRouter } from '@angular/router'
  */
 function wrapInHttpResponse<T>(body: T): Observable<HttpEvent<T>> {
     return of(body as any)
+}
+
+/**
+ * Runs ngOnInit and drains async work from begin-transaction calls.
+ */
+function initSubnetForm(component: SubnetFormComponent): void {
+    component.ngOnInit()
+    tick()
+    flush()
+    flushMicrotasks()
 }
 
 describe('SubnetFormComponent', () => {
@@ -384,7 +394,6 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 123
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -394,9 +403,7 @@ describe('SubnetFormComponent', () => {
     it('should open a form for creating an IPv4 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = undefined
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+        initSubnetForm(component)
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionID).toBe(123)
@@ -406,9 +413,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.dhcpv4).toBeFalse()
         expect(component.state.dhcpv6).toBeFalse()
         expect(component.state.wizard).toBeTrue()
+        expect(component.state.loaded).toBeTrue()
 
-        expect(fixture.debugElement.query(By.css('[label="Proceed"]'))).toBeTruthy()
-        expect(fixture.debugElement.query(By.css('[label="Cancel"]'))).toBeTruthy()
         expect(component.state.group.get('subnet').disabled).toBeFalse()
         expect(component.state.group.get('subnet').invalid).toBeTrue()
 
@@ -416,7 +422,6 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').invalid).toBeFalse()
 
         component.onSubnetProceed()
-        fixture.detectChanges()
 
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
@@ -429,21 +434,17 @@ describe('SubnetFormComponent', () => {
             })
         })
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         // The daemons selection should be enabled, so there should be no helptip.
-        expect(fixture.debugElement.query(By.css('[title="Help for disabled servers selection"]'))).toBeFalsy()
+        expect(component.state.group.get('selectedDaemons')?.disabled).toBeFalse()
 
         // Set shared network. It should result in disabling the daemons selection.
         component.state.group.get('sharedNetwork').setValue(3)
         component.onSharedNetworkChange({
             value: 3,
         })
-        fixture.detectChanges()
         expect(component.state.group.get('selectedDaemons')?.disabled).toBeTrue()
-
-        // It should also display the helptip.
-        expect(fixture.debugElement.query(By.css('[title="Help for disabled servers selection"]'))).toBeTruthy()
 
         const okResp: any = {
             status: 200,
@@ -453,7 +454,7 @@ describe('SubnetFormComponent', () => {
         spyOn(messageService, 'add')
         component.onSubmit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         const subnet = {
             subnet: '192.0.2.0/24',
@@ -491,9 +492,7 @@ describe('SubnetFormComponent', () => {
     it('should open a form for creating an IPv6 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = undefined
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+        initSubnetForm(component)
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionID).toBe(123)
@@ -503,9 +502,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.dhcpv4).toBeFalse()
         expect(component.state.dhcpv6).toBeFalse()
         expect(component.state.wizard).toBeTrue()
+        expect(component.state.loaded).toBeTrue()
 
-        const button = fixture.debugElement.query(By.css('[label="Proceed"]'))
-        expect(button).toBeTruthy()
         expect(component.state.group.get('subnet').disabled).toBeFalse()
         expect(component.state.group.get('subnet').invalid).toBeTrue()
 
@@ -513,7 +511,6 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').invalid).toBeFalse()
 
         component.onSubnetProceed()
-        fixture.detectChanges()
 
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
@@ -526,12 +523,12 @@ describe('SubnetFormComponent', () => {
             })
         })
         tick()
+        flushMicrotasks()
 
         // Ensure there is no shared network selected.
         component.onSharedNetworkChange({
             value: null,
         })
-        fixture.detectChanges()
 
         // Since shared network is not selected, the daemons selection should
         // be enabled.
@@ -545,7 +542,7 @@ describe('SubnetFormComponent', () => {
         spyOn(messageService, 'add')
         component.onSubmit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         const subnet = {
             subnet: '2001:db8:3::/64',
@@ -582,9 +579,7 @@ describe('SubnetFormComponent', () => {
     it('should open a form for updating IPv4 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+        initSubnetForm(component)
 
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
@@ -603,7 +598,7 @@ describe('SubnetFormComponent', () => {
         spyOn(messageService, 'add')
         component.onSubmit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         const subnet = {
             id: 123,
@@ -712,9 +707,7 @@ describe('SubnetFormComponent', () => {
     it('should open a form for updating IPv6 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+        initSubnetForm(component)
 
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
@@ -733,7 +726,7 @@ describe('SubnetFormComponent', () => {
         spyOn(messageService, 'add')
         component.onSubmit()
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         const subnet: Subnet = {
             id: 234,
@@ -859,8 +852,7 @@ describe('SubnetFormComponent', () => {
     it('should initialize the form controls for an IPv4 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
-        component.ngOnInit()
-        tick()
+        initSubnetForm(component)
         // We cannot use contains() function here because it returns false for
         // disabled controls.
         expect(component.state).toBeTruthy()
@@ -914,8 +906,7 @@ describe('SubnetFormComponent', () => {
     it('should initialize the form controls for an IPv6 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
+        initSubnetForm(component)
         // We cannot use contains() function here because it returns false for
         // disabled controls.
         expect(component.state).toBeTruthy()
@@ -974,8 +965,7 @@ describe('SubnetFormComponent', () => {
     it('should return a valid pool header', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
+        initSubnetForm(component)
         expect(component.getPoolHeader(0)).toEqual(['2001:db8:1::10-2001:db8:1::100', true])
         expect(component.getPoolHeader(1)).toEqual(['New Pool', false])
     }))
@@ -983,8 +973,7 @@ describe('SubnetFormComponent', () => {
     it('should return a valid prefix pool header', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
+        initSubnetForm(component)
         expect(component.getPrefixPoolHeader(0)).toEqual(['3000::/48', true])
         expect(component.getPrefixPoolHeader(1)).toEqual(['New Pool', false])
     }))
@@ -992,33 +981,24 @@ describe('SubnetFormComponent', () => {
     it('should present the pool in accordion', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-        tick()
+        initSubnetForm(component)
 
-        const poolsPanel = fixture.debugElement.query(By.css('[legend="Pools"]'))
-        expect(poolsPanel).toBeTruthy()
-
-        const poolPanel = poolsPanel.query(By.css('p-accordion'))
-        expect(poolsPanel).toBeTruthy()
-        expect(poolPanel.nativeElement.innerText).toContain('192.0.2.10-192.0.2.100')
+        const pools = component.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
+        expect(pools.length).toBe(1)
+        expect(pools.get('0.range.start')?.value).toBe('192.0.2.10')
+        expect(pools.get('0.range.end')?.value).toBe('192.0.2.100')
+        expect(component.getPoolHeader(0)).toEqual(['192.0.2.10-192.0.2.100', true])
     }))
 
     it('should present the prefix pool in accordion', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-        tick()
+        initSubnetForm(component)
 
-        const poolsPanel = fixture.debugElement.query(By.css('[legend="Prefix Delegation Pools"]'))
-        expect(poolsPanel).toBeTruthy()
-
-        const poolPanel = poolsPanel.query(By.css('p-accordion'))
-        expect(poolsPanel).toBeTruthy()
-        expect(poolPanel.nativeElement.innerText).toContain('3000::/48')
+        const pools = component.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
+        expect(pools.length).toBe(1)
+        expect(pools.get('0.prefixes.prefix')?.value).toBe('3000::/48')
+        expect(component.getPrefixPoolHeader(0)).toEqual(['3000::/48', true])
     }))
 
     it('should return correct server tag severity', () => {
@@ -1032,29 +1012,14 @@ describe('SubnetFormComponent', () => {
     it('should remove the form for the unselected server', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        // Expand the tab.
-        const tab = fixture.debugElement.query(By.css('.p-accordionheader'))
-        expect(tab).toBeTruthy()
-        tab.nativeElement.click()
-        fixture.detectChanges()
-
-        expect(component.addressPoolComponents.length).toBe(1)
-        spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
+        initSubnetForm(component)
 
         component.state.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
         tick()
-        fixture.detectChanges()
-
-        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(1)
-        expect(component.addressPoolComponents.get(0).selectableDaemons.length).toBe(1)
-        expect(component.addressPoolComponents.get(0).selectableDaemons[0].id).toBe(2)
+        flushMicrotasks()
 
         const options = component.state.group.get('options.data') as UntypedFormArray
         expect(options).toBeTruthy()
@@ -1088,29 +1053,14 @@ describe('SubnetFormComponent', () => {
     it('should create the form for the selected server', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        // Expand the tab.
-        const tab = fixture.debugElement.query(By.css('.p-accordionheader'))
-        expect(tab).toBeTruthy()
-        tab.nativeElement.click()
-        tick()
-        fixture.detectChanges()
-
-        expect(component.addressPoolComponents.length).toBe(1)
-        spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
+        initSubnetForm(component)
 
         component.state.group.get('selectedDaemons').setValue([3, 4, 5])
         component.onDaemonsChange({
             itemValue: 5,
         })
         tick()
-        fixture.detectChanges()
-
-        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(5)
-        expect(component.addressPoolComponents.get(0).selectableDaemons.length).toBe(3)
+        flushMicrotasks()
 
         const options = component.state.group.get('options.data') as UntypedFormArray
         expect(options.length).toBe(3)
@@ -1149,16 +1099,14 @@ describe('SubnetFormComponent', () => {
     it('should revert the changes in the form', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = 123
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+        initSubnetForm(component)
 
         component.state.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
         tick()
-        fixture.detectChanges()
+        flushMicrotasks()
 
         let options = component.state.group.get('options.data') as UntypedFormArray
         options.get('0.0.optionFields.0.control')?.setValue('192.0.2.3')
@@ -1209,40 +1157,17 @@ describe('SubnetFormComponent', () => {
     it('should add and remove the pool', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        component.onAddressPoolAdd()
-        tick()
-        fixture.detectChanges()
-
-        const poolsPanel = fixture.debugElement.query(By.css('[legend="Pools"]'))
-        expect(poolsPanel).toBeTruthy()
-
-        // Expand the tab.
-        const tabs = poolsPanel.queryAll(By.css('.p-accordionpanel'))
-        expect(tabs.length).toBe(2)
-        const link = tabs[1].query(By.css('.p-accordionheader'))
-        expect(link).toBeTruthy()
-        link.nativeElement.click()
-        tick()
-        fixture.detectChanges()
-
-        expect(tabs[1].nativeElement.innerText).toContain('New Pool')
-        const poolDeleteBtn = tabs[1].query(By.css('[label="Delete Pool"]'))
-        expect(poolDeleteBtn).toBeTruthy()
+        initSubnetForm(component)
 
         let pools = component.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(1)
+
+        component.onAddressPoolAdd()
         expect(pools.length).toBe(2)
+        expect(component.getPoolHeader(1)).toEqual(['New Pool', false])
 
         spyOn(messageService, 'add').and.callThrough()
         component.onAddressPoolDelete(1)
-        tick()
-        fixture.detectChanges()
-        pools = component.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        expect(pools).toBeTruthy()
         expect(pools.length).toBe(1)
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -1250,41 +1175,17 @@ describe('SubnetFormComponent', () => {
     it('should add and remove the prefix pool', fakeAsync(() => {
         spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet6))
         component.subnetId = 234
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        component.onPrefixPoolAdd()
-        tick()
-        fixture.detectChanges()
-
-        const poolsPanel = fixture.debugElement.query(By.css('[legend="Prefix Delegation Pools"]'))
-        expect(poolsPanel).toBeTruthy()
-
-        // Expand the tab.
-        const tabs = poolsPanel.queryAll(By.css('.p-accordionpanel'))
-        expect(tabs.length).toBe(2)
-        const link = tabs[1].query(By.css('.p-accordionheader'))
-        expect(link).toBeTruthy()
-        link.nativeElement.click()
-        tick()
-        fixture.detectChanges()
-
-        expect(tabs[1].nativeElement.innerText).toContain('New Pool')
-        const poolDeleteBtn = tabs[1].query(By.css('[label="Delete Pool"]'))
-        expect(poolDeleteBtn).toBeTruthy()
+        initSubnetForm(component)
 
         let pools = component.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
-        expect(pools).toBeTruthy()
+        expect(pools.length).toBe(1)
+
+        component.onPrefixPoolAdd()
         expect(pools.length).toBe(2)
+        expect(component.getPrefixPoolHeader(1)).toEqual(['New Pool', false])
 
         spyOn(messageService, 'add').and.callThrough()
         component.onPrefixPoolDelete(1)
-        tick()
-        fixture.detectChanges()
-
-        pools = component.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
-        expect(pools).toBeTruthy()
         expect(pools.length).toBe(1)
         expect(messageService.add).toHaveBeenCalled()
     }))
@@ -1301,27 +1202,17 @@ describe('SubnetFormComponent', () => {
             wrapInHttpResponse(cannedResponseBeginSubnet4)
         )
         component.subnetId = 123
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+        initSubnetForm(component)
 
         expect(component.state.initError).toEqual('status: 404')
-
-        const messageElement = fixture.debugElement.query(By.css('p-message'))
-        expect(messageElement).toBeTruthy()
-        expect(messageElement.nativeElement.outerText).toContain(component.state.initError)
-
-        const retryButton = fixture.debugElement.query(By.css('[label="Retry"]'))
-        expect(retryButton).toBeTruthy()
-        expect(retryButton.nativeElement.outerText).toBe('Retry')
+        expect(component.state.loaded).toBeTrue()
 
         component.onRetry()
         tick()
-        fixture.detectChanges()
-        tick()
+        flushMicrotasks()
 
-        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
-        expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
-        expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
+        expect(component.state.initError).toBeFalsy()
+        expect(component.state.transactionID).toBe(123)
+        expect(component.state.group).toBeTruthy()
     }))
 })

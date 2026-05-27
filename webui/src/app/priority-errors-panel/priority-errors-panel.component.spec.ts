@@ -38,7 +38,6 @@ describe('PriorityErrorsPanelComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(PriorityErrorsPanelComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
         messageService = fixture.debugElement.injector.get(MessageService)
         sse = fixture.debugElement.injector.get(ServerSentEventsService)
         api = fixture.debugElement.injector.get(ServicesService)
@@ -76,7 +75,6 @@ describe('PriorityErrorsPanelComponent', () => {
         // When the component is initialized it should subscribe to the events and
         // receive the report about the daemons with connectivity issues.
         component.ngOnInit()
-        fixture.detectChanges()
         tick()
 
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
@@ -101,7 +99,6 @@ describe('PriorityErrorsPanelComponent', () => {
             stream: 'connectivity',
             originalEvent: null,
         })
-        fixture.detectChanges()
         tick()
 
         // The backoff has been enabled so the new event should not trigger
@@ -129,7 +126,6 @@ describe('PriorityErrorsPanelComponent', () => {
             stream: 'connectivity',
             originalEvent: null,
         })
-        fixture.detectChanges()
         tick()
         expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
         expect(api.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(2)
@@ -167,7 +163,6 @@ describe('PriorityErrorsPanelComponent', () => {
 
         // When the component is initialized it should subscribe to the events and
         // receive the report about the daemons with connectivity issues.
-        component.ngOnInit()
         fixture.detectChanges()
         tick()
 

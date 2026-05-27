@@ -21,7 +21,6 @@ describe('SubnetBarComponent', () => {
             subnet: '',
             stats: null,
         }
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -69,25 +68,25 @@ describe('SubnetBarComponent', () => {
         }
 
         // Utilization below 100%, usual situation.
-        component.subnet = getSubnet(50)
+        fixture.componentRef.setInput('subnet', getSubnet(50) as any)
         fixture.detectChanges()
         expect(extendBeyond()).toBeFalse()
 
         // Utilization equals to 100%, the subnet bar should
         // have a maximal width as allowed by the container.
-        component.subnet = getSubnet(100)
+        fixture.componentRef.setInput('subnet', getSubnet(100) as any)
         fixture.detectChanges()
         expect(extendBeyond()).toBeFalse()
 
         // Utilization above 100%, unusual case, but it shouldn't
         // cause UI glitches.
-        component.subnet = getSubnet(150)
+        fixture.componentRef.setInput('subnet', getSubnet(150) as any)
         fixture.detectChanges()
         expect(extendBeyond()).toBeFalse()
 
         // Utilization below 0%, invalid or buggy utilization.
         // Anyway, UI shouldn't be broken.
-        component.subnet = getSubnet(-50)
+        fixture.componentRef.setInput('subnet', getSubnet(-50) as any)
         fixture.detectChanges()
         expect(extendBeyond()).toBeFalse()
     })
@@ -114,14 +113,24 @@ describe('SubnetBarComponent', () => {
     })
 
     it('should display single bar for IPv4', () => {
-        component.subnet.subnet = '10.0.0.0/8'
+        component.subnet = {
+            subnet: '10.0.0.0/8',
+            addrUtilization: null,
+            pdUtilization: null,
+            stats: null,
+        } as any
         fixture.detectChanges()
         const elements = fixture.debugElement.queryAll(By.css('.utilization__bar'))
         expect(elements.length).toBe(1)
     })
 
     it('should display double bar for IPv6', () => {
-        component.subnet.subnet = 'fe80::/64'
+        component.subnet = {
+            subnet: 'fe80::/64',
+            addrUtilization: null,
+            pdUtilization: null,
+            stats: null,
+        } as any
         fixture.detectChanges()
         const elements = fixture.debugElement.queryAll(By.css('.utilization__bar'))
         expect(elements.length).toBe(2)
