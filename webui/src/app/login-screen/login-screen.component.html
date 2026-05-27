@@ -36,10 +36,14 @@
                             >
                                 <ng-template let-item #item>
                                     <div class="flex align-items-center gap-2">
-                                        <img
-                                            src="/assets/authentication-methods/{{ item.id }}.png"
-                                            (error)="onMissingIcon($event)"
-                                        />
+                                        @if (item.id === 'oidc') {
+                                            <i class="fa-brands fa-openid text-5xl" aria-hidden="true"></i>
+                                        } @else {
+                                            <img
+                                                src="/assets/authentication-methods/{{ item.id }}.png"
+                                                (error)="onMissingIcon($event)"
+                                            />
+                                        }
                                         <div>{{ item.name }}</div>
                                     </div>
                                 </ng-template>
@@ -48,12 +52,16 @@
                                         class="flex align-items-center gap-2"
                                         *ngIf="loginForm.get('authenticationMethod').value"
                                     >
-                                        <img
-                                            src="/assets/authentication-methods/{{
-                                                loginForm.get('authenticationMethod').value.id
-                                            }}.png"
-                                            (error)="onMissingIcon($event)"
-                                        />
+                                        @if (loginForm.get('authenticationMethod').value.id === 'oidc') {
+                                            <i class="fa-brands fa-openid text-5xl" aria-hidden="true"></i>
+                                        } @else {
+                                            <img
+                                                src="/assets/authentication-methods/{{
+                                                    loginForm.get('authenticationMethod').value.id
+                                                }}.png"
+                                                (error)="onMissingIcon($event)"
+                                            />
+                                        }
                                         <div>{{ loginForm.get('authenticationMethod').value.name }}</div>
                                     </div>
                                 </ng-template>
