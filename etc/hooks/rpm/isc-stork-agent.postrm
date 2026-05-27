@@ -8,6 +8,7 @@ case "$1" in
             # Some installs may self-manage the stork-agent user.
             if [ "$(getent passwd stork-agent | cut -d : -f 5)" = "Stork Agent User" ]; then
                 userdel stork-agent >/dev/null || /bin/true
+                groupdel stork-agent >/dev/null || /bin/true
             fi
         fi
         ;;

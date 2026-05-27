@@ -6,5 +6,3 @@ if command -v rc-service > /dev/null; then
   # Stop if started.
   rc-service --ifstarted isc-stork-agent stop
 fi
-
-groups stork-agent | xargs -n 1 | grep -v stork-agent | xargs -r -n 1 delgroup stork-agent

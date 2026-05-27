@@ -8,6 +8,7 @@ case "$1" in
             # Some installs may self-manage the stork-server user.
             if [ "$(getent passwd stork-server | cut -d : -f 5)" = "Stork Server User" ]; then
                 userdel stork-server >/dev/null || /bin/true
+                groupdel stork-server >/dev/null || /bin/true
             fi
         fi
         ;;

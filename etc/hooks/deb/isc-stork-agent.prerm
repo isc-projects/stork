@@ -15,8 +15,6 @@ before_remove () {
         systemctl disable isc-stork-agent
         systemctl stop isc-stork-agent
     fi
-
-    usermod -G "" stork-agent
 }
 
 

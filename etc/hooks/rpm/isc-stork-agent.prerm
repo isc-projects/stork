@@ -16,9 +16,6 @@ case "$1" in
             systemctl disable isc-stork-agent
             systemctl stop isc-stork-agent
         fi
-
-        # Remove stork-agent from any extra groups like e.g. bind.
-        usermod -G "" stork-agent
         ;;
     1)  # This is a yum/dnf upgrade.
         # Do nothing.

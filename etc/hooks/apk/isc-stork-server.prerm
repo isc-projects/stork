@@ -9,5 +9,3 @@ if command -v rc-service > /dev/null; then
   # Remove the authentication-methods icons.
   rm -f /usr/share/stork/www/assets/authentication-methods/*.png
 fi
-
-groups stork-server | xargs -n 1 | grep -v stork-server | xargs -r -n 1 delgroup stork-server
