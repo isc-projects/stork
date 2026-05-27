@@ -201,7 +201,7 @@ export class KeaDaemonComponent {
      * @param databaseType database type.
      * @returns 'MySQL', 'PostgreSQL', 'Cassandra' or 'Unknown'.
      */
-    databaseNameFromType(databaseType: 'memfile' | 'mysql' | 'postgresql' | 'cql') {
+    databaseNameFromType(databaseType: string) {
         switch (databaseType) {
             case 'memfile':
                 return 'Memfile'

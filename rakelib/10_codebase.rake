@@ -354,7 +354,7 @@ file open_api_generator_webui_dir => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
     "-i", SWAGGER_FILE,
     "-g", "typescript-angular",
     "-o", open_api_generator_webui_dir,
-    "--additional-properties", "snapshot=true,ngVersion=10.1.5,modelPropertyNaming=camelCase"
+    "--additional-properties", "snapshot=true,ngVersion=21.0.0,modelPropertyNaming=camelCase"
     sh "touch", "-c", open_api_generator_webui_dir
 end
 CLEAN.append open_api_generator_webui_dir
