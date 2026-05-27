@@ -64,6 +64,9 @@ describe('KeaDaemonComponent', () => {
                     backendType: 'mysql',
                     database: 'kea',
                     host: 'localhost',
+                    user: 'stork',
+                    port: 3306,
+                    tlsClientCertConfigured: true,
                     dataTypes: ['Leases', 'Host Reservations'],
                 },
             ],
@@ -112,6 +115,44 @@ describe('KeaDaemonComponent', () => {
         expect(component.databaseNameFromType('other' as any)).toBe('Unknown')
     })
 
+    it('should return canonical database connection details string', () => {
+        expect(
+            component.databaseConnectionString({
+                user: 'stork',
+                host: 'localhost',
+                port: 3306,
+                database: 'kea',
+                tlsClientCertConfigured: true,
+            })
+        ).toBe('stork@localhost:3306/kea (client TLS)')
+
+        expect(
+            component.databaseConnectionString({
+                host: 'db.example.org',
+                database: 'kea',
+                tlsClientCertConfigured: false,
+            })
+        ).toBe('db.example.org/kea')
+
+        expect(
+            component.databaseConnectionString({
+                user: 'admin',
+                host: '127.0.0.1',
+                database: 'configdb',
+            })
+        ).toBe('admin@127.0.0.1/configdb')
+
+        expect(
+            component.databaseConnectionString({
+                host: '192.0.2.1',
+                port: 5432,
+                database: 'kea',
+            })
+        ).toBe('192.0.2.1:5432/kea')
+
+        expect(component.databaseConnectionString({})).toBe('/')
+    })
+
     it('should display storage information', () => {
         const dataStorageFilesFieldset = fixture.debugElement.query(By.css('#data-storage-files-fieldset'))
         const dataStorageFilesElement = dataStorageFilesFieldset.nativeElement
@@ -120,7 +161,8 @@ describe('KeaDaemonComponent', () => {
 
         const dataStorageBackendsFieldset = fixture.debugElement.query(By.css('#data-storage-backends-fieldset'))
         const dataStorageBackendsElement = dataStorageBackendsFieldset.nativeElement
-        expect(dataStorageBackendsElement.innerText).toContain('MySQL (kea@localhost) with')
+        const normalizedText = dataStorageBackendsElement.innerText.replace(/\s+/g, ' ')
+        expect(normalizedText).toContain('MySQL (stork@localhost:3306/kea (client TLS)) with:')
         expect(dataStorageBackendsElement.innerText).toContain('Leases')
         expect(dataStorageBackendsElement.innerText).toContain('Host Reservations')
     })

@@ -243,9 +243,8 @@
                             <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                                 <div *ngFor="let backend of daemon().backends">
                                     <i class="fa fa-database text-gray-400"></i>
-                                    {{ databaseNameFromType(backend.backendType) }} ({{ backend.database }}&#64;{{
-                                        backend.host
-                                    }}) with:
+                                    {{ databaseNameFromType(backend.backendType) }}
+                                    ({{ databaseConnectionString(backend) }}) with:
                                     <ul class="word-break-all" style="list-style-type: disc">
                                         <li *ngFor="let dataType of backend.dataTypes">
                                             <i>{{ dataType }}</i>

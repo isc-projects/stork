@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api'
 import { ServicesService } from '../backend'
 
 import { durationToString, daemonStatusIconTooltip } from '../utils'
-import { KeaDaemon, ModelFile } from '../backend'
+import { KeaDaemon, KeaDaemonDatabase, ModelFile } from '../backend'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { NgIf, NgClass, NgFor } from '@angular/common'
 import { Button } from 'primeng/button'
@@ -215,6 +215,34 @@ export class KeaDaemonComponent {
                 break
         }
         return 'Unknown'
+    }
+
+    /**
+     * Returns canonical database connection details string.
+     *
+     * Format: dbusername@dbhost:dbport/dbname where dbusername and dbport are
+     * optional. If client TLS is configured, appends "(client TLS)".
+     *
+     * @param backend database backend details.
+     * @returns formatted database connection details.
+     */
+    databaseConnectionString(backend: KeaDaemonDatabase): string {
+        let details = ''
+
+        if (backend.user) {
+            details += backend.user + '@'
+        }
+        details += backend.host ?? ''
+        if (!!backend.port) {
+            details += ':' + backend.port
+        }
+        details += '/' + (backend.database ?? '')
+
+        if (backend.tlsClientCertConfigured) {
+            details += ' (client TLS)'
+        }
+
+        return details
     }
 
     /**
