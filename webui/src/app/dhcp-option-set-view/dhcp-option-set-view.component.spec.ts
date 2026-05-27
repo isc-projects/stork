@@ -19,7 +19,6 @@ describe('DhcpOptionSetViewComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DhcpOptionSetViewComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -104,7 +103,6 @@ describe('DhcpOptionSetViewComponent', () => {
         ]
         component.options = options
         component.levels = ['subnet']
-        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.optionNodes[0].length).toBe(3)
@@ -186,6 +184,7 @@ describe('DhcpOptionSetViewComponent', () => {
     })
 
     it('should should display a message indicating there are no options', () => {
+        fixture.detectChanges()
         let tree = fixture.debugElement.query(By.css('p-tree'))
         expect(tree).toBeTruthy()
         expect(tree.properties.innerText).toContain('No options configured.')
@@ -208,7 +207,6 @@ describe('DhcpOptionSetViewComponent', () => {
         ]
         component.options = options
         component.levels = ['subnet']
-        component.ngOnInit()
         fixture.detectChanges()
 
         let optionSet = fixture.debugElement.query(By.css('p-tree'))
@@ -232,7 +230,6 @@ describe('DhcpOptionSetViewComponent', () => {
         ]
         component.options = options
         component.levels = ['subnet']
-        component.ngOnInit()
         fixture.detectChanges()
 
         let optionSet = fixture.debugElement.query(By.css('p-tree'))
@@ -298,7 +295,6 @@ describe('DhcpOptionSetViewComponent', () => {
         ]
         component.options = options
         component.levels = ['subnet', 'global']
-        component.ngOnInit()
         fixture.detectChanges()
 
         // Initially, all options should be visible.
@@ -344,7 +340,6 @@ describe('DhcpOptionSetViewComponent', () => {
         ]
         component.options = options
         component.levels = ['host']
-        component.ngOnInit()
         fixture.detectChanges()
 
         expect(fixture.debugElement.query(By.css('p-checkbox'))).toBeFalsy()
@@ -367,13 +362,13 @@ describe('DhcpOptionSetViewComponent', () => {
         ]
         component.options = options
         component.levels = ['subnet', 'global']
-        component.ngOnInit()
         fixture.detectChanges()
 
         expect(fixture.debugElement.query(By.css('p-checkbox'))).toBeTruthy()
     })
 
     it('should return correct level tag severity', () => {
+        fixture.detectChanges()
         component.levels = ['subnet', 'shared network', 'global']
         let node: TreeNode<OptionNode> = {
             type: 'option',

@@ -17,56 +17,51 @@ describe('EntityLinkComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(EntityLinkComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
+
+    function expectDaemonLink(linkId: number | string, text: string, href: string): void {
+        const link = fixture.debugElement.query(By.css(`#daemon-link-${linkId}`))
+        expect(link.nativeElement.innerText).toEqual(text)
+        expect(link.attributes.href).toEqual(href)
+    }
+
+    function renderDaemon(attrs: unknown): void {
+        component.entity = 'daemon'
+        component.attrs = attrs
+        component.showEntityName = false
+        fixture.detectChanges()
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
     it('should construct daemon link', () => {
-        component.entity = 'daemon'
-        component.attrs = { id: 98, name: 'dhcp4' }
-        component.showEntityName = false
-        fixture.detectChanges()
-        const link = fixture.debugElement.query(By.css('#daemon-link-98'))
-        expect(link.attributes.href).toEqual('/daemons/98')
-        expect(link.nativeElement.innerText).toEqual('[98]\u00a0DHCPv4')
-        expect(link.attributes.href).toEqual('/daemons/98')
+        renderDaemon({ id: 98, name: 'dhcp4' })
+        expectDaemonLink(98, '[98]\u00a0DHCPv4', '/daemons/98')
+        expect(fixture.nativeElement.textContent).not.toContain('daemon')
+    })
 
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('daemon')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('daemon')
-        component.showEntityName = false
-
-        // Test that entity link from LocalSubnet.
+    it('should construct daemon link from LocalSubnet', () => {
         const subnet: LocalSubnet = {
             id: 24,
             daemonId: 42,
             daemonLabel: 'DHCPv4@localhost',
         }
-        component.attrs = subnet
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
-        expect(link.attributes.href).toEqual('/daemons/42')
+        renderDaemon(subnet)
+        expectDaemonLink(42, '[42]\u00a0DHCPv4@localhost', '/daemons/42')
+    })
 
-        // Test entity link from LocalSharedNetwork.
+    it('should construct daemon link from LocalSharedNetwork', () => {
         const sharedNetwork: LocalSharedNetwork = {
             daemonId: 42,
             daemonLabel: 'DHCPv4@localhost',
         }
-        component.attrs = sharedNetwork
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
-        expect(link.attributes.href).toEqual('/daemons/42')
+        renderDaemon(sharedNetwork)
+        expectDaemonLink(42, '[42]\u00a0DHCPv4@localhost', '/daemons/42')
+    })
 
-        // Test entity link from LocalHost.
+    it('should construct daemon link from LocalHost', () => {
         const host: LocalHost = {
             bootFileName: 'pxelinux.0',
             clientClasses: ['class1', 'class2'],
@@ -76,12 +71,11 @@ describe('EntityLinkComponent', () => {
             daemonId: 42,
             daemonLabel: 'DHCPv4@localhost',
         }
-        component.attrs = host
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
-        expect(link.attributes.href).toEqual('/daemons/42')
+        renderDaemon(host)
+        expectDaemonLink(42, '[42]\u00a0DHCPv4@localhost', '/daemons/42')
+    })
 
-        // Test entity link from LocalZone.
+    it('should construct daemon link from LocalZone', () => {
         const zone: LocalZone = {
             daemonId: 42,
             daemonLabel: 'DHCPv4@localhost',
@@ -92,12 +86,11 @@ describe('EntityLinkComponent', () => {
             zoneClass: 'IN',
             zoneType: 'primary',
         }
-        component.attrs = zone
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
-        expect(link.attributes.href).toEqual('/daemons/42')
+        renderDaemon(zone)
+        expectDaemonLink(42, '[42]\u00a0DHCPv4@localhost', '/daemons/42')
+    })
 
-        // Test entity link from Daemon.
+    it('should construct daemon link from Daemon', () => {
         const daemon: Daemon = {
             id: 42,
             name: 'dhcp4',
@@ -109,38 +102,32 @@ describe('EntityLinkComponent', () => {
             pid: 1234,
             version: '1.0.0',
         }
-        component.attrs = daemon
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4')
-        expect(link.attributes.href).toEqual('/daemons/42')
+        renderDaemon(daemon)
+        expectDaemonLink(42, '[42]\u00a0DHCPv4', '/daemons/42')
+    })
 
-        // Test entity link from LeasesSearchErredDaemon.
+    it('should construct daemon link from LeasesSearchErredDaemon', () => {
         const erredDaemon: LeasesSearchErredDaemon = {
             id: 42,
             label: 'DHCPv4@localhost',
         }
-        component.attrs = erredDaemon
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('[42]\u00a0DHCPv4@localhost')
-        expect(link.attributes.href).toEqual('/daemons/42')
+        renderDaemon(erredDaemon)
+        expectDaemonLink(42, '[42]\u00a0DHCPv4@localhost', '/daemons/42')
+    })
 
-        // Test entity link for missing daemon ID.
-        component.attrs = { name: 'dhcp4' }
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('DHCPv4')
-        expect(link.attributes.href).toEqual('/daemons')
+    it('should construct daemon link without id', () => {
+        renderDaemon({ name: 'dhcp4' })
+        expectDaemonLink(0, 'DHCPv4', '/daemons')
+    })
 
-        // Test entity link for numeric zero daemon ID.
-        component.attrs = { id: 0, name: 'dhcp4' }
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('DHCPv4')
-        expect(link.attributes.href).toEqual('/daemons')
+    it('should construct daemon link for numeric zero id', () => {
+        renderDaemon({ id: 0, name: 'dhcp4' })
+        expectDaemonLink(0, 'DHCPv4', '/daemons')
+    })
 
-        // Test entity link for string zero daemon ID.
-        component.attrs = { id: '0', name: 'dhcp4' }
-        fixture.detectChanges()
-        expect(link.nativeElement.innerText).toEqual('DHCPv4')
-        expect(link.attributes.href).toEqual('/daemons')
+    it('should construct daemon link for string zero id', () => {
+        renderDaemon({ id: '0', name: 'dhcp4' })
+        expectDaemonLink(0, 'DHCPv4', '/daemons')
     })
 
     it('should construct machine link', () => {
@@ -151,16 +138,7 @@ describe('EntityLinkComponent', () => {
         const link = fixture.debugElement.query(By.css('#machine-link'))
         expect(link.attributes.href).toEqual('/machines/5')
         expect(link.nativeElement.innerText).toEqual('[5]\u00a0192.0.2.10')
-
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('machine')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('machine')
+        expect(fixture.nativeElement.textContent).not.toContain('machine')
     })
 
     it('should construct user link with login', () => {
@@ -171,16 +149,7 @@ describe('EntityLinkComponent', () => {
         const link = fixture.debugElement.query(By.css('#user-link'))
         expect(link.attributes.href).toEqual('/users/7')
         expect(link.nativeElement.innerText).toEqual('[7]\u00a0turtle')
-
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('user')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('user')
+        expect(fixture.nativeElement.textContent).not.toContain('user')
     })
 
     it('should construct user link with email', () => {
@@ -191,16 +160,7 @@ describe('EntityLinkComponent', () => {
         const link = fixture.debugElement.query(By.css('#user-link'))
         expect(link.attributes.href).toEqual('/users/7')
         expect(link.nativeElement.innerText).toEqual('[7]\u00a0mouse@example.org')
-
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('user')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('user')
+        expect(fixture.nativeElement.textContent).not.toContain('user')
     })
 
     it('should construct host link', () => {
@@ -211,20 +171,16 @@ describe('EntityLinkComponent', () => {
         const link = fixture.debugElement.query(By.css('#host-link'))
         expect(link.attributes.href).toEqual('/dhcp/hosts/8')
         expect(link.nativeElement.innerText).toEqual('mouse.example.org')
+        expect(fixture.nativeElement.textContent).not.toContain('host')
+    })
 
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('host')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('host')
-
-        // Show the identifier.
+    it('should show host identifier when requested', () => {
+        component.entity = 'host'
+        component.attrs = { id: 8, label: 'mouse.example.org' }
+        component.showEntityName = false
         fixture.componentRef.setInput('showIdentifier', true)
         fixture.detectChanges()
+        const link = fixture.debugElement.query(By.css('#host-link'))
         expect(link.nativeElement.innerText).toEqual('[8]\u00a0mouse.example.org')
     })
 
@@ -236,20 +192,16 @@ describe('EntityLinkComponent', () => {
         const link = fixture.debugElement.query(By.css('#subnet-link'))
         expect(link.attributes.href).toEqual('/dhcp/subnets/8')
         expect(link.nativeElement.innerText).toEqual('fe80::/64')
+        expect(fixture.nativeElement.textContent).not.toContain('subnet')
+    })
 
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('subnet')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('subnet')
-
-        // Show the identifier.
+    it('should show subnet identifier when requested', () => {
+        component.entity = 'subnet'
+        component.attrs = { id: 8, subnet: 'fe80::/64' }
+        component.showEntityName = false
         fixture.componentRef.setInput('showIdentifier', true)
         fixture.detectChanges()
+        const link = fixture.debugElement.query(By.css('#subnet-link'))
         expect(link.nativeElement.innerText).toEqual('[8] fe80::/64')
     })
 
@@ -261,20 +213,16 @@ describe('EntityLinkComponent', () => {
         const link = fixture.debugElement.query(By.css('#shared-network-link'))
         expect(link.attributes.href).toEqual('/dhcp/shared-networks/9')
         expect(link.nativeElement.innerText).toEqual('frog')
+        expect(fixture.nativeElement.textContent).not.toContain('subnet')
+    })
 
-        // Test entity name is not displayed.
-        let native = fixture.nativeElement
-        expect(native.textContent).not.toContain('subnet')
-
-        // Display entity name.
-        component.showEntityName = true
-        fixture.detectChanges()
-        native = fixture.nativeElement
-        expect(native.textContent).toContain('shared network')
-
-        // Show the identifier.
+    it('should show shared network identifier when requested', () => {
+        component.entity = 'shared-network'
+        component.attrs = { id: 9, name: 'frog' }
+        component.showEntityName = false
         fixture.componentRef.setInput('showIdentifier', true)
         fixture.detectChanges()
+        const link = fixture.debugElement.query(By.css('#shared-network-link'))
         expect(link.nativeElement.innerText).toEqual('[9]\u00a0frog')
     })
 })

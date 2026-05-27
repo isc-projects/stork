@@ -11,8 +11,6 @@ describe('ByteCharacterComponent', () => {
 
         fixture = TestBed.createComponent(ByteCharacterComponent)
         component = fixture.componentInstance
-        component.byteValue = 42
-        fixture.detectChanges()
     })
 
     it('should create', () => {

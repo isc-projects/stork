@@ -15,7 +15,6 @@ describe('DhcpClientClassSetViewComponent', () => {
 
         fixture = TestBed.createComponent(DhcpClientClassSetViewComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -23,19 +22,21 @@ describe('DhcpClientClassSetViewComponent', () => {
     })
 
     it('should display client classses', () => {
-        component.clientClasses = ['access-point', 'router', 'classifier']
+        fixture.componentRef.setInput('clientClasses', ['access-point', 'router', 'classifier'])
         fixture.detectChanges()
 
+        expect(component.clientClasses.length).toBe(3)
         const chips = fixture.debugElement.queryAll(By.css('p-chip'))
         expect(chips.length).toBe(3)
     })
 
     it('should display a note that there are no client classes', () => {
-        component.clientClasses = []
+        fixture.componentRef.setInput('clientClasses', [])
         fixture.detectChanges()
 
+        expect(component.clientClasses.length).toBe(0)
         const chips = fixture.debugElement.queryAll(By.css('p-chip'))
         expect(chips.length).toBe(0)
-        expect(fixture.debugElement.nativeElement.innerText).toContain('No client classes configured.')
+        expect(fixture.debugElement.nativeElement.textContent).toContain('No client classes configured.')
     })
 })

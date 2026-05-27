@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing'
+import { By } from '@angular/platform-browser'
 
 import { VersionStatusComponent } from './version-status.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
@@ -238,15 +239,17 @@ describe('VersionStatusComponent', () => {
         expect(messagesDiv).toBeNull()
     })
 
-    it('should display block message', () => {
-        // Arrange
+    it('should display block message', fakeAsync(() => {
         fixture.componentRef.setInput('inline', false)
+        fixture.componentRef.setInput('daemon', { name: 'dhcp4', version: '2.6.1' })
+        fixture.detectChanges()
+        tick()
+        flushMicrotasks()
+        fixture.detectChanges()
 
-        // Act & Assert
-        setCorrectInputs()
-        const messagesDiv = fixture.nativeElement.querySelector('div.p-message')
-        expect(messagesDiv).toBeTruthy()
-    })
+        expect(component.messages?.length).toBeGreaterThan(0)
+        expect(fixture.debugElement.query(By.css('p-message'))).toBeTruthy()
+    }))
 
     it('should not display feedback when version undefined', () => {
         // Arrange
