@@ -273,7 +273,7 @@ export class LoginScreenComponent implements OnInit {
      */
     protected authMethodChange(event: SelectChangeEvent) {
         const authMethod = event.value as AuthenticationMethod
-        const id = (authMethod.id ?? '') as string
+        const id = authMethod.id ?? ''
         this.updateNonFormLabel(authMethod)
         localStorage.setItem(this.selectedAuthMethodKey, id)
     }
@@ -286,7 +286,7 @@ export class LoginScreenComponent implements OnInit {
      * @private
      */
     private updateNonFormLabel(authMethod: AuthenticationMethod) {
-        const id = (authMethod.id ?? '') as string
+        const id = authMethod.id ?? ''
         // For now, we only support OpenID Connect as a non-form authentication.
         // In the future, we may support more such methods. This method ID matching
         // logic will have to be extended.

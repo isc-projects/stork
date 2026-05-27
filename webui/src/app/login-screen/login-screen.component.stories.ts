@@ -207,9 +207,8 @@ export const TestAuthMethodIsStoredInLocalStorage: Story = {
         const user = userEvent.setup({ delay: 50 })
 
         // Act
-        let options
         await user.click(combobox)
-        options = await canvas.findAllByRole('option')
+        let options = await canvas.findAllByRole('option')
         await expect(options.length).toBeGreaterThanOrEqual(3)
 
         // Reset storage to have selected the first option.
