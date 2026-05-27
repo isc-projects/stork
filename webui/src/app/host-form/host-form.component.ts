@@ -668,6 +668,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * skip initialization in the next ngOnInit function invocation.
      */
     ngOnDestroy(): void {
+        if (!this.form) {
+            return
+        }
         this.form.preserved = true
         this.formDestroy.emit(this.form)
     }

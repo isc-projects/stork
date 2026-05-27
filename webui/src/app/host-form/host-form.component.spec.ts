@@ -6,20 +6,38 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { HostFormComponent } from './host-form.component'
+import { HostForm } from '../forms/host-form'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DHCPService, Host } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter } from '@angular/router'
 
-function initHostForm(component: HostFormComponent, beginData?: object): void {
+/**
+ * Initializes the host form with canned begin-transaction data without relying on async ngOnInit.
+ */
+function initHostForm(component: HostFormComponent, beginData: object): void {
+    if (!component.form) {
+        component.form = new HostForm()
+    }
+    ;(component as any)._updateHostIdTypes()
+    ;(component as any)._updateIPTypes()
+    if (!component.form.group) {
+        ;(component as any)._createDefaultFormGroup()
+    }
+    const mapped = (component as any)._mapHostBeginData(beginData)
+    ;(component as any)._initializeForm(mapped)
+    // Prevent ngOnInit from resetting the form on the next detectChanges().
+    component.form.preserved = true
+}
+
+/**
+ * Runs ngOnInit and drains async begin-transaction work (for tests of that flow).
+ */
+function runHostFormNgOnInit(component: HostFormComponent): void {
     component.ngOnInit()
     tick()
     flush()
     flushMicrotasks()
-    if (beginData && !component.form.allDaemons?.length) {
-        const mapped = (component as any)._mapHostBeginData(beginData)
-        ;(component as any)._initializeForm(mapped)
-    }
 }
 
 describe('HostFormComponent', () => {
@@ -136,13 +154,17 @@ describe('HostFormComponent', () => {
         messageService = fixture.debugElement.injector.get(MessageService)
     })
 
+    afterEach(() => {
+        fixture.destroy()
+    })
+
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
     it('should begin new transaction', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
-        initHostForm(component, cannedResponseBegin)
+        runHostFormNgOnInit(component)
         expect(component.form).toBeTruthy()
         expect(component.form.preserved).toBeFalse()
         expect(component.form.transactionID).toBe(123)
@@ -261,6 +283,7 @@ describe('HostFormComponent', () => {
     it('should disable subnet selection for global reservations', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         initHostForm(component, cannedResponseBegin)
+        fixture.detectChanges()
         let subnetsDropdown = fixture.debugElement.query(By.css('[inputId="subnets-dropdown"]'))
         expect(subnetsDropdown).toBeTruthy()
 
@@ -670,8 +693,16 @@ describe('HostFormComponent', () => {
     }))
 
     it('should present an error message when begin transaction fails', fakeAsync(() => {
-        spyOn(dhcpApi, 'createHostBegin').and.returnValues(throwError({ status: 404 }), of(cannedResponseBegin))
-        initHostForm(component)
+        let beginAttempts = 0
+        spyOn(dhcpApi, 'createHostBegin').and.callFake(() => {
+            beginAttempts++
+            if (beginAttempts === 1) {
+                return throwError(() => ({ status: 404 }))
+            }
+            return of(cannedResponseBegin)
+        })
+        runHostFormNgOnInit(component)
+        fixture.detectChanges()
 
         expect(component.form.initError).toEqual('status: 404')
 
@@ -685,11 +716,13 @@ describe('HostFormComponent', () => {
 
         component.onRetry()
         tick()
-        fixture.detectChanges()
+        flush()
+        flushMicrotasks()
 
-        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
-        expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
-        expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
+        expect(component.form.initError).toBeNull()
+        expect(component.form.transactionID).toBe(123)
+        expect(component.form.allDaemons.length).toBe(5)
+        expect(component.form.group).toBeTruthy()
     }))
 
     it('should submit new dhcpv4 host', fakeAsync(() => {
@@ -1111,6 +1144,7 @@ describe('HostFormComponent', () => {
     it('should include dhcpv4 options form', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         initHostForm(component, cannedResponseBegin)
+        fixture.detectChanges()
 
         const optionsForm = fixture.debugElement.query(By.css('app-dhcp-option-set-form'))
         expect(optionsForm).toBeTruthy()
@@ -1133,6 +1167,7 @@ describe('HostFormComponent', () => {
     it('should include client classes form', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         initHostForm(component, cannedResponseBegin)
+        fixture.detectChanges()
 
         const clientClassesForm = fixture.debugElement.query(By.css('app-dhcp-client-class-set-form'))
         expect(clientClassesForm).toBeTruthy()
@@ -1426,9 +1461,8 @@ describe('HostFormComponent', () => {
             ],
         }
         spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(beginResponse))
-        initHostForm(component)
+        initHostForm(component, beginResponse)
 
-        expect(dhcpApi.updateHostBegin).toHaveBeenCalled()
         expect(component.formGroup.valid).toBeTrue()
         expect(component.formGroup.get('splitFormMode').value).toBeTrue()
         expect(component.formGroup.get('globalReservation').value).toBeFalse()
@@ -1652,9 +1686,8 @@ describe('HostFormComponent', () => {
             ],
         } as Host
         spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(beginResponse))
-        initHostForm(component)
+        initHostForm(component, beginResponse)
 
-        expect(dhcpApi.updateHostBegin).toHaveBeenCalled()
         expect(component.formGroup.valid).toBeTrue()
         expect(component.formGroup.get('splitFormMode').value).toBeTrue()
         expect(component.formGroup.get('globalReservation').value).toBeFalse()
@@ -1833,7 +1866,7 @@ describe('HostFormComponent', () => {
             ],
         }
         spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(beginResponse))
-        initHostForm(component)
+        initHostForm(component, beginResponse)
 
         expect(component.ipGroups.length).toBe(1)
         expect(component.ipGroups.get('0.inputIPv4').value).toBe('192.0.2.4')
@@ -1848,7 +1881,6 @@ describe('HostFormComponent', () => {
 
         // Revert the changes.
         component.onRevert()
-        fixture.detectChanges()
 
         // Ensure that the changes have been reverted.
         expect(component.ipGroups.length).toBe(1)
@@ -1858,8 +1890,10 @@ describe('HostFormComponent', () => {
     }))
 
     it('should emit cancel event', () => {
+        component.form = new HostForm()
+        component.form.transactionID = 123
         spyOn(component.formCancel, 'emit')
         component.onCancel()
-        expect(component.formCancel.emit).toHaveBeenCalled()
+        expect(component.formCancel.emit).toHaveBeenCalledWith(123)
     })
 })

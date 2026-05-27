@@ -143,6 +143,9 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
      * skip initialization in the next ngOnInit function invocation.
      */
     ngOnDestroy(): void {
+        if (!this.state) {
+            return
+        }
         this.state.markLoaded()
         this.formDestroy.emit(this.state)
     }
