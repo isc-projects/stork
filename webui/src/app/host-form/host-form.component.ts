@@ -12,6 +12,7 @@ import {
     ReactiveFormsModule,
 } from '@angular/forms'
 import { MessageService, SelectItem } from 'primeng/api'
+import { lastValueFrom } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { collapseIPv6Number, isIPv4, IPv4, IPv6, Validator } from 'ip-num'
 import { StorkValidators } from '../validators'
@@ -449,16 +450,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * with the retry button.
      */
     private _createHostBegin(): void {
-        this._dhcpApi
-            .createHostBegin()
-            .pipe(
+        lastValueFrom(
+            this._dhcpApi.createHostBegin().pipe(
                 map((data) => {
                     // We have to mangle the returned information and store them
                     // in the format usable by the component.
                     return this._mapHostBeginData(data)
                 })
             )
-            .toPromise()
+        )
             .then((data) => {
                 this._initializeForm(data)
             })
@@ -484,16 +484,15 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * along with the retry button.
      */
     private _updateHostBegin(): void {
-        this._dhcpApi
-            .updateHostBegin(this.hostId)
-            .pipe(
+        lastValueFrom(
+            this._dhcpApi.updateHostBegin(this.hostId).pipe(
                 map((data) => {
                     // We have to mangle the returned information and store them
                     // in the format usable by the component.
                     return this._mapHostBeginData(data)
                 })
             )
-            .toPromise()
+        )
             .then((data) => {
                 this._initializeForm(data)
             })
@@ -1250,10 +1249,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // Update the existing host.
         if (this.hostId) {
             host.id = this.hostId
-            this._dhcpApi
-                .updateHostSubmit(this.hostId, this.form.transactionID, host)
-                .toPromise()
-                .then(() => {
+            lastValueFrom(this._dhcpApi.updateHostSubmit(this.hostId, this.form.transactionID, host)).then(() => {
                     this._messageService.add({
                         severity: 'success',
                         summary: 'Host reservation successfully updated',
@@ -1276,10 +1272,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             return
         }
         // Submit new host.
-        this._dhcpApi
-            .createHostSubmit(this.form.transactionID, host)
-            .toPromise()
-            .then(() => {
+        lastValueFrom(this._dhcpApi.createHostSubmit(this.form.transactionID, host)).then(() => {
                 this._messageService.add({
                     severity: 'success',
                     summary: 'Host reservation successfully added',

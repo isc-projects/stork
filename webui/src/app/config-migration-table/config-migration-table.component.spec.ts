@@ -41,7 +41,6 @@ describe('ConfigMigrationTableComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(ConfigMigrationTableComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -54,8 +53,7 @@ describe('ConfigMigrationTableComponent', () => {
         expect(dhcpServiceSpy.getMigrations).toHaveBeenCalledWith(0, 10)
     })
 
-    it('should set migrations and totalRecords on successful loadData', async () => {
-        // Setup test data
+    it('should set migrations and totalRecords on successful loadData', fakeAsync(() => {
         const testMigrations = [
             { id: '1', progress: 0.5 },
             { id: '2', progress: 1.0 },
@@ -68,18 +66,12 @@ describe('ConfigMigrationTableComponent', () => {
             }) as any as Observable<HttpResponse<MigrationStatuses>>
         )
 
-        // Call loadData
-        const event = { first: 0, rows: 10 } as TableLazyLoadEvent
-        component.loadData(event)
+        component.loadData({ first: 0, rows: 10 } as TableLazyLoadEvent)
+        tick()
 
-        // Wait for async operations
-        fixture.detectChanges()
-        await fixture.whenStable()
-
-        // Verify the component state
         expect(component.dataCollection.length).toBe(2)
         expect(component.totalRecords).toBe(2)
-    })
+    }))
 
     it('should emit clearFinishedMigrationsRequest when onClearFinishedMigrations is called', fakeAsync(() => {
         spyOn(component.clearMigrations, 'emit')

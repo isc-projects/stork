@@ -12,19 +12,20 @@ describe('DelegatedPrefixBarComponent', () => {
         fixture = TestBed.createComponent(DelegatedPrefixBarComponent)
         component = fixture.componentInstance
 
-        component.pool = {
-            prefix: 'fe80::/64',
-            delegatedLength: 80,
-        }
-
-        fixture.detectChanges()
     })
+
+    function render(pool: { prefix: string; delegatedLength: number; excludedPrefix?: string }): void {
+        component.pool = pool
+        fixture.detectChanges()
+        fixture.detectChanges()
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
     it('should display prefix and length', () => {
+        render({ prefix: 'fe80::/64', delegatedLength: 80 })
         expect(
             (fixture.debugElement.nativeElement as HTMLElement).textContent
                 .trim()
@@ -34,23 +35,22 @@ describe('DelegatedPrefixBarComponent', () => {
     })
 
     it('should shorten the excluded prefix', () => {
-        component.pool.excludedPrefix = 'fe80:42::/96'
+        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: 'fe80:42::/96' })
         expect(component.shortExcludedPrefix).toBe('~:42::/96')
     })
 
     it('should not shorten if the excluded prefix has no common part with a prefix', () => {
-        component.pool.excludedPrefix = '3001::/96'
+        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: '3001::/96' })
         expect(component.shortExcludedPrefix).toBe('3001::/96')
     })
 
     it('should handle an error on the invalid excluded prefix', () => {
-        component.pool.excludedPrefix = 'foo'
+        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: 'foo' })
         expect(component.shortExcludedPrefix).toBe('foo')
     })
 
     it('should display an excluded prefix', () => {
-        component.pool.excludedPrefix = 'fe80:42::/96'
-        fixture.detectChanges()
+        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: 'fe80:42::/96' })
         expect(
             (fixture.debugElement.nativeElement as HTMLElement).textContent
                 .trim()
