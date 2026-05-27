@@ -133,7 +133,7 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
 end
 
 agent_etc_files = FileList["etc/agent.env"]
-if get_package_manager_types().include?("apk")
+if get_package_manager_type() == "apk"
     agent_etc_files.append("etc/isc-stork-agent.initd")
 end
 agent_dist_etc_dir = "dist/agent/etc/stork"
@@ -211,7 +211,7 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
 end
 
 server_etc_files = FileList["etc/server.env", "etc/versions.json"]
-if get_package_manager_types().include?("apk")
+if get_package_manager_type() == "apk"
     server_etc_files.append("etc/isc-stork-server.initd")
 end
 server_dist_etc_dir = "dist/server/etc/stork"
