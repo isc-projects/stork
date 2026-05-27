@@ -36,7 +36,6 @@ describe('SharedParametersFormComponent', () => {
         fixture = TestBed.createComponent(SharedParametersFormComponent<SubnetForm>)
         component = fixture.componentInstance
         component.formGroup = new FormGroup<SubnetForm>({})
-        fixture.detectChanges()
     })
 
     it('should create', () => {

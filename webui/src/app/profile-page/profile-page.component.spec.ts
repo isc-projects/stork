@@ -38,7 +38,6 @@ describe('ProfilePageComponent', () => {
             groups: [],
             authenticationMethodId: 'internal',
         } as User
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -46,6 +45,7 @@ describe('ProfilePageComponent', () => {
     })
 
     it('should have breadcrumbs', () => {
+        fixture.detectChanges()
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
         expect(breadcrumbsElement).not.toBeNull()
         const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
@@ -55,6 +55,7 @@ describe('ProfilePageComponent', () => {
     })
 
     it('should display not-specified placeholder if the external ID is empty', () => {
+        fixture.detectChanges()
         const labels = fixture.debugElement.queryAll(By.css('div b'))
         const externalIdLabels = labels.filter((l) =>
             (l.nativeElement as HTMLElement).textContent.includes('External ID')

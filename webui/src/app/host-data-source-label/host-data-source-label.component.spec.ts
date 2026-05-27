@@ -11,7 +11,6 @@ describe('HostDataSourceLabelComponent', () => {
 
         fixture = TestBed.createComponent(HostDataSourceLabelComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
 
     it('should create', () => {

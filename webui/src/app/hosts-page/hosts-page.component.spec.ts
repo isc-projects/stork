@@ -52,7 +52,6 @@ describe('HostsPageComponent', () => {
         component = fixture.componentInstance
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
-
         fixture.detectChanges()
     })
 
@@ -284,7 +283,6 @@ describe('HostsPageComponent', () => {
                 localHosts: [{ daemonId: 1, dataSource: 'config' }],
             },
         ]
-        fixture.detectChanges()
 
         // Ensure that we don't fetch the host information from the server upon
         // opening a new tab. We should use the information available in the
@@ -300,7 +298,6 @@ describe('HostsPageComponent', () => {
 
         component.callUpdateHostDeleteTransaction(123, 321)
         tick()
-        fixture.detectChanges()
         expect(messageService.add).toHaveBeenCalledOnceWith(
             jasmine.objectContaining({
                 severity: 'error',

@@ -44,7 +44,6 @@ describe('SettingsPageComponent', () => {
         messageService = fixture.debugElement.injector.get(MessageService)
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'superAdmin').and.returnValue(true)
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -62,6 +61,8 @@ describe('SettingsPageComponent', () => {
     })
 
     it('should have breadcrumbs', () => {
+        spyOn(settingsApi, 'getSettings').and.returnValue(of({}) as any)
+        fixture.detectChanges()
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
         expect(breadcrumbsElement).not.toBeNull()
         const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
@@ -72,6 +73,8 @@ describe('SettingsPageComponent', () => {
     })
 
     it('should contain the help tip', () => {
+        spyOn(settingsApi, 'getSettings').and.returnValue(of({}) as any)
+        fixture.detectChanges()
         const helptipElement = fixture.debugElement.query(By.directive(HelpTipComponent))
         expect(helptipElement).not.toBeNull()
         const helptipComponent = helptipElement.componentInstance as HelpTipComponent
@@ -94,7 +97,6 @@ describe('SettingsPageComponent', () => {
             enableOnlineSoftwareVersions: true,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
-        component.ngOnInit()
         fixture.detectChanges()
         tick()
 
@@ -115,13 +117,13 @@ describe('SettingsPageComponent', () => {
 
     it('should display error message upon getting the settings', fakeAsync(() => {
         spyOn(settingsApi, 'getSettings').and.returnValue(throwError({ status: 404 }))
-        spyOn(messageService, 'add').and.callThrough()
-        component.ngOnInit()
+        const addSpy = spyOn(messageService, 'add')
         fixture.detectChanges()
         tick()
 
         // Error message should have been displayed and the retry button should be displayed.
-        expect(messageService.add).toHaveBeenCalledTimes(1)
+        expect(addSpy).toHaveBeenCalledTimes(1)
+        expect(component.formState).toBe('fail')
         const retryBtn = fixture.debugElement.query(By.css('[label=Retry]'))
         expect(retryBtn).not.toBeNull()
 
@@ -130,7 +132,7 @@ describe('SettingsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(messageService.add).toHaveBeenCalledTimes(2)
+        expect(addSpy).toHaveBeenCalledTimes(2)
         expect(fixture.debugElement.nativeElement.innerText).toContain(
             'Fetching current settings from the server failed.'
         )
@@ -165,12 +167,10 @@ describe('SettingsPageComponent', () => {
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
-        component.ngOnInit()
         fixture.detectChanges()
         tick()
 
         component.settingsForm.setValue(updatedSettings)
-        fixture.detectChanges()
 
         component.saveSettings()
         expect(settingsApi.updateSettings).toHaveBeenCalledWith(updatedSettings)
@@ -187,7 +187,6 @@ describe('SettingsPageComponent', () => {
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
-        component.ngOnInit()
         fixture.detectChanges()
         tick()
 

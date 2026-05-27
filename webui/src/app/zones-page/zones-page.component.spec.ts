@@ -515,12 +515,10 @@ describe('ZonesPageComponent', () => {
 
         // Act
         refreshBtnDe.nativeElement.click()
-        fixture.detectChanges()
 
         // Assert
         expect(component.zonesFetchStatesLoading).withContext('data should be loading').toBeTrue()
         await fixture.whenStable()
-        fixture.detectChanges()
         expect(component.zonesFetchStatesLoading).withContext('data loading should be done').toBeFalse()
         expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(2)
         expect(component.zonesFetchStates).toEqual(zoneFetchStates.items as Array<ZoneInventoryState>)
@@ -578,7 +576,6 @@ describe('ZonesPageComponent', () => {
         // Act
         filterInput.nativeElement.dispatchEvent(new Event('input'))
         tick(300)
-        fixture.detectChanges()
 
         // Assert
         expect(router.navigate).toHaveBeenCalledWith([], {
@@ -603,7 +600,6 @@ describe('ZonesPageComponent', () => {
         // Act
         filterInput.nativeElement.dispatchEvent(new Event('input'))
         tick(300)
-        fixture.detectChanges()
 
         // Assert
         expect(router.navigate).toHaveBeenCalledWith([], {

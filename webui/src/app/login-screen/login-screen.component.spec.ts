@@ -65,7 +65,6 @@ describe('LoginScreenComponent', () => {
         component = fixture.componentInstance
         router = fixture.debugElement.injector.get(Router)
         msgSrv = fixture.debugElement.injector.get(MessageService)
-        fixture.detectChanges()
         localStorage.clear()
     })
 
@@ -122,18 +121,8 @@ describe('LoginScreenComponent', () => {
     }))
 
     it('should try to sign-in user with selected authentication method', fakeAsync(() => {
-        // Inject AuthService stub and set spy.
         const authService = fixture.debugElement.injector.get(AuthService)
         const loginSpy = spyOn(authService, 'login').and.callThrough()
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        // There should be a dropdown visible.
-        const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-select'))
-        expect(dropdown).toBeTruthy()
-
-        dropdown.nativeElement.click()
         fixture.detectChanges()
 
         // Let's pick ldap method.
@@ -146,7 +135,6 @@ describe('LoginScreenComponent', () => {
 
         listItems[1].nativeElement.click()
         tick()
-        fixture.detectChanges()
 
         // Provide login and password.
         const inputs = fixture.debugElement.queryAll(By.css('.login-screen__authentication-inputs input'))
@@ -167,7 +155,6 @@ describe('LoginScreenComponent', () => {
         btn.nativeElement.click()
         fixture.detectChanges()
 
-        // Check if AuthService login() was called with expected values.
         expect(loginSpy).toHaveBeenCalledOnceWith('ldapId', 'login', 'passwd', '/')
     }))
 

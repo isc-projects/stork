@@ -12,6 +12,17 @@ import { DHCPService } from '../backend'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AuthService } from '../auth.service'
 
+/** Expands toggleable PrimeNG fieldsets so their content is rendered in tests. */
+function expandToggleableFieldsets(fixture: ComponentFixture<SharedNetworkTabComponent>): void {
+    for (const fieldset of fixture.debugElement.queryAll(By.css('p-fieldset'))) {
+        const toggleButton = fieldset.query(By.css('button'))
+        if (toggleButton) {
+            toggleButton.nativeElement.click()
+        }
+    }
+    fixture.detectChanges()
+}
+
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
     let fixture: ComponentFixture<SharedNetworkTabComponent>
@@ -39,7 +50,6 @@ describe('SharedNetworkTabComponent', () => {
         msgService = fixture.debugElement.injector.get(MessageService)
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'superAdmin').and.returnValue(true)
-        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -323,6 +333,7 @@ describe('SharedNetworkTabComponent', () => {
 
         component.ngOnInit()
         fixture.detectChanges()
+        expandToggleableFieldsets(fixture)
 
         expect(fixture.nativeElement.innerText).toContain('Shared Network foo')
 
@@ -384,6 +395,7 @@ describe('SharedNetworkTabComponent', () => {
 
         component.ngOnInit()
         fixture.detectChanges()
+        expandToggleableFieldsets(fixture)
 
         expect(fixture.nativeElement.innerText).toContain('Shared Network bar')
 
@@ -459,6 +471,7 @@ describe('SharedNetworkTabComponent', () => {
 
         component.ngOnInit()
         fixture.detectChanges()
+        expandToggleableFieldsets(fixture)
 
         expect(fixture.nativeElement.innerText).toContain('Shared Network foo')
 

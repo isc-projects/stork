@@ -11,7 +11,6 @@ describe('ParameterViewComponent', () => {
 
         fixture = TestBed.createComponent(ParameterViewComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
 
     it('should create', () => {
