@@ -16,8 +16,12 @@ describe('CascadedParametersBoardComponent', () => {
 
         fixture = TestBed.createComponent(CascadedParametersBoardComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
     })
+
+    function render(): void {
+        fixture.detectChanges()
+        fixture.detectChanges()
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -77,7 +81,7 @@ describe('CascadedParametersBoardComponent', () => {
                 ],
             },
         ]
-        component.ngOnInit()
+        render()
 
         expect(component.rows.length).toBe(6)
         expect(component.rows[0].name).toBe('Cache Max Age')
@@ -195,8 +199,7 @@ describe('CascadedParametersBoardComponent', () => {
         ]
         component.excludedParameters = ['clientClass', 'cacheThreshold']
 
-        component.ngOnInit()
-        fixture.detectChanges()
+        render()
 
         let rows = fixture.debugElement.queryAll(By.css('tr'))
         expect(rows.length).toBe(2)
@@ -219,8 +222,7 @@ describe('CascadedParametersBoardComponent', () => {
                 ],
             },
         ]
-        component.ngOnInit()
-        fixture.detectChanges()
+        render()
 
         let rows = fixture.debugElement.queryAll(By.css('tr'))
         expect(rows.length).toBe(2)
@@ -234,7 +236,7 @@ describe('CascadedParametersBoardComponent', () => {
         expect(button).toBeTruthy()
 
         button.nativeElement.click()
-        fixture.detectChanges()
+        render()
 
         rows = fixture.debugElement.queryAll(By.css('tr'))
         expect(rows.length).toBe(4)
@@ -264,8 +266,7 @@ describe('CascadedParametersBoardComponent', () => {
                 ],
             },
         ]
-        component.ngOnInit()
-        fixture.detectChanges()
+        render()
 
         let rows = fixture.debugElement.queryAll(By.css('tr'))
         expect(rows.length).toBe(2)
@@ -296,8 +297,7 @@ describe('CascadedParametersBoardComponent', () => {
                 ],
             },
         ]
-        component.ngOnInit()
-        fixture.detectChanges()
+        render()
 
         const headers = fixture.debugElement.queryAll(By.css('th'))
         expect(headers.length).toBe(4)
@@ -314,8 +314,7 @@ describe('CascadedParametersBoardComponent', () => {
                 parameters: [],
             },
         ]
-        component.ngOnInit()
-        fixture.detectChanges()
+        render()
 
         const span = fixture.debugElement.query(By.css('span'))
         expect(span).toBeTruthy()

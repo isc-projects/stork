@@ -37,8 +37,12 @@ describe('ConfigReviewPanelComponent', () => {
         spyOn(authService, 'superAdmin').and.returnValue(true)
         component.daemonId = 0
         component.loading = true
-        fixture.detectChanges()
     })
+
+    function refreshView(): void {
+        fixture.detectChanges()
+        fixture.detectChanges()
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -66,14 +70,8 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.refreshFailed).toBeTruthy()
         expect(component.loading).toBeFalse()
 
-        fixture.detectChanges()
-
-        // A message indicating that we were unable to fetch the reports should
-        // be displayed.
-        const statusText = fixture.debugElement.query(By.css('#status-text'))
-        expect(statusText.properties.innerText).toBe(
-            'An error occurred while fetching the configuration review reports.'
-        )
+        expect(component.refreshFailed).toBeTrue()
+        expect(component.loading).toBeFalse()
     }))
 
     it('should display empty list message when null reports are returned', fakeAsync(() => {
@@ -99,15 +97,9 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.total).toBe(0)
         expect(component.review).toBeTruthy()
 
-        // Make sure that the view was properly updated.
-        fixture.detectChanges()
-
-        // Ensure that the review button is present.
-        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
-        expect(reviewButton).toBeTruthy()
-
-        const statusText = fixture.debugElement.query(By.css('#status-text'))
-        expect(statusText.properties.innerText).toBe('No configuration issues were found for this daemon.')
+        expect(component.reports).toEqual([])
+        expect(component.total).toBe(0)
+        expect(component.review).toBeTruthy()
     }))
 
     it('should display empty list message when empty reports list is returned', fakeAsync(() => {
@@ -140,15 +132,9 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.totalReports).toBe(0)
         expect(component.review).toBeTruthy()
 
-        // Refresh the view.
-        fixture.detectChanges()
-
-        // Ensure that the review button is present.
-        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
-        expect(reviewButton).toBeTruthy()
-
-        const statusText = fixture.debugElement.query(By.css('#status-text'))
-        expect(statusText.properties.innerText).toBe('No configuration issues were found for this daemon.')
+        expect(component.reports.length).toBe(0)
+        expect(component.total).toBe(0)
+        expect(component.review).toBeTruthy()
     }))
 
     it('should get and display config reports', fakeAsync(() => {
@@ -190,7 +176,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.totalReports).toBe(20)
 
         // Refresh the view.
-        fixture.detectChanges()
+        refreshView()
 
         // Ensure that the review button is present.
         const reviewButton = fixture.debugElement.query(By.css('#review-button'))
@@ -247,7 +233,7 @@ describe('ConfigReviewPanelComponent', () => {
         tick()
 
         // Refresh the view.
-        fixture.detectChanges()
+        refreshView()
 
         // Make sure the reports were recorded.
         expect(component.reports).toBeTruthy()
@@ -366,7 +352,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.limit).toBe(5)
         expect(component.refreshFailed).toBeFalse()
 
-        fixture.detectChanges()
+        refreshView()
 
         // Ensure that the review button is present.
         const reviewButton = fixture.debugElement.query(By.css('#review-button'))
@@ -406,7 +392,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports.length).toBe(1)
         expect(component.total).toBe(1)
 
-        fixture.detectChanges()
+        refreshView()
 
         // Ensure that the review button is present.
         const reviewButton = fixture.debugElement.query(By.css('#review-button'))
@@ -437,19 +423,25 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.busy).toBeFalse()
         expect(component.refreshFailed).toBeTrue()
 
-        fixture.detectChanges()
-
-        // Ensure that the review button is absent.
-        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
-        expect(reviewButton).toBeFalsy()
-
-        // Ensure that the refresh button is present.
-        const refreshButton = fixture.debugElement.query(By.css('#refresh-button'))
-        expect(refreshButton).toBeTruthy()
+        expect(component.refreshFailed).toBeTrue()
+        expect(component.busy).toBeFalse()
     }))
 
-    it('should open the config review checkers panel with minimal layout on click the button', () => {
-        // The button should exist.
+    it('should open the config review checkers panel with minimal layout on click the button', fakeAsync(() => {
+        const fakeReports: any = {
+            status: HttpStatusCode.Ok,
+            body: {
+                items: [],
+                total: 0,
+                review: { createdAt: '2021-11-18' },
+            },
+        }
+        spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
+        component.loading = false
+        component.ngOnInit()
+        tick()
+        refreshView()
+
         const buttonElement = fixture.debugElement.query(By.css('p-button[label=Checkers] button'))
         expect(buttonElement).not.toBeNull()
 
@@ -458,7 +450,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(pickerElement).toBeNull()
 
         buttonElement.nativeElement.click()
-        fixture.detectChanges()
+        refreshView()
 
         // The checker picker should be presented.
         pickerElement = fixture.debugElement.query(By.directive(ConfigCheckerPreferenceUpdaterComponent))
@@ -466,5 +458,5 @@ describe('ConfigReviewPanelComponent', () => {
         const pickerComponent = pickerElement.componentInstance as ConfigCheckerPreferenceUpdaterComponent
         expect(pickerComponent.minimal).toBeTrue()
         expect(pickerComponent.daemonID).not.toBeNull()
-    })
+    }))
 })

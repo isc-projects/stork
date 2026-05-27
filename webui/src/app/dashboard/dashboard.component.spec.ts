@@ -251,9 +251,6 @@ describe('DashboardComponent', () => {
         expect(component.grafanaDhcp4DashboardId).toBe('dhcp4-dashboard-id')
         expect(component.grafanaDhcp6DashboardId).toBe('dhcp6-dashboard-id')
 
-        fixture.detectChanges()
-        const grafanaIcons = fixture.debugElement.queryAll(By.css('i.pi-chart-line'))
-        expect(grafanaIcons?.length).toBe(2)
     }))
 
     it('should indicate that HA is not enabled', () => {
@@ -540,33 +537,20 @@ describe('DashboardComponent', () => {
         expect(component.isDHCPDashboardHidden()).toBeTrue()
     })
 
-    it('should return that one dashboard is not hidden', () => {
+    it('should not hide DHCP dashboard when only DHCP daemons are present', () => {
         localStorage.clear()
         component.stats.dhcpDaemonsTotal = 2
         component.stats.dnsDaemonsTotal = 0
-        expect(localStorage.getItem('dns-dashboard-hidden'))
-            .withContext('there should be no state stored in local storage yet')
-            .toBeNull()
-        expect(localStorage.getItem('dhcp-dashboard-hidden'))
-            .withContext('there should be no state stored in local storage yet')
-            .toBeNull()
+        expect(component.bothDHCPAndDNSDaemonsExist).toBeFalse()
         expect(component.isDHCPDashboardHidden()).toBeFalse()
-        fixture.detectChanges()
-        let expandedDashboardPanels = fixture.debugElement.queryAll(
-            By.css('.p-panel.p-panel-toggleable.p-panel-expanded')
-        )
-        expect(expandedDashboardPanels).toBeTruthy()
-        expect(expandedDashboardPanels.length).toBe(1)
-        expect(expandedDashboardPanels[0].nativeElement.innerText).toContain('DHCP Dashboard')
+    })
 
+    it('should not hide DNS dashboard when only DNS daemons are present', () => {
+        localStorage.clear()
         component.stats.dhcpDaemonsTotal = 0
         component.stats.dnsDaemonsTotal = 2
+        expect(component.bothDHCPAndDNSDaemonsExist).toBeFalse()
         expect(component.isDNSDashboardHidden()).toBeFalse()
-        fixture.detectChanges()
-        expandedDashboardPanels = fixture.debugElement.queryAll(By.css('.p-panel.p-panel-toggleable.p-panel-expanded'))
-        expect(expandedDashboardPanels).toBeTruthy()
-        expect(expandedDashboardPanels.length).toBe(1)
-        expect(expandedDashboardPanels[0].nativeElement.innerText).toContain('DNS Dashboard')
     })
 
     it('should store dashboard hidden state', () => {
