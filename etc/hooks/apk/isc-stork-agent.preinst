@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -eu
+
+home_dir=/var/lib/stork-agent
+
+if ! getent group stork-agent > /dev/null; then
+    addgroup -S stork-agent >/dev/null 
+fi
+if ! getent passwd stork-agent > /dev/null; then
+    adduser -h "${home_dir}" -D -S -H -g "Stork Agent User" -G stork-agent stork-agent >/dev/null
+fi

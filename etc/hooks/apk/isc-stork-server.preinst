@@ -4,5 +4,9 @@ set -eu
 
 home_dir=/var/lib/stork-server
 
-addgroup -S stork-server >/dev/null
-adduser -h "${home_dir}" -D -S -H -g "Stork Server User" -G stork-server stork-server >/dev/null
+if ! getent group stork-server > /dev/null; then
+    addgroup -S stork-server >/dev/null
+fi
+if ! getent passwd stork-server > /dev/null; then
+    adduser -h "${home_dir}" -D -S -H -g "Stork Server User" -G stork-server stork-server >/dev/null
+fi

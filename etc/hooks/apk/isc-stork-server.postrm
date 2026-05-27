@@ -2,4 +2,7 @@
 
 set -eu
 
-deluser stork-server >/dev/null || /bin/true
+# Some installs may self-manage the stork-server user, so only remove if the GECOS matches
+if [ "$(getent passwd stork-server | cut -d : -f 5)" = "Stork Server User" ]; then
+    deluser stork-server >/dev/null || /bin/true
+fi

@@ -56,6 +56,7 @@ overrides:
       postremove:  etc/hooks/rpm/isc-stork-agent.postrm
   apk:
     scripts:
+      preinstall:  etc/hooks/apk/isc-stork-agent.preinst
       postinstall: etc/hooks/apk/isc-stork-agent.postinst
       preremove:   etc/hooks/apk/isc-stork-agent.prerm
       postremove:  etc/hooks/apk/isc-stork-agent.postrm

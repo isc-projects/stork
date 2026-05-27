@@ -2,4 +2,7 @@
 
 set -eu
 
-deluser stork-agent >/dev/null || /bin/true
+# Some installs may self-manage the stork-agent user, so only remove if the GECOS matches.
+if [ "$(getent passwd stork-agent | cut -d : -f 5)" = "Stork Agent User" ]; then
+    deluser stork-agent >/dev/null || /bin/true
+fi
