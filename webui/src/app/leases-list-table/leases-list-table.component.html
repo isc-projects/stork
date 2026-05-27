@@ -252,24 +252,12 @@
     </ng-template>
     <ng-template #body let-l>
         <tr id="lease-row-{{ l.id }}">
-            <td>
-                {{ l.ipAddress }}
-            </td>
-            <td>
-                {{ l.hwAddress || '—' }}
-            </td>
-            <td>
-                {{ l.duid || '—' }}
-            </td>
-            <td>
-                {{ l.clientId || '—' }}
-            </td>
-            <td>
-                {{ l.prefixLength || '—' }}
-            </td>
-            <td>
-                {{ stateToString(l.state) }}
-            </td>
+            <td>{{ l.ipAddress }}</td>
+            <td>{{ l.hwAddress || '—' }}</td>
+            <td>{{ l.duid || '—' }}</td>
+            <td>{{ l.clientId || '—' }}</td>
+            <td>{{ l.prefixLength || '—' }}</td>
+            <td>{{ stateToString(l.state) }}</td>
             <td>
                 <app-entity-link
                     entity="daemon"

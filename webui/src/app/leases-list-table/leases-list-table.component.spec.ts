@@ -12,6 +12,27 @@ import { DHCPService, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
+const exampleV6Lease = {
+    id: 1,
+    daemonId: 8,
+    daemonLabel: 'DHCPv6',
+    cltt: 10,
+    ipAddress: 'fe80::10',
+    state: 1,
+    subnetId: 24,
+    validLifetime: 3600,
+}
+const exampleV4Lease = {
+    id: 1,
+    daemonId: 8,
+    daemonLabel: 'DHCPv4',
+    cltt: 11,
+    ipAddress: '10.168.1.67',
+    state: 1,
+    subnetId: 27,
+    validLifetime: 3600,
+}
+
 describe('LeasesListTableComponent', () => {
     let component: LeasesListTableComponent
     let fixture: ComponentFixture<LeasesListTableComponent>
@@ -114,18 +135,7 @@ describe('LeasesListTableComponent', () => {
     }))
 
     it('should be filtered by subnetId', fakeAsync(() => {
-        component.dataCollection = [
-            {
-                id: 1,
-                daemonId: 8,
-                daemonLabel: 'DHCPv6',
-                cltt: 10,
-                ipAddress: 'fe80::10',
-                state: 1,
-                subnetId: 24,
-                validLifetime: 3600,
-            },
-        ]
+        component.dataCollection = [exampleV6Lease]
         fixture.detectChanges()
 
         getLeaseListSpy.and.callThrough()
@@ -146,18 +156,7 @@ describe('LeasesListTableComponent', () => {
     }))
 
     it('should be filtered by localSubnetId', fakeAsync(() => {
-        component.dataCollection = [
-            {
-                id: 1,
-                daemonId: 8,
-                daemonLabel: 'DHCPv4',
-                cltt: 11,
-                ipAddress: '10.168.1.67',
-                state: 1,
-                subnetId: 27,
-                validLifetime: 3600,
-            },
-        ]
+        component.dataCollection = [exampleV4Lease]
         fixture.detectChanges()
 
         getLeaseListSpy.and.callThrough()
@@ -178,18 +177,7 @@ describe('LeasesListTableComponent', () => {
     }))
 
     it('should display errors using the MessageService', fakeAsync(() => {
-        component.dataCollection = [
-            {
-                id: 1,
-                daemonId: 8,
-                daemonLabel: 'DHCPv4',
-                cltt: 11,
-                ipAddress: '10.168.1.67',
-                state: 1,
-                subnetId: 27,
-                validLifetime: 3600,
-            },
-        ]
+        component.dataCollection = [exampleV4Lease]
         fixture.detectChanges()
 
         getLeaseListSpy.and.returnValue(
@@ -211,28 +199,7 @@ describe('LeasesListTableComponent', () => {
         )
     }))
     it('should be filtered by machineId', fakeAsync(() => {
-        component.dataCollection = [
-            {
-                id: 1,
-                daemonId: 8,
-                daemonLabel: 'DHCPv4',
-                cltt: 11,
-                ipAddress: '10.168.1.67',
-                state: 1,
-                subnetId: 9,
-                validLifetime: 3600,
-            },
-            {
-                id: 2,
-                daemonId: 10,
-                daemonLabel: 'DHCPv4',
-                cltt: 11,
-                ipAddress: '10.168.2.67',
-                state: 0,
-                subnetId: 10,
-                validLifetime: 3600,
-            },
-        ]
+        component.dataCollection = [exampleV4Lease]
         fixture.detectChanges()
 
         getLeaseListSpy.and.callThrough()
