@@ -380,12 +380,19 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ctl.cleanupSessions(ctx)
 
+	var (
+		ok          bool
+		authSession AuthSession
+		sessionMap  map[string]AuthSession
+	)
 	// Get cached data for received state.
 	state := r.URL.Query().Get("state")
-	sessionMap := ctl.getAuthSessionMap(ctx)
-	authSession, ok := sessionMap[state]
+	if len(state) > 0 {
+		sessionMap = ctl.getAuthSessionMap(ctx)
+		authSession, ok = sessionMap[state]
+	}
 	if !ok {
-		log.Warn("OIDC callback endpoint received invalid or expired state")
+		log.WithField("state", state).Warn("OIDC callback endpoint received invalid or expired state")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}
@@ -405,6 +412,11 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Do the exchange with token endpoint and verify the response.
 	code := r.URL.Query().Get("code")
+	if len(code) == 0 {
+		log.Error("Code is missing in the OIDC authentication response")
+		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
+		return
+	}
 	token, err := ctl.oauth2Config.Exchange(ctx, code, oauth2.SetAuthURLParam("code_verifier", codeVerifier))
 	if err != nil {
 		log.WithError(err).Error("Error while exchanging OIDC token")
@@ -425,7 +437,11 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if idToken.Nonce != expectedNonce {
-		log.Error("Error while verifying OIDC token response - invalid nonce")
+		logFields := log.Fields{
+			"idTokenNonce":  idToken.Nonce,
+			"expectedNonce": expectedNonce,
+		}
+		log.WithFields(logFields).Error("Error while verifying OIDC token response - invalid nonce")
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)
 		return
 	}

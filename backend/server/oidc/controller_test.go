@@ -539,7 +539,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state+"&error=123&error_description=testError", nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state+"&error=123&error_description=testError&code=foobar", nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
@@ -607,7 +607,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
@@ -659,7 +659,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
@@ -710,7 +710,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -760,7 +760,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -820,7 +820,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -887,7 +887,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil)
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -976,4 +976,93 @@ func TestExtractGroupsFromClaim(t *testing.T) {
 		require.Contains(t, res, "groupB")
 		require.Contains(t, res, "groupC")
 	})
+}
+
+// Test that callback handler handles empty state.
+func TestCallbackEndpointHandlesEmptyState(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := controller.Middleware(nextHandler)
+
+	// Act
+	req := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar", nil) // state is missing.
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+
+	// Assert
+	require.Equal(t, http.StatusFound, resp.StatusCode)
+	require.Greater(t, len(resp.Header), 2)
+	// Check auth_session cookie.
+	require.Contains(t, resp.Header, "Set-Cookie")
+	require.Contains(t, resp.Header.Get("Set-Cookie"), "auth_session")
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp.Header, "Location")
+	require.Contains(t, resp.Header.Get("Location"), "/login/auth-err")
+}
+
+// Test that callback handler handles empty code.
+func TestCallbackEndpointHandlesEmptyCode(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
+	require.True(t, controller.configured)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := nonceModifier(controller.Middleware(nextHandler), controller, "test-nonce")
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, http.StatusFound, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil) // code is missing.
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to login page showing brief error feedback message.
+	require.Contains(t, resp2.Header, "Location")
+	require.Contains(t, resp2.Header.Get("Location"), "/login/auth-err")
 }
