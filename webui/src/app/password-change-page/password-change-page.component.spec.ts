@@ -36,7 +36,6 @@ describe('PasswordChangePageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(PasswordChangePageComponent)
         component = fixture.componentInstance
-        fixture.detectChanges()
 
         authService = TestBed.inject(AuthService)
     })
@@ -46,6 +45,7 @@ describe('PasswordChangePageComponent', () => {
     })
 
     it('should have breadcrumbs', () => {
+        fixture.detectChanges()
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
         expect(breadcrumbsElement).not.toBeNull()
         const breadcrumbsComponent = breadcrumbsElement.componentInstance as BreadcrumbsComponent
@@ -61,14 +61,12 @@ describe('PasswordChangePageComponent', () => {
 
         // Empty new password.
         component.passwordChangeForm.get('newPassword').setValue('')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['required']).not.toBeNull()
 
         // Minimum length violation.
         component.passwordChangeForm.get('newPassword').setValue('Short1!')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['minlength']).not.toBeNull()
@@ -76,42 +74,36 @@ describe('PasswordChangePageComponent', () => {
         // Maximum length violation.
         const longPassword = 'A'.repeat(121)
         component.passwordChangeForm.get('newPassword').setValue(longPassword)
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['maxlength']).not.toBeNull()
 
         // Missing uppercase letter.
         component.passwordChangeForm.get('newPassword').setValue('lowercase123!')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['hasUppercaseLetter']).not.toBeNull()
 
         // Missing lowercase letter.
         component.passwordChangeForm.get('newPassword').setValue('UPPERCASE123!')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['hasLowercaseLetter']).not.toBeNull()
 
         // Missing digit.
         component.passwordChangeForm.get('newPassword').setValue('NoDigitsHere!')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['hasDigit']).not.toBeNull()
 
         // Missing special character.
         component.passwordChangeForm.get('newPassword').setValue('NoSpecialChar1')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['hasSpecialCharacter']).not.toBeNull()
 
         // Many violations at once.
         component.passwordChangeForm.get('newPassword').setValue('short')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeFalse()
         expect(component.passwordChangeForm.get('newPassword').errors).not.toBeNull()
         expect(component.passwordChangeForm.get('newPassword').errors['minlength']).not.toBeNull()
@@ -122,7 +114,6 @@ describe('PasswordChangePageComponent', () => {
         // Valid password.
         component.passwordChangeForm.get('newPassword').setValue('ValidPassword123!')
         component.passwordChangeForm.get('confirmPassword').setValue('ValidPassword123!')
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeTrue()
     })
 
@@ -131,8 +122,6 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('oldPassword').setValue('admin')
         component.passwordChangeForm.get('newPassword').setValue('Password with spaces works well in 2026!')
         component.passwordChangeForm.get('confirmPassword').setValue('Password with spaces works well in 2026!')
-
-        fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeTrue()
     })
 
@@ -158,7 +147,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('oldPassword').setValue('')
         component.passwordChangeForm.get('oldPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('oldPassword')
         expect(message).toContain('Password is required.')
@@ -168,7 +156,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('newPassword').setValue('Short1!')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
         expect(message).toContain('Password must be at least 12 characters long.')
@@ -179,7 +166,6 @@ describe('PasswordChangePageComponent', () => {
         const longPassword = 'A'.repeat(121)
         component.passwordChangeForm.get('oldPassword').setValue(longPassword)
         component.passwordChangeForm.get('oldPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('oldPassword')
         expect(message).toContain('Password must be at most 120 characters long.')
@@ -189,7 +175,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('newPassword').setValue('lowercase123!')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
         expect(message).toContain('Password must contain at least one uppercase letter.')
@@ -199,7 +184,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('newPassword').setValue('UPPERCASE123!')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
         expect(message).toContain('Password must contain at least one lowercase letter.')
@@ -209,7 +193,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('newPassword').setValue('NoDigitsHere!')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
         expect(message).toContain('Password must contain at least one digit.')
@@ -219,7 +202,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('newPassword').setValue('NoSpecialChar1')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
         expect(message).toContain('Password must contain at least one special character or whitespace.')
@@ -230,7 +212,6 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('newPassword').setValue('ValidPassword123!')
         component.passwordChangeForm.get('confirmPassword').setValue('DifferentPassword123!')
         component.passwordChangeForm.get('confirmPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('confirmPassword', true)
         expect(message).toContain('Passwords must match.')
@@ -241,7 +222,6 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('oldPassword').setValue('SamePassword123!')
         component.passwordChangeForm.get('newPassword').setValue('SamePassword123!')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword', true)
         expect(message).toContain('New password must be different from current password.')
@@ -251,7 +231,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('newPassword').setValue('short')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword')
         expect(message).toContain('Password must be at least 12 characters long.')
@@ -264,7 +243,6 @@ describe('PasswordChangePageComponent', () => {
         component.ngOnInit()
         component.passwordChangeForm.get('oldPassword').setValue('ValidPassword123!')
         component.passwordChangeForm.get('oldPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('oldPassword')
         expect(message).toBe('')
@@ -276,7 +254,6 @@ describe('PasswordChangePageComponent', () => {
         component.passwordChangeForm.get('newPassword').setValue('SamePassword123!')
         component.passwordChangeForm.get('confirmPassword').setValue('DifferentPassword123!')
         component.passwordChangeForm.get('newPassword').markAsTouched()
-        fixture.detectChanges()
 
         const message = component.buildFeedbackMessage('newPassword', false)
         expect(message).not.toContain('New password must be different from current password.')
