@@ -4,7 +4,12 @@ set -eu
 
 case "$1" in
     0) # This is a yum/dnf remove.
-        userdel stork-server >/dev/null || /bin/true
+        if getent passwd stork-server > /dev/null; then
+            # Some installs may self-manage the stork-server user.
+            if [ "$(getent passwd stork-server | cut -d : -f 5)" = "Stork Server User" ]; then
+                userdel stork-server >/dev/null || /bin/true
+            fi
+        fi
         ;;
     1)  # This is a yum/dnf upgrade.
         # Do nothing.

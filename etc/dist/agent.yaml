@@ -46,11 +46,13 @@ contents:
 overrides:
   deb:
     scripts:
+      preinstall:  etc/hooks/deb/isc-stork-agent.preinst
       postinstall: etc/hooks/deb/isc-stork-agent.postinst
       preremove:   etc/hooks/deb/isc-stork-agent.prerm
       postremove:  etc/hooks/deb/isc-stork-agent.postrm
   rpm:
     scripts:
+      preinstall:  etc/hooks/rpm/isc-stork-agent.preinst
       postinstall: etc/hooks/rpm/isc-stork-agent.postinst
       preremove:   etc/hooks/rpm/isc-stork-agent.prerm
       postremove:  etc/hooks/rpm/isc-stork-agent.postrm

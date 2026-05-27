@@ -3,11 +3,16 @@
 set -eu
 
 after_remove () {
-    userdel stork-server >/dev/null || /bin/true
+    if getent passwd stork-server > /dev/null; then
+        # Some installs may self-manage the stork-server user.
+        if [ "$(getent passwd stork-server | cut -d : -f 5)" = "Stork Server User" ]; then
+            userdel stork-server >/dev/null || /bin/true
+        fi
+    fi
 }
 
 
-if [ "${1}" = "remove" -o "${1}" = "abort-install" ]
+if [ "${1}" = "remove" ] || [ "${1}" = "abort-install" ]
 then
     # "after remove" goes here.
     # "abort-install" happens when the pre-installation script failed.

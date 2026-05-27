@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -eu
+
+home_dir=/var/lib/stork-agent
+
+# Add stork-agent group if it does not exist.
+if ! getent group stork-agent > /dev/null; then
+    groupadd --system stork-agent >/dev/null
+fi
+
+# Add stork-agent user if it does not exist.
+if ! getent passwd stork-agent > /dev/null; then
+    useradd --system --home-dir "${home_dir}" --gid stork-agent --comment "Stork Agent User" stork-agent >/dev/null
+fi

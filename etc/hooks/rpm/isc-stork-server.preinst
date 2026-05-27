@@ -3,6 +3,12 @@
 set -eu
 
 # Add stork-server user if does not exist.
+home_dir=/var/lib/stork-server
+
+if ! getent group stork-server > /dev/null; then
+	groupadd --system stork-server >/dev/null
+fi
+
 if ! getent passwd stork-server > /dev/null; then
-	 useradd --system --base-dir /var/lib stork-server
+	useradd --system --home-dir "${home_dir}" --gid stork-server --comment "Stork Server User" stork-server >/dev/null
 fi

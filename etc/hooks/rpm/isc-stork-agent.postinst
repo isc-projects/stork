@@ -11,11 +11,6 @@ after_install () {
     chmod 700 "${home_dir}/certs"
     chmod 700 "${home_dir}/tokens"
 
-    # Add stork-agent user if does not exist.
-    if ! getent passwd stork-agent > /dev/null; then
-        useradd --system --home-dir "${home_dir}" stork-agent
-    fi
-
     # Add stork-agent user to named so it can read its config files.
     if getent group named > /dev/null; then
         usermod -aG named stork-agent
@@ -26,8 +21,12 @@ after_install () {
         usermod -aG kea stork-agent
     fi
 
+    # Directly retrieve uid and gid in case the user is self-managed.
+    stork_agent_uid=$(getent passwd stork-agent | cut -d: -f3)
+    stork_agent_gid=$(getent group stork-agent | cut -d: -f3)
+
     # Change ownership of all folders and files in home dir to stork-agent user.
-    chown -R stork-agent "${home_dir}"
+    chown -R "${stork_agent_uid}:${stork_agent_gid}" "${home_dir}"
 }
 
 after_upgrade () {
