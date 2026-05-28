@@ -510,6 +510,9 @@ namespace :gen do
         task :swagger => [open_api_generator_webui_dir]
     end
 
+    desc 'Generate Swagger API YAML file (used by stork_tests)'
+    task :swagger_file => [SWAGGER_FILE]
+
     desc 'Generate standard DHCP option definitions for the backend and the UI'
     task :std_option_defs => ["gen:ui:std_option_defs", "gen:backend:std_option_defs"]
 end
