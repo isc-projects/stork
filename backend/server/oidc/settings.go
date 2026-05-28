@@ -25,6 +25,7 @@ type Settings struct {
 	GroupMapping         GroupMapping          `group:"OIDC to Stork group mapping"`
 	Scopes               CommaSeparatedStrings `long:"oidc-scopes" description:"Comma separated list of scopes sent in Authentication Request. Stork always sends 'openid' scope and this list is appended." env:"STORK_OIDC_SCOPES" default:"email,profile"`
 	GroupsClaim          string                `long:"oidc-groups-claim" description:"Claim key used to retrieve user groups from OID Provider token endpoint. It must be configured if 'group-allow' or 'map-groups' setting is used" env:"STORK_OIDC_GROUPS_CLAIM" default:"groups"`
+	RedirectURI          string                `long:"oidc-redirect-uri" description:"Redirection URI to which the response to OIDC authentication request will be sent. If empty, Stork will try to construct this URI. It is useful when Stork UI is behind a Reverse Proxy." env:"STORK_OIDC_REDIRECT_URI" default:""`
 }
 
 // Implementation of go-flags Unmarshaler interface. Unmarshals a comma-separated values in a string into a slice of strings.
