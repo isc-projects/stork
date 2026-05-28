@@ -981,11 +981,6 @@ func TestAddOrUpdateExternalUserFails(t *testing.T) {
 	systemUser, err := AddOrUpdateExternalUser(db, externalUser, "ext_method")
 	require.NoError(t, err)
 	require.NotNil(t, systemUser)
-	// Create a unique index on the system_user table, to be able to force DB integrity violation error.
-	_, err = db.Model((*SystemUser)(nil)).Exec(`
-		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, email)
-	`)
-	require.NoError(t, err)
 	externalUser2 := externalUser
 	externalUser2.ID = "other_id"
 	systemUser2, err := AddOrUpdateExternalUser(db, externalUser2, "ext_method")
@@ -1034,12 +1029,6 @@ func TestAddOrUpdateExternalUserWithoutLoginWhenUniqueConstraintApplied(t *testi
 		Name:     "Fooz",
 		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
 	}
-
-	// Create a unique index on the system_user table, to be able to check if DB integrity violation error does not occur.
-	_, err := db.Model((*SystemUser)(nil)).Exec(`
-		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, login)
-	`)
-	require.NoError(t, err)
 
 	// Act + Assert
 	// 1st call, user is created.
@@ -1114,12 +1103,6 @@ func TestAddOrUpdateExternalUserWithoutEmailWhenUniqueConstraintApplied(t *testi
 		Name:     "Fooz",
 		Groups:   []authdata.UserGroupID{authdata.UserGroupIDReadOnly},
 	}
-
-	// Create a unique index on the system_user table, to be able to check if DB integrity violation error does not occur.
-	_, err := db.Model((*SystemUser)(nil)).Exec(`
-		CREATE UNIQUE INDEX test_idx ON ?TableName (auth_method, email)
-	`)
-	require.NoError(t, err)
 
 	// Act + Assert
 	// 1st call, user is created.
