@@ -1394,6 +1394,47 @@ overflows. Stork is not designed to operate on non-POSIX platforms, so Windows i
 and will not be supported. Compiling Stork components for Windows is discouraged because Golang's standard library
 may suppress some errors related to file operations on the NTFS filesystem.
 
+OpenID Connect Authentication
+=============================
+
+As of version 2.5.0, Stork server provides a possibility to authenticate users
+using OpenID Connect protocol.
+
+OIDC Configuration
+------------------
+
+The following settings are available for the OpenID Connect configuration (they have a
+common ``STORK_OIDC_`` prefix):
+
+- ``STORK_OIDC_ISSUER_URL``
+
+The OpenID Provider Issuer URL; it is mandatory setting. Stork will try to do OIDC Discovery with the Issuer to retrieve
+authorization and token endpoints of the OpenID Provider.
+
+- ``STORK_OIDC_CLIENT_ID``
+
+The Client ID registered at the OpenID Provider; it is mandatory setting.
+
+- ``STORK_OIDC_CLIENT_SECRET``
+
+The Client secret provided by the OpenID Provider. Not all OpenID Providers require this. If left empty, Stork will not
+send the ``Client secret`` as part of the request to OpenID Provider token endpoint.
+
+- ``STORK_OIDC_REDIRECT_URI``
+
+The redirection URI to which the response to OIDC authentication request will be sent. If left empty, Stork will try to
+construct this URI based on the Server address. It is useful when Stork UI is behind a Reverse Proxy. It must end with
+``oidc/callback`` URL path as this is how Stork server recognizes OIDC authentication response from the OpenID Provider.
+For example, if your Stork deployment is using a reverse proxy and the Stork UI is accessible under URL
+``https://example.org:1234/stork``, you should configure this setting with value ``https://example.org:1234/stork/oidc/callback``.
+Note that this redirection URI must be registered at the OpenID Provider.
+
+- ``STORK_OIDC_PROVIDER_NAME``
+
+The OpenID Provider name that will be displayed on a Login page. You may use it to customize the label on the
+``Log in with...`` button. By default, it displays ``Log in with OpenID Connect``.
+
+
 Security Checklist for Stork Configurations
 ===========================================
 
