@@ -156,3 +156,29 @@ func TestCSHRMarshalJSON(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, expected, actual)
 }
+
+// TestCSHRMarshalJSONNil verifies that [MarshalJSON] does not panic or error when
+// called with a nil receiver.
+func TestCSHRMarshalJSONNil(t *testing.T) {
+	input := NewColonSepHexStr(nil)
+	var (
+		output []byte
+		err    error
+	)
+	require.NotPanics(t, func() {
+		output, err = input.MarshalJSON()
+	})
+	require.NoError(t, err)
+	require.Nil(t, output)
+}
+
+// TestCSHRUnmarshalJSONNil verifies that [UnmarshalJSON] does not panic or error
+// when called with a nil receiver.
+func TestCSHRUnmarshalJSONNil(t *testing.T) {
+	input := NewColonSepHexStr(nil)
+	var err error
+	require.NotPanics(t, func() {
+		err = input.UnmarshalJSON([]byte("\"00:11:22:33\""))
+	})
+	require.NoError(t, err)
+}
