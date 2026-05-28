@@ -1434,6 +1434,19 @@ Note that this redirection URI must be registered at the OpenID Provider.
 The OpenID Provider name that will be displayed on a Login page. You may use it to customize the label on the
 ``Log in with...`` button. By default, it displays ``Log in with OpenID Connect``.
 
+- ``STORK_OIDC_SCOPES``
+
+Comma separated list of scopes sent in OIDC Authentication Request. Stork always sends 'openid' scope and the list
+from this setting is appended. It defaults to ``email,profile``. The scopes list may be OpenID Provider implementation
+specific. Based on requested scopes, the OpenID Provider may include different claims in the token endpoint response.
+Stork will try to extract such claims as user email, name or groups the user belongs to.
+
+- ``STORK_OIDC_GROUPS_CLAIM``
+
+Claim key used to retrieve user groups claim from OpenID Provider token endpoint response. It must be configured if
+STORK_OIDC_GROUP_ALLOW or STORK_OIDC_MAP_GROUPS setting is used.
+
+
 
 Security Checklist for Stork Configurations
 ===========================================
