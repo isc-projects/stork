@@ -108,23 +108,27 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 	})
 	ctl.tokenVerifier = tokenVerifier
 	// Prepare OAuth2 config.
-	redirectURL := serverURL.JoinPath(callbackURLPath)
-	if redirectURL.Hostname() == "::" {
-		port := redirectURL.Port()
-		redirectURL.Host = "localhost:" + port
+	redirectURI := ctl.settings.RedirectURI
+	if len(redirectURI) == 0 {
+		constructedURI := serverURL.JoinPath(callbackURLPath)
+		if constructedURI.Hostname() == "::" {
+			port := constructedURI.Port()
+			constructedURI.Host = "localhost:" + port
+		}
+		redirectURI = constructedURI.String()
 	}
 	logFields := log.Fields{
-		"redirectURL":    redirectURL.String(),
+		"redirectURI":    redirectURI,
 		"openIDProvider": ctl.settings.IssuerURL,
 	}
-	log.WithFields(logFields).Info("Authentication using OpenID Connect is now enabled in Stork, and users will be authenticated by OpenID Provider if the redirectURL has been registered in this provider.")
+	log.WithFields(logFields).Info("Authentication using OpenID Connect is now enabled in Stork, and users will be authenticated by OpenID Provider if the redirectURI has been registered in this provider.")
 	scopes := []string{
 		oidc.ScopeOpenID,
 	}
 	scopes = append(scopes, ctl.settings.Scopes...)
 	oauth2Config := oauth2.Config{
 		ClientID:    ctl.settings.ClientID,
-		RedirectURL: redirectURL.String(),
+		RedirectURL: redirectURI,
 		Endpoint:    op.Endpoint(),
 		Scopes:      scopes,
 	}
