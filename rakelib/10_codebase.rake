@@ -242,33 +242,6 @@ GO_TOOL_CODEBASE = go_tool_codebase
 CLEAN.append *FileList["backend/**/*mock_test.go"]
 
 ##############
-### Python ###
-##############
-
-agent_pb_python_file = "tests/system/agent_pb2.py"
-file agent_pb_python_file => [agent_proto_file, PROTOC, PROTOC_GEN_PYTHON_GRPC] do
-    Dir.chdir("backend/api") do
-        sh PROTOC,
-            "--proto_path=.",
-            "--python_out=.",
-            "--grpc_python_out=.",
-            "--plugin=protoc-gen-grpc_python=#{PROTOC_GEN_PYTHON_GRPC}",
-            "agent.proto"
-    end
-    sh "mv", *FileList["backend/api/*.py"], "tests/system"
-    sh "touch", "-c", agent_pb_python_file
-end
-CLEAN.append agent_pb_python_file
-
-agent_grpc_python_file = "tests/system/agent_grpc.py"
-file agent_grpc_python_file => [agent_pb_python_file] do
-    sh "touch", "-c", agent_grpc_python_file
-end
-CLEAN.append agent_grpc_python_file
-
-GRPC_PYTHON_API_FILES = [agent_pb_python_file, agent_grpc_python_file]
-
-##############
 #### Java ####
 ##############
 
@@ -293,24 +266,6 @@ def check_java_version
 
     raise("Java >= 11.0.0 is required. You have #{java_version}.")
 end
-
-OPEN_API_GENERATOR_PYTHON_DIR = "tests/system/openapi_client"
-file OPEN_API_GENERATOR_PYTHON_DIR => [JAVA, SWAGGER_FILE, OPENAPI_GENERATOR] do
-    check_java_version
-    sh "rm", "-rf", OPEN_API_GENERATOR_PYTHON_DIR
-    sh JAVA, "-jar", OPENAPI_GENERATOR, "generate",
-        "-i", SWAGGER_FILE,
-        "-g", "python",
-        "-o", "tests/system",
-        "--global-property", "apiTests=false,modelTests=false",
-        "--additional-properties", "generateSourceCodeOnly=true"
-    sh "touch", OPEN_API_GENERATOR_PYTHON_DIR
-end
-
-CLEAN.append OPEN_API_GENERATOR_PYTHON_DIR, "tests/system/.openapi-generator",
-    "tests/system/.openapi-generator", "tests/system/openapi_client_README.md",
-    "tests/system/.openapi-generator-ignore",  *FileList["tests/system/**/__pycache__"],
-    *FileList["tests/system/**/.pytest_cache"]
 
 #####################
 ### Documentation ###

@@ -1115,7 +1115,7 @@ PIP_SYNC = File.join(python_tools_dir, "bin", "pip-sync")
 file PIP_SYNC => [PIP_COMPILE]
 
     # Trim the extension and the Python version from the filename.
-    # E.g. "init_deps/pytest.3_11.txt" -> "init_deps/pytest"
+    # E.g. "init_deps/sphinx.3_11.txt" -> "init_deps/sphinx"
 def convert_to_requirements_in(requirements_txt_path)
     dir = File.dirname(requirements_txt_path)
     base = File.basename(requirements_txt_path, ".txt")  # Trim the .txt extension
@@ -1146,24 +1146,6 @@ file SPHINX_BUILD => [PIP] do
     sh SPHINX_BUILD, "--version"
 end
 add_hash_guard(SPHINX_BUILD, sphinx_requirements_file)
-
-PYTEST = File.join(python_tools_dir, "bin", "pytest")
-pytests_requirements_file = File.expand_path("init_deps/pytest.#{PYTHON3_VERSION}.txt", __dir__)
-file PYTEST => [PIP] do
-    sh PIP, "install", "-r", pytests_requirements_file
-    sh "touch", "-c", PYTEST
-    sh PYTEST, "--version"
-end
-add_hash_guard(PYTEST, pytests_requirements_file)
-
-PROTOC_GEN_PYTHON_GRPC = File.join(python_tools_dir, "bin", "protoc-gen-python_grpc")
-file PROTOC_GEN_PYTHON_GRPC => [PYTEST] do
-    sh "touch", "-c", PROTOC_GEN_PYTHON_GRPC
-    if !File.file?(PROTOC_GEN_PYTHON_GRPC)
-        # This plugin doesn't support version printing.
-        fail
-    end
-end
 
 PIP_AUDIT = File.join(python_tools_dir, "bin", "pip-audit")
 file PIP_AUDIT => [PIP] do

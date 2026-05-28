@@ -271,7 +271,7 @@ namespace :demo do
     desc "Collects the performance data from the demo containers and generates
         the report
         TMP_DIRECTORY - temporary directory to store the performance data - optional, default: system temporary directory"
-    task :performance => [DOCKER_COMPOSE, PYTHON, PYTEST] do
+    task :performance => [DOCKER_COMPOSE, PYTHON] do
         # Fetch running services.
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         services = []
