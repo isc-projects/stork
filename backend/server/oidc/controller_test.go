@@ -1092,3 +1092,45 @@ func TestGetMetadata(t *testing.T) {
 	meta = controller.GetMetadata()
 	require.Contains(t, meta.GetDescription(), "OpenID Provider")
 }
+
+// Test if OIDC controller configuration is using redirect URI setting.
+func TestRedirectURISettingUsed(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", ClientSecret: "client-secret", RedirectURI: "http://custom.uri.org:1234/stork/oidc/callback"}, db)
+	require.NotNil(t, controller)
+
+	// Act
+	err = controller.Configure(url.URL{Scheme: "http", Host: "[::]:8080"}, &dbsession.SessionMgr{})
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, controller.IsConfigured())
+	require.NotNil(t, controller.oauth2Config)
+	require.EqualValues(t, "http://custom.uri.org:1234/stork/oidc/callback", controller.oauth2Config.RedirectURL)
+}
+
+// Test if OIDC controller configuration is using default redirect URI.
+func TestRedirectURISettingNotUsed(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", ClientSecret: "client-secret"}, db)
+	require.NotNil(t, controller)
+
+	// Act
+	err = controller.Configure(url.URL{Scheme: "http", Host: "[::]:8080"}, &dbsession.SessionMgr{})
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, controller.IsConfigured())
+	require.NotNil(t, controller.oauth2Config)
+	require.EqualValues(t, "http://localhost:8080/oidc/callback", controller.oauth2Config.RedirectURL)
+}
