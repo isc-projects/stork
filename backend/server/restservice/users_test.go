@@ -1833,8 +1833,7 @@ func TestCreateSessionOfExternalUserRace(t *testing.T) {
 	require.Equal(t, 1, queryHook.insertionCount)
 }
 
-// Test that the external users may have duplicated logins and they don't cause
-// conflict with the internal users.
+// Test that users must not have duplicated login.
 func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1873,7 +1872,7 @@ func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
 				Lastname: "foo",
 				Name:     "foo",
 			}, nil),
-		// Second log-in with updated data.
+		// Second log-in with overlapping login.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("bar@example.org")), gomock.Any()).
 			Return(&authdata.User{
@@ -1919,23 +1918,18 @@ func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
 
 	// Assert
 	require.IsType(t, &users.CreateSessionOK{}, rsp1)
-	require.IsType(t, &users.CreateSessionOK{}, rsp2)
+	require.IsType(t, &users.CreateSessionBadRequest{}, rsp2)
 	require.IsType(t, &users.CreateSessionOK{}, rsp3)
 	okRsp1 := rsp1.(*users.CreateSessionOK)
-	okRsp2 := rsp2.(*users.CreateSessionOK)
-	okRsp3 := rsp3.(*users.CreateSessionOK)
+	okRsp2 := rsp3.(*users.CreateSessionOK)
 	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp2.Payload.ID)
-	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp3.Payload.ID)
 	require.Equal(t, "foo", okRsp1.Payload.Name)
-	require.Equal(t, "bar", okRsp2.Payload.Name)
-	require.Equal(t, "baz", okRsp3.Payload.Name)
+	require.Equal(t, "baz", okRsp2.Payload.Name)
 	require.Equal(t, "login", okRsp1.Payload.Login)
 	require.Equal(t, "login", okRsp2.Payload.Login)
-	require.Equal(t, "login", okRsp3.Payload.Login)
 }
 
-// Test that the external users may have duplicated email and they don't cause
-// conflict with the internal users.
+// Test that users must not have duplicated email.
 func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1974,7 +1968,7 @@ func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 				Lastname: "foo",
 				Name:     "foo",
 			}, nil),
-		// Second log-in with updated data.
+		// Second log-in with overlapping email.
 		mock.EXPECT().
 			Authenticate(gomock.Any(), gomock.Any(), gomock.Eq(storkutil.Ptr("bar")), gomock.Any()).
 			Return(&authdata.User{
@@ -2020,19 +2014,15 @@ func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 
 	// Assert
 	require.IsType(t, &users.CreateSessionOK{}, rsp1)
-	require.IsType(t, &users.CreateSessionOK{}, rsp2)
+	require.IsType(t, &users.CreateSessionBadRequest{}, rsp2)
 	require.IsType(t, &users.CreateSessionOK{}, rsp3)
 	okRsp1 := rsp1.(*users.CreateSessionOK)
-	okRsp2 := rsp2.(*users.CreateSessionOK)
-	okRsp3 := rsp3.(*users.CreateSessionOK)
+	okRsp2 := rsp3.(*users.CreateSessionOK)
 	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp2.Payload.ID)
-	require.NotEqual(t, *okRsp1.Payload.ID, *okRsp3.Payload.ID)
 	require.Equal(t, "foo", okRsp1.Payload.Name)
-	require.Equal(t, "bar", okRsp2.Payload.Name)
-	require.Equal(t, "baz", okRsp3.Payload.Name)
+	require.Equal(t, "baz", okRsp2.Payload.Name)
 	require.Equal(t, "common@example.org", okRsp1.Payload.Email)
 	require.Equal(t, "common@example.org", okRsp2.Payload.Email)
-	require.Equal(t, "common@example.org", okRsp3.Payload.Email)
 }
 
 // Test that the external users' change of group mapping done externally

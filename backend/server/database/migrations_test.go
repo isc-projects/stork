@@ -23,7 +23,7 @@ import (
 
 // Current schema version. This value must be bumped up every
 // time the schema is updated.
-const expectedSchemaVersion int64 = 74
+const expectedSchemaVersion int64 = 73
 
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, db *dbops.PgDB, expectedOldVersion, expectedNewVersion int64, action ...string) {
@@ -979,7 +979,7 @@ func TestMigration72BackfillServerTag(t *testing.T) {
 	err = dbmodel.AddDaemon(db, daemonCA)
 	require.NoError(t, err)
 
-	_, _, err = dbops.Migrate(db, "down", "71")
+	_, _, err = dbops.Migrate(db, "down", "72")
 	require.NoError(t, err)
 
 	// Act
