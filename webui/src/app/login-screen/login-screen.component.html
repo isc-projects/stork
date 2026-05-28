@@ -1,3 +1,13 @@
+<ng-template #methodItem let-item>
+    <div class="flex align-items-center gap-2">
+        @if (item.id === 'oidc') {
+            <i class="fa-brands fa-openid text-5xl" aria-hidden="true"></i>
+        } @else {
+            <img src="/assets/authentication-methods/{{ item.id }}.png" (error)="onMissingIcon($event)" />
+        }
+        <div>{{ item.name }}</div>
+    </div>
+</ng-template>
 <div class="login-screen__wrapper">
     <div class="login-screen">
         <div class="login-screen__content">
@@ -35,35 +45,14 @@
                                 (onChange)="authMethodChange($event)"
                             >
                                 <ng-template let-item #item>
-                                    <div class="flex align-items-center gap-2">
-                                        @if (item.id === 'oidc') {
-                                            <i class="fa-brands fa-openid text-5xl" aria-hidden="true"></i>
-                                        } @else {
-                                            <img
-                                                src="/assets/authentication-methods/{{ item.id }}.png"
-                                                (error)="onMissingIcon($event)"
-                                            />
-                                        }
-                                        <div>{{ item.name }}</div>
-                                    </div>
+                                    <ng-container
+                                        *ngTemplateOutlet="methodItem; context: { $implicit: item }"
+                                    ></ng-container>
                                 </ng-template>
-                                <ng-template #selectedItem>
-                                    <div
-                                        class="flex align-items-center gap-2"
-                                        *ngIf="loginForm.get('authenticationMethod').value"
-                                    >
-                                        @if (loginForm.get('authenticationMethod').value.id === 'oidc') {
-                                            <i class="fa-brands fa-openid text-5xl" aria-hidden="true"></i>
-                                        } @else {
-                                            <img
-                                                src="/assets/authentication-methods/{{
-                                                    loginForm.get('authenticationMethod').value.id
-                                                }}.png"
-                                                (error)="onMissingIcon($event)"
-                                            />
-                                        }
-                                        <div>{{ loginForm.get('authenticationMethod').value.name }}</div>
-                                    </div>
+                                <ng-template let-item #selectedItem>
+                                    <ng-container
+                                        *ngTemplateOutlet="methodItem; context: { $implicit: item }"
+                                    ></ng-container>
                                 </ng-template>
                             </p-select>
                             <label for="authenticationMethod" class="text-white">Choose a Method</label>

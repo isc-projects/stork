@@ -7,7 +7,7 @@ import { AuthenticationMethod } from '../backend'
 import { AuthService } from '../auth.service'
 import { HttpClient } from '@angular/common/http'
 import { lastValueFrom } from 'rxjs'
-import { NgIf } from '@angular/common'
+import { NgIf, NgTemplateOutlet } from '@angular/common'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { FloatLabel } from 'primeng/floatlabel'
 import { Select, SelectChangeEvent } from 'primeng/select'
@@ -47,6 +47,7 @@ import { MessageService } from 'primeng/api'
         Password,
         ButtonModule,
         Message,
+        NgTemplateOutlet,
     ],
 })
 export class LoginScreenComponent implements OnInit {
