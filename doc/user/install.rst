@@ -1408,44 +1408,88 @@ common ``STORK_OIDC_`` prefix):
 
 - ``STORK_OIDC_ISSUER_URL``
 
-The OpenID Provider Issuer URL; it is mandatory setting. Stork will try to do OIDC Discovery with the Issuer to retrieve
-authorization and token endpoints of the OpenID Provider.
+    The OpenID Provider Issuer URL; it is mandatory setting. Stork will try to do OIDC Discovery with the Issuer to retrieve
+    authorization and token endpoints of the OpenID Provider.
 
 - ``STORK_OIDC_CLIENT_ID``
 
-The Client ID registered at the OpenID Provider; it is mandatory setting.
+    The Client ID registered at the OpenID Provider; it is mandatory setting.
 
 - ``STORK_OIDC_CLIENT_SECRET``
 
-The Client secret provided by the OpenID Provider. Not all OpenID Providers require this. If left empty, Stork will not
-send the ``Client secret`` as part of the request to OpenID Provider token endpoint.
+    The Client secret provided by the OpenID Provider. Not all OpenID Providers require this. If left empty, Stork will not
+    send the ``Client secret`` as part of the request to OpenID Provider token endpoint.
 
 - ``STORK_OIDC_REDIRECT_URI``
 
-The redirection URI to which the response to OIDC authentication request will be sent. If left empty, Stork will try to
-construct this URI based on the Server address. It is useful when Stork UI is behind a Reverse Proxy. It must end with
-``oidc/callback`` URL path as this is how Stork server recognizes OIDC authentication response from the OpenID Provider.
-For example, if your Stork deployment is using a reverse proxy and the Stork UI is accessible under URL
-``https://example.org:1234/stork``, you should configure this setting with value ``https://example.org:1234/stork/oidc/callback``.
-Note that this redirection URI must be registered at the OpenID Provider.
+    The redirection URI to which the response to OIDC authentication request will be sent. If left empty, Stork will try to
+    construct this URI based on the Server address by joining server scheme, ``rest-host``, ``rest-port``, ``rest-base-url``
+    settings with ``/oidc/callback`` path. It is useful when Stork UI is behind a Reverse Proxy. It must end with
+    ``/oidc/callback`` URL path as this is how Stork server recognizes OIDC authentication response from the OpenID Provider.
+    For example, if your Stork deployment is using a reverse proxy and the Stork UI is accessible under URL
+    ``https://example.org:1234/stork``, you should configure this setting with value ``https://example.org:1234/stork/oidc/callback``.
+    Note that this redirection URI must be registered at the OpenID Provider.
 
 - ``STORK_OIDC_PROVIDER_NAME``
 
-The OpenID Provider name that will be displayed on a Login page. You may use it to customize the label on the
-``Log in with...`` button. By default, it displays ``Log in with OpenID Connect``.
+    The OpenID Provider name that will be displayed on a Login page. You may use it to customize the label on the
+    ``Log in with...`` button. By default, it displays ``Log in with OpenID Connect``.
 
 - ``STORK_OIDC_SCOPES``
 
-Comma separated list of scopes sent in OIDC Authentication Request. Stork always sends 'openid' scope and the list
-from this setting is appended. It defaults to ``email,profile``. The scopes list may be OpenID Provider implementation
-specific. Based on requested scopes, the OpenID Provider may include different claims in the token endpoint response.
-Stork will try to extract such claims as user email, name or groups the user belongs to.
+    Comma separated list of scopes sent in OIDC Authentication Request. Stork always sends ``openid`` scope and the list
+    from this setting is appended. It defaults to ``email,profile``. The scopes list may be OpenID Provider implementation
+    specific. Based on requested scopes, the OpenID Provider may include different claims in the token endpoint response.
+    Stork will try to extract such claims as user email, name or groups the user belongs to. Stork will use claim keys:
+    ``email``, ``given_name``, ``family_name``, ``name`` and the value of ``oidc-groups-claim`` setting.
 
 - ``STORK_OIDC_GROUPS_CLAIM``
 
-Claim key used to retrieve user groups claim from OpenID Provider token endpoint response. It must be configured if
-STORK_OIDC_GROUP_ALLOW or STORK_OIDC_MAP_GROUPS setting is used.
+    Claim key used to retrieve user groups claim from OpenID Provider token endpoint response. It must be well configured if
+    ``STORK_OIDC_GROUP_ALLOW`` (``oidc-group-allow``) or ``STORK_OIDC_MAP_GROUPS`` (``oidc-map-groups``) setting is used.
+    Defaults to ``groups``.
 
+User group/role related settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stork may extract groups that user belongs to from the received claims from OpenID Provider token endpoint response. The
+following related settings may be used:
+
+- ``STORK_OIDC_GROUP_ALLOW``
+
+    If defined, Stork login will be allowed only for members of the specified group. Use this if not all users that passed
+    OIDC authentication should be permitted login to Stork. For example, if you have a group in your OpenID Provider
+    ``netadmins``, you might specify that here, and then only your network admins will be able to login to Stork.
+    The default is empty, which allows any user who can authenticate at OpenID Provider to login to Stork.
+
+    This is independent of the group mapping feature (``STORK_OIDC_MAP_GROUPS``).  You can restrict Stork login
+    without mapping Stork roles.  You can map Stork roles without restricting Stork login.  However, it often makes the
+    most sense to use both features together.
+
+- ``STORK_OIDC_MAP_GROUPS``
+
+    Enable mapping of the groups from the received claims to Stork roles. Set to ``true`` or ``1`` to enable this setting.
+    Leave empty to disable it. Defaults to disabled. When enabled, Stork will automatically follow permission changes that
+    are applied in the OpenID Provider. Note that the mapping is refreshed with every OIDC authentication.
+    If group mapping is disabled, all users that authenticated at OpenID Provider will be assigned the
+    "read-only" role in Stork. If group mapping is enabled, and a given user is permitted login but is not a
+    member of any mapped group, they will be assigned no Stork role, and will receive error messages if they try to use
+    Stork.
+
+- ``STORK_OIDC_GROUP_SUPER_ADMIN``
+
+    Members of these groups will be granted the super-admin role in Stork. Specify one or a comma-separated list of groups.
+    If a comma is part of any group name, it must be escaped with the backslash ``\``. The default is ``stork-super-admin``.
+
+- ``STORK_OIDC_GROUP_ADMIN``
+
+    Members of these groups will be granted the admin role in Stork. Specify one or a comma-separated list of groups.
+    If a comma is part of any group name, it must be escaped with the backslash ``\``. The default is ``stork-admin``.
+
+- ``STORK_OIDC_GROUP_READ_ONLY``
+
+    Members of these groups will be granted the read-only role in Stork. Specify one or a comma-separated list of groups.
+    If a comma is part of any group name, it must be escaped with the backslash ``\``. The default is ``stork-read-only``.
 
 
 Security Checklist for Stork Configurations
