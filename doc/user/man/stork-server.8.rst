@@ -171,10 +171,10 @@ variables are listed in square brackets, where applicable):
    Specifies the URL of the file with current Kea, Stork and BIND 9 software versions metadata. By default, it is `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_. ``[$STORK_REST_VERSIONS_URL]``
 
 ``--oidc-issuer-url``
-   Mandatory. The OID Provider Issuer URL used for OIDC discovery process. ``[$STORK_OIDC_ISSUER_URL]``
+   Mandatory OIDC setting. The OID Provider Issuer URL used for OIDC discovery process. ``[$STORK_OIDC_ISSUER_URL]``
 
 ``--oidc-client-id``
-   Mandatory. Client ID registered at the OID Provider. ``[$STORK_OIDC_CLIENT_ID]``
+   Mandatory OIDC setting. Client ID registered at the OID Provider. ``[$STORK_OIDC_CLIENT_ID]``
 
 ``--oidc-client-secret``
    Optional. Client secret provided by the OID Provider. Optional, because only some Providers require this in the OIDC process. ``[$STORK_OIDC_CLIENT_SECRET]``
