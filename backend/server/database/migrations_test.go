@@ -945,8 +945,8 @@ func TestMigration71DropAppsWithNoDaemons(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that migration 72 backfills server_tag from the existing config JSON.
-func TestMigration72BackfillServerTag(t *testing.T) {
+// Test that migration 73 backfills server_tag from the existing config JSON.
+func TestMigration73BackfillServerTag(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -979,10 +979,13 @@ func TestMigration72BackfillServerTag(t *testing.T) {
 	err = dbmodel.AddDaemon(db, daemonCA)
 	require.NoError(t, err)
 
+	// Go down from the latest migration to version 72. It is
+	// one before the migration that backfills the server tag.
 	_, _, err = dbops.Migrate(db, "down", "72")
 	require.NoError(t, err)
 
 	// Act
+	// Run the migration 73 which should backfill the server tag.
 	_, _, err = dbops.Migrate(db, "up")
 	require.NoError(t, err)
 
