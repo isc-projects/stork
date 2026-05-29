@@ -1506,6 +1506,16 @@ These examples assume that your organization's local GitLab installation ``https
 OpenID Provider. Your Stork UI is served behind a Reverse Proxy and is accessible at URL ``https://stork.my-organization.org:8081``.
 Your Stork server REST API is accessible at URL ``https://stork.my-organization.org:8080``.
 
+The first example does not use ``STORK_OIDC_MAP_GROUPS`` setting, which means that all users who belong to the ``stork-users``
+group (specified by ``STORK_OIDC_GROUP_ALLOW`` setting) will log in to Stork after successful OIDC authentication with
+``read-only`` role. After the user logs in for the first time, any super-admin may then update the user's role and grant
+more privileges if needed.
+
+The second example, apart from the ``STORK_OIDC_GROUP_ALLOW`` setting, is showcasing also the usage of ``STORK_OIDC_MAP_GROUPS``
+setting. In the example, any user trying to log in to Stork will have to be assigned to the ``stork-users`` group and
+to one of ``stork-super-admin``, ``stork-admin`` or ``stork-read-only`` groups. Stork will automatically follow permission
+changes that are applied for the users in the OpenID Provider.
+
 .. code-block::
 
     # Example 1
@@ -1567,7 +1577,8 @@ Factor Authentication in the OpenID Provider to improve the security of the auth
 After successful authentication, the user will get redirected back to Stork. Considering that ``STORK_OIDC_GROUP_ALLOW`` was
 configured, login to Stork will be successful if the user belongs to appropriate group in the OpenID Provider.
 In case of missing assignment to a mandatory group, the user may get redirected back to Stork Login page, where ``Unauthorized``
-error feedback will be visible.
+error feedback will be visible. In case of any other error during the OIDC authentication, the user may also get redirected
+back to Stork Login page, where the error feedback will be displayed.
 
 Security Checklist for Stork Configurations
 ===========================================
