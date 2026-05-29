@@ -1552,6 +1552,23 @@ Stork server API. Considering that NGINX is used the configuration snippet may l
         proxy_set_header Accept-Encoding "";
     }
 
+OIDC authentication usage
+-------------------------
+
+Once the OIDC authentication is correctly configured, Stork users should see the OIDC authentication method
+as available to select in a ``Choose a Method`` form element on the Login page:
+
+.. figure:: ./static/oidc.png
+   :alt: OpenID Connect authentication method
+
+After user clicks on the ``Log in with ...`` button, they will get redirected to OpenID Provider page where user will be
+able to authenticate and authorize the Stork as a OIDC Relying Party. It is highly recommended to enable also Multi
+Factor Authentication in the OpenID Provider to improve the authentication process security.
+After successful authentication, user will get redirected back to Stork. Considering that ``STORK_OIDC_GROUP_ALLOW`` was
+configured, login to Stork will be successful if the user belongs to appropriate group in the OpenID Provider.
+In case of missing assignment to mandatory group, user may get redirected back to Stork Login page, where ``Unauthorized``
+error feedback will be visible.
+
 Security Checklist for Stork Configurations
 ===========================================
 
