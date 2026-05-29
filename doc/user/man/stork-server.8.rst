@@ -183,7 +183,7 @@ variables are listed in square brackets, where applicable):
    Optional. The OID Provider name that will be displayed on a Login page. Leave blank to display generic OpenID Connect name. (default: OpenID Connect) ``[$STORK_OIDC_PROVIDER_NAME]``
 
 ``--oidc-group-allow``
-   The mandatory group that user must belong to, to access Stork, empty for allow all users ``[$STORK_OIDC_GROUP_ALLOW]``
+   The mandatory group that user must belong to, to access Stork, empty for allow all authenticated users ``[$STORK_OIDC_GROUP_ALLOW]``
 
 ``--oidc-map-groups``
    Enable mapping OIDC groups returned from token endpoint to Stork groups ``[$STORK_OIDC_MAP_GROUPS]``

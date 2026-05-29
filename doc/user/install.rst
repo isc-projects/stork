@@ -1433,7 +1433,7 @@ common ``STORK_OIDC_`` prefix):
     Note that this redirection URI must be registered at the OpenID Provider, so you must contact your OpenID Provider
     administrator about this. For user convenience, when Stork server starts, the URI is printed as information level log:
 
-.. code-block::
+.. code-block:: console
 
     INFO[2026-05-29 10:39:56]       controller.go:124   Authentication using OpenID Connect is now enabled in Stork, and users will be authenticated by OpenID Provider if the redirectURI has been registered in this provider.  openIDProvider="https://example.oidc.issuer.org" redirectURI="https://example.org:1234/stork/oidc/callback"
 
