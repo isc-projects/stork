@@ -1,3 +1,248 @@
+Stork 2.5.0 released on 2026-06-03.
+
+* 651 [doc] piotrek
+
+    Added a brief documentation section in ARM for OpenID Connect
+    authentication in Stork.
+    (Gitlab #2485)
+
+* 650 [bug] slawek
+
+    Fixed a bug that could cause the server to panic during user
+    authentication via LDAP. Authentication could be rejected if the
+    user's Distinguished Name differed from the value known to the Stork
+    server.
+    (Gitlab #2303)
+
+* 649 [func] william
+
+    The Stork server now has a user interface for displaying leases
+    which it collected from Kea.  See DHCP > Leases List.
+    (Gitlab #2059)
+
+* 648 [func] piotrek
+
+    Added support for OpenID Connect external authentication to Stork
+    server.
+    (Gitlab #2455, #2457, #2463, #2465, #2473, #2480)
+
+* 647 [build] marcin
+
+    Updated backend, UI, python and ruby dependencies.
+    (Gitlab #2469)
+
+* 646 [func] marcin
+
+    Stork agent uses the BIND 9 directory option to determine
+    absolute paths to the log files where DNS zone transfers
+    are logged.
+    (Gitlab #2460)
+
+* 645 [func] slawek
+
+    Support for creating subnets in the Config Backend database.
+    (Gitlab #2424)
+
+* 644 [func] marcin
+
+    Implemented zone transfers monitoring in the agent. The agent
+    now collects the information about ongoing and completed zone
+    transfers, and holds it in memory. Since there is no gRPC API
+    to retrieve the zone transfer information from the agent, the
+    information is not yet available to the server. The API and the
+    necessary Stork server updates will be implemented in the future
+    GL issues.
+    (Gitlab #2393)
+
+* 643 [build] piotrek
+
+    Updated dependencies including Go 1.25.10, and several
+    JavaScript and Python packages.
+    (Gitlab #2454)
+
+* 642 [bug] slawek
+
+    Fixed the authentication-methods directory permissions in
+    packaging scripts. The stork-server process could not write
+    LDAP hook icons because the directory was owned by root after
+    package installation. Added mkdir and chown in all post-install
+    scripts and os.MkdirAll in Go code as defense-in-depth.
+    (Gitlab #1621)
+
+* 641 [func] marcin
+
+    Stork agent parses BIND 9 logging configuration to determine
+    the log files where zone transfer events are logged. The zone
+    transfers are tracked in these files when zone transfer tracking
+    is enabled using the --enable-xfr-tracking parameter. Still, it
+    is possible to specify alternate file locations by explicitly
+    setting the --xfr-in-tracking-path and --xfr-out-tracking-path
+    command line arguments of the Stork agent.
+    (Gitlab #2444)
+
+* 640 [func] slawek
+
+    Added verification of the environment variables provided by a shell
+    and in the environment file to print a descriptive feedback in case
+    of a typo or using a deprecated variable.
+    (Gitlab #1587)
+
+* 639 [ui] slawek
+
+    Display the Kea daemon's server tag on the daemon page.
+    (Gitlab #2420)
+
+* 638 [func] marcin
+
+    Added new parameters to the Stork agent enabling zone transfer
+    monitoring in the explicitly specified files or systemd logs.
+    The captured logs are not yet interpreted.
+    (Gitlab #2392)
+
+* 637 [func] slawek
+
+    Added a new container to the demo that runs Kea DHCPv4 server
+    with the Config Backend (cb_cmds) hook.
+    (Gitlab #2416)
+
+* 636 [func] marcin
+
+    Implemented log tracker in the Stork agent. It will be used to
+    monitor BIND 9 logs to capture the zone transfer events. However,
+    as a generic solution, it can be used in the future for tracking
+    any kind of events logged in the files or systemd logs.
+    (Gitlab #2391)
+
+* 635 [func] slawek
+
+    The Stork server now extracts the server tag from the Kea
+    DHCP daemon configuration and stores it in the database. It is the
+    backbone of the Kea Config Backend support.
+    (Gitlab #2419)
+
+* 634 [build] piotrek
+
+    Updated dependencies including Go 1.25.9, and several
+    JavaScript, Python, Ruby and Go packages.
+    (Gitlab #2445)
+
+* 633 [bug] marcin
+
+    Fixed detection and monitoring of the kea-dhcp-ddns process.
+    (Gitlab #2433)
+
+* 632 [func] william
+
+    The Stork server now collects leases from the agents and stores them
+    in the Stork server database. They will be displayed by UI added in
+    a later change.
+    (Gitlab #2058)
+
+* 631 [build] andrei
+
+    Go Swagger version was bumped up to v0.33.2.
+    (Gitlab #2111)
+
+* 630 [func] piotrek
+
+    Zone RRs viewer filtering panel was changed to compact style to
+    match other filtering panels in Stork UI.
+    (Gitlab #2282)
+
+* 629 [ui] slawek
+
+    Fixed long shared network names overlapping adjacent columns
+    on the Dashboard. Names are now truncated with an ellipsis and
+    expand to the full text on hover.
+    (Gitlab #2385)
+
+* 628 [sec] slawek
+
+    Enhanced protection against Path Traversal attack in RestAPI.
+    (Gitlab #2309)
+
+* 627 [bug] slawek
+
+    Fixed the Stork server crash when the monitored daemon had no
+    control sockets specified.
+    (Gitlab #2403)
+
+* 626 [bug] marcin
+
+    Stork no longer erases Kea configuration parameters it does not
+    recognize when it updates Kea configuration. This is important
+    when Stork version is behind Kea version, and new parameters
+    were introduced to Kea.
+    (Gitlab #2328)
+
+* 625 [func] marcin
+
+    Implemented systemd logs reader and watcher using journalctl.
+    It will be used to monitor BIND9 logs to capture zone transfer
+    events.
+    (Gitlab #2389)
+
+* 624 [bug] slawek
+
+    Fixed Kea, BIND 9, and PowerDNS detection failing to parse the CLI
+    flags when the path to the binary contained a directory named same
+    as the binary (e.g., /var/lib/named/sbin/named).
+    (Gitlab #2374)
+
+* 623 [bug] andrei
+
+    The agent can now detect Kea daemons started with a relative
+    executable path; previously, it tried to guess that the
+    executable would be located in the current working directory
+    from which the process was started.
+    (Gitlab #2289)
+
+* 622 [func] ! slawek
+
+    The default hook directory path is now relative to the binary
+    location rather than an absolute path. The hook directory is created
+    during the package installation if it doesn't exist.
+    (Gitlab #1699)
+
+* 621 [func] marcin
+
+    Implemented log file reader and watcher, working similar to the
+    tail -f. It will be used to monitor BIND9 log files to capture
+    zone transfer events.
+    (Gitlab #2388)
+
+* 620 [bug] slawek
+
+    Decreased the logging level for a message produced when it is unable
+    to find a subnet reported in the Kea statistics response to prevent
+    bloating the logs if the stale subnets are included.
+    (Gitlab #2382)
+
+* 619 [func] slawek
+
+    Added the --db-tls-1-2-enabled flag (STORK_DATABASE_TLS_1_2_ENABLED
+    environment variable) to allow lowering the minimum TLS version for
+    database connections from 1.3 to 1.2.
+    (Gitlab #2319)
+
+* 618 [bug] slawek
+
+    Fixed a hole that allowed pulling the same agent state many times
+    concurrently, which could result in duplicating daemons.
+    (Gitlab #583)
+
+* 617 [build] piotrek
+
+    Updated frontend dependencies including Angular 20 and PrimeNG 20.
+    Development dependency Storybook was updated to version 10.2.
+    (Gitlab #2297)
+
+* 616 [bug] slawek
+
+    Fixed a database migration failure for the application with no
+    daemons.
+    (Gitlab #2317)
+
 Stork 2.4.0 released on 2026-02-25.
 
 * 615 [bug] slawek
